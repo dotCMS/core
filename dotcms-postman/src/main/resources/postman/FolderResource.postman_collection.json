@@ -1,0 +1,1235 @@
+{
+	"info": {
+		"_postman_id": "d0b98de2-fe86-455b-aac7-6065ddbc0ad8",
+		"name": "FolderResource",
+		"description": "Test for FolderResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
+	},
+	"item": [
+		{
+			"name": "findSubfolderByPath",
+			"item": [
+				{
+					"name": "Create new Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Host check\", function () {",
+									"    pm.expect(jsonData.entity.siteName).to.eql('site.test.find.subfolders.by.path');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"",
+									"pm.test(\"ModUser should contain a valid user identifier\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData.entity.modUser).to.be.a('string').and.not.eql(\"\");",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Permissions array should be empty for public endpoints\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData.permissions).to.be.an('array').that.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\":\"site.test.find.subfolders.by.path\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						},
+						"description": "New Site to test find subfolders by path"
+					},
+					"response": []
+				},
+				{
+					"name": "createFolders Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/testfindfolder1\",\"/testfindfolder1/subfolder1\",\"/testfindfolder1/subfolder2\",\"/testfindfolder1/testsubfolder1\",\"/testFindFolder2\",\"/testFindFolder2/subfolder1\",\"/TESTFINDTESTFOLDER3/\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/site.test.find.subfolders.by.path",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"site.test.find.subfolders.by.path"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const entity = jsonData.entity;",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/');",
+									"});",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(4);",
+									"});",
+									"",
+									"pm.test(\"Checking that all expected folder attributes are present\", function () {",
+									"    entity.forEach(function(folderEntry) {",
+									"        pm.expect(folderEntry.addChildrenAllowed).to.not.equal(undefined);",
+									"        pm.expect(folderEntry.hostName).to.not.equal(undefined);",
+									"        pm.expect(folderEntry.id).to.not.equal(undefined);",
+									"        pm.expect(folderEntry.inode).to.not.equal(undefined);",
+									"        pm.expect(folderEntry.path).to.not.equal(undefined);",
+									"    });",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path/\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Site Without final /",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/');",
+									"});",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(4);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Site Does Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.p\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Site And Some char to filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/');",
+									"});",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path/testfindf\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Path that does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path/testfindsu\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Folder Subfolders Passing The Site And Parent Folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/subfolder1/');",
+									"});",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(4);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path/testfindfolder1/\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Folder Subfolders Passing The Site And Parent Folder And Some Char to filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/subfolder1/');",
+									"});",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path/testfindfolder1/s\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Without Passing The Site And Some char to filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[0].path).to.contains('/testfindfolder');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"/testfindfolder\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Folder Subfolders Without Passing The Site And Some char to filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[1].path).to.contains('/testfindfolder1/sub');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"/testfindfolder1/sub\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Folder Subfolders Without Passing The Path 400 BadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						},
+						"description": "Calls the endpoint to get the subfolders, but no body is sent so a 400 must be returned."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "selectCurrentFolder",
+			"item": [
+				{
+					"name": "create folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json(); ",
+									"    pm.collectionVariables.set(\"folderId\", jsonData[\"entity\"][0][\"identifier\"]);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/test_folder\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"default"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select folder no valid user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/{{folderId}}/file-browser-selected",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"{{folderId}}",
+								"file-browser-selected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select not found folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/not-exists/file-browser-selected",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"not-exists",
+								"file-browser-selected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/{{folderId}}/file-browser-selected",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"{{folderId}}",
+								"file-browser-selected"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createFolders Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/folder1\",\"/folder2/subfolder1\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"default"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+        {
+          "name": "deleteFolder",
+          "item": [
+            {
+              "name": "deleteNonExistedFolder",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Response status code is 404\", function () {",
+                      "    pm.expect(pm.response.code).to.equal(404);",
+                      "});",
+                      "",
+                      "pm.test(\"Response should contain a message field\", function () {",
+                      "    const responseData = pm.response.json();",
+                      "    ",
+                      "    pm.expect(responseData).to.be.an('object');",
+                      "    pm.expect(responseData).to.have.property('message');",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[\"/folder-1/folder-2/target-folder\"]",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/folder/default",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "folder",
+                    "default"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+		{
+			"name": "Get Folder Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder2/subfolder1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"sitename",
+						"default",
+						"uri",
+						"folder2",
+						"subfolder1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createFolders BadRequest with Restricted Name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/dotcms\",\"/folder2/subfolder1\"]\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/demo.dotcms.com",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"demo.dotcms.com"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createFolders BadRequest with Invalid SiteName",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/foldertestcreate1/test\",\"test2\"]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/siteNotExist",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"siteNotExist"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "loadFolderAndSubFoldersByPath BadRequest with Unexisting Folder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/siteId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder/not/exists",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"siteId",
+						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+						"path",
+						"folder",
+						"not",
+						"exists"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "loadFolderAndSubFoldersByPath BadRequest with Unexisting siteId",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/siteId/host-id-not-exists/path/folder1",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"siteId",
+						"host-id-not-exists",
+						"path",
+						"folder1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "loadFolderAndSubFoldersByPath Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Includes subFolders\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"subfolder1\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/siteId/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d/path/folder2",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"siteId",
+						"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+						"path",
+						"folder2"
+					]
+				},
+				"description": "Get folder2 and all the subFolders"
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

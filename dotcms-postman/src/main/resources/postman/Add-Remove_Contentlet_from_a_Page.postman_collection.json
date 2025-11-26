@@ -1,0 +1,1023 @@
+{
+	"info": {
+		"_postman_id": "a23d7cfd-b23a-47df-aa00-123309c61292",
+		"name": "Add/Remove Contentlet from a Page",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
+	},
+	"item": [
+		{
+			"name": "To specific variants",
+			"item": [
+				{
+					"name": "Create a Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+									"",
+									"",
+									"pm.test(\"Id in entity is not empty\", function () {",
+									"    const responseData = pm.response.json();",
+									"",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData.entity).to.be.an('array');",
+									"    responseData.entity.forEach(function(entity) {",
+									"        pm.expect(entity.id).to.exist.and.to.not.be.empty;",
+									"    });",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"add/remove contentlet type\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Field to Content Type",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{contentTypeId}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{contentTypeId}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"title\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/move",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v3",
+								"contenttype",
+								"{{contentTypeId}}",
+								"fields",
+								"move"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet_1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"content1_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_1\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeId}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet_2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"content2_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_2\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeId}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet_3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"content3_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_3\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeId}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet_4",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"content4_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_4\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeId}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
+									"",
+									"",
+									"pm.test(\"ModUser and Owner fields are not exposed in the response\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData.modUser).to.not.exist;",
+									"    pm.expect(responseData.owner).to.not.exist;",
+									"});",
+									"",
+									"",
+									"pm.test(\"CanEdit, CanLock, and CanRead permissions are set to false\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.have.property('canEdit', false);",
+									"    pm.expect(responseData.entity).to.have.property('canLock', false);",
+									"    pm.expect(responseData.entity).to.have.property('canRead', false);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Archived, live, and working flags are set appropriately\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData.entity.archived).to.be.false;",
+									"    pm.expect(responseData.entity.live).to.be.true;",
+									"    pm.expect(responseData.entity.working).to.be.true;",
+									"});",
+									"",
+									""
+
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_to_add_remove_contentlet\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_to_add_remove_contentlet\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add contetlet into DEFAULT variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n    \"contentletsId\": [\"{{content1_id}}\", \"{{content2_id}}\", \"{{content3_id}}\"],\n    \"identifier\": \"SYSTEM_CONTAINER\",\n    \"uuid\": \"1\" \n    }   \n]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{page_id}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{page_id}}",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createDraftExperiment_shoudSucceed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"experimentId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"experimentShortId\", jsonData.entity.id.substring(0, 11).replace('-', ''));",
+									"",
+									"",
+									"pm.test(\"Created by field should not be empty\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.have.property('entity');",
+									"    pm.expect(responseData.entity).to.have.property('createdBy').that.is.not.empty;",
+									"});",
+									"",
+									"",
+									"pm.test(\"Creation date is a non-negative integer\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData.entity.creationDate).to.be.a('number').and.to.be.at.least(0);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Description is a non-empty string\", function () {",
+									"  const responseData = pm.response.json();",
+									"  ",
+									"  pm.expect(responseData).to.be.an('object');",
+									"  pm.expect(responseData.entity.description).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Description should not be empty\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"TrafficAllocation is a non-negative integer and within an acceptable range\", function () {",
+									"    const responseData = pm.response.json();",
+									"",
+									"    pm.expect(responseData.entity.trafficAllocation).to.be.a('number');",
+									"    pm.expect(responseData.entity.trafficAllocation).to.be.at.least(0, \"TrafficAllocation should be non-negative\");",
+									"    pm.expect(responseData.entity.trafficAllocation).to.be.at.most(100, \"TrafficAllocation should be within 0-100 range\");",
+									"});",
+									"",
+									""
+
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pageId\": \"{{page_id}}\",\n    \"name\": \"Add/Remove content Experiment\",\n    \"description\": \"Expriment ro Add/Remove contentlet from a specific variant page\" \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								""
+							]
+						},
+						"description": "Create a new Experiment named \"Add/Remove content Experiment\" with the page created in the previous request."
+					},
+					"response": []
+				},
+				{
+					"name": "addVariantToExperiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Variant to Add/Remove contentlet test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/variants",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{experimentId}}",
+								"variants"
+							]
+						},
+						"description": "Create a new variant into the previous created experiment"
+					},
+					"response": []
+				},
+				{
+					"name": "render page with DEFAULT variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"   ",
+									"    var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_2');",
+									"    pm.expect(html).to.contains('content_3');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_to_add_remove_contentlet?language_id=1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_to_add_remove_contentlet"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "render page with new variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"   ",
+									"    var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_2');",
+									"    pm.expect(html).to.contains('content_3');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_to_add_remove_contentlet?language_id=1&variantName=dotexperiment-{{experimentId}}-variant-1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_to_add_remove_contentlet"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "variantName",
+									"value": "dotexperiment-{{experimentId}}-variant-1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Contentlet into a specific variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n    \"contentletsId\": [\"{{content1_id}}\", \"{{content4_id}}\"],\n    \"identifier\": \"SYSTEM_CONTAINER\",\n    \"uuid\": \"1\" \n    }   \n]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{page_id}}/content?variantName=dotexperiment-{{experimentShortId}}-variant-1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{page_id}}",
+								"content"
+							],
+							"query": [
+								{
+									"key": "variantName",
+									"value": "dotexperiment-{{experimentShortId}}-variant-1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render again after Add/remove",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"   ",
+									"   var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_4');",
+									"",
+									"    pm.expect(html).not.to.contains('content_2');",
+									"    pm.expect(html).not.to.contains('content_3');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_to_add_remove_contentlet?language_id=1&variantName=dotexperiment-{{experimentShortId}}-variant-1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_to_add_remove_contentlet"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "variantName",
+									"value": "dotexperiment-{{experimentShortId}}-variant-1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render again after Add/remove DEFAULT variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"   ",
+									"    var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_2');",
+									"    pm.expect(html).to.contains('content_3');",
+									"",
+									"    pm.expect(html).not.to.contains('content_4');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_to_add_remove_contentlet?language_id=1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_to_add_remove_contentlet"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This test do the follow:\n\n*   add/remove contentlet type called 'add/remove contentlet type' with just a title field\n*   Create 4 contentlet with title:\n    *   content_1\n    *   content_2\n    *   content_3\n    *   content_4\n*   Create a Page called 'page_to_add_remove_contentlet'\n*   Add the first 3 contentlet into the Page.\n*   Create a experiment called 'Add/Remove content Experiment' using this page as Original\n*   Create a variant into this experiment called \"Variant to Add/Remove contentlet test\".\n*   Render the page in the DEFAULT variant and the specific variant created before, the 3 contentlets should be render.\n*   Remove 'content-2' and 'content-3' also add 'content-4' into the page for the variant \"Variant to Add/Remove contentlet test\".\n*   Render the page for the variant \"Variant to Add/Remove contentlet test\" should have just 'content-1' and 'content-4'.\n*   Render the page for the DEFAULT variant should render 'content-1', 'content-2' and 'content-3'"
+		}
+	],
+	"variable": [
+		{
+			"key": "experimentId",
+			"value": ""
+		},
+		{
+			"key": "experimentShortId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "content1_id",
+			"value": ""
+		},
+		{
+			"key": "content4_id",
+			"value": ""
+		},
+		{
+			"key": "content2_id",
+			"value": ""
+		},
+		{
+			"key": "content3_id",
+			"value": ""
+		},
+		{
+			"key": "page_id",
+			"value": ""
+		}
+	]
+}

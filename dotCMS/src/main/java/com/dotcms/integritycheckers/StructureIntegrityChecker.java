@@ -1,11 +1,14 @@
 package com.dotcms.integritycheckers;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -140,7 +143,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("select s.velocity_var_name as velocity_name, "
                     + "s.inode as local_inode, st.inode as remote_inode from structure s "
                     + "join " + tempTableName
-                    + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode");
+                    + " st on lower(s.velocity_var_name) = lower(st.velocity_var_name) and s.inode <> st.inode");
 
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
@@ -155,7 +158,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                         + "' from structure s "
                         + "join "
                         + tempTableName
-                        + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode";
+                        + " st on lower(s.velocity_var_name) = lower(st.velocity_var_name) and s.inode <> st.inode";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
             }
@@ -194,60 +197,33 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 final String TEMP_INODE = "TEMP_INODE_" + System.currentTimeMillis();
                 
                 // 1.1) Insert dummy temp row on INODE table
-                if (DbConnectionFactory.isOracle()) {
-                    dc.executeStatement("insert into inode (inode, owner, idate, type) values ('" + TEMP_INODE + "', 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_TYPE') " );
-                } else {
-                    dc.executeStatement("insert into inode (inode, owner, idate, type) values ('" + TEMP_INODE + "', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') " );
-                }
+
+                dc.executeStatement("insert into inode (inode, owner, idate, type) values ('" + TEMP_INODE + "', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') " );
+
 
                 // 1.2) Insert dummy temp row on STRUCTURE table
 
-                if (DbConnectionFactory.isOracle()) {
-                    dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE +"', 'DUMMY_NAME', 'DUMMY_DESC', '"
-                            + DbConnectionFactory.getDBFalse()
-                            + "', '', '', '', 1, '"
-                            + DbConnectionFactory.getDBTrue()
-                            + "', '"
-                            + DbConnectionFactory.getDBFalse()
-                            + "', 'DUMMY_VAR_NAME'"
-                            + ", 'DUMMY_PATERN', '"
-                            + st.getHost()
-                            + "', '"
-                            + st.getFolder()
-                            + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
-                } else if (DbConnectionFactory.isPostgres()) {
-                    dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', "
-                            + DbConnectionFactory.getDBFalse()
-                            + ", '', '', '', 1, "
-                            + DbConnectionFactory.getDBTrue()
-                            + ", "
-                            + DbConnectionFactory.getDBFalse()
-                            + ", 'DUMMY_VAR_NAME'"
-                            + ", 'DUMMY_PATERN', '"
-                            + st.getHost()
-                            + "', '"
-                            + st.getFolder()
-                            + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
-                } else {
-                    dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', '"
-                            + DbConnectionFactory.getDBFalse()
-                            + "', '', '', '', 1, '"
-                            + DbConnectionFactory.getDBTrue()
-                            + "', '"
-                            + DbConnectionFactory.getDBFalse()
-                            + "', 'DUMMY_VAR_NAME'"
-                            + ", 'DUMMY_PATERN', '"
-                            + st.getHost()
-                            + "', '"
-                            + st.getFolder()
-                            + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
-                }
+                dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', "
+                        + DbConnectionFactory.getDBFalse()
+                        + ", '', '', '', 1, "
+                        + DbConnectionFactory.getDBTrue()
+                        + ", "
+                        + DbConnectionFactory.getDBFalse()
+                        + ", 'DUMMY_VAR_NAME'"
+                        + ", 'DUMMY_PATERN', '"
+                        + st.getHost()
+                        + "', '"
+                        + st.getFolder()
+                        + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
+
 
                 // 2) Update references to the new dummies temps
 
                 // update foreign tables references to TEMP
                 dc.executeStatement("update container_structures set structure_id = '" + TEMP_INODE + "' where structure_id = '"
                         + oldStructureInode + "'" );
+
+
                 dc.executeStatement("update contentlet set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
                         + oldStructureInode + "'" );
                 dc.executeStatement("update field set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
@@ -350,6 +326,17 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 // 5) update foreign tables references to the new real row
                 dc.executeStatement("update container_structures set structure_id = '"
                         + newStructureInode + "' where structure_id = '" + TEMP_INODE + "'" );
+
+
+                dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = '\"" + newStructureInode + "\"'"
+                                + " WHERE structure_inode = ? ")
+                        .addParam(TEMP_INODE)
+                        .loadResult();
+
+
+
+
+
                 dc.executeStatement("update contentlet set structure_inode = '" + newStructureInode
                         + "' where structure_inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update field set structure_inode = '" + newStructureInode
@@ -373,11 +360,26 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 // 6) delete dummy temp
                 dc.executeStatement("delete from structure where inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("delete from inode where inode = '" + TEMP_INODE + "'" );
+
+
+                ContentType fakeType = ImmutableSimpleContentType.builder()
+                        .variable(st.getVelocityVarName())
+                        .id(newStructureInode)
+                        .name("fake")
+                        .build();
+
+                HibernateUtil.addCommitListener(()->{
+                    APILocator.getContentletAPI().refresh(fakeType);
+                });
+
+
+
             }
         } catch (final SQLException e) {
             throw new DotDataException(String.format("An error occurred when executing the fix for Content Types in " +
                     "Endpoint '%s': %s", key, e.getMessage()), e);
         }
+
     }
 
 }

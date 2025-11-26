@@ -1,0 +1,31 @@
+@use "variables" as *;
+
+:host {
+    form {
+        min-height: 30.5rem;
+        display: flex;
+        flex-direction: column;
+
+        &.locale-add__edit-form {
+            min-height: 20rem;
+        }
+    }
+    dot-copy-button {
+        position: absolute;
+        top: $spacing-0;
+        right: $spacing-0;
+    }
+}
+
+.locale-add__buttons {
+    display: flex;
+    gap: $spacing-3;
+    margin-top: auto;
+    justify-content: flex-end;
+}
+
+.locale-add__error-message {
+    margin: $spacing-1 0;
+    font-size: $font-size-sm;
+    color: $red;
+}

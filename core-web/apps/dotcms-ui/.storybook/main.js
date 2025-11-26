@@ -5,7 +5,7 @@ const rootMain = require('../../../.storybook/main');
 module.exports = {
     ...rootMain,
 
-    core: { ...rootMain.core, builder: 'webpack5' },
+    core: { ...rootMain.core },
 
     stories: [
         ...rootMain.stories,
@@ -18,9 +18,6 @@ module.exports = {
         '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
     addons: ['@storybook/addon-essentials', ...rootMain.addons],
-    features: {
-        previewMdx2: true
-    },
     webpackFinal: async (config, { configType }) => {
         // apply any global webpack configs that might have been specified in .storybook/main.js
         if (rootMain.webpackFinal) {

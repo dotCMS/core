@@ -1,6 +1,7 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.api.BuiltVersionService;
 import com.dotcms.api.UserAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
@@ -13,8 +14,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -31,7 +32,7 @@ import picocli.CommandLine.ExitCode;
         })
 public class StatusCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "status";
+    public static final String NAME = "status";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
@@ -49,6 +50,9 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
     @Inject
     AuthenticationContext authenticationContext;
 
+    @Inject
+    BuiltVersionService builtVersionService;
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -57,6 +61,13 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
+
+        builtVersionService.version().ifPresent(version -> {
+            output.info(String.format("@|bold Build Version:|@ %s", version.version()));
+            output.info(String.format("@|bold Build Name:|@ %s", version.name()));
+            output.info(String.format("@|bold Build Timestamp:|@ %d", version.timestamp()));
+            output.info(String.format("@|bold Build Revision:|@ %s", version.revision()));
+        });
 
         final Optional<ServiceBean> optional = serviceManager.services().stream()
                 .filter(ServiceBean::active).findFirst();

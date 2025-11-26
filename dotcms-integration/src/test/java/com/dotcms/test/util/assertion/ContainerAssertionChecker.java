@@ -6,19 +6,16 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Container}
@@ -43,7 +40,7 @@ public class ContainerAssertionChecker implements AssertionChecker<Container> {
                     containerParams.getIdentifier(), systemUser, false);
             Container container = isLive ? containerLive : containerWorking;
 
-            Map<String, Object> arguments = map(
+            Map<String, Object> arguments = new HashMap<>(Map.of(
                     "id", container.getIdentifier(),
                     "asset_name", identifier.getAssetName(),
                     "host_id", identifier.getHostId(),
@@ -55,7 +52,7 @@ public class ContainerAssertionChecker implements AssertionChecker<Container> {
                     "working_inode", containerWorking.getInode(),
                     "live_inode", containerLive != null ? containerLive.getInode() : "null"
 
-            );
+            ));
 
             if (!containerStructures.isEmpty()) {
                 arguments.put("content_type_id", containerStructures.get(0).getStructureId());

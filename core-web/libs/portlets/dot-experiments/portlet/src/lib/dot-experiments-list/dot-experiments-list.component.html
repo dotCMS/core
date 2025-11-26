@@ -1,49 +1,45 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <dot-experiments-header
-        [isLoading]="vm.isLoading"
-        [title]="vm.pageTitle"
         (goBack)="goToBrowserBack()"
-    />
+        [isLoading]="vm.isLoading"
+        [title]="vm.pageTitle" />
     <div class="dot-experiment">
-        <ng-container
-            *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
-        >
+        @if (vm.experiments.length) {
             <div class="dot-experiment__actions">
                 <dot-experiments-status-filter
-                    [options]="statusOptionList"
-                    [selectedItems]="vm.filterStatus"
                     (switch)="selectedStatusFilter($event)"
-                />
-
+                    [options]="statusOptionList"
+                    [selectedItems]="vm.filterStatus" />
                 <button
                     (click)="addExperiment()"
                     data-testId="add-experiment-button"
                     label="{{ 'experimentspage.add.new.experiment' | dm }}"
                     pButton
-                    type="button"
-                ></button>
+                    type="button"></button>
             </div>
-
             <dot-experiments-list-table
-                [experimentGroupedByStatus]="vm.experimentsFiltered"
                 (goToContainer)="goToContainerAction($event)"
-            />
-        </ng-container>
+                [experimentGroupedByStatus]="vm.experimentsFiltered" />
+        } @else {
+            <ng-container
+                [ngTemplateOutlet]="
+                    vm.isLoading ? loadingExperiments : noExperiments
+                "></ng-container>
+        }
     </div>
-    <dot-add-to-bundle
-        *ngIf="vm.addToBundleContentId"
-        [assetIdentifier]="vm.addToBundleContentId"
-        (cancel)="vm.addToBundleContentId = null"
-    />
-</ng-container>
+    @if (vm.addToBundleContentId) {
+        <dot-add-to-bundle
+            (cancel)="vm.addToBundleContentId = null"
+            [assetIdentifier]="vm.addToBundleContentId" />
+    }
+}
 
 <ng-template #noExperiments>
     <dot-empty-container
+        (buttonAction)="addExperiment()"
         [buttonLabel]="'experimentspage.add.new.experiment' | dm"
         [configuration]="emptyConfiguration"
-        [hideContactUsLink]="true"
-        (buttonAction)="addExperiment()"
-    />
+        [hideContactUsLink]="true" />
 </ng-template>
 <ng-template #loadingExperiments>
     <dot-experiments-list-skeleton />

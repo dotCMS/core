@@ -9,7 +9,11 @@ import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -41,7 +45,11 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -52,9 +60,6 @@ import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,15 +69,25 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
+ * The UserAPITest class is a test suite for testing various functionalities provided
+ * by the UserAPI and other related APIs. This class contains multiple test methods
+ * that validate API operations, such as creating, deleting, and updating users or
+ * querying user-related data with different filters and criteria.
  *
  * @author Oswaldo Gallango
- *
+ * @since May 5th, 2016
  */
-
 public class UserAPITest extends IntegrationTestBase {
 
 	protected static UserAPI userAPI;
@@ -142,12 +157,13 @@ public class UserAPITest extends IntegrationTestBase {
 		final String timeString = String.valueOf( new Date().getTime());
 
 		/**
-		 * Add host
+		 * Add site
 		 */
-		Host host = new Host();
-		host.setHostname("test"+timeString+".demo.dotcms.com");
-		host.setIndexPolicy(IndexPolicy.FORCE);
-		host=hostAPI.save(host, systemUser, false);
+		Host site = new Host();
+		site.setHostname("test"+timeString+".demo.dotcms.com");
+		site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		site.setIndexPolicy(IndexPolicy.FORCE);
+		site=hostAPI.save(site, systemUser, false);
 		/**
 		 * Add role
 		 */
@@ -165,32 +181,32 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Set permission to role
 		 */
 		List<Permission> permissionsToSave = new ArrayList<>();
-		permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS), true));
-		permissionsToSave.add(new Permission(Host.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
-		permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN), true));
-		permissionsToSave.add(new Permission(Container.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(Template.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(Link.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(Structure.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(Category.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
-		permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS), true));
+		permissionsToSave.add(new Permission(Host.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN), true));
+		permissionsToSave.add(new Permission(Container.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Template.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Link.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Structure.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Category.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), site.getPermissionId(), newRole.getId(), 0, true));
 
-		if ( APILocator.getPermissionAPI().isInheritingPermissions(host) ) {
-			Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(host);
-			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser);
+		if ( APILocator.getPermissionAPI().isInheritingPermissions(site) ) {
+			Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(site);
+			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, site, systemUser);
 		}
 
 		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
-		APILocator.getPermissionAPI().assignPermissions(permissionsToSave, host, systemUser, false);
+		APILocator.getPermissionAPI().assignPermissions(permissionsToSave, site, systemUser, false);
 
 		/**
 		 * Add role permission over htmlpages
 		 */
 		Structure pageStructure = StructureFactory.getStructureByVelocityVarName(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME);
-		perAPI.permissionIndividually(host, pageStructure, systemUser);
+		perAPI.permissionIndividually(site, pageStructure, systemUser);
 
 		List<Permission> permissions = new ArrayList<>();
 		Permission p1=new Permission();
@@ -250,7 +266,7 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add folder
 		 */
-		Folder testFolder = folderAPI.createFolders("/folderTest"+timeString, host, userToDelete, false);
+		Folder testFolder = folderAPI.createFolders("/folderTest"+timeString, site, userToDelete, false);
 		testFolder.setOwner(userToDelete.getUserId());
 		folderAPI.save(testFolder, userToDelete, false);
 
@@ -349,7 +365,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add structure
 		 */
 		Structure st = new Structure();
-		st.setHost(host.getIdentifier());
+		st.setHost(site.getIdentifier());
 		st.setFolder(testFolder.getInode());
 		st.setName("structure"+timeString);
 		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
@@ -391,7 +407,7 @@ public class UserAPITest extends IntegrationTestBase {
 		cs.setStructureId(st.getInode());
 		cs.setCode(container.getCode());
 		csList.add(cs);
-		container = containerAPI.save(container, csList, host, userToDelete, false);
+		container = containerAPI.save(container, csList, site, userToDelete, false);
 		PublishFactory.publishAsset(container,userToDelete, false, false);
 
 		/**
@@ -405,7 +421,7 @@ public class UserAPITest extends IntegrationTestBase {
 		template.setBody(templateBody);
 		template.setOwner(userToDelete.getUserId());
 		template.setDrawedBody(templateBody);
-		template = templateAPI.saveTemplate(template, host, userToDelete, false);
+		template = templateAPI.saveTemplate(template, site, userToDelete, false);
 		PublishFactory.publishAsset(template, userToDelete, false, false);
 
 		/**
@@ -415,7 +431,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		Contentlet contentAsset=new Contentlet();
 		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-		contentAsset.setHost(host.getIdentifier());
+		contentAsset.setHost(site.getIdentifier());
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
@@ -434,7 +450,7 @@ public class UserAPITest extends IntegrationTestBase {
 		String title ="content"+timeString;
 		Contentlet contentAsset2=new Contentlet();
 		contentAsset2.setStructureInode(st.getInode());
-		contentAsset2.setHost(host.getIdentifier());
+		contentAsset2.setHost(site.getIdentifier());
 		contentAsset2.setProperty("title", title);
 		contentAsset2.setLanguageId(langId);
 		contentAsset2.setProperty("body", title);
@@ -480,7 +496,7 @@ public class UserAPITest extends IntegrationTestBase {
 		link.setTarget("_blank");
 		link.setOwner(userToDelete.getUserId());
 		link.setModUser(userToDelete.getUserId());
-		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
+		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, site, langId, true);
 
 		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -489,7 +505,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		StringBuffer myURL = new StringBuffer();
 		if(InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
-			myURL.append(host.getHostname());
+			myURL.append(site.getHostname());
 		}
 		myURL.append(internalLinkIdentifier.getURI());
 		link.setUrl(myURL.toString());
@@ -501,7 +517,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 */
 		final String hostVariableString = "hostVariable"+timeString;
 		HostVariable hostVariable = new HostVariable();
-		hostVariable.setHostId(host.getIdentifier());
+		hostVariable.setHostId(site.getIdentifier());
 		hostVariable.setName(hostVariableString);
 		hostVariable.setKey(hostVariableString);
 		hostVariable.setValue(hostVariableString);
@@ -549,11 +565,11 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(testFolder.getOwner().equals(userToDelete.getUserId()));
 
-		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),userToDelete,false).get(0);
+		hostVariable = hostVariableAPI.getVariablesForHost(site.getIdentifier(),userToDelete,false).get(0);
 		assertTrue(hostVariable.getLastModifierId().equals(userToDelete.getUserId()));
 
 		//Verify we have the proper user set in the HTMLPage
-		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
+		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, site, langId, true);
 		assertTrue(page.getOwner().equals(userToDelete.getUserId()));
 		assertTrue(page.getModUser().equals(userToDelete.getUserId()));
 
@@ -593,7 +609,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertEquals(replacementUser.getUserId(), link.getOwner());
 		assertEquals(replacementUser.getUserId(), link.getModUser());
 
-		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
+		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, site, langId, true);
 		Logger.info(this, "Page inode:" + page.getInode());
 		Logger.info(this, "Page identifier:" + page.getIdentifier());
 		assertEquals("Page Owner " + page.getOwner(), replacementUser.getUserId(), page.getOwner());
@@ -630,10 +646,10 @@ public class UserAPITest extends IntegrationTestBase {
 		assertEquals(replacementUser.getUserId(), template.getModUser());
 
 		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
-		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
+		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), site, systemUser, false);
 		assertEquals(replacementUser.getUserId(), testFolder.getOwner());
 
-		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
+		hostVariable = hostVariableAPI.getVariablesForHost(site.getIdentifier(),replacementUser,false).get(0);
 		assertEquals(replacementUser.getUserId(), hostVariable.getLastModifierId());
 
 
@@ -1370,5 +1386,109 @@ public class UserAPITest extends IntegrationTestBase {
 		final Map<String, Object> userMapNoEmail = user.toMap();
 		assertEquals(userMapNoEmail.get("emailAddress"), StringPool.BLANK);
 		assertEquals(userMapNoEmail.get("gravitar"), StringPool.BLANK);
+	}
+
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user is saved
+	 * ExpectedResult: The new user is persisted successfully
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withFirstName() throws DotDataException, DotSecurityException {
+		String firstname = "Test User";
+		final User newUser = new UserDataGen().firstName(firstname).nextPersisted();
+
+        assertEquals("Test User", newUser.getFirstName());
+
+	}
+
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user creation with user first name being created exceeding maximum characters allowed
+	 * ExpectedResult: The new user creation should throw an error
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withFirstNameExceeding() throws DotSecurityException {
+        String firstName ="xzYWuASxGQZemNRBdEjouKEUOZvOoERBFgCxJHuqQAvpjywvZuARWRThKTONozXwBXUOkXnwhzbTtovqFBxYNzNQDJxfhecGTRfOAAA";
+		final User newUser = new UserDataGen().firstName("test").nextPersisted();
+
+		try {
+			newUser.setFirstName(firstName);
+			// Call the save method with the user object
+			userAPI.save(newUser, APILocator.systemUser(), false, false);
+			fail("Expected DotDataException to be thrown");
+		} catch (DotDataException e) {
+			// Verify that the exception message matches the expected message
+			assertEquals("Length of First Name provided exceeds the maximum limit 100", e.getMessage());
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user creation with user lastname being created exceeding maximum characters allowed
+	 * ExpectedResult: The new user creation should throw an error
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withLastNameExceeding() throws  DotSecurityException {
+		String lastName ="xzYWuASxGQZemNRBdEjouKEUOZvOoERBFgCxJHuqQAvpjywvZuARWRThKTONozXwBXUOkXnwhzbTtovqFBxYNzNQDJxfhecGTRfOAAA";
+		final User newUser = new UserDataGen().firstName("test").nextPersisted();
+
+		try {
+			newUser.setLastName(lastName);
+			// Call the save method with the user object
+			userAPI.save(newUser, APILocator.systemUser(), false, false);
+			fail("Expected DotDataException to be thrown");
+		} catch (DotDataException e) {
+			// Verify that the exception message matches the expected message
+			assertEquals("Length of Last Name provided exceeds the maximum limit 100", e.getMessage());
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user creation with user email being created exceeding maximum characters allowed
+	 * ExpectedResult: The new user creation should throw an error
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withEmailNameExceeding() throws  DotSecurityException {
+		String email ="xzYWuASxGQZemNRBdEjouKEUOZvOoERBFgCxJHuqQAvpjywvZuARWRThKTONozXwBXUOkXnwhzbTtovqFBxYNzNQDJxfhecGTRf@dotcms.com";
+		final User newUser = new UserDataGen().firstName("test").nextPersisted();
+
+		try {
+			newUser.setEmailAddress(email);
+			// Call the save method with the user object
+			userAPI.save(newUser, APILocator.systemUser(), false, false);
+			fail("Expected DotDataException to be thrown");
+		} catch (DotDataException e) {
+			// Verify that the exception message matches the expected message
+			assertEquals("Length of Email Address provided exceeds the maximum limit 100", e.getMessage());
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A user is saved by the same user, this means that the user is updating its own information.
+	 * ExpectedResult: When loading the saved user, it should have the new values
+	 *
+	 */
+	@Test
+	public void test_saveUser_from_same_user() throws DotSecurityException, DotDataException {
+		String name ="test_updated";
+		final User user = new UserDataGen().firstName("test").nextPersisted();
+		final User loggedInUser = new UserDataGen().id(user.getUserId()).firstName(user.getFirstName()).next();
+		try {
+			user.setFirstName(name);
+			userAPI.save(user, user, false, false);
+			User updatedUser = userAPI.loadUserById(user.getUserId(), loggedInUser, false);
+			assertEquals(name, updatedUser.getFirstName());
+		} finally {
+			UserDataGen.remove(user);
+		}
 	}
 }

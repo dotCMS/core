@@ -1,5 +1,3 @@
-version: '3.5'
-
 networks:
   db_net:
   opensearch-net:
@@ -12,7 +10,7 @@ volumes:
 
 services:
   opensearch:
-    image: opensearchproject/opensearch:1.3.6
+    image: opensearchproject/opensearch:1
     environment:
       - cluster.name=elastic-cluster
       - discovery.type=single-node
@@ -50,14 +48,14 @@ services:
         DOT_DOT_PUBSUB_PROVIDER_OVERRIDE: 'com.dotcms.dotpubsub.RedisPubSubImpl'
         DOT_REDIS_LETTUCECLIENT_URLS: 'redis://MY_SECRET_P4SS@redis'
         DOT_CACHE_DEFAULT_CHAIN: 'com.dotmarketing.business.cache.provider.caffine.CaffineCache,com.dotcms.cache.lettuce.RedisCache'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20251006/starter-20251006.zip'
     depends_on:
       - opensearch
       - db
       - redis
     volumes:
       #- {local_data_path}:/data/shared
-      - {license_local_path}/license.zip:/data/shared/assets/license.zip
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
       - opensearch-net
@@ -75,7 +73,7 @@ services:
       - redis_net
 
   db:
-    image: postgres:15
+    image: pgvector/pgvector:pg16
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
@@ -85,4 +83,3 @@ services:
       - dbdata:/var/lib/postgresql/data
     networks:
       - db_net
-

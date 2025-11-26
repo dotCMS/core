@@ -1,4 +1,4 @@
-import { KeyValuePipe, NgClass, NgForOf, NgIf, NgTemplateOutlet } from '@angular/common';
+import { KeyValuePipe, NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -10,8 +10,7 @@ import {
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
+import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
 
 /**
  *
@@ -25,11 +24,8 @@ import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/do
  */
 @Component({
     selector: 'dot-experiments-details-table',
-    standalone: true,
     imports: [
-        NgIf,
         NgTemplateOutlet,
-        NgForOf,
         NgClass,
         KeyValuePipe,
         SkeletonModule,

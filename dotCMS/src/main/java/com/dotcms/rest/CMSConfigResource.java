@@ -25,6 +25,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -48,6 +49,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
  *         Date: 7/22/13
  */
 @Path ("/config")
+@Tag(name = "System Configuration")
 public class CMSConfigResource {
 
     private final WebResource webResource = new WebResource();
@@ -444,6 +446,7 @@ public class CMSConfigResource {
     /**
      * Deletes a given end point
      *
+     * @deprecated use {@link EndpointResource#delete(HttpServletRequest, HttpServletResponse, String)}
      * @param request
      * @param user
      * @param password
@@ -452,6 +455,7 @@ public class CMSConfigResource {
      * @throws JSONException
      * @throws IOException
      */
+    @Deprecated
     @POST
     @Path ("/deleteEndpoint")
     @Produces (MediaType.APPLICATION_JSON)

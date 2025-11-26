@@ -1,22 +1,25 @@
 <div
-    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3"
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
-    [tooltipPosition]="disabled ? 'bottom' : null">
-    <p-avatar
-        *ngIf="persona"
-        [text]="persona?.name"
-        [image]="persona?.photo"
-        [badgeDisabled]="!persona?.personalized"
-        pBadge
-        dotAvatar></p-avatar>
+    [tooltipPosition]="disabled ? 'bottom' : null"
+    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3">
+    @if (persona) {
+        <p-avatar
+            [text]="persona?.name"
+            [image]="persona?.photo"
+            [badgeDisabled]="!persona?.personalized"
+            pBadge
+            dotAvatar></p-avatar>
+    }
 
-    <p-avatar *ngIf="!persona" [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
+    @if (!persona) {
+        <p-avatar [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
+    }
 
-    <span class="dot-persona-selector__name">{{
-        persona?.name || ('modes.persona.no.persona' | dm)
-    }}</span>
+    <span class="dot-persona-selector__name">
+        {{ persona?.name || ('modes.persona.no.persona' | dm) }}
+    </span>
 
-    <ng-container *ngIf="!readonly">
+    @if (!readonly) {
         <i class="pi pi-chevron-down"></i>
-    </ng-container>
+    }
 </div>

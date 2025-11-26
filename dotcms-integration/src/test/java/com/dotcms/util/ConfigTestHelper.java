@@ -8,7 +8,8 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.FileUtil;
-import org.mockito.Matchers;
+
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -35,6 +36,8 @@ public class ConfigTestHelper extends Config {
     public static void _setupFakeTestingContext() throws Exception {
         // if we need a fake ServletContext
         if (CONTEXT == null) {
+            // make sure the tmp dir is there before running
+            new File(System.getProperty("java.io.tmpdir")).mkdirs();
             ServletContext context = Mockito.mock(ServletContext.class);
             Mockito.when(context.getInitParameter("company_id")).thenReturn("dotcms.org");
 
@@ -47,8 +50,7 @@ public class ConfigTestHelper extends Config {
             WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
-            // make sure the tmp dir is there before running
-            new File(System.getProperty("java.io.tmpdir")).mkdirs();
+
             final String topPath = Files.createTempDirectory("config_test_helper").toAbsolutePath().toString();
 
             final String velocityPath = VelocityUtil.getVelocityRootPath();
@@ -58,7 +60,7 @@ public class ConfigTestHelper extends Config {
 
             String[] contextRoots = new String[]{topPath,testRoot.toString()};
 
-            Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
+            Mockito.when(context.getRealPath(ArgumentMatchers.anyString())).thenAnswer(new Answer<String>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
@@ -67,7 +69,7 @@ public class ConfigTestHelper extends Config {
                     return (fullPath!=null) ? fullPath.toString() : null;
                 }
             });
-            Mockito.when(context.getResource(Matchers.anyString())).thenAnswer(new Answer<URL>() {
+            Mockito.when(context.getResource(ArgumentMatchers.anyString())).thenAnswer(new Answer<URL>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public URL answer(InvocationOnMock invocation) throws Throwable {
@@ -92,8 +94,7 @@ public class ConfigTestHelper extends Config {
     }
 
 
-    private static Path getTestFilePath(String contextPath,String[] contextRoots)
-            throws MalformedURLException {
+    private static Path getTestFilePath(String contextPath,String[] contextRoots){
         if (!contextPath.startsWith("/"))
             throw new IllegalArgumentException("Resource path must start with a / and is relative to context root");
         else

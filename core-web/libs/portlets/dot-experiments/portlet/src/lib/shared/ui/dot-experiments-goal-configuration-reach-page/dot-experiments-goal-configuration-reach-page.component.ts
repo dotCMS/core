@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -12,12 +11,11 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
+    DotDropdownDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 
@@ -26,14 +24,11 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
  */
 @Component({
     selector: 'dot-experiments-goal-configuration-reach-page',
-    standalone: true,
     imports: [
-        CommonModule,
         DotAutofocusDirective,
         DotDropdownDirective,
         DotFieldRequiredDirective,
         DotFieldValidationMessageComponent,
-        DotPipesModule,
         DropdownModule,
         DotMessagePipe,
         InputTextModule,

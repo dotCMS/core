@@ -1,40 +1,40 @@
-<form
-    class="p-fluid"
-    *ngIf="form"
-    [formGroup]="form"
-    (ngSubmit)="emitValues()"
-    (keyup.enter)="emitValues()"
-    novalidate
->
-    <div class="field" *ngIf="data['assignable']">
-        <label for="dotRoles">{{ 'assignee.form.assignee' | dm }}</label>
-        <p-dropdown
-            id="dotRoles"
-            [options]="dotRoles"
-            [style]="{ width: '100%' }"
-            formControlName="assign"
-            appendTo="body"
-        >
-        </p-dropdown>
-    </div>
-    <div class="field" *ngIf="data['commentable']">
-        <label for="comment">{{ 'comment.form.comments' | dm }}</label>
-        <textarea
-            id="comment"
-            [style]="{ width: '100%' }"
-            (keydown.enter)="$event.stopPropagation()"
-            pInputTextarea
-            formControlName="comments"
-        >
-        </textarea>
-    </div>
-
-    <div class="field" *ngIf="data['moveable']">
-        <label dotFieldRequired for="move">{{ 'Move' | dm }}</label>
-        <dot-page-selector
-            id="move"
-            [folderSearch]="true"
-            formControlName="pathToMove"
-        ></dot-page-selector>
-    </div>
-</form>
+@if (form) {
+    <form
+        (ngSubmit)="emitValues()"
+        (keyup.enter)="emitValues()"
+        [formGroup]="form"
+        class="p-fluid"
+        novalidate>
+        @if (data['assignable']) {
+            <div class="field">
+                <label for="dotRoles">{{ 'assignee.form.assignee' | dm }}</label>
+                <p-dropdown
+                    [options]="dotRoles"
+                    [style]="{ width: '100%' }"
+                    id="dotRoles"
+                    formControlName="assign"
+                    appendTo="body"></p-dropdown>
+            </div>
+        }
+        @if (data['commentable']) {
+            <div class="field">
+                <label for="comment">{{ 'comment.form.comments' | dm }}</label>
+                <textarea
+                    (keydown.enter)="$event.stopPropagation()"
+                    [style]="{ width: '100%' }"
+                    id="comment"
+                    pInputTextarea
+                    formControlName="comments"></textarea>
+            </div>
+        }
+        @if (data['moveable']) {
+            <div class="field">
+                <label dotFieldRequired for="move">{{ 'Move' | dm }}</label>
+                <dot-page-selector
+                    [folderSearch]="true"
+                    id="move"
+                    formControlName="pathToMove"></dot-page-selector>
+            </div>
+        }
+    </form>
+}

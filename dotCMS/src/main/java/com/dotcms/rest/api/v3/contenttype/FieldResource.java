@@ -1,32 +1,43 @@
 package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
-import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.filtering.Specification;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Resource for handle fields operations, all this end point check if the {@link ContentType}'s layout is valid
@@ -34,7 +45,9 @@ import static com.dotcms.util.CollectionsUtils.map;
  * @see FieldLayout
  */
 @Path("/v3/contenttype/{typeIdOrVarName}/fields")
+@Tag(name = "Content Type Field", description = "Content type field definitions and configuration")
 public class FieldResource {
+
     private final WebResource webResource;
     private final ContentTypeFieldLayoutAPI contentTypeFieldLayoutAPI;
 
@@ -93,27 +106,32 @@ public class FieldResource {
     }
 
     /**
-     * Move field and return the new {@link ContentType}'s layout in the response.
-     * The request body should have the follow sintax:
+     * Moves a field in a Content Type, and returns the new {@link ContentType}'s layout in the
+     * response. This endpoint is used when dragging-and-dropping a new field to a Content Type,
+     * and when moving a field around in the Content Type's layout. The JSON body in the request
+     * has the follow syntax:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         layout: [
      *             {
      *                 divider: {
-     *                     //All the row field attributes
+     *                     // Row field attributes
      *                 },
      *                 columns: [
      *                   {
      *                      columnDivider: {
-     *                          //All the column field attributes
+     *                          // Column field attributes
      *                      },
      *                      fields: [
      *                          {
-     *                              //All the field attributes
+     *                              // Attributes for field #1
      *                          },
      *                          {
-     *                              //All the field attributes
+     *                              // Attributes for field #2
+     *                          },
+     *                          {
+     *                              // and so on...
      *                          }
      *                      ]
      *                   }
@@ -121,18 +139,23 @@ public class FieldResource {
      *             }
      *         ]
      *     }
-     * </code>
+     * }
+     * </pre>
+     * <p>
+     * The {@code sortOrder} attribute sent in the body is ignored, and the array index is taken as
+     * the real sort order value. If the Content Type has an invalid layout, it will be fixed before
+     * the field is update. If a new field is sent in the field array, it is created in the exact
+     * order it is placed.
      *
-     * The sortOrder attribute is sent it is ignore, the array index is take as sortOrder.
-     * If the content type has a wrong layout then it is fix first before the field update.
-     * If a new field is sent in the set the fields it is created in the order where it is put.
+     * @param typeIdOrVarName The Content Type's Identifier or Velocity Variable Name.
+     * @param moveFieldsForm  The {@link MoveFieldsForm} object describing the field layout.
+     * @param req             The current instance of the {@link HttpServletRequest}.
      *
-     * @param typeIdOrVarName
-     * @param moveFieldsForm
-     * @param req
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @return The Content Type's new field layout.
+     *
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws DotSecurityException The User performing this action doesn't have the required
+     *                              permissions to do so.
      */
     @PUT
     @JSONP
@@ -140,19 +163,160 @@ public class FieldResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     @Path("/move")
+    @Operation(
+            operationId = "moveOrAddContentTypeField",
+            summary = "Moves or adds a field to a Content Type",
+            description = "Moves or adds a field to a Content Type. This endpoint is called (1) when " +
+                    "dragging-and-dropping a new field to a Content Type, (2) when updating an " +
+                    "existing field, or (3) when moving such a field around in the Content Type's " +
+                    "layout.",
+            tags = {"Content Type Field"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Field was added or updated successfully",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = "{\n" +
+                                                            "    \"entity\": [\n" +
+                                                            "        {\n" +
+                                                            "            \"divider\": {\n" +
+                                                            "                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n" +
+                                                            "                \"contentTypeId\": \"3b70f386cf65117a675f284eea928415\",\n" +
+                                                            "                \"dataType\": \"SYSTEM\",\n" +
+                                                            "                \"fieldContentTypeProperties\": [],\n" +
+                                                            "                \"fieldType\": \"Row\",\n" +
+                                                            "                \"fieldTypeLabel\": \"Row\",\n" +
+                                                            "                \"fieldVariables\": [],\n" +
+                                                            "                \"fixed\": false,\n" +
+                                                            "                \"forceIncludeInApi\": false,\n" +
+                                                            "                \"iDate\": 1763758144000,\n" +
+                                                            "                \"id\": \"1b950209ec7b1a5e6901f7fe277e0a6a\",\n" +
+                                                            "                \"indexed\": false,\n" +
+                                                            "                \"listed\": false,\n" +
+                                                            "                \"modDate\": 1763758164000,\n" +
+                                                            "                \"name\": \"fields-0\",\n" +
+                                                            "                \"readOnly\": false,\n" +
+                                                            "                \"required\": false,\n" +
+                                                            "                \"searchable\": false,\n" +
+                                                            "                \"sortOrder\": 0,\n" +
+                                                            "                \"unique\": false,\n" +
+                                                            "                \"variable\": \"fields0\"\n" +
+                                                            "            },\n" +
+                                                            "            \"columns\": [\n" +
+                                                            "                {\n" +
+                                                            "                    \"columnDivider\": {\n" +
+                                                            "                        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n" +
+                                                            "                        \"contentTypeId\": \"3b70f386cf65117a675f284eea928415\",\n" +
+                                                            "                        \"dataType\": \"SYSTEM\",\n" +
+                                                            "                        \"fieldContentTypeProperties\": [],\n" +
+                                                            "                        \"fieldType\": \"Column\",\n" +
+                                                            "                        \"fieldTypeLabel\": \"Column\",\n" +
+                                                            "                        \"fieldVariables\": [],\n" +
+                                                            "                        \"fixed\": false,\n" +
+                                                            "                        \"forceIncludeInApi\": false,\n" +
+                                                            "                        \"iDate\": 1763758144000,\n" +
+                                                            "                        \"id\": \"6515a7a25deb3b99711398c14bfe3062\",\n" +
+                                                            "                        \"indexed\": false,\n" +
+                                                            "                        \"listed\": false,\n" +
+                                                            "                        \"modDate\": 1763758164000,\n" +
+                                                            "                        \"name\": \"fields-1\",\n" +
+                                                            "                        \"readOnly\": false,\n" +
+                                                            "                        \"required\": false,\n" +
+                                                            "                        \"searchable\": false,\n" +
+                                                            "                        \"sortOrder\": 1,\n" +
+                                                            "                        \"unique\": false,\n" +
+                                                            "                        \"variable\": \"fields1\"\n" +
+                                                            "                    },\n" +
+                                                            "                    \"fields\": [\n" +
+                                                            "                        {\n" +
+                                                            "                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n" +
+                                                            "                            \"contentTypeId\": \"3b70f386cf65117a675f284eea928415\",\n" +
+                                                            "                            \"dataType\": \"TEXT\",\n" +
+                                                            "                            \"fieldType\": \"Text\",\n" +
+                                                            "                            \"fieldTypeLabel\": \"Text\",\n" +
+                                                            "                            \"fieldVariables\": [],\n" +
+                                                            "                            \"fixed\": false,\n" +
+                                                            "                            \"forceIncludeInApi\": false,\n" +
+                                                            "                            \"iDate\": 1763758164000,\n" +
+                                                            "                            \"id\": \"ba34f109c9e86793384387e2619267ea\",\n" +
+                                                            "                            \"indexed\": false,\n" +
+                                                            "                            \"listed\": false,\n" +
+                                                            "                            \"modDate\": 1763761740000,\n" +
+                                                            "                            \"name\": \"title\",\n" +
+                                                            "                            \"readOnly\": false,\n" +
+                                                            "                            \"required\": false,\n" +
+                                                            "                            \"searchable\": false,\n" +
+                                                            "                            \"sortOrder\": 2,\n" +
+                                                            "                            \"unique\": false,\n" +
+                                                            "                            \"variable\": \"title\"\n" +
+                                                            "                        },\n" +
+                                                            "                        {\n" +
+                                                            "                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n" +
+                                                            "                            \"contentTypeId\": \"3b70f386cf65117a675f284eea928415\",\n" +
+                                                            "                            \"dataType\": \"TEXT\",\n" +
+                                                            "                            \"fieldType\": \"Text\",\n" +
+                                                            "                            \"fieldTypeLabel\": \"Text\",\n" +
+                                                            "                            \"fieldVariables\": [\n" +
+                                                            "                                {\n" +
+                                                            "                                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n" +
+                                                            "                                    \"fieldId\": \"e39533a92ee05d8c083f7e6a1a5ee5e5\",\n" +
+                                                            "                                    \"id\": \"7844f04c-0481-4b0d-aa22-95e1a097bb30\",\n" +
+                                                            "                                    \"key\": \"My Field Var\",\n" +
+                                                            "                                    \"value\": \"My value\"\n" +
+                                                            "                                }\n" +
+                                                            "                            ],\n" +
+                                                            "                            \"fixed\": false,\n" +
+                                                            "                            \"forceIncludeInApi\": false,\n" +
+                                                            "                            \"iDate\": 1764008792000,\n" +
+                                                            "                            \"id\": \"e39533a92ee05d8c083f7e6a1a5ee5e5\",\n" +
+                                                            "                            \"indexed\": true,\n" +
+                                                            "                            \"listed\": true,\n" +
+                                                            "                            \"modDate\": 1764018597000,\n" +
+                                                            "                            \"name\": \"Description\",\n" +
+                                                            "                            \"readOnly\": false,\n" +
+                                                            "                            \"required\": false,\n" +
+                                                            "                            \"searchable\": false,\n" +
+                                                            "                            \"sortOrder\": 7,\n" +
+                                                            "                            \"unique\": false,\n" +
+                                                            "                            \"variable\": \"description\"\n" +
+                                                            "                        }\n" +
+                                                            "                    ]\n" +
+                                                            "                }\n" +
+                                                            "            ]\n" +
+                                                            "        }\n" +
+                                                            "    ],\n" +
+                                                            "    \"errors\": [],\n" +
+                                                            "    \"i18nMessagesMap\": {},\n" +
+                                                            "    \"messages\": [],\n" +
+                                                            "    \"pagination\": null,\n" +
+                                                            "    \"permissions\": []\n" +
+                                                            "}"
+                                            )
+                                    }
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Invalid JSON body"),
+                    @ApiResponse(responseCode = "401", description = "User not specified"),
+                    @ApiResponse(responseCode = "404", description = "Content Type ID not found"),
+                    @ApiResponse(responseCode = "415", description = "Body must be a JSON object"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
     public Response moveFields(
             @PathParam("typeIdOrVarName") final String typeIdOrVarName,
             final MoveFieldsForm moveFieldsForm,
             @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
-
         final InitDataObject initData =
-                this.webResource.init(null, true, req, true, null);
+                new WebResource.InitBuilder(webResource)
+                        .requestAndResponse(req, null)
+                        .requiredBackendUser(false)
+                        .requiredFrontendUser(false)
+                        .rejectWhenNoUser(true)
+                        .init();
         final User user = initData.getUser();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-
         final FieldLayout layout = moveFieldsForm.getRows(contentType);
-
         final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.moveFields(contentType, layout, user);
         return Response.ok(new ResponseEntityView<>(fieldLayout.getRows())).build();
     }
@@ -226,10 +390,128 @@ public class FieldResource {
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
 
         return Response.ok(new ResponseEntityView(
-                map(
+                Map.of(
                    "fields", deleteFieldResult.getLayout().getRows(),
                         "deletedIds", deleteFieldResult.getFieldDeletedIds()
                 )
         )).build();
     }
+
+    /**
+     * Returns the list of fields in a Content Type that meet the specified criteria. For instance,
+     * if you need to retrieve all fields marked as 'required', 'unique'`, and 'system indexed',
+     * you can call the endpoint like this:
+     * <pre>
+     *     {@code
+     *     {{serverURL}}/api/v3/contenttype/AAA/fields/allfields?filter=REQUIRED&filter=SYSTEM_INDEXED&filter=UNIQUE
+     *     }
+     * </pre>
+     * Just add the same `filter` parameter for each criterion you want to apply.
+     *
+     * @param request         The current instance of the {@link HttpServletRequest}.
+     * @param response        The current instance of the {@link HttpServletResponse}.
+     * @param typeIdOrVarName The Identifier or Velocity Variable Name of a given
+     *                        {@link ContentType}.
+     * @param criteria        A set of {@link FilteringCriteria} objects that will be used to filter
+     *                        the fields.
+     *
+     * @return A {@link FieldResponseView} object that contains the list of {@link Field} objects
+     * that meet the specified criteria.
+     *
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws DotSecurityException The specified User does not have the necessary permissions to
+     *                              execute this operation.
+     */
+    @GET
+    @Path("/allfields")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "allfields",
+            summary = "Returns filtered Content Type fields",
+            description = "Returns the list of fields in a Content Type that meet the specified criteria.",
+            tags = {"Content Type Field"},
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            examples = {
+                                    @ExampleObject(
+                                            name = "filter",
+                                            value = "REQUIRED,SYSTEM_INDEXED,UNIQUE,SHOW_IN_LIST,USER_SEARCHABLE",
+                                            summary = "Filter fields by one or more of the specified criteria"
+                                    )
+                            }
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    description = "Returning a list of one Field matching the filtering criteria.",
+                                                    value = "{\n" +
+                                                            "    \"entity\": [\n" +
+                                                            "        {\n" +
+                                                            "            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n" +
+                                                            "            \"contentTypeId\": \"3b70f386cf65117a675f284eea928415\",\n" +
+                                                            "            \"dataType\": \"TEXT\",\n" +
+                                                            "            \"dbColumn\": \"text2\",\n" +
+                                                            "            \"defaultValue\": null,\n" +
+                                                            "            \"fixed\": false,\n" +
+                                                            "            \"forceIncludeInApi\": false,\n" +
+                                                            "            \"hint\": null,\n" +
+                                                            "            \"iDate\": 1732992811000,\n" +
+                                                            "            \"id\": \"e39533a92ee05d8c083f7e6a1a5ee5e5\",\n" +
+                                                            "            \"indexed\": true,\n" +
+                                                            "            \"listed\": false,\n" +
+                                                            "            \"modDate\": 1732992838000,\n" +
+                                                            "            \"name\": \"Description\",\n" +
+                                                            "            \"owner\": null,\n" +
+                                                            "            \"readOnly\": false,\n" +
+                                                            "            \"regexCheck\": null,\n" +
+                                                            "            \"relationType\": null,\n" +
+                                                            "            \"required\": true,\n" +
+                                                            "            \"searchable\": false,\n" +
+                                                            "            \"sortOrder\": 3,\n" +
+                                                            "            \"unique\": true,\n" +
+                                                            "            \"values\": null,\n" +
+                                                            "            \"variable\": \"description\"\n" +
+                                                            "        }\n" +
+                                                            "    ],\n" +
+                                                            "    \"errors\": [],\n" +
+                                                            "    \"i18nMessagesMap\": {},\n" +
+                                                            "    \"messages\": [],\n" +
+                                                            "    \"pagination\": null,\n" +
+                                                            "    \"permissions\": []\n" +
+                                                            "}"
+                                            )
+                                    }
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request, when using invalid filter names"),
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "404", description = "Content Type was not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public FieldResponseView allFieldsBy(@Context final HttpServletRequest request,
+                                         @Context final HttpServletResponse response,
+                                         @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+                                         @QueryParam("filter") final Set<FilteringCriteria> criteria) throws DotDataException, DotSecurityException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        Logger.debug(this, () -> String.format("Returning filtered fields from Content Type '%s' " +
+                "using the criteria: %s", typeIdOrVarName, criteria));
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+        final Specification<Field> fieldSpecification = FilteringCriteria.specificationsFrom(criteria);
+        final List<Field> filteredFields = contentType.fields().stream().filter(fieldSpecification::isSatisfiedBy)
+                .collect(Collectors.toList());
+        return new FieldResponseView(filteredFields);
+    }
+
 }

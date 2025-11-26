@@ -1,5 +1,26 @@
 package com.dotcms.rest.api.v1.maintenance;
 
+import com.dotcms.business.SystemTable;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.util.ReleaseInfo;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -10,31 +31,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.util.ReleaseInfo;
-import io.vavr.control.Try;
 
-
+@Tag(name = "Administration")
 @Path("/v1/jvm")
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
+    private static final String DEFAULT_OBFUSCATE_PATTERN = "passw|pass|passwd|secret|key|token";
+
+    public static final Pattern obfuscateBasePattern = Pattern.compile(DEFAULT_OBFUSCATE_PATTERN,
+            Pattern.CASE_INSENSITIVE);
+
     public static final Pattern obfuscatePattern = Pattern.compile(
-            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "passw|pass|passwd|secret|key|token"),
+            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", DEFAULT_OBFUSCATE_PATTERN),
             Pattern.CASE_INSENSITIVE);
 
     @Path("/")
@@ -58,6 +67,7 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("host", getHostInfo());
         resultMap.put("jvm", getJVMInfo());
         resultMap.put("environment", getEnvironmentalVars());
+        resultMap.put("configOverrides", getDBOverrides());
         resultMap.put("system", getSystemProps());
 
         
@@ -91,7 +101,6 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("cpuLoadJava",  percentage.format(os.getProcessCpuLoad()));
         resultMap.put("arch",  os.getArch());
         resultMap.put("cpuLoadSystem",  percentage.format(os.getSystemCpuLoad()));
-        resultMap.put("systemLoadAverage",  percentage.format(os.getSystemLoadAverage()));
         resultMap.put("os",  os.getName());
         resultMap.put("osVersion",  os.getVersion());
         resultMap.put("hostname", Try.of(()->InetAddress.getLocalHost().getHostName()).getOrElse("ukn") );
@@ -101,7 +110,22 @@ public class JVMInfoResource implements Serializable {
         
     }
     
-    
+
+    private Map<String, Object> getDBOverrides(){
+        final Map<String,Object> resultMap=new LinkedHashMap<>();
+
+        SystemTable systemTable =APILocator.getSystemAPI().getSystemTable();
+
+        resultMap.putAll(systemTable.all());
+
+
+
+
+        return resultMap;
+    }
+
+
+
     private Map<String,Object> getJVMInfo(){
         
         final Map<String,Object> resultMap=new LinkedHashMap<>();
@@ -167,13 +191,15 @@ public class JVMInfoResource implements Serializable {
     
     
     
-    private String obfuscateIfNeeded(final String key, final Object valueObject) {
+    public static String obfuscateIfNeeded(final String key, final Object valueObject) {
         final String value = (String) valueObject;
         if(UtilMethods.isEmpty(value)) return "";
-        return obfuscatePattern.matcher(key).find() ? obfuscate(value) : value;
+        return obfuscateBasePattern.matcher(key).find() || obfuscatePattern.matcher(key).find()
+                ? obfuscate(value)
+                : value;
     }
     
-    private String obfuscate(final String value) {
+    private static String obfuscate(final String value) {
         return value.charAt(0)
                 + "*********"
                 + value.charAt(value.length() - 1);

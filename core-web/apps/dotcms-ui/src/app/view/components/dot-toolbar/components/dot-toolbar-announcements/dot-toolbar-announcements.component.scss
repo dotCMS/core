@@ -1,11 +1,7 @@
 @use "variables" as *;
 
-:host {
-    max-height: 100vh;
-    overflow: auto;
-    display: block;
-    padding: $spacing-4;
-    width: 26rem;
+.announcements__main-container {
+    width: 24rem;
 }
 
 .announcements__list {
@@ -30,6 +26,19 @@
     i {
         color: $color-palette-primary-500;
     }
+}
+
+.announcements__badge {
+    background-color: $color-accessible-text-fuchsia;
+    border-radius: 50%;
+    color: $white;
+    font-size: $font-size-sm;
+    line-height: $font-size-sm;
+    width: 0.625rem;
+    height: 0.625rem;
+    position: absolute;
+    left: 39px;
+    top: 14px;
 }
 
 .announcements__about-link {
@@ -60,7 +69,7 @@
     margin: 0;
     padding-bottom: $spacing-1;
     border-bottom: 1px solid $color-palette-gray-300;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
 }
 
 .announcements__content {
@@ -80,7 +89,7 @@
     background-color: var(--color-palette-secondary-200);
     color: var(--color-palette-secondary-500);
     border-radius: 50%;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
 }
 
 .announcements__label {
@@ -105,27 +114,14 @@
 .announcements__url {
     text-decoration: none;
     color: $black;
-}
-
-.announcements__badge {
-    background-color: $color-accessible-text-fuchsia;
-    border-radius: 50%;
-    color: $white;
-    font-size: $font-size-sm;
-    line-height: $font-size-sm;
-    width: 0.625rem;
-    height: 0.625rem;
-    position: absolute;
-    left: 39px;
-    top: 14px;
+    width: 100%;
 }
 
 ::ng-deep {
     .toolbar-announcements__container {
         &.p-overlaypanel {
-            .p-overlaypanel-content {
-                padding: 0;
-            }
+            max-height: 80vh;
+            overflow: auto;
         }
     }
 }

@@ -93,7 +93,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	 * @return
 	 */
 	private Identifier check404(Identifier value) {
-	    return value!=null && value.getAssetType()!=null && value.getAssetType().equals(IdentifierAPI.IDENT404) ? new Identifier() : value;
+		final boolean is404 = value!=null && value.getAssetType()!=null && value.getAssetType().equals(IdentifierAPI.IDENT404);
+		if(is404){
+			Logger.debug(this, "404 Identifier found: " + value.toString());
+		}
+		return is404 ? new Identifier() : value;
 	}
 
 	/**

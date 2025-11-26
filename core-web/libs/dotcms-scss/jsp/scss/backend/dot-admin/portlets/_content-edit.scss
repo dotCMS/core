@@ -13,7 +13,7 @@ $sidebar-width: 300px;
     text-overflow: clip;
     white-space: nowrap;
     font-family: Monaco, Menlo, sans-serif;
-    font-size: 12px;
+    font-size: $font-size-sm;
 }
 
 .aceTextTemplate,
@@ -30,14 +30,13 @@ $sidebar-width: 300px;
     text-overflow: clip;
     white-space: nowrap;
     font-family: Monaco, Menlo, sans-serif;
-    font-size: 12px;
+    font-size: $font-size-xs;
 }
 
 .content-edit__main {
     height: 100%;
     margin: 0px $sidebar-width 0 0;
     position: relative;
-    padding-top: $spacing-1 * 2;
     width: auto;
     z-index: 1;
 }

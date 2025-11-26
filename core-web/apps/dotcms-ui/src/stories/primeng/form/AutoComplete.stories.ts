@@ -1,9 +1,9 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { action } from '@storybook/addon-actions';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { UPDATE_STORY_ARGS } from '@storybook/core-events';
 
 import { BrowserModule } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 
@@ -29,7 +29,7 @@ const originalData = [
     { name: 'United States Minor Outlying Islands', code: 'UM' }
 ];
 
-export default {
+const meta: Meta<AutoComplete> = {
     title: 'PrimeNG/Form/AutoComplete',
     component: AutoComplete,
     parameters: {
@@ -42,7 +42,7 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [AutoCompleteModule, NoopAnimationsModule, BrowserModule]
+            imports: [AutoCompleteModule, BrowserAnimationsModule, BrowserModule]
         })
     ],
     args: {
@@ -95,42 +95,49 @@ export default {
             }
         }
     }
-} as Meta;
+};
+export default meta;
 
-// First arguments is the Args from Meta, the second one is the whole storybook context
-export const Main: Story = (args, { id }) => {
-    return {
-        props: {
-            ...args,
-            filterCountries: ({ query }: { query: string }) => {
-                // This hack is to emit a change and update the story args https://github.com/storybookjs/storybook/issues/17089#issuecomment-1663403902
-                const filtered = [...originalData].filter((country: { name: string }) =>
-                    country.name.toLowerCase().includes(query.toLowerCase())
-                );
+type Story = StoryObj<AutoComplete>;
 
-                const channel = (
-                    window as Window & typeof globalThis & { __STORYBOOK_ADDONS_CHANNEL__: Channel }
-                ).__STORYBOOK_ADDONS_CHANNEL__;
+export const Main: Story = {
+    render: (args, { id }) => {
+        return {
+            props: {
+                ...args,
+                filterCountries: ({ query }: { query: string }) => {
+                    // This hack is to emit a change and update the story args https://github.com/storybookjs/storybook/issues/17089#issuecomment-1663403902
+                    const filtered = [...originalData].filter((country: { name: string }) =>
+                        country.name.toLowerCase().includes(query.toLowerCase())
+                    );
 
-                channel.emit(UPDATE_STORY_ARGS, {
-                    storyId: id,
-                    updatedArgs: {
-                        suggestions: filtered // This way the reference of suggestions change in runtime and primeng finish its change detection lifecycle
-                    }
-                });
-            }
-        },
-        template: `<p-autoComplete
-        (completeMethod)="filterCountries($event)"
-        [dropdown]="dropdown"
-        [suggestions]="suggestions"
-        [field]="field"
-        appendTo="body"
-        [multiple]="multiple"
-        [showClear]="showClear"
-        [dropdownIcon]="dropdownIcon"
-        [delay]="delay"
-        [unique]="unique"
-        ></p-autoComplete>`
-    };
+                    const channel = (
+                        window as Window &
+                            typeof globalThis & { __STORYBOOK_ADDONS_CHANNEL__: Channel }
+                    ).__STORYBOOK_ADDONS_CHANNEL__;
+
+                    channel.emit(UPDATE_STORY_ARGS, {
+                        storyId: id,
+                        updatedArgs: {
+                            suggestions: filtered // This way the reference of suggestions change in runtime and primeng finish its change detection lifecycle
+                        }
+                    });
+                },
+                onSelect: action('onSelect')
+            },
+            template: `<p-autoComplete
+            (completeMethod)="filterCountries($event)"
+            (onSelect)="onSelect($event)"
+            [dropdown]="dropdown"
+            [suggestions]="suggestions"
+            [field]="field"
+            appendTo="body"
+            [multiple]="multiple"
+            [showClear]="showClear"
+            [dropdownIcon]="dropdownIcon"
+            [delay]="delay"
+            [unique]="unique"
+            ></p-autoComplete>`
+        };
+    }
 };

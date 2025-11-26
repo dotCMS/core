@@ -1,18 +1,13 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.EmptyField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.google.common.collect.ImmutableList;
-import static com.dotcms.util.CollectionsUtils.set;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -23,7 +18,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
+import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static com.dotcms.util.CollectionsUtils.set;
 
 /**
  * 
@@ -288,7 +289,7 @@ public class FieldFactory {
 	public static void deleteFieldVariable(FieldVariable fieldVar){
 	       try {
 	           fapi().delete(new FieldVariableTransformer(fieldVar).newfield());
-	        } catch (DotStateException | DotDataException e) {
+	        } catch (final DotStateException | UniqueFieldValueDuplicatedException | DotDataException e) {
 	            Logger.error(FieldFactory.class, e.getMessage());
 	        }
 	}

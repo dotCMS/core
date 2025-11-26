@@ -27,10 +27,8 @@ import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
-import com.dotcms.graphql.datafetcher.DotJSONDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLInterfaceType;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 public enum InterfaceType {
+
     CONTENTLET(SimpleContentType.class),
     CONTENT(SimpleContentType.class),
     FILEASSET(FileAssetContentType.class),
@@ -141,13 +140,15 @@ public enum InterfaceType {
      */
     private static void addBaseTypeFields(final Map<String, TypeFetcher> baseTypeFields,
             final List<Field> requiredFormFields) {
+        final ContentAPIGraphQLTypesProvider instance = ContentAPIGraphQLTypesProvider.INSTANCE;
+        //Only Add the fixed fields to the base type fields as others can be removed breaking the GraphQLSchema
         for (final Field formField : requiredFormFields) {
-            if (!formField.fixed() && !formField.forceIncludeInApi()) {
+            if (!formField.fixed()) {
+                Logger.warn(InterfaceType.class, "Field " + formField.variable() + " is not fixed, skipping.");
                 continue;
             }
             baseTypeFields.put(formField.variable(), new TypeFetcher(
-                    ContentAPIGraphQLTypesProvider.INSTANCE
-                            .getGraphqlTypeForFieldClass(formField.type(), formField)));
+                    instance.getGraphqlTypeForFieldClass(formField.type(), formField)));
         }
     }
 

@@ -234,7 +234,7 @@ public class ESMappingUtilHelper {
                     field = fieldFactory.byId(fieldVariable.fieldId());
                     type = contentTypeAPI.find(field.contentTypeId());
 
-                    putContentTypeMapping(type, CollectionsUtils.map(field.variable().toLowerCase(),
+                    putContentTypeMapping(type, Map.of(field.variable().toLowerCase(),
                             new JSONObject(fieldVariable.value())), indexes);
 
                     //Adds to the set the mapped already set for this field

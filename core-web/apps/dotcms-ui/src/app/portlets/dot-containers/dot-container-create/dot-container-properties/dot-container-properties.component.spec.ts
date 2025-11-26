@@ -30,20 +30,17 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { MenuModule } from 'primeng/menu';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotEventsService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService,
-    DotGlobalMessageService,
-    DotFormatDateService
+    DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -56,17 +53,24 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotAutofocusDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { dotEventSocketURLFactory } from '../../../../test/dot-test-bed';
+import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
 
 @Component({
     selector: 'dot-container-code',
@@ -238,7 +242,8 @@ describe('DotContainerPropertiesComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [],
+            imports: [
                 DotContainerPropertiesComponent,
                 DotContentEditorComponent,
                 DotLoopEditorComponent,
@@ -257,10 +262,10 @@ describe('DotContainerPropertiesComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy(),
-                        goToURL: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditContainer: jest.fn(),
+                        goToSiteBrowser: jest.fn(),
+                        goToURL: jest.fn()
                     }
                 },
                 StringUtils,
@@ -293,9 +298,9 @@ describe('DotContainerPropertiesComponent', () => {
                 ReactiveFormsModule,
                 MenuModule,
                 ButtonModule,
-                DotActionButtonModule,
-                DotActionMenuButtonModule,
-                DotAddToBundleModule,
+                DotActionButtonComponent,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 DotAutofocusDirective,
@@ -313,7 +318,7 @@ describe('DotContainerPropertiesComponent', () => {
 
     describe('with data', () => {
         beforeEach(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
@@ -349,7 +354,7 @@ describe('DotContainerPropertiesComponent', () => {
         });
 
         it('should render content types when max-content greater then zero', fakeAsync(() => {
-            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
+            jest.spyOn(fixture.componentInstance, 'showContentTypeAndCode');
             fixture.componentInstance.form.get('maxContentlets').setValue(0);
             fixture.componentInstance.form.get('maxContentlets').valueChanges.subscribe((value) => {
                 expect(value).toBe(5);
@@ -366,10 +371,10 @@ describe('DotContainerPropertiesComponent', () => {
         }));
 
         it('should clear the field', fakeAsync(() => {
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
-            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            jest.spyOn(comp, 'clearContentConfirmationModal');
             comp.form.get('maxContentlets').setValue(0);
             tick();
             fixture.detectChanges();
@@ -379,8 +384,8 @@ describe('DotContainerPropertiesComponent', () => {
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
 
@@ -391,8 +396,8 @@ describe('DotContainerPropertiesComponent', () => {
             comp.form.get('maxContentlets').setValue(0);
             comp.form.get('maxContentlets').setValue(5);
             fixture.detectChanges();
-            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(comp, 'clearContentConfirmationModal');
+            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             const clearBtn = de.query(By.css('[data-testId="clearContent"]'));
@@ -403,8 +408,8 @@ describe('DotContainerPropertiesComponent', () => {
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
             expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
@@ -459,6 +464,7 @@ describe('DotContainerPropertiesComponent', () => {
             saveBtn.triggerEventHandler('click');
             fixture.detectChanges();
             expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
+            expect(dotRouterService.goToURL).toHaveBeenCalledTimes(1);
         });
     });
 });

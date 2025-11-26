@@ -1,0 +1,185 @@
+name: "dotAI"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
+allowExtraParameters: true
+description: |
+  Credentials and options for using OpenAI/ChatGPT with dotCMS. There are a number of config 
+  properties that can be set in the extra parameter fields. Please see the "config" tab of the [dotAI tool](#/c/dotai) to see what can be configured. We recommend you have a single config for all your sites, 
+  by placing all config on the SYSTEM_HOST or provide a configuration PER site. 
+
+params:
+  apiKey:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "API Key"
+    hint: "Your ChatGPT API key"
+    required: true
+  textModelNames:
+    value: "gpt-4o"
+    hidden: false
+    type: "STRING"
+    label: "Allowed Model Names"
+    hint: "Comma delimited list of models allowed to generate OpenAI API response (e.g. gpt-4o,gpt-4o-mini). If the list is empty, then all models are allowed."
+    required: false
+  rolePrompt:
+    value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."
+    hidden: false
+    type: "STRING"
+    label: "Role Prompt"
+    hint: "A prompt describing the role (if any) the chatbot will play for the dotCMS user."
+    required: false
+  textPrompt:
+    value: "Use Descriptive writing style."
+    hidden: false
+    type: "STRING"
+    label: "Text Prompt"
+    hint: "A prompt describing writing style."
+    required: false
+  textModelTokensPerMinute:
+    value: "180000"
+    hidden: false
+    type: "STRING"
+    label: "Tokens per Minute"
+    hint: "Tokens per minute used to generate OpenAI API response."
+    required: false
+  textModelApiPerMinute:
+    value: "3500"
+    hidden: false
+    type: "STRING"
+    label: "API per Minute"
+    hint: "API per minute used to generate OpenAI API response."
+    required: false
+  textModelMaxTokens:
+    value: "16384"
+    hidden: false
+    type: "STRING"
+    label: "Max Tokens"
+    hint: "Maximum number of tokens used to generate OpenAI API response."
+    required: false
+  textModelCompletion:
+    value: "true"
+    hidden: false
+    type: "BOOL"
+    label: "Completion model enabled"
+    hint: "Enable completion model used to generate OpenAI API response."
+    required: false
+  imageModelNames:
+    value: "dall-e-3"
+    hidden: false
+    type: "STRING"
+    label: "Image Model Names"
+    hint: "Comma delimited list of image models used to generate OpenAI API response(e.g. dall-e-3)."
+    required: true
+  imagePrompt:
+    value: "Use 16:9 aspect ratio."
+    hidden: false
+    type: "STRING"
+    label: "Image Prompt"
+    hint: "Aspect ratio to use for image."
+    required: false
+  imageSize:
+    hidden: false
+    type: "SELECT"
+    label: "Image size"
+    hint: "Image size to generate"
+    required: true
+    value:
+      - label: "1792x1024 (Blog Image 3:2)"
+        value: "1792x1024"
+        selected: true
+      - label: "1024x1792 (Blog Image Vertical 2:3)"
+        value: "1024x1792"
+      - label: "1024x1024 (Large Square 1:1)"
+        value: "1024x1024"
+      - label: "1280x720 (Hero Image 16:9)"
+        value: "1280x720"
+      - label: "1200x630 (Image 3:2)"
+        value: "1200x630"
+      - label: "630x1200 (Image Vertical 2:3)"
+        value: "630x1200"
+      - label: "512x512 (Medium Square 1:1)"
+        value: "512x512"
+      - label: "1920x1080 (Background 16:9)"
+        value: "1920x1080"
+      - label: "256x256 (Small Square 1:1)"
+        value: "256x256"
+  imageModelTokensPerMinute:
+    value: "0"
+    hidden: false
+    type: "STRING"
+    label: "Image Tokens per Minute"
+    hint: "Tokens per minute used to generate OpenAI API response."
+    required: false
+  imageModelApiPerMinute:
+    value: "50"
+    hidden: false
+    type: "STRING"
+    label: "Image API per Minute"
+    hint: "API per minute used to generate OpenAI API response."
+    required: false
+  imageModelMaxTokens:
+    value: "0"
+    hidden: false
+    type: "STRING"
+    label: "Image Max Tokens"
+    hint: "Maximum number of tokens used to generate OpenAI API response."
+    required: false
+  imageModelCompletion:
+    value: "false"
+    hidden: false
+    type: "BOOL"
+    label: "Image Completion model enabled"
+    hint: "Enable completion model used to generate OpenAI API response."
+    required: false
+  embeddingsModelNames:
+    value: "text-embedding-ada-002"
+    hidden: false
+    type: "STRING"
+    label: "Embeddings Model Names"
+    hint: "Comma delimited list of embeddings models used to generate OpenAI API response (e.g. text-embedding-ada-002)."
+    required: true
+  embeddingsModelTokensPerMinute:
+    value: "1000000"
+    hidden: false
+    type: "STRING"
+    label: "Embeddings Tokens per Minute"
+    hint: "Tokens per minute used to generate OpenAI API response."
+    required: false
+  embeddingsModelApiPerMinute:
+    value: "3000"
+    hidden: false
+    type: "STRING"
+    label: "Embeddings API per Minute"
+    hint: "API per minute used to generate OpenAI API response."
+    required: false
+  embeddingsModelMaxTokens:
+    value: "8191"
+    hidden: false
+    type: "STRING"
+    label: "Embeddings Max Tokens"
+    hint: "Maximum number of tokens used to generate OpenAI API response."
+    required: false
+  embeddingsModelCompletion:
+    value: "false"
+    hidden: false
+    type: "BOOL"
+    label: "Embeddings Completion model enabled"
+    hint: "Enable completion model used to generate OpenAI API response."
+    required: false
+  listenerIndexer:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Auto Index Content Config"
+    hint: |
+      A json map that automatically maps indexes->contentTypes and tells dotCMS which content types should be indexed and where, e.g.
+      ```
+      {
+          "default": "blog,news,webPageContent",
+          "blogsOnly": "blog.blogcontent"
+      }
+      ```
+      means that blog, news and webPageContent will be indexed in the `default` index and the blog field `blog.blogcontent` will be 
+      indexed into the `blogsOnly` index. The list of content types is a comma separated list content types and can optionally 
+      include the field that should be indexed when a contentlet is published.  All unpublished content will be removed from the index.
+    required: false

@@ -1,10 +1,14 @@
+@use "sass:map";
+
 @mixin assistant-font-face($weight, $font-filename) {
     @font-face {
         font-family: "Assistant";
         font-style: normal;
         font-weight: $weight;
         font-display: swap;
-        src: local(""), url("/dotAdmin/assets/Assistant-#{$font-filename}.woff2") format("woff2"),
+        src:
+            local(""),
+            url("/dotAdmin/assets/Assistant-#{$font-filename}.woff2") format("woff2"),
             /* Chrome 26+, Opera 23+, Firefox 39+ */
                 url("/dotAdmin/assets/Assistant-#{$font-filename}.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
@@ -16,7 +20,9 @@
         font-style: normal;
         font-weight: $weight;
         font-display: swap;
-        src: local(""), url("/dotAdmin/assets/RedHatMono-#{$font-filename}.woff2") format("woff2"),
+        src:
+            local(""),
+            url("/dotAdmin/assets/RedHatMono-#{$font-filename}.woff2") format("woff2"),
             /* Chrome 26+, Opera 23+, Firefox 39+ */
                 url("/dotAdmin/assets/RedHatMono-#{$font-filename}.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }

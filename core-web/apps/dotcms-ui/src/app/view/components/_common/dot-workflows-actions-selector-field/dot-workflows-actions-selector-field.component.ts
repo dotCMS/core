@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     forwardRef,
@@ -7,16 +8,18 @@ import {
     OnChanges,
     OnInit,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { SelectItem, SelectItemGroup } from 'primeng/api';
-import { Dropdown } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 import { tap } from 'rxjs/operators';
 
 import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
@@ -35,11 +38,16 @@ interface DropdownEvent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
-    ]
+    ],
+    imports: [CommonModule, FormsModule, DropdownModule, DotMessagePipe]
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit
 {
+    private dotWorkflowsActionsSelectorFieldService = inject(
+        DotWorkflowsActionsSelectorFieldService
+    );
+
     @ViewChild('dropdown') dropdown: Dropdown;
     @Input() workflows: DotCMSWorkflow[];
 
@@ -47,17 +55,13 @@ export class DotWorkflowsActionsSelectorFieldComponent
     disabled = false;
     value: string;
 
-    constructor(
-        private dotWorkflowsActionsSelectorFieldService: DotWorkflowsActionsSelectorFieldService
-    ) {}
-
     ngOnInit() {
         this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get().pipe(
             tap((actions: SelectItemGroup[]) => {
                 const actionsIds = this.getActionsIds(actions);
 
-                if (actionsIds.length && !actionsIds.includes(this.value)) {
-                    this.dropdown.clear(null);
+                if (this.shouldClearDropdown(this.dropdown, actionsIds, this.value)) {
+                    this.dropdown.clear();
                 }
             })
         );
@@ -124,5 +128,18 @@ export class DotWorkflowsActionsSelectorFieldComponent
         return actions.reduce((acc: string[], { items }: SelectItemGroup) => {
             return [...acc, ...items.map((item: SelectItem) => item.value)];
         }, []);
+    }
+
+    /**
+     * Determines whether the dropdown should be cleared based on the provided options and the current value.
+     *
+     * @param {Dropdown} dropdown - The dropdown component instance.
+     * @param {string[]} options - Array of available options for the dropdown.
+     * @param {string} value - The current value selected in the dropdown.
+     * @returns {boolean} - Returns `true` if the dropdown should be cleared (i.e., if the dropdown exists, there are available options,
+     *                      and the current value is not in the list of options). Otherwise, returns `false`.
+     */
+    private shouldClearDropdown(dropdown: Dropdown, options: string[], value: string): boolean {
+        return dropdown && options.length && !options.includes(value);
     }
 }

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -16,7 +16,7 @@ import { DotRelationshipCardinality } from '../model/dot-relationship-cardinalit
  */
 @Injectable()
 export class DotRelationshipService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      *Return all the cardinalities options allow

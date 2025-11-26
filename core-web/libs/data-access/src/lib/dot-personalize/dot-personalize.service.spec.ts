@@ -1,14 +1,14 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPersonalizeService } from './dot-personalize.service';
 
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
+
 describe('DotPersonalizeService', () => {
-    let injector: TestBed;
     let dotPersonalizeService: DotPersonalizeService;
     let httpMock: HttpTestingController;
 
@@ -21,9 +21,8 @@ describe('DotPersonalizeService', () => {
                 DotPersonalizeService
             ]
         });
-        injector = getTestBed();
-        dotPersonalizeService = injector.get(DotPersonalizeService);
-        httpMock = injector.get(HttpTestingController);
+        dotPersonalizeService = TestBed.inject(DotPersonalizeService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should set Personalized', () => {

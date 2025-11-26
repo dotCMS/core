@@ -1,75 +1,58 @@
-<ng-container *dotShowHideFeature="featureFlagAnnouncements">
-    <p-button
-        [class.dot-toolbar-notifications__button-active]="activeAnnouncements"
-        (click)="toolbarAnnouncements.toggle($event)"
-        icon="pi pi-megaphone"
-        styleClass="p-button-rounded p-button-text">
-    </p-button>
-    <span
-        class="dot-toolbar__badge"
-        id="dot-toolbar-notifications-badge"
-        *ngIf="showUnreadAnnouncement()">
-    </span>
+@let notifications = $notifications();
+@let unreadCount = notifications.unreadCount;
+@let hasMore = notifications.hasMore;
+@let data = notifications.data;
 
-    <p-overlayPanel
-        #toolbarAnnouncements
-        (onHide)="markAnnocumentsAsRead()"
-        (onShow)="onActiveAnnouncements()"
-        appendTo="body"
-        styleClass="toolbar-announcements__container">
-        <dot-toolbar-announcements [showUnreadAnnouncement]="showUnreadAnnouncement()" />
-    </p-overlayPanel>
-</ng-container>
-<div class="toolbar-notifications__container">
-    <span
-        class="dot-toolbar__badge"
-        id="dot-toolbar-notifications-badge"
-        *ngIf="notificationsUnreadCount"></span>
-    <dot-dropdown-component
-        id="dot-toolbar-notifications"
-        (shutdown)="iframeOverlayService.hide()"
-        (wasOpen)="iframeOverlayService.show()"
-        (toggle)="toggleNotifications()"
-        data-testId="dot-toolbar-notifications"
-        icon="pi pi-bell"
-        position="right">
-        <div class="toolbar-notifications">
-            <div class="toolbar-notifications__heading">
-                <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">
-                    {{ 'notifications_title' | dm }}
-                </h3>
+<dot-toolbar-btn-overlay
+    #overlayPanel
+    icon="pi pi-bell"
+    [showBadge]="unreadCount > 0"
+    (onHide)="markAllAsRead()">
+    <div class="dot-notifications">
+        <div class="flex align-items-center justify-content-between pb-2">
+            <h3 class="dot-notifications__title" id="dot-toolbar-notifications-title">
+                {{ 'notifications_title' | dm }}
+            </h3>
+            @if (data.length) {
                 <p-button
-                    id="dot-toolbar-notifications-button-dismiss-all"
-                    *ngIf="notifications.length"
                     (click)="dismissAllNotifications()"
-                    label="{{ 'notifications_clear_all' | dm }}"
+                    id="dot-toolbar-notifications-button-dismiss-all"
+                    [label]="'notifications_clear_all' | dm"
                     icon="pi pi-trash"
-                    styleClass="p-button-rounded p-button-text p-button-sm p-button-primary"></p-button>
-            </div>
-            <div class="dot-toolbar-notifications__empty" *ngIf="!notifications.length">
-                <span class="dot-toolbar-notifications__empty-title">
+                    [rounded]="true"
+                    [text]="true"
+                    styleClass="p-button-sm p-button-primary" />
+            }
+        </div>
+        @if (!data.length) {
+            <div class="dot-notifications__empty">
+                <span class="dot-notifications__empty-title">
                     {{ 'notifications_no_notifications_title' | dm }}
                 </span>
-                <span class="dot-toolbar-notifications__empty-info">
+                <span class="dot-notifications__empty-info">
                     {{ 'notifications_no_notifications' | dm }}
                 </span>
             </div>
-            <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
-                <dot-notifications-list
-                    id="dot-notifications-list"
-                    [notifications]="notifications"
-                    (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>
-            </div>
-            <div class="toolbar-notifications__footer" id="dot-toolbar-notifications-footer">
+        }
+        <div class="dot-notifications__content" id="dot-toolbar-notifications-content">
+            <ul class="dot-notifications-list p-0">
+                @for (notification of data; track notification.id) {
+                    <dot-notification-item
+                        (clear)="onDismissNotification($event)"
+                        [data]="notification" />
+                }
+            </ul>
+        </div>
+        <div class="dot-notifications__footer" id="dot-toolbar-notifications-footer">
+            @if (hasMore) {
                 <button
+                    (click)="loadMore()"
                     class="p-button-outlined"
                     id="dot-toolbar-notifications-button-load-more"
-                    *ngIf="existsMoreToLoad"
-                    (click)="loadMore()"
                     ripple
                     pButton
                     label="{{ 'notifications_load_more' | dm }}"></button>
-            </div>
+            }
         </div>
-    </dot-dropdown-component>
-</div>
+    </div>
+</dot-toolbar-btn-overlay>

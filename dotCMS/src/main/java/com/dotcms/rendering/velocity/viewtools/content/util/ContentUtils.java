@@ -3,12 +3,12 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
-import com.dotcms.rest.ContentResource;
+import com.dotcms.content.elasticsearch.util.PaginationUtil;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.TimeMachineUtil;
-import com.dotmarketing.beans.Identifier;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -24,6 +24,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
@@ -38,6 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -80,7 +82,8 @@ public class ContentUtils {
 	 * @return The requested {@link Contentlet} object.
 	 */
 		public static Contentlet find(final String inodeOrIdentifier, final User user, final boolean EDIT_OR_PREVIEW_MODE, final long sessionLang){
-			return find(inodeOrIdentifier,user,null,EDIT_OR_PREVIEW_MODE, sessionLang);
+			final Optional<String> timeMachineDate = TimeMachineUtil.getTimeMachineDate();
+			return find(inodeOrIdentifier, user, timeMachineDate.orElse(null), EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
 
 	    private static Contentlet fixRecurringDates(Contentlet contentlet, String[] recDates) {
@@ -109,60 +112,69 @@ public class ContentUtils {
 	 *
 	 * @return The requested {@link Contentlet} object.
 	 */
-        public static Contentlet find(final String inodeOrIdentifierIn, final User user, final String tmDate, final boolean EDIT_OR_PREVIEW_MODE,
-                        final long sessionLang) {
-            final String inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifierIn);
-            final String[] recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
-            try {
-                // by inode
-                Contentlet contentlet = conAPI.find(inodeOrIdentifier, user, true);
-                if (contentlet != null) {
-                    return fixRecurringDates(contentlet, recDates);
-                }
+	public static Contentlet find(final String inodeOrIdentifierIn, final User user,
+			final String tmDate, final boolean EDIT_OR_PREVIEW_MODE,
+			final long sessionLang) {
+		final String inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifierIn);
+		final String[] recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
+		try {
+			final PageMode pageMode = PageMode.get();
+			// Test by inode
+			Contentlet contentlet = conAPI.find(inodeOrIdentifier, user, true);
+			if (contentlet != null) {  // Time machine by the identifier extracted from the contentlet we found through the inode
+				if (null != tmDate) {
+					final Date ffdate = new Date(Long.parseLong(tmDate));
+					final Optional<Contentlet> futureContent = conAPI.findContentletByIdentifierOrFallback(
+							contentlet.getIdentifier(), sessionLang,
+							VariantAPI.DEFAULT_VARIANT.name(),
+							ffdate, user, pageMode.respectAnonPerms);
+					if (futureContent.isPresent()) {
+						return fixRecurringDates(futureContent.get(), recDates);
+					}
+				}
+			}
 
-                // timemachine
-                if (tmDate != null) {
-                    // timemachine future dates
-                    final Date ffdate = new Date(Long.parseLong(tmDate));
-                    final Identifier ident = APILocator.getIdentifierAPI().find(inodeOrIdentifier);
-                    if (ident == null || !UtilMethods.isSet(ident.getId())) {
-                        return null;
-                    }
+			// okay if we failed retrieving the contentlet using inode we still need to test by identifier Cuz this method actually takes an identifier
+			if (null != tmDate) {
+				final Date ffdate = new Date(Long.parseLong(tmDate));
+				final Optional<Contentlet> futureContent = conAPI.findContentletByIdentifierOrFallback(
+						inodeOrIdentifier, sessionLang, VariantAPI.DEFAULT_VARIANT.name(),
+						ffdate, user, pageMode.respectAnonPerms);
+				if (futureContent.isPresent()) {
+					return fixRecurringDates(futureContent.get(), recDates);
+				}
+			}
 
-                    // timemachine content has expired. return nothing
-                    if (UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate())) {
-                        return null;
-                    }
-                    
-                    // timemachine content to be published in the future, return the working version
-                    if (UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate())) {
-                        return conAPI.findContentletByIdentifierOrFallback(inodeOrIdentifier, false, sessionLang, user, true)
-                                        .orElse(null);
-                    }
-                }
+			// if We ran out of possibilities retrieving the contentlet via time machine we fall back on the current or present live contentlet
+			// if we already had one found by inode this is the one We should return
+			if (null != contentlet) {
+				return fixRecurringDates(contentlet, recDates);
+			}
+            // Fallbacks from here on...
+			//If not we try to get the contentlet by the identifier
+			final ContentletVersionInfo contentletVersionInfoByFallback = WebAPILocator.getVariantWebAPI()
+					.getContentletVersionInfoByFallback(sessionLang, inodeOrIdentifier,
+							EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE : PageMode.LIVE, user);
+			// If content is being viewed in EDIT_OR_PREVIEW_MODE, we need to get the working version. Otherwise, we
+			// need the live version. That's why we're negating it when calling the API
+			final String contentletInode =
+					EDIT_OR_PREVIEW_MODE ? contentletVersionInfoByFallback.getWorkingInode()
+							: contentletVersionInfoByFallback.getLiveInode();
 
-				final ContentletVersionInfo contentletVersionInfoByFallback = WebAPILocator.getVariantWebAPI()
-						.getContentletVersionInfoByFallback(sessionLang, inodeOrIdentifier,
-								EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE : PageMode.LIVE, user);
-				// If content is being viewed in EDIT_OR_PREVIEW_MODE, we need to get the working version. Otherwise, we
-				// need the live version. That's why we're negating it when calling the API
-				final String contentletInode =
-						EDIT_OR_PREVIEW_MODE ? contentletVersionInfoByFallback.getWorkingInode()
-								: contentletVersionInfoByFallback.getLiveInode();
-
-				contentlet = conAPI.find(contentletInode, user, true);
-                return fixRecurringDates(contentlet, recDates);
-            } catch (final Exception e) {
-                String msg = e.getMessage();
-                msg = (msg.contains("\n")) ? msg.substring(0, msg.indexOf("\n")) : msg;
-				final String errorMsg = String.format("An error occurred when User '%s' attempted to find Contentlet " +
-															  "with Inode/ID '%s' [lang=%s, tmDate=%s]: %s",
-						user.getUserId(), inodeOrIdentifier, sessionLang, tmDate, msg);
-                Logger.warn(ContentUtils.class, errorMsg);
-                Logger.debug(ContentUtils.class, errorMsg, e);
-                return null;
-            }
-        }
+			contentlet = conAPI.find(contentletInode, user, true);
+			return fixRecurringDates(contentlet, recDates);
+		} catch (final Exception e) {
+			String msg = e.getMessage();
+			msg = (msg.contains("\n")) ? msg.substring(0, msg.indexOf("\n")) : msg;
+			final String errorMsg = String.format(
+					"An error occurred when User '%s' attempted to find Contentlet " +
+							"with Inode/ID '%s' [lang=%s, tmDate=%s]: %s",
+					user.getUserId(), inodeOrIdentifier, sessionLang, tmDate, msg);
+			Logger.warn(ContentUtils.class, errorMsg);
+			Logger.debug(ContentUtils.class, errorMsg, e);
+			return null;
+		}
+	}
 		
 		/**
 		 * Returns empty List if no results are found
@@ -222,7 +234,7 @@ public class ContentUtils {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
 			    if(tmDate!=null && query.contains("+live:true")) {
-			        // with timemachine on!
+			        // with time machine on!
                     final Date futureDate = new Date(Long.parseLong(tmDate));
                     query = query.replaceAll("\\+live\\:true", "")
                             .replaceAll("\\+working\\:true", "");
@@ -270,12 +282,11 @@ public class ContentUtils {
 	    	            });
 		            }
 		            
-		            // truncate to respect limit
-		            if(contentlets.size()>limit){
+		            // truncate to respect limit, remember 0 means no limit
+		            if(limit > 0 && contentlets.size() > limit){
 		                contentlets = contentlets.subList(0, limit);
 		            }
-			    }
-			    else {
+			    } else {
 			        // normal query
 			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, respectFrontendRoles);
 			        ret.setTotalResults(conts.getTotalResults());
@@ -346,25 +357,21 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 * 
 		 */
-		public static PaginatedContentList<Contentlet> pullPerPage(String query, int currentPage, int contentsPerPage, String sort, User user, String tmDate){
-			PaginatedArrayList<Contentlet> cmaps = pullPagenated(query, contentsPerPage, contentsPerPage * (currentPage - 1), sort, user, tmDate);
-			PaginatedContentList<Contentlet> ret = new PaginatedContentList<>();
-			
-			if(cmaps.size()>0){
-				long minIndex = (currentPage - 1) * contentsPerPage;
-		        long totalCount = cmaps.getTotalResults();
-		        long maxIndex = contentsPerPage * currentPage;
-		        if((minIndex + contentsPerPage) >= totalCount){
-		        	maxIndex = totalCount;
-		        }
-				ret.addAll(cmaps);
-				ret.setTotalResults(cmaps.getTotalResults());
-				ret.setTotalPages((long)Math.ceil(((double)cmaps.getTotalResults())/((double)contentsPerPage)));
-				ret.setNextPage(maxIndex < totalCount);
-				ret.setPreviousPage(minIndex > 0);
-				cmaps = null;
-			}
-			return ret;
+		public static PaginatedContentList<Contentlet> pullPerPage(final String query,
+				final int page, final int contentsPerPage, final String sort, final User user,
+				final String tmDate) {
+
+            // Calculate the offset
+			final int currentPage = Math.max(page, 1);
+            var offset = contentsPerPage * (currentPage - 1);
+
+            PaginatedArrayList<Contentlet> cmaps = pullPagenated(
+                    query, contentsPerPage, offset, sort, user, tmDate
+            );
+
+            return PaginationUtil.paginatedArrayListToPaginatedContentList(
+                    cmaps, contentsPerPage, offset
+            );
 		}
 		
 		/**
@@ -775,13 +782,13 @@ public class ContentUtils {
 	 * @param languageId
 	 */
 	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode, final long languageId) {
-
 		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 		if (addRelationshipsOnPage &&
 				Objects.nonNull(response) &&
 				Objects.nonNull(request) &&
 				Objects.nonNull(user)) {
+
 			final String depthParam =
 					Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
 							request.getParameter(WebKeys.HTMLPAGE_DEPTH) :
@@ -792,6 +799,19 @@ public class ContentUtils {
 			}
 		}
 	}
+	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode,
+										final long languageId, final int depth) {
+
+		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+		if (addRelationshipsOnPage &&
+				Objects.nonNull(response) &&
+				Objects.nonNull(request) &&
+				Objects.nonNull(user)) {
+
+			addRelationships(contentlet, user, mode, languageId, depth, request, response);
+		}
+ 	}
 
 	/**
 	 * Adds the relationships to the contentlet based on depth argument
@@ -811,7 +831,7 @@ public class ContentUtils {
 
 			try {
 
-				final JSONObject jsonWithRelationShips = ContentResource.addRelationshipsToJSON(request, response,
+				final JSONObject jsonWithRelationShips = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
 						request.getParameter("render"), user, depth, mode.respectAnonPerms, contentlet,
 						new JSONObject(), null, languageId, mode.showLive, false,
 						true);

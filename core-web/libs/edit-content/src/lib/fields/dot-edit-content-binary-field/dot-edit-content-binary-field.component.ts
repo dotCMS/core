@@ -1,16 +1,17 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
     computed,
+    DestroyRef,
     ElementRef,
     EventEmitter,
     forwardRef,
+    inject,
     Input,
     OnDestroy,
     OnInit,
@@ -19,26 +20,31 @@ import {
     Signal,
     ViewChild
 } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
-    DotCMSTempFile
+    DotCMSTempFile,
+    DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
+    DotAIImagePromptComponent,
     DotDropZoneComponent,
     DotMessagePipe,
-    DotSpinnerModule,
+    DotSpinnerComponent,
     DropZoneErrorType,
     DropZoneFileEvent,
     DropZoneFileValidity
@@ -62,9 +68,14 @@ export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions
     language: 'text'
 };
 
+type SystemOptionsType = {
+    allowURLImport: boolean;
+    allowCodeWrite: boolean;
+    allowGenerateImg: boolean;
+};
+
 @Component({
     selector: 'dot-edit-content-binary-field',
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,
@@ -73,17 +84,18 @@ export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions
         MonacoEditorModule,
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
-        DotSpinnerModule,
-        HttpClientModule,
+        DotSpinnerComponent,
         DotBinaryFieldEditorComponent,
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
-        DotBinaryFieldPreviewComponent
+        DotBinaryFieldPreviewComponent,
+        TooltipModule
     ],
     providers: [
+        DialogService,
+        DotBinaryFieldEditImageService,
         DotBinaryFieldStore,
         DotLicenseService,
-        DotBinaryFieldEditImageService,
         DotBinaryFieldValidatorService,
         {
             multi: true,
@@ -98,10 +110,40 @@ export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions
 export class DotEditContentBinaryFieldComponent
     implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
-    contentTypeField = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
-    @Input() contentlet: DotCMSContentlet;
+    readonly #dotBinaryFieldStore = inject(DotBinaryFieldStore);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
+    readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
+    readonly #cd = inject(ChangeDetectorRef);
+    readonly #dotAiService = inject(DotAiService);
+    readonly #dialogService = inject(DialogService);
+    readonly #destroyRef = inject(DestroyRef);
 
+    $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
+        initialValue: false
+    });
+    $tooltipTextAIBtn = computed(() => {
+        const isAIPluginInstalled = this.$isAIPluginInstalled();
+        if (!isAIPluginInstalled) {
+            return this.#dotMessageService.get('dot.binary.field.action.generate.with.tooltip');
+        }
+
+        return null;
+    });
+
+    value: string | null = null;
+
+    @Input({ required: true })
+    set field(contentTypeField: DotCMSContentTypeField) {
+        this.$field.set(contentTypeField);
+    }
+    @Input({ required: true }) contentlet: DotCMSContentlet;
     @Input() imageEditor = false;
+
+    $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
+    $variable = computed(() => this.$field()?.variable);
+    $disabled = signal<boolean>(false);
+
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
@@ -111,55 +153,47 @@ export class DotEditContentBinaryFieldComponent
     };
     readonly BinaryFieldStatus = BinaryFieldStatus;
     readonly BinaryFieldMode = BinaryFieldMode;
-    readonly vm$ = this.dotBinaryFieldStore.vm$;
+    readonly vm$ = this.#dotBinaryFieldStore.vm$;
+    #dialogRef: DynamicDialogRef | null = null;
     dialogOpen = false;
     customMonacoOptions: Signal<MonacoEditorConstructionOptions> = computed(() => {
+        const field = this.$field();
+
         return {
-            ...this.parseCustomMonacoOptions(this.contentTypeField().fieldVariables)
+            ...this.parseCustomMonacoOptions(field?.fieldVariables)
         };
     });
     private onChange: (value: string) => void;
     private onTouched: () => void;
     private tempId = '';
 
-    protected systemOptions: Record<string, boolean> = {};
+    systemOptions = signal<SystemOptionsType>({
+        allowURLImport: false,
+        allowCodeWrite: false,
+        allowGenerateImg: false
+    });
 
-    constructor(
-        private readonly dotBinaryFieldStore: DotBinaryFieldStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
-        private readonly DotBinaryFieldValidatorService: DotBinaryFieldValidatorService,
-        private readonly cd: ChangeDetectorRef
-    ) {
-        this.dotMessageService.init();
-    }
-
-    @Input({ required: true })
-    set field(contentTypeField: DotCMSContentTypeField) {
-        this.contentTypeField.set(contentTypeField);
-    }
-
-    get value(): string {
-        return this.contentlet?.[this.variable] ?? this.contentTypeField().defaultValue;
+    constructor() {
+        this.#dotMessageService.init();
     }
 
     get maxFileSize(): number {
-        return this.DotBinaryFieldValidatorService.maxFileSize;
+        return this.#dotBinaryFieldValidatorService.maxFileSize;
     }
 
     get accept(): string[] {
-        return this.DotBinaryFieldValidatorService.accept;
+        return this.#dotBinaryFieldValidatorService.accept;
     }
 
-    private get variable(): string {
-        return this.contentTypeField().variable;
+    get variable() {
+        return this.$variable();
     }
 
     ngOnInit() {
-        this.dotBinaryFieldStore.value$
+        this.#dotBinaryFieldStore.value$
             .pipe(
                 skip(1),
-                filter(({ value }) => value !== this.value)
+                filter(({ value }) => value !== this.getValue())
             )
             .subscribe(({ value, fileName }) => {
                 this.tempId = value; // If the value changes, it means that a new file was uploaded
@@ -171,36 +205,37 @@ export class DotEditContentBinaryFieldComponent
                 }
             });
 
-        this.dotBinaryFieldEditImageService
+        this.#dotBinaryFieldEditImageService
             .editedImage()
             .pipe(
                 filter((tempFile) => !!tempFile),
-                tap(() => this.dotBinaryFieldStore.setStatus(BinaryFieldStatus.UPLOADING)),
+                tap(() => this.#dotBinaryFieldStore.setStatus(BinaryFieldStatus.UPLOADING)),
                 delay(500) // Loading animation
             )
-            .subscribe((temp) => this.dotBinaryFieldStore.setFileFromTemp(temp));
+            .subscribe((temp) => this.#dotBinaryFieldStore.setFileFromTemp(temp));
 
-        this.dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
+        this.#dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
     }
 
     ngAfterViewInit() {
         this.setFieldVariables();
 
-        if (!this.value || !this.checkMetadata()) {
+        if (!this.contentlet || !this.getValue() || !this.checkMetadata()) {
             return;
         }
 
-        this.dotBinaryFieldStore.setFileFromContentlet({
+        this.#dotBinaryFieldStore.setFileFromContentlet({
             ...this.contentlet,
-            value: this.value,
+            value: this.getValue(),
             fieldVariable: this.variable
         });
 
-        this.cd.detectChanges();
+        this.#cd.detectChanges();
     }
 
     writeValue(value: string): void {
-        this.dotBinaryFieldStore.setValue(value);
+        this.value = value;
+        this.#dotBinaryFieldStore.setValue(value);
     }
 
     registerOnChange(fn: (value: string) => void) {
@@ -211,8 +246,13 @@ export class DotEditContentBinaryFieldComponent
         this.onTouched = fn;
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.$disabled.set(isDisabled);
+    }
+
     ngOnDestroy() {
-        this.dotBinaryFieldEditImageService.removeListener();
+        this.#dotBinaryFieldEditImageService.removeListener();
+        this.#dialogRef?.close();
     }
 
     /**
@@ -222,8 +262,54 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     openDialog(mode: BinaryFieldMode) {
-        this.dialogOpen = true;
-        this.dotBinaryFieldStore.setMode(mode);
+        if (this.$disabled()) {
+            return;
+        }
+
+        if (mode === BinaryFieldMode.AI) {
+            this.openAIImagePrompt();
+        } else {
+            this.dialogOpen = true;
+        }
+
+        this.#dotBinaryFieldStore.setMode(mode);
+    }
+
+    /**
+     * Opens a dialog for AI Image Prompt using the DotAIImagePromptComponent.
+     * The dialog has various configurations such as header, appendTo, closeOnEscape, draggable,
+     * keepInViewport, maskStyleClass, resizable, modal, width, and style.
+     *
+     * When the dialog is closed, it filters the selected image and if an image is selected,
+     * it parses the image to a temporary file and sets it in the dotBinaryFieldStore.
+     *
+     * @private
+     */
+    openAIImagePrompt() {
+        const header = this.#dotMessageService.get('dot.binary.field.action.generate.dialog-title');
+
+        this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' }
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((selectedImage: DotGeneratedAIImage) => {
+                const tempFile = this.parseToTempFile(selectedImage);
+                this.#dotBinaryFieldStore.setTempFile(tempFile);
+            });
     }
 
     /**
@@ -233,7 +319,8 @@ export class DotEditContentBinaryFieldComponent
      */
     closeDialog() {
         this.dialogOpen = false;
-        this.dotBinaryFieldStore.setMode(BinaryFieldMode.DROPZONE);
+        this.#dialogRef?.close();
+        this.#dotBinaryFieldStore.setMode(BinaryFieldMode.DROPZONE);
     }
 
     /**
@@ -242,6 +329,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     openFilePicker() {
+        if (this.$disabled()) {
+            return;
+        }
+
         this.inputFile.nativeElement.click();
     }
 
@@ -252,9 +343,13 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     handleFileSelection(event: Event) {
+        if (this.$disabled()) {
+            return;
+        }
+
         const input = event.target as HTMLInputElement;
         const file = input.files[0];
-        this.dotBinaryFieldStore.handleUploadFile(file);
+        this.#dotBinaryFieldStore.handleUploadFile(file);
     }
 
     /**
@@ -263,7 +358,11 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     removeFile() {
-        this.dotBinaryFieldStore.removeFile();
+        if (this.$disabled()) {
+            return;
+        }
+
+        this.#dotBinaryFieldStore.removeFile();
     }
 
     /**
@@ -273,7 +372,7 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     setTempFile(tempFile: DotCMSTempFile) {
-        this.dotBinaryFieldStore.setFileFromTemp(tempFile);
+        this.#dotBinaryFieldStore.setFileFromTemp(tempFile);
         this.dialogOpen = false;
     }
 
@@ -292,10 +391,10 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     onEditImage() {
-        this.dotBinaryFieldEditImageService.openImageEditor({
+        this.#dotBinaryFieldEditImageService.openImageEditor({
             inode: this.contentlet?.inode,
             tempId: this.tempId,
-            variable: this.contentTypeField().variable
+            variable: this.variable
         });
     }
 
@@ -306,7 +405,7 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     setDropZoneActiveState(value: boolean) {
-        this.dotBinaryFieldStore.setDropZoneActive(value);
+        this.#dotBinaryFieldStore.setDropZoneActive(value);
     }
 
     /**
@@ -317,13 +416,17 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     handleFileDrop({ validity, file }: DropZoneFileEvent): void {
+        if (this.$disabled()) {
+            return;
+        }
+
         if (!validity.valid) {
             this.handleFileDropError(validity);
 
             return;
         }
 
-        this.dotBinaryFieldStore.handleUploadFile(file);
+        this.#dotBinaryFieldStore.handleUploadFile(file);
     }
 
     /**
@@ -333,23 +436,25 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     private setFieldVariables() {
+        const field = this.$field();
         const {
             accept,
             maxFileSize = 0,
             systemOptions = `{
                 "allowURLImport": true,
-                "allowCodeWrite": true
+                "allowCodeWrite": true,
+                "allowGenerateImg": true
             }`
         } = getFieldVariablesParsed<{
             accept: string;
             maxFileSize: string;
             systemOptions: string;
-        }>(this.contentTypeField().fieldVariables);
+        }>(field?.fieldVariables);
 
-        this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
-        this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
-        this.systemOptions = JSON.parse(systemOptions);
-        this.cd.detectChanges();
+        this.#dotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
+        this.#dotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
+        this.systemOptions.set(JSON.parse(systemOptions));
+        this.#cd.detectChanges();
     }
 
     /**
@@ -367,7 +472,7 @@ export class DotEditContentBinaryFieldComponent
         const errorType = errorsType[0];
         const uiMessage = getUiMessage(errorType, messageArgs[errorType]);
 
-        this.dotBinaryFieldStore.invalidFile(uiMessage);
+        this.#dotBinaryFieldStore.invalidFile(uiMessage);
     }
 
     /**
@@ -400,5 +505,33 @@ export class DotEditContentBinaryFieldComponent
         const key = isFileAsset ? 'metaData' : this.variable + 'MetaData';
 
         return !!this.contentlet[key];
+    }
+
+    private parseToTempFile(selectedImage: DotGeneratedAIImage) {
+        const { response } = selectedImage;
+        const { contentlet } = response;
+        const metaData = contentlet['assetMetaData'];
+
+        const tempFile: DotCMSTempFile = {
+            id: response.response,
+            fileName: response.tempFileName,
+            folder: contentlet.folder,
+            image: true,
+            length: metaData.length,
+            mimeType: metaData.contentType,
+            referenceUrl: contentlet.asset,
+            thumbnailUrl: contentlet.asset,
+            metadata: metaData
+        };
+
+        return tempFile;
+    }
+
+    private getValue() {
+        if (this.value !== null) {
+            return this.value;
+        }
+
+        return this.contentlet?.[this.variable] ?? this.$field().defaultValue;
     }
 }

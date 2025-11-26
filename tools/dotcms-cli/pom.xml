@@ -6,13 +6,12 @@
   <parent>
     <groupId>com.dotcms</groupId>
     <artifactId>dotcms-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}${sha1}${changelist}</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>dotcms-cli-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.0-SNAPSHOT</version>
 
   <modules>
     <module>api-data-model</module>
@@ -22,7 +21,7 @@
   <properties>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
+    <quarkus.platform.version>3.6.0</quarkus.platform.version>
     <jreleaser-plugin.version>1.8.0</jreleaser-plugin.version>
     <google.findbugs.version>3.0.2</google.findbugs.version>
   </properties>
@@ -53,6 +52,14 @@
               <gitRootSearch>true</gitRootSearch>
               <configFile>${project.basedir}/jreleaser.yml</configFile>
             </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>full-release</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>

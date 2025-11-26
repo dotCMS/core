@@ -1,16 +1,18 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { MenuItem } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
+import { MenuItem, SharedModule } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { MenuModule } from 'primeng/menu';
 
-import { filter, pluck, take, takeUntil } from 'rxjs/operators';
+import { pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotAlertConfirmService,
     DotMessageDisplayService,
@@ -18,25 +20,63 @@ import {
     DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContentState,
     DotMessageSeverity,
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 @Component({
     selector: 'dot-template-list',
     templateUrl: './dot-template-list.component.html',
-    styleUrls: ['./dot-template-list.component.scss']
+    styleUrls: ['./dot-template-list.component.scss'],
+    imports: [
+        CommonModule,
+        DotListingDataTableComponent,
+        DotMessagePipe,
+        DotRelativeDatePipe,
+        SharedModule,
+        CheckboxModule,
+        MenuModule,
+        ButtonModule,
+        DotActionMenuButtonComponent,
+        DotAddToBundleComponent,
+        DynamicDialogModule,
+        DotEmptyStateComponent,
+        AutoFocusModule
+    ],
+    providers: [DotTemplatesService, DialogService, DotSiteBrowserService]
 })
 export class DotTemplateListComponent implements OnInit, OnDestroy {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotRouterService = inject(DotRouterService);
+    private dotSiteService = inject(SiteService);
+    private dotTemplatesService = inject(DotTemplatesService);
+    private route = inject(ActivatedRoute);
+    dialogService = inject(DialogService);
+    private dotSiteBrowserService = inject(DotSiteBrowserService);
+
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
     tableColumns: DataTableColumn[];
@@ -49,19 +89,6 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     private hasEnvironments: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotRouterService: DotRouterService,
-        private dotSiteService: SiteService,
-        private dotTemplatesService: DotTemplatesService,
-        private route: ActivatedRoute,
-        public dialogService: DialogService,
-        private dotSiteBrowserService: DotSiteBrowserService
-    ) {}
-
     ngOnInit(): void {
         this.route.data
             .pipe(pluck('dotTemplateListResolverData'), take(1))
@@ -73,32 +100,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             });
         this.setAddOptions();
 
-        /**
-         * When the portlet reload (from the browser reload button), the site service emits
-         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
-         * an unwanted reload.
-         *
-         * This extra work in the filter is to prevent that extra reload.
-         *
-         */
-        let currentHost = this.dotSiteService.currentSite?.hostname || null;
-
-        this.dotSiteService.switchSite$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((site: Site) => {
-                    if (currentHost === null) {
-                        currentHost = site?.hostname;
-
-                        return false;
-                    }
-
-                    return true;
-                })
-            )
-            .subscribe(() => {
-                this.dotRouterService.gotoPortlet('templates');
-            });
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.dotRouterService.gotoPortlet('templates');
+        });
     }
 
     ngOnDestroy(): void {
@@ -112,7 +116,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} { template }
      * @memberof DotTemplateListComponent
      */
-    editTemplate(template: DotTemplate): void {
+    editTemplate(event: unknown): void {
+        const template = event as DotTemplate;
         this.isTemplateAsFile(template)
             ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
                   this.dotRouterService.goToSiteBrowser();
@@ -139,7 +144,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      *
      * @memberof DotTemplateListComponent
      */
-    updateSelectedTemplates(templates: DotTemplate[]): void {
+    updateSelectedTemplates(event: unknown): void {
+        const templates = event as DotTemplate[];
         this.selectedTemplates = templates;
     }
 
@@ -174,7 +180,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} template
      * @memberof DotTemplateListComponent
      */
-    setContextMenu(template: DotTemplate): void {
+    setContextMenu(event: unknown): void {
+        const template = event as DotTemplate;
         this.listing.contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );

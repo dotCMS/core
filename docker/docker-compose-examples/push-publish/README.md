@@ -1,48 +1,53 @@
 # Dotcms Push Publish
 
-Push publish environment where the sender runs on port 8080 and the receiver on 8081. Database: postgres.
-
-**Important note:**  For the endpoint configuration, the local IP address must be used instead of `localhost` or `127.0.0.1`
+Push publish environment where the sender runs on port 8081 and the receiver on port 8082. Database: postgres.
 
 ## Usage
 
-#### Environment setup
+### Endpoint Configuration
 
+In the endpoint configuration, it is mandatory to use a local IP address instead of `localhost` or `127.0.0.1`. You need to know the local IP address of the host where the application is running. In a Linux environment, you can find it using the `ifconfig` command, or `ipconfig` if you are in a Windows environment. The result will be something like `192.168.x.x`.
 
-1) A local path to license pack must be set here:
+As an alternative to using a local IP address, you can use directly the alias of the receiver node service, for instance:
 
-```
-- {license_local_path}/license.zip:/data/shared/assets/license.zip
-```
+To reference the receiver service (`dotcms-receiver`), use the `HTTP` protocol with the alias `dotcms-receiver.local` and port `8082`.
 
-The license pack must contain at least two licenses (one for each node in the cluster)
+### Environment Setup
 
+1. A local path to the license pack must be set here:
 
-2) A local path to access data in the instance can be set uncommenting this line: 
+   ```yaml
+   - {license_local_path}/license.zip:/data/shared/assets/license.zip
+   ```
 
-```
-#- {local_data_path}:/data/shared
-```
+   The license pack must contain at least two licenses (one for each node in the cluster).
 
-3) A custom starter can be set through this line (uncomment and change the starter url accordingly): 
+2. A local path to access data in the instance can be set by uncommenting this line:
 
-```
-#"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
-```
+   ```yaml
+   #- {local_data_path}:/data/shared
+   ```
 
-#### Deploying nodes:
+3. A custom starter can be set through this line (uncomment and change the starter URL accordingly):
+
+   ```yaml
+   #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
+   ```
+
+### Deploying Nodes
+
+To deploy the sender and receiver nodes, use the following command:
 
 ```bash
-docker-compose -f docker-compose-sender.yml up
-docker-compose -f docker-compose-receiver.yml up
-
+docker-compose up
 ```
 
-#### Undeploying nodes:
+### Undeploying Nodes
+
+To undeploy the sender and receiver nodes, use the following command:
 
 ```bash
-docker-compose -f docker-compose-sender.yml down
-docker-compose -f docker-compose-receiver.yml down
+docker-compose down
 ```
 
-**Important note:** `ctrl+c` does not destroy instances
+**Important note**: `ctrl+c` does not destroy instances.

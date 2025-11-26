@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -12,7 +12,7 @@ import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models'
  */
 @Injectable()
 export class DotFieldVariablesService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Load Field Variables.

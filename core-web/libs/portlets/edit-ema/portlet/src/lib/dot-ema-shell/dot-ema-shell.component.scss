@@ -5,14 +5,27 @@
     grid-template-columns: 1fr auto;
     grid-template-rows: 100%;
     height: 100%;
+    background-color: $white;
 
     router-outlet {
         display: none;
+    }
+
+    &:has(p-messages) {
+        grid-template-rows: max-content 100%;
     }
 }
 
 // Selectors overlayPanel and dialog
 ::ng-deep {
+    dot-wizard {
+        dot-dialog {
+            &.active {
+                z-index: 1103 !important;
+            }
+        }
+    }
+
     .p-overlaypanel.edit-ema-selector.p-component {
         .p-overlaypanel-content {
             padding: 0;
@@ -32,9 +45,39 @@
         .p-dialog-content {
             padding: 0 $spacing-6 $spacing-6 $spacing-6;
         }
+    }
 
-        .p-dialog-footer {
-            padding-top: 0;
+    dot-experiments-shell dot-experiments-list {
+        .dot-experiment {
+            padding: $spacing-3 $spacing-5 $spacing-5 $spacing-5 !important;
         }
     }
+}
+
+p-messages {
+    grid-column: -1 / 1;
+    border: solid 1px $color-palette-gray-200;
+    border-top: none;
+}
+
+.lock-message {
+    display: inline;
+    line-height: 1.5;
+
+    strong {
+        font-weight: $font-weight-medium-bold;
+    }
+}
+
+.unlock-link {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-0;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    color: $color-palette-blue;
 }

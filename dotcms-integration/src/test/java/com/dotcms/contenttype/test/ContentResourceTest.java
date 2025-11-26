@@ -1,61 +1,30 @@
 package com.dotcms.contenttype.test;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.CompanyDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.RoleDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
-import com.dotcms.datagen.UserDataGen;
-import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.RESTParams;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -67,31 +36,33 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Base64;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -106,19 +77,27 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(DataProviderRunner.class)
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
@@ -391,7 +370,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         Contentlet parent = contentletDataGen.languageId(language).next();
         parent = contentletAPI.checkin(parent,
-                CollectionsUtils.map(relationship1, CollectionsUtils.list(child1), relationship2,
+                Map.of(relationship1, CollectionsUtils.list(child1), relationship2,
                         CollectionsUtils.list(child2, child3)), user, false);
 
         final ContentResource contentResource = new ContentResource();
@@ -571,7 +550,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent = parentDataGen.languageId(language).next();
             parent = contentletAPI.checkin(parent,
-                    CollectionsUtils.map(parentRelationship, CollectionsUtils.list(child)), user,
+                    Map.of(parentRelationship, CollectionsUtils.list(child)), user,
                     false);
 
             if (testCase.limitedUser) {
@@ -671,13 +650,13 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent1 = parentDataGen.languageId(language).next();
             parent1 = contentletAPI.checkin(parent1,
-                    CollectionsUtils.map(relationship1, CollectionsUtils.list(child1, child2),
+                    Map.of(relationship1, CollectionsUtils.list(child1, child2),
                             relationship2, CollectionsUtils.list(anotherChild)), user,
                     false);
 
             Contentlet parent2 = parentDataGen.languageId(language).next();
             parent2 = contentletAPI.checkin(parent2,
-                    CollectionsUtils.map(relationship1, CollectionsUtils.list(child1, child2)), user,
+                    Map.of(relationship1, CollectionsUtils.list(child1, child2)), user,
                     false);
 
             final StringBuilder pullRelatedQuery = new StringBuilder();
@@ -1288,8 +1267,9 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
-            assertEquals("Unable to set string value as a Long",
-                    ((HashMap)endpointResponse1.getEntity()).get("message"));
+            final String message = (String)((Map)endpointResponse1.getEntity()).get("message");
+            assertEquals("Unable to set string value 'This isn't a numeric value' as a Long for the field: numeric", message);
+
 
         }finally {
             if(null != contentType){
@@ -1386,10 +1366,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + new String(Base64.encode(("admin@dotcms.com:admin").getBytes())));
+            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + user.getPassword()).getBytes())));
+            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
         }
 
         if (jsonPayload != null) {
@@ -1581,9 +1561,9 @@ public class ContentResourceTest extends IntegrationTestBase {
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final Contentlet grandChild = contentletDataGen.languageId(1).setProperty(textField.name(),"grandChild").nextPersisted();
         Contentlet child = contentletDataGen.languageId(1).setProperty(textField.name(),"child").next();
-        child = contentletAPI.checkin(child,CollectionsUtils.map(relationship,CollectionsUtils.list(grandChild)),user,false);
+        child = contentletAPI.checkin(child,Map.of(relationship,CollectionsUtils.list(grandChild)),user,false);
         Contentlet parent = contentletDataGen.languageId(1).setProperty(textField.name(),"parent").next();
-        parent = contentletAPI.checkin(parent,CollectionsUtils.map(relationship,CollectionsUtils.list(child)),user,false);
+        parent = contentletAPI.checkin(parent,Map.of(relationship,CollectionsUtils.list(child)),user,false);
 
         final ContentResource contentResource = new ContentResource();
         final HttpServletRequest request = createHttpRequest(null, null);
@@ -1608,5 +1588,188 @@ public class ContentResourceTest extends IntegrationTestBase {
         final JSONObject grandChildJSONContentlet = (JSONObject) jsonArrayChildRelationships.get(0);
         assertEquals(grandChild.getIdentifier(), grandChildJSONContentlet.get(IDENTIFIER));
         assertEquals("grandChild", grandChildJSONContentlet.get("title"));
+    }
+
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: The method is invoked for a widget
+     * Expected result: The response should override the URL with the one provided in the contentlet
+     */
+    @Test
+    public void testGetContentShouldReturnUrlOverridden() throws Exception {
+
+        final ContentType type = getWidgetLikeContentTypeUrlField("WidgetType", null, null);
+
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(type.id())
+                .languageId(1L)
+                .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                .setProperty("widgetTitle", "titleContent")
+                .setProperty("code", "Widget code")
+                .setProperty("url", "somevalue");
+
+
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        // Build request and response
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        // Send request
+        final ContentResource contentResource = new ContentResource();
+
+
+        Response endpointResponse = contentResource.getContent(request, response,
+                "/query/+identifier:" + contentlet.getIdentifier() + "/type/xml");
+
+        // Verify XML result
+        final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+        final InputSource inputSource = new InputSource();
+        inputSource.setCharacterStream(
+                new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
+        final Document doc = dBuilder.parse(inputSource);
+        doc.getDocumentElement().normalize();
+
+        final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
+
+        assertEquals("somevalue", contentletFromXML.getElementsByTagName("url").item(0).getTextContent());
+
+    }
+
+    @WrapInTransaction
+    public static ContentType getWidgetLikeContentTypeUrlField(final String contentTypeName,
+                                                       final Set<String> workflowIds, final Supplier<String> widgetCode) {
+
+        ContentType simpleWidgetContentType = null;
+        try {
+            try {
+                simpleWidgetContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (simpleWidgetContentType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("Code")
+                                .velocityVarName("code")
+                                .required(true)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("url")
+                                .velocityVarName("url")
+                                .required(true)
+                                .next()
+                );
+                if(null != widgetCode){ //If the widgetCode is not null, then add the field
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("WidgetCode")
+                                    .velocityVarName("widgetCode")
+                                    .type(ConstantField.class)
+                                    .required(false)
+                                    .values(widgetCode.get())
+                                    .next()
+                    );
+                }
+
+                simpleWidgetContentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.WIDGET)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(workflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return simpleWidgetContentType;
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: The method is invoked for a widget with a code field and a widget code field with the same value
+     * Expected result: The response should return the rendered widget code when the render parameter is set to true
+     * @throws Exception
+     */
+    @Test
+    public void testRenderWidgetCode() throws Exception {
+
+        //We're going to use this as code and widget code to test the endpoint
+        final String code = "#set($a = 10)\n"
+                + "#set($b = 5) \n"
+                + "#set($sum = $a + $b) \n"
+                + "$sum";
+        // When rendering the widget code, the result should be the sum of a and b (10 + 5 = 15)
+
+        final ContentType type = getWidgetLikeContentTypeUrlField("CodeWidgetType", null, ()->code);
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(type.id())
+                .languageId(1L)
+                .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                .setProperty("widgetTitle", "myWidgetTitle")
+                .setProperty("code", code)
+                .setProperty("url", "somevalue");
+
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(contentlet);
+
+        // Build request and response
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        // Send request
+        final ContentResource contentResource = new ContentResource();
+
+        final Map<?, ?> resp = callEndpoint(contentResource, request, response, contentlet, false);
+        final String codeValue = resp.get("code").toString();
+        final String widgetCodeValue = resp.get("widgetCode").toString();
+
+        final String raw = removeSpecialCharacters(code);
+
+        assertEquals(raw, removeSpecialCharacters(codeValue));
+        assertEquals(raw, removeSpecialCharacters(widgetCodeValue));
+
+        final Map<?, ?> resp2 = callEndpoint(contentResource, request, response, contentlet, true);
+        final String parsedCode = resp2.get("code").toString();
+        final String parsedWidgetCode = resp2.get("widgetCode").toString();
+        Assert.assertEquals(15,Integer.parseInt(parsedCode));
+        Assert.assertEquals(15,Integer.parseInt(parsedWidgetCode));
+
+    }
+
+    public static String removeSpecialCharacters(String input) {
+        return input.replaceAll("[^a-zA-Z0-9\\s]", "");
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * @param contentResource The content resource
+     * @param request The request
+     * @param response The response
+     * @param contentlet The contentlet
+     * @param render If the contentlet should be rendered
+     * @return The map with the contentlet
+     * @throws JsonProcessingException
+     */
+    private static Map<?, ?> callEndpoint(final ContentResource contentResource, final HttpServletRequest request,
+            final HttpServletResponse response, final Contentlet contentlet, final boolean render) throws JsonProcessingException {
+        Response endpointResponse = contentResource.getContent(request, response,
+                "/id/" + contentlet.getIdentifier() + "/render/"+render);
+
+        final String out = endpointResponse.getEntity().toString();
+        final Map<?,?> map = new ObjectMapper().readValue(out, Map.class);
+        final List<?> contentlets = (List<?>)map.get("contentlets");
+        Assert.assertFalse(contentlets.isEmpty());
+        return (Map<?, ?>)contentlets.get(0);
     }
 }

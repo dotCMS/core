@@ -15,32 +15,38 @@ export class DotClipboardUtil {
      * @returns Promise<boolean>
      * @memberof DotClipboardUtil
      */
-    copy(text: string): Promise<boolean> {
-        /*
-            Aparently this is the only crossbrowser solution so far. If we do this in another place we might have
-            to include an npm module.
-        */
-        const txtArea = document.createElement('textarea');
+    async copy(text: string): Promise<boolean> {
+        try {
+            await navigator.clipboard.writeText(text);
 
-        txtArea.style.position = 'fixed';
-        txtArea.style.top = '0';
-        txtArea.style.left = '0';
-        txtArea.style.opacity = '0';
-        txtArea.value = text;
-        document.body.appendChild(txtArea);
-        txtArea.select();
+            return true;
+        } catch {
+            return this.fallbackCopyToClipboard(text);
+        }
+    }
 
-        let result;
-
-        return new Promise((resolve, reject) => {
+    /**
+     * Fallback method for older browsers that don't support the Clipboard API
+     * @private
+     */
+    private fallbackCopyToClipboard(text: string): Promise<boolean> {
+        return new Promise((resolve) => {
             try {
-                result = document.execCommand('copy');
-                resolve(result);
-            } catch (err) {
-                reject(result);
-            }
+                const txtArea = document.createElement('textarea');
+                txtArea.style.position = 'fixed';
+                txtArea.style.top = '0';
+                txtArea.style.left = '0';
+                txtArea.style.opacity = '0';
+                txtArea.value = text;
+                document.body.appendChild(txtArea);
+                txtArea.select();
 
-            document.body.removeChild(txtArea);
+                const result = document.execCommand('copy');
+                document.body.removeChild(txtArea);
+                resolve(result);
+            } catch {
+                resolve(false);
+            }
         });
     }
 }

@@ -376,4 +376,14 @@ public class TestUserUtils {
         throw new IllegalStateException("dunno What Db 'Im running on");
     }
 
+    @WrapInTransaction
+    public static User getBackendUser(final Host host)
+            throws DotDataException, DotSecurityException {
+        final String randEmail = RandomStringUtils.randomAlphabetic(10);
+        final String email = randEmail + "@dotcms.com";
+
+        return new UserDataGen().firstName(randEmail).lastName("Backend").emailAddress(email)
+                .password(randEmail).roles(getOrCreatePublisherRole(host), getFrontendRole(), getBackendRole()).nextPersisted();
+    }
+
 }

@@ -1,58 +1,47 @@
 @use "variables" as *;
 
-.p-breadcrumb ul > .p-breadcrumb-chevron.pi {
-    color: $color-palette-gray-500;
+.p-breadcrumb {
+    border: 0 none;
+    padding: $spacing-3 0;
 
-    &:not(:nth-child(2)) {
-        font-size: $font-size-xs;
+    .p-breadcrumb-list {
+        li {
+            .p-menuitem-link {
+                transition: none;
+                .p-menuitem-text {
+                    color: $color-palette-gray-700;
+                    font-size: $font-size-default;
+                    cursor: pointer;
+                    &[href] {
+                        color: $black;
+                        &:hover {
+                            color: $color-palette-primary;
+                            text-decoration: underline;
+                        }
+                    }
+                }
+                .p-menuitem-icon {
+                    color: $black;
+                }
+                &:focus {
+                    outline: 0 none;
+                    outline-offset: 0;
+                    box-shadow: none;
+                }
+            }
+            &.p-menuitem-separator {
+                margin: 0 $spacing-1;
+                color: $black;
+            }
+
+            &:last-child {
+                .p-menuitem-text {
+                    color: $color-palette-gray-700;
+                }
+                .p-menuitem-icon {
+                    color: $color-palette-gray-700;
+                }
+            }
+        }
     }
-}
-
-.p-breadcrumb ul li:first-child {
-    font-size: $font-size-lg;
-}
-
-.p-breadcrumb ul li:nth-child(2)::before {
-    content: "";
-    width: 1px;
-    height: 20px;
-    background: $color-palette-gray-500;
-    display: block;
-}
-
-.p-breadcrumb ul li .p-menuitem-link {
-    transition: none;
-    border-radius: $border-radius-xs;
-}
-
-.p-breadcrumb ul li .p-menuitem-link:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
-}
-
-.p-breadcrumb ul li .p-menuitem-link[href] .p-menuitem-text {
-    font-size: $font-size-lg;
-
-    &:hover {
-        color: $color-palette-primary;
-        text-decoration: underline;
-    }
-}
-
-.p-breadcrumb ul li .p-menuitem-link .p-menuitem-text {
-    color: $color-palette-gray-700;
-}
-
-.p-breadcrumb ul li .p-menuitem-link .p-menuitem-icon {
-    color: $black;
-}
-
-.p-breadcrumb ul li.p-breadcrumb-chevron {
-    margin: 0 $spacing-1 0 $spacing-1;
-    color: $black;
-}
-
-.p-breadcrumb ul li:last-child .p-menuitem-icon {
-    color: $black;
 }

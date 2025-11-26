@@ -1,8 +1,9 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
@@ -10,12 +11,17 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedConditionOperatorsByTypeOfGoal,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotEnvironment,
     DotExperiment,
     DotExperimentStatus,
     DotPageRenderState,
@@ -31,8 +37,6 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
 import {
     checkIfExperimentDescriptionIsSaving,
@@ -101,6 +105,14 @@ export interface ConfigurationTrafficStepViewModel {
 
 @Injectable()
 export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
+    private readonly dotExperimentsService = inject(DotExperimentsService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly messageService = inject(MessageService);
+    private readonly title = inject(Title);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
     // Selectors
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
@@ -959,20 +971,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         })
     );
 
-    constructor(
-        private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly messageService: MessageService,
-        private readonly title: Title,
-        private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotPushPublishDialogService: DotPushPublishDialogService
-    ) {
+    constructor() {
+        const route = inject(ActivatedRoute);
         const dotPageRenderState = route.parent.parent.parent.snapshot.data['content'];
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+
         super({
             ...initialState,
             hasEnterpriseLicense,
@@ -1010,8 +1015,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.status !== DotExperimentStatus.DRAFT
             ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
             : dotPageRenderState.state.lockedByAnotherUser
-            ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
-            : null;
+              ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
+              : null;
     }
 
     private getMenuItems(

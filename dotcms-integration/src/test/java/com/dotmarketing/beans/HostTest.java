@@ -1,9 +1,12 @@
 package com.dotmarketing.beans;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,5 +42,33 @@ public class HostTest {
         host.setDefault(false);
         assertFalse(host.isDefault());
     }
+
+    @Test
+    public void insureTagStorageWorks() {
+
+        Host host = new Host();
+        host.setTagStorage("SYSTEM_HOST");
+        assertTrue(host.getTagStorage().equals(Host.SYSTEM_HOST));
+
+        host = new Host();
+        host.setTagStorage("IDONTEXIST_" + System.currentTimeMillis());
+        assertTrue(host.getTagStorage().equals(Host.SYSTEM_HOST));
+
+        Host defaultHost = Try.of(()->APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)).getOrNull();
+
+
+        host = new Host();
+        host.setTagStorage(defaultHost.getIdentifier());
+
+        assertEquals(host.getTagStorage(), defaultHost.getIdentifier());
+
+
+
+
+    }
+
+
+
+
 
 }

@@ -1,4 +1,4 @@
-import { LowerCasePipe, NgForOf, NgIf, UpperCasePipe } from '@angular/common';
+import { LowerCasePipe, UpperCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,23 +20,16 @@ import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models'
 import {
     DotEmptyContainerComponent,
     DotMessagePipe,
-    DotRelativeDatePipe,
     DotTimestampToDatePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list-table',
     imports: [
-        NgIf,
         LowerCasePipe,
         UpperCasePipe,
-        NgForOf,
-        // dotCMS
         DotMessagePipe,
-        DotRelativeDatePipe,
-        // PrimeNG
         ConfirmPopupModule,
         TableModule,
         ButtonModule,

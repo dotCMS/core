@@ -65,13 +65,14 @@
     #set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
     #if($EDIT_MODE && $_hasPermission)
     	#set($localContent = $dotcontent.find($!{CONTENT_INODE}))
+        #set($jsonContent = $json.generate($localContent))
         <button
             data-dot-identifier="$!{localContent.identifier}"
             data-dot-inode="$!{CONTENT_INODE}"
             data-dot-object="edit-content"
+            onclick='window.dotUVE.editContentlet($jsonContent.contentObject)'
             style="box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%) !important; border: none !important; border-radius: 16px !important; cursor: pointer !important; font-size: 0 !important; height: 32px !important; outline: none !important; position: relative !important; width: 32px !important; z-index: 2147483646 !important;
             background: #fff url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) no-repeat center center !important;">
-            Edit
         </button>
     #end
 #end
@@ -94,7 +95,7 @@
     #if (!$UtilMethods.isSet($_dotParseListHeap))
       #set ($_dotParseListHeap = $contents.getEmptyList())
     #end
-    
+
     #set ($_dotParseDummyVariable = $_dotParseListHeap.add($list))
   #end
 
@@ -102,7 +103,7 @@
     #if (!$UtilMethods.isSet($_dotParseContentHeap))
       #set ($_dotParseContentHeap = $contents.getEmptyList())
     #end
-    
+
     #set ($_dotParseDummyVariable = $_dotParseContentHeap.add($content))
   #end
 
@@ -153,7 +154,7 @@
         <p><b>The file you want to  ${esc.h}include ($_dotParsePath) doesn't exist, please change the path and try again.</b></p>
       #end
     #end
-  
+
     #set ($_dotParsePath = '')
     #set ($_dotParseRealPath = '')
 
@@ -175,9 +176,14 @@
             <i class="fa fa-arrow-up"></i>
             <i class="fa fa-arrow-down"></i>
         </a>
+
         <script>
             function openReorderDialog(event) {
                 event.preventDefault();
+                if(window.dotUVE){
+                  window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})
+                  return;
+                }
                 var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
                 var customEvent = window.top.document.createEvent("CustomEvent");
                 customEvent.initCustomEvent("ng-event", false, false,  {
@@ -189,3 +195,58 @@
         </script>
     #end
 #end
+
+#macro(sortNavigation)
+    #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
+      #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
+      <button
+    onclick='openReorderDialog(event)'
+    style="
+        background-color: #426BF0;
+        border-radius: 3px;
+        display: flex;
+        flex-direction: row;
+        cursor: pointer;
+        border: none;
+    "
+    data-original-title="Reorder Menu">
+    <span
+        style="
+            background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDMwLjgzbDkuMTcsLTkuMTdsOS4xNyw5LjE3bDIuODMsLTIuODNsLTEyLC0xMmwtMTIsMTJsMi44MywyLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0zMC42OTQ1NTcsOS40MjU4ODdsNDgsMGwwLDQ4bC00OCwwbDAsLTQ4eiIvPgogPC9nPgo8L3N2Zz4=);
+            background-repeat: no-repeat;
+            background-size: contain;
+            display: block;
+            height: 36px;
+            width: 36px;
+        "></span>
+    <span
+        style="
+            background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CgogPGc+CiAgPHRpdGxlPmJhY2tncm91bmQ8L3RpdGxlPgogIDxyZWN0IGZpbGw9Im5vbmUiIGlkPSJjYW52YXNfYmFja2dyb3VuZCIgaGVpZ2h0PSI0MDIiIHdpZHRoPSI1ODIiIHk9Ii0xIiB4PSItMSIvPgogPC9nPgogPGc+CiAgPHRpdGxlPkxheWVyIDE8L3RpdGxlPgogIDxwYXRoIGZpbGw9IiNmZmZmZmYiIGlkPSJzdmdfMSIgZD0ibTE0LjgzLDE2LjQybDkuMTcsOS4xN2w5LjE3LC05LjE3bDIuODMsMi44M2wtMTIsMTJsLTEyLC0xMmwyLjgzLC0yLjgzeiIvPgogIDxwYXRoIGlkPSJzdmdfMiIgZmlsbD0ibm9uZSIgZD0ibS0xOC4zOTk4OTksMTcuMDc4NDczbDQ4LDBsMCw0OGwtNDgsMGwwLC00OHoiLz4KIDwvZz4KPC9zdmc+);
+            background-repeat: no-repeat;
+            background-size: contain;
+            display: block;
+            height: 36px;
+            width: 36px;
+        "></span>
+</button>
+        <script>
+            function openReorderDialog(event) {
+                event.preventDefault();
+                if(window.dotUVE){
+                  window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})
+                  return;
+                }
+                var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
+                var customEvent = window.top.document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "reorder-menu",
+                    data: reorderUrl
+                });
+                window.top.document.dispatchEvent(customEvent);
+            }
+        </script>
+
+    #end
+#end
+
+

@@ -18,9 +18,9 @@ import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -35,15 +35,21 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -65,6 +71,13 @@ import java.util.concurrent.RejectedExecutionException;
  */
 public class CircuitBreakerUrl {
 
+    private static final Lazy<Integer> circuitBreakerMaxConnTotal =
+            Lazy.of(() -> Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL", 100));
+    private static final Lazy<Boolean> allowAccessToPrivateSubnets =
+            Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl =
+            new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
+
     private final String proxyUrl;
     private final long timeoutMs;
     private final CircuitBreaker circuitBreaker;
@@ -74,17 +87,16 @@ public class CircuitBreakerUrl {
     private int response = -1;
     private Header[] responseHeaders;
     private final boolean allowRedirects;
-    private final boolean throwWhenNot2xx;
+    private final boolean throwWhenError;
+    private final Function<Integer, Exception> overrideException;
+    private final boolean raiseFailsafe;
 
-    private static final Lazy<Integer> circuitBreakerMaxConnTotal = Lazy.of(()->Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL",100));
-    private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
-    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
+    public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
-    public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[]{});
-    /**
-     * 
-     * @param proxyUrl
-     */
+    public enum Method {
+        GET, POST, PUT, DELETE, PATCH, HEAD
+    }
+
     public CircuitBreakerUrl(final String proxyUrl) {
         this(proxyUrl, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000));
     }
@@ -95,7 +107,7 @@ public class CircuitBreakerUrl {
      * @param timeoutMs
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs) {
-        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
+        this(proxyUrl, timeoutMs, CircuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
     }
     
     /**
@@ -118,13 +130,12 @@ public class CircuitBreakerUrl {
           timeoutMs,
           circuitBreaker,
           new HttpGet(proxyUrl),
-          ImmutableMap.of(),
-          ImmutableMap.of(),
+          Map.of(),
+          Map.of(),
           verbose,
           null);
     }
-    
-    
+
     @VisibleForTesting
     public CircuitBreakerUrl(final String proxyUrl,
                              final long timeoutMs,
@@ -134,24 +145,9 @@ public class CircuitBreakerUrl {
                              final Map<String, String> headers,
                              final boolean verbose,
                              final String rawData) {
-        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true);
-        
+        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false);
     }
     
-    /**
-     * Full featured constructor
-     * 
-     * @param proxyUrl
-     * @param timeoutMs
-     * @param circuitBreaker
-     * @param request
-     * @param params
-     * @param headers
-     * @param verbose
-     * @param rawData
-     * @param allowRedirects
-     * @param throwWhenNot2xx
-     */
     @VisibleForTesting
     public CircuitBreakerUrl(final String proxyUrl,
                              final long timeoutMs,
@@ -162,7 +158,9 @@ public class CircuitBreakerUrl {
                              final boolean verbose,
                              final String rawData,
                              final boolean allowRedirects,
-                             final boolean throwWhenNot2xx) {
+                             final boolean throwWhenError,
+                             final Function<Integer, Exception> overrideException,
+                             final boolean raiseFailsafe) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
@@ -170,7 +168,9 @@ public class CircuitBreakerUrl {
         this.request = request;
         this.rawData = rawData;
         this.allowRedirects = allowRedirects;
-        this.throwWhenNot2xx = throwWhenNot2xx;
+        this.throwWhenError = throwWhenError;
+        this.overrideException = this.throwWhenError ? overrideException : null;
+        this.raiseFailsafe = raiseFailsafe;
 
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
@@ -203,13 +203,14 @@ public class CircuitBreakerUrl {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
             final String output = out.toString();
-            if (!isWithin2xx(this.response)) {
+            if (isError()) {
                 Logger.warn(
                     this,
                     String.format(
-                        "Invalid response detected when consuming [%s] with http status [%d] and response:\n%s",
+                        "Invalid response detected when consuming [%s] with http status [%d] and response:%s%s",
                         this.proxyUrl,
                         this.response,
+                        System.lineSeparator(),
                         output));
             }
             return output;
@@ -234,7 +235,7 @@ public class CircuitBreakerUrl {
 
                     @Override
                     public void setWriteListener(WriteListener writeListener) {
-
+                        // no-op
                     }
                 };
             }
@@ -246,11 +247,9 @@ public class CircuitBreakerUrl {
         circuitBreakerConnectionControl.check(this.proxyUrl);
 
         try (final OutputStream out = response.getOutputStream()) {
-
             circuitBreakerConnectionControl.start(Thread.currentThread().getId());
 
-            if(verbose) {
-
+            if (verbose) {
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
             }
 
@@ -265,7 +264,7 @@ public class CircuitBreakerUrl {
                                 .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
-                        try (CloseableHttpClient httpclient = HttpClientBuilder.create()
+                        try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
                                 .setDefaultRequestConfig(config).build()) {
                             
@@ -273,7 +272,7 @@ public class CircuitBreakerUrl {
                                 throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
                             }
 
-                            try (CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
+                            try (final CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
 
                                 this.responseHeaders = innerResponse.getAllHeaders();
 
@@ -291,56 +290,117 @@ public class CircuitBreakerUrl {
                             }
                             
                             // throw an error if the request is bad
-                            if (!isWithin2xx(this.response) && throwWhenNot2xx) {
-                                throw new BadRequestException("Got invalid response for url: " + this.proxyUrl + " response: " + this.response);
+                            if ((isError() || isRedirectWhenDisallowed()) && throwWhenError) {
+                                throw Optional
+                                        .ofNullable(overrideException)
+                                        .map(mapper -> mapper.apply(this.response))
+                                        .orElse(new BadRequestException(
+                                                String.format(
+                                                        "Got invalid response for url: [%s] response: [%d]",
+                                                        this.proxyUrl,
+                                                        this.response)));
                             }
                         }
                     });
         } catch (FailsafeException ee) {
 
             Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+
+            if (raiseFailsafe) {
+                throw ee;
+            }
         } finally {
 
             circuitBreakerConnectionControl.end(Thread.currentThread().getId());
         }
     }
 
-    public static boolean isWithin2xx(final int response) {
-        return response >= 200 && response <= 299;
-    }
+    /**
+     * Does a ping (HEAD) over to the given URL to see if it is running
+     * @param urlString String
+     * @return boolean
+     */
+    public boolean ping() {
 
-    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
-        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+        final MutableBoolean pingResult = new MutableBoolean(false);
+        circuitBreakerConnectionControl.check(this.proxyUrl);
 
-        if (UtilMethods.isSet(contentTypeHeader)) {
-            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
+        try {
+            circuitBreakerConnectionControl.start(Thread.currentThread().getId());
+
+            if (verbose) {
+                Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
+            }
+
+            Failsafe.with(circuitBreaker)
+                    .onSuccess(connection -> {
+                        if(verbose) {
+                            Logger.info(this, "success to " + this.proxyUrl);
+                        }
+                        pingResult.setValue(true);
+                    })
+                    .onFailure(failure ->
+                            Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
+                    .run(ctx -> {
+
+                        final RequestConfig config = RequestConfig.custom()
+                                .setConnectTimeout(Math.toIntExact(this.timeoutMs))
+                                .setRedirectsEnabled(allowRedirects)
+                                .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
+                                .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
+                        try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
+                                .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
+                                .setDefaultRequestConfig(config).build()) {
+
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
+                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                            }
+
+                            try (final CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
+
+                                this.response = innerResponse.getStatusLine().getStatusCode();
+                            }
+
+                            pingResult.setValue(isSuccessResponse(this.response));
+                        }
+                    });
+        } catch (Exception ee) {
+
+            Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+        } finally {
+
+            circuitBreakerConnectionControl.end(Thread.currentThread().getId());
         }
 
-        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
-
-        if (UtilMethods.isSet(contentLengthHeader)) {
-            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
-        }
+        return pingResult.getValue();
     }
 
     public int response() {
-      return this.response;
+        return response;
     }
 
-    public static CircuitBreakerUrlBuilder builder() {
-        return new CircuitBreakerUrlBuilder();
+    public boolean isProcessed() {
+        return response != -1;
     }
 
+    public boolean isError() {
+        final javax.ws.rs.core.Response.Status.Family family = fromStatusCode(response);
+        return Stream
+                .of(
+                        javax.ws.rs.core.Response.Status.Family.CLIENT_ERROR,
+                        javax.ws.rs.core.Response.Status.Family.SERVER_ERROR)
+                .anyMatch(fam -> fam == family)
+                || !isProcessed();
+    }
 
-    @Override
-    public String toString() {
-        return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
+    public boolean isRedirectWhenDisallowed() {
+        return fromStatusCode(response) == javax.ws.rs.core.Response.Status.Family.REDIRECTION && !allowRedirects;
     }
 
     public <T extends Serializable> T doObject(final Class<T> clazz) {
         return Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), clazz))
-            .onFailure(e -> Logger.warnAndDebug(CircuitBreakerUrl.class, e))
-            .getOrElse((T) null);
+                .onFailure(e -> Logger.warnAndDebug(CircuitBreakerUrl.class, e))
+                .getOrElse((T) null);
     }
 
     public <T extends Serializable> Response<T> doResponse(final Class<T> clazz) {
@@ -364,9 +424,58 @@ public class CircuitBreakerUrl {
         return responseHeaders;
     }
 
-    public enum Method {
-        GET, POST, PUT, DELETE, PATCH;
+    @Override
+    public String toString() {
+        return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
+    }
 
+    private javax.ws.rs.core.Response.Status.Family fromStatusCode(final int statusCode) {
+        return javax.ws.rs.core.Response.Status.Family.familyOf(statusCode);
+    }
+
+    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
+        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+
+        if (UtilMethods.isSet(contentTypeHeader)) {
+            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
+        }
+
+        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
+
+        if (UtilMethods.isSet(contentLengthHeader)) {
+            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
+        }
+    }
+
+    public static Map<String, String> authHeaders(final String token) {
+        return ImmutableMap.<String, String>builder()
+                .put(HttpHeaders.AUTHORIZATION, token)
+                .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    /**
+     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
+     *
+     * @param statusCode http status code
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(final int statusCode) {
+        return javax.ws.rs.core.Response.Status.Family.familyOf(statusCode) == javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
+    }
+
+    /**
+     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
+     *
+     * @param response http response representation
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
+        return isSuccessResponse(response.getStatusCode());
+    }
+
+    public static CircuitBreakerUrlBuilder builder() {
+        return new CircuitBreakerUrlBuilder();
     }
 
     public static class CircuitBreakerConnectionControl {
@@ -381,7 +490,6 @@ public class CircuitBreakerUrl {
         public void check(final String proxyUrl) {
 
             if (threadIdConnectionCountSet.size() >= maxConnTotal) {
-
                 Logger.info(this, "The maximum number of connections has been reached, size: " +
                         threadIdConnectionCountSet.size() + ", url: " + proxyUrl);
                 throw new RejectedExecutionException("The maximum number of connections has been reached.");
@@ -389,14 +497,13 @@ public class CircuitBreakerUrl {
         }
 
         public void start(final long id) {
-
             threadIdConnectionCountSet.add(id);
         }
 
         public void end(final long id) {
-
             threadIdConnectionCountSet.remove(id);
         }
+
     }
 
     public static class Response<T extends Serializable> implements Serializable {
@@ -447,6 +554,7 @@ public class CircuitBreakerUrl {
                 ", statusCode=" + statusCode +
                 '}';
         }
+
     }
 
 }

@@ -1,11 +1,11 @@
-import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator';
+import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Dropdown, DropdownFilterEvent, DropdownModule } from 'primeng/dropdown';
 
 import { DotEventsService, DotSiteService } from '@dotcms/data-access';
 import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
@@ -48,7 +48,7 @@ describe('DotSiteSelectorDirective', () => {
         let getSitesSpy;
 
         beforeEach(() => {
-            getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
+            getSitesSpy = jest.spyOn(dotSiteService, 'getSites').mockReturnValue(of(mockSites));
         });
 
         it('should get sites list', () => {
@@ -60,18 +60,22 @@ describe('DotSiteSelectorDirective', () => {
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-            const filter = 'demo';
-
-            dropdown.onFilter.emit({ filter });
+            const event: DropdownFilterEvent = {
+                filter: 'demo',
+                originalEvent: new MouseEvent('click')
+            };
+            dropdown.onFilter.emit(event);
 
             spectator.tick(500);
-            expect(getSitesSpy).toHaveBeenCalledWith(filter, 10);
+            expect(dotSiteService.getSites).toHaveBeenCalledWith(event.filter, 10);
         }));
     });
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            const getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
+            const getSitesSpy = jest
+                .spyOn(dotSiteService, 'getSites')
+                .mockReturnValue(of(mockSites));
             spectator.detectChanges();
             dotEventsService.notify('login-as');
             spectator.tick(0);

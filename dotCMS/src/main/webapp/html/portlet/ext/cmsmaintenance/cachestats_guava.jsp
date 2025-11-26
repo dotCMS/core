@@ -22,32 +22,44 @@
     </a>
 </div>
 <%}%>
+
+<%
+
+    long maxMemory = Runtime.getRuntime().maxMemory();
+    long totalMemoryInUse = Runtime.getRuntime().totalMemory();
+    long freeMemory = Runtime.getRuntime().freeMemory();
+    long usedMemory = totalMemoryInUse - freeMemory;
+    long availableMemory = maxMemory - usedMemory;
+
+%>
+
+
 <link rel="stylesheet" href="/html/js/sortable-0.8.0/css/sortable-theme-minimal.css" />
 <script src="/html/js/sortable-0.8.0/js/sortable.min.js"></script>
 <div style="padding-bottom:30px;">
     <table class="listingTable shadowBox" style="width:400px">
         <tr>
-            <th><%= LanguageUtil.get(pageContext, "Total-Memory-Available") %>
+            <th><%= LanguageUtil.get( pageContext, "Total-Memory-Available" ) %> / Xmx
             </th>
-            <td align="right"><%=UtilMethods.prettyByteify(Runtime.getRuntime().maxMemory())%>
+            <td align="right"><%=UtilMethods.prettyByteify( maxMemory )%>
             </td>
         </tr>
         <tr>
-            <th><%= LanguageUtil.get(pageContext, "Memory-Allocated") %>
+            <th><%= LanguageUtil.get( pageContext, "Memory-Allocated" ) %>
             </th>
-            <td align="right"><%= UtilMethods.prettyByteify(Runtime.getRuntime().totalMemory())%>
+            <td align="right"><%= UtilMethods.prettyByteify( totalMemoryInUse )%>
             </td>
         </tr>
         <tr>
-            <th><%= LanguageUtil.get(pageContext, "Filled-Memory") %>
+            <th><%= LanguageUtil.get( pageContext, "Filled-Memory" ) %>
             </th>
-            <td align="right"><%= UtilMethods.prettyByteify(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())%>
+            <td align="right"><%= UtilMethods.prettyByteify( usedMemory )%>
             </td>
         </tr>
         <tr>
-            <th><%= LanguageUtil.get(pageContext, "Free-Memory") %>
+            <th><%= LanguageUtil.get( pageContext, "Free-Memory" ) %>
             </th>
-            <td align="right"><%= UtilMethods.prettyByteify(Runtime.getRuntime().freeMemory())%>
+            <td align="right"><%= UtilMethods.prettyByteify( availableMemory )%>
             </td>
         </tr>
     </table>

@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.liferay.portal.model.User;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
@@ -52,9 +53,10 @@ import java.util.function.Predicate;
 public interface WorkflowAPI {
 
 	/**
-	 * Id of the System Workflow
+	 * Id and variable name of the System Workflow
 	 */
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
+	public static final String SYSTEM_WORKFLOW_VARIABLE_NAME = WorkFlowFactory.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 	/**
 	 * Default show on
@@ -277,7 +279,15 @@ public interface WorkflowAPI {
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
-	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
+	/**
+	 * Find a scheme by the scheme id or variable name
+	 *
+	 * @param idOrVar the id or variable name of the scheme
+	 * @return the scheme with the given id or variable name
+	 * @throws DotDataException     if there is an error retrieving the scheme
+	 * @throws DotSecurityException if the user does not have permission to access the scheme
+	 */
+	public WorkflowScheme findScheme(String idOrVar) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
@@ -460,6 +470,13 @@ public interface WorkflowAPI {
 	 */
 	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Friend method for the Export in order to allow to complete the actions meta info
+	 * @param action
+	 * @param actionClasses
+	 */
+	void fillActionInfo(final WorkflowAction action,
+				   final List<WorkflowActionClass> actionClasses);
 	/**
 	 * Finds an action associated to the steps and the user permissions over the permissionable.
 	 * The action will be validated against the user permissions.

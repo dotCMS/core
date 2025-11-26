@@ -1,5 +1,6 @@
 package com.dotcms.rest.api;
 
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -16,19 +17,21 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import javax.ws.rs.ext.Provider;
 
 
 /**
  * @author Geoff M. Granum
  */
+@Provider
 public class CorsFilter implements ContainerResponseFilter {
 
 
     final public static String CORS_PREFIX = "api.cors";
     final public static String CORS_DEFAULT = "default";
-    final private Map<String, List<String[]>> headerMap;
+    final private Lazy<Map<String, List<String[]>>> headerMap = Lazy.of(this::loadHeaders);
 
-    public CorsFilter() {
+    Map<String, List<String[]>> loadHeaders() {
         Map<String, List<String[]>> loadingMap  = new HashMap<>();
         final List<String> props = Config.subsetContainsAsList(CORS_PREFIX);
         props.forEach(key -> {
@@ -43,8 +46,13 @@ public class CorsFilter implements ContainerResponseFilter {
             loadingMap.put(mapping, keys);
 
         });
-        this.headerMap = ImmutableMap.copyOf(loadingMap);
+        return ImmutableMap.copyOf(loadingMap);
     }
+
+
+
+
+
 
     
     @Override
@@ -69,7 +77,7 @@ public class CorsFilter implements ContainerResponseFilter {
 
 
     protected List<String[]> getHeaders(final String mapping) {
-        List<String[]> corsHeaders = headerMap.containsKey(mapping) ? headerMap.get(mapping) : headerMap.get(CORS_DEFAULT);
+        List<String[]> corsHeaders = headerMap.get().containsKey(mapping) ? headerMap.get().get(mapping) : headerMap.get().get(CORS_DEFAULT);
         return corsHeaders != null ? corsHeaders : ImmutableList.of() ;
 
     }
@@ -98,4 +106,3 @@ public class CorsFilter implements ContainerResponseFilter {
 
 
 }
-

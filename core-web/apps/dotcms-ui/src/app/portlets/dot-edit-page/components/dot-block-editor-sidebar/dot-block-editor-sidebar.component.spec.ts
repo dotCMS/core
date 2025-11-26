@@ -10,6 +10,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -22,7 +23,8 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
-import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+
+import { DotBlockEditorSidebarComponent } from './dot-block-editor-sidebar.component';
 
 const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
@@ -77,6 +79,8 @@ export class MockDotBlockEditorComponent {
     @Input() languageId = 1;
     @Input() field: DotCMSContentTypeField;
     @Input() value: { [key: string]: string } | string = '';
+    @Input() contentletIdentifier: string;
+    @Input() showVideoThumbnail: boolean;
 
     editor = {
         getJSON: () => {
@@ -127,8 +131,9 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotBlockEditorSidebarComponent, MockDotBlockEditorComponent],
             imports: [
+                DotBlockEditorSidebarComponent,
+                MockDotBlockEditorComponent,
                 HttpClientTestingModule,
                 BrowserAnimationsModule,
                 SidebarModule,
@@ -150,7 +155,12 @@ describe('DotBlockEditorSidebarComponent', () => {
                 DotAlertConfirmService,
                 ConfirmationService
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotBlockEditorSidebarComponent, {
+                remove: { imports: [BlockEditorModule] },
+                add: { imports: [MockDotBlockEditorComponent] }
+            })
+            .compileComponents();
         dotEventsService = TestBed.inject(DotEventsService);
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
@@ -176,8 +186,8 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', async () => {
-        spyOn(dotContentTypeService, 'getContentType').and.callThrough();
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        jest.spyOn(dotContentTypeService, 'getContentType');
+        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('true'));
         dotEventsService.notify('edit-block-editor', clickEvent);
 
         await fixture.whenRenderingDone();
@@ -188,6 +198,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         ).componentInstance;
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
+        expect(dotContentTypeService.getContentType).toHaveBeenCalledTimes(1);
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toEqual(clickEvent.dataset.language);
         expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.blockEditorContent));
@@ -195,7 +206,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should save changes in the editor', () => {
         dotEventsService.notify('edit-block-editor', clickEvent);
-        spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+        jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(of({}));
         fixture.detectChanges();
 
         const updateBtn = de.query(By.css('[data-testId="updateBtn"]'));
@@ -213,8 +224,8 @@ describe('DotBlockEditorSidebarComponent', () => {
         });
 
         dotEventsService.notify('edit-block-editor', clickEvent);
-        spyOn(dotAlertConfirmService, 'alert').and.callThrough();
-        spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+        jest.spyOn(dotAlertConfirmService, 'alert');
+        jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
             throwError(error404)
         );
         fixture.detectChanges();

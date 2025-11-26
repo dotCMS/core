@@ -1,20 +1,30 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { DropdownModule } from 'primeng/dropdown';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import {
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
+import { DotDialogActions } from '@dotcms/dotcms-models';
+import { DotDialogComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
+
+import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 enum DownloadType {
     UNPUBLISH = 'unpublish',
@@ -26,9 +36,24 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
 @Component({
     selector: 'dot-download-bundle-dialog',
     templateUrl: './dot-download-bundle-dialog.component.html',
-    styleUrls: ['./dot-download-bundle-dialog.component.scss']
+    styleUrls: ['./dot-download-bundle-dialog.component.scss'],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        DropdownModule,
+        SelectButtonModule,
+        DotDialogComponent,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
+    providers: [DotPushPublishFiltersService]
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
+    fb = inject(UntypedFormBuilder);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
+    private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
+
     downloadOptions: SelectItem[];
     filterOptions: SelectItem[];
     dialogActions: DotDialogActions;
@@ -39,13 +64,6 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private currentFilterKey: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private filters: SelectItem[] = null;
-
-    constructor(
-        public fb: UntypedFormBuilder,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishFiltersService: DotPushPublishFiltersService,
-        private dotDownloadBundleDialogService: DotDownloadBundleDialogService
-    ) {}
 
     ngOnInit() {
         this.dotDownloadBundleDialogService.showDialog$

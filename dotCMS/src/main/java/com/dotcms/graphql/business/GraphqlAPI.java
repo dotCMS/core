@@ -1,16 +1,12 @@
 package com.dotcms.graphql.business;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.exception.DotDataException;
-
 import com.liferay.portal.model.User;
-import graphql.schema.GraphQLObjectType;
-import java.util.Collection;
-import java.util.Map;
-
-import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 
+/**
+ * Api to
+ */
 public interface GraphqlAPI {
 
     String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
@@ -21,5 +17,9 @@ public interface GraphqlAPI {
 
     void invalidateSchema();
 
+    /**
+     * If GRAPHQL_PRINT_SCHEMA is turn on to true, prints the schema in the file system
+     *
+     */
     void printSchema();
 }

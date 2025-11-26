@@ -2,24 +2,26 @@
 
 .p-dialog {
     border-radius: $border-radius-md;
-    box-shadow: 0 11px 15px -7px $color-palette-black-op-20,
-        0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
+    box-shadow:
+        0 11px 15px -7px $color-palette-black-op-20,
+        0 24px 38px 3px $color-palette-black-op-10,
+        0 9px 46px 8px $color-palette-black-op-10;
     border: 0 none;
     overflow: auto;
+    background-color: $white;
 }
 
 .p-dialog .p-dialog-header {
     border-bottom: 0 none;
     background: $white;
     color: $black;
-    padding: $spacing-6;
+    padding: $spacing-4;
     border-top-right-radius: $border-radius-md;
     border-top-left-radius: $border-radius-md;
 }
 
 .p-dialog .p-dialog-header .p-dialog-title {
-    font-size: $font-size-xl;
-    font-size: 1.5rem;
+    font-size: $font-size-lg;
 }
 
 .p-dialog .p-dialog-header .p-dialog-header-icon {
@@ -29,7 +31,10 @@
     border: 0 none;
     background: transparent;
     border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
     margin-right: $spacing-1;
 }
 
@@ -53,7 +58,15 @@
     gap: $spacing-3;
     background: $white;
     color: $black;
-    padding: 0 $spacing-6 $spacing-6 $spacing-6;
+    padding: $spacing-4;
+    word-break: break-word;
+}
+.p-dialog:has(.p-dialog-header) .p-dialog-content {
+    padding-top: 0;
+}
+
+.p-dialog:has(.p-dialog-footer) .p-dialog-content {
+    padding-bottom: 0;
 }
 
 .p-dialog .p-dialog-footer {
@@ -73,9 +86,13 @@
 
 //TODO: This need to go to the confirm-dialog stylesheet when we update the look and feel
 .p-dialog.p-confirm-dialog .p-confirm-dialog-icon {
-    font-size: $font-size-xxl;
+    font-size: $font-size-xl;
     padding-right: $spacing-1;
     color: $color-palette-primary;
+
+    &.text-warning-yellow {
+        color: $color-palette-yellow;
+    }
 }
 
 .p-dialog.p-confirm-dialog .p-confirm-dialog-message {
@@ -83,8 +100,17 @@
 }
 
 .p-dialog-mask.p-component-overlay {
-    background-color: $color-palette-black-op-80;
-    backdrop-filter: blur(5px);
+    background-color: $color-palette-black-op-50;
+}
+
+.p-dialog-relationship-field {
+    .p-dialog-header {
+        padding-top: $spacing-4;
+        padding-bottom: 0;
+    }
+    .p-dialog-footer {
+        padding-top: 0;
+    }
 }
 
 .p-dialog-header .p-dialog-header-icons .p-dialog-header-close {
@@ -97,4 +123,17 @@
     background-color: transparent;
     -webkit-backdrop-filter: blur($blur-md);
     backdrop-filter: blur($blur-md);
+    padding: 0;
+    align-items: center;
+}
+
+.p-dialog-mask.p-dialog-mask-dynamic.p-component-overlay {
+    padding: 0;
+    align-items: center;
+}
+
+.p-dialog-mask.p-dialog-mask-transparent-nested.p-component-overlay {
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }

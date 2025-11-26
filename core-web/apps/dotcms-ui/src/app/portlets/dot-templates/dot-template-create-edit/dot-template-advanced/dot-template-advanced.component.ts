@@ -8,16 +8,22 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
-import { DotPortletToolbarActions } from '@models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 
+import { DotPortletToolbarActions } from '../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
+import { DotContainerSelectorComponent } from '../../../../view/components/dot-container-selector/dot-container-selector.component';
+import { DotPortletToolbarComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
+import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
 interface MonacoEditorOperation {
@@ -39,9 +45,20 @@ interface MonacoEditor {
 @Component({
     selector: 'dot-template-advanced',
     templateUrl: './dot-template-advanced.component.html',
-    styleUrls: ['./dot-template-advanced.scss']
+    styleUrls: ['./dot-template-advanced.scss'],
+    imports: [
+        DotContainerSelectorComponent,
+        DotTextareaContentComponent,
+        DotPortletBaseComponent,
+        DotPortletToolbarComponent,
+        ReactiveFormsModule,
+        DotGlobalMessageComponent
+    ]
 })
 export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChanges {
+    private fb = inject(UntypedFormBuilder);
+    private dotMessageService = inject(DotMessageService);
+
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
@@ -54,8 +71,6 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     form: UntypedFormGroup;
     actions: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private fb: UntypedFormBuilder, private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.form = this.fb.group({ body: this.body });

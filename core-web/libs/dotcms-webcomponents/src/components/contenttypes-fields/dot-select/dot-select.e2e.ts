@@ -286,7 +286,7 @@ describe('dot-select', () => {
                 expect(await optionElements[1].getProperty('selected')).toBe(true);
             });
 
-            it('should render options with the first option selected (component\'s default behaviour)', async () => {
+            it("should render options with the first option selected (component's default behaviour)", async () => {
                 element.setProperty('options', 'a|1,b|2,c|3');
                 await page.waitForChanges();
                 const optionElements = await getOptions(page);

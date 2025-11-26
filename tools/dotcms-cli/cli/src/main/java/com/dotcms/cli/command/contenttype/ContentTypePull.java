@@ -17,8 +17,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -44,8 +44,7 @@ import picocli.CommandLine;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer>,
-        DotCommand, DotPull {
+public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer>, DotPull {
 
     static final String NAME = "pull";
 

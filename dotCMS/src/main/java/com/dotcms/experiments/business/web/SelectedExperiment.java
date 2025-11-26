@@ -1,16 +1,13 @@
 package com.dotcms.experiments.business.web;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.Serializable;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This is a {@link com.dotcms.experiments.model.Experiment} selected to a User, this mean this user
@@ -157,10 +154,13 @@ public class SelectedExperiment implements Serializable {
         }
 
         public Map<String, String> regexs() {
-            return map(
-                "isExperimentPage", redirectPattern,
-                   "isTargetPage", targetPagePattern
-            );
+
+            final Map<String, String> regexs = new HashMap();
+
+            regexs.put("isExperimentPage", redirectPattern);
+            regexs.put("isTargetPage", targetPagePattern);
+
+            return regexs;
         }
     }
 

@@ -21,7 +21,12 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import javax.servlet.http.HttpSession;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import org.glassfish.jersey.server.JSONP;
@@ -34,7 +39,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -47,6 +51,7 @@ import java.util.Map;
  * Created by jasontesser on 9/28/16.
  */
 @Path("/v1/folder")
+@Tag(name = "Folders", description = "Endpoints for managing folder structure and organization")
 public class FolderResource implements Serializable {
 
     private final WebResource webResource;
@@ -67,13 +72,15 @@ public class FolderResource implements Serializable {
 
     /**
      * Delete one or more path for a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param paths
-     * @param siteName
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest}.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse}.
+     * @param paths paths to delete
+     * @param siteName site name
      * @return List of folders deleted
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @throws IllegalArgumentException if the site name is not found
+     * @throws DoesNotExistException if the folder does not exist
+     * @throws DotSecurityException if the user does not have permission to delete the folder
+     * @throws DotDataException if there is an error deleting the folder
      */
     @DELETE
     @Path("/{siteName}")
@@ -81,6 +88,30 @@ public class FolderResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            summary = "Delete one or more path for a site",
+            description = "Delete one or more path for a site if they exist"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folders deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\n"
+                                    + "    \"entity\": [\n"
+                                    + "        \"/folder-1/folder-2/target-folder\"\n"
+                                    + "    ],\n"
+                                    + "    \"errors\": [],\n"
+                                    + "    \"i18nMessagesMap\": {},\n"
+                                    + "    \"messages\": [],\n"
+                                    + "    \"pagination\": null,\n"
+                                    + "    \"permissions\": []\n"
+                                    + "}"
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "404", description = "Folders not found"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to delete folders")
+    })
     public final Response deleteFolders(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
                                         final List<String> paths,
@@ -98,23 +129,21 @@ public class FolderResource implements Serializable {
         final List<String> deletedFolders = new ArrayList<>();
 
         final Host host = APILocator.getHostAPI().findByName(siteName, user, true);
-        if(!UtilMethods.isSet(host)) {
-
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
+        if (!UtilMethods.isSet(host)) {
+            throw new IllegalArgumentException(
+                    String.format(" Couldn't find any host with name `%s` ", siteName));
         }
 
-        Logger.debug(this, ()-> "Deleting the folders: " + paths);
+        Logger.debug(this, () -> "Deleting the folders: " + paths);
 
         for (final String path : paths) {
-
             final Folder folder = folderHelper.loadFolderByURI(host.getIdentifier(), user, path);
-            if (null != folder) {
 
-                Logger.debug(this, ()-> "Deleting the folder: " + path);
-                folderHelper.deleteFolder (folder, user);
+            if (folderHelper.isValidFolder(folder)) {
+                Logger.debug(this, () -> "Deleting the folder: " + path);
+                folderHelper.deleteFolder(folder, user);
                 deletedFolders.add(path);
             } else {
-
                 Logger.error(this, "The folder does not exists: " + path);
                 throw new DoesNotExistException("The folder does not exists: " + path);
             }

@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotcms.rendering.velocity.util.VelocityUtil.convertToVelocityVariable;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
@@ -38,6 +40,7 @@ import com.dotmarketing.portlets.workflows.model.transform.WorkflowSchemeTransfo
 import com.dotmarketing.portlets.workflows.model.transform.WorkflowTaskTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -45,9 +48,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
-import org.postgresql.util.PGobject;
-
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -63,6 +63,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.apache.commons.beanutils.BeanUtils;
+import org.postgresql.util.PGobject;
 
 /**
  * Implementation class for the {@link WorkFlowFactory}.
@@ -87,6 +89,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private static final String WA_SHOW_ON_COLUMN = "show_on";
     private static final String WA_USE_ROLE_HIERARCHY_ASSIGN_COLUMN = "use_role_hierarchy_assign";
     private static final String WA_METADATA_COLUMN = "metadata";
+
+    public static final String VALID_VARIABLE_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     /**
      * Creates an instance of the {@link WorkFlowFactory}.
@@ -144,6 +148,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 Map.class)).getOrElse(new HashMap<String, Object>()));
         BeanUtils.copyProperties(action, row);
         action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
+        action.setOnlyBatchActionlet(ActionletUtil.hasOnlyBatchActionlet(action));
         return action;
     }
 
@@ -712,7 +717,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         db.setSQL(WorkflowSQL.SELECT_ACTION);
         db.addParam(id);
         try {
-            return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
+            return  (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
                     WorkflowAction.class).get(0);
         } catch (IndexOutOfBoundsException ioob) {
             return null;
@@ -868,22 +873,31 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     }
 
     @Override
-    public WorkflowScheme findScheme(String id) throws DotDataException {
-        WorkflowScheme scheme = cache.getScheme(id);
+    public WorkflowScheme findScheme(String idOrVar) throws DotDataException {
+
+        WorkflowScheme scheme = cache.getScheme(idOrVar);
+
         if (scheme == null) {
-            try {
-                final DotConnect db = new DotConnect();
-                db.setSQL(WorkflowSQL.SELECT_SCHEME);
-                db.addParam(id);
-                scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(),
-                        WorkflowScheme.class).get(0);
-                cache.add(scheme);
-            } catch (final IndexOutOfBoundsException e) {
-                throw new DoesNotExistException("Workflow-does-not-exists-scheme");
-            } catch (final Exception e) {
-                throw new DotDataException(e.getMessage(), e);
+
+            /*
+             1. If the if has UUID format lets try to find the workflow by id.
+             2. If not let's try to find it by variable name.
+             3. If the id is a really old inode, it will not have the UUID format but still need to catch that case.
+             */
+            if (UUIDUtil.isUUID(idOrVar)) {
+                scheme = dbFindSchemeById(idOrVar);
+            } else {
+                try {
+                    scheme = dbFindSchemeByVariable(idOrVar);
+                } catch (DoesNotExistException e) {
+                    scheme = dbFindSchemeById(idOrVar);
+                }
+
             }
+
+            cache.add(scheme);
         }
+
         return scheme;
     }
 
@@ -1839,7 +1853,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final WorkflowScheme proxyScheme = new WorkflowScheme();
         proxyScheme.setId(action.getSchemeId());
         cache.removeActions(proxyScheme);
-
         // update workflowScheme mod date
         final WorkflowScheme scheme = findScheme(action.getSchemeId());
         saveScheme(scheme);
@@ -1973,35 +1986,56 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
 
-        boolean isNew = true;
-        if (UtilMethods.isSet(scheme.getId())) {
-            try {
-                final WorkflowScheme test = this.findScheme(scheme.getId());
-                if (test != null) {
-                    isNew = false;
-                }
-            } catch (final Exception e) {
-                Logger.debug(this.getClass(), e.getMessage(), e);
-            }
-        } else {
-            scheme.setId(UUIDGenerator.generateUuid());
-        }
-
-        scheme.setModDate(new Date());
+        boolean isNew = isNewScheme(scheme);
 
         final DotConnect db = new DotConnect();
         try {
 
             if (isNew) {
 
+                // Validating the variable name and generating a new one if necessary
+                if (UtilMethods.isSet(scheme.getVariableName())) {
+
+                    // Make sure the variable name is not already in use
+                    if (doesWorkflowWithVariableExist(scheme.getVariableName())) {
+                        throw new IllegalArgumentException(
+                                String.format(
+                                        "Invalid Workflow Scheme variable name [%s]. Already exist.",
+                                        scheme.getVariableName()
+                                )
+                        );
+                    }
+                } else {
+
+                    // Generating a new variable name for this workflow scheme
+                    final String generatedVariableName = suggestVariableName(scheme.getName());
+                    if (!generatedVariableName.matches(VALID_VARIABLE_NAME_REGEX)) {
+
+                        throw new IllegalArgumentException(
+                                String.format(
+                                        "Invalid Workflow Scheme variable name [%s]",
+                                        scheme.getVariableName()
+                                )
+                        );
+                    }
+
+                    scheme.setVariableName(generatedVariableName);
+                }
+
+                // Generate an ID if the scheme does not already have one
+                if (UtilMethods.isEmpty(scheme.getId())) {
+                    scheme.setId(generateSchemaId(scheme));
+                }
+
                 db.setSQL(WorkflowSQL.INSERT_SCHEME);
                 db.addParam(scheme.getId());
                 db.addParam(scheme.getName());
+                db.addParam(scheme.getVariableName());
                 db.addParam(scheme.getDescription());
                 db.addParam(scheme.isArchived());
                 db.addParam(false);
                 db.addParam(scheme.isDefaultScheme());
-                db.addParam(scheme.getModDate());
+                db.addParam(new Date());
                 db.loadResult();
             } else {
                 db.setSQL(WorkflowSQL.UPDATE_SCHEME);
@@ -2009,11 +2043,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 db.addParam(scheme.getDescription());
                 db.addParam(scheme.isArchived());
                 db.addParam(false);
-                db.addParam(scheme.getModDate());
+                db.addParam(new Date());
                 db.addParam(scheme.getId());
                 db.loadResult();
 
             }
+
             cache.remove(scheme);
         } catch (final Exception e) {
             throw new DotDataException(e.getMessage(), e);
@@ -2497,6 +2532,60 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         return scheme;
     }
 
+    /**
+     * Finds a WorkflowScheme based on the given variable name.
+     *
+     * @param variableName the name of the variable to search for
+     * @return the WorkflowScheme object that matches the given variable name
+     * @throws DotDataException if an error occurs during the search operation
+     */
+    private WorkflowScheme dbFindSchemeByVariable(String variableName) throws DotDataException {
+
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(WorkflowSQL.SELECT_SCHEME_BY_VARIABLE_NAME);
+        dc.addParam(variableName.toLowerCase());
+
+        List<Map<String, Object>> results;
+        results = dc.loadObjectResults();
+        if (results.isEmpty()) {
+            throw new DoesNotExistException(
+                    String.format(
+                            "Workflow scheme [%s] not found", variableName
+                    )
+            );
+        }
+
+        return this.convertListToObjects(results, WorkflowScheme.class).get(0);
+    }
+
+    /**
+     * Finds a WorkflowScheme based on the given id.
+     *
+     * @param id The ID of the workflow scheme to be retrieved.
+     * @return The workflow scheme with the specified ID.
+     * @throws DotDataException      If there is an error while performing the database operation.
+     * @throws DoesNotExistException If the workflow scheme with the specified ID is not found in
+     *                               the database.
+     */
+    private WorkflowScheme dbFindSchemeById(String id) throws DotDataException {
+
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(WorkflowSQL.SELECT_SCHEME);
+        dc.addParam(id);
+
+        List<Map<String, Object>> results;
+        results = dc.loadObjectResults();
+        if (results.isEmpty()) {
+            throw new DoesNotExistException(
+                    String.format(
+                            "Workflow scheme [%s] not found", id
+                    )
+            );
+        }
+
+        return this.convertListToObjects(results, WorkflowScheme.class).get(0);
+    }
+
     @Override
     public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param)
             throws DotDataException, AlreadyExistException {
@@ -2752,5 +2841,88 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         return dc.getInt("mycount");
     }
 
+    /**
+     * Simple method to check if a workflow scheme, based on its id, already exists in the database
+     *
+     * @param scheme WorkflowScheme to be checked
+     * @return boolean true if the scheme already exists, false otherwise
+     */
+    private boolean isNewScheme(WorkflowScheme scheme) {
+
+        boolean isNew = true;
+        if (UtilMethods.isSet(scheme.getId())) {
+            try {
+                final WorkflowScheme foundWorkflow = this.findScheme(scheme.getId());
+                if (foundWorkflow != null) {
+                    isNew = false;
+                }
+            } catch (final Exception e) {
+                Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+        }
+
+        return isNew;
+    }
+
+    /**
+     * Generates the scheme id, using a deterministic id generator, the deterministic id generator
+     * uses the scheme variable name as the seed for the generation.
+     *
+     * @param scheme the scheme to generate the id
+     * @return the generated id
+     */
+    private String generateSchemaId(final WorkflowScheme scheme) {
+        return APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(scheme);
+    }
+
+    /**
+     * Suggests a variable name for a given workflow name.
+     *
+     * @param workflowName the name of the workflow
+     * @return a suggested variable name
+     * @throws DotDataException if unable to suggest a variable name for the workflow scheme
+     */
+    private String suggestVariableName(final String workflowName) throws DotDataException {
+
+        DotConnect dc = new DotConnect();
+
+        final String suggestedVarName = convertToVelocityVariable(workflowName, true);
+        String varName = suggestedVarName;
+
+        for (int i = 1; i < 10000; i++) {
+
+            dc.setSQL(WorkflowSQL.SELECT_COUNT_BY_VARIABLE_NAME);
+            dc.addParam(varName.toLowerCase());
+            if (dc.getInt("test") == 0) {
+                return varName;
+            }
+
+            varName = suggestedVarName + i;
+        }
+
+        throw new DotDataException(
+                "Unable to suggest a variable name for workflow schem.  Got to:" + varName);
+    }
+
+    /**
+     * Checks whether a workflow with the given variable name exists.
+     *
+     * @param variableName the name of the variable to check
+     * @return true if a workflow with the variable exists, false otherwise
+     * @throws DotDataException if an error occurs while checking for the workflow
+     */
+    private boolean doesWorkflowWithVariableExist(String variableName) throws DotDataException {
+
+        boolean exist = false;
+
+        try {
+            final var workflowScheme = findScheme(variableName);
+            exist = UtilMethods.isSet(workflowScheme);
+        } catch (DoesNotExistException e) {
+            // nothing to do - moving on
+        }
+
+        return exist;
+    }
 
 }

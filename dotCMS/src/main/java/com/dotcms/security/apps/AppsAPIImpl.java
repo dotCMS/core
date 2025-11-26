@@ -10,7 +10,6 @@ import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
 import static com.dotcms.security.apps.AppsUtil.validateForSave;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
-import static com.google.common.collect.ImmutableList.of;
 import static java.util.Collections.emptyMap;
 
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -19,21 +18,18 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
@@ -66,24 +62,20 @@ public class AppsAPIImpl implements AppsAPI {
 
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
-    private final ContentletAPI contentletAPI;
     private final SecretsStore secretsStore;
     private final AppsCache appsCache;
     private final LocalSystemEventsAPI localSystemEventsAPI;
-
     private final LicenseValiditySupplier licenseValiditySupplier;
     private final AppDescriptorHelper appDescriptorHelper;
 
     @VisibleForTesting
     public AppsAPIImpl(final LayoutAPI layoutAPI, final HostAPI hostAPI,
-            final ContentletAPI contentletAPI,
             final SecretsStore secretsRepository, final AppsCache appsCache,
             final LocalSystemEventsAPI localSystemEventsAPI,
             final AppDescriptorHelper appDescriptorHelper,
             final LicenseValiditySupplier licenseValiditySupplier) {
         this.layoutAPI = layoutAPI;
         this.hostAPI = hostAPI;
-        this.contentletAPI = contentletAPI;
         this.secretsStore = secretsRepository;
         this.appsCache = appsCache;
         this.localSystemEventsAPI = localSystemEventsAPI;
@@ -95,12 +87,14 @@ public class AppsAPIImpl implements AppsAPI {
      * default constructor
      */
     public AppsAPIImpl() {
-        this(APILocator.getLayoutAPI(), APILocator.getHostAPI(),
-                APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
-                CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
+        this(
+                APILocator.getLayoutAPI(),
+                APILocator.getHostAPI(),
+                SecretsStore.INSTANCE.get(),
+                CacheLocator.getAppsCache(),
+                APILocator.getLocalSystemEventsAPI(),
                 new AppDescriptorHelper(),
-                new LicenseValiditySupplier() {
-                });
+                new LicenseValiditySupplier() {});
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
@@ -365,18 +359,6 @@ public class AppsAPIImpl implements AppsAPI {
         deleteSecrets(key, host.getIdentifier(), user);
     }
 
-
-    private void deleteSecrets(final String key, final String siteIdentifier, final User user)
-            throws DotDataException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
-            throw new DotSecurityException(String.format(
-                    "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
-                    key, siteIdentifier, user.getUserId()));
-        } else {
-            secretsStore.deleteValue(internalKey(key, siteIdentifier));
-        }
-    }
-
     @Override
     public List<AppDescriptor> getAppDescriptors(final User user)
             throws DotDataException, DotSecurityException {
@@ -412,14 +394,6 @@ public class AppsAPIImpl implements AppsAPI {
                 }
             });
         }
-    }
-
-    /**
-     * AppDescriptor mapped by appKey
-     * @return
-     */
-    private Map<String, AppDescriptor> getAppDescriptorMap(){
-       return appsCache.getAppDescriptorsMap(this::getAppDescriptorsMeta);
     }
 
     @Override
@@ -459,22 +433,22 @@ public class AppsAPIImpl implements AppsAPI {
         }
         Logger.debug(AppsAPIImpl.class, () -> " ymlFiles are set under:  " + ymlFilesPath);
 
-            final AppSchema appSchema = appDescriptorHelper.readAppFile(file.toPath());
-            // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
-            if (appDescriptorHelper.validateAppDescriptor(appSchema)) {
-                final File incomingFile = new File(basePath, file.getName());
-                if (incomingFile.exists()) {
-                    throw new AlreadyExistException(
-                            String.format(
-                                    "Invalid attempt to override an existing file named '%s'.",
-                                    incomingFile.getName()));
-                }
-
-                appDescriptorHelper.writeAppFile(incomingFile, appSchema);
-
-                invalidateCache();
+        final AppSchema appSchema = appDescriptorHelper.readAppFile(file.toPath());
+        // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
+        if (appDescriptorHelper.validateAppDescriptor(appSchema)) {
+            final File incomingFile = new File(basePath, file.getName());
+            if (incomingFile.exists()) {
+                throw new AlreadyExistException(
+                        String.format(
+                                "Invalid attempt to override an existing file named '%s'.",
+                                incomingFile.getName()));
             }
-            return new AppDescriptorImpl(file.getName(), false, appSchema);
+
+            appDescriptorHelper.writeAppFile(incomingFile, appSchema);
+
+            invalidateCache();
+        }
+        return new AppDescriptorImpl(file.getName(), false, appSchema);
 
     }
 
@@ -510,6 +484,21 @@ public class AppsAPIImpl implements AppsAPI {
             }
             invalidateCache();
         }
+    }
+
+    private void deleteSecrets(final String key, final String siteIdentifier, final User user)
+            throws DotDataException, DotSecurityException {
+        if (userDoesNotHaveAccess(user)) {
+            throw new DotSecurityException(String.format(
+                    "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
+                    key, siteIdentifier, user.getUserId()));
+        } else {
+            secretsStore.deleteValue(internalKey(key, siteIdentifier));
+        }
+    }
+
+    private Map<String, AppDescriptor> getAppDescriptorMap(){
+        return appsCache.getAppDescriptorsMap(this::getAppDescriptorsMeta);
     }
 
     /**
@@ -578,7 +567,7 @@ public class AppsAPIImpl implements AppsAPI {
             final Host site, final User user)
             throws DotSecurityException, DotDataException {
         final String appKey = appDescriptor.getKey();
-        final boolean hasConfigurations = !filterSitesForAppKey(appKey, of(site.getIdentifier()),
+        final boolean hasConfigurations = !filterSitesForAppKey(appKey, List.of(site.getIdentifier()),
                 user).isEmpty();
         if (hasConfigurations) {
             final Optional<AppSecrets> secretsOptional = getSecrets(appKey, site, user);
@@ -590,7 +579,7 @@ public class AppsAPIImpl implements AppsAPI {
                     final ParamDescriptor descriptor = entry.getValue();
                     final Secret secret = appSecrets.getSecrets().get(paramName);
                     if (isRequiredWithNoDefaultValue(descriptor, secret)) {
-                        warnings.put(paramName, of(String
+                        warnings.put(paramName, List.of(String
                                 .format("`%s` is required. It is missing a value and no default is provided.",
                                         paramName)));
                     }
@@ -801,7 +790,7 @@ public class AppsAPIImpl implements AppsAPI {
                     continue;
                 }
                 throw new IllegalArgumentException(
-                        String.format("No site identified by `%s` was found locally.\n %s", siteId,
+                        String.format("No site identified by `%s` was found locally.%n %s", siteId,
                                 failSilentlyMessage));
             }
 
@@ -816,7 +805,7 @@ public class AppsAPIImpl implements AppsAPI {
                         continue;
                     }
                     throw new IllegalArgumentException(
-                            String.format("No App Descriptor `%s` was found locally.\n %s",
+                            String.format("No App Descriptor `%s` was found locally.%n %s",
                                     appSecrets.getKey(), failSilentlyMessage));
                 }
 
@@ -828,11 +817,11 @@ public class AppsAPIImpl implements AppsAPI {
                         continue;
                     }
                     throw new IllegalArgumentException(
-                            String.format("Incoming empty secret `%s` could replace local copy.\n %s ",
+                            String.format("Incoming empty secret `%s` could replace local copy.%n %s ",
                                     appSecrets.getKey(), failSilentlyMessage));
                 }
                 try {
-                    validateForSave(mapForValidation(appSecrets), appDescriptor.get());
+                    validateForSave(mapForValidation(appSecrets), appDescriptor.get(), Optional.empty());
                 } catch (IllegalArgumentException ae) {
                     if (failSilently) {
                         Logger.warn(AppsAPIImpl.class, () -> String
@@ -842,7 +831,7 @@ public class AppsAPIImpl implements AppsAPI {
                     }
                     throw new IllegalArgumentException(
                             String.format(
-                                    "Incoming secret `%s` has validation issues with local descriptor.\n %s ",
+                                    "Incoming secret `%s` has validation issues with local descriptor.%n %s ",
                                     appSecrets.getKey(), failSilentlyMessage),
                             ae);
                 }

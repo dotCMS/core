@@ -7,6 +7,7 @@ export class NgGridHelper {
             // tslint:disable:no-bitwise
             const r = (Math.random() * 16) | 0;
             const v = c === 'x' ? r : (r & 0x3) | 0x8;
+
             return v.toString(16);
             // tslint:enable:no-bitwise
         });
@@ -16,6 +17,7 @@ export class NgGridHelper {
         if (a.col === b.col) {
             return a.row - b.row;
         }
+
         return a.col - b.col;
     }
 
@@ -23,6 +25,7 @@ export class NgGridHelper {
         if (a.row === b.row) {
             return a.col - b.col;
         }
+
         return a.row - b.row;
     }
 }

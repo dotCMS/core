@@ -60,7 +60,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
-import com.liferay.portlet.admin.ejb.AdminConfigManagerUtil;
 import com.liferay.portlet.admin.model.EmailConfig;
 import com.liferay.portlet.admin.model.UserConfig;
 import com.liferay.util.Encryptor;
@@ -79,8 +78,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import java.util.Map;
 
 /**
  * This manager provides interaction with {@link User} objects in terms of authentication,
@@ -379,7 +377,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
         Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-        String url = UrlStrategyUtil.getURL(company, map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
+        String url = UrlStrategyUtil.getURL(company, Map.of(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
                 (fromAngular) ? UserService.ANGULAR_RESET_PASSWORD_URL_STRATEGY : UserService.DEFAULT_RESET_PASSWORD_URL_STRATEGY);
 
         String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);

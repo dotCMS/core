@@ -1,20 +1,47 @@
-import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    HostBinding,
+    inject,
+    input,
+    output
+} from '@angular/core';
+import { ControlContainer, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DividerModule } from 'primeng/divider';
 
-import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
-import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotSystemTimezone
+} from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+
+import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
+import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
+import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
+import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
+import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
+import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
+import { DotEditContentFileFieldComponent } from '../../fields/dot-edit-content-file-field/dot-edit-content-file-field.component';
+import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
+import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
-import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
+import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
+import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
+import { DotEditContentRelationshipFieldComponent } from '../../fields/dot-edit-content-relationship-field/dot-edit-content-relationship-field.component';
+import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
+import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
+import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
+import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 @Component({
     selector: 'dot-edit-content-field',
-    standalone: true,
     templateUrl: './dot-edit-content-field.component.html',
     styleUrls: ['./dot-edit-content-field.component.scss'],
     viewProviders: [
@@ -25,23 +52,103 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgSwitch,
-        NgSwitchCase,
-        NgIf,
         ReactiveFormsModule,
-        DotEditContentFieldsModule,
-        DotFieldRequiredDirective,
-        BlockEditorModule,
-        DotEditContentBinaryFieldComponent,
-        DotEditContentKeyValueComponent
+        DotEditContentTextAreaComponent,
+        DotEditContentRadioFieldComponent,
+        DotEditContentSelectFieldComponent,
+        DotEditContentTextFieldComponent,
+        DotEditContentCalendarFieldComponent,
+        DotEditContentTagFieldComponent,
+        DotEditContentCheckboxFieldComponent,
+        DotEditContentMultiSelectFieldComponent,
+        DotBinaryFieldWrapperComponent,
+        DotEditContentJsonFieldComponent,
+        DotEditContentCustomFieldComponent,
+        DotEditContentWYSIWYGFieldComponent,
+        DotEditContentHostFolderFieldComponent,
+        DotEditContentCategoryFieldComponent,
+        DotEditContentBlockEditorComponent,
+        DotEditContentKeyValueComponent,
+        DotEditContentWYSIWYGFieldComponent,
+        DotEditContentFileFieldComponent,
+        DotEditContentRelationshipFieldComponent,
+        DividerModule
     ]
 })
 export class DotEditContentFieldComponent {
-    @HostBinding('class') class = 'field';
-    @Input() field!: DotCMSContentTypeField;
-    @Input() contentlet!: DotCMSContentlet;
-    @Input() contentType!: string;
+    readonly #globalStore = inject(GlobalStore);
+    #parentForm = inject(ControlContainer, { skipSelf: true })?.control as FormGroup;
 
+    @HostBinding('class') class = 'field';
+
+    /**
+     * The field.
+     */
+    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+
+    /**
+     * The contentlet.
+     */
+    $contentlet = input<DotCMSContentlet | undefined>(null, { alias: 'contentlet' });
+
+    /**
+     * The content type.
+     */
+    $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
+
+    /**
+     * Event emitted when disabledWYSIWYG changes in any field component.
+     * Emits the updated disabledWYSIWYG array.
+     */
+    disabledWYSIWYGChange = output<string[]>();
+
+    /**
+     * The system timezone from the global store.
+     */
+    $systemTimezone = computed((): DotSystemTimezone | null => {
+        return this.#globalStore.systemConfig()?.systemTimezone ?? null;
+    });
+
+    /**
+     * The field types.
+     */
     readonly fieldTypes = FIELD_TYPES;
-    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
+
+    /**
+     * Event emitted when the binary field value is updated.
+     * @param event
+     */
+    onBinaryFieldValueUpdated(event: { value: string; fileName: string }) {
+        if (!this.shouldAutoFillFields(this.$contentType())) {
+            return;
+        }
+
+        const { fileName } = event;
+
+        const titleControl = this.#parentForm.get('title');
+        const fileNameControl = this.#parentForm.get('fileName');
+
+        // Auto-fill title if exists and is empty
+        if (titleControl && !titleControl.value) {
+            titleControl.setValue(fileName);
+            titleControl.markAsTouched();
+        }
+
+        // Auto-fill fileName if exists and is empty
+        if (fileNameControl && !fileNameControl.value) {
+            fileNameControl.setValue(fileName);
+            fileNameControl.markAsTouched();
+        }
+    }
+
+    /**
+     * Whether to auto-fill the fields.
+     * @param contentType
+     * @returns
+     */
+    private shouldAutoFillFields(contentType: DotCMSContentType | null): boolean {
+        if (!contentType) return false;
+
+        return contentType.baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+    }
 }

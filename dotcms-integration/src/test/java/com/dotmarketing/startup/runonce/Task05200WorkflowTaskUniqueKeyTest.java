@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
@@ -67,7 +68,7 @@ public class Task05200WorkflowTaskUniqueKeyTest {
     }
 
     @Test
-    public void Test_Upgrade_Task_When_Duped_WorkflowTasks_Exists() throws DotDataException {
+    public void Test_Upgrade_Task_When_Duped_WorkflowTasks_Exists() throws DotDataException, DotSecurityException {
 
         removeConstraintIfAny();
 
@@ -155,7 +156,7 @@ public class Task05200WorkflowTaskUniqueKeyTest {
     }
 
     @Test
-    public void Test_Upgrade_Task_When_Duped_With_Null_Languages_WorkflowTasks_Exists() throws DotDataException {
+    public void Test_Upgrade_Task_When_Duped_With_Null_Languages_WorkflowTasks_Exists() throws DotDataException, DotSecurityException {
 
         removeConstraintIfAny();
 

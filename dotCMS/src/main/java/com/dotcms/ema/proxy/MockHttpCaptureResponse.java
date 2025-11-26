@@ -17,16 +17,12 @@ import com.dotcms.mock.response.MockResponse;
  */
 public class MockHttpCaptureResponse extends HttpServletResponseWrapper implements MockResponse {
 
-
-    ByteArrayOutputStream bout = new ByteArrayOutputStream(4096*8);
+    final ByteArrayOutputStream bout = new ByteArrayOutputStream(4096*8);
     ServletOutputStream out = null;
 
     public MockHttpCaptureResponse(HttpServletResponse response) {
         super(response);
-
-
     }
-
 
     @Override
     public HttpServletResponse response() {
@@ -40,18 +36,10 @@ public class MockHttpCaptureResponse extends HttpServletResponseWrapper implemen
             out = new MockServletOutputStream(bout);
         }
         return out;
-
     }
 
     public byte[] getBytes() {
         return bout.toByteArray();
-    }
-
-
-    @Override
-    public PrintWriter getWriter() throws IOException {
-        // TODO Auto-generated method stub
-        return super.getWriter();
     }
 
 }

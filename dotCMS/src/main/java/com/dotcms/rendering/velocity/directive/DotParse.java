@@ -1,13 +1,17 @@
 package com.dotcms.rendering.velocity.directive;
 
-import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import java.io.File;
+import java.io.Serializable;
 import java.io.Writer;
+import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.util.ConversionUtils;
@@ -31,10 +35,12 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import org.apache.velocity.runtime.parser.node.Node;
 
 
 public class DotParse extends DotDirective {
 
+    private final static String RENDER = "render";
     private static final long serialVersionUID = 1L;
 
     private final String hostIndicator = "//";
@@ -190,7 +196,35 @@ public class DotParse extends DotDirective {
         throw new ResourceNotFoundException(errorMessage);
     }
 
+    /**
+     * Call after render the Template, it allow you to do something before the return of
+     * the {@link DotDirective#render(InternalContextAdapter, Writer, Node)}
+     *
+     * @param render    Template content after render
+     * @param arguments
+     * @param context
+     */
+    void afterRender(final String render, String[] arguments, Context context) {
+        if (arguments.length > 1) {
+            try {
+                int ttl = Integer.parseInt(arguments[1]);
+                CacheLocator.getBlockDirectiveCache().add(getTTLCacheKey(arguments), Map.of(RENDER, render), Duration.ofSeconds(ttl));
+            } catch (NumberFormatException e) {
+                Logger.debug(this.getClass(), "Invalid TTL value in dotParse: " + arguments[1]);
+            }
+        }
+    }
 
+    public Optional<String> getFromCache(final String[] arguments) {
+        final  Map<String, Serializable> valueFromCache =
+                CacheLocator.getBlockDirectiveCache().get(getTTLCacheKey(arguments));
+        return UtilMethods.isSet(valueFromCache.get(RENDER)) ? Optional.of(valueFromCache.get(RENDER).toString()) :
+                Optional.empty();
+    }
+
+    private String getTTLCacheKey(String[] arguments) {
+        return getName() + "_" + arguments[0];
+    }
 
     private Optional<Tuple2<Identifier, String>> resolveDotAsset(final RenderParams params,
                     final String templatePath) throws DotDataException, DotSecurityException {
@@ -229,8 +263,6 @@ public class DotParse extends DotDirective {
 
         final Identifier identifier = APILocator.getIdentifierAPI().find(conOpt.get().getIdentifier());
         return Optional.of(Tuple.of(identifier, fieldVar));
-
-
     }
 
     private Optional<Tuple2<Identifier, String>> resolveFileAsset(final RenderParams params,
@@ -251,4 +283,3 @@ public class DotParse extends DotDirective {
     }
 
 }
-

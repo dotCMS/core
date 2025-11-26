@@ -8,9 +8,11 @@ import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.client.push.task.PushTask;
 import com.dotcms.api.client.push.task.PushTaskParams;
+import com.dotcms.api.client.util.ErrorHandlingUtil;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.model.push.PushAnalysisResult;
 import com.dotcms.model.push.PushOptions;
 import io.quarkus.arc.DefaultBean;
@@ -20,13 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
+import picocli.CommandLine.ExitCode;
 
 /**
  * Implementation of the PushService interface for performing push operations.
@@ -40,6 +44,9 @@ public class PushServiceImpl implements PushService {
 
     @Inject
     MapperService mapperService;
+
+    @Inject
+    ErrorHandlingUtil errorHandlerUtil;
 
     @Inject
     FormatStatus formatStatus;
@@ -190,16 +197,19 @@ public class PushServiceImpl implements PushService {
             // (pushAnalysisServiceFuture and animationFuture) have completed.
             CompletableFuture.allOf(pushAnalysisServiceFuture, animationFuture).join();
             analysisResults = pushAnalysisServiceFuture.get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
             var errorMessage = String.format(
                     "Error occurred while analysing push data for [%s]: [%s].",
                     localFileOrFolder.getAbsolutePath(), e.getMessage());
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PushException(errorMessage, e);
+        } catch (ExecutionException | CompletionException e) {
+            var cause = e.getCause();
+            throw errorHandlerUtil.mapPushException(cause);
         }
 
         var summary = new PushAnalysisSummary<>(analysisResults);
-
         return Pair.of(analysisResults, summary);
     }
 
@@ -223,89 +233,132 @@ public class PushServiceImpl implements PushService {
             final PushHandler<T> pushHandler,
             final Map<String, Object> customOptions) {
 
-        var retryAttempts = 0;
+        var maxRetryAttempts = options.maxRetryAttempts();
         var failed = false;
+        var retryAttempts = 0;
+        var errorCode = ExitCode.OK;
 
         do {
 
             if (retryAttempts > 0) {
-                output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts,
-                        options.maxRetryAttempts()));
+                output.info(
+                        String.format(
+                                "%n↺ Retrying push process [%d of %d]...",
+                                retryAttempts,
+                                options.maxRetryAttempts()
+                        )
+                );
             }
 
-            // ConsoleProgressBar instance to handle the push progress bar
-            ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
-            // Calculating the total number of steps
-            progressBar.setTotalSteps(
-                    summary.total
+            var e = processPushAttempt(
+                    analysisResults,
+                    summary,
+                    options,
+                    output,
+                    pushHandler,
+                    customOptions,
+                    retryAttempts
             );
-
-            CompletableFuture<List<Exception>> pushFuture = executor.supplyAsync(
-                    () -> {
-
-                        PushTask<T> task = new PushTask<>(
-                                logger, mapperService, executor
-                        );
-
-                        task.setTaskParams(PushTaskParams.<T>builder().
-                                results(analysisResults).
-                                allowRemove(options.allowRemove()).
-                                disableAutoUpdate(options.disableAutoUpdate()).
-                                failFast(options.failFast()).
-                                customOptions(customOptions).
-                                pushHandler(pushHandler).
-                                progressBar(progressBar).
-                                build()
-                        );
-
-                        return task.compute();
-                    });
-            progressBar.setFuture(pushFuture);
-
-            CompletableFuture<Void> animationFuture = executor.runAsync(
-                    progressBar
-            );
-
-            try {
-
-                // Waits for the completion of both the push process and console progress bar animation tasks.
-                // This line blocks the current thread until both CompletableFuture instances
-                // (pushFuture and animationFuture) have completed.
-                CompletableFuture.allOf(pushFuture, animationFuture).join();
-
-                var errors = pushFuture.get();
-                if (!errors.isEmpty()) {
-
-                    failed = true;
-                    output.info(String.format(
-                            "%n%nFound [@|bold,red %s|@] errors during the push process:",
-                            errors.size()));
-                    long count = errors.stream().filter(PushException.class::isInstance).count();
-                    int c = 0;
-                    for (final var error : errors) {
-                        c++;
-                        output.handleCommandException(error,
-                                String.format("%s %n", error.getMessage()), c >= count);
-                    }
-                }
-
-            } catch (InterruptedException | ExecutionException e) {
-
-                var errorMessage = String.format("Error occurred while pushing contents: [%s].",
-                        e.getMessage());
-                logger.error(errorMessage, e);
-                throw new PushException(errorMessage, e);
-            } catch (Exception e) {// Fail fast
-
+            errorCode = Math.max(errorCode, e);
+            if (errorCode > ExitCode.OK) {
                 failed = true;
-                if (retryAttempts + 1 <= options.maxRetryAttempts()) {
-                    output.info("\n\nFound errors during the push process:");
-                    output.error(e.getMessage());
-                } else {
-                    throw e;
-                }
             }
-        } while (failed && retryAttempts++ < options.maxRetryAttempts());
+
+        } while (failed && retryAttempts++ < maxRetryAttempts);
+        if (errorCode > ExitCode.OK) {
+            //All exceptions are already handled and logged, so we can just throw a generic exception to force exit
+            throw new ForceSilentExitException(errorCode);
+        }
+    }
+
+    /**
+     * Processes the push attempt based on the given analysis results, summary, options, output,
+     * push handler, custom options, and retry attempts. The method handles the push process, the
+     * console progress bar animation, and exception handling.
+     *
+     * @param <T>             The type parameter.
+     * @param analysisResults The list of push analysis results.
+     * @param summary         The push analysis summary.
+     * @param options         The push options.
+     * @param output          The output option mixin.
+     * @param pushHandler     The push handler for handling the push operations.
+     * @param customOptions   The custom options for the push operation that may be used by each
+     *                        push handler implementation.
+     * @param retryAttempts   The number of retry attempts for the push operation.
+     * @return The exit code for the push operation.
+     * @throws PushException If an error occurs during the push operation.
+     */
+    private <T> int processPushAttempt(List<PushAnalysisResult<T>> analysisResults,
+            PushAnalysisSummary<T> summary,
+            final PushOptions options,
+            final OutputOptionMixin output,
+            final PushHandler<T> pushHandler,
+            final Map<String, Object> customOptions,
+            int retryAttempts) {
+
+        // ConsoleProgressBar instance to handle the push progress bar
+        ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
+        // Calculating the total number of steps
+        progressBar.setTotalSteps(
+                summary.total
+        );
+
+        CompletableFuture<List<Exception>> pushFuture = executor.supplyAsync(
+                () -> {
+
+                    PushTask<T> task = new PushTask<>(
+                            logger, mapperService, executor
+                    );
+
+                    task.setTaskParams(PushTaskParams.<T>builder().
+                            results(analysisResults).
+                            allowRemove(options.allowRemove()).
+                            disableAutoUpdate(options.disableAutoUpdate()).
+                            failFast(options.failFast()).
+                            customOptions(customOptions).
+                            pushHandler(pushHandler).
+                            progressBar(progressBar).
+                            build()
+                    );
+
+                    return task.compute().join();
+                });
+        progressBar.setFuture(pushFuture);
+
+        CompletableFuture<Void> animationFuture = executor.runAsync(
+                progressBar
+        );
+
+        try {
+
+            // Waits for the completion of both the push process and console progress bar animation tasks.
+            // This line blocks the current thread until both CompletableFuture instances
+            // (pushFuture and animationFuture) have completed.
+            CompletableFuture.allOf(pushFuture, animationFuture).join();
+
+            var errors = pushFuture.get();
+            return errorHandlerUtil.handlePushExceptions(errors, output);
+
+        } catch (InterruptedException e) {
+
+            var errorMessage = String.format(
+                    "Error occurred while pushing contents: [%s].", e.getMessage()
+            );
+            logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
+            throw new PushException(errorMessage, e);
+        } catch (ExecutionException | CompletionException e) {// Fail fast
+
+            var cause = e.getCause();
+            var toThrow = errorHandlerUtil.handlePushFailFastException(
+                    retryAttempts, options.maxRetryAttempts(), output, cause
+            );
+            if (toThrow.isPresent()) {
+                throw toThrow.get();
+            }
+
+            return ExitCode.SOFTWARE;
+        }
     }
 
     /**

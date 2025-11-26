@@ -42,6 +42,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.File;
@@ -53,12 +54,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Implements a rest endpoints the allows to run javascript code (js).
  * @author jsanca
  */
 @Path("/js")
+@Tag(name = "JavaScript", description = "JavaScript execution and server-side scripting")
 public class JsResource {
 
     public static final String IDENTIFIER = "identifier";
@@ -528,12 +531,12 @@ public class JsResource {
                     .build();
 
             final JavascriptReader javascriptReader = JavascriptReaderFactory.getJavascriptReader(UtilMethods.isSet(folderName));
-            final Map queryParams = uriInfo.getQueryParameters();
-            final Map<String, Object> contextParams = CollectionsUtils.map(
-                    "pathParam", pathParam,
-                    "queryParams", ProxyHashMap.from(queryParams),
-                    "bodyMap",  ProxyHashMap.from(toObjectObjectMap(bodyMap)),
-                    "binaries", ProxyArray.fromList(Arrays.asList(binaries)));
+            final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+            final Map<String, Object> contextParams = new HashMap<>();
+            contextParams.put("pathParam", pathParam);
+            contextParams.put("queryParams", ProxyHashMap.from((Map)queryParams));
+            contextParams.put("bodyMap",  ProxyHashMap.from(toObjectObjectMap(bodyMap)));
+            contextParams.put("binaries", ProxyArray.fromList(Arrays.asList(binaries)));
 
             try(Reader reader = javascriptReader.getJavaScriptReader(javascriptReaderParams)){
                 return evalJavascript(request, response, reader, contextParams,
@@ -550,9 +553,11 @@ public class JsResource {
 
         final  Map<Object, Object> objectObjectMap = new HashMap<>();
 
-        for (final Map.Entry<String, Object> entry : map.entrySet()) {
+        if (Objects.nonNull(map)) {
+            for (final Map.Entry<String, Object> entry : map.entrySet()) {
 
-            objectObjectMap.put(entry.getKey(), entry.getValue());
+                objectObjectMap.put(entry.getKey(), entry.getValue());
+            }
         }
 
         return objectObjectMap;
@@ -561,7 +566,7 @@ public class JsResource {
     private Response evalJavascript(final HttpServletRequest request, final HttpServletResponse response,
                                     final Reader javascriptReader, final Map<String, Object> contextParams,
                                     final User user, final DotJSONCache cache)
-            throws Exception {
+            throws JsException {
 
         final ScriptEngine scriptEngine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
 
@@ -583,7 +588,7 @@ public class JsResource {
             if (e.getCause() instanceof DotToolException) {
 
                 Logger.error(this,"Error evaluating javascript: " + (e.getCause()).getCause().getMessage());
-                throw (Exception) (e.getCause()).getCause();
+                throw new JsException(e.getCause().getCause());
             }
         }
 

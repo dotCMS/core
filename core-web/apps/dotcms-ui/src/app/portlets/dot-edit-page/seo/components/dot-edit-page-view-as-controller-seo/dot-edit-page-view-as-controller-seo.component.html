@@ -1,34 +1,31 @@
-<ng-container *ngIf="isEnterpriseLicense$ | async as isEnterpriseLicense; else language">
+@if (isEnterpriseLicense$ | async; as isEnterpriseLicense) {
     <dot-language-selector
+        (selected)="changeLanguageHandler($event)"
         [pTooltip]="pageState.viewAs.language.language"
         [pageId]="pageState.page.identifier"
         [value]="pageState.viewAs.language"
-        (selected)="changeLanguageHandler($event)"
         appendTo="body"
         tooltipPosition="bottom"
         tooltipStyleClass="dot-language-selector__dialog" />
-
     <dot-persona-selector
-        [disabled]="(dotPageStateService.haveContent$ | async) === false"
-        [pageState]="pageState"
         (delete)="deletePersonalization($event)"
-        (selected)="changePersonaHandler($event)"></dot-persona-selector>
-
-    <p-checkbox
-        class="flex dot-edit__what-changed-button"
-        *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
-        [binary]="true"
-        [label]="'dot.common.whats.changed' | dm"
-        (onChange)="whatschange.emit($event.checked)"></p-checkbox>
-</ng-container>
-
-<ng-template #language>
+        (selected)="changePersonaHandler($event)"
+        [disabled]="(dotPageStateService.haveContent$ | async) === false"
+        [pageState]="pageState" />
+    @if (showWhatsChanged && isEnterpriseLicense$ | async) {
+        <p-checkbox
+            (onChange)="whatschange.emit($event.checked)"
+            [binary]="true"
+            [label]="'dot.common.whats.changed' | dm"
+            class="flex dot-edit__what-changed-button" />
+    }
+} @else {
     <dot-language-selector
+        (selected)="changeLanguageHandler($event)"
         [pageId]="pageState.page.identifier"
         [readonly]="!!variant"
-        [value]="pageState.viewAs.language"
-        (selected)="changeLanguageHandler($event)"></dot-language-selector>
-</ng-template>
+        [value]="pageState.viewAs.language" />
+}
 
 <p-confirmDialog
     [acceptIcon]="null"
@@ -37,10 +34,10 @@
     key="lang-confirm-dialog"
     rejectButtonStyleClass="p-button-outlined" />
 
-@if (showEditJSPDialog()){
-<dot-iframe-dialog
-    [header]="pageState.page.title"
-    [url]="urlEditPageIframeDialog()"
-    (custom)="customIframeDialog($event)"
-    (shutdown)="removeEditJSPDialog()" />
+@if (showEditJSPDialog()) {
+    <dot-iframe-dialog
+        (custom)="customIframeDialog($event)"
+        (shutdown)="removeEditJSPDialog()"
+        [header]="pageState.page.title"
+        [url]="urlEditPageIframeDialog()" />
 }

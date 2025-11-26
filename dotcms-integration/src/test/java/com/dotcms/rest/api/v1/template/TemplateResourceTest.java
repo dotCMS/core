@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.template;
 
-import static com.dotcms.rendering.velocity.directive.ParseContainer.PARSE_CONTAINER_UUID_PREFIX;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -32,7 +31,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -46,17 +44,18 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.junit.Assert;
@@ -1072,6 +1071,49 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: list in the TemplateResource
+     * Given Scenario: Create a template on hostA, and a template on hostB. List templates using the
+     *                  wildcard host as the query param.
+     * ExpectedResult: The endpoint should return 200, and templateA and templateB should be returned
+     */
+    @Test
+    public void test_listTemplate_filterByHost_usingWildcardHost()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final Host newHostB = new SiteDataGen().nextPersisted();
+
+        //Create templates in two different sites
+        final Template templateA = APILocator.getTemplateAPI()
+                .saveTemplate(new TemplateDataGen().title(title).next(), newHostA, adminUser,
+                        false);
+        final Template templateB = APILocator.getTemplateAPI()
+                .saveTemplate(new TemplateDataGen().title(title).next(), newHostB, adminUser,
+                        false);
+
+        //Call Resource
+        final Response responseResource = resource.list(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response, title, 0, 40,
+                "mod_date", "DESC",
+                StringPool.STAR, false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(
+                responseResource.getEntity());
+        final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(
+                responseEntityView.getEntity());
+        final PaginatedArrayList paginatedArrayListWihoutSystemTemplate = removeSystemTemplate(
+                paginatedArrayList);
+        Assert.assertEquals(2, paginatedArrayListWihoutSystemTemplate.size());
+        paginatedArrayListWihoutSystemTemplate.stream().anyMatch(
+                templateView -> ((TemplateView) templateView).getIdentifier()
+                        .equals(templateA.getIdentifier()));
+        paginatedArrayListWihoutSystemTemplate.stream().anyMatch(
+                templateView -> ((TemplateView) templateView).getIdentifier()
+                        .equals(templateB.getIdentifier()));
+    }
+
+    /**
+     * Method to test: list in the TemplateResource
      * Given Scenario: Create 2 templates, and a limited user. Give READ Permissions to one template to
      *                  the limited user. Get All the templates that the user can READ.
      * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
@@ -1240,7 +1282,6 @@ public class TemplateResourceTest {
                 templateFromDaBaseBeforeUpdate.getDrawedBody());
         assertTrue(templateLayoutBeforeUpdate.existsContainer(container, uuid));
 
-        //Thread.sleep(10000);
         templateResource.save(request, response, templateForm);
 
         final Template templateFromDaBaseAfterUpdate = APILocator.getTemplateAPI()
@@ -1250,13 +1291,8 @@ public class TemplateResourceTest {
                 templateFromDaBaseAfterUpdate.getDrawedBody());
         assertTrue(templateLayoutAfterUpdate.existsContainer(container, "1"));
 
-        System.out.println("SECOND TIME------------------------");
-
         final String pageHtml_2 = APILocator.getHTMLPageAssetRenderedAPI()
                 .getPageHtml(pageContext, request, response);
         assertTrue(pageHtml_2.contains("<div>Testing</div>"));
-
-
-
     }
 }

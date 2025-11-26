@@ -16,9 +16,9 @@ import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
 import {
+    DotExperimentsService,
     DotHttpErrorManagerService,
-    DotMessageService,
-    DotSessionStorageService
+    DotMessageService
 } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
@@ -27,7 +27,6 @@ import {
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -77,7 +76,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     let dotExperimentsService: SpyObject<DotExperimentsService>;
     let router: Router;
 
-    let dotSessionStorageService: DotSessionStorageService;
     let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
@@ -97,7 +95,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotSessionStorageService),
             mockProvider(Router)
         ]
     });
@@ -112,7 +109,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
         router = spectator.inject(Router);
 
-        dotSessionStorageService = spectator.inject(DotSessionStorageService);
         confirmationService = spectator.inject(ConfirmationService);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
@@ -247,7 +243,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should goToEditPage emit a variant and mode(preview) when View button is clicked', () => {
             spectator.click(byTestId('variant-preview-button'));
 
-            expect(dotSessionStorageService.setVariationId).toHaveBeenCalledWith(variants[0].id);
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParams: {
                     mode: DotPageMode.PREVIEW,
@@ -261,7 +256,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
             spectator.click(byTestId('variant-edit-button'));
 
-            expect(dotSessionStorageService.setVariationId).toHaveBeenCalledWith(variants[1].id);
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParams: {
                     mode: DotPageMode.EDIT,

@@ -11,6 +11,7 @@ import {
     Host,
     h
 } from '@stencil/core';
+
 import {
     DotFieldStatusClasses,
     DotFieldStatusEvent,
@@ -72,7 +73,7 @@ export class DotDateComponent {
     step = '1';
 
     @State() classNames: DotFieldStatusClasses;
-    @State() errorMessageElement: JSX.Element;
+    @State() errorMessageElement: any;
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
@@ -172,7 +173,7 @@ export class DotDateComponent {
     }
 
     private getErrorMessage(statusEvent: DotInputCalendarStatusEvent): string {
-        return !!this.value
+        return this.value
             ? statusEvent.isValidRange
                 ? ''
                 : this.validationMessage

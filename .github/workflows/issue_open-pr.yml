@@ -1,0 +1,17 @@
+name: PR opened
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  add-issue-to-pr:
+    name: Add Issue to PR
+    uses: ./.github/workflows/issue_comp_link-issue-to-pr.yml
+    with:
+      pr_branch: ${{ github.head_ref }}
+      pr_url: ${{ github.event.pull_request.html_url }}
+      pr_title: ${{ github.event.pull_request.title }}
+      pr_body: ${{ github.event.pull_request.body }}
+      pr_author: ${{ github.event.pull_request.user.login }}
+      pr_merged: ${{ github.event.pull_request.merged }}

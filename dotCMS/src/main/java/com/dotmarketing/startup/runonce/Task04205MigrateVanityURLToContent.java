@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.UserAPI;
@@ -12,6 +10,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -280,7 +279,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             newURL = url;
         }
 
-        return map("siteId", hostId, "uri", newURL);
+        return Map.of("siteId", hostId, "uri", newURL);
     }
 
     /**

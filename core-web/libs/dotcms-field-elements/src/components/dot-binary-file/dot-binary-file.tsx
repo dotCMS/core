@@ -11,6 +11,8 @@ import {
     Host,
     h
 } from '@stencil/core';
+
+import { Components } from '../../components';
 import {
     DotBinaryFileEvent,
     DotBinaryMessageError,
@@ -28,8 +30,8 @@ import {
     updateStatus
 } from '../../utils';
 
-import { Components } from '../../components';
 import DotBinaryTextField = Components.DotBinaryTextField;
+
 import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-form/utils';
 
 /**
@@ -176,7 +178,7 @@ export class DotBinaryFileComponent {
     @Watch('accept')
     optionsWatch(): void {
         this.accept = checkProp<DotBinaryFileComponent, string>(this, 'accept');
-        this.allowedFileTypes = !!this.accept ? this.accept.split(',') : [];
+        this.allowedFileTypes = this.accept ? this.accept.split(',') : [];
         this.allowedFileTypes = this.allowedFileTypes.map((fileType: string) => fileType.trim());
     }
 
@@ -235,8 +237,7 @@ export class DotBinaryFileComponent {
                     label={this.label}
                     required={this.required}
                     name={this.name}
-                    tabindex="0"
-                >
+                    tabindex="0">
                     {this.previewImageName ? (
                         <dot-binary-file-preview
                             onClick={(e: MouseEvent) => {

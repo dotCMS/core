@@ -4,6 +4,7 @@
 
 :host {
     display: block;
+    font-size: $font-size-md;
 
     &.dot-nav-item__collapsed {
         position: relative;
@@ -20,7 +21,9 @@
                 position: absolute;
                 top: 0;
                 transform: translateY(0);
-                transition: opacity $basic-speed ease, transform $basic-speed ease;
+                transition:
+                    opacity $basic-speed ease,
+                    transform $basic-speed ease;
                 z-index: 9999;
             }
         }
@@ -66,13 +69,28 @@
 
 .dot-nav__item {
     align-items: center;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
     min-height: $navigation-item-height;
-    padding: 14px 22px 13px 25px; // top and bottom padding to get min 48px height
     position: relative;
     transition: background-color $basic-speed ease;
     width: $navigation-width;
+}
+
+.dot-nav__item-main {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    padding: $spacing-3 0 $spacing-2 $spacing-4;
+}
+
+.dot-nav__item-toggle {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    padding: $spacing-3 $spacing-4 $spacing-2 0;
+    position: relative;
 }
 
 .dot-nav__item-label {

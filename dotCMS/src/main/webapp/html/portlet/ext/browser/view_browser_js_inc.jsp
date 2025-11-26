@@ -19,6 +19,23 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 %>
 
+<style type="text/css" media="all">
+    .nameTD {
+        max-width: 200px;
+        overflow: hidden;
+    }
+    .nameTD .assetRef {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .nameTD .assetName {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
@@ -190,7 +207,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         } else {
             showDebugMessage('contentAreaRefMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "left-click-over-content-area")) %>');
             //executeChangeName();
-            //executeChangeShowOnMenu();
         }
         return false;
     }
@@ -235,19 +251,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function showOnMenuKeyHandler(e) {
-        var inode = getInodeFromID(Event.element(e).id);
-        if (document.layers)
-            Key = e.which;
-        else
-            Key = e.keyCode;
-        showDebugMessage('showOnMenuKeyHandler: inode = ' + inode + ', key = ' + Key);
-        if (Key == 13) {
-            executeChangeShowOnMenu ();
-        }
-        if (Key == 27)
-            cancelChangeContentShowOnMenu ();
-    }
+
 
     function contentNameDIVClicked(e)
     {
@@ -257,21 +261,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         return false;
     }
 
-    function contentShowOnMenuClicked(e)
-    {
-        var inode = getInodeFromID(Event.element(e).id);
-        showDebugMessage('contentShowOnMenuClicked: inode = ' + inode +
-            ', selectedContent = ' + selectedContent);
-        if(inode == selectedContent) {
-            enableChangeContentShowOnMenu (inode);
-        }
-        if (changingShowOnMenuTo != inode) {
-            showDebugMessage('contentShowOnMenuClicked: executing executeChangeShowOnMenu,  ' +
-                ' inode = ' + inode +
-                ', changingShowOnMenuTo = ' + changingShowOnMenuTo);
-            executeChangeShowOnMenu();
-        }
-    }
+
 
     function contentTRMouseUp(e) {
         var inode = getInodeFromID(Event.element(e).id);
@@ -305,11 +295,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 addClass(tr, 'contentRowSelected');
                 selectedContent = inode;
             }
-            if (changingShowOnMenuTo != inode) {
-                showDebugMessage('contentTRMouseUp: inode = ' + inode +
-                    ', changingShowOnMenuTo = ' + changingShowOnMenuTo);
-                executeChangeShowOnMenu();
-            }
+
         }
         return false;
     }
@@ -321,7 +307,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var inode = getInodeFromID(Event.element(e).id);
 
         showDebugMessage('contentTRDoubleClicked: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Double-click-over")) %>: ' + inode);
-        executeChangeShowOnMenu();
         if (inodes[inode].type == 'folder') {
             showDebugMessage(DWRUtil.toDescriptiveString(inodes[inode], 2));
             openFolder(inode);
@@ -720,7 +705,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             if($(asset.inode + '-DIV') != null)
             {
                 Event.stopObserving(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                Event.stopObserving(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.stopObserving(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.stopObserving(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.stopObserving(asset.inode + '-TR', 'mouseout', mouseOutContent);
@@ -777,7 +761,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
                     '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                     '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                    '        &nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + shortenString(asset.name, 30) + '</span>\n' +
+                    '        <span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + asset.name + '</span>\n' +
                     '    </a>\n' +
                     '    </td>\n' +
                     '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -800,7 +784,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
                 //Attaching events
                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
@@ -851,8 +834,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 var assetFullName = name;
 
                 //processing asset description and name to avoid long words that break the column width
-                name = shortenLongWords(name, 30)
-                name = shortenString(name, 30)
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
@@ -869,7 +850,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                         '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -879,7 +860,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
                         '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span style="pointer-events: none" class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -915,7 +896,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
                 //Attaching events
                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
@@ -1096,83 +1076,12 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function enableChangeContentShowOnMenu (inode) {
-        if (changingShowOnMenuTo != inode) {
-            executeChangeShowOnMenu (changingShowOnMenuTo);
-            var currentValue = $(inode + '-ShowOnMenuSPAN').innerHTML.replace(/\s/g,'').replace(/&nbsp;/g,'');
-            lastShowOnMenu = currentValue;
-            showDebugMessage('enableChangeContentShowOnMenu lastShowOnMenu: \'' + lastShowOnMenu + '\', currentValue: \'' + currentValue + '\'');
 
-            $(inode + '-ShowOnMenuSPAN').innerHTML = '<input style="width:19px; text-align:center;" type="text" id="' + inode + '-ShowOnMenuText" ' +
-                'onBlur="executeChangeShowOnMenu ()" ' +
-                'value="'+currentValue+'"/>';
-            $(inode + '-ShowOnMenuText').focus();
-            $(inode + '-ShowOnMenuText').select();
 
-            Event.observe(inode + '-ShowOnMenuText', 'keypress', showOnMenuKeyHandler);
-        }
-        changingShowOnMenuTo = inode;
-        showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Enabling-show-on-menu-edit-on")) %>: ' + inode);
-    }
 
-    function cancelChangeContentShowOnMenu () {
 
-        if ($(changingShowOnMenuTo + '-ShowOnMenuSPAN') != null) {
-            var value = lastShowOnMenu;
-            if (value == '') value = '&nbsp;&nbsp;&nbsp;';
-            $(changingShowOnMenuTo + '-ShowOnMenuSPAN').innerHTML = value;
-        }
 
-        changingShowOnMenuTo = null;
-    }
 
-    function executeChangeShowOnMenu () {
-        if (changingShowOnMenuTo != null) {
-            var rawNewValue = $(changingShowOnMenuTo + '-ShowOnMenuText').value.replace(/\s/g,'');
-            var newValue = rawNewValue;
-            if(newValue != '' && isNaN(parseInt(newValue))) {
-                showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-value")) %>:');
-                $(changingShowOnMenuTo + '-ShowOnMenuSPAN').innerHTML = lastShowOnMenu;
-                return;
-            }
-
-            if (newValue == '')
-                newValue = '-1';
-
-            showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Change-show-on-menu ")) %> lastShowOnMenu: \'' + lastShowOnMenu + '\', newValue: \'' + newValue + '\'');
-            if (lastShowOnMenu != rawNewValue) {
-                showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Change-show-on-menu ")) %> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "To")) %>: ' + changingShowOnMenuTo + ', <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "to-be")) %>: ' + $(changingShowOnMenuTo + '-ShowOnMenuText').value);
-                BrowserAjax.changeAssetMenuOrder (changingShowOnMenuTo, newValue, executeChangeShowOnMenuCallBack);
-            } else {
-                showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Change-show-on-menu")) %><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "on12")) %>: ' + changingShowOnMenuTo + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "hasnt-changed")) %>');
-            }
-
-            if (newValue == null || newValue == '' || newValue == '-1' || newValue.length == 0) { newValue = '&nbsp;&nbsp;&nbsp;'; }
-            showDebugMessage('executeChangeShowOnMenu newValue: \'' + newValue + '\'');
-            $(changingShowOnMenuTo + '-ShowOnMenuSPAN').innerHTML = newValue;
-            changingShowOnMenuTo = null;
-        }
-        lastShowOnMenu = null;
-    }
-
-    function executeChangeShowOnMenuCallBack (data) {
-
-        var inode = data.inode;
-        var lastValue = data.lastName;
-        var newValue = data.newName;
-
-        showDebugMessage('result: ' + data.result);
-
-        if (data.result == 0) {
-            showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Value-change")) %>');
-        } else {
-            showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Value-change-failed")) %>');
-            var value = lastValue;
-            if (value == '') value = '&nbsp;&nbsp;&nbsp;';
-            $(inode + '-ShowOnMenuSPAN').innerHTML = value;
-        }
-
-    }
 
     function markForCut (objId, parentId, referer) {
         if ($(markedForCopy + '-TR') != null) {
@@ -1689,6 +1598,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function createContentlet(url, contentType) {
+        url = url + "&lang=" + selectedLang;
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",

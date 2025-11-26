@@ -1,9 +1,10 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotPage,
     DotPageContainer,
@@ -14,9 +15,9 @@ import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-te
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 
 describe('DotContainerContentletService', () => {
-    let injector: TestBed;
     let dotContainerContentletService: DotContainerContentletService;
     let httpMock: HttpTestingController;
+    let dotSessionStorageService: DotSessionStorageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -27,9 +28,9 @@ describe('DotContainerContentletService', () => {
                 DotSessionStorageService
             ]
         });
-        injector = getTestBed();
-        dotContainerContentletService = injector.get(DotContainerContentletService);
-        httpMock = injector.get(HttpTestingController);
+        dotContainerContentletService = TestBed.inject(DotContainerContentletService);
+        httpMock = TestBed.inject(HttpTestingController);
+        dotSessionStorageService = TestBed.inject(DotSessionStorageService);
     });
 
     it('should do a request for get the contentlet html code', () => {
@@ -80,7 +81,7 @@ describe('DotContainerContentletService', () => {
 
         const form: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
-            clazz: 'clazz',
+            clazz: DotCMSClazzes.TEXT,
             defaultType: true,
             fixed: true,
             folder: 'folder',
@@ -97,7 +98,8 @@ describe('DotContainerContentletService', () => {
     });
 
     it('should do a request for get the contentlet html code in a specific variant', () => {
-        window.sessionStorage.setItem('variantName', 'Testing');
+        // Mock the DotSessionStorageService to return the Testing variant
+        jest.spyOn(dotSessionStorageService, 'getVariationId').mockReturnValue('Testing');
 
         const pageContainer: DotPageContainer = {
             identifier: '1',
@@ -139,6 +141,6 @@ describe('DotContainerContentletService', () => {
 
     afterEach(() => {
         httpMock.verify();
-        window.sessionStorage.removeItem('variantName');
+        jest.clearAllMocks();
     });
 });

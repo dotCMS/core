@@ -1,6 +1,7 @@
 .view-roles,
 .view-roles .portlet-sidebar {
     height: 100%;
+    overflow: auto;
 }
 
 .view-roles {
@@ -31,7 +32,8 @@
 }
 
 .view-roles__tree {
-    height: 100%;
+    height: auto;
+    padding-bottom: $spacing-2;
 }
 
 .view-roles__tabs,
@@ -70,7 +72,7 @@
 
 .nameText {
     align-self: center;
-    font-size: $font-size-lg;
+    font-size: $font-size-lmd;
     font-weight: normal;
 }
 

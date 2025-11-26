@@ -1,74 +1,82 @@
-import { Observable, of } from 'rxjs';
-
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    OnInit,
+    signal
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { catchError, map, shareReplay, tap } from 'rxjs/operators';
-
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
+const UNIQUE_CLASSES = true;
+
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
-    standalone: true,
-    imports: [
-        AutoCompleteModule,
-        FormsModule,
-        ButtonModule,
-        DotMessagePipe,
-        NgIf,
-        AsyncPipe,
-        DotSelectItemDirective
-    ],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddStyleClassesDialogComponent implements OnInit {
-    @ViewChild(AutoComplete) autoComplete: AutoComplete;
-    filteredSuggestions = null;
-    selectedClasses: string[] = [];
+    /**
+     * Service to get the classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    readonly #jsonClassesService = inject(JsonClassesService);
+    /**
+     * Dialog reference
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #dynamicDialogConfig = inject(DynamicDialogConfig<{ selectedClasses: string[] }>);
+    /**
+     * Selected classes to be added
+     * @memberof AddStyleClassesDialogComponent
+     */
+    $selectedClasses = signal<string[]>([]);
+    /**
+     * Check if the JSON file has classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    $classes = toSignal(this.#jsonClassesService.getClasses(), {
+        initialValue: []
+    });
+    /**
+     * Filtered suggestions based on the query
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    $filteredSuggestions = signal<string[]>(this.$classes());
 
-    isJsonClasses$: Observable<boolean>;
-    classes: string[];
+    /**
+     * Check if the JSON file has classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
+    $hasClasses = computed(() => this.$classes().length > 0);
 
-    constructor(
-        private jsonClassesService: JsonClassesService,
-        public dynamicDialogConfig: DynamicDialogConfig<{
-            selectedClasses: string[];
-        }>,
-        private ref: DynamicDialogRef
-    ) {}
+    protected readonly UNIQUE_CLASSES = UNIQUE_CLASSES;
 
+    /**
+     * Set the selected classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     ngOnInit() {
-        const { selectedClasses } = this.dynamicDialogConfig.data;
-        this.selectedClasses = selectedClasses;
-
-        this.isJsonClasses$ = this.jsonClassesService.getClasses().pipe(
-            tap(({ classes }) => {
-                if (classes?.length) {
-                    this.classes = classes;
-                } else {
-                    this.classes = [];
-                }
-            }),
-            map(({ classes }) => {
-                return !!classes?.length;
-            }),
-            catchError(() => {
-                this.classes = [];
-
-                return of(false);
-            }),
-            shareReplay(1)
-        );
+        this.$selectedClasses.set(this.#dynamicDialogConfig?.data?.selectedClasses || []);
     }
 
     /**
@@ -78,15 +86,14 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @return {*}
      * @memberof AddStyleClassesDialogComponent
      */
-    filterClasses({ query }: { query: string }): void {
+    filterClasses({ query }: AutoCompleteCompleteEvent): void {
         /*
-            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L739
-
+            https://github.com/primefaces/primeng/blob/master/src/app/components/autocomplete/autocomplete.ts#L541
             Sadly we need to pass suggestions all the time, even if they are empty because on the set is where the primeng remove the loading icon
         */
-
-        // PrimeNG autocomplete doesn't support async pipe in the suggestions
-        this.filteredSuggestions = this.classes.filter((item) => item.includes(query));
+        const classes = this.$classes();
+        const filteredClasses = query ? classes.filter((item) => item.includes(query)) : classes;
+        this.$filteredSuggestions.set([...filteredClasses]);
     }
 
     /**
@@ -95,6 +102,26 @@ export class AddStyleClassesDialogComponent implements OnInit {
      * @memberof AddStyleClassesDialogComponent
      */
     save() {
-        this.ref.close(this.selectedClasses);
+        this.#dialogRef.close(this.$selectedClasses());
+    }
+
+    /**
+     * Add the current input value to selected classes when Enter is pressed
+     *
+     * @param {Event} event
+     * @memberof AddStyleClassesDialogComponent
+     */
+    onEnterKey(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value) {
+            const currentClasses = this.$selectedClasses();
+            if (!UNIQUE_CLASSES || !currentClasses.includes(value)) {
+                this.$selectedClasses.update((classes) => [...classes, value]);
+            }
+
+            input.value = '';
+        }
     }
 }

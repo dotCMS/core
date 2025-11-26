@@ -1,16 +1,132 @@
+@use "sass:map";
 @use "variables" as *;
 @import "mixins";
 
-$chip-height-sm: 1.5rem; // 24px
-$chip-height-md: 2.5rem; // 40px
+$colors: (
+    primary: (
+        shade: (
+            color: $color-palette-primary-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-primary,
+            contrast: $white
+        ),
+        tint: (
+            color: $color-palette-primary-tint,
+            contrast: $color-palette-primary-shade
+        )
+    ),
+    blue: (
+        shade: (
+            color: $color-palette-primary-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-primary,
+            contrast: $white
+        ),
+        tint: (
+            color: $color-palette-primary-tint,
+            contrast: $color-palette-primary-shade
+        )
+    ),
+    secondary: (
+        shade: (
+            color: $color-palette-purple-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-purple,
+            contrast: $white
+        ),
+        tint: (
+            color: $color-palette-purple-tint,
+            contrast: $color-palette-purple-shade
+        )
+    ),
+    success: (
+        shade: (
+            color: $color-palette-green-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-green,
+            contrast: $color-palette-gray-900
+        ),
+        tint: (
+            color: $color-palette-green-tint,
+            contrast: $color-palette-green-shade
+        )
+    ),
+    warning: (
+        shade: (
+            color: $color-palette-yellow-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-yellow,
+            contrast: $color-palette-gray-900
+        ),
+        tint: (
+            color: $color-palette-yellow-tint,
+            contrast: $color-palette-yellow-shade
+        )
+    ),
+    error: (
+        shade: (
+            color: $color-palette-red-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-red,
+            contrast: $white
+        ),
+        tint: (
+            color: $color-palette-red-tint,
+            contrast: $color-palette-red-shade
+        )
+    ),
+    gray: (
+        shade: (
+            color: $color-palette-gray-shade,
+            contrast: $color-palette-gray-900
+        ),
+        base: (
+            color: $color-palette-gray-300,
+            contrast: $color-palette-gray-900
+        ),
+        tint: (
+            color: $color-palette-gray-op-15,
+            contrast: $color-palette-gray-900
+        )
+    ),
+    pink: (
+        shade: (
+            color: $color-palette-fuchsia-shade,
+            contrast: $white
+        ),
+        base: (
+            color: $color-palette-fuchsia,
+            contrast: $white
+        ),
+        tint: (
+            color: $color-palette-fuchsia-tint,
+            contrast: $color-palette-fuchsia-shade
+        )
+    )
+);
 
 p-chip .p-chip {
-    background-color: $color-accessible-text-blue-bg;
-    color: $color-accessible-text-blue;
+    border-color: $color-palette-primary-tint;
+    background-color: $color-palette-primary-tint;
+    color: $color-palette-primary-shade;
     border-radius: $border-radius-md;
+    border-width: 1px;
+    border-style: solid;
     padding: 0 $spacing-1;
-    height: $chip-height-md;
     gap: $spacing-1;
+    height: $field-height-md;
 
     .p-chip-icon,
     .pi-chip-remove-icon {
@@ -24,48 +140,89 @@ p-chip .p-chip {
         }
     }
 
-    &.p-chip-image {
-        // Not implemented
+    &.p-chip-outlined {
+        border-color: $color-palette-primary-shade;
+        background-color: $white;
+        color: $color-palette-primary-shade;
     }
 
-    &.p-chip-secondary {
-        background-color: $color-accessible-text-purple-bg;
-        color: $color-accessible-text-purple;
+    &.p-chip-filled {
+        border-color: $color-palette-primary;
+        background-color: $color-palette-primary;
+        color: $white;
     }
 
-    &.p-chip-warning {
-        background-color: $color-accessible-text-yellow-bg;
-        color: $color-accessible-text-yellow;
+    &.p-chip-dashed {
+        border-style: dashed;
+        background-color: $white;
+        border-color: $color-palette-primary-shade;
+        color: $color-palette-primary-shade;
     }
 
-    &.p-chip-success {
-        background-color: $color-accessible-text-green-bg;
-        color: $color-accessible-text-green;
+    // Severity
+
+    @each $color-name, $value in $colors {
+        &.p-chip-#{$color-name} {
+            background-color: #{map.get($value, tint, color)};
+            color: #{map.get($value, tint, contrast)};
+            border-color: #{map.get($value, tint, color)};
+            &.p-chip-outlined {
+                background-color: $white;
+                color: #{map.get($value, shade, color)};
+                border-color: #{map.get($value, shade, color)};
+            }
+            &.p-chip-dashed {
+                border-style: dashed;
+                background-color: $white;
+                border-color: #{map.get($value, shade, color)};
+            }
+            &.p-chip-filled {
+                background-color: #{map.get($value, base, color)};
+                color: #{map.get($value, base, contrast)};
+                border-color: #{map.get($value, base, color)};
+            }
+        }
     }
 
-    &.p-chip-error {
-        background-color: $color-accessible-text-red-bg;
-        color: $color-accessible-text-red;
-    }
+    // Severity Exceptions
 
     &.p-chip-gray {
-        background-color: $color-accessible-text-gray-bg;
-        color: $color-accessible-text-gray;
+        &.p-chip-outlined {
+            color: $color-palette-gray-900;
+        }
+
+        &.p-chip-dashed {
+            border-color: $color-palette-gray-500;
+        }
     }
 
-    &.p-chip-pink {
-        background: $color-alert-fuchsia;
-        color: $color-accessible-text-fuchsia;
+    &.p-chip-white {
+        border-color: $white;
+        background-color: $white;
+        color: $color-palette-gray-900;
     }
+
+    // Sizes
 
     &.p-chip-sm {
         gap: $spacing-0;
         padding: 0 $spacing-1;
         border-radius: $border-radius-sm;
-        height: $chip-height-sm;
+        font-size: $font-size-sm;
+        height: $font-size-xl;
 
         .p-chip-text {
-            font-size: $icon-sm;
+            font-size: $font-size-sm;
+        }
+    }
+
+    &.p-chip-lg {
+        height: $field-height-lg;
+        border-radius: $border-radius-lg;
+        font-size: $font-size-lmd;
+
+        .p-chip-text {
+            font-size: $font-size-lmd;
         }
     }
 

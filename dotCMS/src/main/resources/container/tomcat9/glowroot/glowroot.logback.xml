@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration>
+
+  <!-- to edit this file, copy it to the glowroot folder (where glowroot.jar resides),
+    keeping the same file name (glowroot.logback.xml), and glowroot will find it and use it instead
+    of the glowroot.logback.xml configuration file that is inside glowroot.jar -->
+
+  <appender name="CONSOLE" class="org.glowroot.agent.shaded.ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+    <!-- to use logstash encoder, comment out the encoder above, and uncomment the encoder below -->
+    <!--
+    <encoder class="org.glowroot.agent.shaded.net.logstash.logback.encoder.LogstashEncoder" />
+    -->
+</appender>
+
+  <logger name="org.glowroot.agent.shaded" level="error" />
+  <logger name="org.glowroot.agent.embedded.shaded" level="error" />
+  <!-- this is to deal with "Sending GOAWAY failed" that occur when connection to central fails
+    (which is already logged more nicely by DownstreamServiceObserver) -->
+  <logger name="org.glowroot.agent.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler"
+    level="off" />
+  <root level="error">
+    <appender-ref ref="CONSOLE" />
+    <!--<appender-ref ref="FILE" />-->
+  </root>
+
+  <!-- unfortunately, cannot use logback/janino conditional to enable auditing in agent
+    due to https://github.com/qos-ch/logback/pull/291 -->
+
+  <!-- to enable auditing (step 1 of 2): comment out the line below -->
+
+  <logger name="audit" level="off" />
+
+  <!-- to enable auditing (step 2 of 2): uncomment the lines below -->
+
+  <!--
+  <appender name="AUDIT" class="org.glowroot.agent.shaded.ch.qos.logback.core.rolling.RollingFileAppender">
+    <rollingPolicy class="org.glowroot.agent.shaded.ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${glowroot.log.dir}/glowroot-audit.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <logger name="audit" level="info" additivity="false">
+    <appender-ref ref="AUDIT" />
+  </logger>
+  -->
+
+</configuration>

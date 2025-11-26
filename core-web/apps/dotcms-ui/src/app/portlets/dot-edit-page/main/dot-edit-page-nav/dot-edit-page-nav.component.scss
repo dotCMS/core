@@ -38,7 +38,7 @@ $nav-size: 80px;
     color: $color-palette-gray-800;
     display: flex;
     flex-direction: column;
-    font-size: 11px;
+    font-size: $font-size-xs;
     height: $nav-size;
     justify-content: center;
     text-decoration: none;
@@ -54,7 +54,7 @@ $nav-size: 80px;
     }
 
     & > .fa {
-        font-size: 1.25em;
+        font-size: $font-size-sm;
         margin-bottom: 8px;
     }
 

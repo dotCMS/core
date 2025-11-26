@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.attributes.CustomAttributeCache;
+import com.dotcms.analytics.attributes.CustomAttributeCacheImpl;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -15,6 +17,8 @@ import com.dotcms.experiments.business.ExperimentsCache;
 import com.dotcms.experiments.business.ExperimentsCacheImpl;
 import com.dotcms.graphql.GraphQLCache;
 import com.dotcms.graphql.business.GraphQLSchemaCache;
+import com.dotcms.jobs.business.job.JobCache;
+import com.dotcms.jobs.business.job.JobCacheImpl;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -229,10 +233,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (BlockDirectiveCache)getInstance(CacheIndex.Block_Directive);
 	}
 
-	public static BlockPageCache getBlockPageCache() {
-		return (BlockPageCache) getInstance(CacheIndex.Block_Page);
+    public static StaticPageCache getBlockPageCache() {
+        return getStaticPageCache();
 	}
 
+    public static StaticPageCache getStaticPageCache() {
+        return (StaticPageCache) getInstance(CacheIndex.Block_Page);
+    }
 	public static VersionableCache getVersionableCache() {
 		return (VersionableCache)getInstance(CacheIndex.Versionable);
 	}
@@ -365,6 +372,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the {@link JobCache} singleton cache.
+	 */
+	public static JobCache getJobCache() {
+		return (JobCache) getInstance(CacheIndex.JOB_CACHE);
+	}
+
+	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -392,6 +406,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 		return serviceRef;
 	 }
+
+	public static CustomAttributeCache getAnalyticsCustomAttributeCache() {
+		return (CustomAttributeCache) getInstance(CacheIndex.ANALYTICS_CUSTOMATTRIBUTE_CACHE);
+	}
 
 
 	@Override
@@ -476,8 +494,9 @@ enum CacheIndex
 	VariantCache("VariantCache"),
 	EXPERIMENTS_CACHE("ExperimentsCache"),
 	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
-
-	Javascript("Javascript");
+	Javascript("Javascript"),
+	JOB_CACHE("JobCache"),
+	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache");
 
 	Cachable create() {
 		switch(this) {
@@ -505,7 +524,8 @@ enum CacheIndex
 	      	case Identifier : return new IdentifierCacheImpl();
 	      	case HostVariables : return new HostVariablesCacheImpl();
 	      	case Block_Directive : return new BlockDirectiveCacheImpl();
-	      	case Block_Page : return new BlockPageCacheImpl();
+            case Block_Page:
+                return new StaticPageCacheImpl();
 	      	case Versionable : return new VersionableCacheImpl();
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
@@ -533,7 +553,8 @@ enum CacheIndex
 			case EXPERIMENTS_CACHE: return new ExperimentsCacheImpl();
 			case CHAINABLE_404_STORAGE_CACHE: return new Chainable404StorageCache();
 			case Javascript: return new JsCache();
-
+			case JOB_CACHE: return new JobCacheImpl();
+			case ANALYTICS_CUSTOMATTRIBUTE_CACHE: return new CustomAttributeCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

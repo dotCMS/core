@@ -1,55 +1,66 @@
-version: '3.5'
-
-networks:
-  db_net:
-  opensearch-net:
-
-volumes:
-  cms-shared:
-  dbdata:
-  opensearch-data:
-
 services:
-  opensearch:
-    image: opensearchproject/opensearch:1.3.6
+  db:
+    image: pgvector/pgvector:pg16
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
-      - cluster.name=elastic-cluster
-      - discovery.type=single-node
-      - data
-      - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xmx1G "
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:1
+    environment:
+      cluster.name: "elastic-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
     ulimits:
       memlock:
-        soft: -1 # Set memlock to unlimited (no soft or hard limit)
+        soft: -1
         hard: -1
       nofile:
-        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        soft: 65536
         hard: 65536
     ports:
-      - 9200:9200
-      - 9600:9600
+      - "9200:9200"
+      - "9600:9600"
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     networks:
       - opensearch-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
 
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        CMS_JAVA_OPTS: '-Xmx1g '
-        LANG: 'C.UTF-8'
-        TZ: 'UTC'
-        DB_BASE_URL: "jdbc:postgresql://db/dotcms"
-        DB_USERNAME: 'dotcmsdbuser'
-        DB_PASSWORD: 'password'
-        DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
-        DOT_ES_ENDPOINTS: 'https://opensearch:9200'
-        DOT_INITIAL_ADMIN_PASSWORD: 'admin'
-        DOT_DOTCMS_CLUSTER_ID:  'dotcms-production'
-        CUSTOM_STARTER_URL: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220713/starter-20220713.zip
+      CMS_JAVA_OPTS: '-Xmx1g '
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
+      CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20251006/starter-20251006.zip'
     depends_on:
-      - opensearch
       - db
+      - opensearch
     volumes:
       - cms-shared:/data/shared
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
@@ -60,16 +71,11 @@ services:
       - "8082:8082"
       - "8443:8443"
 
-  db:
-    image: postgres:15
-    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
-    environment:
-        "POSTGRES_USER": 'dotcmsdbuser'
-        "POSTGRES_PASSWORD": 'password'
-        "POSTGRES_DB": 'dotcms'
-    volumes:
-      - dbdata:/var/lib/postgresql/data
-    networks:
-      - db_net
+networks:
+  db_net:
+  opensearch-net:
 
-
+volumes:
+  cms-shared:
+  dbdata:
+  opensearch-data:

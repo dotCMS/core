@@ -1,19 +1,26 @@
 {
     "name": "dotcms-ui-e2e",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "apps/dotcms-ui-e2e/src",
     "projectType": "application",
+    "sourceRoot": "apps/dotcms-ui-e2e/src",
+    "implicitDependencies": ["dotcms-ui"],
     "targets": {
         "e2e": {
-            "executor": "@nx/cypress:cypress",
+            "executor": "@nx/playwright:playwright",
+            "outputs": ["{workspaceRoot}/dist/.playwright/apps/dotcms-ui-e2e"],
             "options": {
-                "cypressConfig": "apps/dotcms-ui-e2e/cypress.json",
-                "tsConfig": "apps/dotcms-ui-e2e/tsconfig.e2e.json",
-                "devServerTarget": "dotcms-ui:serve"
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts"
             },
             "configurations": {
-                "production": {
-                    "devServerTarget": "dotcms-ui:serve:production"
+                "ci": {
+                    "headed": false,
+                    "ui": false
+                },
+                "headless": {
+                    "headed": false
+                },
+                "ui": {
+                    "ui": true
                 }
             }
         },
@@ -21,7 +28,5 @@
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": [],
-    "implicitDependencies": ["dotcms-ui"]
+    }
 }

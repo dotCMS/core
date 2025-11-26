@@ -1,33 +1,30 @@
 package com.dotcms.graphql.util;
 
-import com.dotcms.graphql.InterfaceType;
-import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
-import com.dotcms.util.DotPreconditions;
+import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.GraphQLException;
+import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldDefinition.Builder;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
+import graphql.schema.PropertyDataFetcher;
+import graphql.schema.TypeResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.PropertyDataFetcher;
-import graphql.schema.TypeResolver;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
-
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
 public class TypeUtil {
 
@@ -84,7 +81,8 @@ public class TypeUtil {
                 fieldDefinitionBuilder.argument(GraphQLArgument.newArgument()
                         .name("render")
                         .type(GraphQLBoolean)
-                        .defaultValue(null));
+                        .defaultValueProgrammatic(null)
+                );
 
                 fieldDefinitionList.add(fieldDefinitionBuilder.build());
             } catch (GraphQLException e) {
@@ -118,7 +116,7 @@ public class TypeUtil {
             fieldDefinitionBuilder.argument(GraphQLArgument.newArgument()
                     .name("render")
                     .type(GraphQLBoolean)
-                    .defaultValue(null));
+                    .defaultValueProgrammatic(null));
 
             builder.field(fieldDefinitionBuilder.build());
         });
@@ -127,20 +125,49 @@ public class TypeUtil {
         return builder.build();
     }
 
-    public static String collectionizedName(final String typeName) {
-        return typeName + "Collection";
-    }
+    final static String COLLECTION="Collection";
 
-    public static String oldCollectionizedName(final String typeName) {
-        return typeName.substring(0, 1).toLowerCase() + typeName.substring(1) + "Collection";
+    public static String collectionizedName(final String typeName) {
+        return typeName + COLLECTION;
     }
 
     public static String singularizeCollectionName(final String collectionName) {
-        return collectionName.replaceAll("Collection", "");
+        return collectionName.endsWith(COLLECTION) ? collectionName.substring(0,collectionName.lastIndexOf(COLLECTION)) : collectionName;
     }
 
     public static String singularizeBaseTypeCollectionName(final String baseTypeCollectionName) {
         return singularizeCollectionName(baseTypeCollectionName).replaceAll(BASE_TYPE_SUFFIX, "");
+    }
+
+    /**
+     * Tries to resolve the name of the type
+     * IllegalArgumentException is thrown if the type is not a GraphQLNamedSchemaElement or GraphQLObjectType
+     * @param type
+     * @return
+     */
+    public static  String getName (final GraphQLType type) {
+
+        if (type instanceof GraphQLNamedSchemaElement) {
+            return GraphQLNamedSchemaElement.class.cast(type).getName();
+        }
+
+        if (type instanceof GraphQLObjectType) {
+            return GraphQLObjectType.class.cast(type).getName();
+        }
+
+        if (type instanceof GraphQLList) {
+            final GraphQLType wrappedType = GraphQLList.class.cast(type).getWrappedType();
+            if (wrappedType instanceof GraphQLNamedSchemaElement) {
+                return GraphQLNamedSchemaElement.class.cast(wrappedType).getName();
+            }
+
+            if (wrappedType instanceof GraphQLObjectType) {
+                return GraphQLObjectType.class.cast(wrappedType).getName();
+            }
+        }
+
+        final String typeName = null != type ?type.getClass().getSimpleName():"NULL";
+        throw new IllegalArgumentException("Type: " + typeName + " is not a GraphQLNamedSchemaElement or GraphQLObjectType");
     }
 
     public static class TypeFetcher {

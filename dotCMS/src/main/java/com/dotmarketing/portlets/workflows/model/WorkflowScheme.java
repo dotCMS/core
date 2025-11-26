@@ -34,6 +34,7 @@ public class WorkflowScheme implements Serializable, ManifestItem {
 	String id;
 	Date creationDate = new Date();
 	String name;
+	String variableName;
 	String description;
 	boolean archived;
 	boolean mandatory;
@@ -85,8 +86,16 @@ public class WorkflowScheme implements Serializable, ManifestItem {
 		return name;
 	}
 
+	public String getVariableName() {
+		return variableName;
+	}
+
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public void setVariableName(String variableName) {
+		this.variableName = variableName;
 	}
 
 	public String getDescription() {

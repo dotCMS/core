@@ -53,9 +53,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             currentVariantName = VariantAPI.DEFAULT_VARIANT.name();
         } else {
             try {
-                final Optional<Variant> byName = APILocator.getVariantAPI()
-                        .get(currentVariantName);
-                currentVariantName = byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
+                return APILocator.getVariantAPI()
+                        .get(currentVariantName)
+                        .filter((variant -> !variant.archived()))
+                        .orElse(VariantAPI.DEFAULT_VARIANT)
+                        .name();
             } catch (DotDataException e) {
                 Logger.error(VariantWebAPIImpl.class,
                         String.format("It is not possible get variant y name %s: %s",
@@ -64,19 +66,21 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             }
         }
 
-        setSessionAttribute(request, currentVariantName);
+        setSessionAttributeIfNeeded(request, currentVariantName);
         return currentVariantName;
     }
 
-    private static void setSessionAttribute(final HttpServletRequest request,
+    private static void setSessionAttributeIfNeeded(final HttpServletRequest request,
             final String currentVariantName) {
 
-        final HttpSession session = request.getSession(true);
+        boolean buildSessionIfNeeded = !"DEFAULT".equals(currentVariantName);
+
+        final HttpSession session = request.getSession(buildSessionIfNeeded);
 
         if (!UtilMethods.isSet(session)) {
             return;
         }
-        
+
         final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);
 
         if (mustOverwrite(attribute, currentVariantName)) {
@@ -238,6 +242,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
 
         return Boolean.TRUE.equals(contentlet.isHTMLPage()) ||
                 forceFallbackByContentType(type) ||
+                isFileFallback(type) ||
                 isContentletFallback(type) ||
                 isWidgetFallback(type);
     }
@@ -245,6 +250,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     private static boolean isWidgetFallback(ContentType type) {
         return type.baseType() == BaseContentType.WIDGET
                 && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage();
+    }
+
+    private static boolean isFileFallback(ContentType type) {
+        return (type.baseType() == BaseContentType.FILEASSET || type.baseType() == BaseContentType.DOTASSET)
+                && APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage();
     }
 
     private static boolean isContentletFallback(ContentType type) {

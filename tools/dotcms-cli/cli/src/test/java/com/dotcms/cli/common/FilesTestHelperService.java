@@ -5,43 +5,42 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
-import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
-import com.dotcms.model.site.CreateUpdateSiteRequest;
-import com.dotcms.model.site.GetSiteByNameRequest;
-import com.dotcms.model.site.SiteView;
-import com.google.common.collect.ImmutableList;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @ApplicationScoped
 public class FilesTestHelperService {
 
-    @Inject
-    RestClientFactory clientFactory;
-
     private static final Duration MAX_WAIT_TIME = Duration.ofSeconds(15);
     private static final Duration POLL_INTERVAL = Duration.ofSeconds(2);
+
+    @Inject
+    SitesTestHelperService sitesTestHelper;
+
+    @Inject
+    RestClientFactory clientFactory;
 
     /**
      * Prepares data by creating test folders, adding test files, and creating a new test site.
@@ -91,11 +90,11 @@ public class FilesTestHelperService {
         final String subfolder1_2_3 = "subFolder1-2-3";
 
         // subfolder2_1 children
-        final String subfolder2_1_1 = "subFolder2-1-1";
+        final String subfolder2_1_1 = "subFolder2-1-1-子資料夾";
         final String subfolder2_1_2 = "subFolder2-1-2";
         final String subfolder2_1_3 = "subFolder2-1-3";
 
-        var paths = ImmutableList.of(
+        var paths = List.of(
                 String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_1),
                 String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_2),
                 String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_3),
@@ -113,7 +112,7 @@ public class FilesTestHelperService {
         );
 
         // Creating a new test site
-        final String newSiteName = createSite();
+        final String newSiteName = sitesTestHelper.createSiteOnServer().siteName();
 
         // Creating test folders
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse =
@@ -132,6 +131,12 @@ public class FilesTestHelperService {
                     String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
                     "image2.png");
             pushFile(true, "en-us", newSiteName,
+                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
+                    "這就是我的想像6.png");
+            pushFile(true, "en-us", newSiteName,
+                    String.format("/%s/%s/%s", folder2, subfolder2_1, subfolder2_1_1),
+                    "image (7)+.png");
+            pushFile(true, "en-us", newSiteName,
                     String.format("/%s", folder3),
                     "image 3.png");
             pushFile(true, "en-us", newSiteName,
@@ -143,26 +148,52 @@ public class FilesTestHelperService {
     }
 
     /**
-     * Creates a new site.
+     * Generates a large data structure on the file system with the specified root folder and number
+     * of folders.
      *
-     * @return The name of the newly created test site.
+     * @param rootFolder  The root folder where the data structure will be generated.
+     * @param noOfFolders The number of root folders to create.
+     * @throws IOException If an I/O error occurs.
      */
-    public String createSite() {
+    public void prepareLargeDataOnFileSystem(Path rootFolder, final int noOfFolders)
+            throws IOException {
 
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+        //final int noOfFolders = 100; // number of root folders to create
+        final int depth = 10; // number of sub-folders in each root folder
+        final int filesPerFolder = 2; // number of files in each folder
+        final String[] availableFiles = {"image (7)+.png", "image1.png", "image2.png",
+                "image 3.png", "image4.jpg", "image5.jpg", "這就是我的想像6.png"};
 
-        // Creating a new test site
-        final String newSiteName = String.format("site-%s", UUID.randomUUID());
-        CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder()
-                .siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = siteAPI.create(newSiteRequest);
-        Assertions.assertNotNull(createSiteResponse);
-        // Publish the new site
-        siteAPI.publish(createSiteResponse.entity().identifier());
-        Assertions.assertTrue(siteExist(newSiteName),
-                String.format("Site %s was not created", newSiteName));
+        int fileCounter = 0; // A counter for rotating through the availableFiles array
 
-        return newSiteName;
+        // Generate folder structure
+        for (int i = 0; i < noOfFolders; i++) {
+            Path folder = rootFolder.resolve("folder" + (i + 1));
+            for (int j = 0; j < depth; j++) {
+                folder = folder.resolve("subfolder-" + (i + 1) + "-" + (j + 1));
+
+                // Create folder
+                Files.createDirectories(folder);
+
+                // Populate with files
+                for (int k = 0; k < filesPerFolder; k++) {
+                    int assetIndex = fileCounter % availableFiles.length;
+                    String fileName = availableFiles[assetIndex];
+                    Path file = folder.resolve(fileName);
+
+                    try (InputStream inputStream = getClass().getResourceAsStream(
+                            String.format("/%s", fileName))) {
+
+                        Assertions.assertNotNull(inputStream,
+                                String.format("File %s not found", fileName));
+
+                        Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
+                    }
+
+                    fileCounter++;
+                }
+            }
+        }
     }
 
     /**
@@ -206,38 +237,6 @@ public class FilesTestHelperService {
     }
 
     /**
-     * Checks if a site with the given name exists.
-     *
-     * @param siteName the name of the site to check
-     * @return true if the site exists, false otherwise
-     */
-    public Boolean siteExist(final String siteName) {
-
-        try {
-
-            await()
-                    .atMost(MAX_WAIT_TIME)
-                    .pollInterval(POLL_INTERVAL)
-                    .until(() -> {
-                        try {
-                            var response = findSiteByName(siteName);
-                            return (response != null && response.entity() != null) &&
-                                    ((response.entity().isLive() != null &&
-                                            response.entity().isLive()) &&
-                                            (response.entity().isWorking() != null &&
-                                                    response.entity().isWorking()));
-                        } catch (NotFoundException e) {
-                            return false;
-                        }
-                    });
-
-            return true;
-        } catch (ConditionTimeoutException ex) {
-            return false;
-        }
-    }
-
-    /**
      * Checks whether an asset exists at the given remote asset path.
      *
      * @param remoteAssetPath The path to the remote asset
@@ -265,23 +264,6 @@ public class FilesTestHelperService {
         } catch (ConditionTimeoutException ex) {
             return false;
         }
-    }
-
-    /**
-     * Retrieves a site by its name.
-     *
-     * @param siteName The name of the site.
-     * @return The ResponseEntityView containing the SiteView object representing the site.
-     */
-    @ActivateRequestContext
-    public ResponseEntityView<SiteView> findSiteByName(final String siteName) {
-
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        // Execute the REST call to retrieve folder contents
-        return siteAPI.findByName(
-                GetSiteByNameRequest.builder().siteName(siteName).build()
-        );
     }
 
     /**

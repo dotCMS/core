@@ -18,24 +18,29 @@ import { MenuModule } from 'primeng/menu';
 import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCategory } from '@dotcms/dotcms-models';
+import {
+    DotActionMenuButtonComponent,
+    DotMenuComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotCategoriesListComponent } from './dot-categories-list.component';
 
-import { DotMenuModule } from '../../../view/components/_common/dot-menu/dot-menu.module';
+import { DotCategoriesService } from '../../../api/services/dot-categories/dot-categories.service';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-categories-list></dot-categories-list>`
+    template: `
+        <dot-categories-list></dot-categories-list>
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 
@@ -57,7 +62,13 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             working: false,
             name: 'dsdsd',
             friendlyName: 'dfdf',
-            type: 'ASD'
+            type: 'ASD',
+            active: false,
+            childrenCount: 0,
+            description: '',
+            iDate: 0,
+            keywords: '',
+            owner: ''
         },
         {
             categoryId: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
@@ -71,7 +82,13 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             working: false,
             name: 'dsdsd',
             friendlyName: 'dfdf',
-            type: 'ASD'
+            type: 'ASD',
+            active: false,
+            childrenCount: 0,
+            description: '',
+            iDate: 0,
+            keywords: '',
+            owner: ''
         }
     ];
     beforeEach(() => {
@@ -84,26 +101,26 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             'message.category.empty.button.label': 'Add New Category'
         });
         TestBed.configureTestingModule({
-            declarations: [DotCategoriesListComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
                 SharedModule,
                 MenuModule,
-                DotMenuModule,
+                DotMenuComponent,
                 HttpClientTestingModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 BreadcrumbModule,
-                DotPortletBaseModule,
+                DotPortletBaseComponent,
                 ButtonModule,
                 InputTextModule,
                 TableModule,
                 PaginatorModule,
                 InplaceModule,
                 InputNumberModule,
-                DotActionMenuButtonModule,
-
+                DotActionMenuButtonComponent,
                 CheckboxModule,
-                DotEmptyStateModule
+                DotEmptyStateComponent,
+                DotCategoriesListComponent
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -157,11 +174,11 @@ xdescribe('DotCategoriesListingTableComponent', () => {
         hostFixture.detectChanges();
         de = hostFixture.debugElement.query(By.css('p-table'));
         const emptyState = de.query(By.css('[data-testid="title"]'));
-        expect(emptyState.nativeElement.innerText).toBe('Your category list is empty');
+        expect(emptyState.nativeElement.textContent).toBe('Your category list is empty');
     }));
 
     function setRequestSpy(response: any): void {
-        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+        jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
             of({
                 entity: response,
                 header: (type) => (type === 'Link' ? 'test;test=test' : '40')

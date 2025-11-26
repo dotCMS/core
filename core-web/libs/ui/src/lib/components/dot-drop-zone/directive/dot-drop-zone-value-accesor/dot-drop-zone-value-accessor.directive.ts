@@ -1,4 +1,4 @@
-import { Directive, Host, OnInit, Optional, forwardRef } from '@angular/core';
+import { Directive, OnInit, forwardRef, inject } from '@angular/core';
 import {
     AbstractControl,
     ControlValueAccessor,
@@ -26,10 +26,12 @@ import { DotDropZoneComponent, DropZoneFileEvent } from '../../dot-drop-zone.com
     ]
 })
 export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, Validator, OnInit {
+    private _dotDropZone = inject(DotDropZoneComponent, { optional: true, host: true });
+
     private onChange: (value: File) => void;
     private onTouched: () => void;
 
-    constructor(@Optional() @Host() private _dotDropZone: DotDropZoneComponent) {
+    constructor() {
         if (!this._dotDropZone) {
             throw new Error(
                 'dot-drop-zone-value-accessor can only be used inside of a dot-drop-zone'

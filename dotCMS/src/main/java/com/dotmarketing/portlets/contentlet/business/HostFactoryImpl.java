@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
+import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -8,6 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.ConversionUtils;
@@ -31,20 +35,21 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +60,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
-import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 /**
  * SQL-based implementation class for {@link HostFactory}.
@@ -67,12 +72,14 @@ import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
  */
 public class HostFactoryImpl implements HostFactory {
 
-    private HostCache siteCache = CacheLocator.getHostCache();
+    private final HostCache siteCache;
     private ContentletFactory contentFactory;
+    private HostVariableFactory siteVariableFactory;
     private ContentletAPI contentletAPI;
 
     private final String WHERE = " WHERE ";
     private final String AND = " AND ";
+    private final String OR = " OR ";
     private final String ORDER_BY = " ORDER BY ? ";
 
     private static final String SELECT_SYSTEM_HOST = "SELECT id FROM identifier WHERE id = '"+ Host.SYSTEM_HOST+"' ";
@@ -80,36 +87,39 @@ public class HostFactoryImpl implements HostFactory {
     private static final String FROM_JOINED_TABLES = "INNER JOIN identifier i " +
             "ON c.identifier = i.id AND i.asset_subtype = '" + Host.HOST_VELOCITY_VAR_NAME + "' " +
             "INNER JOIN contentlet_version_info cvi " +
-            "ON c.inode = cvi.working_inode ";
+            "ON c.inode = cvi.working_inode " +
+            "LEFT JOIN contentlet clive " +
+            "ON clive.inode = cvi.live_inode ";
 
-    private static final String SELECT_SITE_INODE = "SELECT c.inode FROM contentlet" +
-            " c " +
+    private static final String SELECT_SITE_INODE =
+            "SELECT c.inode, cvi.live_inode FROM contentlet c " +
             FROM_JOINED_TABLES;
-    private static final String SELECT_SITE_INODE_AND_ALIASES = "SELECT c.inode, %s" +
-            " AS aliases FROM contentlet c " +
+    private static final String SELECT_SITE_INODE_AND_ALIASES =
+            "SELECT c.inode, cvi.live_inode, " +
+            "%s AS aliases, %s AS live_aliases FROM contentlet c " +
             FROM_JOINED_TABLES;
 
-    private static final String POSTGRES_ALIASES_COLUMN = ContentletJsonAPI
-            .CONTENTLET_AS_JSON +
+    private static final String POSTGRES_ALIASES_COLUMN = "%s." +
+            ContentletJsonAPI.CONTENTLET_AS_JSON +
             "->'fields'->'" + Host.ALIASES_KEY + "'->>'value' ";
 
-    private static final String MSSQL_ALIASES_COLUMN = "JSON_VALUE(c." +
+    private static final String MSSQL_ALIASES_COLUMN = "JSON_VALUE(%s." +
             ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + Host.ALIASES_KEY + ".value') ";
-    private static final String ALIASES_COLUMN = "c.text_area1";
+    private static final String ALIASES_COLUMN = "%s.text_area1";
 
     private static final String SITE_NAME_LIKE = "LOWER(%s) LIKE ? ";
 
     private static final String SITE_NAME_EQUALS ="LOWER(%s) = ? ";
 
-    private static final String POSTGRES_SITENAME_COLUMN = ContentletJsonAPI
-            .CONTENTLET_AS_JSON +
+    private static final String POSTGRES_SITENAME_COLUMN = "%s." +
+            ContentletJsonAPI.CONTENTLET_AS_JSON +
             "->'fields'->'" + Host.HOST_NAME_KEY + "'->>'value' ";
 
-    private static final String MSSQL_SITENAME_COLUMN = "JSON_VALUE(c." +
+    private static final String MSSQL_SITENAME_COLUMN = "JSON_VALUE(%s." +
             ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + Host.HOST_NAME_KEY + ".value')" +
             " ";
 
-    private static final String SITENAME_COLUMN = "c.text1";
+    private static final String SITENAME_COLUMN = "%s.text1";
 
     private static final String ALIAS_LIKE = "LOWER(%s) LIKE ? ";
 
@@ -136,7 +146,7 @@ public class HostFactoryImpl implements HostFactory {
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
-            "ORDER BY length(%s),  " + POSTGRES_SITENAME_COLUMN;
+            " ORDER BY length(%s), %s  ";
 
     /**
      * Default class constructor.
@@ -159,6 +169,20 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     /**
+     * Lazy initialization of the Host Variable Factory service. This helps prevent startup issues
+     * when several factories or APIs are initialized during the initialization phase of the Host
+     * Factory.
+     *
+     * @return An instance of the {@link HostVariableFactory} service.
+     */
+    protected HostVariableFactory getHostVariableFactory() {
+        if (null == this.siteVariableFactory) {
+            this.siteVariableFactory = FactoryLocator.getHostVariableFactory();
+        }
+        return this.siteVariableFactory;
+    }
+
+    /**
      * Lazy initialization of the Contentlet API service. This helps prevent startup issues when several factories or
      * APIs are initialized during the initialization phase of the Host Factory.
      *
@@ -172,18 +196,34 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     @Override
-    public Host bySiteName(final String siteName) {
-        Host site = siteCache.get(siteName);
-        if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
+    public Host bySiteName(final String siteName, boolean retrieveLiveVersion) {
+        Host site;
+        final Host cachedSiteByName = siteCache.getByName(siteName, retrieveLiveVersion);
+        if (UtilMethods.isSet(() -> cachedSiteByName.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteByName.getIdentifier())) {
+                return null;
+            }
+            site = cachedSiteByName;
+        } else {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
-                    .append(WHERE);
-            sqlQuery.append(getSiteNameColumn(SITE_NAME_EQUALS));
+                .append(WHERE)
+                .append(getSiteNameOrAliasColumn(SITE_NAME_EQUALS, true, "c"))
+                .append(OR)
+                .append(getSiteNameOrAliasColumn(SITE_NAME_EQUALS, true, "clive"));
             dc.setSQL(sqlQuery.toString());
+            dc.addParam(siteName.toLowerCase());
             dc.addParam(siteName.toLowerCase());
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    // Check if siteName is a UUID and try to find by ID
+                    final Host siteById = findSiteByIdIfUUID(siteName, retrieveLiveVersion);
+                    if (siteById != null) {
+                        return siteById;
+                    }
+                    // Site not found by name or ID, add to 404 cache
+                    siteCache.add404HostByName(siteName);
                     return null;
                 }
                 final String siteInode = dbResults.get(0).get("inode");
@@ -200,6 +240,18 @@ public class HostFactoryImpl implements HostFactory {
                 final Contentlet siteAsContentlet = this.contentFactory.find(siteInode);
                 site = new Host(siteAsContentlet);
                 this.siteCache.add(site);
+
+                if (UtilMethods.isSet(() -> dbResults.get(0).get("live_inode"))) {
+                    final String liveInode = dbResults.get(0).get("live_inode");
+                    if (!siteInode.equals(liveInode)) {
+                        final Host liveHost = new Host(this.contentFactory.find(
+                                dbResults.get(0).get("live_inode")));
+                        this.siteCache.add(liveHost);
+                        if (retrieveLiveVersion) {
+                            site = liveHost;
+                        }
+                    }
+                }
             } catch (final Exception e) {
                 final String errorMsg = String.format("An error occurred when retrieving Site by name '%s': %s",
                         siteName, e.getMessage());
@@ -210,66 +262,87 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     @Override
-    public Host byAlias(String alias) {
-        Host site = this.siteCache.getHostByAlias(alias);
-        if (null == site) {
-            final DotConnect dc = new DotConnect();
-            final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE_AND_ALIASES)
-                    .append(WHERE)
-                    .append(ALIAS_LIKE);
-            String sql = sqlQuery.toString();
-            if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-                if (DbConnectionFactory.isPostgres()) {
-                    sql = String.format(sql, POSTGRES_ALIASES_COLUMN, POSTGRES_ALIASES_COLUMN);
-                } else {
-                    sql = String.format(sql, MSSQL_ALIASES_COLUMN, MSSQL_ALIASES_COLUMN);
-                }
-            } else {
-                sql = String.format(sql, ALIASES_COLUMN, ALIASES_COLUMN);
+    public Host byAlias(String alias, boolean retrieveLiveVersion) {
+        Host site = null;
+        Host cachedSiteByAlias = this.siteCache.getHostByAlias(alias, retrieveLiveVersion);
+        if (UtilMethods.isSet(() -> cachedSiteByAlias.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteByAlias.getIdentifier())) {
+                return null;
             }
-            dc.setSQL(sql);
+            site = cachedSiteByAlias;
+        } else {
+            final DotConnect dc = new DotConnect();
+            final StringBuilder sqlQuery = new StringBuilder()
+                    .append(getSiteNameOrAliasColumn(SELECT_SITE_INODE_AND_ALIASES, false, "c", "clive"))
+                    .append(WHERE)
+                    .append(getSiteNameOrAliasColumn(ALIAS_LIKE, false, "c"))
+                    .append(OR)
+                    .append(getSiteNameOrAliasColumn(ALIAS_LIKE, false, "clive"));
+            dc.setSQL(sqlQuery.toString());
+            dc.addParam("%" + alias.toLowerCase() + "%");
             dc.addParam("%" + alias.toLowerCase() + "%");
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    siteCache.addHostAlias(alias, HostCache.cache404Contentlet);
                     return null;
                 }
-                if (dbResults.size() == 1) {
-                    final Set<String> siteAliases = new HashSet<>(parseSiteAliases(dbResults.get(0).get("aliases")));
+
+                final List<Contentlet> siteAsContentletList = new ArrayList<>();
+                final Map<String, Contentlet>   liveSiteMap = new HashMap<>();
+                for (final Map<String, String> siteInfo : dbResults) {
+                    final Set<String> siteAliases = new HashSet<>(parseSiteAliases(siteInfo.get("aliases")));
+                    if (UtilMethods.isSet(() -> siteInfo.get("live_aliases"))) {
+                        siteAliases.addAll(parseSiteAliases(siteInfo.get("live_aliases")));
+                    }
                     if (siteAliases.contains(alias)) {
-                        site = new Host(this.getContentletFactory().find(dbResults.get(0).get("inode")));
-                    }
-                } else {
-                    final List<Contentlet> siteAsContentletList = new ArrayList<>();
-                    for (final Map<String, String> siteInfo : dbResults) {
-                        final Set<String> siteAliases = new HashSet<>(parseSiteAliases(siteInfo.get("aliases")));
-                        if (siteAliases.contains(alias)) {
-                            siteAsContentletList.add(this.getContentletFactory().find(siteInfo.get("inode")));
-                        }
-                    }
-                    if (siteAsContentletList.size() == 1) {
-                        site = new Host(siteAsContentletList.get(0));
-                    } else {
-                        for (final Contentlet siteAsContentlet : siteAsContentletList) {
-                            if (Boolean.class.cast(siteAsContentlet.get(Host.IS_DEFAULT_KEY))) {
-                                site = new Host(siteAsContentlet);
-                                break;
+                        final String siteInode = siteInfo.get("inode");
+                        siteAsContentletList.add(this.getContentletFactory().find(siteInode));
+                        if (UtilMethods.isSet(() -> siteInfo.get("live_inode"))) {
+                            final String liveInode = siteInfo.get("live_inode");
+                            if (!siteInode.equals(liveInode)) {
+                                liveSiteMap.put(siteInode, this.getContentletFactory().find(liveInode));
                             }
                         }
-                        if (null == site) {
-                            site = new Host(siteAsContentletList.get(0));
-                        }
-                        final StringBuilder warningMsg = new StringBuilder().append("ERROR: ").append(siteAsContentletList.size())
-                                .append(" Sites have the same alias '").append(alias).append("':\n");
-                        for (final Contentlet siteAsContentlet : siteAsContentletList) {
-                            warningMsg.append("-> Inode = ").append(siteAsContentlet.getInode()).append("\n");
-                        }
-                        warningMsg.append("Defaulting to Site '").append(site.getInode()).append("'");
-                        Logger.fatal(this, warningMsg.toString());
                     }
                 }
+                if (siteAsContentletList.isEmpty()) {
+                    siteCache.addHostAlias(alias, HostCache.cache404Contentlet);
+                    return null;
+                } else if (siteAsContentletList.size() == 1) {
+                    site = new Host(siteAsContentletList.get(0));
+                } else {
+                    for (final Contentlet siteAsContentlet : siteAsContentletList) {
+                        if (Boolean.class.cast(siteAsContentlet.get(Host.IS_DEFAULT_KEY))) {
+                            site = new Host(siteAsContentlet);
+                            break;
+                        }
+                    }
+                    if (null == site) {
+                        site = new Host(siteAsContentletList.get(0));
+                    }
+                    final StringBuilder warningMsg = new StringBuilder().append("ERROR: ").append(siteAsContentletList.size())
+                            .append(" Sites have the same alias '").append(alias).append("':\n");
+                    for (final Contentlet siteAsContentlet : siteAsContentletList) {
+                        warningMsg.append("-> Inode = ").append(siteAsContentlet.getInode()).append("\n");
+                    }
+                    warningMsg.append("Defaulting to Site '").append(site.getInode()).append("'");
+                    Logger.fatal(this, warningMsg.toString());
+                }
+
                 this.siteCache.add(site);
                 this.siteCache.addHostAlias(alias, site);
+
+                if (!liveSiteMap.isEmpty()) {
+                    final String siteInode = site.getInode();
+                    if (liveSiteMap.containsKey(siteInode)) {
+                        final Host liveHost = new Host(liveSiteMap.get(siteInode));
+                        this.siteCache.add(liveHost);
+                        if (retrieveLiveVersion) {
+                            site = liveHost;
+                        }
+                    }
+                }
             } catch (final Exception e) {
                 throw new DotRuntimeException(String.format("An error occurred when retrieving Site with alias '%s': " +
                         "%s", alias, e.getMessage()), e);
@@ -288,11 +361,18 @@ public class HostFactoryImpl implements HostFactory {
         return findAll(limit,offset, orderBy, true);
     }
 
-    @CloseDBIfOpened
     @Override
     public List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost) throws DotDataException, DotSecurityException {
+        return findAll(limit, offset, orderBy, includeSystemHost, false);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Host> findAll(final int limit, final int offset, final String orderBy,
+                              final boolean includeSystemHost, final boolean retrieveLiveVersion) throws DotDataException, DotSecurityException {
         final DotConnect dc = new DotConnect();
-        final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
+        final StringBuilder sqlQuery = new StringBuilder()
+                .append(SELECT_SITE_INODE)
                 .append(WHERE)
                 .append(" true ");
         if (!includeSystemHost) {
@@ -314,12 +394,12 @@ public class HostFactoryImpl implements HostFactory {
             dc.setStartRow(offset);
         }
         final List<Map<String, String>> dbResults = dc.loadResults();
-        return this.convertDbResultsToSites(dbResults);
+        return this.convertDbResultsToSites(dbResults, retrieveLiveVersion);
     }
 
     @Override
     public Host findSystemHost(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Host systemHost = this.siteCache.get(Host.SYSTEM_HOST);
+        Host systemHost = this.siteCache.getById(Host.SYSTEM_HOST, false);
         if (null != systemHost) {
             return systemHost;
         }
@@ -391,37 +471,65 @@ public class HostFactoryImpl implements HostFactory {
             if (siteAsContentlet.getContentType().id().equals(hostContentType.inode())) {
                 site = new Host(siteAsContentlet);
                 this.siteCache.add(site);
+
+                if (UtilMethods.isSet(versionInfo::getLiveInode)) {
+                    final String liveInode = versionInfo.getLiveInode();
+                    if (!siteInode.equals(liveInode)) {
+                        final Host liveHost = new Host(this.getContentletAPI().find(
+                                liveInode, systemUser, respectFrontendRoles));
+                        this.siteCache.add(liveHost);
+                        if (respectFrontendRoles) {
+                            site = liveHost;
+                        }
+                    }
+                }
             }
+        }
+        if (null == site && !Host.SYSTEM_HOST.equals(id)) {
+            this.siteCache.add404HostById(id);
+            Logger.warn(HostAPIImpl.class, String.format("Site with id '%s' not found", id));
         }
         return site;
     }
 
+    /**
+     * This method is called inside a separate thread and takes care of deleting the specified Site
+     * in a process in the background. Once it's done, a notification will be generated as well,
+     * which is particularly useful to the UI layer.
+     *
+     * @param site                 The {@link Host} object to be deleted.
+     * @param user                 The {@link User} object that is requesting the deletion.
+     * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+     *                             front-end roles must be validated against this user, set to
+     *                             {@code true}.
+     *
+     * @return If the Site was deleted successfully, returns {@code true}.
+     *
+     * @throws DotRuntimeException The specified Site failed to be deleted.
+     */
     @WrapInTransaction
-    private Boolean innerDeleteHost(final Host site, final User user, final boolean respectFrontendRoles) {
+    private Boolean innerDeleteSite(final Host site, final User user, final boolean respectFrontendRoles) {
         try {
-            deleteHost(site, user, respectFrontendRoles);
+            deleteSite(site, user, respectFrontendRoles);
             HibernateUtil.addCommitListener
                     (() -> generateNotification(site, user));
-        } catch (Exception e) {
-            // send notification
+        } catch (final Exception e) {
             try {
-
                 APILocator.getNotificationAPI().generateNotification(
                         new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
-                        new I18NMessage("notifications_host_deletion_error", site.getHostname(), e.getMessage()),
+                        new I18NMessage("notifications_host_deletion_error", site.getHostname(), ExceptionUtil.getErrorMessage(e)),
                         null, // no actions
                         NotificationLevel.ERROR,
                         NotificationType.GENERIC,
                         user.getUserId(),
                         user.getLocale()
                 );
-
             } catch (final DotDataException e1) {
                 Logger.error(HostAPIImpl.class, String.format("An error occurred when saving Site Deletion " +
-                        "Notification for site '%s': %s", site, e.getMessage()), e);
+                        "Notification for site '%s': %s", site, ExceptionUtil.getErrorMessage(e)), e);
             }
             final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site " +
-                    "'%s': %s", user.getUserId(), site, e.getMessage());
+                    "'%s': %s", user.getUserId(), site, ExceptionUtil.getErrorMessage(e));
             Logger.error(HostAPIImpl.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
@@ -447,84 +555,132 @@ public class HostFactoryImpl implements HostFactory {
         }
     }
 
-    public void deleteHost(final Host site, final User user, final boolean respectFrontendRoles) throws Exception {
-        if(site != null){
+    /**
+     * Deletes the specified Site from the content repository. There are a lot of different objects
+     * that must be deleted when a Site is removed, such as Menu Links, Contentlets, Folders, and so
+     * on. This means that the deletion process is quite complex and may take a very long time to
+     * finish.
+     *
+     * @param site                 The {@link Host} object to be deleted.
+     * @param user                 The {@link User} object that is requesting the deletion.
+     * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+     *                             front-end roles must be validated against this user, set to
+     *                             {@code true}.
+     *
+     * @throws Exception An error occurred when deleting the specified Site.
+     */
+    public void deleteSite(final Host site, final User user, final boolean respectFrontendRoles) throws Exception {
+        if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
+            return;
+        } else {
             siteCache.remove(site);
         }
-
+        Logger.info(this, "======================================================================");
+        Logger.info(this, String.format("  Start deleting Site '%s' ...", site.getHostname()));
+        Logger.info(this, "======================================================================");
         final DotConnect dc = new DotConnect();
 
-        // Remove Links
-        MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
-        List<Link> links = linkAPI.findLinks(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-        for (Link link : links) {
+        final int steps = 15;
+
+        final MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
+        final List<Link> links = linkAPI.findLinks(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
+        Logger.info(this,
+                String.format("-> (Step 1/%d) Deleting %d Menu Links from Site '%s'", steps,
+                        links.size(), site.getHostname()));
+        for (final Link link : links) {
             linkAPI.delete(link, user, respectFrontendRoles);
         }
 
-        // Remove Contentlet
-        ContentletAPI contentAPI = APILocator.getContentletAPI();
+        Logger.info(this, String.format("-> (Step 2/%d) Deleting all Contentlets from Site '%s'",
+                steps, site.getHostname()));
+        final ContentletAPI contentAPI = APILocator.getContentletAPI();
         contentAPI.deleteByHost(site, APILocator.systemUser(), respectFrontendRoles);
 
-        // Remove Folders
-        FolderAPI folderAPI = APILocator.getFolderAPI();
-        List<Folder> folders = folderAPI.findFoldersByHost(site, user, respectFrontendRoles);
-        for (Folder folder : folders) {
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final List<Folder> folders = folderAPI.findFoldersByHost(site, user, respectFrontendRoles);
+        Logger.info(this,
+                String.format("-> (Step 3/%d) Deleting %d Folders from Site '%s'", steps,
+                        folders.size(), site.getHostname()));
+        for (final Folder folder : folders) {
             folderAPI.delete(folder, user, respectFrontendRoles);
         }
 
-        // Remove Templates
-        TemplateAPI templateAPI = APILocator.getTemplateAPI();
-        List<Template> templates = templateAPI.findTemplatesAssignedTo(site, true);
-        for (Template template : templates) {
+        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        final List<Template> templates = templateAPI.findTemplatesAssignedTo(site, true);
+        Logger.info(this, String.format("-> (Step 4/%d) Deleting %d Templates from Site '%s'",
+                steps, templates.size(), site.getHostname()));
+        for (final Template template : templates) {
             dc.setSQL("delete from template_containers where template_id = ?");
             dc.addParam(template.getIdentifier());
             dc.loadResult();
 
-            templateAPI.delete(template, user, respectFrontendRoles);
+            if (!template.isDeleted()) {
+                templateAPI.unpublishTemplate(template, user, respectFrontendRoles);
+                templateAPI.archive(template, user, respectFrontendRoles);
+            }
+
+            templateAPI.deleteTemplate(template, user, respectFrontendRoles);
         }
 
-        // Remove Containers
-        ContainerAPI containerAPI = APILocator.getContainerAPI();
-        List<Container> containers = containerAPI.findContainers(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-        for (Container container : containers) {
+        final ContainerAPI containerAPI = APILocator.getContainerAPI();
+        final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                .includeArchived(true)
+                .siteId(site.getIdentifier())
+                .offset(0)
+                .limit(-1).build();
+        final List<Container> containers = containerAPI.findContainers(user, searchParams);
+        Logger.info(this, String.format("-> (Step 5/%d) Deleting %d Containers from Site '%s'",
+                steps, containers.size(), site.getHostname()));
+        for (final Container container : containers) {
             containerAPI.delete(container, user, respectFrontendRoles);
         }
 
-        // Remove Structures
-        List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles).search(" host = '" + site.getIdentifier() + "'");
-
-        for (ContentType type : types) {
-            List<Contentlet> structContent = contentAPI.findByStructure(new StructureTransformer(type).asStructure(), APILocator.systemUser(), false, 0, 0);
-            for (Contentlet c : structContent) {
+        final List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles)
+                .search(" host = '" + site.getIdentifier() + "'");
+        Logger.info(this, String.format("-> (Step 6/%d) Deleting %d Content Types from Site '%s'",
+                steps, types.size(), site.getHostname()));
+        for (final ContentType type : types) {
+            final List<Contentlet> contentsByType = contentAPI.findByStructure(new StructureTransformer(type)
+                    .asStructure(), APILocator.systemUser(), false, 0, 0);
+            for (final Contentlet contentlet : contentsByType) {
                 //We are deleting a site/host, we don't need to validate anything.
-                c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-                contentAPI.delete(c, user, respectFrontendRoles);
+                contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+                contentAPI.delete(contentlet, user, respectFrontendRoles);
             }
 
-            ContentTypeAPI contentTypeAPI = APILocator
-                    .getContentTypeAPI(user, respectFrontendRoles);
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontendRoles);
             //Validate if are allow to delete this content type
             if (!type.system() && !type.defaultType()) {
-                contentTypeAPI.delete(type);
+                contentTypeAPI.deleteSync(type);
             } else {
+                Logger.info(this, String.format(
+                        "---> (Step 6/%d) Content Type '%s' cannot be deleted, and must be moved to SYSTEM_HOST",
+                        steps, type.variable()));
                 //If we can not delete it we need to change the host to SYSTEM_HOST
-                ContentType clonedContentType = ContentTypeBuilder.builder(type)
-                        .host(findSystemHost(user, false).getIdentifier()).build();
+                final ContentType clonedContentType = ContentTypeBuilder.builder(type).from(type)
+                        .folder(Folder.SYSTEM_FOLDER)
+                        .folderPath(Folder.SYSTEM_FOLDER_PATH)
+                        .host(Host.SYSTEM_HOST)
+                        .siteName(Host.SYSTEM_HOST_NAME).build();
                 contentTypeAPI.save(clonedContentType);
             }
-
         }
 
         // wipe bad old containers
+        Logger.info(this, String.format("-> (Step 7/%d) Deleting invalid Containers from Site '%s'",
+                steps, site.getHostname()));
         dc.setSQL("delete from container_structures where exists (select * from identifier where host_inode=? and container_structures.container_id=id)");
         dc.addParam(site.getIdentifier());
         dc.loadResult();
 
-        Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
-        for(Inode.Type asset : assets) {
+        Logger.info(this, String.format(
+                "-> (Step 8/%d) Deleting all remaining Containers, Templates, and Links from Site "
+                        + "'%s'", steps, site.getHostname()));
+        final Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
+        for (final Inode.Type asset : assets) {
             dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
             dc.addParam(site.getIdentifier());
-            for(Map row : (List<Map>)dc.loadResults()) {
+            for (final Map<String, Object> row : (List<Map<String, Object>>)dc.loadResults()) {
                 dc.setSQL("delete from "+asset.getVersionTableName()+" where working_inode=? or live_inode=?");
                 dc.addParam(row.get("inode"));
                 dc.addParam(row.get("inode"));
@@ -536,51 +692,73 @@ public class HostFactoryImpl implements HostFactory {
             }
         }
 
-        //Remove Tags
+        Logger.info(this, String.format("-> (Step 9/%d) Deleting all Tags from Site '%s'",
+                steps, site.getHostname()));
         APILocator.getTagAPI().deleteTagsByHostId(site.getIdentifier());
 
-        // Double-check that ALL contentlets are effectively removed
-        // before using dotConnect to kill bad identifiers
-        List<Contentlet> remainingContenlets = contentAPI
+        // Double-check that ALL contentlets are effectively removed before using dotConnect to kill bad identifiers
+        final List<Contentlet> remainingContenlets = contentAPI
                 .findContentletsByHost(site, user, respectFrontendRoles);
-        if (remainingContenlets != null
-                && remainingContenlets.size() > 0) {
+        Logger.info(this, String.format(
+                "-> (Step 10/%d) Deleting (double-checking) %d Contentlets from Site " +
+                        "'%s'", steps,
+                UtilMethods.isSet(remainingContenlets) ? remainingContenlets.size() : 0,
+                site.getHostname()));
+        if (UtilMethods.isSet(remainingContenlets)) {
             contentAPI.deleteByHost(site, user, respectFrontendRoles);
         }
 
-        // kill bad identifiers pointing to the host
+        // kill bad identifiers pointing to the site
+        Logger.info(this,
+                String.format("-> (Step 11/%d) Deleting all invalid Identifiers from Site '%s'",
+                        steps, site.getHostname()));
         dc.setSQL("delete from identifier where host_inode=?");
         dc.addParam(site.getIdentifier());
         dc.loadResult();
 
-        // Remove Host
-        Contentlet c = contentAPI.find(site.getInode(), user, respectFrontendRoles);
-        contentAPI.delete(c, user, respectFrontendRoles);
+        Logger.info(this,
+                String.format("-> (Step 12/%d) Deleting the Site '%s' itself", steps,
+                        site.getHostname()));
+        final Contentlet siteAsContent = contentAPI.find(site.getInode(), user, respectFrontendRoles);
+        contentAPI.delete(siteAsContent, user, respectFrontendRoles);
 
         try {
+            Logger.info(this, String.format("-> (Step 13/%d) Deleting all Secrets from Site '%s'",
+                    steps, site.getHostname()));
             APILocator.getAppsAPI().removeSecretsForSite(site, APILocator.systemUser());
         } catch (final Exception e) {
-            Logger.warn(HostAPIImpl.class, String.format("An error occurred when removing secrets for site " +
-                    "'%s': %s", site, e.getMessage()), e);
+            Logger.warn(HostAPIImpl.class, String.format("An error occurred when removing secrets for Site " +
+                    "'%s': %s", site, ExceptionUtil.getErrorMessage(e)), e);
         }
+
+        Logger.info(this, String.format("-> (Step 14/%d) Deleting site variables from Site '%s'",
+                steps, site.getHostname()));
+        getHostVariableFactory().deleteAllVariablesForSite(site.getIdentifier());
+
+        Logger.info(this,
+                String.format("-> (Step 15/%d) Flushing all caches after deleting Site '%s'",
+                        steps, site.getHostname()));
         flushAllCaches(site);
+
+        Logger.info(this, "======================================================================");
+        Logger.info(this, String.format("  Site '%s' has been deleted successfully!", site.getHostname()));
+        Logger.info(this, "======================================================================");
     }
 
     @Override
     public Optional<Future<Boolean>> delete(final Host site, final User user, final boolean respectFrontendRoles,
                                             final boolean runAsSeparatedThread) {
-        Optional<Future<Boolean>> future = Optional.empty();
-
-        class DeleteHostThread implements Callable<Boolean> {
+        class DeleteSiteThread implements Callable<Boolean> {
 
             @Override
             public Boolean call() {
-                return innerDeleteHost(site, user, respectFrontendRoles);
+                return innerDeleteSite(site, user, respectFrontendRoles);
             }
+
         }
 
-        final DeleteHostThread deleteHostThread = new DeleteHostThread();
-
+        final DeleteSiteThread deleteHostThread = new DeleteSiteThread();
+        Optional<Future<Boolean>> future;
         if(runAsSeparatedThread) {
             final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
             future = Optional.of(concurrentFactory.getSubmitter
@@ -593,26 +771,28 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     @Override
-    public Optional<Host> findDefaultHost(final String contentTypeId, final String columnName) throws DotDataException, DotSecurityException {
-        Host defaultHost = this.siteCache.getDefaultHost();
+    public Optional<Host> findDefaultHost(final String contentTypeId, final String columnName,
+                                          final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        Host defaultHost = this.siteCache.getDefaultHost(respectFrontendRoles);
         if (null != defaultHost) {
             return Optional.of(defaultHost);
         }
         final DotConnect dotConnect = new DotConnect();
-        String inode = null;
+        String workingInode = null;
+        String liveInode = null;
 
         if (APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
 
             String sql = null;
 
             if(DbConnectionFactory.isPostgres()) {
-                sql = "SELECT cvi.working_inode\n"
+                sql = "SELECT cvi.working_inode,cvi.live_inode\n"
                         + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
                         + "  WHERE c.contentlet_as_json @> '{ \"fields\":{\"isDefault\":{ \"value\":true }} }' \n"
                         + "  and c.structure_inode = ?";
             }
             if(DbConnectionFactory.isMsSql()){
-                sql = "SELECT cvi.working_inode\n"
+                sql = "SELECT cvi.working_inode,cvi.live_inode\n"
                         + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
                         + "  WHERE JSON_VALUE(c.contentlet_as_json, '$.fields.isDefault.value') = 'true'  \n"
                         + "  and c.structure_inode = ?";
@@ -622,23 +802,37 @@ public class HostFactoryImpl implements HostFactory {
             }
             dotConnect.setSQL(sql);
             dotConnect.addParam(contentTypeId);
-            inode = Try.of(()->dotConnect.getString("working_inode")).onFailure(throwable -> {
-                Logger.warnAndDebug(HostAPIImpl.class,"An Error occurred while fetching the default host. ", throwable);
+            workingInode = Try.of(()->dotConnect.getString("working_inode")).onFailure(throwable -> {
+                Logger.warnAndDebug(HostAPIImpl.class,"An Error occurred while fetching the working inode for the default host. ", throwable);
+            }).getOrNull();
+            liveInode = Try.of(()->dotConnect.getString("live_inode")).onFailure(throwable -> {
+                Logger.warnAndDebug(HostAPIImpl.class,"An Error occurred while fetching the live inode for the default host. ", throwable);
             }).getOrNull();
         }
-        if (UtilMethods.isNotSet(inode)) {
+        if (UtilMethods.isNotSet(workingInode)) {
             dotConnect
-                    .setSQL("select working_inode from contentlet_version_info join contentlet on (contentlet.inode = contentlet_version_info.working_inode) "
+                    .setSQL("select working_inode,live_inode"
+                            + " from contentlet_version_info join contentlet"
+                            + " on (contentlet.inode = contentlet_version_info.working_inode) "
                             + " where " + columnName  + " = ? and structure_inode =?");
             dotConnect.addParam(true);
             dotConnect.addParam(contentTypeId);
-            inode = dotConnect.getString("working_inode");
+            workingInode = dotConnect.getString("working_inode");
+            liveInode = dotConnect.getString("live_inode");
         }
-        if (UtilMethods.isNotSet(inode)) {
+        if (UtilMethods.isNotSet(workingInode)) {
             return Optional.empty();
         }
-        defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
+        defaultHost = new Host(APILocator.getContentletAPI().find(workingInode, APILocator.systemUser(), false));
         this.siteCache.add(defaultHost);
+        if (UtilMethods.isSet(liveInode) && !StringUtils.equals(workingInode,liveInode)) {
+            final Host liveDefaultHost = new Host(APILocator.getContentletAPI().find(
+                    liveInode, APILocator.systemUser(), false));
+            this.siteCache.add(liveDefaultHost);
+            if (respectFrontendRoles) {
+                defaultHost = liveDefaultHost;
+            }
+        }
         return Optional.of(defaultHost);
     }
 
@@ -753,7 +947,7 @@ public class HostFactoryImpl implements HostFactory {
         sqlQuery.append("cvi.identifier = i.id");
         if (UtilMethods.isSet(siteNameFilter)) {
             sqlQuery.append(AND);
-            sqlQuery.append(getSiteNameColumn(SITE_NAME_LIKE));
+            sqlQuery.append(getSiteNameOrAliasColumn(SITE_NAME_LIKE, true, "c"));
         }
         if (UtilMethods.isSet(condition)) {
             sqlQuery.append(AND);
@@ -764,7 +958,7 @@ public class HostFactoryImpl implements HostFactory {
             sqlQuery.append(EXCLUDE_SYSTEM_HOST);
         }
         if (UtilMethods.isSet(siteNameFilter)) {
-            sqlQuery.append(getSiteNameColumn(PRIORITIZE_EXACT_MATCHES));
+            sqlQuery.append(getSiteNameOrAliasColumn(PRIORITIZE_EXACT_MATCHES, true, "c", "c"));
         }
 
         dc.setSQL(sqlQuery.toString());
@@ -784,13 +978,15 @@ public class HostFactoryImpl implements HostFactory {
             if (dbResults.isEmpty()) {
                 return Optional.of(hostList);
             }
-            final List<Host> siteList = convertDbResultsToSites(dbResults);
+            final List<Host> siteList = convertDbResultsToSites(dbResults, respectFrontendRoles);
             if(user.isAdmin()){
                 return Optional.of(siteList);
             }
             hostList.addAll(APILocator.getPermissionAPI().filterCollection(siteList, PermissionAPI
                     .PERMISSION_READ, respectFrontendRoles, user));
-            hostList = hostList.stream().limit(limit).collect(Collectors.toList());
+            if (limit > 0) {
+                hostList = hostList.stream().limit(limit).collect(Collectors.toList());
+            }
 
             //We want to include the system host in the list of hosts
             final Host systemHost = APILocator.systemHost();
@@ -803,10 +999,11 @@ public class HostFactoryImpl implements HostFactory {
                 hostList.add(systemHost);
             }
 
-            if(hostList.size()==limit || siteList.size() < limit){//user is admin or reach the amount of sites requested or there is no anymore sites
+            if (limit == 0 || hostList.size() == limit || siteList.size() < limit) {//reached the amount of sites requested or there is no anymore sites
                 return Optional.of(hostList);
-            }else{
-                return search(siteNameFilter,condition,showSystemHost,limit,offset+limit,user,respectFrontendRoles,hostList);
+            } else {
+                return search(siteNameFilter, condition, showSystemHost,
+                        limit,offset+limit, user, respectFrontendRoles, hostList);
             }
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when searching for Sites based on the following " +
@@ -820,14 +1017,17 @@ public class HostFactoryImpl implements HostFactory {
     /**
      * Utility method used to convert Site data from the data source into a list of Sites.
      *
-     * @param dbResults Data representing a Site.
-     *
+     * @param dbResults           Data representing a Site.
+     * @param retrieveLiveVersion If the live version of the Site must be retrieved.
      * @return The list of {@link Host} objects.
      */
-    private List<Host> convertDbResultsToSites(final List<Map<String, String>> dbResults) {
+    private List<Host> convertDbResultsToSites(final List<Map<String, String>> dbResults,
+                                               final boolean retrieveLiveVersion) {
         return dbResults.stream().map(siteData -> {
             try {
-                final Contentlet contentlet = this.getContentletFactory().find(siteData.get("inode"));
+                final String inode = retrieveLiveVersion && UtilMethods.isSet(() -> siteData.get("live_inode")) ?
+                        siteData.get("live_inode") : siteData.get("inode");
+                final Contentlet contentlet = this.getContentletFactory().find(inode);
                 return new Host(contentlet);
             } catch (final DotDataException | DotSecurityException e) {
                 Logger.warn(this, String.format("Contentlet with Inode '%s' could not be retrieved from Content " +
@@ -856,25 +1056,57 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     /**
-     * Returns the appropriate column for the {@code Site Name} field depending on the database that dotCMS is running
-     * on. That is, if the value is inside the "Content as JSON" column, or the legacy "text" column.
+     * Returns the appropriate column for the {@code Site Name} or {@code Alias} field depending
+     * on the database that dotCMS is running on. That is, if the value is inside
+     * the "Content as JSON" column, or the legacy "text" column.
      *
-     * @param baseQuery The base SQL query whose column name will be replaced.
-     *
-     * @return The appropriate database column for the Site Name field.
+     * @param baseQuery     The base SQL query whose column name will be replaced.
+     * @param getSiteColumn If the column is for the Site Name field, set to {@code true}. Otherwise, set to {@code false}.
+     * @param tableAliases  The aliases of the tables where the Site Name or Alias fields are located.
+     * @return The appropriate database column for the Site Name or Alias field.
      */
-    private static String getSiteNameColumn(final String baseQuery) {
-        String sql = baseQuery;
-        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-            if (DbConnectionFactory.isPostgres()) {
-                sql = String.format(sql, POSTGRES_SITENAME_COLUMN);
+    private static String getSiteNameOrAliasColumn(final String baseQuery,
+                                                   final boolean getSiteColumn, final String... tableAliases) {
+
+        final Object [] fields = new Object[tableAliases.length];
+        for (int i = 0; i < tableAliases.length; i++) {
+            if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
+                if (DbConnectionFactory.isPostgres()) {
+                    fields[i] = String.format(getSiteColumn ?
+                        POSTGRES_SITENAME_COLUMN : POSTGRES_ALIASES_COLUMN, tableAliases[i]);
+                } else {
+                    fields[i] = String.format(getSiteColumn ?
+                        MSSQL_SITENAME_COLUMN : MSSQL_ALIASES_COLUMN, tableAliases[i]);
+                }
             } else {
-                sql = String.format(sql, MSSQL_SITENAME_COLUMN);
+                fields[i] = String.format(getSiteColumn ?
+                        SITENAME_COLUMN : ALIASES_COLUMN, tableAliases[i]);
             }
-        } else {
-            sql = String.format(sql, SITENAME_COLUMN);
         }
-        return sql;
+        return String.format(baseQuery, fields);
+    }
+
+    /**
+     * Attempts to find a site by ID if the provided siteName is a valid UUID.
+     *
+     * @param siteName The site name that may be a UUID identifier.
+     * @param retrieveLiveVersion If the live version of the Site must be retrieved.
+     * @return The {@link Host} object if found by ID, otherwise {@code null}.
+     */
+    private Host findSiteByIdIfUUID(final String siteName, final boolean retrieveLiveVersion) {
+        if (UUIDUtil.isUUID(siteName)) {
+            try {
+                // siteName is a valid UUID, try to find by ID
+                final Host siteById = DBSearch(siteName, retrieveLiveVersion);
+                if (siteById != null) {
+                    Logger.debug(this, () -> String.format("Site found by ID '%s'", siteName));
+                    return siteById;
+                }
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.warn(this, String.format("Error searching for site by ID '%s'", siteName), e);
+            }
+        }
+        return null;
     }
 
     /**

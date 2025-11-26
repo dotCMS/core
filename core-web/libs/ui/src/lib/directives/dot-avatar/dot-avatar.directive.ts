@@ -1,15 +1,17 @@
-import { ChangeDetectorRef, Directive, HostListener, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Directive, HostListener, Input, OnInit, inject } from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
 @Directive({
-    selector: 'p-avatar[dotAvatar]',
-    standalone: true
+    selector: 'p-avatar[dotAvatar]'
 })
 export class DotAvatarDirective implements OnInit {
+    private avatar = inject(Avatar);
+    private cd = inject(ChangeDetectorRef);
+
     @Input() text = 'Default';
 
-    constructor(private avatar: Avatar, private cd: ChangeDetectorRef) {
+    constructor() {
         this.avatar.shape = 'circle';
     }
 

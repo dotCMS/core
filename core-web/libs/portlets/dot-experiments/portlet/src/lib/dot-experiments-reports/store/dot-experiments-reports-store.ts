@@ -1,16 +1,21 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { ChartData } from 'chart.js';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     BayesianNoWinnerStatus,
     BayesianStatusResponse,
@@ -28,7 +33,6 @@ import {
     SummaryLegend,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 
 import {
     getBayesianDatasets,
@@ -79,6 +83,12 @@ const CONVERSION_RATE_RANGE_SEPARATOR_LABEL = 'to';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
+    private readonly dotExperimentsService = inject(DotExperimentsService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly messageService = inject(MessageService);
+    private readonly title = inject(Title);
+
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
     );
@@ -93,10 +103,11 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         }
     );
 
-    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(({ results }) =>
-        BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
-            ? null
-            : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
+    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(
+        ({ results }) =>
+            BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
+                ? null
+                : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
     );
 
     readonly getPromotedVariant$: Observable<Variant | null> = this.select(({ experiment }) =>
@@ -313,13 +324,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         })
     );
 
-    constructor(
-        private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly messageService: MessageService,
-        private readonly title: Title
-    ) {
+    constructor() {
         super(initialState);
     }
 

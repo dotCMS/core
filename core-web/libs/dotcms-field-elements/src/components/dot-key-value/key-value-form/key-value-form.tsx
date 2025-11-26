@@ -1,4 +1,5 @@
 import { Component, Prop, State, Element, Event, EventEmitter, h } from '@stencil/core';
+
 import { DotKeyValueField } from '../../../models';
 
 const DEFAULT_VALUE = { key: '', value: '' };
@@ -82,8 +83,7 @@ export class DotKeyValueComponent {
                 <button
                     class="key-value-form__save__button"
                     type="submit"
-                    disabled={buttonDisabled}
-                >
+                    disabled={buttonDisabled}>
                     {this.addButtonLabel}
                 </button>
             </form>

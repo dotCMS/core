@@ -1,15 +1,26 @@
+import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
+import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit.store';
 
-import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
+import { DotCategoriesService } from '../../../api/services/dot-categories/dot-categories.service';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
+import { DotCategoriesListComponent } from '../dot-categories-list/dot-categories-list.component';
+import { DotCategoriesPermissionsComponent } from '../dot-categories-permissions/dot-categories-permissions.component';
 
-@Pipe({ name: 'dm' })
+@Pipe({
+    name: 'dm',
+    standalone: false
+})
 class MockPipe implements PipeTransform {
     transform(value: string): string {
         return value;
@@ -21,8 +32,22 @@ describe('CategoriesCreateEditComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotCategoriesCreateEditComponent, MockPipe],
-            imports: [DotPortletBaseModule, DotCategoriesListingModule, TabViewModule]
+            declarations: [MockPipe],
+            imports: [
+                CommonModule,
+                HttpClientTestingModule,
+                DotMessagePipe,
+                TabViewModule,
+                DotCategoriesListComponent,
+                DotPortletBaseComponent,
+                DotCategoriesPermissionsComponent,
+                DotCategoriesCreateEditComponent
+            ],
+            providers: [
+                DotCategoriesCreateEditStore,
+                DotCategoriesService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock }
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotCategoriesCreateEditComponent);

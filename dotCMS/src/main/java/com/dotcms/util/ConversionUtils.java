@@ -369,4 +369,28 @@ public class ConversionUtils implements Serializable {
 				DbConnectionFactory.isDBTrue(objectBoolean.toString());
 	}
 
+	/**
+	 * Converts bytes to human-readable format (B, KB, MB, GB, TB).
+	 * This is the reverse operation of {@link #toLongFromByteCountHumanDisplaySize(String, long)}.
+	 * 
+	 * @param bytes the number of bytes to convert
+	 * @return human-readable string representation (e.g., "1.5 MB", "512 B")
+	 */
+	public static String toHumanReadableByteSize(final long bytes) {
+		if (bytes < 1024) {
+			return bytes + " B";
+		}
+		
+		final String[] units = {"KB", "MB", "GB", "TB"};
+		int unitIndex = 0;
+		double size = bytes;
+		
+		while (size >= 1024 && unitIndex < units.length - 1) {
+			size /= 1024;
+			unitIndex++;
+		}
+		
+		return String.format("%.2f %s", size, units[unitIndex]);
+	}
+
 }

@@ -1,12 +1,17 @@
 <button
-    class="p-button-sm p-button-text"
-    [pTooltip]="tooltipText"
+    #copyButton
     (click)="copyUrlToClipboard($event)"
-    pButton
-    type="button"
+    [class]="$clazz()"
+    [label]="label()"
+    [pTooltip]="tooltipContent"
     appendTo="body"
     hideDelay="800"
-    tooltipPosition="bottom">
-    <i class="pi pi-copy"></i>
-    <span class="p-button-label" *ngIf="!!label">{{ label }}</span>
-</button>
+    icon="pi pi-copy"
+    pButton
+    tooltipPosition="bottom"
+    data-testid="copy-to-clipboard"
+    type="button"></button>
+
+<ng-template #tooltipContent>
+    <span data-testid="tooltip-content">{{ $tooltipText() }}</span>
+</ng-template>

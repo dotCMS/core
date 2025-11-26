@@ -1,11 +1,7 @@
-import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-
-import { SharedModule } from 'primeng/api';
-import { InplaceModule } from 'primeng/inplace';
 
 import { DotInlineEditComponent } from './dot-inline-edit.component';
 
@@ -19,11 +15,11 @@ import { DotInlineEditComponent } from './dot-inline-edit.component';
             <input />
         </ng-template>
         <dot-inline-edit
-            #dotEditInline
             [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
             [inlineEditContentTemplate]="inlineEditContentTemplate"
-        ></dot-inline-edit>
-    `
+            #dotEditInline></dot-inline-edit>
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input() inlineEditDisplayTemplate?: TemplateRef<unknown>;
@@ -37,8 +33,8 @@ describe('DotInlineEditComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotInlineEditComponent, HostTestComponent],
-            imports: [CommonModule, InplaceModule, SharedModule, HttpClientTestingModule],
+            declarations: [HostTestComponent],
+            imports: [DotInlineEditComponent, HttpClientTestingModule],
             providers: []
         }).compileComponents();
 

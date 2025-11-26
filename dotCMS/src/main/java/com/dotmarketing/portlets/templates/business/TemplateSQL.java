@@ -4,7 +4,17 @@ import com.dotmarketing.beans.Inode.Type;
 
 public class TemplateSQL {
 
-    public static TemplateSQL getInstance(){ return new TemplateSQL(); }
+    private static TemplateSQL instance;
+
+    private TemplateSQL(){
+    }
+    public static TemplateSQL getInstance() {
+        if (instance == null) {
+            instance = new TemplateSQL();
+        }
+
+        return instance;
+    }
 
     public static final String FIND_TEMPLATES_BY_HOST_INODE =
             "select template.*, template_identifier.*  from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
@@ -54,5 +64,8 @@ public class TemplateSQL {
     public static final String UPDATE_MOD_USER_BY_MOD_USER = "UPDATE template set mod_user = ? where mod_user = ?";
 
     public static final String UPDATE_LOCKED_BY = "update " + Type.TEMPLATE.getVersionTableName() + " set locked_by=? where locked_by  = ?";
+
+    public static final String GET_PAGES_BY_TEMPLATE_ID = " SELECT c.identifier, c.variant_id as variant FROM contentlet c WHERE EXISTS " +
+            "(SELECT 1 FROM structure s WHERE s.inode = c.structure_inode AND s.structuretype = '5') AND c.contentlet_as_json->'fields'->'template'->>'value' = ? ";
 
 }

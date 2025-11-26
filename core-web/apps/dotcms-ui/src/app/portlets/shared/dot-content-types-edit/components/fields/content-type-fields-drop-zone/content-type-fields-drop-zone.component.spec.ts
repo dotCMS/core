@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
@@ -25,26 +24,27 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import {
+    DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService,
-    DotFormatDateService
+    DotMessageService
 } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotDialogComponent, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -52,16 +52,16 @@ import {
     dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn,
-    FieldUtil,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
-import { ContentTypeFieldsAddRowModule } from '..';
+import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
-import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
+import { DotContentTypeFieldsVariablesComponent } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
@@ -176,7 +176,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
     const mockRouter = {
-        navigate: jasmine.createSpy('navigate')
+        navigate: jest.fn()
     };
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -191,13 +191,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         dragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                TestContentTypeFieldsPropertiesFormComponent,
-                TestContentTypeFieldsRowComponent,
-                TestDotContentTypeFieldsTabComponent,
-                TestDotLoadingIndicatorComponent
-            ],
+            declarations: [ContentTypeFieldsDropZoneComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -206,24 +200,31 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     }
                 ]),
                 BrowserAnimationsModule,
-                ContentTypeFieldsAddRowModule,
-                DotContentTypeFieldsVariablesModule,
-                DotDialogModule,
-                DotActionButtonModule,
-                ButtonModule,
-                DotIconModule,
-                DragulaModule,
-                TableModule,
-                DotFieldValidationMessageComponent,
-                ReactiveFormsModule,
                 HttpClientTestingModule,
+                FormsModule,
+                ReactiveFormsModule,
                 DotMessagePipe,
-                TabViewModule
+                TabViewModule,
+                TooltipModule,
+                ButtonModule,
+                DotDialogComponent,
+                DragulaModule,
+                TestDotLoadingIndicatorComponent,
+                TestContentTypeFieldsRowComponent,
+                TestContentTypeFieldsPropertiesFormComponent,
+                TestDotContentTypeFieldsTabComponent,
+                ContentTypeFieldsAddRowComponent,
+                DotContentTypeFieldsVariablesComponent,
+                DotIconComponent,
+                DotActionButtonComponent,
+                TableModule,
+                CheckboxModule
             ],
             providers: [
                 { provide: Router, useValue: mockRouter },
                 { provide: FieldDragDropService, useValue: dragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotAlertConfirmService, useValue: {} },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: dotLoadingIndicatorServiceMock
@@ -289,7 +290,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         comp.displayDialog = true;
         comp.activeTab = 1;
-        spyOn(comp, 'setDialogOkButtonState');
+        jest.spyOn(comp, 'setDialogOkButtonState');
 
         fixture.detectChanges();
 
@@ -303,6 +304,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.currentField).toBe(null);
         expect(comp.activeTab).toBe(0);
         expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
+        expect(comp.setDialogOkButtonState).toHaveBeenCalledTimes(1);
     });
 
     it('should emit removeFields event', () => {
@@ -310,7 +312,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
 
@@ -326,7 +328,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
         fieldRow.columns[0].fields = [field];
@@ -349,7 +351,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fieldRow1.divider.id = 'test';
         comp.fieldRows = [fieldRow1, fieldRow2];
 
-        spyOn(comp.removeFields, 'emit');
+        jest.spyOn(comp.removeFields, 'emit');
         comp.removeFieldRow(fieldRow2, 1);
 
         expect(comp.removeFields.emit).toHaveBeenCalledTimes(0);
@@ -360,7 +362,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+            clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
         fieldRow1.columns[0].fields = [field];
@@ -404,7 +406,8 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>'
+        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
+    standalone: false
 })
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
@@ -419,7 +422,7 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
-const BLOCK_EDITOR_FIELD = {
+const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     id: '12',
@@ -452,7 +455,7 @@ describe('Load fields and drag and drop', () => {
     let scrollIntoViewSpy;
 
     const mockRouter = {
-        navigate: jasmine.createSpy('navigate')
+        navigate: jest.fn()
     };
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -469,16 +472,16 @@ describe('Load fields and drag and drop', () => {
         TestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
+                TestHostComponent,
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent
+            ],
+            imports: [
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                TestHostComponent,
                 TestDotLoadingIndicatorComponent,
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
-                TestDotBlockEditorSettingsComponent
-            ],
-            imports: [
+                TestDotBlockEditorSettingsComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -486,17 +489,17 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                DotContentTypeFieldsVariablesModule,
+                DotContentTypeFieldsVariablesComponent,
                 FormsModule,
                 CheckboxModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
-                DotActionButtonModule,
-                DotIconModule,
+                DotActionButtonComponent,
+                DotIconComponent,
                 ButtonModule,
                 TableModule,
-                ContentTypeFieldsAddRowModule,
-                DotDialogModule,
+                ContentTypeFieldsAddRowComponent,
+                DotDialogComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
                 TabViewModule
@@ -556,9 +559,9 @@ describe('Load fields and drag and drop', () => {
         de = hostDe.query(By.css('dot-content-type-fields-drop-zone'));
         comp = de.componentInstance;
         const rendered = de.injector.get(Renderer2);
-        scrollIntoViewSpy = jasmine.createSpy();
+        scrollIntoViewSpy = jest.fn();
 
-        spyOn(rendered, 'selectRootElement').and.callFake(() => {
+        jest.spyOn(rendered, 'selectRootElement').mockImplementation(() => {
             return {
                 scrollIntoView: scrollIntoViewSpy
             };
@@ -607,7 +610,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: DotCMSClazzes.TEXT,
                                 id: '5',
                                 name: 'field 5',
                                 sortOrder: 4,
@@ -649,7 +652,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: DotCMSClazzes.TEXT,
                                 id: '9',
                                 name: 'field 9',
                                 sortOrder: 8,
@@ -689,10 +692,11 @@ describe('Load fields and drag and drop', () => {
 
     it('should handler editField event', () => {
         const field = {
-            clazz: 'classField',
-            name: 'nameField'
+            id: '5',
+            clazz: DotCMSClazzes.TEXT,
+            name: 'field 5'
         };
-        const spy = spyOn(comp, 'editFieldHandler');
+        const spy = jest.spyOn(comp, 'editFieldHandler');
 
         fixture.detectChanges();
 
@@ -703,7 +707,7 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should save all updated fields', fakeAsync(() => {
-        spyOn(testFieldDragDropService, 'isDraggedEventStarted').and.returnValue(false);
+        jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(false);
 
         const updatedField = fakeFields[2].columns[0].fields[0];
 
@@ -712,7 +716,7 @@ describe('Load fields and drag and drop', () => {
         tick(100);
         comp.editFieldHandler(updatedField);
 
-        spyOn(comp.editField, 'emit');
+        jest.spyOn(comp.editField, 'emit');
 
         const fieldUpdated = {
             ...dotcmsContentTypeFieldBasicMock,
@@ -733,7 +737,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should not save any fields', fakeAsync(() => {
         comp.currentField = null;
-        spyOn(testFieldDragDropService, 'isDraggedEventStarted').and.returnValue(true);
+        jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(true);
 
         const updatedField = fakeFields[2].columns[0].fields[0];
 
@@ -742,13 +746,13 @@ describe('Load fields and drag and drop', () => {
         tick(100);
         comp.editFieldHandler(updatedField);
 
-        spyOn(comp.editField, 'emit');
+        jest.spyOn(comp.editField, 'emit');
 
         expect(comp.currentField).toBeNull();
     }));
 
     it('should emit and create 2 columns', () => {
-        spyOn(comp, 'addRow');
+        jest.spyOn(comp, 'addRow');
         fixture.detectChanges();
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.selectColums.emit(2);
@@ -813,9 +817,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const fieldMoved = [
-            _.cloneDeep(comp.fieldRows[1]),
-            _.cloneDeep(comp.fieldRows[0]),
-            _.cloneDeep(comp.fieldRows[2])
+            structuredClone(comp.fieldRows[1]),
+            structuredClone(comp.fieldRows[0]),
+            structuredClone(comp.fieldRows[2])
         ];
 
         comp.saveFields.subscribe((data) => {
@@ -847,9 +851,9 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const fieldMoved = [
-            _.cloneDeep(comp.fieldRows[1]),
-            _.cloneDeep(comp.fieldRows[0]),
-            _.cloneDeep(comp.fieldRows[2])
+            structuredClone(comp.fieldRows[1]),
+            structuredClone(comp.fieldRows[0]),
+            structuredClone(comp.fieldRows[2])
         ];
 
         comp.saveFields.subscribe(() => {
@@ -886,7 +890,7 @@ describe('Load fields and drag and drop', () => {
             name: 'nameField'
         };
 
-        const spy = spyOn(comp, 'removeField');
+        const spy = jest.spyOn(comp, 'removeField');
 
         fixture.detectChanges();
 
@@ -1017,14 +1021,14 @@ describe('Load fields and drag and drop', () => {
             });
 
             it('should show convert to block box and trigger convert', () => {
-                spyOn(comp.editField, 'emit');
+                jest.spyOn(comp.editField, 'emit');
 
                 const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
 
                 convertBox.triggerEventHandler('convert', {});
 
                 expect(comp.editField.emit).toHaveBeenCalledWith(
-                    jasmine.objectContaining({
+                    expect.objectContaining({
                         contentTypeId: '3b',
                         fieldType: 'Story-Block',
                         id: '3',
@@ -1051,7 +1055,7 @@ describe('Load fields and drag and drop', () => {
             });
 
             it('should create dot-block-editor-settings', () => {
-                const panels = de.queryAll(By.css('p-tabPanel'));
+                const panels = de.queryAll(By.css('p-tabpanel'));
                 expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
                 expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
                 expect(panels.length).toBe(3);
@@ -1151,7 +1155,7 @@ describe('Load fields and drag and drop', () => {
             });
 
             fixture.detectChanges();
-            const tabView = de.query(By.css('p-tabView'));
+            const tabView = de.query(By.css('p-tabview'));
             tabView.triggerEventHandler('onChange', { index: 1 });
 
             fixture.detectChanges();
@@ -1170,7 +1174,7 @@ describe('Load fields and drag and drop', () => {
 
         it('Should show dot-loading-indicator when loading is set to true', () => {
             hostComp.loading = true;
-            spyOn(dotLoadingIndicatorServiceMock, 'show');
+            jest.spyOn(dotLoadingIndicatorServiceMock, 'show');
             fixture.detectChanges();
 
             expect(dotLoadingIndicatorServiceMock.show).toHaveBeenCalled();
@@ -1178,7 +1182,7 @@ describe('Load fields and drag and drop', () => {
 
         it('Should hide dot-loading-indicator when loading is set to true', () => {
             hostComp.loading = false;
-            spyOn(dotLoadingIndicatorServiceMock, 'hide');
+            jest.spyOn(dotLoadingIndicatorServiceMock, 'hide');
             fixture.detectChanges();
 
             expect(dotLoadingIndicatorServiceMock.hide).toHaveBeenCalled();

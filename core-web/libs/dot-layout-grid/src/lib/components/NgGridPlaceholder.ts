@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnInit, Renderer2 } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, inject } from '@angular/core';
+
 import { NgGrid } from '../directives/NgGrid';
 import { NgGridItemPosition, NgGridItemSize } from '../interfaces/INgGrid';
 
@@ -7,12 +8,13 @@ import { NgGridItemPosition, NgGridItemSize } from '../interfaces/INgGrid';
     template: ''
 })
 export class NgGridPlaceholder implements OnInit {
+    private _ngEl = inject(ElementRef);
+    private _renderer = inject(Renderer2);
+
     private _size: NgGridItemSize;
     private _position: NgGridItemPosition;
     private _ngGrid: NgGrid;
     private _cascadeMode: string;
-
-    constructor(private _ngEl: ElementRef, private _renderer: Renderer2) {}
 
     public registerGrid(ngGrid: NgGrid) {
         this._ngGrid = ngGrid;
@@ -39,19 +41,23 @@ export class NgGridPlaceholder implements OnInit {
         this._cascadeMode = cascade;
         switch (cascade) {
             case 'up':
+
             case 'left':
+
             default:
                 this._renderer.setStyle(this._ngEl.nativeElement, 'left', '0px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'top', '0px');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'right');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'bottom');
                 break;
+
             case 'right':
                 this._renderer.setStyle(this._ngEl.nativeElement, 'right', '0px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'top', '0px');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'left');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'bottom');
                 break;
+
             case 'down':
                 this._renderer.setStyle(this._ngEl.nativeElement, 'left', '0px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'bottom', '0px');
@@ -70,7 +76,9 @@ export class NgGridPlaceholder implements OnInit {
     private _setPosition(x: number, y: number): void {
         switch (this._cascadeMode) {
             case 'up':
+
             case 'left':
+
             default:
                 this._renderer.setStyle(
                     this._ngEl.nativeElement,
@@ -78,6 +86,7 @@ export class NgGridPlaceholder implements OnInit {
                     'translate(' + x + 'px, ' + y + 'px)'
                 );
                 break;
+
             case 'right':
                 this._renderer.setStyle(
                     this._ngEl.nativeElement,
@@ -85,6 +94,7 @@ export class NgGridPlaceholder implements OnInit {
                     'translate(' + -x + 'px, ' + y + 'px)'
                 );
                 break;
+
             case 'down':
                 this._renderer.setStyle(
                     this._ngEl.nativeElement,

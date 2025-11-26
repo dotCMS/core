@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -10,26 +11,25 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
+    DotPropertiesService,
     DotRouterService,
+    DotUiColorsService,
     DotWorkflowActionsFireService,
-    DotGlobalMessageService,
     DotWorkflowEventHandlerService,
-    DotFormatDateService,
-    DotIframeService
+    DotSystemConfigService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -38,26 +38,40 @@ import {
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
+    DotPushPublishDialogService,
     LoggerService,
     LoginService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
-import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { NotificationsService } from '../../../api/services/notifications-service';
+import { LOCATION_TOKEN } from '../../../providers';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
+import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
+// import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
     selector: 'dot-alert-confirm',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotDialogComponent {}
 
 @Component({
     selector: 'dot-toolbar',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotToolbarComponent {
     @Input() collapsed: boolean;
@@ -65,13 +79,15 @@ class MockDotToolbarComponent {
 
 @Component({
     selector: 'dot-generate-secure-password',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotGenerateSecurePasswordComponent {}
 
 @Component({
     selector: 'dot-main-nav',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotMainNavComponent {
     @Input() collapsed: boolean;
@@ -79,21 +95,28 @@ class MockDotMainNavComponent {
 
 @Component({
     selector: 'dot-message-display',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-large-message-display',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLargeMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-push-publish-dialog',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPushPublishDialogComponent {}
+
+const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
+    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
+});
 
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
@@ -104,10 +127,11 @@ describe('MainLegacyComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                DotContentletEditorModule,
-                DotDownloadBundleDialogModule,
-                DotWizardModule,
-                HttpClientTestingModule
+                // DotContentletEditorModule,
+                DotDownloadBundleDialogComponent,
+                DotWizardComponent,
+                HttpClientTestingModule,
+                MainComponentLegacyComponent
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -137,10 +161,33 @@ describe('MainLegacyComponent', () => {
                 DotGlobalMessageService,
                 DotEventsService,
                 DotGenerateSecurePasswordService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                // Add missing services for standalone components
+                DotDownloadBundleDialogService,
+                DotPushPublishDialogService,
+                PushPublishService,
+                DotCurrentUserService,
+                DotWorkflowEventHandlerService,
+                DotNavigationService,
+                IframeOverlayService,
+                DotSystemConfigService,
+                NotificationsService,
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKeys: () => of(createFeatureFlagResponse()),
+                        getFeatureFlag: jest.fn().mockReturnValue(of(true))
+                    }
+                },
+                {
+                    provide: LOCATION_TOKEN,
+                    useValue: {
+                        reload: jest.fn()
+                    }
+                }
             ],
             declarations: [
-                MainComponentLegacyComponent,
+                // MainComponentLegacyComponent, // Moved to imports as standalone
                 MockDotDialogComponent,
                 MockDotMainNavComponent,
                 MockDotToolbarComponent,
@@ -181,12 +228,16 @@ describe('MainLegacyComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            spyOn(dotCustomEventHandlerService, 'handle');
-            createContentlet.triggerEventHandler('custom', { data: 'test' });
+            jest.spyOn(dotCustomEventHandlerService, 'handle');
+            const mockEvent = {
+                detail: {
+                    name: 'create-contentlet',
+                    data: 'test'
+                }
+            };
+            createContentlet.triggerEventHandler('custom', mockEvent);
 
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
-                data: 'test'
-            });
+            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
         });
     });
 });

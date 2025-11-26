@@ -17,7 +17,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
@@ -30,8 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import org.jetbrains.annotations.NotNull;
 
 
@@ -153,7 +151,7 @@ public class VariantAPIImpl implements VariantAPI {
 
     private static void deleteContentlet(final Contentlet contentlet) {
         try {
-            APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getVariantId());
+            APILocator.getVersionableAPI().deleteContentletVersionInfoByVariant(contentlet);
             APILocator.getContentletAPI().deleteVersion(contentlet, APILocator.systemUser(), false);
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);

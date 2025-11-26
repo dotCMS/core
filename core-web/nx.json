@@ -1,8 +1,4 @@
 {
-    "affected": {
-        "defaultBase": "master"
-    },
-    "npmScope": "dotcms",
     "tasksRunnerOptions": {
         "default": {
             "runner": "nx/tasks-runners/default",
@@ -13,16 +9,15 @@
         }
     },
     "cli": {
-        "defaultCollection": "@nx/angular",
         "packageManager": "yarn"
     },
     "defaultProject": "dotcms-ui",
     "generators": {
         "@nx/angular:application": {
-            "style": "scss",
+            "e2eTestRunner": "playwright",
             "linter": "eslint",
-            "unitTestRunner": "jest",
-            "e2eTestRunner": "cypress"
+            "style": "scss",
+            "unitTestRunner": "jest"
         },
         "@nx/angular:library": {
             "linter": "eslint",
@@ -43,24 +38,7 @@
                 "linter": "eslint"
             }
         },
-        "@nrwl/angular:application": {
-            "style": "scss",
-            "linter": "eslint",
-            "unitTestRunner": "karma",
-            "e2eTestRunner": "cypress"
-        },
-        "@nrwl/angular:library": {
-            "linter": "eslint",
-            "unitTestRunner": "karma"
-        },
-        "@nrwl/angular:component": {
-            "style": "scss",
-            "changeDetection": "OnPush"
-        },
-        "@nrwl/react": {
-            "application": {
-                "babel": true
-            },
+        "@nx/react": {
             "library": {
                 "unitTestRunner": "jest"
             }
@@ -102,6 +80,43 @@
                     "codeCoverage": true
                 }
             }
+        },
+        "@nx/eslint:lint": {
+            "inputs": ["default", "{workspaceRoot}/.eslintrc.json"],
+            "cache": true
+        },
+        "@nx/rollup:rollup": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@nx/vite:build": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@nx/angular:package": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@nx/js:tsc": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@angular-devkit/build-angular:application": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "e2e-ci--**/*": {
+            "dependsOn": ["^build"]
+        },
+        "@nx/esbuild:esbuild": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
         }
     },
     "namedInputs": {
@@ -123,10 +138,50 @@
             "!{projectRoot}/.eslintrc.json",
             "!{projectRoot}/.storybook/**/*",
             "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
-            "!{projectRoot}/.storybook/**/*",
-            "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
             "!{projectRoot}/tsconfig.storybook.json",
             "!{projectRoot}/src/test-setup.[jt]s"
         ]
-    }
+    },
+    "plugins": [
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "lint"
+            }
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build",
+                "previewTargetName": "preview",
+                "testTargetName": "test",
+                "serveTargetName": "serve",
+                "serveStaticTargetName": "serve-static"
+            }
+        },
+        {
+            "plugin": "@nx/rollup/plugin",
+            "options": {
+                "buildTargetName": "rollup:build"
+            }
+        },
+        {
+            "plugin": "@nx/playwright/plugin",
+            "options": {
+                "targetName": "e2e"
+            }
+        }
+    ],
+    "defaultBase": "main",
+    "ignorePatterns": [
+        "**/node_modules",
+        "**/*vite.config*.timestamp*",
+        "**/*vitest.config*.timestamp*"
+    ],
+    "release": {
+        "version": {
+            "preVersionCommand": "yarn nx run-many -t build"
+        }
+    },
+    "useLegacyCache": true
 }

@@ -1,0 +1,8 @@
+<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
+    version="2.0" bean-discovery-mode="annotated">
+    <scan>
+        <exclude name="org.apache.**"/>
+    </scan>
+</beans>

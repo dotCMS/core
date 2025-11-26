@@ -8,5 +8,9 @@
         "types": []
     },
     "exclude": ["src/test-setup.ts", "src/**/*.spec.ts", "jest.config.ts", "src/**/*.test.ts"],
-    "include": ["src/**/*.ts"]
+    "include": [
+        "src/**/*.ts",
+        "../../../data-access/src/lib/dot-favorite-contenttype/dot-favorite-contenttype.service.spec.ts",
+        "../../../data-access/src/lib/dot-favorite-contenttype/dot-favorite-contenttype.service.ts"
+    ]
 }

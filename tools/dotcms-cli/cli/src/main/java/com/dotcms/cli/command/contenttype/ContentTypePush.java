@@ -4,7 +4,6 @@ import com.dotcms.api.client.push.PushService;
 import com.dotcms.api.client.push.contenttype.ContentTypeComparator;
 import com.dotcms.api.client.push.contenttype.ContentTypeFetcher;
 import com.dotcms.api.client.push.contenttype.ContentTypePushHandler;
-import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPushOptionsMixin;
@@ -18,8 +17,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -32,8 +31,7 @@ import picocli.CommandLine;
                 "" // empty string to add a new line
         }
 )
-public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer>,
-        DotCommand, DotPush {
+public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
 
@@ -74,17 +72,15 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
         }
 
         // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
+        final Optional<Workspace> workspace = workspace();
         if (workspace.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("No valid workspace found at path: [%s]",
-                            this.getPushMixin().path.toPath()));
+                            this.getPushMixin().pushPath.toPath()));
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile()) {
             inputFile = Path.of(workspace.get().contentTypes().toString(), inputFile.getName())
                     .toFile();
         }
@@ -142,6 +138,20 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @Override
     public int getOrder() {
         return ApplyCommandOrder.CONTENT_TYPE.getOrder();
+    }
+
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
+    }
+
+    @Override
+    public Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().contentTypes();
+        }
+        throw new IllegalArgumentException("No valid workspace found.");
     }
 
 }

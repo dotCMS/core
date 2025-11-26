@@ -1,5 +1,5 @@
 {
-    "extends": ["../../../../.eslintrc.json"],
+    "extends": ["../../../../.eslintrc.base.json"],
     "ignorePatterns": ["!**/*"],
     "overrides": [
         {
@@ -20,7 +20,11 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ]
+                ],
+                "@angular-eslint/prefer-standalone": "off",
+                "@angular-eslint/no-input-rename": "off",
+                "@angular-eslint/no-output-on-prefix": "off",
+                "@angular-eslint/no-output-native": "off"
             },
             "extends": [
                 "plugin:@nx/angular",

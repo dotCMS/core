@@ -1,15 +1,14 @@
 package com.dotmarketing.servlets;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.matches;
-
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockServletPathRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -17,19 +16,19 @@ import com.dotcms.mock.response.MockHttpCaptureResponse;
 import com.dotcms.mock.response.MockHttpContentTypeResponse;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -41,22 +40,30 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.tools.ant.taskdefs.Classloader;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.RandomStringUtils;
+import java.util.Base64;
+import org.junit.AfterClass;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
@@ -90,12 +97,26 @@ public class BinaryExporterServletTest {
     private static final String BY_ID = "by-identifier";
     private static final String BY_INODE = "by-inode";
 
-    private static final String READ_PERMISSIONS = "has-read-permissions";
-    private static final String NO_PERMISSIONS = "no-permissions";
+    private static final String NO_PERMISSIONS_REQUIRED = "no-permissions-required";
+    private static final String PERMISSIONS_REQUIRED = "permissions-required";
+
+    private static final String AUTH_WITH_CREDENTIALS = "auth-with-credentials";
+    private static final String AUTH_WITH_TOKEN = "auth-with-token";
+    private static final String NO_AUTH = "no-auth";
+
+    private static final String DEFAULT_LANGUAGE = "default-language";
+    private static final String NON_DEFAULT_LANGUAGE = "non-default-language";
 
     private static Host host;
     private static Role role;
+    private static User user;
+    private static Language nonDefaultLanguage;
+    private static String userEmailAndPassword;
+    private static ApiToken apiToken;
 
+    /**
+     * Prepare testing environment
+     */
     @BeforeClass
     public static void prepare() throws Exception {
 
@@ -105,26 +126,98 @@ public class BinaryExporterServletTest {
         host = new SiteDataGen().nextPersisted();
         role = new RoleDataGen().nextPersisted();
 
+        final String userPassword = RandomStringUtils.randomAlphabetic(10);
+        final String userEmail = RandomStringUtils.randomAlphabetic(5) + "@dotcms.com";
+        userEmailAndPassword = userEmail + ":" + userPassword;
+
+        user = new UserDataGen()
+                .emailAddress(userEmail).password(userPassword)
+                .roles(role, APILocator.getRoleAPI().loadRoleByKey(DOTCMS_BACK_END_USER))
+                .nextPersisted();
+
+        nonDefaultLanguage = new LanguageDataGen().nextPersisted();
+
+        apiToken = APILocator.getApiTokenAPI().persistApiToken(
+           user.getUserId(), Date.from(Instant.now().plus(Duration.ofDays(10))),
+           APILocator.systemUser().getUserId() , "127.0.0.1");
+
     }
 
+    /**
+     * Clean up testing environment
+     */
+    @AfterClass
+    public static void cleanup() {
+        User systemUser = APILocator.systemUser();
+        if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getIdentifier())) {
+            try {
+                host.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                APILocator.getHostAPI().unpublish(host, systemUser, false);
+                APILocator.getHostAPI().archive(host, systemUser, false);
+                APILocator.getHostAPI().delete(host, systemUser, false);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.error(BinaryExporterServletTest.class, "Unable to remove Host.", e);
+            }
+        }
+        if (UtilMethods.isSet(role) && UtilMethods.isSet(role.getId())) {
+            RoleDataGen.remove(role);
+        }
+        if (UtilMethods.isSet(user) && UtilMethods.isSet(user.getUserId())) {
+            UserDataGen.remove(user);
+        }
+    }
+
+    /**
+     * Data provider for test cases of requestBinaryFile test method
+     * @return Test cases data
+     */
     @DataProvider
     public static Object[][] testCases() {
         return new Object[][] {
-                { BY_ID, READ_PERMISSIONS },
-                { BY_ID, NO_PERMISSIONS },
-                { BY_INODE, READ_PERMISSIONS },
-                { BY_INODE, NO_PERMISSIONS },
+                {BY_ID, NO_PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_ID, NO_PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_ID, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_ID, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, NON_DEFAULT_LANGUAGE}
         };
     }
 
+    /**
+     * Method to test: {@link BinaryExporterServlet.doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: Request a binary file asset Expected result: Should return the binary file
+     * asset content if permissions are granted If permissions are not granted, should return 401
+     * Unauthorized
+     *
+     * @param byIdType       Identifier type (by-identifier or by-inode)
+     * @param permissionType Permissions required (no-permissions-required or permissions-required)
+     * @param authType       Authorization type (no-auth, auth-with-credentials or auth-with-token)
+     * @param languageType   The type of language to use for the test (default-language,
+     *                       non-default-language)
+     */
     @UseDataProvider("testCases")
     @Test
-    public void requestBinaryFile(
-            final String byIdType, final String permissionType)
+    public void requestBinaryFile(final String byIdType, final String permissionType,
+            final String authType, final String languageType)
             throws DotDataException, DotSecurityException, ServletException, IOException {
 
         final boolean byIdentifier = byIdType.equals(BY_ID);
-        final boolean permissionsRequired = permissionType.equals(NO_PERMISSIONS);
+        final boolean permissionsRequired = permissionType.equals(PERMISSIONS_REQUIRED);
+        final boolean useDefaultLanguage = languageType.equals(DEFAULT_LANGUAGE);
 
         Contentlet fileAsset = null;
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
@@ -136,24 +229,46 @@ public class BinaryExporterServletTest {
 
             // Set asset permissions
             if (permissionsRequired) {
-                addPermissions(fileAsset);
+                ServletTestUtils.addPermissions(fileAsset, role);
             }
 
             // Build request and response
             final String fileURI = "/contentAsset/raw-data/"
                     + (byIdentifier ? fileAsset.getIdentifier() : fileAsset.getInode())
                     + "/fileAsset/";
-            final HttpServletRequest request = mockServletRequest(fileURI);
+            final MockHeaderRequest request = new MockHeaderRequest(mockServletRequest(fileURI));
+            if (AUTH_WITH_CREDENTIALS.equals(authType)) {
+                request.setHeader("Authorization",
+                        "Basic " + Base64.getEncoder().encodeToString(userEmailAndPassword.getBytes()));
+            } else if (AUTH_WITH_TOKEN.equals(authType)) {
+                request.setHeader("Authorization",
+                        "Bearer " + APILocator.getApiTokenAPI().getJWT(apiToken, user));
+            }
+
+            if (!useDefaultLanguage) {
+                HttpSession sessionOpt = request.getSession(true);
+                if (sessionOpt != null) {
+                    sessionOpt.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                            String.valueOf(nonDefaultLanguage.getId()));
+                }
+            }
+
             final HttpServletResponse response = mockServletResponse(tmpTargetFile);
 
             // Send servlet request
             sendRequest(request, response);
 
-            if (permissionsRequired) {
+            if (permissionsRequired && NO_AUTH.equals(authType)) {
                 // Verify response status
-                assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+                if (byIdentifier && !useDefaultLanguage) {
+                    assertEquals(HttpServletResponse.SC_NOT_FOUND, response.getStatus());
+                } else {
+                    assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+                    assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+                }
             } else {
                 // Verify response
+                assertEquals(HttpServletResponse.SC_OK, response.getStatus());
                 final byte[] responseContent = Files.readAllBytes(tmpTargetFile.getPath());
                 assertArrayEquals(ShortyServletAndTitleImageTest.pngPixel, responseContent);
             }
@@ -255,15 +370,15 @@ public class BinaryExporterServletTest {
 
             final String fileURI = "/contentAsset/image/" + fileContentlet.getInode()
                     + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
-            final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-            Mockito.when(request.getHeader("user-agent")).thenReturn(userAgent);
-            Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
-            Mockito.when(request.getRequestURI()).thenReturn(fileURI);
-            Mockito.when(request.getServletPath()).thenReturn("/contentAsset");
-            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getHeader("user-agent")).thenReturn(userAgent);
+            when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+            when(request.getRequestURI()).thenReturn(fileURI);
+            when(request.getServletPath()).thenReturn("/contentAsset");
+            when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
                     .thenReturn("image/webp");
 
-            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
+            when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
                     .thenReturn("image/jpeg");
 
             final HttpServletResponse response = new MockHttpContentTypeResponse(
@@ -312,7 +427,7 @@ public class BinaryExporterServletTest {
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
         try {
             return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                    Mockito.mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
+                    mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -327,26 +442,5 @@ public class BinaryExporterServletTest {
 
     }
 
-    private void addPermissions(final Contentlet fileAsset)
-            throws DotSecurityException, DotDataException {
-
-        final User systemUser = APILocator.systemUser();
-        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-
-        final Permission anonPermission = new Permission();
-        anonPermission.setInode(fileAsset.getPermissionId());
-        anonPermission.setRoleId(anonymousRole.getId());
-        anonPermission.setPermission(0);
-
-        final Permission permission = new Permission();
-        permission.setInode(fileAsset.getPermissionId());
-        permission.setRoleId(role.getId());
-        permission.setPermission(PermissionAPI.PERMISSION_READ);
-
-        APILocator.getPermissionAPI().save(
-                CollectionsUtils.list(anonPermission, permission),
-                fileAsset, systemUser, false);
-
-    }
 
 }

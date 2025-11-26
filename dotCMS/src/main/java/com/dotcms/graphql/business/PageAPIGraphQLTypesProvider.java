@@ -6,8 +6,8 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
+import static graphql.scalars.ExtendedScalars.GraphQLLong;
 import static graphql.schema.GraphQLList.list;
 
 import com.dotcms.enterprise.license.LicenseManager;
@@ -20,10 +20,13 @@ import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
+import com.dotcms.graphql.datafetcher.page.RunningExperimentFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
+import com.dotcms.graphql.datafetcher.page.VanityURLFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.domain.Geolocation;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
@@ -43,6 +46,7 @@ import com.dotmarketing.portlets.templates.design.bean.Sidebar;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.util.Logger;
 import eu.bitwalker.useragentutils.Browser;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -83,20 +87,24 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public static final String DOT_PAGE_CONTAINER_STRUCTURE = "DotPageContainerStructure";
     public static final String DOT_PAGE_CONTAINER_CONTENTLETS = "DotPageContainerContentlets";
     public static final String DOT_PAGE_CONTAINER = "DotPageContainer";
+    public static final String DOT_PAGE_VANITY_URL = "DotPageVanityURL";
     public static final String DOT_PAGE_BODY = "DotPageBody";
     Map<String, GraphQLOutputType> typesMap = new HashMap<>();
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
+
+        Logger.debug(this, ()-> "Creating Page API GraphQL Types");
         typesMap.clear();
 
         // Page type
         final Map<String, TypeFetcher> pageFields = new HashMap<>(ContentFields.getContentFields());
-        pageFields.put("__icon__", new TypeFetcher(GraphQLString));
+        pageFields.put("icon", new TypeFetcher(GraphQLString));
         pageFields.put("cachettl", new TypeFetcher(GraphQLString));
         pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean));
         pageFields.put("canLock", new TypeFetcher(GraphQLBoolean));
         pageFields.put("canRead", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("canSeeRules", new TypeFetcher(GraphQLBoolean));
         pageFields.put("deleted", new TypeFetcher(GraphQLBoolean));
         pageFields.put("description", new TypeFetcher(GraphQLString));
         pageFields.put("extension", new TypeFetcher(GraphQLString));
@@ -148,6 +156,18 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new LayoutDataFetcher()));
         pageFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER)),
                 new ContainersDataFetcher()));
+        pageFields.put("vanityUrl", new TypeFetcher(
+                GraphQLTypeReference.typeRef(DOT_PAGE_VANITY_URL), new VanityURLFetcher())
+        );
+        pageFields.put("runningExperimentId", new TypeFetcher(
+                GraphQLString, new RunningExperimentFetcher())
+        );
+        
+        // Expose the page as its underlying contentlet type to enable inline fragments
+        // for accessing content-type-specific fields like SEO metadata
+        pageFields.put("page", new TypeFetcher(
+                GraphQLTypeReference.typeRef(DOT_CONTENTLET),
+                PropertyDataFetcher.fetching((Contentlet contentlet) -> contentlet)));
 
         typesMap.put(DOT_PAGE, TypeUtil.createObjectType(DOT_PAGE, pageFields));
 
@@ -198,6 +218,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         viewAsFields.put("mode", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ViewAsPageStatus, String>)
                         (viewAs)->viewAs.getPageMode().name())));
+        viewAsFields.put("variantId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ViewAsPageStatus::getVariantId)));
         if(LicenseManager.getInstance().isEnterprise()) {
             viewAsFields
                     .put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
@@ -571,6 +593,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 PropertyDataFetcher.fetching(ContainerStructure::getContainerId)));
         containerStructureFields.put("code", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching(ContainerStructure::getCode)));
+        containerStructureFields.put("contentTypeVar", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContentTypeVar)));
 
         typesMap.put(DOT_PAGE_CONTAINER_STRUCTURE, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_STRUCTURE,
                 containerStructureFields));
@@ -591,8 +615,46 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         typesMap.put(DOT_PAGE_CONTAINER, TypeUtil.createObjectType(DOT_PAGE_CONTAINER,
                 containerFields));
 
-        return typesMap.values();
+        // Vanity URL type
+        final Map<String, TypeFetcher> vanityURLFields = getVanityURLFields();
+        typesMap.put(DOT_PAGE_VANITY_URL,
+                TypeUtil.createObjectType(DOT_PAGE_VANITY_URL, vanityURLFields));
 
+        return typesMap.values();
+    }
+
+    /**
+     * Get the fields for the Vanity URL type
+     *
+     * @return a map of field names to TypeFetchers
+     */
+    private Map<String, TypeFetcher> getVanityURLFields() {
+
+        final Map<String, TypeFetcher> vanityURLFields = new HashMap<>();
+
+        vanityURLFields.put("id", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<CachedVanityUrl>("vanityUrlId"))
+        );
+        vanityURLFields.put("uri", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<CachedVanityUrl>("url"))
+        );
+        vanityURLFields.put("siteId", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<CachedVanityUrl>("siteId"))
+        );
+        vanityURLFields.put("languageId", new TypeFetcher(GraphQLLong,
+                new PropertyDataFetcher<CachedVanityUrl>("languageId"))
+        );
+        vanityURLFields.put("forwardTo", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<CachedVanityUrl>("forwardTo"))
+        );
+        vanityURLFields.put("action", new TypeFetcher(GraphQLInt,
+                new PropertyDataFetcher<CachedVanityUrl>("response"))
+        );
+        vanityURLFields.put("order", new TypeFetcher(GraphQLInt,
+                new PropertyDataFetcher<CachedVanityUrl>("order"))
+        );
+
+        return vanityURLFields;
     }
 
     Map<String, GraphQLOutputType> getTypesMap() {

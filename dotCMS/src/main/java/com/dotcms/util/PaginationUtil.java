@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.rest.Pagination;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -14,6 +15,7 @@ import com.liferay.util.StringUtil;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -24,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
@@ -80,18 +81,25 @@ public class PaginationUtil {
 
 	}
 
-	/**
-	 * Returns a paginated response of elements to the User based on a specific set of parameters. Any class inheriting
-	 * the {@link Paginator} interface will be able to provide paginated items.
-	 *
-	 * @param req     The current instance of the {@link HttpServletRequest}.
-	 * @param user    The {@link User} calling this pagination.
-	 * @param filter  A multipurpose String filtering parameter.
-	 * @param page    The page offset value, for pagination purposes.
-	 * @param perPage The number of items per page, for pagination purposes.
-	 *
-	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
-	 */
+    /**
+     * Returns a paginated response of elements to the User based on a specific set of parameters.
+     * Any class inheriting the {@link Paginator} interface will be able to provide paginated
+     * items.
+     *
+     * @param req     The current instance of the {@link HttpServletRequest}.
+     * @param user    The {@link User} calling this pagination.
+     * @param filter  A multipurpose String filtering parameter.
+     * @param page    The page offset value, for pagination purposes.
+     * @param perPage The number of items per page, for pagination purposes.
+     *
+     * @return The {@link Response} object including the paginated items and the respective
+     * pagination headers.
+     *
+     * @deprecated Please use the {@link #getPageView(PaginationUtilParams)} method as it uses the
+     * {@link ResponseEntityPaginatedDataView} instead of the generic {@link Response} for returning
+     * the results.
+     */
+    @Deprecated
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page, final int perPage) {
 		return getPage(req, user, filter, page, perPage, StringUtils.EMPTY, null, null);
 	}
@@ -110,7 +118,12 @@ public class PaginationUtil {
 	 * @param direction The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
 	 *
 	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+     *
+     * @deprecated Please use the {@link #getPageView(PaginationUtilParams)} method as it uses the
+     * {@link ResponseEntityPaginatedDataView} instead of the generic {@link Response} for returning
+     * the results.
 	 */
+    @Deprecated
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
 							final int perPage, final String orderBy, final String direction) {
 		return getPage(req, user, filter, page, perPage, orderBy,
@@ -130,7 +143,12 @@ public class PaginationUtil {
 	 *                    class to return the expected items.
 	 *
 	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+     *
+     * @deprecated Please use the {@link #getPageView(PaginationUtilParams)} method as it uses the
+     * {@link ResponseEntityPaginatedDataView} instead of the generic {@link Response} for returning
+     * the results.
 	 */
+    @Deprecated
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
 							final int perPage, final Map<String, Object>  extraParams) {
 		return getPage(req, user, filter, page, perPage, null, null, extraParams);
@@ -152,7 +170,12 @@ public class PaginationUtil {
 	 *                     class to return the expected items.
 	 *
 	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+     *
+     * @deprecated Please use the {@link #getPageView(PaginationUtilParams)} method as it uses the
+     * {@link ResponseEntityPaginatedDataView} instead of the generic {@link Response} for returning
+     * the results.
 	 */
+    @Deprecated
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
 							final int perPage, final String orderBy, final OrderDirection direction,
 							final Map<String, Object> extraParams) {
@@ -175,7 +198,13 @@ public class PaginationUtil {
 	 * @param function     This is function must feed the items into whatever json we want to use.
 	 *
 	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+     *
+     * @deprecated Please use the {@link #getPageView(PaginationUtilParams)} method as it uses the
+     * {@link ResponseEntityPaginatedDataView} instead of the generic {@link Response} for returning
+     * the results.
 	 */
+    @Deprecated
+	@SuppressWarnings("unchecked")
 	public <T, R> Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
 								   final int perPage, final String orderBy, final OrderDirection direction,
 								   final Map<String, Object> extraParams,
@@ -185,7 +214,7 @@ public class PaginationUtil {
 		final int minIndex = this.getMinIndex(pageValue, perPageValue);
 		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
 		final Map<String, Object> params = this.getParameters(sanitizeFilter, orderBy, direction, extraParams);
-		PaginatedArrayList items = minIndex >= 0 ? paginator.getItems(user, perPageValue, minIndex, params) : null;
+		PaginatedArrayList <T> items = minIndex >= 0 ? paginator.getItems(user, perPageValue, minIndex, params) : null;
 		if (UtilMethods.isNotSet(items)) {
 			items = new PaginatedArrayList<>();
 		}
@@ -197,6 +226,39 @@ public class PaginationUtil {
 		final Object paginatedItems = null != function ? function.apply(items) : items;
 		return this.createResponse(paginatedItems, linkHeader, pageValue, perPageValue, totalRecords);
 	}
+
+    /**
+     * Returns a {@link ResponseEntityPaginatedDataView} object containing the resulting objects
+     * along with the respective pagination information.
+     *
+     * @param utilParams The {@link PaginationUtilParams} object containing the different pagination
+     *                   parameters and filtering criteria.
+     * @param <T>        Generics for the optional Functional Interface to be applied to every
+     *                   result.
+     * @param <R>        Generics for the optional Functional Interface to be applied to every
+     *                   result.
+     *
+     * @return The {@link ResponseEntityPaginatedDataView} object with the paginated results.
+     */
+    @SuppressWarnings("unchecked")
+    public <T, R> ResponseEntityPaginatedDataView getPageView(final PaginationUtilParams<T, R> utilParams) {
+        final int pageValue = utilParams.page() <= 0 ? FIRST_PAGE_INDEX : utilParams.page();
+        final int perPageValue = utilParams.perPage() <= 0 ? perPageDefault : utilParams.perPage();
+        final int minIndex = this.getMinIndex(pageValue, perPageValue);
+        final String sanitizedFilter = UtilMethods.isSet(utilParams.filter()) ? SQLUtil.sanitizeParameter(utilParams.filter()) : StringPool.BLANK;
+        final Map<String, Object> params = this.getParameters(sanitizedFilter, utilParams.orderBy(), utilParams.direction(), utilParams.extraParams());
+        PaginatedArrayList items = minIndex >= 0 ? paginator.getItems(utilParams.user(), perPageValue, minIndex, params) : null;
+        if (UtilMethods.isNotSet(items)) {
+            items = new PaginatedArrayList<>();
+        }
+        final long totalRecords = items.getTotalResults();
+        final LinkHeader linkHeader =
+                new LinkHeader.Builder().baseUrl(utilParams.request().getRequestURI()).filter(sanitizedFilter).page(pageValue)
+                        .perPage(perPageValue).totalRecords(totalRecords).orderBy(utilParams.orderBy()).direction(utilParams.direction())
+                        .extraParams(utilParams.extraParams()).build();
+        final Object paginatedItems = null != utilParams.function() ? utilParams.function().apply(items) : items;
+        return this.createResponseView(utilParams.response(), paginatedItems, linkHeader, pageValue, perPageValue, totalRecords);
+    }
 
 	/**
 	 * Utility method that condenses a list of provided filtering parameters into a single Object Map.
@@ -212,11 +274,10 @@ public class PaginationUtil {
 												final String orderBy,
 												final OrderDirection direction,
 												final Map<String, Object> extraParams) {
-		final Map<String, Object> params = map(
-				Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
-				Paginator.ORDER_BY_PARAM_NAME, orderBy,
-				Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC
-		);
+		final Map<String, Object> params = new HashMap<>();
+		params.put(Paginator.DEFAULT_FILTER_PARAM_NAME, filter);
+		params.put(Paginator.ORDER_BY_PARAM_NAME, orderBy);
+		params.put(Paginator.ORDER_DIRECTION_PARAM_NAME, direction != null ? direction : OrderDirection.ASC);
 
 		if (extraParams != null) {
 			for (final Map.Entry<String, Object> paramEntry : extraParams.entrySet()) {
@@ -247,20 +308,20 @@ public class PaginationUtil {
 		final List<String> links = new ArrayList<>();
 		final String URL_KEY = "URL";
 		final String REL_VALUE_KEY = "relValue";
-		links.add(StringUtil.format(LINK_TEMPLATE, map(
+		links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), FIRST_PAGE_INDEX, linkHeader.perPage(),
 						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, FIRST_REL_VALUE
 		)));
 
 		int lastPage = (int) (Math.ceil((double) linkHeader.totalRecords() / linkHeader.perPage()));
-		links.add(StringUtil.format(LINK_TEMPLATE, map(
+		links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), lastPage, linkHeader.perPage(),
 						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, LAST_REL_VALUE
 		)));
 
-		links.add(StringUtil.format(LINK_TEMPLATE, map(
+		links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), -1, linkHeader.perPage(),
 						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, PAGE_REL_VALUE
@@ -268,7 +329,7 @@ public class PaginationUtil {
 
 		int next = linkHeader.page() + 1;
 		if (next <= lastPage){
-			links.add(StringUtil.format(LINK_TEMPLATE, map(
+			links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 					URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), next, linkHeader.perPage(),
 							linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 					REL_VALUE_KEY, NEXT_REL_VALUE
@@ -277,7 +338,7 @@ public class PaginationUtil {
 
 		int prev = linkHeader.page() - 1;
 		if (prev > 0){
-			links.add(StringUtil.format(LINK_TEMPLATE, map(
+			links.add(StringUtil.format(LINK_TEMPLATE, Map.of(
 					URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), prev, linkHeader.perPage(),
 							linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 					REL_VALUE_KEY, PREV_REL_VALUE
@@ -288,9 +349,12 @@ public class PaginationUtil {
 	}
 
 	/**
-	 * Builds the expected URL for the {@code Link} header. The syntax to build each URL is the following:
+	 * Builds the expected URL for the {@code Link} header. The syntax to build each URL is the
+     * following:
 	 * <pre>
-	 *     [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+     *     {@code
+	 *     [baseUrl]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+     *     }
 	 * </pre>
 	 *
 	 * @param baseUrl     The URI for the current HTTP Request.
@@ -388,9 +452,14 @@ public class PaginationUtil {
 	 * @param totalRecords   The total number of unfiltered items returned by the query.
 	 *
 	 * @return The expected {@link Response} object.
+     *
+     * @deprecated Please use the {@link #getPageView(PaginationUtilParams)} method as it uses the
+     * {@link ResponseEntityPaginatedDataView} instead of the generic {@link Response} for returning
+     * the results.
 	 */
+    @Deprecated
 	private Response createResponse(final Object paginatedItems, final LinkHeader linkHeader, final int pageValue,
-									final int perPageValue, final long totalRecords) {
+                                    final int perPageValue, final long totalRecords) {
 		final String linkHeaderValue = this.getHeaderValue(linkHeader);
 		final Pagination pagination =
 				new Pagination.Builder()
@@ -405,13 +474,48 @@ public class PaginationUtil {
 					   .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords).build();
 	}
 
+    /**
+     * Creates an instance of the {@link ResponseEntityPaginatedDataView} class including both the
+     * Entity -- i.e., the list of queried objects -- and additional pagination attributes for the
+     * UI layer or any other client to have. This is meant to solve a problem in which certain
+     * proxies may remove the already existing pagination headers.
+     *
+     * @param response       The current instance of the {@link HttpServletResponse}.
+     * @param paginatedItems The paginated data that is being returned.
+     * @param linkHeader     The {@link LinkHeader} object with the information for generating the
+     *                       navigation for the paginated data.
+     * @param pageValue      The currently selected page.
+     * @param perPageValue   The maximum number of items returned in a results page.
+     * @param totalRecords   The total number of unfiltered items returned by the query.
+     *
+     * @return The {@link ResponseEntityPaginatedDataView} object.
+     */
+    private ResponseEntityPaginatedDataView createResponseView(final HttpServletResponse response,
+                                                               final Object paginatedItems,
+                                                               final LinkHeader linkHeader,
+                                                               final int pageValue,
+                                                               final int perPageValue,
+                                                               final long totalRecords) {
+        final String linkHeaderValue = this.getHeaderValue(linkHeader);
+        final Pagination pagination = new Pagination.Builder()
+                .currentPage(pageValue)
+                .perPage(perPageValue)
+                .totalEntries(totalRecords).build();
+        response.setHeader(LINK_HEADER_NAME, linkHeaderValue);
+        response.setHeader(PAGINATION_PER_PAGE_HEADER_NAME, String.valueOf(perPageValue));
+        response.setHeader(PAGINATION_CURRENT_PAGE_HEADER_NAME, String.valueOf(pageValue));
+        response.setHeader(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, String.valueOf(nLinks));
+        response.setHeader(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, String.valueOf(totalRecords));
+        return new ResponseEntityPaginatedDataView(paginatedItems, pagination);
+    }
+
 	/**
 	 * Contains the required information for generating the value of the {@code Link} HTTP Header used by the UI layer.
 	 * There are three values that can be generated:
 	 * <ul>
 	 *     <li>The link to get the <b>first</b> results page.</li>
 	 *     <li>The link to get the <b>last</b> results page.</li>
-	 *     <li>The link to get the <b>a specific</b> results page.</li>
+	 *     <li>The link to get the <b>specific</b> results page.</li>
 	 * </ul>
 	 * For instance, the value of this header may look like this:
 	 * <br/><br/>{@code

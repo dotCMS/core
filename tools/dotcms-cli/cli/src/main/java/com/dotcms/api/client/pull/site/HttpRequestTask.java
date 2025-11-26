@@ -5,17 +5,16 @@ import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.function.Function;
-import javax.enterprise.context.Dependent;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 /**
  * Represents a task that performs HTTP requests concurrently.
  */
 @Dependent
-public class HttpRequestTask extends TaskProcessor {
+public class HttpRequestTask extends TaskProcessor<List<Site>, CompletableFuture<List<SiteView>>> {
 
     private final SiteFetcher siteFetcher;
 
@@ -42,12 +41,13 @@ public class HttpRequestTask extends TaskProcessor {
      *
      * @param sites List of Site objects to process.
      */
+    @Override
     public void setTaskParams(final List<Site> sites) {
         this.sites = sites;
     }
 
     /**
-     * Processes a list of Site objects, either sequantially or in parallel, depending on the list
+     * Processes a list of Site objects, either sequentially or in parallel, depending on the list
      * size. If the size of the list is under a predefined threshold, items are processed
      * individually in order. For larger lists, the work is divided into separate concurrent tasks,
      * which are processed in parallel.
@@ -56,46 +56,30 @@ public class HttpRequestTask extends TaskProcessor {
      *
      * @return A List of fully fetched SiteView objects.
      */
-    public List<SiteView> compute() {
-
-        CompletionService<List<SiteView>> completionService =
-                new ExecutorCompletionService<>(executor);
+    @Override
+    public CompletableFuture<List<SiteView>> compute() {
 
         if (sites.size() <= THRESHOLD) {
 
             // If the list is small enough, process sequentially
-            List<SiteView> siteViews = new ArrayList<>();
-            for (Site site : sites) {
-                siteViews.add(siteFetcher.fetchByKey(site.hostName(), null));
-            }
+            return CompletableFuture.supplyAsync(() -> sites.stream()
+                    .map(site ->
+                            siteFetcher.fetchByKey(site.hostName(), false, null)
+                    ).collect(Collectors.toList()), executor);
 
-            return siteViews;
-
-        } else {
-
-            // If the list is large, split it into smaller tasks
-            int toProcessCount = splitTasks(sites, completionService);
-
-            // Wait for all tasks to complete and gather the results
-            final var foundSites = new ArrayList<SiteView>();
-            Function<List<SiteView>, Void> processFunction = taskResult -> {
-                foundSites.addAll(taskResult);
-                return null;
-            };
-            processTasks(toProcessCount, completionService, processFunction);
-            return foundSites;
         }
+
+        // If the list is large, split it into smaller tasks
+        return splitTasks(sites);
     }
 
     /**
      * Splits a list of Site objects into separate tasks.
      *
      * @param sites             List of Site objects to process.
-     * @param completionService The CompletionService to submit tasks to.
-     * @return The number of tasks to process.
+     * @return A CompletableFuture representing the combined results of the separate tasks.
      */
-    private int splitTasks(List<Site> sites,
-            CompletionService<List<SiteView>> completionService) {
+    private CompletableFuture<List<SiteView>> splitTasks(List<Site> sites) {
 
         int mid = sites.size() / 2;
         var subList1 = sites.subList(0, mid);
@@ -103,14 +87,17 @@ public class HttpRequestTask extends TaskProcessor {
 
         var task1 = new HttpRequestTask(siteFetcher, executor);
         task1.setTaskParams(subList1);
+        var futureTask1 = task1.compute();
 
         var task2 = new HttpRequestTask(siteFetcher, executor);
         task2.setTaskParams(subList2);
+        var futureTask2 = task2.compute();
 
-        completionService.submit(task1::compute);
-        completionService.submit(task2::compute);
-
-        return 2;
+        return futureTask1.thenCombine(futureTask2, (list1, list2) -> {
+            var combinedList = new ArrayList<>(list1);
+            combinedList.addAll(list2);
+            return combinedList;
+        });
     }
 
 }

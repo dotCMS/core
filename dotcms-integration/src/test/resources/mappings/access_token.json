@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/realms/dotcms/protocol/openid-connect/token",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/x-www-form-urlencoded"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "contains": "client_id=clientId&client_secret=clientSecret&grant_type=client_credentials"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "access_token": "access_token_123_abc",
+      "token_type": "Bearer",
+      "expires_in": 3600
+    }
+  }
+}

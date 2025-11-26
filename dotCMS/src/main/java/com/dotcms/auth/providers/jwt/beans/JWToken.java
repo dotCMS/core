@@ -1,5 +1,7 @@
 package com.dotcms.auth.providers.jwt.beans;
 
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Optional;
@@ -62,12 +64,17 @@ public interface JWToken extends Serializable {
     /**
      * Optionally gets the user associated with this token. If the user is not active, no user will be
      * returned
-     * 
+     *
      * @return
      */
     @JsonIgnore
     default Optional<User> getActiveUser() {
-        User user = Try.of(() -> APILocator.getUserAPI().loadUserById(getUserId())).getOrNull();
+        String subjectString = getUserId();
+
+        String userIdString = (this instanceof ApiToken)
+                ? subjectString
+                : Try.of(()-> PublicEncryptionFactory.decryptString(subjectString)).onFailure(e-> Logger.debug(JWToken.class,"Subject Not Encrypted:" + e,e)).getOrElse(subjectString);
+        User user = Try.of(() -> APILocator.getUserAPI().loadUserById(userIdString)).getOrNull();
         if (user != null && user.isActive()) {
             return Optional.of(user);
         }

@@ -1,5 +1,8 @@
 package com.dotmarketing.beans;
 
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -173,6 +176,13 @@ public class Permission implements Serializable {
              */
             type = IHTMLPage.class.getCanonicalName();
         }
+
+		if ( type != null && (type.equals( FileAssetContainer.class.getCanonicalName())
+				|| type.equals( FileAssetTemplate.class.getCanonicalName() )) ) {
+            // file asset container/template are contentlets, so we have to map to contentlet
+			type = Contentlet.class.getCanonicalName();
+		}
+
         this.type = type;
     }
 

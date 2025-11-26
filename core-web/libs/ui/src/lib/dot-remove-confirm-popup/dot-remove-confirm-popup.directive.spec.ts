@@ -1,16 +1,18 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
-import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
+import { DotRemoveConfirmPopupWithEscapeDirective } from './dot-remove-confirm-popup.directive';
 
 @Component({
     selector: 'dot-escape-confirm-popup-host',
-    template: `<p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>`,
-    imports: [ConfirmPopupModule]
+    template: `
+        <p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>
+    `,
+    imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective]
 })
 class CustomHostComponent {}
 
@@ -20,7 +22,6 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
 
     const createHost = createHostFactory({
         component: CustomHostComponent,
-        imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective],
         providers: [ConfirmationService]
     });
 
@@ -32,8 +33,15 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
     });
 
     it('should close the confirmPopup with escape', () => {
-        spyOn(confirmationService, 'close');
-        spectator.dispatchKeyboardEvent(document, 'keydown', 'Escape');
+        jest.spyOn(confirmationService, 'close');
+
+        const event = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            bubbles: true
+        });
+        document.dispatchEvent(event);
+
         expect(confirmationService.close).toHaveBeenCalledTimes(1);
     });
 });

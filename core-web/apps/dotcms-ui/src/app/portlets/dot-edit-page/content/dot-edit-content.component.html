@@ -1,67 +1,62 @@
-<ng-container *ngIf="pageState$ | async as pageState">
+@if (pageState$ | async; as pageState) {
     <dot-form-selector
-        [show]="editForm"
         (pick)="onFormSelected($event)"
-        (shutdown)="editForm = false"></dot-form-selector>
+        (shutdown)="editForm = false"
+        [show]="editForm"></dot-form-selector>
     <dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
     <dot-create-contentlet
         (custom)="onCustomEvent($event)"
         (shutdown)="handleCloseAction()"></dot-create-contentlet>
     <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
-    <dot-reorder-menu [url]="reorderMenuUrl" (shutdown)="onCloseReorderDialog()"></dot-reorder-menu>
-
+    <dot-reorder-menu (shutdown)="onCloseReorderDialog()" [url]="reorderMenuUrl"></dot-reorder-menu>
     <ng-template #enabledComponent>
         <dot-edit-page-toolbar-seo
-            class="dot-edit__toolbar"
-            [pageState]="pageState"
-            [runningExperiment]="pageState.state.runningExperiment"
-            [variant]="variantData | async"
             (actionFired)="reload($event)"
             (backToExperiment)="backToExperiment()"
             (cancel)="onCancelToolbar()"
             (favoritePage)="showFavoritePageDialog($event)"
-            (whatschange)="showWhatsChanged = $event"></dot-edit-page-toolbar-seo>
+            (whatschange)="showWhatsChanged = $event"
+            [pageState]="pageState"
+            [runningExperiment]="pageState.state.runningExperiment"
+            [variant]="variantData | async"
+            class="dot-edit__toolbar"></dot-edit-page-toolbar-seo>
     </ng-template>
-
     <ng-template #disabledComponent>
         <dot-edit-page-toolbar
-            class="dot-edit__toolbar"
-            [pageState]="pageState"
-            [runningExperiment]="pageState.state.runningExperiment"
-            [variant]="variantData | async"
             (actionFired)="reload($event)"
             (backToExperiment)="backToExperiment()"
             (cancel)="onCancelToolbar()"
             (favoritePage)="showFavoritePageDialog($event)"
-            (whatschange)="showWhatsChanged = $event"></dot-edit-page-toolbar>
+            (whatschange)="showWhatsChanged = $event"
+            [pageState]="pageState"
+            [runningExperiment]="pageState.state.runningExperiment"
+            [variant]="variantData | async"
+            class="dot-edit__toolbar"></dot-edit-page-toolbar>
     </ng-template>
-
     <ng-container
         *dotShowHideFeature="featureFlagSeo; alternate: disabledComponent"
         [ngTemplateOutlet]="enabledComponent"></ng-container>
-
     <div
-        class="dot-edit-content__wrapper"
         [class.dot-edit-content__preview]="!isEditMode"
+        class="dot-edit-content__wrapper"
         data-testId="edit-content-wrapper">
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
-        <dot-results-seo-tool
-            *ngIf="pageState.seoMedia; else dotEditIframe"
-            [hostName]="pageState.page.hostName"
-            [seoMedia]="pageState.seoMedia"
-            [device]="pageState.viewAs.device"
-            [seoOGTagsResults]="seoOGTagsResults"
-            [seoOGTags]="seoOGTags"></dot-results-seo-tool>
-        <ng-template #dotEditIframe>
-            <dot-select-seo-tool
-                *ngIf="pageState.viewAs.device"
-                [device]="pageState.viewAs.device"></dot-select-seo-tool>
+        @if (pageState.seoMedia) {
+            <dot-results-seo-tool
+                [device]="pageState.viewAs.device"
+                [hostName]="pageState.page.hostName"
+                [seoMedia]="pageState.seoMedia"
+                [seoOGTagsResults]="seoOGTagsResults"
+                [seoOGTags]="seoOGTags"></dot-results-seo-tool>
+        } @else {
+            @if (pageState.viewAs.device) {
+                <dot-select-seo-tool [device]="pageState.viewAs.device"></dot-select-seo-tool>
+            }
             <div
-                class="dot-edit__page-wrapper"
-                [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device">
+                [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
+                class="dot-edit__page-wrapper">
                 <div class="dot-edit__device-wrapper">
                     <div
-                        class="dot-edit__iframe-wrapper"
                         [ngStyle]="{
                             width: pageState.viewAs.device
                                 ? pageState.viewAs.device.cssWidth + 'px'
@@ -69,46 +64,52 @@
                             height: pageState.viewAs.device
                                 ? pageState.viewAs.device.cssHeight + 'px'
                                 : '100%'
-                        }">
-                        <dot-overlay-mask
-                            *ngIf="showOverlay"
-                            (click)="iframeOverlayService.hide()"></dot-overlay-mask>
-                        <dot-whats-changed
-                            *ngIf="showWhatsChanged"
-                            [languageId]="pageState.viewAs.language.id"
-                            [pageId]="pageState.page.identifier"></dot-whats-changed>
-                        <iframe
-                            class="dot-edit__iframe"
-                            #iframe
-                            *ngIf="showIframe"
-                            [ngStyle]="{
-                                visibility: showWhatsChanged ? 'hidden' : '',
-                                position: showWhatsChanged ? 'absolute' : ''
-                            }"
-                            (load)="onLoad($event)"
-                            frameborder="0"
-                            height="100%"
-                            width="100%"></iframe>
+                        }"
+                        class="dot-edit__iframe-wrapper">
+                        @if (showOverlay) {
+                            <dot-overlay-mask
+                                (click)="iframeOverlayService.hide()"></dot-overlay-mask>
+                        }
+                        @if (showWhatsChanged) {
+                            <dot-whats-changed
+                                [languageId]="pageState.viewAs.language.id"
+                                [pageId]="pageState.page.identifier"></dot-whats-changed>
+                        }
+                        @if (showIframe) {
+                            <iframe
+                                (load)="onLoad($event)"
+                                [ngStyle]="{
+                                    visibility: showWhatsChanged ? 'hidden' : '',
+                                    position: showWhatsChanged ? 'absolute' : ''
+                                }"
+                                #iframe
+                                class="dot-edit__iframe"
+                                frameborder="0"
+                                height="100%"
+                                title="Edit Content"
+                                width="100%"></iframe>
+                        }
                     </div>
                 </div>
             </div>
-        </ng-template>
-
-        <div
-            class="dot-edit-content__palette"
-            *ngIf="(isEnterpriseLicense$ | async) && isEditMode && allowedContent"
-            [class.collapsed]="paletteCollapsed"
-            [class.editMode]="isEditMode">
-            <dot-palette [allowedContent]="allowedContent" [languageId]="pageLanguageId">
-            </dot-palette>
+        }
+        @if ((isEnterpriseLicense$ | async) && isEditMode && allowedContent) {
             <div
-                class="dot-edit-content__palette-visibility"
-                (click)="paletteCollapsed = !paletteCollapsed"
-                data-testId="palette-visibility">
-                <dot-icon
-                    [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"
-                    size="22"></dot-icon>
+                [class.collapsed]="paletteCollapsed"
+                [class.editMode]="isEditMode"
+                class="dot-edit-content__palette">
+                <dot-palette
+                    [allowedContent]="allowedContent"
+                    [languageId]="pageLanguageId"></dot-palette>
+                <div
+                    (click)="paletteCollapsed = !paletteCollapsed"
+                    class="dot-edit-content__palette-visibility"
+                    data-testId="palette-visibility">
+                    <dot-icon
+                        [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"
+                        size="22"></dot-icon>
+                </div>
             </div>
-        </div>
+        }
     </div>
-</ng-container>
+}

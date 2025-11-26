@@ -33,6 +33,7 @@ public abstract class WorkflowCache implements Cachable {
 	abstract protected List<WorkflowAction> addActions(WorkflowScheme scheme, List<WorkflowAction> actions);
 	abstract protected List<WorkflowActionClass> addActionClasses(WorkflowAction action, List<WorkflowActionClass> actionClasses);
 	abstract protected List<WorkflowAction> getActions(WorkflowStep step);
+
 	abstract protected List<WorkflowActionClass> getActionClasses(final WorkflowAction action);
 	abstract protected List<WorkflowAction> getActions(WorkflowScheme scheme);
 	

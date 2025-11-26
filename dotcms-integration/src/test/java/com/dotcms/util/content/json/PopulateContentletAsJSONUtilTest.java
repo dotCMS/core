@@ -22,9 +22,11 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
 
@@ -251,7 +253,7 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
 
                 // For this contentlet we need to create multiple versions
                 for (int j = 0; j < 3; j++) {
-                    var newVersion = ContentletDataGen.createNewVersion(contenlet, variant_1, map());
+                    var newVersion = ContentletDataGen.createNewVersion(contenlet, variant_1, new HashMap<>());
                     ContentletDataGen.publish(newVersion);
                 }
             }

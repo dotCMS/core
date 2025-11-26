@@ -2,12 +2,13 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
@@ -21,6 +22,9 @@ public abstract class AbstractLanguageCommand {
     protected OutputOptionMixin output;
 
     @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
+
+    @CommandLine.Mixin
     protected HelpOptionMixin helpOptionMixin;
 
     @Inject
@@ -28,14 +32,9 @@ public abstract class AbstractLanguageCommand {
 
     String shortFormat(final Language language) {
         return String.format(
-                "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@] isoCode: [@|bold,yellow %s|@]",
-                language.language().orElse(""),
+                "id: [@|bold,underline,cyan %s|@] isoCode: [@|bold,yellow %s|@]",
                 language.id().get(),
-                language.languageCode().get(),
-                language.country().orElse(""),
-                language.countryCode().orElse(""),
                 language.isoCode()
-
         );
     }
 

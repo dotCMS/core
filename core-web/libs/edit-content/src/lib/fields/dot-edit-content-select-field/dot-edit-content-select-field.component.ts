@@ -1,20 +1,31 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 @Component({
     selector: 'dot-edit-content-select-field',
-    standalone: true,
-    imports: [DropdownModule, ReactiveFormsModule],
-    templateUrl: './dot-edit-content-select-field.component.html',
-    styleUrls: ['./dot-edit-content-select-field.component.scss'],
+    imports: [
+        DropdownModule,
+        ReactiveFormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotMessagePipe
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './dot-edit-content-select-field.component.html',
     viewProviders: [
         {
             provide: ControlContainer,
@@ -22,30 +33,26 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         }
     ]
 })
-export class DotEditContentSelectFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
-    private readonly controlContainer = inject(ControlContainer);
-
-    options = [];
-
-    ngOnInit() {
-        this.options = getSingleSelectableFieldOptions(
-            this.field?.values || '',
-            this.field.dataType
-        );
-
-        if (this.formControl.value === null) {
-            this.formControl.setValue(this.options[0]?.value);
-        }
-    }
+export class DotEditContentSelectFieldComponent extends BaseWrapperField {
+    /**
+     * A signal that holds the field.
+     * It is used to display the field in the component.
+     */
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
+     * A signal that holds the contentlet.
+     * It is used to display the contentlet in the component.
      */
-    get formControl() {
-        return this.controlContainer.control.get(
-            this.field.variable
-        ) as AbstractControl<DotEditContentFieldSingleSelectableDataTypes>;
-    }
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+
+    /**
+     * A signal that holds the options.
+     * It is used to display the options in the component.
+     */
+    $options = computed(() => {
+        const field = this.$field();
+
+        return getSingleSelectableFieldOptions(field?.values || '', field.dataType);
+    });
 }

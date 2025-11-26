@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.icon {
+    font-size: 4.12rem;
+    color: $color-palette-gray-700;
+}
+
+.title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
+    color: $color-palette-gray-700;
+    margin: 0;
+    margin-top: $spacing-2;
+}
+
+.description {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-regular-bold;
+    color: $color-palette-gray-700;
+    margin: 0;
+}

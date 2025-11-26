@@ -10,8 +10,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Created by Jonathan Gamba
  * Date: 10/25/12
@@ -24,7 +22,7 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
     private int leftOffset = -1;
 
     private static final Map<Integer, Integer> mapWithWidthPercent = ImmutableMap.<Integer, Integer>builder().put(12,100).put(11,91).put(10,83).put(9,75).put(8,66).put(7,58).put(6,50).put(5,41).put(4,33).put(3,25).put(2,16).put(1,8).build();
-    private static final Map<Integer, Integer> mapWidthPercentWith = map(100, 12, 75, 9, 66, 8, 50,6, 33, 4, 25,3);
+    private static final Map<Integer, Integer> mapWidthPercentWith = Map.of(100, 12, 75, 9, 66, 8, 50,6, 33, 4, 25,3);
 
     @JsonCreator
     public TemplateLayoutColumn(@JsonProperty("containers") List<ContainerUUID> containers,

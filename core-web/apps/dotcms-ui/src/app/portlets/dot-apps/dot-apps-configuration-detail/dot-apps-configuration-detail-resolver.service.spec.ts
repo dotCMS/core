@@ -5,19 +5,19 @@ import { of } from 'rxjs';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+
 class AppsServicesMock {
     getConfiguration(_appKey: string, _id: string) {
         return of({});
     }
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
+const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+    'toString'
+]);
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('DotAppsConfigurationDetailResolver', () => {
@@ -25,7 +25,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
 
     beforeEach(waitForAsync(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotAppsConfigurationDetailResolver,
                 { provide: DotAppsService, useClass: AppsServicesMock },
@@ -35,8 +35,8 @@ describe('DotAppsConfigurationDetailResolver', () => {
                 }
             ]
         });
-        dotAppsServices = testbed.get(DotAppsService);
-        dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
+        dotAppsServices = TestBed.inject(DotAppsService);
+        dotAppsConfigurationDetailResolver = TestBed.inject(DotAppsConfigurationDetailResolver);
     }));
 
     it('should get and return app with configurations', () => {
@@ -64,7 +64,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
             return param === 'appKey' ? queryParams.appKey : queryParams.id;
         };
 
-        spyOn<any>(dotAppsServices, 'getConfiguration').and.returnValue(of(response));
+        jest.spyOn<any>(dotAppsServices, 'getConfiguration').mockReturnValue(of(response));
 
         dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)

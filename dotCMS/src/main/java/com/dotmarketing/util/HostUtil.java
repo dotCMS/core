@@ -2,24 +2,36 @@ package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portal.model.User;
+import com.liferay.portlet.ActionRequestImpl;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+/**
+ * This utility class provides common-use methods to handle specific information of Sites in
+ * dotCMS. The main purpose of this class is to expose routines that don't belong to the Site API
+ * per se, but use the data provided by it.
+ *
+ * @author Christian Barigelli
+ * @since Apr 5th, 2012
+ */
 public class HostUtil {
 
 	public static final String HOST_INDICATOR     = "//";
@@ -164,6 +176,45 @@ public class HostUtil {
 		session.removeAttribute(WebKeys.CURRENT_HOST);
 		session.setAttribute(WebKeys.CURRENT_HOST, host);
 	}
+
+	/**
+	 * Takes a list of Site IDs and/or Site Keys, and resolves them to a list of Site IDs only.
+	 * This allows developers/users to pass down a Site Key when they don't have access to its ID,
+	 * or simply don't want to use it.
+	 *
+	 * @param sites The list of Site IDs and/or Site Keys to resolve.
+	 *
+	 * @return A list of Site IDs only.
+	 */
+	public static List<String> resolveSiteIds(final List<String> sites, final User user,
+											  final boolean respectFrontendRoles) {
+		if (UtilMethods.isNotSet(sites)) {
+			return List.of();
+		}
+		final Set<String> uniqueIds = new HashSet<>(sites);
+		return uniqueIds.stream().map(siteIdOrKey -> {
+
+			final Optional<Host> siteOpt =
+					Try.of(() -> APILocator.getHostAPI().findByIdOrKey(siteIdOrKey, user,
+							respectFrontendRoles)).getOrElse(Optional.empty());
+			
+			// SECURITY: Validate site ID format before returning unverified input
+			if (siteOpt.isPresent()) {
+				return siteOpt.get().getIdentifier();
+			} else {
+				// Only return the original input if it's a valid site identifier format
+				if (IdentifierValidator.isValid(siteIdOrKey, IdentifierValidator.SITE_PROFILE)) {
+					return siteIdOrKey;
+				} else {
+					// SECURITY: Do not log user input to prevent information disclosure
+					Logger.warn(HostUtil.class, "Invalid site identifier rejected");
+					return null; // Filter out invalid identifiers
+				}
+			}
+
+		}).filter(Objects::nonNull).collect(Collectors.toList());
+	}
+	
 
 
 }

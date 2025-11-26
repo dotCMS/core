@@ -1,26 +1,38 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
     AfterViewInit,
     Component,
     ElementRef,
     HostListener,
+    inject,
     OnDestroy,
     ViewChild
 } from '@angular/core';
 
-import { Menu } from 'primeng/menu';
+import { DialogService } from 'primeng/dynamicdialog';
+import { Menu, MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import {
+    DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotPageRenderService,
-    DotRouterService
+    DotPageTypesService,
+    DotPageWorkflowsActionsService,
+    DotRouterService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -29,7 +41,10 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
+import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
 import {
     DotPagesState,
     DotPageStore,
@@ -43,29 +58,51 @@ export interface DotActionsMenuEventParams {
 }
 
 @Component({
-    providers: [DotPageStore],
+    providers: [
+        DotPageStore,
+        DialogService,
+        DotESContentService,
+        DotPageRenderService,
+        DotPageTypesService,
+        DotTempFileUploadService,
+        DotWorkflowsActionsService,
+        DotPageWorkflowsActionsService,
+        DotWorkflowActionsFireService,
+        DotWorkflowEventHandlerService,
+        DotRouterService,
+        DotFavoritePageService
+    ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
-    templateUrl: './dot-pages.component.html'
+    templateUrl: './dot-pages.component.html',
+    imports: [
+        CommonModule,
+        DotAddToBundleComponent,
+        DotPagesFavoritePanelComponent,
+        DotPagesListingPanelComponent,
+        MenuModule,
+        ProgressSpinnerModule
+    ]
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
+    private dotRouterService = inject(DotRouterService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotEventsService = inject(DotEventsService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotPageRenderService = inject(DotPageRenderService);
+    private element = inject(ElementRef);
+    private dotSiteService = inject(SiteService);
+
+    readonly #store = inject(DotPageStore);
+
     @ViewChild('menu') menu: Menu;
-    vm$: Observable<DotPagesState> = this.store.vm$;
+    vm$: Observable<DotPagesState> = this.#store.vm$;
 
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private store: DotPageStore,
-        private dotRouterService: DotRouterService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotEventsService: DotEventsService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotPageRenderService: DotPageRenderService,
-        private element: ElementRef,
-        private dotSiteService: SiteService
-    ) {
-        this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
+    constructor() {
+        this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
     /**
@@ -75,7 +112,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string): void {
-        this.store.setPortletStatus(ComponentStatus.LOADING);
+        this.#store.setPortletStatus(ComponentStatus.LOADING);
 
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
@@ -102,12 +139,12 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                             })
                         );
                         this.dotHttpErrorManagerService.handle(error);
-                        this.store.setPortletStatus(ComponentStatus.LOADED);
+                        this.#store.setPortletStatus(ComponentStatus.LOADED);
                     }
                 },
                 (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
-                    this.store.setPortletStatus(ComponentStatus.LOADED);
+                    this.#store.setPortletStatus(ComponentStatus.LOADED);
                 }
             );
     }
@@ -121,7 +158,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     closeMenu(): void {
         if (this.menuIsLoaded(this.domIdMenuAttached)) {
             this.menu.hide();
-            this.store.clearMenuActions();
+            this.#store.clearMenuActions();
         }
     }
 
@@ -133,10 +170,10 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
-        this.store.clearMenuActions();
+        this.#store.clearMenuActions();
         this.menu.hide();
 
-        this.store.showActionsMenu({ item, actionMenuDomId });
+        this.#store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -149,7 +186,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     }
 
     ngAfterViewInit(): void {
-        this.store.actionMenuDomId$
+        this.#store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
                 filter((actionMenuDomId) => !!actionMenuDomId)
@@ -175,7 +212,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                     evt.data['payload']?.contentType === 'dotFavoritePage' ||
                     evt.data['payload']?.contentletType === 'dotFavoritePage';
 
-                this.store.updateSinglePageData({ identifier, isFavoritePage });
+                this.#store.updateSinglePageData({ identifier, isFavoritePage });
 
                 this.dotMessageDisplayService.push({
                     life: 3000,
@@ -185,8 +222,8 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                 });
             });
 
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
-            this.store.getPages({ offset: 0 });
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.#store.getPages({ offset: 0 });
             this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });
     }
@@ -216,7 +253,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     loadPagesOnDeactivation() {
-        this.store.getPages({
+        this.#store.getPages({
             offset: 0
         });
     }

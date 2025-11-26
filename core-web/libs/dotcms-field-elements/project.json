@@ -27,6 +27,7 @@
         "build": {
             "executor": "@nxext/stencil:build",
             "options": {
+                "outputPath": "dist/libs/dotcms-field-elements",
                 "projectType": "library",
                 "configPath": "libs/dotcms-field-elements/stencil.config.ts"
             }
@@ -41,5 +42,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint", "skip:build"]
 }

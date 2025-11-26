@@ -1,24 +1,54 @@
 import { merge, Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+
+import { DialogModule } from 'primeng/dialog';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
+import {
+    DotPageStateService,
+    DotRouterService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
-import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
+import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotEditContentletComponent } from '../../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
+import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
+import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 
 @Component({
     selector: 'dot-edit-page-main',
     templateUrl: './dot-edit-page-main.component.html',
-    styleUrls: ['./dot-edit-page-main.component.scss']
+    styleUrls: ['./dot-edit-page-main.component.scss'],
+    imports: [
+        CommonModule,
+        RouterModule,
+        DotEditContentletComponent,
+        DotBlockEditorSidebarComponent,
+        DotEditPageNavDirective,
+        DotEditPageNavComponent,
+        DotExperimentClassDirective,
+        OverlayPanelModule,
+        DialogModule
+    ]
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotRouterService = inject(DotRouterService);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    private titleService = inject(Title);
+
     pageState$: Observable<DotPageRenderState>;
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
     private pageUrl: string;
@@ -27,14 +57,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
 
-    constructor(
-        private route: ActivatedRoute,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotPageStateService: DotPageStateService,
-        private dotRouterService: DotRouterService,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        private titleService: Title
-    ) {
+    constructor() {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 'save-page': ({ detail: { payload } }: CustomEvent) => {

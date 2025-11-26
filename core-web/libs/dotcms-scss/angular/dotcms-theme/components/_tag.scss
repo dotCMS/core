@@ -13,14 +13,12 @@
 }
 
 p-tag.sm {
-    &.sm {
-        .p-tag {
-            font-size: $font-size-sm;
-            padding: $spacing-1 $spacing-2;
+    .p-tag {
+        font-size: $font-size-xs;
+        padding: $spacing-0 $spacing-1;
 
-            .p-tag-value {
-                line-height: $spacing-3;
-            }
+        .p-tag-value {
+            line-height: $spacing-3;
         }
     }
 }

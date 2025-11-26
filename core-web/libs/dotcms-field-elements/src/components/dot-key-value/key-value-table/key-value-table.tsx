@@ -1,4 +1,5 @@
 import { Component, Prop, Event, EventEmitter, h } from '@stencil/core';
+
 import { DotKeyValueField } from '../../../models';
 
 @Component({
@@ -38,7 +39,7 @@ export class KeyValueTableComponent {
         this.delete.emit(index);
     }
 
-    private getRow(item: DotKeyValueField, index: number): JSX.Element {
+    private getRow(item: DotKeyValueField, index: number) {
         const label = `${this.buttonLabel} ${item.key}, ${item.value}`;
         return (
             <tr>
@@ -47,8 +48,7 @@ export class KeyValueTableComponent {
                         aria-label={label}
                         disabled={this.disabled || null}
                         onClick={() => this.onDelete(index)}
-                        class="dot-key-value__delete-button"
-                    >
+                        class="dot-key-value__delete-button">
                         {this.buttonLabel}
                     </button>
                 </td>
@@ -58,13 +58,13 @@ export class KeyValueTableComponent {
         );
     }
 
-    private renderRows(items: DotKeyValueField[]): JSX.Element {
+    private renderRows(items: DotKeyValueField[]) {
         return this.isValidItems(items)
-            ? ((items.map(this.getRow.bind(this)) as unknown) as JSX.Element)
+            ? (items.map(this.getRow.bind(this)) as unknown)
             : this.getEmptyRow();
     }
 
-    private getEmptyRow(): JSX.Element {
+    private getEmptyRow() {
         return (
             <tr>
                 <td>{this.emptyMessage}</td>

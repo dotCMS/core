@@ -825,5 +825,51 @@ public class DotDatabaseMetaData {
         dotConnect.setSQL(query);
         return (Map<String, String>)dotConnect.loadResults().get(0);
     }
+
+    /**
+     * Checks if the length of a specific column in a table is already what is expected.
+     * Note: since this is going to be used in UT, when using it you need to negate the result,
+     * since the UT should be run when the column length is not what is expected.
+     *
+     * @param tableName
+     * @param columnName
+     * @param expectedLength
+     * @return boolean - true if the column length is equals to the value expected.
+     */
+    public boolean isColumnLengthExpected(final String tableName, final String columnName, final String expectedLength){
+        boolean isColumnLengthExpected = false;
+        try {
+            final Map<String, String> columnData = getModifiedColumnLength(tableName,columnName);
+            isColumnLengthExpected = columnData.get("field_length").equals(expectedLength);
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"An error occurred when trying to pull the field_length");
+        }
+        return isColumnLengthExpected;
+    }
+
+    /**
+     * Checks if an index exists in a table
+     * @param tableName
+     * @param indexName
+     * @return boolean - true if the index exists in the table
+     */
+    public boolean checkIndex(final String tableName, final String indexName) {
+        final DotDatabaseMetaData dbMetadata = new DotDatabaseMetaData();
+
+        try {
+            final ResultSet indicesInfo = dbMetadata.getIndices(DbConnectionFactory.getConnection(),
+                    null, tableName, false);
+            while (indicesInfo.next()) {
+                final String currentIndex = indicesInfo.getString("INDEX_NAME");
+
+                if (currentIndex.equals(indexName)) {
+                    return true;
+                }
+            }
+        } catch (final SQLException e) {
+            Logger.error(this, e);
+        }
+        return false;
+    }
 } // E:O:F:DotDatabaseMetaData.
 

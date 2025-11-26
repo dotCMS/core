@@ -4,6 +4,7 @@ package com.dotcms.visitor.filter.logger;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 
 import com.dotcms.visitor.filter.characteristics.*;
+import com.dotcms.visitor.filter.characteristics.Character;
 import com.dotmarketing.exception.DotRuntimeException;
 
 import com.dotmarketing.logConsole.model.LogMapper;
@@ -118,22 +119,40 @@ public class VisitorLogger {
     }
 
     private static void logInternal(final HttpServletRequest request, final HttpServletResponse response)
-            throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException,
+            throws SecurityException, InstantiationException, IllegalAccessException,
             IllegalArgumentException, InvocationTargetException {
 
-        AbstractCharacter base = new BaseCharacter(request, response);
         try {
-            for (Constructor<AbstractCharacter> con : constructors) {
-                base = con.newInstance(base);
-            }
-
-            for (Constructor<AbstractCharacter> con : customConstructors) {
-                base = con.newInstance(base);
-            }
+            final Character base = createCharacter(request, response);
             doLog(mapper().writeValueAsString(base.getMap()));
         } catch (JsonProcessingException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    /**
+     * Method that creates a character
+     * @param request
+     * @param response
+     * @return
+     * @throws InvocationTargetException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
+    public static Character createCharacter(final HttpServletRequest request,
+                                            final HttpServletResponse response)
+            throws InvocationTargetException, InstantiationException, IllegalAccessException {
+
+        AbstractCharacter base = new BaseCharacter(request, response);
+        for (final Constructor<AbstractCharacter> con : constructors) {
+            base = con.newInstance(base);
+        }
+
+        for (final Constructor<AbstractCharacter> con : customConstructors) {
+            base = con.newInstance(base);
+        }
+
+        return base;
     }
 
     private static void doLog(String message) {

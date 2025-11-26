@@ -1,4 +1,4 @@
-import { DatePipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
+import { DatePipe, LowerCasePipe, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,7 +8,6 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -20,22 +19,16 @@ import {
     ExperimentsStatusIcons,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-header',
     templateUrl: './dot-experiments-ui-header.component.html',
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
     imports: [
-        RouterLink,
-        NgIf,
         LowerCasePipe,
         DatePipe,
         TitleCasePipe,
-        DotIconModule,
-        DotPipesModule,
         DotMessagePipe,
         SkeletonModule,
         ButtonModule,

@@ -1,8 +1,11 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
+import com.dotcms.util.AnnotationUtils;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -88,8 +91,11 @@ public class WfActionClassAjax extends WfBaseAction {
 			workflowActionClass.setName(actionName);
 			workflowActionClass.setActionId(actionId);
 			this.workflowAPI.saveActionClass(workflowActionClass, user);
+
+			final boolean isOnlyBatch = ActionletUtil.isOnlyBatch(clazz);
 			response.setContentType("text/plain");
-			response.getWriter().println(String.format("%s:%s",workflowActionClass.getId(),workflowActionClass.getName()));
+			response.getWriter().println(String.format("%s:%s:%s",workflowActionClass.getId(),
+					workflowActionClass.getName(), Boolean.toString(isOnlyBatch)));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());

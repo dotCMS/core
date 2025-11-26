@@ -3,6 +3,7 @@ package com.dotcms.auth.providers.saml.v1;
 import com.dotcms.filters.interceptor.saml.SamlWebUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.DotSamlException;
@@ -17,11 +18,20 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -47,6 +57,8 @@ import java.util.List;
  * - metadata renders the XML metadata.
  * @author jsanca
  */
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "SAML Authentication")
 @Path("/v1/dotsaml")
 public class DotSamlResource implements Serializable {
 
@@ -95,12 +107,29 @@ public class DotSamlResource implements Serializable {
 	 * @param httpServletResponse   {@link HttpServletResponse}
 	 * @return Response
 	 */
+	@Operation(
+		summary = "Initiate SAML login",
+		description = "Initiates a SAML authentication request by redirecting the user to the Identity Provider (IDP) login screen. Requires IDP metadata to determine the SSO login endpoint."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "SAML authentication request initiated successfully (no body)"),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid IDP configuration ID",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "IDP configuration not found or not enabled",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during SAML authentication initiation",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path( "/login/{idpConfigId}" )
 	@JSONP
 	@NoCache
-	@Produces( { MediaType.APPLICATION_JSON, "application/javascript" } )
-	public Response doLogin(@PathParam( "idpConfigId" ) final String idpConfigId,
+	@Produces( { MediaType.APPLICATION_JSON } )
+	public Response doLogin(@Parameter(description = "Identity Provider configuration ID (typically host ID)", required = true) @PathParam( "idpConfigId" ) final String idpConfigId,
 							@Context final HttpServletRequest httpServletRequest,
 							@Context final HttpServletResponse httpServletResponse) {
 
@@ -145,12 +174,36 @@ public class DotSamlResource implements Serializable {
 	 * @param httpServletResponse   {@link HttpServletResponse}
 	 * @throws IOException
 	 */
+	@Operation(
+		summary = "Process SAML login callback",
+		description = "Handles the callback from the Identity Provider after successful authentication. Extracts user information from the SAML assertion and creates/logs in the user to dotCMS.",
+		requestBody = @RequestBody(description = "SAML assertion data from Identity Provider", required = true,
+					content = {@Content(mediaType = "application/xml"), 
+							  @Content(mediaType = "application/x-www-form-urlencoded")})
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "SAML login processed successfully - user logged in",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid SAML assertion or missing data",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - SAML assertion validation failed",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "404", 
+					description = "IDP configuration not found or not enabled",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during SAML login processing",
+					content = @Content(mediaType = "text/html"))
+	})
 	@POST
 	@Path("/login/{idpConfigId}")
 	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
 	@Produces( { MediaType.APPLICATION_XML, "text/html" } )
 	@NoCache
-	public void processLogin(@PathParam("idpConfigId") final String idpConfigId,
+	public void processLogin(@Parameter(description = "Identity Provider configuration ID (typically host ID)", required = true) @PathParam("idpConfigId") final String idpConfigId,
 							 @Context final HttpServletRequest httpServletRequest,
 							 @Context final HttpServletResponse httpServletResponse) throws IOException {
 
@@ -212,30 +265,45 @@ public class DotSamlResource implements Serializable {
 					// Add session based user ID to be used on the redirect.
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
 
-					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-					Logger.debug(this,"LoginPath: " + loginPath);
-					if (null == loginPath) {
-						if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
-							loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
-						}else {
-							// At this stage we cannot determine whether this was a front
-							// end or back end request since we cannot determine
-							// original request.
-							//
-							// REDIRECT_AFTER_LOGIN should have already been set in relay
-							// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-							// session attribute.
-							loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
-						}
-					} else {
+					String queryString = (String) session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
 
-						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+					String loginPath = httpServletRequest.getParameter("RelayState");
+					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
+					if (!UtilMethods.isSet(loginPath)) {
+
+						loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+						Logger.debug(this, "REDIRECT_AFTER_LOGIN, LoginPath: " + loginPath);
+						if (null == loginPath) {
+							if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
+								loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
+							} else {
+								// At this stage we cannot determine whether this was a front
+								// end or back end request since we cannot determine
+								// original request.
+								//
+								// REDIRECT_AFTER_LOGIN should have already been set in relay
+								// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
+								// session attribute.
+								loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+							}
+						} else {
+
+							session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+						}
 					}
 
+					if (!loginPath.equals(DotSamlConstants.DEFAULT_LOGIN_PATH) && queryString != null) {
+						if (loginPath.contains("?")) {
+							loginPath = loginPath + "&" + queryString;
+						} else {
+							loginPath = loginPath + "?" + queryString;
+						}
+					}
 					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
 							identityProviderConfiguration, user, APILocator.getLoginServiceAPI());
 
+					Logger.debug(this, "Final, LoginPath: " + loginPath);
 					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
 					return;
 				}
@@ -263,12 +331,33 @@ public class DotSamlResource implements Serializable {
 	 * @param httpServletResponse   {@link HttpServletResponse}
 	 * @throws IOException
 	 */
+	@Operation(
+		summary = "Get SAML metadata",
+		description = "Renders the XML metadata for the SAML Service Provider configuration. This endpoint is only accessible by administrators and provides the metadata required for IDP configuration."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "SAML metadata rendered successfully",
+					content = @Content(mediaType = "application/xml")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - admin access required",
+					content = @Content(mediaType = "application/xml")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - user is not an administrator",
+					content = @Content(mediaType = "application/xml")),
+		@ApiResponse(responseCode = "404", 
+					description = "IDP configuration not found or not enabled",
+					content = @Content(mediaType = "application/xml")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error rendering metadata",
+					content = @Content(mediaType = "application/xml"))
+	})
 	@GET
 	@Path( "/metadata/{idpConfigId}" )
 	@JSONP
 	@NoCache
 	@Produces( { MediaType.APPLICATION_XML, "application/xml" } )
-	public void metadata( @PathParam( "idpConfigId" ) final String idpConfigId,
+	public void metadata( @Parameter(description = "Identity Provider configuration ID (typically host ID)", required = true) @PathParam( "idpConfigId" ) final String idpConfigId,
 						  @Context final HttpServletRequest httpServletRequest,
 						  @Context final HttpServletResponse httpServletResponse ) throws IOException {
 
@@ -304,12 +393,27 @@ public class DotSamlResource implements Serializable {
 		throw new DoesNotExistException(message);
 	}
 
+	@Operation(
+		summary = "Process SAML logout (POST)",
+		description = "Processes a SAML logout request via POST method. Handles logout callbacks from the Identity Provider and redirects to the configured logout endpoint."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "SAML logout processed successfully",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "404", 
+					description = "IDP configuration not found or not enabled",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during logout processing",
+					content = @Content(mediaType = "text/html"))
+	})
 	@POST
 	@Path("/logout/{idpConfigId}")
 	@NoCache
 	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public void logoutPost(@PathParam("idpConfigId") final String idpConfigId,
+	public void logoutPost(@Parameter(description = "Identity Provider configuration ID (typically host ID)", required = true) @PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
 					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 
@@ -341,12 +445,27 @@ public class DotSamlResource implements Serializable {
 		throw new DoesNotExistException(message);
 	}
 
+	@Operation(
+		summary = "Process SAML logout (GET)",
+		description = "Processes a SAML logout request via GET method. Initiates logout flow and redirects to the configured logout endpoint or builds a logout URL based on the request."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "SAML logout processed successfully",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "404", 
+					description = "IDP configuration not found or not enabled",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during logout processing",
+					content = @Content(mediaType = "text/html"))
+	})
 	@GET
 	@Path("/logout/{idpConfigId}")
 	@NoCache
 	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public void logoutGet(@PathParam("idpConfigId") final String idpConfigId,
+	public void logoutGet(@Parameter(description = "Identity Provider configuration ID (typically host ID)", required = true) @PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
 					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 

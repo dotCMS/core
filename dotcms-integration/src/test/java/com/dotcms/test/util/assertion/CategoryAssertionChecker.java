@@ -7,11 +7,9 @@ import com.dotmarketing.portlets.categories.model.Category;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Category}
@@ -19,7 +17,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class CategoryAssertionChecker implements AssertionChecker<Category> {
     @Override
     public Map<String, Object> getFileArguments(final Category category, File file) {
-        return map(
+        return Map.of(
                 "inode", category.getInode(),
                 "name", category.getCategoryName(),
                 "key", category.getKey(),

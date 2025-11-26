@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: foo
+  name: dotcms-foo-prod
+  labels:
+    app.dotcms.cloud/aws-region: us-east-1
+spec:
+  selector:
+    matchLabels:
+      app: dotcms
+      fullname: dotcms-foo-prod
+  serviceName: dotcms-foo-prod
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+        aws-region: us-east-1
+      labels:
+        app: dotcms
+        env: prod
+        ver: '23.10'
+        cust: foo
+        fullname: dotcms-foo-prod
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: dotcms
+        image: dotcms/dotcms:23.10.24_lts_v12_661cef9
+        resources:
+          requests:
+            cpu: '.5'
+            memory: 6Gi
+          limits:
+            cpu: '2'
+            memory: 6Gi
+        env:
+        - name: CMS_JAVA_OPTS
+          value: -Xmx5G -XX:+PrintFlagsFinal -Djdk.lang.Process.launchMechanism=fork
+        - name: DOT_ES_ENDPOINTS
+          value: https://elasticsearch1.foo.com
+        - name: DOT_ES_AUTH_TYPE
+          value: BASIC
+        - name: DOT_ES_AUTH_BASIC_USER
+          valueFrom:
+            secretKeyRef:
+              name: foo-prod-elasticsearch
+              key: username
+        - name: DOT_ES_AUTH_BASIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: foo-prod-elasticsearch
+              key: password
+        - name: DB_BASE_URL
+          value: jdbc:postgresql://host.slug.us-east-1.rds.amazonaws.com/foo_database
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: foo_database
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: foo_database
+              key: password
+        - name: DOT_DOTCMS_CLUSTER_ID
+          value: foo-prod
+        - name: DOT_MAIL_SMTP_HOST
+          value: email-smtp.us-east-1.amazonaws.com
+        - name: DOT_MAIL_SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: foo-ses
+              key: username
+        - name: DOT_MAIL_SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: foo-ses
+              key: password
+        - name: DOT_MAIL_SMTP_PORT
+          value: '587'
+        - name: DOT_MAIL_SMTP_AUTH
+          value: 'true'
+        - name: DOT_MAIL_SMTP_STARTTLS_ENABLE
+          value: 'true'
+        ports:
+        - containerPort: 8080
+          name: api
+        - containerPort: 8081
+          name: web-insecure
+        - containerPort: 8082
+          name: web-secure
+        volumeMounts:
+        - name: dotcms-shared
+          mountPath: /data/shared
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - if [ ! -d /data/shared/assets/.backup ]; then mkdir /data/shared/assets/.backup;
+                fi; ln -s /data/shared/assets/.backup /data/local/dotsecure/backup;
+        startupProbe:
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 50
+          timeoutSeconds: 2
+          httpGet:
+            path: /api/v1/probes/startup
+            port: 8082
+          initialDelaySeconds: 30
+        livenessProbe:
+          periodSeconds: 15
+          successThreshold: 1
+          failureThreshold: 4
+          timeoutSeconds: 2
+          httpGet:
+            path: /api/v1/probes/alive
+            port: 8082
+        readinessProbe:
+          periodSeconds: 7
+          successThreshold: 2
+          failureThreshold: 1
+          timeoutSeconds: 2
+          httpGet:
+            path: /api/v1/probes/alive
+            port: 8082
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: fullname
+                  operator: In
+                  values:
+                  - dotcms-foo-prod
+              topologyKey: kubernetes.io/hostname
+      volumes:
+      - name: dotcms-shared
+        persistentVolumeClaim:
+          claimName: foo-prod-efs-pvc

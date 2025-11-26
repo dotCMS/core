@@ -1,7 +1,7 @@
 import { throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, forwardRef } from '@angular/core';
+import { Component, forwardRef, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { finalize, switchMap, take } from 'rxjs/operators';
@@ -13,6 +13,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     assetVersion: string;
@@ -23,25 +24,25 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     selector: 'dot-template-thumbnail-field',
     templateUrl: './dot-template-thumbnail-field.component.html',
     styleUrls: ['./dot-template-thumbnail-field.component.scss'],
+    imports: [DotMessagePipe],
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldComponent)
         }
-    ]
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor {
+    private dotTempFileUploadService = inject(DotTempFileUploadService);
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotCrudService = inject(DotCrudService);
+    private dotMessageService = inject(DotMessageService);
+
     asset: DotCMSTemplateThumbnail;
     error = '';
     loading = false;
-
-    constructor(
-        private dotTempFileUploadService: DotTempFileUploadService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotCrudService: DotCrudService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Handle thumbnail setup

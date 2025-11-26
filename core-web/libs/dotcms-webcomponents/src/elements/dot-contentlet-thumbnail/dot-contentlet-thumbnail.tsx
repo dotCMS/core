@@ -1,4 +1,8 @@
+// We need `h` on scope to be able to render the component
+// But it is unused in this file, so we disable the rule so eslint doesn't complain
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Component, h, Host, Prop, State } from '@stencil/core';
+
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
 @Component({
@@ -18,8 +22,10 @@ export class DotContentletThumbnail {
     @Prop({ reflect: true })
     iconSize = '';
 
+    // JSP elements need the image to be rendered as a background image because of the way they are styled
+    // New elements should use the default image tag for accessibility
     @Prop({ reflect: true })
-    cover = true;
+    backgroundImage = false;
 
     @Prop()
     showVideoThumbnail = true;
@@ -34,9 +40,11 @@ export class DotContentletThumbnail {
     fieldVariable = '';
 
     @State() renderImage: boolean;
+    @State() isSVG: boolean;
 
     componentWillLoad() {
         const { hasTitleImage, mimeType } = this.contentlet;
+        this.isSVG = mimeType === 'image/svg+xml';
         // Some endpoints return this property as a boolean
         if (typeof hasTitleImage === 'boolean' && hasTitleImage) {
             this.renderImage = hasTitleImage;
@@ -44,13 +52,16 @@ export class DotContentletThumbnail {
             this.renderImage =
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
+                this.contentlet['image'] ||
                 this.shouldShowVideoThumbnail();
         }
     }
 
     render() {
-        const image = this.contentlet && this.cover ? `url(${this.getImageURL()})` : '';
-        const imgClass = this.cover ? 'cover' : '';
+        const backgroundImageURL =
+            this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
+        const imgClass = this.backgroundImage ? 'background-image' : '';
+        const svgClass = this.isSVG ? ' svg-thumbnail' : '';
 
         return (
             <Host>
@@ -58,11 +69,15 @@ export class DotContentletThumbnail {
                     <dot-video-thumbnail
                         contentlet={this.contentlet}
                         variable={this.fieldVariable}
-                        cover={this.cover}
+                        cover={this.backgroundImage}
                         playable={this.playableVideo}
                     />
                 ) : this.renderImage ? (
-                    <div class={`thumbnail ${imgClass}`} style={{ 'background-image': image }}>
+                    <div
+                        class={`thumbnail ${imgClass}${svgClass}`}
+                        style={{
+                            'background-image': backgroundImageURL
+                        }}>
                         <img
                             src={this.getImageURL()}
                             alt={this.alt}
@@ -82,13 +97,25 @@ export class DotContentletThumbnail {
     }
 
     private getImageURL(): string {
-        return this.contentlet.mimeType === 'application/pdf'
-            ? `/contentAsset/image/${this.contentlet.inode}/${
-                  this.fieldVariable || this.contentlet.titleImage
-              }/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
-                  this.contentlet.modDateMilis || this.contentlet.modDate
-              }`;
+        if (this.contentlet.mimeType === 'application/pdf') {
+            return `/contentAsset/image/${this.contentlet.inode}/${
+                this.fieldVariable || this.contentlet.titleImage
+            }/pdf_page/1/resize_w/250/quality_q/45`;
+        }
+
+        // Check first if we passed a field variable
+        if (this.fieldVariablePath()) {
+            return `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
+                this.contentlet.modDateMilis || this.contentlet.modDate
+            }`;
+        }
+
+        if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
+
+        if (this.contentlet['image'])
+            return `/dA/${this.contentlet.inode}/image/resize_w/250/quality_q/45`;
+
+        return `/dA/${this.contentlet.inode}/500w/50q?r=${this.contentlet.modDateMilis || this.contentlet.modDate}`;
     }
 
     private fieldVariablePath(): string {
@@ -99,14 +126,26 @@ export class DotContentletThumbnail {
         return `${this.fieldVariable || this.contentlet.titleImage}/`;
     }
 
-    private switchToIcon(): any {
+    private switchToIcon(): void {
         this.renderImage = false;
     }
 
-    private getIcon() {
-        return this.contentlet?.baseType !== 'FILEASSET'
-            ? this.contentlet?.contentTypeIcon
-            : this.contentlet?.__icon__;
+    /**
+     * Gets the appropriate icon for the contentlet based on its type and properties.
+     * Prioritizes file asset icons over content type icons.
+     * @returns The icon string to be displayed
+     */
+    private getIcon(): string {
+        if (!this.contentlet) {
+            return '';
+        }
+
+        const { baseType, __icon__, contentTypeIcon } = this.contentlet;
+        const isFileAsset = baseType === 'FILEASSET';
+
+        return isFileAsset
+            ? (__icon__ ?? contentTypeIcon ?? '')
+            : (contentTypeIcon ?? __icon__ ?? '');
     }
 
     private shouldShowVideoThumbnail() {

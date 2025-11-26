@@ -1,13 +1,13 @@
-<i [class]="'pi pi-' + info.icon" data-testId="icon"></i>
+<i [class]="'pi pi-' + info.icon" data-testid="icon"></i>
 
-<h4 data-testId="title">{{ info.title | dm }}</h4>
+<h4 data-testid="title">{{ info.title | dm }}</h4>
 
-<p data-testId="description">
+<p data-testid="description">
     {{ info.description | dm }}
 </p>
 
 <div class="actions">
-    <a class="p-button p-button-outlined" [routerLink]="info.buttonPath" data-testId="button">
+    <a [routerLink]="info.buttonPath" class="p-button p-button-outlined" data-testid="button">
         {{ info.buttonText | dm }}
     </a>
 </div>

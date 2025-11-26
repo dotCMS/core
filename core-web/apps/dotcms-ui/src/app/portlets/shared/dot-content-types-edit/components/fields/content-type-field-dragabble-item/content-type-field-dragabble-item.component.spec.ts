@@ -7,15 +7,15 @@ import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 
+import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
@@ -35,8 +35,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         TestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
             imports: [
-                DotIconModule,
-                DotCopyLinkModule,
+                DotIconComponent,
+                DotCopyLinkComponent,
                 HttpClientTestingModule,
                 DotMessagePipe,
                 OverlayPanelModule,
@@ -126,7 +126,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             )
         ).nativeElement.textContent;
 
-        expect(attrs.every((attr) => attrsString.includes(attr))).toBeTrue();
+        expect(attrs.every((attr) => attrsString.includes(attr))).toBe(true);
     });
 
     it('should has a drag button', () => {

@@ -1,23 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService,
-    DotFormatDateService
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApp, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -26,6 +25,8 @@ import {
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
+// eslint-disable-next-line import/order
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 import { DotAppsService } from './dot-apps.service';
 
@@ -51,7 +52,6 @@ const mockDotApps = [
 ];
 
 describe('DotAppsService', () => {
-    let injector: TestBed;
     let dotAppsService: DotAppsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let coreWebService: CoreWebService;
@@ -79,11 +79,10 @@ describe('DotAppsService', () => {
                 mockProvider(DotMessageService)
             ]
         });
-        injector = getTestBed();
-        dotAppsService = injector.get(DotAppsService);
-        dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
-        coreWebService = injector.get(CoreWebService);
-        httpMock = injector.get(HttpTestingController);
+        dotAppsService = TestBed.inject(DotAppsService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        coreWebService = TestBed.inject(CoreWebService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get apps', () => {
@@ -117,8 +116,8 @@ describe('DotAppsService', () => {
 
     it('should throw error on get apps and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.get().subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -141,15 +140,15 @@ describe('DotAppsService', () => {
 
     it('should throw error on get a specific app and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.getConfiguration('test', '1').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
     });
 
     it('should import apps', () => {
-        spyOn(coreWebService, 'requestView').and.callThrough();
+        jest.spyOn(coreWebService, 'requestView');
         const conf: DotAppsImportConfiguration = {
             file: null,
             json: { password: 'test' }
@@ -181,7 +180,15 @@ describe('DotAppsService', () => {
         const mockResponse = {
             headers: {
                 get: (_header: string) => {
-                    return `attachment; filename=${fileName}`;
+                    if (_header === 'content-disposition') {
+                        return `attachment; filename=${fileName}`;
+                    }
+
+                    if (_header === 'error-message') {
+                        return null;
+                    }
+
+                    return null;
                 }
             },
             blob: () => {
@@ -189,9 +196,9 @@ describe('DotAppsService', () => {
             }
         };
         const anchor: HTMLAnchorElement = document.createElement('a');
-        spyOn<any>(window, 'fetch').and.returnValue(Promise.resolve(mockResponse));
-        spyOn(anchor, 'click');
-        spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
+        (window as any).fetch = jest.fn().mockReturnValue(Promise.resolve(mockResponse));
+        jest.spyOn(anchor, 'click');
+        jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
 
         const conf = {
             appKeysBySite: {},
@@ -202,7 +209,7 @@ describe('DotAppsService', () => {
         dotAppsService.exportConfiguration(conf);
         tick(1);
 
-        expect(window.fetch).toHaveBeenCalledWith(`/api/v1/apps/export`, {
+        expect((window as any).fetch).toHaveBeenCalledWith(`/api/v1/apps/export`, {
             method: 'POST',
             cache: 'no-cache',
             headers: {
@@ -211,11 +218,12 @@ describe('DotAppsService', () => {
             body: JSON.stringify(conf)
         });
         expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
+        expect(dotUtils.getDownloadLink).toHaveBeenCalledTimes(1);
         expect(anchor.click).toHaveBeenCalledTimes(1);
     }));
 
     it('should throw error when export apps configuration', fakeAsync(() => {
-        spyOn<any>(window, 'fetch').and.returnValue(Promise.reject(new Error('error')));
+        (window as any).fetch = jest.fn().mockReturnValue(Promise.reject(new Error('error')));
 
         const conf = {
             appKeysBySite: {},
@@ -256,8 +264,8 @@ describe('DotAppsService', () => {
             name: { hidden: false, value: 'test' }
         };
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.saveSiteConfiguration('test', '123', params).subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -281,8 +289,8 @@ describe('DotAppsService', () => {
 
     it('should throw error on delete a specific app and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.deleteConfiguration('test', '123').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -305,8 +313,8 @@ describe('DotAppsService', () => {
 
     it('should throw error on delete all configurations from an app and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAppsService.deleteAllConfigurations('test').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));

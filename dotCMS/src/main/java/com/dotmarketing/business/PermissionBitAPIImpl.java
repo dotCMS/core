@@ -6,10 +6,18 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.beans.UserProxy;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,9 +42,8 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,6 +58,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * PermissionAPI is an API intended to be a helper class for class to get Permissions.  Classes within the dotCMS
@@ -275,115 +284,239 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doesUserHavePermission(permissionable, permissionType, userIn, respectFrontendRoles, null);
 	}
 
+
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable,
-										  final int permissionType,
-										  final User userIn,
-										  final boolean respectFrontendRoles,
-										  final Contentlet contentlet) throws DotDataException {
-	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-        if (user.getUserId().equals(APILocator.systemUser().getUserId())){
-            return true;
-        }
-        
-        if (user.isAdmin()) {
-            return true;
-        }
-        
-        if (permissionable == null) {
-            Logger.warn(this, "Permissionable object is null");
-            throw new NullPointerException("Permissionable object is null");
-        }
-        
-        if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
-            Logger.debug(
-				this.getClass(),
-				"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-            Logger.debug(
-				this.getClass(),
-				"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
-            return false;
-        }
+			final int permissionType,
+			final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet contentlet) throws DotDataException {
 
-        // short circuit for UserProxy
-        if (permissionable instanceof UserProxy) {
-            return userPermissions((UserProxy) permissionable, user);
-        }
 
-		// Folders do not have PUBLISH, use EDIT instead
-		final int expecterPermissionType = (PermissionableType
-			.FOLDERS
-			.getCanonicalName()
-			.equals(permissionable.getPermissionType()) ||
-				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
-				&& permissionType == PERMISSION_PUBLISH
-			? PERMISSION_EDIT
-			: permissionType;
 
-		Role adminRole;
-		Role anonRole;
-		Role frontEndUserRole;
-		Role cmsOwnerRole;
-		try {
-			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
-			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
-		if (APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
+		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+		if (user.getUserId().equals(APILocator.systemUser().getUserId()) || user.isAdmin()){
 			return true;
 		}
 
-		final List<Permission> perms = getPermissions(permissionable, true);
+
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+		}
+
+		Optional<Boolean> cachedPermission = CacheLocator.getPermissionCache().doesUserHavePermission(permissionable, String.valueOf(permissionType), user, respectFrontendRoles, contentlet);
+		if (cachedPermission.isPresent() ) {
+			return cachedPermission.get();
+		}
+
+		boolean hasPermission = doesUserHavePermissionInternal(permissionable, permissionType, user, respectFrontendRoles, contentlet);
+
+		CacheLocator.getPermissionCache().putUserHavePermission(permissionable, String.valueOf(permissionType), user, respectFrontendRoles, contentlet, hasPermission);
+		return hasPermission;
+
+	}
+
+	private final Lazy<Role> anonRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> adminRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSAdminRole()).getOrElseThrow(DotRuntimeException::new));
+	private final Lazy<Role> ownerRole = Lazy.of(()->Try.of(()->APILocator.getRoleAPI().loadCMSOwnerRole()).getOrElseThrow(DotRuntimeException::new));
+
+
+
+	@CloseDBIfOpened
+	public boolean doesUserHavePermissionInternal(final Permissionable permissionable,
+										  final int permissionType,
+										  @NotNull final User userIn,
+										  final boolean respectFrontendRoles,
+										  final Contentlet contentlet) throws DotDataException {
+
+		final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+		if (user.getUserId().equals(APILocator.systemUser().getUserId())){
+			return true;
+		}
+
+		if (user.isAdmin()) {
+			return true;
+		}
+
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(
+					this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+		}
+
+		// short circuit for UserProxy
+		if (permissionable instanceof UserProxy) {
+			return userPermissions((UserProxy) permissionable, user);
+		}
+
+		// Folders do not have PUBLISH, use EDIT instead
+		final int expecterPermissionType = (PermissionableType
+				.FOLDERS
+				.getCanonicalName()
+				.equals(permissionable.getPermissionType()) ||
+				permissionable instanceof Identifier && ((Identifier) permissionable).getAssetType().equals("folder"))
+				&& permissionType == PERMISSION_PUBLISH
+				? PERMISSION_EDIT
+				: permissionType;
+
+
+		final List<Permission> perms = getPermissions(permissionable, true)
+				.stream()
+				.filter(p-> p.matchesPermission(expecterPermissionType))
+				.collect(Collectors.toList());
 		final boolean isContentlet = permissionable instanceof Contentlet;
 		for(final Permission p : perms){
-			if (p.matchesPermission(expecterPermissionType)) {
-				if (respectFrontendRoles) {
-					//anonymous role should not be able to access non-live contentlet
-					if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
-						return true;
-						//if logged in site user has permission
-					}
-                }
-				// if owner and owner has required permission return true
-				try {
-					if (p.getRoleId().equals(cmsOwnerRole.getId())
+			if (respectFrontendRoles) {
+				//anonymous role should not be able to access non-live contentlet
+				if (p.getRoleId().equals(anonRole.get().getId()) && (!isContentlet || isLiveContentlet(permissionable))) {
+					return true;
+					//if logged in site user has permission
+				}
+			}
+			// if owner and owner has required permission return true
+			try {
+				if (p.getRoleId().equals(ownerRole.get().getId())
 						&& permissionable.getOwner() != null
 						&& permissionable.getOwner().equals(user.getUserId())
 						&& checkRelatedPermissions(permissionable.permissionDependencies(expecterPermissionType), user)) {
-						return true;
-					}
-				} catch (DotDataException e1) {
-					Logger.error(this, e1.getMessage(), e1);
-					throw new DotRuntimeException(e1.getMessage(), e1);
-				}
-
-				if (permissionable instanceof WorkflowAction
-					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
 					return true;
 				}
+			} catch (DotDataException e1) {
+				Logger.error(this, e1.getMessage(), e1);
+				throw new DotRuntimeException(e1.getMessage(), e1);
+			}
+
+			if (permissionable instanceof WorkflowAction
+					&& workflowActionHasPermission(expecterPermissionType, p, user, contentlet)) {
+				return true;
 			}
 		}
 
-        // front end users cannot read content that is not live
-        if (!user.isBackendUser()
-			&& isContentlet
-			&& !isLiveContentlet(permissionable)
-			&& expecterPermissionType == PERMISSION_READ) {
-            Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
-                    "is not live.", user.getUserId(), permissionable.getPermissionId()));
+		// front end users cannot read content that is not live
+		if (!user.isBackendUser()
+				&& isContentlet
+				&& !isLiveContentlet(permissionable)
+				&& expecterPermissionType == PERMISSION_READ) {
+			Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
+					"is not live.", user.getUserId(), permissionable.getPermissionId()));
+			return false;
+		}
+
+        // disallow access if user has no permissions to any categories used on the content
+        if (isContentlet && !checkCategoryPermissionsSecond(((Contentlet) permissionable), expecterPermissionType, user,
+                respectFrontendRoles)) {
             return false;
         }
 
 		final Set<String> userRoleIds = filterUserRoles(user, respectFrontendRoles).stream().map(Role::getId).collect(Collectors.toSet());
-        
+
 		return doRolesHavePermission(userRoleIds, getPermissions(permissionable, true), expecterPermissionType);
+
 	}
+
+
+    /**
+     * Checks if the specified user has permissions to the categories used on the content. The algo is this: To access a
+     * piece of content, the user has to have permissions to at least one category that is set on EVERY category field
+     * on the content (or the category field is empty). If the user does not have access to ANY of the categories set on
+     * any category field of the content, then the user is not allowed to access the content.
+     *
+     * @param contentlet           the contentlet for which category permissions are being checked. This parameter must
+     *                             not be null.
+     * @param permissionType       the type of permission being checked (e.g., read, write, etc.).
+     * @param user                 the user whose permissions are being verified. This parameter must not be null.
+     * @param respectFrontendRoles a flag indicating whether to respect frontend roles during permission checks.
+     * @return true if the user has the specified permission type for all categories associated with the contentlet;
+     * false otherwise.
+     * @throws DotDataException if an error occurs during the permission check process.
+     */
+
+    boolean checkCategoryPermissionsSecond(@NotNull final Contentlet contentlet, final int permissionType,
+            @NotNull final User user, boolean respectFrontendRoles)
+            throws DotDataException {
+
+        if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
+            return true;
+        }
+
+        // List of fields which have secondaryPermissionCheck=true
+        List<Field> permissionedCategories = contentlet
+                .getContentType()
+                .fields(CategoryField.class)
+                .stream()
+                .filter(f -> f.fieldVariables()
+                        .stream()
+                        .anyMatch(
+                                fv -> "secondaryPermissionCheck".equalsIgnoreCase(fv.key()) && "true".equalsIgnoreCase(
+                                        fv.value())))
+                .collect(Collectors.toList());
+
+        if (permissionedCategories.isEmpty()) {
+            return true;
+        }
+
+        for (Field field : permissionedCategories) {
+
+            // get all categories selected
+            List<Category> allCats = Try.of(() -> (List<Category>) APILocator.getContentletAPI()
+                            .getFieldValue(contentlet, field, APILocator.systemUser(), false))
+                    .getOrElse(List.of());
+
+            // nothing selected, allow access
+            if (allCats.isEmpty()) {
+                continue;
+            }
+
+            //categories that user has access to
+            List<Category> myCats = Try.of(
+                            () -> (List<Category>) APILocator.getContentletAPI().getFieldValue(contentlet, field, user, false))
+                    .getOrElse(List.of());
+
+            // if user has no permissions to any categories, kaput!
+            if (myCats.isEmpty()) {
+                // log if trying to publish or something
+                if (permissionType > 1) {
+                    String msg = "User " + (user != null ? user.getUserId() : "Unknown")
+                            + " cannot " + PermissionLevel.getPermissionLevel(permissionType).name()
+                            + " due to CATEGORY PERMISSIONS on contentlet with id: " + contentlet.getIdentifier();
+                    Logger.warn(this.getClass(), msg);
+                    if (Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK_THROW_EXCEPTION_ON_PUBLISH",
+                            true)) {
+                        throw new DotValidationException(msg);
+                    }
+
+
+                }
+                return false;
+            }
+        }
+
+        return true;
+
+
+    }
+
 
 	/**
 	 * Given an expected permissionType to be satisfied, a resolved "Anyone who can..." style permission, a {@link User}
@@ -443,14 +576,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@WrapInTransaction
 	@Override
 	public void setDefaultCMSAnonymousPermissions(Permissionable permissionable) throws DotDataException{
-		Role cmsAnonymousRole;
-		try {
-			cmsAnonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
-
+		Role cmsAnonymousRole= anonRole.get();
 
 		Permission cmsAnonymousPermission = new Permission();
 		cmsAnonymousPermission.setRoleId(cmsAnonymousRole.getId());
@@ -617,12 +743,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 */
 	@WrapInTransaction
 	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
-		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
 
-			if(!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
-				throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
-			}
-		}
+
+		checkCopyPermissions(permissionable, user);
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -662,6 +785,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
+	private void checkCopyPermissions(Permissionable permissionable, User user) throws DotDataException, DotSecurityException {
+
+		if (!isCopy(permissionable)){
+			if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+
+				if (!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
+					throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+				}
+			}
+		}
+	}
+
 	/**
 	 * In case the permissionable is a contentlet, we try to check if the content type has edit permissions
 	 * This is applies when the doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) was called previously and has fail.
@@ -671,7 +806,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return boolean
 	 * @throws DotDataException
 	 */
-	private boolean checkIfContentletTypeHasEditPermissions(final Permissionable permissionable, final User user) throws DotDataException {
+	public boolean checkIfContentletTypeHasEditPermissions(final Permissionable permissionable, final User user) throws DotDataException {
 
 		return permissionable instanceof Contentlet? // we can check if the content type has edit permissions
 				doesUserHavePermission(Contentlet.class.cast(permissionable).getContentType(), PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user):false;
@@ -1895,6 +2030,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		return false;
+	}
+
+	public boolean isCopy(Permissionable permissionable){
+		boolean isCopy = false;
+		if (permissionable instanceof Contentlet){
+			Contentlet contentlet = (Contentlet) permissionable;
+			isCopy = contentlet.getBoolProperty(Contentlet.IS_COPY);
+		}
+		return isCopy;
 	}
 
 }

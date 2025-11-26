@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.apps.view;
 
-import static com.liferay.util.StringPool.BLANK;
-
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.AbstractProperty;
 import com.dotcms.security.apps.ParamDescriptor;
@@ -14,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.annotations.VisibleForTesting;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +20,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.liferay.util.StringPool.BLANK;
+
+/**
+ * This View class takes the exposable attributes from a {@link Secret} object and exposes them
+ * appropriately as a JSON object.
+ *
+ * @author Fabrizzio Araya
+ * @since Apr 8th, 2020
+ */
 @JsonSerialize(using = SecretView.SecretViewSerializer.class)
 public class SecretView {
 
@@ -80,10 +88,9 @@ public class SecretView {
     }
 
     /**
-     * This serializer generates the Json output for SecretView
-     * It'll render a secret or a paramDescriptor
-     * But if both are set the generated output will show them both merged.
-     * The two objects share common properties defined by the AbstractProperty class.
+     * This serializer generates the Json output for SecretView. It'll render a secret or a
+     * paramDescriptor. But, if both are set, the generated output will show them both merged. The
+     * two objects share common properties defined by the AbstractProperty class.
      */
     public static class SecretViewSerializer extends JsonSerializer<SecretView> {
 
@@ -119,7 +126,6 @@ public class SecretView {
             ViewUtil.pushSecret(map);
             final String json = mapper.writeValueAsString(map);
             jsonGenerator.writeRawValue(json);
-
         }
 
         private void buildCommonJson(final AbstractProperty property,
@@ -127,6 +133,9 @@ public class SecretView {
             final Type type = property.getType();
             map.put("type", type);
             map.put("hidden", property.isHidden());
+            map.put("hasEnvVar", property.hasEnvVar());
+            map.put("envShow", property.isEnvShow());
+            map.put("hasEnvVarValue", property.hasEnvVarValue());
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {
@@ -148,9 +157,7 @@ public class SecretView {
                     }
                 } else {
                     final String value = property.getString();
-                    map.put("value",
-                            property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK
-                                    : value);
+                    map.put("value", property.isHidden() && UtilMethods.isSet(value) ? HIDDEN_SECRET_MASK : value);
                 }
             }
         }
@@ -160,12 +167,24 @@ public class SecretView {
             buildCommonJson(secret, map);
         }
 
+        /**
+         * Builds the JSON for a {@link ParamDescriptor} by exposing the appropriate relevant
+         * properties. Different types of input fields might expose different attributes.
+         *
+         * @param paramDescriptor The {@link ParamDescriptor} that will be exposed.
+         * @param map The JSON map that will be updated with the properties of the
+         *            {@link ParamDescriptor}.
+         */
         private void buildParam(final ParamDescriptor paramDescriptor,
                 final Map<String, Object> map) {
             buildCommonJson(paramDescriptor, map);
             map.put("hint", paramDescriptor.getHint());
             map.put("label", paramDescriptor.getLabel());
             map.put("required", paramDescriptor.isRequired());
+            if (Type.GENERATED_STRING.equals(paramDescriptor.getType())) {
+                map.put("buttonLabel", paramDescriptor.getButtonLabel());
+                map.put("buttonEndpoint", paramDescriptor.getButtonEndpoint());
+            }
         }
 
         private void mergeSecretAndParam(final Secret secret,

@@ -1,0 +1,20 @@
+@if (showAsCompare) {
+    <div
+        [innerHTML]="
+            htmlWorkingValue$ | async | dotDiff: (htmlCompareValue$ | async) : showDiff | safeHtml
+        "
+        data-testId="div-compare"></div>
+} @else {
+    <div [innerHTML]="htmlWorkingValue$ | async | safeHtml" data-testId="div-working"></div>
+}
+
+<dot-block-editor
+    [value]="data.working[field]"
+    [ngStyle]="{ display: 'none' }"
+    id="blockEditor"
+    #blockEditor />
+<dot-block-editor
+    [value]="data.compare[field]"
+    [ngStyle]="{ display: 'none' }"
+    id="blockEditorCompare"
+    #blockEditorCompare />

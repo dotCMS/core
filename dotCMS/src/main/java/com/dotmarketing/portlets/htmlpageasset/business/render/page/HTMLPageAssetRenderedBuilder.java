@@ -2,10 +2,12 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -20,9 +22,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
@@ -32,15 +37,15 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.context.Context;
 
 /**
  * This class will be in charge of building the Metadata object for an HTML Page.
@@ -63,6 +68,8 @@ public class HTMLPageAssetRenderedBuilder {
     private String pageUrlMapper;
     private boolean live;
     private boolean parseJSON;
+    private Experiment runningExperiment;
+    private VanityURLView vanityUrl;
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -114,6 +121,11 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
+    public HTMLPageAssetRenderedBuilder setVanityUrl(final VanityURLView vanityUrl) {
+        this.vanityUrl = vanityUrl;
+        return this;
+    }
+
     /**
      * Generates the metadata of the specified HTML Page. All the internal data structures that make up the page will be
      * retrieved from the content repository and will be returned to the User in the form of a {@link PageView} object.
@@ -145,29 +157,32 @@ public class HTMLPageAssetRenderedBuilder {
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
 
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
-                this.htmlPageAsset, systemUser, mode, language.getId(), this.site);
+                this.htmlPageAsset, user, mode, language.getId(), this.site);
 
-        final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
-
+        // Here we get the URL contentlet, if it exists.
+        // If it exists, we check if the page is live or not.
+        final Optional<Contentlet> urlContentletOpt = findUrlMapContentlet(request, mode);
         if (!rendered) {
-
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
+
+            transformLegacyContainerUUIDs(layout);
+
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
                     .page(this.htmlPageAsset).layout(layout).canCreateTemplate(canCreateTemplates)
                     .canEditTemplate(canEditTemplate).viewAs(
                             this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
                                     mode, this.htmlPageAsset, user))
-                    .pageUrlMapper(pageUrlMapper).live(live);
+                    .pageUrlMapper(pageUrlMapper).live(live)
+                    .runningExperiment(runningExperiment)
+                    .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
             return pageViewBuilder.build();
         } else {
-
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
             velocityContext.put("parseJSON", parseJSON);
@@ -177,7 +192,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = this.getPageHTML();
+            final String pageHTML = this.getPageHTML(mode);
+
+            transformLegacyContainerUUIDs(layout);
 
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
             pageViewBuilder.site(site).template(template).containers(containers)
@@ -185,36 +202,83 @@ public class HTMLPageAssetRenderedBuilder {
                     .canEditTemplate(canEditTemplate).viewAs(
                     this.htmlPageAssetRenderedAPI.getViewAsStatus(request,
                             mode, this.htmlPageAsset, user))
-                    .pageUrlMapper(pageUrlMapper).live(live);
+                    .pageUrlMapper(pageUrlMapper).live(live)
+                    .runningExperiment(runningExperiment)
+                    .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
             return pageViewBuilder.build();
         }
     }
 
-    private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request) throws DotDataException, DotSecurityException {
+    /**
+     * Returns the URL contentlet if it exists. This is used to get the contentlet that is associated with the URL of the page like a urlMapContent
+     * @param request
+     * @param mode
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private Optional<Contentlet> findUrlMapContentlet(final HttpServletRequest request, final PageMode mode)
+            throws DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
 
         if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)) {
-
             final String inode = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-            contentlet         = this.contentletAPI.find(inode, user, false);
+            contentlet = this.contentletAPI.find(inode, user, false);
         } else if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET)) {
-
-            final String id    = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
-            contentlet         = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
+            final String id = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            contentlet = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
         }
 
-        return Optional.ofNullable(contentlet);
+        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
+        if(null != contentlet && timeMachineDate.isPresent()) {
+            final Contentlet contentletForTimeMachine = getContentletForTimeMachine(contentlet, timeMachineDate.get());
+            return Optional.of(contentletForTimeMachine);
+        } else {
+            if (null != contentlet && PageMode.LIVE == mode && !contentlet.isLive()) {
+                throw new HTMLPageAssetNotFoundException(pageUrlMapper);
+            }
+            return Optional.ofNullable(contentlet);
+        }
     }
 
-    public String getPageHTML() throws DotSecurityException {
+    /**
+     * Finds the appropriate contentlet version for Time Machine functionality.
+     * If a Time Machine date is present and the contentlet is not null, this method
+     * attempts to find a version of the contentlet that existed at the specified Time Machine date.
+     *
+     * @param contentlet The original contentlet to find a time machine version for. Can be null.
+     * @param timeMachineDate The date to find the contentlet version for. If null, the original contentlet is returned.
+     * @return The time machine version of the contentlet if found, otherwise the original contentlet.
+     *         Returns null if the input contentlet was null.
+     * @throws DotDataException If there is an error in the underlying data layer
+     * @throws DotSecurityException If the current user doesn't have permission to access the contentlet
+     */
+    private Contentlet getContentletForTimeMachine(final Contentlet contentlet, final Date timeMachineDate)
+            throws DotDataException, DotSecurityException {
 
-        final PageMode mode = PageMode.get(request);
+        // Early return if the contentlet is null or no Time Machine date is configured
+        if (contentlet == null ) {
+            throw new IllegalArgumentException("Contentlet cannot be null");
+        }
 
-        return getPageHTML(mode);
+        // Attempt to find the version of the contentlet at the Time Machine date
+        final Contentlet future = contentletAPI.findContentletByIdentifier(
+                contentlet.getIdentifier(),
+                contentlet.getLanguageId(),
+                WebAPILocator.getVariantWebAPI().currentVariantId(),
+                timeMachineDate,
+                user,
+                false
+        );
+
+        // Return the future version if found, otherwise return the original contentlet
+        return future != null ? future : contentlet;
     }
+
+
 
     @CloseDBIfOpened
     public String getPageHTML(final PageMode pageMode) throws DotSecurityException {
@@ -245,6 +309,44 @@ public class HTMLPageAssetRenderedBuilder {
                     APILocator.getTemplateAPI().findWorkingTemplate(htmlPageAsset.getTemplateId(),systemUser, mode.respectAnonPerms);
         } catch (DotSecurityException e) {
             return null;
+        }
+    }
+
+    public void setRunningExperiment(Experiment experiment) {
+        this.runningExperiment = experiment;
+    }
+
+    /**
+     * Transforms legacy container UUIDs (LEGACY_RELATION_TYPE) to "1" throughout the template layout
+     * to ensure consistency between layout and rendered container fields in the API response.
+     * 
+     * @param layout The template layout to transform
+     */
+    private void transformLegacyContainerUUIDs(TemplateLayout layout) {
+        if (layout == null) {
+            return;
+        }
+
+
+        if (layout.getBody() != null && layout.getBody().getRows() != null) {
+            layout.getBody().getRows().forEach(row -> {
+                if (row.getColumns() != null) {
+                    row.getColumns().forEach(column -> {
+                        if (column.getContainers() != null) {
+                            column.getContainers().stream()
+                                    .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
+                                    .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
+                        }
+                    });
+                }
+            });
+        }
+
+
+        if (layout.getSidebar() != null && layout.getSidebar().getContainers() != null) {
+            layout.getSidebar().getContainers().stream()
+                    .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
+                    .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
         }
     }
 

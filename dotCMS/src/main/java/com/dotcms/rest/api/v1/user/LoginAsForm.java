@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Length;
 
 @JsonDeserialize(builder = LoginAsForm.Builder.class)
 public class LoginAsForm {

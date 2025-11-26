@@ -1,0 +1,52 @@
+# This composite action prepares the GitHub Actions runner with basic setup steps.
+# It can optionally clean up the runner, set up Java and GraalVM, and ensure the
+# main branch is available locally.
+#
+# Features:
+# - Optional runner cleanup for extra disk space
+# - Optional Java and GraalVM setup
+# - Ensures main branch is available locally if required
+# - Flexible configuration through inputs
+
+name: 'Prepare Runner'
+description: 'Basic steps to prepare the runner'
+inputs:
+  cleanup-runner:
+    description: 'The runner requires extra disk space'
+    required: true
+    default: 'false'
+  require-graalvm:
+    description: 'Require GraalVM to be installed'
+    required: true
+    default: 'false'
+  require-java:
+    description: 'Require java to be installed'
+    default: 'true'
+  require-main:
+    description: 'require the main tag to run this action'
+    required: true
+    default: 'false'
+  java-version:
+    description: 'The version of Java to install'
+    required: false
+  graalvm-version:
+    description: 'Override the sdkman version of GraalVM to install'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup main branch locally without switching current branch
+      shell: bash
+      if: (github.ref != 'refs/heads/main' && inputs.require-main == 'true')
+      run: git fetch origin main:main
+    - name: Cleanup Runner
+      if: ${{ inputs.cleanup-runner == 'true' }}
+      uses: ./.github/actions/core-cicd/cleanup-runner
+    - name: Setup Java
+      if: ${{ inputs.require-java == 'true' }}
+      id: setup-java
+      uses: ./.github/actions/core-cicd/setup-java
+      with:
+        java-version: ${{ inputs.java-version }}
+        graalvm-version: ${{ inputs.graalvm-version }}
+        require-graalvm: ${{ inputs.require-graalvm }}

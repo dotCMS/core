@@ -1,0 +1,44 @@
+<div class="dialog-prompt__wrapper">
+    <dot-ai-image-prompt-form
+        (valueChange)="store.setFormValue($event)"
+        (generate)="store.generateImage()"
+        [value]="store.currentImage()"
+        [isLoading]="store.isLoading()"
+        [hasEditorContent]="store.hasContext()" />
+
+    <div [class.dialog-prompt_gallery]="store.isLoading() || store.hasImages()">
+        <dot-ai-image-prompt-gallery
+            (activeIndexChange)="store.setGalleryActiveIndex($event)"
+            (regenerate)="store.generateImage()"
+            [isLoading]="store.isLoading()"
+            [images]="store.images()"
+            [activeImageIndex]="store.galleryActiveIndex()"
+            [orientation]="store.formValue()?.size" />
+        @if (store.isLoading() || store.hasImages()) {
+            <div class="dot-ai-image__buttons">
+                <button
+                    (click)="closeDialog()"
+                    [label]="'Cancel' | dm"
+                    class="p-button-text"
+                    data-testid="close-btn"
+                    type="button"
+                    pButton></button>
+                <button
+                    (click)="insertImage()"
+                    [disabled]="store.isLoading() || store.currentImageHasError()"
+                    [label]="'block-editor.extension.ai-image.insert' | dm"
+                    class="align-self-end"
+                    data-testid="submit-btn"
+                    pButton
+                    type="submit"
+                    icon="pi pi-check"></button>
+            </div>
+        }
+    </div>
+    <p-confirmDialog
+        [style]="{ width: '500px' }"
+        key="ai-image-prompt"
+        rejectButtonStyleClass="p-button-outlined"
+        acceptIcon="null"
+        rejectIcon="null" />
+</div>

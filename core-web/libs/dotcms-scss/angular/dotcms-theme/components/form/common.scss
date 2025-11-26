@@ -98,6 +98,13 @@ $select-border-size: 2px;
     margin: 0;
     border-top-right-radius: $border-radius-xs;
     border-top-left-radius: $border-radius-xs;
+    gap: $spacing-1;
+}
+
+#field-panel-empty-message {
+    padding: $spacing-2 $spacing-2;
+    color: $black;
+    background: transparent;
 }
 
 #field-panel-filter {
@@ -110,8 +117,36 @@ $select-border-size: 2px;
     color: $color-palette-primary;
 }
 
+#field-panel-icon-close {
+    color: $color-palette-primary;
+    width: $spacing-6;
+    height: $spacing-6;
+    border-radius: $border-radius-circular;
+    border: 0 none;
+    background: transparent;
+    transition:
+        color 0.15s,
+        box-shadow 0.15s;
+
+    &:hover {
+        background-color: $color-palette-primary-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-primary-op-20;
+    }
+
+    &:focus {
+        outline: 0 none;
+        outline-offset: 0;
+        background-color: transparent;
+        @include field-focus;
+    }
+}
+
 #field-panel-items {
     padding: 0;
+    margin: 0;
 }
 
 #field-panel-item {
@@ -137,14 +172,31 @@ $select-border-size: 2px;
 }
 
 #field-chip {
-    height: 1.5rem;
+    height: $spacing-4;
     padding: $spacing-1;
-    background: $color-palette-primary-200;
+    background: $color-palette-primary-op-10;
     border-radius: $border-radius-sm;
     color: $color-palette-primary;
     font-size: $font-size-sm;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: $spacing-0;
+    flex-direction: row-reverse;
+    margin-right: $spacing-0;
+}
+
+#field-chip-sm {
+    height: $spacing-3;
+    padding: $spacing-0;
+    font-size: $font-size-xs;
+}
+
+#field-chip-token {
+    padding: 0.375rem $spacing-2;
+    margin-right: $spacing-1;
+    background: $bg-highlight;
+    color: $color-palette-primary;
+    border-radius: $border-radius-xs;
+    font-size: $font-size-sm;
 }

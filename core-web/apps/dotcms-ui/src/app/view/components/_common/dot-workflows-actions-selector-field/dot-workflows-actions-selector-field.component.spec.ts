@@ -1,14 +1,13 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, DebugElement, OnInit } from '@angular/core';
+import { Component, DebugElement, OnInit, inject, forwardRef } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { SelectItemGroup } from 'primeng/api';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -17,23 +16,25 @@ import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
+import { DOTTestBed } from '../../../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-fake-form',
     template: `
         <form [formGroup]="form">
             <dot-workflows-actions-selector-field
                 [workflows]="workfows"
-                formControlName="action"
-            ></dot-workflows-actions-selector-field>
+                formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent implements OnInit {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
     workfows: DotCMSWorkflow[] = [];
-
-    constructor(private fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         this.form = this.fb.group({
@@ -75,7 +76,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotWorkflowsActionsSelectorFieldComponent, FakeFormComponent],
+            declarations: [FakeFormComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -86,7 +87,21 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                     useClass: DotWorkflowsActionsSelectorFieldServiceMock
                 }
             ],
-            imports: [DropdownModule, DotMessagePipe]
+            imports: [DotWorkflowsActionsSelectorFieldComponent, DropdownModule, DotMessagePipe]
+        }).overrideComponent(DotWorkflowsActionsSelectorFieldComponent, {
+            set: {
+                providers: [
+                    {
+                        multi: true,
+                        provide: NG_VALUE_ACCESSOR,
+                        useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
+                    },
+                    {
+                        provide: DotWorkflowsActionsSelectorFieldService,
+                        useClass: DotWorkflowsActionsSelectorFieldServiceMock
+                    }
+                ]
+            }
         });
     }));
 
@@ -114,12 +129,11 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
             }
         ];
 
-        dotWorkflowsActionsSelectorFieldService = deHost.injector.get(
-            DotWorkflowsActionsSelectorFieldService
-        );
+        dotWorkflowsActionsSelectorFieldService =
+            de.componentInstance['dotWorkflowsActionsSelectorFieldService'];
 
-        spyOn(dotWorkflowsActionsSelectorFieldService, 'get').and.callThrough();
-        spyOn(dotWorkflowsActionsSelectorFieldService, 'load').and.callThrough();
+        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'get');
+        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'load');
     });
 
     describe('initialization', () => {
@@ -130,6 +144,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
         it('should load actions', () => {
             expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
             expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith([]);
+            expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
         });
 
         it('should subscribe to actions', () => {
@@ -148,9 +163,8 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 it('should have basics', () => {
                     expect(dropdown.appendTo).toBe('body');
                     expect(dropdown.group).toBe(true);
-                    expect(dropdown.placeholder).toBe('Select an action');
+                    expect(dropdown.placeholder()).toBe('Select an action');
                     expect(dropdown.style).toEqual({ width: '100%' });
-                    expect(dropdown.autoDisplayFirst).toBe(false);
                 });
             });
 
@@ -163,7 +177,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                     expect(dropdown.disabled).toBe(true);
                 });
 
-                it('should be enaled when actions list is filled', () => {
+                it('should be enabled when actions list is filled', () => {
                     fixtureHost.detectChanges();
                     dropdown = getDropdownComponent();
                     expect(dropdown.disabled).toBe(false);
@@ -243,7 +257,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 componentHost.workfows = mock;
                 fixtureHost.detectChanges();
                 expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith(
-                    jasmine.arrayContaining(mock)
+                    expect.arrayContaining(mock)
                 );
             });
         });

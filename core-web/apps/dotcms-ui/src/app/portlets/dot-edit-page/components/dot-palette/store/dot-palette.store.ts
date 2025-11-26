@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
@@ -10,14 +10,17 @@ import { debounceTime, map, take } from 'rxjs/operators';
 import {
     DotContentTypeService,
     DotESContentService,
+    DotPropertiesService,
     DotSessionStorageService,
     PaginatorService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
+    DotConfigurationVariables,
     ESContent
 } from '@dotcms/dotcms-models';
 
@@ -37,6 +40,12 @@ const CONTENTLET_VIEW_OUT = 'contentlet:out';
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private paginatorESService = inject(DotESContentService);
+    private paginationService = inject(PaginatorService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+    private dotConfigurationService = inject(DotPropertiesService);
+
     readonly vm$ = this.state$;
 
     readonly setFilter = this.updater((state: DotPaletteState, data: string) => {
@@ -159,12 +168,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         return { ...state, totalRecords: data };
     });
 
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private paginatorESService: DotESContentService,
-        private paginationService: PaginatorService,
-        private dotSessionStorageService: DotSessionStorageService
-    ) {
+    constructor() {
         super({
             contentlets: null,
             contentTypes: null,
@@ -249,37 +253,41 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      */
     getContenttypesData(): void {
         this.setLoading();
-        this.state$.pipe(take(1)).subscribe(({ filter, allowedContent }) => {
-            if (allowedContent && allowedContent.length) {
-                forkJoin([
-                    this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
-                    this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
-                ])
-                    .pipe(take(1))
-                    .subscribe((results: DotCMSContentType[][]) => {
-                        const [allowContent, widgets] = results;
+        this.state$.pipe(take(1)).subscribe(({ filter, allowedContent = [] }) => {
+            // Note: This store needs to be refactored
+            const hasAllowedContent = allowedContent && allowedContent.length > 0;
+            const contentTypes$ = hasAllowedContent
+                ? this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(','))
+                : of([]);
 
-                        // Some pages bring widgets in the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES, and others don't.
-                        // However, all pages allow widgets, so we make a request just to get them.
-                        // Full comment here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
-                        // This filter is used to prevent widgets from being repeated.
-                        const contentLets = allowContent.filter(
-                            (item) => item.baseType !== 'WIDGET'
-                        );
+            forkJoin({
+                contentTypes: contentTypes$,
+                widgets: this.dotContentTypeService.getContentTypes({
+                    filter,
+                    page: 40,
+                    type: 'WIDGET'
+                }),
+                hiddenContentTypes: this.dotConfigurationService.getKeyAsList(
+                    DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
+                )
+            })
+                .pipe(take(1))
+                .subscribe(({ contentTypes, widgets, hiddenContentTypes }) => {
+                    /**
+                     * This filter is used to prevent widgets from being repeated.
+                     * More information here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
+                     */
+                    const filteredContentTypes = contentTypes.filter(
+                        (item) => item.baseType !== DotCMSBaseTypesContentTypes.WIDGET
+                    );
+                    const mergedContentAndWidgets = [...filteredContentTypes, ...widgets];
+                    const data = mergedContentAndWidgets
+                        .filter((item) => !hiddenContentTypes.includes(item.variable))
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .slice(0, 40);
 
-                        // Merge both array and order them by name
-                        const contentTypes = [...contentLets, ...widgets]
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .slice(0, 40);
-
-                        this.loadContentypes(contentTypes);
-                    });
-            } else {
-                this.dotContentTypeService
-                    .getContentTypes({ filter, page: 40, type: 'WIDGET' })
-                    .pipe(take(1))
-                    .subscribe((data: DotCMSContentType[]) => this.loadContentypes(data));
-            }
+                    this.loadContentypes(data);
+                });
         });
     }
 

@@ -1,12 +1,13 @@
-import { Component, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, ViewChild, inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotDiffPipe } from '@dotcms/app/view/pipes';
 import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotWhatChanged } from '@dotcms/dotcms-models';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
+import { DotDiffPipe, DotMessagePipe } from '@dotcms/ui';
+
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
 
 export const SHOW_DIFF_STYLES =
     'del{text-decoration: line-through; background-color:#fdb8c0 } ins{ text-decoration: underline; background-color: #ddffdd}';
@@ -14,9 +15,14 @@ export const SHOW_DIFF_STYLES =
 @Component({
     selector: 'dot-whats-changed',
     templateUrl: './dot-whats-changed.component.html',
-    styleUrls: ['./dot-whats-changed.component.scss']
+    styleUrls: ['./dot-whats-changed.component.scss'],
+    imports: [IframeComponent, DotMessagePipe]
 })
 export class DotWhatsChangedComponent implements OnInit, OnChanges {
+    private dotEditPageService = inject(DotEditPageService);
+    private dotDOMHtmlUtilService = inject(DotDOMHtmlUtilService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+
     @Input()
     languageId: string;
     @Input()
@@ -31,12 +37,6 @@ export class DotWhatsChangedComponent implements OnInit, OnChanges {
         renderLive: '',
         renderWorking: ''
     };
-
-    constructor(
-        private dotEditPageService: DotEditPageService,
-        private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
 
     ngOnInit(): void {
         this.styles = this.dotDOMHtmlUtilService.createStyleElement(SHOW_DIFF_STYLES);

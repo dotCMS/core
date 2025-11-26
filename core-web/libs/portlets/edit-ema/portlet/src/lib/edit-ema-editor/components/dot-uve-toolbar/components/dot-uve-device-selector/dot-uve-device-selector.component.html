@@ -1,0 +1,59 @@
+@for (device of defaultDevices; track $index) {
+    <p-button
+        [icon]="device.icon"
+        [pTooltip]="device.name | dm"
+        tooltipPosition="bottom"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
+        (click)="onDeviceSelect(device)"
+        [attr.data-testId]="device.inode" />
+}
+
+<p-button
+    styleClass="p-button-text p-button-sm p-button-rounded orientation p-button-icon-only"
+    [disabled]="$disableOrientation()"
+    (click)="onOrientationChange()"
+    data-testId="orientation">
+    <svg
+        [ngClass]="$currentOrientation()"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        width="24px"
+        height="24px">
+        <use
+            data-testId="orientation"
+            href="./assets/edit-ema/orientation.svg#orientation"
+            width="24px"
+            height="24px"></use>
+    </svg>
+</p-button>
+
+@if ($menuItems().length) {
+    <p-button
+        icon="pi pi-angle-down"
+        iconPos="right"
+        [label]="$moreButtonLabel() | dm"
+        [class.active]="$isMoreButtonActive()"
+        styleClass="p-button-text p-2 p-button-sm"
+        (click)="menu.toggle($event)"
+        data-testId="more-button" />
+
+    <p-menu
+        #menu
+        [popup]="true"
+        styleClass="more-menu"
+        [model]="$menuItems()"
+        data-testId="more-menu">
+        <ng-template pTemplate="submenuheader" let-item>
+            <span class="text-primary font-bold">{{ item.label }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-item>
+            <a
+                pRipple
+                class="flex align-items-center p-menuitem-link menu-item"
+                [ngClass]="{ 'menu-item--active': item.id === activeMenuItemId() }">
+                <span>{{ item.label }}</span>
+            </a>
+        </ng-template>
+    </p-menu>
+}

@@ -1,7 +1,10 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,4 +34,18 @@ public interface ExperimentsFactory {
      * {@link ExperimentFilter}
      */
     List<Experiment> list(final ExperimentFilter filter) throws DotDataException;
+
+    /**
+     * Return the collection of experiments that are active on this Page. This includes all the experiments
+     * currently active on this Page.
+     */
+
+    /**
+     * Return the collection of experiments that are RUNNING, DRAFT or SCHEDULED on the Page
+     * @param pageIdentifier to Filter the Experiments.
+     *
+     * @return
+     * @throws DotDataException
+     */
+    Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
 }

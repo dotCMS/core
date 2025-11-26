@@ -1,58 +1,17 @@
-/* 
-* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
-* Copyright (c) 2023 dotCMS Inc.
-* 
-* With regard to the dotCMS Software and this code:
-* 
-* This software, source code and associated documentation files (the
-* "Software")  may only be modified and used if you (and any entity that
-* you represent) have:
-* 
-* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
-* of Service, available at https://www.dotcms.com/terms (the “Enterprise
-* Terms”) or have another agreement governing the licensing and use of the
-* Software between you and dotCMS. 2. Each dotCMS instance that uses
-* enterprise features enabled by the code in this directory is licensed
-* under these agreements and has a separate and valid dotCMS Enterprise
-* server key issued by dotCMS.
-* 
-* Subject to these terms, you are free to modify this Software and publish
-* patches to the Software if you agree that dotCMS and/or its licensors
-* (as applicable) retain all right, title and interest in and to all such
-* modifications and/or patches, and all such modifications and/or patches
-* may only be used, copied, modified, displayed, distributed, or otherwise
-* exploited with a valid dotCMS Enterprise license for the correct number
-* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
-* applicable) retain all right, title and interest in and to all such
-* modifications.  You are not granted any other rights beyond what is
-* expressly stated herein.  Subject to the foregoing, it is forbidden to
-* copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
-* For all third party components incorporated into the dotCMS Software,
-* those components are licensed under the original license provided by the
-* owner of the applicable component.
+/*
+*
+* Copyright (c) 2025 dotCMS LLC
+* Use of this software is governed by the Business Source License included
+* in the LICENSE file found at in the root directory of software.
+* SPDX-License-Identifier: BUSL-1.1
+*
 */
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndexType;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -75,6 +34,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -83,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.vavr.control.Try;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -164,7 +126,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                 if (defaultIndice != null && !defaultIndice.isEmpty() && !list.isEmpty() ){
                     final int index = list.indexOf(defaultIndice);
                     //change the element defaultIndex to the first position of the arraylist if it is not yet
-                    if (index != 0) {
+                    if(index < 0){
+                        Logger.warn(this.getClass(), String.format("The default site search '%s' index was not found in the list of indices.", defaultIndice));
+                    } else {
                         list.remove(index);
                         list.add(indexPosition, defaultIndice);
                     }
@@ -725,7 +689,56 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
     }
 
+    /**
+     * This method is responsible for deleting old Site Search indices.
+     * It performs the following steps:
+     * 1. Retrieves all Site Search indices.
+     * 2. Removes the default Site Search index from the list of indices to be removed.
+     * 3. Retrieves all indices with an alias and removes them from the list of indices to be removed.
+     * 4. Removes indices which were created in the last day from the list of indices to be removed.
+     * 5. If there are any indices left to be removed, it logs their names and deletes them.
+     */
+    public void deleteOldSiteSearchIndices(){
+        //Get All SiteSearch Indices
+        final List<String> indicesToRemove = new ArrayList<>();
 
+        indicesToRemove.addAll(listIndices());
+
+        //Remove Default SiteSearch Index
+        final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+                .getOrNull();
+
+        if(info!=null) {
+            indicesToRemove.remove(info.getSiteSearch());
+        }
+
+        //Get All Indices with an Alias
+        final List<String> listOfIndicesWithAlias = new ArrayList<>(indexApi.getIndexAlias(indicesToRemove).keySet());
+
+        //Remove Indices with an Alias from the list of indicesToRemove
+        indicesToRemove.removeAll(listOfIndicesWithAlias);
+
+        //Remove Indices which were created in the last day from the list of indicesToRemove
+        final Date yesterdayDate = Date.from(Instant.now().minus(Duration.ofDays(1)));
+        final String yesterdayDateTimestamp = ContentletIndexAPIImpl.timestampFormatter.format(yesterdayDate);
+        final long yesterdayDateLong = Long.parseLong(yesterdayDateTimestamp);
+
+        final List<String> listOfIndicesCreatedInTheLast24Hours = new ArrayList<>();
+        for(final String index : indicesToRemove){
+            final String indexTimestamp = index.split("_")[1];
+            final long indexTimestampLong = Long.parseLong(indexTimestamp);
+            if(indexTimestampLong >= yesterdayDateLong){
+                listOfIndicesCreatedInTheLast24Hours.add(index);
+            }
+        }
+
+        indicesToRemove.removeAll(listOfIndicesCreatedInTheLast24Hours);
+
+        if(!indicesToRemove.isEmpty()) {
+            Logger.info(this.getClass(), "The following indices will be deleted: " + String.join(",", indicesToRemove));
+            indexApi.deleteMultiple(indicesToRemove.toArray(new String[0]));
+        }
+    }
 
 
 

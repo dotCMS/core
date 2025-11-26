@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
@@ -11,8 +12,8 @@ import com.dotcms.model.site.SiteView;
 import org.apache.commons.lang3.BooleanUtils;
 import picocli.CommandLine;
 
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 
 public abstract class AbstractSiteCommand {
 
@@ -21,6 +22,9 @@ public abstract class AbstractSiteCommand {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
 
     @CommandLine.Mixin
     protected HelpOptionMixin helpOptionMixin;

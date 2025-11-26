@@ -1,0 +1,17 @@
+<button
+    (click)="op.toggle($event)"
+    [label]="selectedLanguage()?.label"
+    [ngClass]="{ selected: selectedLanguage().id !== 1 }"
+    class="p-button-text p-button-sm"
+    pButton
+    icon="pi pi-globe"
+    data-testId="language-button"></button>
+<p-overlayPanel #op styleClass="edit-ema-selector" data-testId="language-op">
+    <p-listbox
+        [options]="languages$ | async"
+        (onChange)="onChange($event); op.toggle($event)"
+        #listbox
+        optionLabel="label"
+        dataKey="id"
+        data-testId="language-listbox"></p-listbox>
+</p-overlayPanel>

@@ -5,17 +5,16 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * 
@@ -44,7 +43,7 @@ import java.util.Set;
  *
  */
 public interface FieldAPI {
-	String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
+	String FULLSCREEN_FIELD_FEATURE_FLAG = FeatureFlagName.FULLSCREEN_FIELD_FEATURE_FLAG;
 
 	/**
 	 * Retrieves the list of the base Fields Types
@@ -120,39 +119,64 @@ public interface FieldAPI {
 	List<Field> byContentTypeId(String typeId) throws DotDataException;
 
 	/**
-	 * Saves a new Field
-	 * 
-	 * @param field Field to be saved.
-	 * @param user User that is going to save the Field
-	 * @return Saved Field Object
-	 * @throws DotDataException Error occurred when performing the action.
-	 * @throws DotSecurityException The user does not have permissions to perform this action.
-	 */
-	Field save(Field field, User user) throws DotDataException, DotSecurityException;
-
-	/**
-	 * Saves a new Field
+	 * Saves a {@link Field} object to the database. If the field already exists, it updates the
+	 * existing field and will be automatically reordered in the field layout. This method also
+	 * handles the necessary validations, reordering, and cache invalidations.
 	 *
-	 * @param field
-	 * @param user
-	 * @param reorderIfNeed  if it’s true then reorder all the fields relative to the order of the field being saved
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @param field The {@link Field} being saved.
+	 * @param user  The {@link User} performing the save operation.
+	 *
+	 * @return The saved {@link Field}.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The specified user does not have permissions to perform this
+	 *                              action.
 	 */
-	Field save(Field field, User user, boolean reorderIfNeed) throws DotDataException, DotSecurityException;
+	Field save(final Field field, final User user) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Saves a new Field Variable.
-	 * 
-	 * @param fieldVar Field Variable to be saved.
-	 * @param user User that is going to save the Field Variable.
-	 * @return Saved Field Variable Object
-	 * @throws DotDataException Error occurred when performing the action.
-	 * @throws DotSecurityException The user does not have permissions to perform this action.
+	 * Saves a {@link Field} object to the database. If the field already exists, it updates the
+	 * existing field. This method also handles the necessary validations, potential reordering,
+	 * and cache invalidations.
+	 *
+	 * @param field         The {@link Field} being saved.
+	 * @param user          The {@link User} performing the save operation.
+	 * @param reorderIfNeed If set to {@code true}, all fields relative to the order of the field
+	 *                      being saved will be recalculated.
+	 *
+	 * @return The saved {@link Field}.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The specified user does not have permissions to perform this
+	 *                              action.
 	 */
-	FieldVariable save(FieldVariable fieldVar, User user) throws DotDataException, DotSecurityException;
+	Field save(final Field field, final User user, final boolean reorderIfNeed)
+			throws DotDataException, DotSecurityException;
 
+	/**
+	 * Saves a new Field Variable. For this operation to succeed, the Field Variable must be
+	 * already assigned to a field that actually exists in a Content Type.
+	 *
+	 * @param fieldVar The {@link FieldVariable} being saved.
+	 * @param user     The {@link User} that is going to save the Field Variable.
+	 *
+	 * @return The saved {@link FieldVariable} object.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The specified user does not have permissions to perform this
+	 *                              action.
+	 */
+	FieldVariable save(final FieldVariable fieldVar, final User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Save the list of {@link FieldVariable} objects to the specified {@link Field}.
+	 *
+	 * @param fieldVariables The list of new or existing Field Variables.
+	 * @param field          The field that the Field Variables belong to.
+	 *
+	 * @throws DotStateException An error occurred when saving a Field Variable.
+	 */
+	void save(final List<FieldVariable> fieldVariables, final Field field);
 
 	/**
 	 * Returns a field based on the Content Type Id and the Field Relation Type
@@ -181,7 +205,7 @@ public interface FieldAPI {
 	 * @param fieldVar Field Variable that wants to be deleted.
 	 * @throws DotDataException Error occurred when performing the action.
 	 */
-    void delete(FieldVariable fieldVar) throws DotDataException;
+    void delete(FieldVariable fieldVar) throws DotDataException, UniqueFieldValueDuplicatedException;
 
     /**
      * Returns the dataType and the number of the column of that field. e.g bool1
@@ -206,12 +230,14 @@ public interface FieldAPI {
 	Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Save a bunch of fields
+	 * Saves the specified list of fields that are assigned to a given Content Type.
 	 *
-	 * @param fields fields to save
-	 * @param user user who save the fields
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @param fields The list of {@link Field} objects being saved.
+	 * @param user   The {@link User} saving such fields.
+	 *
+	 * @throws DotSecurityException The specified User does not have the required permissions to
+	 *                              execute this action.
+	 * @throws DotDataException     An error occurred when interacting with the database.
 	 */
     void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException;
 

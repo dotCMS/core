@@ -1,21 +1,27 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    inject,
     Input,
     OnChanges,
     OnDestroy,
     OnInit,
     Output,
+    signal,
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
+import { SiteEntity } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 
@@ -32,9 +38,16 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     providers: [PaginatorService],
     selector: 'dot-site-selector',
     styleUrls: ['./dot-site-selector.component.scss'],
-    templateUrl: 'dot-site-selector.component.html'
+    templateUrl: 'dot-site-selector.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [FormsModule, SearchableDropdownComponent]
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
+    #globalStore = inject(GlobalStore);
+    private siteService = inject(SiteService);
+    paginationService = inject(PaginatorService);
+    private dotEventsService = inject(DotEventsService);
+
     @Input() archive: boolean;
     @Input() id: string;
     @Input() live: boolean;
@@ -50,18 +63,11 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
 
-    currentSite: Site;
-
-    sitesCurrentPage: Site[];
-    moreThanOneSite = false;
+    $currentSite = signal<Site | null>(null);
+    $sitesCurrentPage = signal<Site[]>([]);
+    $moreThanOneSite = signal<boolean>(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private siteService: SiteService,
-        public paginationService: PaginatorService,
-        private dotEventsService: DotEventsService
-    ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
@@ -83,9 +89,9 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
                 });
         });
 
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.siteService.currentSite$.pipe(takeUntil(this.destroy$)).subscribe((site) => {
             setTimeout(() => {
-                this.updateCurrentSite(this.siteService.currentSite);
+                this.updateCurrentSite(site);
             }, 200);
         });
     }
@@ -103,7 +109,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     /**
      * Manage the sites refresh when a event happen
-     * @memberof SiteSelectorComponent
+     * @memberof DotSiteSelectorComponent
      */
     handleSitesRefresh(site: Site): void {
         this.paginationService
@@ -129,7 +135,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     /**
      * Call when the global serach changed
      * @param any filter
-     * @memberof SiteSelectorComponent
+     * @memberof DotSiteSelectorComponent
      */
     handleFilterChange(filter): void {
         this.getSitesList(filter);
@@ -138,7 +144,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     /**
      * Call when the current page changed
      * @param any event
-     * @memberof SiteSelectorComponent
+     * @memberof DotSiteSelectorComponent
      */
     handlePageChange(event): void {
         this.getSitesList(event.filter, event.first);
@@ -146,9 +152,9 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     /**
      * Call to load a new page.
-     * @param string [filter='']
-     * @param number [page=1]
-     * @memberof SiteSelectorComponent
+     * @param {string} filter
+     * @param {number} offset
+     * @memberof DotSiteSelectorComponent
      */
     getSitesList(filter = '', offset = 0): void {
         this.paginationService.filter = `*${filter}`;
@@ -156,17 +162,20 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
             .getWithOffset(offset)
             .pipe(take(1))
             .subscribe((items: Site[]) => {
-                this.sitesCurrentPage = [...items];
-                this.moreThanOneSite = this.moreThanOneSite || items.length > 1;
+                this.$sitesCurrentPage.set(items);
+                this.$moreThanOneSite.set(this.$moreThanOneSite() || items.length > 1);
+                //this.cd.detectChanges();
             });
     }
 
     /**
      * Call when the selected site changed and the switch event is emmited
-     * @param Site site
-     * @memberof SiteSelectorComponent
+     * @param {Site} site
+     * @memberof DotSiteSelectorComponent
      */
     siteChange(site: Site): void {
+        // Set the current site in the global store
+        this.#globalStore.setCurrentSite(site as unknown as SiteEntity);
         this.switch.emit(site);
     }
     /**
@@ -176,19 +185,18 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof DotSiteSelectorComponent
      */
     updateCurrentSite(site: Site): void {
-        this.currentSite = site;
+        this.$currentSite.set(site);
     }
 
     private getSiteByIdFromCurrentPage(siteId: string): Site {
         return (
-            this.sitesCurrentPage &&
-            this.sitesCurrentPage.filter((site) => site.identifier === siteId)[0]
+            this.$sitesCurrentPage() &&
+            this.$sitesCurrentPage().filter((site) => site.identifier === siteId)[0]
         );
     }
 
     private selectCurrentSite(siteId: string): void {
         const selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
-
         if (selectedInCurrentPage) {
             this.updateCurrentSite(selectedInCurrentPage);
         } else {
@@ -202,8 +210,8 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     private updateValues(items: Site[]): void {
-        this.sitesCurrentPage = [...items];
-        this.moreThanOneSite = items.length > 1;
+        this.$sitesCurrentPage.set([...items]);
+        this.$moreThanOneSite.set(items.length > 1);
         this.updateCurrentSite(this.siteService.currentSite);
     }
 }

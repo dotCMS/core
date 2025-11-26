@@ -51,8 +51,8 @@
 
 ::ng-deep {
     .p-overlaypanel.paginator {
-        .p-dataview-content {
-            margin-bottom: $spacing-9;
+        .p-paginator {
+            justify-content: center;
         }
 
         .p-paginator-bottom {
@@ -72,6 +72,7 @@
                 padding: $spacing-2 $spacing-6;
                 display: flex;
                 gap: $spacing-2;
+
                 i {
                     color: $color-palette-primary;
                 }
@@ -95,13 +96,15 @@
         width: 100%;
         max-height: 80vh;
         overflow: auto;
+
         .searchable-dropdown__data-list-item {
             cursor: pointer;
-            display: block;
+            display: flex;
             line-height: normal;
             transition: background-color $basic-speed ease-in;
             width: 100%;
             padding: $spacing-1 $spacing-3;
+            gap: $spacing-0;
             @include truncate-text;
 
             &:hover {

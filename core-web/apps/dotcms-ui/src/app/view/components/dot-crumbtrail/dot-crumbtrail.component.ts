@@ -1,19 +1,38 @@
-import { Observable } from 'rxjs';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 
-import { Component, OnInit } from '@angular/core';
+import { GlobalStore } from '@dotcms/store';
+import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
-    styleUrls: ['./dot-crumbtrail.component.scss']
+    styleUrls: ['./dot-crumbtrail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotCollapseBreadcrumbComponent]
 })
-export class DotCrumbtrailComponent implements OnInit {
-    crumb: Observable<DotCrumb[]>;
+export class DotCrumbtrailComponent {
+    /** Global store instance for accessing breadcrumb state */
+    readonly #globalStore = inject(GlobalStore);
 
-    constructor(private crumbTrailService: DotCrumbtrailService) {}
+    /** Signal containing the complete breadcrumb menu items from the global store */
+    $breadcrumbsMenu = this.#globalStore.breadcrumbs;
 
-    ngOnInit() {
-        this.crumb = this.crumbTrailService.crumbTrail$;
-    }
+    /**
+     * Computed signal containing collapsed breadcrumb items.
+     *
+     * Returns all breadcrumb items except the last one, which represents
+     * the current page. If there's only one breadcrumb, returns an empty array.
+     *
+     * @returns Array of breadcrumb items to be displayed in collapsed state
+     */
+    $collapsedBreadcrumbs = computed(() => {
+        const crumbs = this.$breadcrumbsMenu();
+
+        return crumbs.length > 1 ? crumbs.slice(0, -1) : [];
+    });
+
+    /**
+     * Label of the last breadcrumb, provided by the GlobalStore.
+     */
+    $lastBreadcrumb = this.#globalStore.selectLastBreadcrumbLabel;
 }

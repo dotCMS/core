@@ -2,19 +2,26 @@
 
 import { Observable, of as observableOf, of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { CoreWebService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import {
+    DotAjaxActionResponseView,
+    DotPushPublishData,
+    DotPushPublishDialogData
+} from '@dotcms/dotcms-models';
+import { DotDialogComponent } from '@dotcms/ui';
+import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
+
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
@@ -28,7 +35,8 @@ class PushPublishServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-push-publish-dialog></dot-push-publish-dialog>'
+    template: '<dot-push-publish-dialog></dot-push-publish-dialog>',
+    imports: [DotPushPublishDialogComponent]
 })
 class TestHostComponent {}
 
@@ -68,19 +76,33 @@ describe('DotPushPublishDialogComponent', () => {
         timezoneId: 'test'
     };
 
+    const pushPublishServiceMock = new PushPublishServiceMock();
+
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotPushPublishDialogComponent,
-                TestHostComponent,
-                TestDotPushPublishFormComponent
-            ],
-            imports: [BrowserAnimationsModule, DotDialogModule],
+            imports: [BrowserAnimationsModule, TestHostComponent, TestDotPushPublishFormComponent],
             providers: [
-                { provide: PushPublishService, useValue: new PushPublishServiceMock() },
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: PushPublishService, useValue: pushPublishServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotPushPublishDialogService
             ]
+        });
+
+        // Override the standalone component to replace injected services and replace the real form with our mock
+        TestBed.overrideComponent(DotPushPublishDialogComponent, {
+            remove: {
+                imports: [DotPushPublishFormComponent]
+            },
+            add: {
+                imports: [TestDotPushPublishFormComponent],
+                providers: [
+                    { provide: PushPublishService, useValue: pushPublishServiceMock },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock }
+                ]
+            }
         });
 
         fixture = TestBed.createComponent(TestHostComponent);
@@ -89,7 +111,7 @@ describe('DotPushPublishDialogComponent', () => {
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         pushPublishService = TestBed.inject(PushPublishService);
         fixture.detectChanges();
-        spyOn(comp.cancel, 'emit');
+        jest.spyOn(comp.cancel, 'emit');
     });
 
     describe('dot-dialog', () => {
@@ -161,6 +183,7 @@ describe('DotPushPublishDialogComponent', () => {
         let closeButton: DebugElement;
 
         beforeEach(() => {
+            jest.clearAllMocks();
             dotPushPublishDialogService.open(publishData);
             fixture.detectChanges();
             pushPublishForm = fixture.debugElement.query(
@@ -174,7 +197,7 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').and.returnValue(of(null));
+                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
             });
 
             xit('should submit on accept and hide dialog', () => {
@@ -217,8 +240,8 @@ describe('DotPushPublishDialogComponent', () => {
         describe('on error pushPublishContent', () => {
             const errors = ['Error 1', 'Error 2'];
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').and.returnValue(
-                    of({ errors: errors })
+                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    of({ errors: errors } as unknown as DotAjaxActionResponseView)
                 );
             });
 

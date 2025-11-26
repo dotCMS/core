@@ -1,5 +1,6 @@
-import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotKeyValueField } from '../models';
 import { h } from '@stencil/core';
+
+import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotKeyValueField } from '../models';
 
 /**
  * Returns CSS classes object based on field Status values
@@ -151,7 +152,7 @@ export function updateStatus(
  * @param string message
  * @returns JSX.Element
  */
-export function getTagError(show: boolean, message: string): JSX.Element {
+export function getTagError(show: boolean, message: string) {
     return show && isStringType(message) ? (
         <span class="dot-field__error-message">{message}</span>
     ) : null;
@@ -164,7 +165,7 @@ export function getTagError(show: boolean, message: string): JSX.Element {
  * @param string name
  * @returns JSX.Element
  */
-export function getTagHint(hint: string): JSX.Element {
+export function getTagHint(hint: string) {
     return isStringType(hint) ? (
         <span class="dot-field__hint" id={getHintId(hint)}>
             {hint}

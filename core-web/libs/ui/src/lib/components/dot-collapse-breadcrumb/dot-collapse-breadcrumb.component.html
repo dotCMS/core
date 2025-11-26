@@ -1,0 +1,23 @@
+<div class="flex align-items-center h-1rem" [class]="$styleClass()">
+    @if ($isCollapsed()) {
+        <div class="flex align-items-center">
+            <div>
+                <p-menu #menu [model]="$itemsToHide()" [popup]="true" appendTo="body" />
+                <p-button
+                    (click)="menu.toggle($event)"
+                    icon="pi pi-ellipsis-h"
+                    type="button"
+                    data-testid="btn-collapse"
+                    styleClass="p-button-rounded p-button-text p-button-sm outline-none" />
+            </div>
+            <div class="mx-2">
+                <ChevronRightIcon />
+            </div>
+        </div>
+    }
+    <p-breadcrumb [model]="$itemsToShow()" (onItemClick)="onItemClick.emit($event)">
+        <ng-template pTemplate="separator">
+            <i class="pi pi-angle-right text-gray-700"></i>
+        </ng-template>
+    </p-breadcrumb>
+</div>

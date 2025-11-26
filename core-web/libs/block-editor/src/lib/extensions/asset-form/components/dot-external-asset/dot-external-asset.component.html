@@ -1,22 +1,20 @@
-<form class="wrapper" [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+<form (ngSubmit)="onSubmit(form.value)" [formGroup]="form" class="wrapper">
     <div class="form-control">
         <label dotFieldRequired for="url">Insert {{ type }} URL</label>
         <input
+            [placeholder]="placerHolder"
             id="url"
             #input
-            [placeholder]="placerHolder"
             formControlName="url"
             autocomplete="off"
             type="text"
-            pInputText
-        />
+            pInputText />
     </div>
     <div class="footer">
         <span
-            class="error-message"
             [innerHTML]="error || 'Enter a valid url'"
             [class.hide]="!isInvalid || form.pristine"
-        ></span>
+            class="error-message"></span>
         <button [disabled]="form.invalid || disableAction" type="submit" pButton>Insert</button>
     </div>
 </form>

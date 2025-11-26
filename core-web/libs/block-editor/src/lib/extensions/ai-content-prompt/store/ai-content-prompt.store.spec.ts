@@ -1,14 +1,15 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { AiContentPromptStore } from './ai-content-prompt.store';
+import { DotAiService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotAiService } from '../../../shared';
+import { AiContentPromptState, AiContentPromptStore } from './ai-content-prompt.store';
 
 describe('AiContentPromptStore', () => {
     let spectator: SpectatorService<AiContentPromptStore>;
     let store: AiContentPromptStore;
-    let dotAiService: jest.Mocked<DotAiService>;
+    let dotAiService: SpyObject<DotAiService>;
 
     const createStoreService = createServiceFactory({
         service: AiContentPromptStore,
@@ -18,21 +19,56 @@ describe('AiContentPromptStore', () => {
     beforeEach(() => {
         spectator = createStoreService();
         store = spectator.service;
-        dotAiService = spectator.inject(DotAiService) as jest.Mocked<DotAiService>;
+        dotAiService = spectator.inject(DotAiService);
     });
 
     it('should set open state', (done) => {
-        spectator.service.setStatus('open');
+        spectator.service.setStatus(ComponentStatus.INIT);
         store.state$.subscribe((state) => {
-            expect(state.status).toBe('open');
+            expect(state.status).toBe(ComponentStatus.INIT);
             done();
         });
     });
 
-    it('should set acceptContent state', (done) => {
-        spectator.service.setAcceptContent(true);
+    it('should showDialog and set the initial state', (done) => {
+        const initialState: AiContentPromptState = {
+            prompt: '',
+            generatedContent: [],
+            selectedContent: '',
+            activeIndex: null,
+            status: ComponentStatus.INIT,
+            showDialog: false,
+            submitLabel: 'block-editor.extension.ai-image.generate'
+        };
+
+        //dirty state
+        spectator.service.patchState({
+            prompt: 'test prompt',
+            selectedContent: 'test selected content'
+        });
+
+        spectator.service.showDialog();
         store.state$.subscribe((state) => {
-            expect(state.acceptContent).toBe(true);
+            expect(state.showDialog).toEqual(true);
+            expect(state).toEqual(initialState);
+            done();
+        });
+    });
+
+    it('should hideDialog', (done) => {
+        spectator.service.patchState({ showDialog: true });
+        spectator.service.hideDialog();
+        store.state$.subscribe((state) => {
+            expect(state.showDialog).toEqual(false);
+            done();
+        });
+    });
+
+    it('should handle subscription on selected Content', (done) => {
+        spectator.service.patchState({ selectedContent: 'test selected content' });
+
+        store.selectedContent$.subscribe((selectedContent) => {
+            expect(selectedContent).toBe('test selected content');
             done();
         });
     });
@@ -49,29 +85,8 @@ describe('AiContentPromptStore', () => {
 
         // Check if state is updated correctly
         store.state$.subscribe((state) => {
-            expect(state.status).toBe('loaded');
-            expect(state.content).toBe(content);
-            done();
-        });
-    });
-
-    it('should reGenerateContent using the last prompt', (done) => {
-        const state = spectator.service['state'];
-        const lastPrompt = 'last prompt';
-        const content = 'generated content';
-
-        // Set the prompt to a known value
-        spectator.service.setState({ ...state, prompt: lastPrompt });
-
-        // Mock the generateContent method of DotAiService
-        dotAiService.generateContent.mockReturnValue(of(content));
-
-        // Trigger the reGenerateContent method
-        store.reGenerateContent();
-
-        store.state$.subscribe((state) => {
-            expect(state.content).toBe(content);
-            expect(dotAiService.generateContent).toHaveBeenCalledWith(lastPrompt);
+            expect(state.status).toBe(ComponentStatus.IDLE);
+            expect(state.generatedContent).toBe([{ content, prompt }]);
             done();
         });
     });

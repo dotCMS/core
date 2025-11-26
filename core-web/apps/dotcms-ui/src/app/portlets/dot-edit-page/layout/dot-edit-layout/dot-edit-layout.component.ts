@@ -1,20 +1,19 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, HostBinding, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
     DotSessionStorageService,
-    DotGlobalMessageService
+    DotGlobalMessageService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import { ResponseView } from '@dotcms/dotcms-js';
 import {
@@ -25,15 +24,30 @@ import {
     DotTemplateDesigner,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
+
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 
 export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
-    styleUrls: ['./dot-edit-layout.component.scss']
+    styleUrls: ['./dot-edit-layout.component.scss'],
+    imports: [RouterModule, TemplateBuilderComponent, DotGlobalMessageComponent]
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotPageLayoutService = inject(DotPageLayoutService);
+    private dotMessageService = inject(DotMessageService);
+    private templateContainersCacheService = inject(DotTemplateContainersCacheService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+    private router = inject(Router);
+
     pageState: DotPageRender | DotPageRenderState;
     apiLink: string;
 
@@ -41,22 +55,14 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     destroy$: Subject<boolean> = new Subject<boolean>();
     featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
+    containerMap: DotContainerMap;
+
     @HostBinding('style.minWidth') width = '100%';
 
     private lastLayout: DotTemplateDesigner;
+    private pageStateStore = inject(DotPageStateService);
 
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotEditLayoutService: DotEditLayoutService,
-        private dotPageLayoutService: DotPageLayoutService,
-        private dotMessageService: DotMessageService,
-        private templateContainersCacheService: DotTemplateContainersCacheService,
-        private dotSessionStorageService: DotSessionStorageService,
-        private router: Router
-    ) {}
+    templateIdentifier = signal('');
 
     ngOnInit() {
         this.route.parent.parent.data
@@ -66,10 +72,15 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                 take(1)
             )
             .subscribe((state: DotPageRenderState) => {
-                this.pageState = state;
+                this.updatePageState(state);
+
                 const mappedContainers = this.getRemappedContainers(state.containers);
                 this.templateContainersCacheService.set(mappedContainers);
             });
+
+        this.pageStateStore.state$.pipe(takeUntil(this.destroy$)).subscribe((state) => {
+            this.updatePageState(state);
+        });
 
         this.saveTemplateDebounce();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
@@ -83,6 +94,18 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Updates the page state and the template identifier with a new state.
+     *
+     * @param {DotPageRenderState} newState
+     * @memberof DotEditLayoutComponent
+     */
+    updatePageState(newState: DotPageRenderState | DotPageRender) {
+        this.pageState = newState;
+        this.templateIdentifier.set(newState.template.identifier);
+        this.containerMap = newState.containerMap;
     }
 
     /**
@@ -181,7 +204,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         this.dotGlobalMessageService.success(
             this.dotMessageService.get('dot.common.message.saved')
         );
-        this.pageState = updatedPage;
+        this.templateIdentifier.set(updatedPage.template.identifier);
+        // We need to pass the new layout to the template builder to sync the value with the backend
+        this.updatePageState(updatedPage);
     }
 
     /**

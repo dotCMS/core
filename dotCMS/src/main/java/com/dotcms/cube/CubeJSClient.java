@@ -1,16 +1,17 @@
 package com.dotcms.cube;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.metrics.timing.TimeMetric;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -21,9 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * CubeJS Client it allow to send a Request to a Cube JS Server.
+ * CubeJS Client it allows to send a Request to a Cube JS Server.
  * Example:
  *
  * <code>
@@ -39,11 +41,13 @@ import java.util.Map;
  * final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
  * </code>
  */
-public class CubeJSClient {
+public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private int PAGE_SIZE = 1000;
+    private static final String CUBEJS_CLIENT_TIMEOUT_KEY = "CUBEJS_CLIENT_TIMEOUT";
+
     private final String url;
     private final AccessToken accessToken;
+    private final AtomicLong cubeJsClientTimeout = new AtomicLong(resolveClientTimeout());
 
     public CubeJSClient(final String url, final AccessToken accessToken) {
         this.url = url;
@@ -81,18 +85,27 @@ public class CubeJSClient {
         DotPreconditions.notNull(query, "Query not must be NULL");
         DotPreconditions.notNull(accessToken, "Access token not must be NULL");
 
+        final String queryAsString = query.toString();
+        return send(queryAsString);
+    }
+
+    public CubeJSResultSet send(final String queryAsString) {
+
+        DotPreconditions.notNull(queryAsString, "Query not must be NULL");
+        DotPreconditions.notNull(accessToken, "Access token not must be NULL");
+
         final CircuitBreakerUrl cubeJSClient;
         final String cubeJsUrl = String.format("%s/cubejs-api/v1/load", url);
-        final String queryAsString = query.toString();
+
         try {
             cubeJSClient = CircuitBreakerUrl.builder()
-                .setMethod(Method.GET)
-                .setHeaders(cubeJsHeaders(accessToken))
-                .setUrl(cubeJsUrl)
-                .setParams(map("query", queryAsString))
-                .setTimeout(4000)
-                .setThrowWhenNot2xx(false)
-                .build();
+                    .setMethod(Method.GET)
+                    .setHeaders(cubeJsHeaders(accessToken))
+                    .setUrl(cubeJsUrl)
+                    .setParams(new HashMap<>(Map.of("query", queryAsString)))
+                    .setTimeout(cubeJsClientTimeout.get())
+                    .setThrowWhenError(false)
+                    .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
         }
@@ -102,13 +115,38 @@ public class CubeJSClient {
         try {
             final String responseAsString = response.getResponse();
             final Map<String, Object> responseAsMap = UtilMethods.isSet(responseAsString) && !responseAsString.equals("[]") ?
-                   JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
+                    JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
 
             return new CubeJSResultSetImpl(UtilMethods.isSet(data) ? data : Collections.emptyList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        if (event.getKey().contains(CUBEJS_CLIENT_TIMEOUT_KEY)) {
+            cubeJsClientTimeout.set(resolveClientTimeout());
+        }
+    }
+
+    /**
+     * Determines the connection timeout set for executing a CubeJS query. After that, an error will
+     * be thrown. Keep in mind that a ClickHouse Database with thousands if not millions of records
+     * may take a long time to retrieve results.
+     * <p>
+     * It's also important to note that this timeout should match the value of the
+     * {@code continueWaitTimeout} configuration property in the {@code cube.js} file for
+     * ClickHouse, which has a maximum value of {@code 90} -- in seconds. For more information, you
+     * can refer to
+     * <a href="https://cube.dev/docs/reference/configuration/config#orchestrator_options">The
+     * official documentation</a>.</p>
+     *
+     * @return The connection timeout for executing queries, in milliseconds.
+     */
+    private long resolveClientTimeout() {
+        return Config.getLongProperty(CUBEJS_CLIENT_TIMEOUT_KEY, 30000);
     }
 
     private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient,
@@ -121,7 +159,10 @@ public class CubeJSClient {
 
         timeMetric.stop();
 
-        if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
+        if (cubeJSClient.isError()) {
+            if (400 == response.getStatusCode()) {
+                throw new IllegalArgumentException(response.getResponse());
+            }
             throw new RuntimeException("CubeJS Server is not available");
         }
 
@@ -136,7 +177,7 @@ public class CubeJSClient {
      */
     private Map<String, String> cubeJsHeaders(final AccessToken accessToken) throws AnalyticsException {
         return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatToken(accessToken, null))
             .build();
     }
 

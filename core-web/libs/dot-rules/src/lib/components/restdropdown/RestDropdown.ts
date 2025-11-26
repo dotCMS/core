@@ -1,30 +1,44 @@
-import { map } from 'rxjs/operators';
-import { Component, EventEmitter, OnChanges, Optional } from '@angular/core';
-import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/core';
-import { NgControl, ControlValueAccessor } from '@angular/forms';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Verify } from '../../services/validation/Verify';
 import { Observable } from 'rxjs';
-import * as _ from 'lodash';
+
+import {
+    Component,
+    EventEmitter,
+    OnChanges,
+    AfterViewInit,
+    Output,
+    Input,
+    ChangeDetectionStrategy,
+    inject
+} from '@angular/core';
+import { NgControl, ControlValueAccessor } from '@angular/forms';
+
+import { map } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { isEmpty } from '@dotcms/utils';
+
+import { Verify } from '../../services/validation/Verify';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-input-rest-dropdown',
     template: `
         <cw-input-dropdown
+            (onDropDownChange)="fireChange($event)"
+            (touch)="fireTouch($event)"
             [value]="modelValue"
-            placeholder="{{ placeholder }}"
             [maxSelections]="maxSelections"
             [minSelections]="minSelections"
             [allowAdditions]="allowAdditions"
-            (onDropDownChange)="fireChange($event)"
-            (touch)="fireTouch($event)"
             [options]="options | async"
-        >
-        </cw-input-dropdown>
-    `
+            placeholder="{{ placeholder }}"></cw-input-dropdown>
+    `,
+    standalone: false
 })
 export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAccessor {
+    private coreWebService = inject(CoreWebService);
+    control = inject(NgControl, { optional: true });
+
     @Input() placeholder: string;
     @Input() allowAdditions: boolean;
     @Input() minSelections: number;
@@ -40,7 +54,9 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
     private _modelValue: string[] | string;
     private _options: Observable<any[]>;
 
-    constructor(private coreWebService: CoreWebService, @Optional() public control: NgControl) {
+    constructor() {
+        const control = this.control;
+
         if (control) {
             control.valueAccessor = this;
         }
@@ -53,16 +69,22 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
         this.maxSelections = 1;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unsafe-function-type
     onChange: Function = () => {};
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unsafe-function-type
     onTouched: Function = () => {};
 
-    ngAfterViewInit(): void {}
+    // Required by AfterViewInit interface but not used in this component
+    // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method
+    ngAfterViewInit(): void {
+        // No implementation needed
+    }
 
     writeValue(value: any): void {
         if (value && value.indexOf(',') > -1) {
             this._modelValue = value.split(',');
         } else {
-            this._modelValue = _.isEmpty(value) ? null : value;
+            this._modelValue = isEmpty(value) ? null : value;
         }
     }
 
@@ -121,6 +143,7 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
                 return this.jsonEntryToOption(valuesJson[key], key);
             });
         }
+
         return ary;
     }
 
@@ -131,7 +154,9 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
         } else {
             opt.value = json[this.optionValueField];
         }
+
         opt.label = json[this.optionLabelField];
+
         return opt;
     }
 }

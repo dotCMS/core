@@ -1,0 +1,21 @@
+@let locales = $locales();
+@let currentLocale = $currentLocale();
+@let isLoading = $isLoading();
+
+@if (isLoading) {
+    <p-skeleton />
+} @else {
+    @for (locale of $localesToShow(); track locale.id) {
+        <p-chip
+            [label]="locale.isoCode | dotIsoCode"
+            (click)="currentLocale?.id !== locale.id ? switchLocale.emit(locale) : null"
+            [styleClass]="getStyleClass(locale)" />
+    }
+    @if (locales?.length > $maxLocaleChips()) {
+        <p-chip
+            [label]="$btnLabel()"
+            styleClass="p-chip-white p-chip-sm"
+            data-testid="show-more-button"
+            (click)="toggleShowAll()" />
+    }
+}

@@ -1,26 +1,34 @@
 <!-- TODO: Move this to iframe-portlet-legacy -->
-<dot-create-contentlet (custom)="onCustomEvent($event)"></dot-create-contentlet>
-<dot-message-display></dot-message-display>
+<dot-create-contentlet (custom)="onCustomEvent($event)" />
+<dot-message-display />
 
 <div class="layout">
-    <header class="layout__header">
-        <dot-toolbar></dot-toolbar>
-    </header>
-    <div class="layout__content">
-        <aside class="layout__sidebar">
-            <dot-main-nav></dot-main-nav>
-        </aside>
-        <main class="layout__main">
-            <router-outlet></router-outlet>
-        </main>
-    </div>
+    <aside
+        class="layout__navigation"
+        data-testid="navigation-sidebar"
+        role="navigation"
+        aria-label="Main navigation">
+        <dot-main-nav />
+    </aside>
+    <main class="layout__main">
+        <header class="layout__branding-bar" data-testid="branding-bar" role="banner">
+            <dot-toolbar />
+        </header>
+        <div
+            class="layout__viewport"
+            data-testid="content-viewport"
+            role="region"
+            aria-label="Main content area">
+            <router-outlet />
+        </div>
+    </main>
 </div>
 
 <!-- After the router-outlet to make sure always shows up on top of any other dialog in the system -->
-<dot-large-message-display></dot-large-message-display>
-<dot-alert-confirm></dot-alert-confirm>
-<dot-push-publish-dialog></dot-push-publish-dialog>
-<dot-download-bundle-dialog></dot-download-bundle-dialog>
-<dot-wizard></dot-wizard>
-<dot-generate-secure-password></dot-generate-secure-password>
-<dot-content-compare-dialog></dot-content-compare-dialog>
+<dot-large-message-display />
+<dot-alert-confirm />
+<dot-push-publish-dialog />
+<dot-download-bundle-dialog />
+<dot-wizard />
+<dot-generate-secure-password />
+<dot-content-compare-dialog />

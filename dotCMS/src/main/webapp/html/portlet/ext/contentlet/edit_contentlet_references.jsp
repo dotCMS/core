@@ -20,6 +20,7 @@
 		</td>
 	</tr>
 	<tr class="header">
+		<th><%= LanguageUtil.get(pageContext, "Host") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Page") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Container") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Page-Owner") %></th>
@@ -41,10 +42,12 @@
 			str_style2 = "class=alternate_2";
 		}
 		Cmod++;
+		String urlWithLang = htmlpageRef.getURI() + "&language_id=" + htmlpageRef.getLanguageId();
 %>
 	<tr <%= str_style2 %> >
-		<td>			
-			<a href="/dotAdmin/#/edit-page/content?url=<%=htmlpageRef.getURI()%>" class="beta" target="_top">
+		<td><%= host.getName() %></td>
+		<td>
+			<a href="/dotAdmin/#/edit-page/content?url=<%=urlWithLang%>" class="beta" target="_top">
 				<%= UtilMethods.escapeHTMLSpecialChars(htmlpageRef.getTitle()) %>
 			</a>
 		</td>

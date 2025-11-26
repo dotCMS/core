@@ -173,7 +173,7 @@ export class KeyValueTableComponent {
         this.delete.emit(index);
     }
 
-    private getRow(item: DotKeyValueField, index: number): JSX.Element {
+    private getRow(item: DotKeyValueField, index: number) {
         const label = `${this.buttonLabel} ${item.key}, ${item.value}`;
         return (
             <tr>
@@ -186,25 +186,24 @@ export class KeyValueTableComponent {
         );
     }
 
-    private getDeleteButton(label: string, index: number): JSX.Element {
+    private getDeleteButton(label: string, index: number) {
         return (
             <button
                 aria-label={label}
                 onClick={() => this.onDelete(index)}
-                class="dot-key-value__delete-button"
-            >
+                class="dot-key-value__delete-button">
                 {this.buttonLabel}
             </button>
         );
     }
 
-    private renderRows(items: DotKeyValueField[]): JSX.Element | JSX.Element[] {
+    private renderRows(items: DotKeyValueField[]) {
         return this.isValidItems(items)
             ? items.map((item, index) => this.getRow(item, index))
             : this.getEmptyRow();
     }
 
-    private getEmptyRow(): JSX.Element {
+    private getEmptyRow() {
         return (
             <tr>
                 <td>{this.emptyMessage}</td>

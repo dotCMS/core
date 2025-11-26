@@ -24,6 +24,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +40,7 @@ import java.util.List;
  * @author freddyrodriguez
  * @author jsanca
  */
+@Tag(name = "Navigation")
 @Path("/v1/menu")
 public class MenuResource implements Serializable {
 

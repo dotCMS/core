@@ -1,78 +1,55 @@
-<tr class="dot-key-value-table-row">
-    <td data-testId="dot-key-value-key">{{ variable.key }}</td>
+@let variable = $variable();
+@let showHiddenField = $showHiddenField();
+@let isHiddenField = $isHiddenField();
+@let index = $index();
 
-    @if (isHiddenField) {
-    <td data-testId="dot-key-value-label">{{ passwordPlaceholder }}</td>
-    } @else {
-    <td
-        #valueCell
-        [pEditableColumn]="currentValue"
-        data-testId="dot-key-value-editable-column"
-        pEditableColumnField="value">
-        <p-cellEditor>
-            <ng-template pTemplate="input">
-                <input
-                    class="field-value-input"
-                    [placeholder]="'keyValue.value_input.placeholder' | dm"
-                    [type]="inputType"
-                    [formControl]="form.get('value')"
-                    (focus)="showEditMenu.set(true)"
-                    (keydown.enter)="onPressEnter()"
-                    (keydown.escape)="$event.stopPropagation(); onCancel()"
-                    autocomplete="false"
-                    data-testId="dot-key-value-input"
-                    pInputText />
-            </ng-template>
-            <ng-template pTemplate="output">
-                @if(isHiddenField || currentHiddenValue) {
-                <span data-testId="dot-key-editable-password-placeholder">
-                    {{ passwordPlaceholder }}
-                </span>
-                } @else {
-                <span
-                    class="dot-key-value-table-row__value-label"
-                    data-testId="dot-editable-key-value">
-                    {{ currentValue }}
-                </span>
-                }
-            </ng-template>
-        </p-cellEditor>
+<tr class="dot-key-value-table-row" [pReorderableRow]="index">
+    @if ($dragAndDrop()) {
+        <td>
+            <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
+        </td>
+    }
+    <td data-testId="dot-key-value-key">
+        <p class="pl-2">{{ variable.key }}</p>
     </td>
+    @if (isHiddenField) {
+        <td data-testId="dot-key-value-label">
+            <p>
+                <i class="pi pi-lock inline-block"></i>
+                {{ 'keyValue.value_hidden' | dm }}
+            </p>
+        </td>
+    } @else {
+        <td data-testId="dot-key-value-editable-column">
+            <input
+                (keydown.enter)="onPressEnter($event)"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                [type]="inputType"
+                [formControl]="valueControl"
+                class="dot-key-value-table-row__value-input"
+                autocomplete="false"
+                data-testId="dot-key-value-input"
+                pInputText />
+        </td>
+    }
+    @if (showHiddenField) {
+        <td class="dot-key-value-table-row__variables-hidden">
+            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
+                <p-inputSwitch
+                    class="dot-key-value-table-row__hidden-switch"
+                    [formControl]="hiddenControl"
+                    data-testId="dot-key-value-hidden-switch" />
+            }
+        </td>
     }
 
-    <td class="dot-key-value-table-row__variables-hidden" *ngIf="showHiddenField">
-        <p-inputSwitch
-            [formControl]="form.get('hidden')"
-            (onChange)="showEditMenu.set(true)"
-            data-testId="dot-key-value-hidden-switch"></p-inputSwitch>
-    </td>
-
     <td class="dot-key-value-table-row__variables-actions">
-        @if(showEditMenu()) {
         <p-button
-            [label]="'Cancel' | dm"
-            (click)="onCancel()"
-            styleClass="dot-key-value-table-row__variables-actions-edit-cancel p-button-outlined"
-            data-testId="dot-key-value-cancel-button" />
-        <p-button
-            #saveButton
-            [label]="'Save' | dm"
-            [disabled]="!form.valid"
-            (click)="saveVariable()"
-            styleClass="dot-key-value-table-row__variables-actions-edit-save"
-            data-testId="dot-key-value-save-button" />
-        } @else {
-        <p-button
-            (click)="delete.emit(variable)"
+            (click)="delete.emit()"
             data-testId="dot-key-value-delete-button"
-            icon="pi pi-trash"
-            styleClass="p-button-text p-button-danger p-button-rounded" />
-        <p-button
-            [disabled]="isHiddenField"
-            (click)="focusValueInput($event)"
-            data-testId="dot-key-value-edit-button"
-            icon="pi pi-pencil"
-            styleClass="p-button-text p-button-rounded" />
-        }
+            icon="pi pi-times"
+            severity="secondary"
+            size="small"
+            [text]="true" />
     </td>
 </tr>

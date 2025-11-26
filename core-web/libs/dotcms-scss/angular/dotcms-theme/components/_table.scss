@@ -1,0 +1,353 @@
+@use "variables" as *;
+
+// dotTable class is a wrapper for PrimeNG DataTable to apply the new
+// design system. When all tables get migrated, this class will need to be removed.
+// The legacy styles live in _datatable.scss and those styles will be removed
+
+@mixin dot-table-tooltip {
+    &[data-wont-fit]:after {
+        content: attr(data-wont-fit);
+        display: none;
+        position: absolute;
+        width: fit-content;
+        z-index: 1;
+        background-color: $white;
+        color: $black;
+        font-size: $font-size-xs;
+        transition: opacity 0.3s ease-in-out;
+        border-radius: $border-radius-sm;
+        padding: $spacing-1;
+        text-align: center;
+        box-shadow: $shadow-l;
+    }
+    &:hover:after {
+        display: block;
+    }
+}
+
+$dot-table-cell-padding: 0.625rem $spacing-1;
+$dot-table-cell-padding-first-child: 0.625rem $spacing-1 $spacing-1 $spacing-3;
+$dot-table-cell-with-tag-padding: $spacing-1;
+$dot-table-cell-with-tag-padding-first-child: $spacing-1 $spacing-1 $spacing-1 $spacing-3;
+$dot-table-header-cell-height: 1.5rem;
+$dot-table-cell-height: 1.25rem;
+
+.dotTable {
+    &.p-datatable {
+        border-radius: $border-radius-md;
+
+        > .p-datatable-wrapper {
+            border-radius: $border-radius-md;
+            border: 1px solid $color-palette-gray-400;
+            border-width: 1px;
+        }
+
+        .p-paginator-top,
+        .p-paginator-bottom {
+            border-width: 0 0 1px 0;
+            border-radius: 0;
+        }
+
+        .p-datatable-header,
+        .p-datatable-footer {
+            border: none;
+            padding: $spacing-3;
+        }
+
+        .p-datatable-thead tr > th {
+            background-color: $color-palette-gray-100;
+            border: 1px solid $color-palette-gray-300;
+            border-width: 0 0 1px 0;
+            color: $black;
+            font-size: $font-size-sm;
+            font-weight: $font-weight-bold;
+            padding: $spacing-1;
+            text-align: left;
+            transition: none;
+            text-wrap: nowrap;
+            line-height: $dot-table-header-cell-height;
+
+            &:has(p-tableHeaderCheckbox) {
+                width: 2.5rem;
+            }
+
+            &:first-child {
+                padding-left: $spacing-3;
+            }
+
+            &:last-child {
+                padding-right: $spacing-3;
+            }
+
+            .error-message {
+                font-weight: $font-weight-regular-bold;
+                color: $color-accessible-text-red;
+            }
+
+            p-button {
+                font-size: 0;
+            }
+        }
+
+        .p-datatable-tfoot > tr > td {
+            text-align: left;
+            padding: $spacing-2;
+            border: 1px solid $color-palette-gray-300;
+            border-width: 0 0 1px 0;
+            font-weight: $font-weight-semi-bold;
+            color: $black;
+            background: $white;
+        }
+
+        .p-sortable-column {
+            outline: 0 none;
+
+            .p-sortable-column-icon {
+                display: inline-block;
+                color: $color-palette-gray-700;
+                margin-left: $spacing-1;
+            }
+
+            .p-sortable-column-badge {
+                border-radius: 50%;
+                height: 1.143rem;
+                min-width: 1.143rem;
+                line-height: 1.143rem;
+                color: $color-palette-primary;
+                background: $bg-highlight;
+                margin-left: $spacing-1;
+            }
+
+            &:not(.p-highlight):hover {
+                color: $text-color-hover;
+
+                .p-sortable-column-icon {
+                    color: $black;
+                }
+            }
+
+            &.p-highlight {
+                color: $color-palette-primary-500;
+
+                .p-sortable-column-icon {
+                    color: $color-palette-primary-500;
+                }
+            }
+        }
+
+        .p-datatable-tbody tr {
+            background: $white;
+            color: $black;
+            height: 4rem;
+            transition: none;
+            outline: 0 none;
+            cursor: pointer;
+            overflow-wrap: anywhere;
+
+            > td {
+                text-align: left;
+                border-bottom: 1px solid $color-palette-gray-300;
+                padding: 0 $spacing-1;
+                font-size: $font-size-md;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: $dot-table-cell-height;
+
+                span {
+                    @include dot-table-tooltip;
+                }
+
+                &:first-child:has(p-tableCheckbox) + td {
+                    padding: $dot-table-cell-padding;
+
+                    &.tag-padding {
+                        padding: $dot-table-cell-with-tag-padding;
+                    }
+                }
+
+                &:first-child:not(:has(p-tableCheckbox)) {
+                    &.tag-padding {
+                        padding: $dot-table-cell-with-tag-padding-first-child;
+                    }
+                }
+
+                &:first-child {
+                    padding-left: $spacing-3;
+                }
+
+                &:last-child {
+                    padding-right: $spacing-3;
+                }
+
+                .container-thumbnail {
+                    width: 85%;
+                    height: 3rem;
+                    max-height: 3rem;
+                    overflow: hidden;
+                    position: relative;
+                    padding: $spacing-0;
+                }
+
+                .p-row-toggler,
+                .p-row-editor-init,
+                .p-row-editor-save,
+                .p-row-editor-cancel {
+                    width: 2rem;
+                    height: 2rem;
+                    color: $black;
+                    border: 0 none;
+                    background: transparent;
+                    border-radius: 50%;
+                    transition:
+                        background-color 0.2s,
+                        color 0.2s,
+                        box-shadow 0.2s;
+
+                    &:enabled:hover {
+                        color: $text-color-hover;
+                        border-color: transparent;
+                        background: $color-palette-primary-100;
+                    }
+
+                    &:focus {
+                        outline: 0 none;
+                        outline-offset: 0;
+                        box-shadow: none;
+                    }
+                }
+
+                .p-row-editor-save {
+                    margin-right: $spacing-1;
+                }
+
+                .pi.pi-ellipsis-v {
+                    color: $color-palette-primary-500;
+                }
+
+                p-button {
+                    font-size: 0;
+                }
+            }
+
+            &.p-highlight {
+                background: $color-palette-primary-100;
+                color: $black;
+            }
+
+            &.disabled-row {
+                background: $color-palette-gray-200;
+                color: $color-palette-gray-700;
+                cursor: default;
+            }
+
+            &.p-datatable-dragpoint-top > td {
+                box-shadow: inset 0 2px 0 0 $color-palette-primary-100;
+            }
+
+            &.p-datatable-dragpoint-bottom > td {
+                box-shadow: inset 0 -2px 0 0 $color-palette-primary-100;
+            }
+
+            &:not(.p-highlight):hover {
+                color: $text-color-hover;
+                transition: background-color ease-in $basic-speed;
+                cursor: default;
+            }
+
+            &.disabled-row:hover {
+                background: $color-palette-gray-200;
+                color: $color-palette-gray-700;
+            }
+        }
+
+        .p-column-resizer-helper {
+            background: $color-palette-primary;
+        }
+
+        .p-datatable-scrollable-header,
+        .p-datatable-scrollable-footer {
+            background: $white;
+        }
+
+        .p-datatable-loading-icon {
+            font-size: $icon-xl;
+            color: $color-palette-secondary;
+        }
+
+        &.p-datatable-gridlines {
+            .p-datatable-header {
+                border-width: 1px 1px 0 1px;
+            }
+
+            .p-datatable-footer {
+                border-width: 0 1px 1px 1px;
+            }
+
+            .p-paginator-top {
+                border-width: 0 1px 0 1px;
+            }
+
+            .p-paginator-bottom {
+                border-width: 0 1px 1px 1px;
+            }
+
+            .p-datatable-thead > tr > th,
+            .p-datatable-tbody > tr > td,
+            .p-datatable-tfoot > tr > td {
+                border-width: 1px;
+            }
+        }
+
+        &.p-datatable-striped {
+            .p-datatable-tbody > tr:nth-child(even) {
+                background: rgba(0, 0, 0, 0.02);
+
+                &.p-highlight {
+                    background: $color-palette-primary-100;
+                    color: $text-color-highlight;
+
+                    .p-row-toggler {
+                        color: $text-color-highlight;
+
+                        &:hover {
+                            color: $text-color-hover;
+                        }
+                    }
+                }
+            }
+        }
+
+        //p-datatable-sm is not actually used for now, keep it to maintain consistency with theme
+        &.p-datatable-sm {
+            .p-datatable-header,
+            .p-datatable-footer {
+                padding: 0.375rem 0.375rem;
+            }
+
+            .p-datatable-thead > tr > th,
+            .p-datatable-tbody > tr > td,
+            .p-datatable-tfoot > tr > td {
+                padding: 0.375rem 0.375rem;
+            }
+        }
+
+        //p-datatable-lg is not actually used for now, keep it to maintain consistency with theme
+        &.p-datatable-lg {
+            .p-datatable-header,
+            .p-datatable-footer {
+                padding: 0.9375rem 0.9375rem;
+            }
+
+            .p-datatable-thead > tr > th,
+            .p-datatable-tbody > tr > td,
+            .p-datatable-tfoot > tr > td {
+                padding: 0.9375rem 0.9375rem;
+            }
+        }
+
+        .p-datatable-tbody > tr:not(.p-highlight):focus {
+            background-color: $color-palette-primary-100;
+        }
+    }
+}

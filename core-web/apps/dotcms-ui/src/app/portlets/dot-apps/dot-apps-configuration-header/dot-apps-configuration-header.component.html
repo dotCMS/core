@@ -1,14 +1,13 @@
 <p-avatar
+    (click)="goToApps(app.key)"
     [image]="app.iconUrl"
     [text]="app.name"
-    (click)="goToApps(app.key)"
     size="xlarge"
-    dotAvatar
-></p-avatar>
+    dotAvatar></p-avatar>
 
 <div class="dot-apps-configuration__data">
     <header>
-        <h3 class="dot-apps-configuration__service-name" (click)="goToApps(app.key)">
+        <h3 (click)="goToApps(app.key)" class="dot-apps-configuration__service-name">
             {{ app.name }}
         </h3>
         <div class="dot-apps-configuration__service-key">
@@ -16,29 +15,29 @@
             <dot-copy-link [copy]="app.key" [label]="app.key"></dot-copy-link>
         </div>
     </header>
-    <span class="dot-apps-configuration__configurations"
-        >{{
+    <span class="dot-apps-configuration__configurations">
+        {{
             app.configurationsCount
                 ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
                 : ('apps.no.configurations' | dm)
         }}
     </span>
     <div
-        class="dot-apps-configuration__description"
         [ngClass]="{
             'dot-apps-configuration__description__show-more': showMore
         }"
-    >
+        class="dot-apps-configuration__description">
         <markdown>{{ app.description }}</markdown>
-        <a
-            class="dot-apps-configuration__description__link_show-more"
-            *ngIf="app.description.length > 270"
-            (click)="showMore = !showMore"
-            >{{
-                showMore
-                    ? ('apps.confirmation.description.show.less' | dm)
-                    : ('apps.confirmation.description.show.more' | dm)
-            }}</a
-        >
+        @if (app.description.length > 270) {
+            <a
+                (click)="showMore = !showMore"
+                class="dot-apps-configuration__description__link_show-more">
+                {{
+                    showMore
+                        ? ('apps.confirmation.description.show.less' | dm)
+                        : ('apps.confirmation.description.show.more' | dm)
+                }}
+            </a>
+        }
     </div>
 </div>

@@ -1,45 +1,69 @@
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+    ReactiveFormsModule
+} from '@angular/forms';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { Site, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotTemplateBuilderComponent } from './dot-template-builder/dot-template-builder.component';
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
-import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
+import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.store';
+
+import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
+import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
     styleUrls: ['./dot-template-create-edit.component.scss'],
-    providers: [DotTemplateStore]
+    providers: [DotTemplateStore, DotTemplatesService, DialogService],
+    imports: [
+        ButtonModule,
+        CommonModule,
+        DotApiLinkComponent,
+        DotPortletBaseComponent,
+        DotPortletToolbarComponent,
+        DynamicDialogModule,
+        DotMessagePipe,
+        DotTemplateBuilderComponent,
+        ReactiveFormsModule
+    ]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
-    vm$ = this.store.vm$;
-    didTemplateChanged$ = this.store.didTemplateChanged$;
+    private fb = inject(UntypedFormBuilder);
+    private dialogService = inject(DialogService);
+    private dotMessageService = inject(DotMessageService);
+    private dotSiteService = inject(SiteService);
+
+    readonly #store = inject(DotTemplateStore);
+    readonly #globalStore = inject(GlobalStore);
+
+    vm$: Observable<VM>;
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private store: DotTemplateStore,
-        private fb: UntypedFormBuilder,
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
-        private dotSiteService: SiteService
-    ) {}
-
     ngOnInit() {
-        this.vm$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(({ original, working }: DotTemplateState) => {
+        this.vm$ = this.#store.vm$.pipe(
+            takeUntil(this.destroy$),
+            tap(({ original, working }: VM) => {
                 const template = original.type === 'design' ? working : original;
                 if (this.form) {
                     const value = this.getFormValue(template);
@@ -50,9 +74,22 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
 
                 if (!template.identifier) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: this.dotMessageService.get('templates.create.title'),
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/create`
+                    });
                     this.createTemplate();
+                } else if (template.title) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: template.title,
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/edit/${template.identifier}`
+                    });
                 }
-            });
+            })
+        );
+
         this.setSwitchSiteListener();
     }
 
@@ -75,9 +112,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 onSave: (value: DotTemplateItem) => {
                     // If it is a template Desing, save entire template
                     if (value.type === 'design') {
-                        this.store.saveTemplate(value);
+                        this.#store.saveTemplate(value);
                     } else {
-                        this.store.saveProperties(value);
+                        this.#store.saveProperties(value);
                     }
                 }
             }
@@ -91,7 +128,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     saveAndPublishTemplate(template: DotTemplate): void {
-        this.store.saveAndPublishTemplate({
+        this.#store.saveAndPublishTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -104,7 +141,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     updateWorkingTemplate(template: DotTemplate): void {
-        this.store.updateWorkingTemplate({
+        this.#store.updateWorkingTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -117,7 +154,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     saveTemplate(template: DotTemplate): void {
-        this.store.saveTemplate({
+        this.#store.saveTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
         });
@@ -129,7 +166,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateCreateEditComponent
      */
     cancelTemplate() {
-        this.store.goToTemplateList();
+        this.#store.goToTemplateList();
     }
 
     /**
@@ -139,7 +176,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        this.store.goToEditTemplate($event.detail.data.id, $event.detail.data.inode);
+        const { data } = $event.detail;
+        this.#store.goToEditTemplate(data.id, data.inode);
     }
 
     private createTemplate(): void {
@@ -151,7 +189,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             data: {
                 template: this.form.value,
                 onSave: (value: DotTemplateItem) => {
-                    this.store.createTemplate(value);
+                    this.#store.createTemplate(value);
                 }
             }
         });
@@ -209,31 +247,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private setSwitchSiteListener(): void {
-        /**
-         * When the portlet reload (from the browser reload button), the site service emits
-         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
-         * an unwanted reload.
-         *
-         * This extra work in the filter is to prevent that extra reload.
-         *
-         */
-        let currentHost = this.dotSiteService.currentSite?.hostname || null;
-        this.dotSiteService.switchSite$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((site: Site) => {
-                    if (currentHost === null) {
-                        currentHost = site?.hostname;
-
-                        return false;
-                    }
-
-                    return true;
-                })
-            )
-            .subscribe(() => {
-                this.store.goToTemplateList();
-            });
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.#store.goToTemplateList();
+        });
     }
 
     private formatTemplateItem({ layout, body, themeId }: DotTemplate): DotTemplateItem {

@@ -1,5 +1,8 @@
 package com.dotcms.cli.command.contenttype;
 
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_ID;
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_VARIABLE_NAME;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dotcms.DotCMSITProfile;
@@ -10,37 +13,44 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.common.ContentTypesTestHelperService;
+import com.dotcms.cli.common.ContentsTestHelperService;
 import com.dotcms.cli.common.InputOutputFormat;
+import com.dotcms.cli.common.SitesTestHelperService;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.model.ResponseEntityView;
+import com.dotcms.contenttype.model.workflow.ImmutableWorkflow;
 import com.dotcms.model.config.Workspace;
-import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
-import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -61,6 +71,15 @@ class ContentTypeCommandIT extends CommandTest {
 
     @Inject
     MapperService mapperService;
+
+    @Inject
+    SitesTestHelperService sitesTestHelper;
+
+    @Inject
+    ContentsTestHelperService contentsTestHelper;
+
+    @Inject
+    ContentTypesTestHelperService contentTypesTestHelper;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -320,12 +339,13 @@ class ContentTypeCommandIT extends CommandTest {
                     "--non-interactive");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable:"));
         }
     }
 
     /**
-     * Test Filter options
+     * Given scenario: We want to filter the content types by name
+     * Expected result: The output should contain only the content types that match the filter
      */
     @Test
     void Test_Command_Content_Filter_Option() {
@@ -337,7 +357,174 @@ class ContentTypeCommandIT extends CommandTest {
                     "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable: [FileAsset]"));
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name and direction asc
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "asc");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name and direction desc
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "desc");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction DESC
+     *
+     * NOTE: modDate has second-level precision, so multiple content types can have
+     * identical modDate values. To ensure deterministic ordering, we need to wait
+     * for at least 1 second between operations that would query these results,
+     * OR accept that tied modDates may appear in any order (which is database-standard behavior).
+     *
+     * This test now uses a more lenient check that allows for database non-determinism
+     * when modDates are equal.
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+
+            // Wait for clock to advance to reduce likelihood of tied timestamps
+            // This is a best-effort approach since we're querying existing content types
+            final long startSecond = System.currentTimeMillis() / 1000;
+            await()
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(100))
+                .until(() -> (System.currentTimeMillis() / 1000) > startSecond);
+
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 3, strings.size(),
+                    "Expected 3 content types but got: " + strings.size() + ". Output: " + output);
+
+            // Use truly tie-tolerant sorting check that accepts database non-determinism
+            // This validator checks only that unique values maintain descending order
+            Assertions.assertTrue(isSortedDescWithTies(strings),
+                    "Dates are not properly sorted descending. Extracted dates: " + strings +
+                    ". Note: Duplicate dates may appear in any permutation (database non-determinism).");
+        }
+    }
+
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction ASC
+     *
+     * NOTE: modDate has second-level precision, so multiple content types can have
+     * identical modDate values. To ensure deterministic ordering, we need to wait
+     * for at least 1 second between operations that would query these results,
+     * OR accept that tied modDates may appear in any order (which is database-standard behavior).
+     *
+     * This test now uses a more lenient check that allows for database non-determinism
+     * when modDates are equal.
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+
+            // Wait for clock to advance to reduce likelihood of tied timestamps
+            // This is a best-effort approach since we're querying existing content types
+            final long startSecond = System.currentTimeMillis() / 1000;
+            await()
+                .atMost(Duration.ofSeconds(2))
+                .pollDelay(Duration.ofMillis(100))
+                .until(() -> (System.currentTimeMillis() / 1000) > startSecond);
+
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 3, strings.size(),
+                    "Expected 3 content types but got: " + strings.size() + ". Output: " + output);
+
+            // Use truly tie-tolerant sorting check that accepts database non-determinism
+            // This validator checks only that unique values maintain ascending order
+            Assertions.assertTrue(isSortedAscWithTies(strings),
+                    "Dates are not properly sorted ascending. Extracted dates: " + strings +
+                    ". Note: Duplicate dates may appear in any permutation (database non-determinism).");
         }
     }
 
@@ -461,6 +648,491 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Pushing a content type with a detail page as URL
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Push_Content_Type_With_Detail_Page_With_URL() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a site
+            final var newSiteResult = sitesTestHelper.createSiteOnServer();
+            // Creating a couple of test pages
+            final var newPageResult = contentsTestHelper.createPageOnServer(
+                    newSiteResult.identifier());
+            // Creating a content type file descriptor
+            var detailPageURL = String.format(
+                    "//%s%s",
+                    newSiteResult.siteName(),
+                    newPageResult.url()
+            );
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptorWithDetailData(
+                    workspace,
+                    detailPageURL, "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertEquals(detailPageURL, byVarName.get().detailPage());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(detailPageURL, updatedContentType.detailPage());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Pushing a content type with a detail page as ID
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Push_Content_Type_With_Detail_Page_With_ID() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a site
+            final var newSiteResult = sitesTestHelper.createSiteOnServer();
+            // Creating a couple of test pages
+            final var newPageResult = contentsTestHelper.createPageOnServer(
+                    newSiteResult.identifier());
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptorWithDetailData(
+                    workspace,
+                    newPageResult.identifier(), "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var expectedDetailPageURL = String.format(
+                    "//%s%s",
+                    newSiteResult.siteName(),
+                    newPageResult.url()
+            );
+
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertEquals(expectedDetailPageURL, byVarName.get().detailPage());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(expectedDetailPageURL, updatedContentType.detailPage());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the detail page
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_With_Updating_Detail_Page() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a site
+            final var newSiteResult = sitesTestHelper.createSiteOnServer();
+            // Creating a couple of test pages
+            final var newPage1Result = contentsTestHelper.createPageOnServer(
+                    newSiteResult.identifier());
+            final var newPage2Result = contentsTestHelper.createPageOnServer(
+                    newSiteResult.identifier());
+            var detailPage1URL = String.format(
+                    "//%s%s",
+                    newSiteResult.siteName(),
+                    newPage1Result.url()
+            );
+            var detailPage2URL = String.format(
+                    "//%s%s",
+                    newSiteResult.siteName(),
+                    newPage2Result.url()
+            );
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptorWithDetailData(
+                    workspace,
+                    detailPage1URL, "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertEquals(detailPage1URL, byVarName.get().detailPage());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(detailPage1URL, updatedContentType.detailPage());
+
+            // ╔═════════════════════════════════════════════════╗
+            // ║  Modifying the detail page of the content type  ║
+            // ╚═════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .detailPage(detailPage2URL).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔══════════════════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the just created Content Type  ║
+            // ╚══════════════════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertEquals(detailPage2URL, byVarName.get().detailPage());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(detailPage2URL, updatedContentType.detailPage());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the workflows
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_With_Workflows() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+
+            // ╔══════════════════════════════════════════════════════════════════════════════╗
+            // ║  Modifying the workflows of the content type -> With just the variable name  ║
+            // ╚══════════════════════════════════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .workflows(
+                            List.of(
+                                    ImmutableWorkflow.builder()
+                                            .variableName(SYSTEM_WORKFLOW_VARIABLE_NAME)
+                                            .build()
+                            )
+                    ).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔════════════════════════════════╗
+            // ║  Pushing again the descriptor  ║
+            // ╚════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+
+            // ╔═══════════════════════════════════════════════════════════════════╗
+            // ║  Modifying the workflows of the content type -> With just the id  ║
+            // ╚═══════════════════════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .workflows(
+                            List.of(
+                                    ImmutableWorkflow.builder()
+                                            .id(SYSTEM_WORKFLOW_ID)
+                                            .build()
+                            )
+                    ).build();
+            jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔════════════════════════════════╗
+            // ║  Pushing again the descriptor  ║
+            // ╚════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Pushing a content type with a detail page with an invalid site
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Push_Content_Type_With_Detail_Page_With_Invalid_Site() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a content type file descriptor
+            var detailPageURL = String.format(
+                    "//%s%s",
+                    "not-existing-site.com",
+                    "/not-existing-page"
+            );
+            contentTypesTestHelper.createContentTypeDescriptorWithDetailData(
+                    workspace,
+                    detailPageURL, "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Pushing a content type with a detail page with an invalid page
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Push_Content_Type_With_Detail_Page_With_Invalid_Page() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a site
+            final var newSiteResult = sitesTestHelper.createSiteOnServer();
+            // Creating a content type file descriptor
+            var detailPageURL = String.format(
+                    "//%s%s",
+                    newSiteResult.siteName(),
+                    "/not-existing-page"
+            );
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptorWithDetailData(
+                    workspace,
+                    detailPageURL, "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * This tests will test the functionality of the content type push command when pushing a
      * folder, checking the content types are properly add, updated and removed on the remote
      * server.
@@ -507,9 +1179,9 @@ class ContentTypeCommandIT extends CommandTest {
 
             // ---
             // Creating a some test content types in the server
-            var newContentType1 = createContentType(workspace, false);
-            var newContentType2 = createContentType(workspace, false);
-            var newContentType3 = createContentType(workspace, false);
+            var newContentType1 = contentTypesTestHelper.createContentTypeOnServer();
+            var newContentType2 = contentTypesTestHelper.createContentTypeOnServer();
+            var newContentType3 = contentTypesTestHelper.createContentTypeOnServer();
 
             // ---
             // Pulling the just created content types - We need the files in the content types folder
@@ -538,8 +1210,8 @@ class ContentTypeCommandIT extends CommandTest {
 
             // ---
             // Creating some content types to fire some additions
-            var newContentType4 = createContentType(workspace, true);
-            var newContentType5 = createContentType(workspace, true);
+            var newContentType4 = contentTypesTestHelper.createContentTypeDescriptor(workspace);
+            var newContentType5 = contentTypesTestHelper.createContentTypeDescriptor(workspace);
 
             // Make sure we have the proper amount of files in the content types folder
             try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
@@ -576,80 +1248,18 @@ class ContentTypeCommandIT extends CommandTest {
                 contentTypeAPI.getContentType(newContentType3, 1L, false);
                 Assertions.fail(" 404 Exception should have been thrown here.");
             } catch (Exception e) {
-                Assertions.assertTrue(e instanceof NotFoundException);
+                Assertions.assertInstanceOf(NotFoundException.class, e);
             }
 
-            byVarName = contentTypeAPI.getContentType(newContentType4, 1L, false);
-            Assertions.assertEquals(newContentType4, byVarName.entity().variable());
+            byVarName = contentTypeAPI.getContentType(newContentType4.variable(), 1L, false);
+            Assertions.assertEquals(newContentType4.variable(), byVarName.entity().variable());
 
-            byVarName = contentTypeAPI.getContentType(newContentType5, 1L, false);
-            Assertions.assertEquals(newContentType5, byVarName.entity().variable());
+            byVarName = contentTypeAPI.getContentType(newContentType5.variable(), 1L, false);
+            Assertions.assertEquals(newContentType5.variable(), byVarName.entity().variable());
 
         } finally {
             deleteTempDirectory(tempFolder);
         }
-    }
-
-    /**
-     * This method creates a content type in the workspace either as a file or by making an API
-     * call
-     *
-     * @param workspace The workspace where the content type should be created
-     * @param asFile    Determines whether the content type should be created as a file or API call
-     * @return The variable name of the created content type
-     * @throws IOException If an I/O error occurs while creating the content type file
-     */
-    private String createContentType(Workspace workspace, boolean asFile) throws IOException {
-
-        final long identifier = System.currentTimeMillis();
-        final String varName = "var_" + identifier;
-
-        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
-                .baseType(BaseContentType.CONTENT)
-                .description("ct for testing.")
-                .name("name-" + varName)
-                .variable(varName)
-                .modDate(new Date())
-                .fixed(true)
-                .iDate(new Date())
-                .host("SYSTEM_HOST")
-                .folder("SYSTEM_FOLDER")
-                .addFields(
-                        ImmutableBinaryField.builder()
-                                .name("__bin_var__" + identifier)
-                                .fixed(false)
-                                .listed(true)
-                                .searchable(true)
-                                .unique(false)
-                                .indexed(true)
-                                .readOnly(false)
-                                .forceIncludeInApi(false)
-                                .modDate(new Date())
-                                .required(false)
-                                .variable("lol")
-                                .sortOrder(1)
-                                .dataType(DataTypes.SYSTEM).build()
-                ).build();
-
-        if (!asFile) {
-
-            final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                    .of(contentType).build();
-
-            final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-            final ResponseEntityView<List<ContentType>> response = contentTypeAPI.createContentTypes(
-                    List.of(saveRequest));
-        } else {
-
-            final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-            final String asString = objectMapper.writeValueAsString(contentType);
-
-            final Path path = Path.of(workspace.contentTypes().toString(),
-                    String.format("%s.json", varName));
-            Files.writeString(path, asString);
-        }
-
-        return varName;
     }
 
     /**
@@ -698,11 +1308,11 @@ class ContentTypeCommandIT extends CommandTest {
             // ---
             // ---
             // Creating a some test content types in the server
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
 
             // Pulling all content types
@@ -744,7 +1354,6 @@ class ContentTypeCommandIT extends CommandTest {
      * @throws IOException if there is an error pulling the content types
      */
     @Test
-    @Order(13)
     void Test_Command_Content_Type_Pull_Pull_All_YAML_Format() throws IOException {
 
         // Create a temporal folder for the workspace
@@ -780,11 +1389,11 @@ class ContentTypeCommandIT extends CommandTest {
 
             // ---
             // Creating a some test content types in the server
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
 
             // Pulling all content types
@@ -827,7 +1436,6 @@ class ContentTypeCommandIT extends CommandTest {
      * @throws IOException if there is an error pulling the content types
      */
     @Test
-    @Order(14)
     void Test_Command_Content_Type_Pull_Pull_All_Twice() throws IOException {
 
         // Create a temporal folder for the workspace
@@ -863,11 +1471,11 @@ class ContentTypeCommandIT extends CommandTest {
 
             // ---
             // Creating a some test content types in the server
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
-            createContentType(workspace, false);
+            contentTypesTestHelper.createContentTypeOnServer();
             contentTypesCount++;
 
             // Pulling all content types
@@ -904,6 +1512,1131 @@ class ContentTypeCommandIT extends CommandTest {
         } finally {
             deleteTempDirectory(tempFolder);
         }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command creating a content type with an ID
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Creation_With_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            final var initialIdentifier = UUID.randomUUID().toString();
+            final var initialVariable = "var_" + System.currentTimeMillis();
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptorWithIdData(
+                    workspace,
+                    initialIdentifier, initialVariable
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(initialVariable, byVarName.get().variable());
+            Assertions.assertEquals(initialIdentifier, byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(initialVariable, updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(initialIdentifier, updatedContentTypeDescriptor.id());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command creating a content type with no ID
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Creation_With_No_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().variable());
+            Assertions.assertNotNull(byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the ID with a non-existing
+     * ID
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_With_Non_Existing_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertNotNull(byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+
+            final var notExistingIdentifier = UUID.randomUUID().toString();
+            final var previousId = updatedContentTypeDescriptor.id();
+
+            // ╔════════════════════════════════════════╗
+            // ║  Modifying the id of the content type  ║
+            // ╚════════════════════════════════════════╝
+            updatedContentTypeDescriptor = ImmutableSimpleContentType.builder()
+                    .from(updatedContentTypeDescriptor)
+                    .id(notExistingIdentifier).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentTypeDescriptor);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertNotEquals(notExistingIdentifier, byVarName.get().id());
+            Assertions.assertEquals(previousId, byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the ID with an existing ID
+     * (Normal scenario)
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_With_Existing_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertNotNull(byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertEquals(updatedContentTypeDescriptor.id(), byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the ID with a null ID
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_With_No_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertNotNull(byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+
+            final var previousId = updatedContentTypeDescriptor.id();
+
+            // ╔════════════════════════════════════════╗
+            // ║  Modifying the id of the content type  ║
+            // ╚════════════════════════════════════════╝
+            updatedContentTypeDescriptor = ImmutableSimpleContentType.builder()
+                    .from(updatedContentTypeDescriptor)
+                    .id(null).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentTypeDescriptor);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+            Assertions.assertNotNull(byVarName.get().id());
+            Assertions.assertEquals(previousId, byVarName.get().id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(byVarName.get().variable(),
+                    updatedContentTypeDescriptor.variable());
+            Assertions.assertEquals(byVarName.get().id(), updatedContentTypeDescriptor.id());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the fields ID with a null
+     * ID.
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_Field_With_No_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
+
+            // ╔══════════════════════════════════╗
+            // ║  Removing the ids on the fields  ║
+            // ╚══════════════════════════════════╝
+            final var descriptorFields = updatedContentTypeDescriptor.fields();
+            var descriptorField1 = descriptorFields.get(0);
+            final var descriptorField1Id = descriptorField1.id();
+            descriptorField1 = ImmutableBinaryField.builder()
+                    .from(descriptorField1)
+                    .id(null).build();
+
+            var descriptorField2 = descriptorFields.get(1);
+            final var descriptorField2Id = descriptorField2.id();
+            descriptorField2 = ImmutableTextField.builder()
+                    .from(descriptorField2)
+                    .id(null).build();
+
+            updatedContentTypeDescriptor = ImmutableSimpleContentType.builder()
+                    .from(updatedContentTypeDescriptor)
+                    .fields(Arrays.asList(descriptorField1, descriptorField2)).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentTypeDescriptor);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(3).id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
+            Assertions.assertEquals(
+                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(3).id());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the fields ID with
+     * non-existing IDs
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_Field_With_Non_Existing_Id() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
+
+            // ╔══════════════════════════════════╗
+            // ║  Changing the ids on the fields  ║
+            // ╚══════════════════════════════════╝
+            final var descriptorFields = updatedContentTypeDescriptor.fields();
+            var descriptorField1 = descriptorFields.get(0);
+            final var descriptorField1Id = descriptorField1.id();
+            descriptorField1 = ImmutableBinaryField.builder()
+                    .from(descriptorField1)
+                    .id(UUID.randomUUID().toString()).build();
+
+            var descriptorField2 = descriptorFields.get(1);
+            final var descriptorField2Id = descriptorField2.id();
+            descriptorField2 = ImmutableTextField.builder()
+                    .from(descriptorField2)
+                    .id(UUID.randomUUID().toString()).build();
+
+            updatedContentTypeDescriptor = ImmutableSimpleContentType.builder()
+                    .from(updatedContentTypeDescriptor)
+                    .fields(Arrays.asList(descriptorField1, descriptorField2)).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentTypeDescriptor);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(3).id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
+            Assertions.assertEquals(
+                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(3).id());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command adding a new field to the content
+     * type.
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_Adding_Field() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
+
+            // ╔════════════════════════════════════════════════════════════════╗
+            // ║  Adding new field and removing the ids on the existing fields  ║
+            // ╚════════════════════════════════════════════════════════════════╝
+            final var descriptorFields = updatedContentTypeDescriptor.fields();
+            var descriptorField1 = descriptorFields.get(2);
+            final var descriptorField1Id = descriptorField1.id();
+            descriptorField1 = ImmutableBinaryField.builder()
+                    .from(descriptorField1)
+                    .id(null).build();
+
+            var descriptorField2 = descriptorFields.get(3);
+            final var descriptorField2Id = descriptorField2.id();
+            descriptorField2 = ImmutableTextField.builder()
+                    .from(descriptorField2)
+                    .id(null).build();
+
+            var newField3 = ImmutableTextField.builder()
+                    .indexed(true)
+                    .dataType(DataTypes.TEXT)
+                    .fieldType("text")
+                    .readOnly(false)
+                    .required(true)
+                    .searchable(true)
+                    .listed(true)
+                    .sortOrder(3)
+                    .searchable(true)
+                    .name("Field3")
+                    .variable("field3")
+                    .fixed(true)
+                    .build();
+
+            updatedContentTypeDescriptor = ImmutableSimpleContentType.builder()
+                    .from(updatedContentTypeDescriptor)
+                    .fields(Arrays.asList(descriptorField1, descriptorField2, newField3)).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentTypeDescriptor);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(5, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(3).id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(5, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
+            Assertions.assertEquals(
+                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(3).id());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command removing a field from the content
+     * type.
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_Removing_Field() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
+
+            // ╔═════════════════╗
+            // ║  Removing field ║
+            // ╚═════════════════╝
+            final var descriptorFields = updatedContentTypeDescriptor.fields();
+            var descriptorField1 = descriptorFields.get(0);
+            final var descriptorField1Id = descriptorField1.id();
+            descriptorField1 = ImmutableBinaryField.builder()
+                    .from(descriptorField1)
+                    .id(null).build();
+
+            updatedContentTypeDescriptor = ImmutableSimpleContentType.builder()
+                    .from(updatedContentTypeDescriptor)
+                    .fields(List.of(descriptorField1)).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentTypeDescriptor);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔═════════════════════════════════════════════════════╗
+            // ║  Pushing again the descriptor for the Content Type  ║
+            // ╚═════════════════════════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertNotNull(byVarName.get().fields());
+            // NOTE: byVarName.get().fields().size() is 3 because after the remove operation, and
+            // not in a consistent way in relation with the add and update, the column and row fields
+            // are included in the list of fields.
+            Assertions.assertEquals(3, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            // NOTE: byVarName.get().fields().size() is 3 because after the remove operation, and
+            // not in a consistent way in relation with the add and update, the column and row fields
+            // are included in the list of fields.
+            Assertions.assertEquals(3, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Test Find by name authenticated with token
+     * Given scenario: We want to find a content type by name using a token
+     * Expected result: The content type should be found and returned
+     */
+    @Test
+    void Test_Command_Content_Find_Authenticated_With_Token() {
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--token", token);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("variable:"));
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command and checking the base type.
+     * Expected Result: The base type on the server should the same as the one on the descriptor before
+     * and after the push operation.
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_Update_Checking_Base_Type() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a HTML page content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createPageContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔════════════════════════════════════════════╗
+            // ║  Validating the information on the server  ║
+            // ╚════════════════════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(BaseContentType.HTMLPAGE, byVarName.get().baseType());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentTypeDescriptor = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
+            Assertions.assertEquals(
+                    BaseContentType.HTMLPAGE, updatedContentTypeDescriptor.baseType()
+            );
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in ascending order (case-insensitive)
+     * Allows equal values (non-strict ordering)
+     *
+     * @param list the list of strings
+     * @return true if the list is sorted in ascending order, false otherwise
+     */
+    public static boolean isSortedAsc(final List<String> list) {
+        if (list == null || list.size() <= 1) {
+            return true;
+        }
+        for (int i = 0; i < list.size() - 1; i++) {
+            final String current = list.get(i);
+            final String next = list.get(i + 1);
+            // Allow equal values, but fail if current > next
+            if (String.CASE_INSENSITIVE_ORDER.compare(current, next) > 0) {
+                System.out.println("Sorting violation at index " + i + ": current=[" + current + "] next=[" + next + "]");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in descending order (case-insensitive)
+     * Allows equal values (non-strict ordering)
+     *
+     * @param list the list of strings
+     * @return true if the list is sorted in descending order, false otherwise
+     */
+    public static boolean isSortedDesc(final List<String> list) {
+        if (list == null || list.size() <= 1) {
+            return true;
+        }
+        for (int i = 0; i < list.size() - 1; i++) {
+            final String current = list.get(i);
+            final String next = list.get(i + 1);
+            // Allow equal values, but fail if current < next
+            if (String.CASE_INSENSITIVE_ORDER.compare(current, next) < 0) {
+                System.out.println("Sorting violation at index " + i + ": current=[" + current + "] next=[" + next + "]");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in descending order (allowing ties).
+     *
+     * This validator checks non-strictly descending order, meaning each element must be
+     * greater than or equal to the next element. This correctly models SQL ORDER BY DESC
+     * behavior where tied values can appear in any order among themselves, but the overall
+     * sequence must be monotonically non-increasing.
+     *
+     * Valid examples:
+     * - [13, 13, 12, 12, 11] ✅ Non-strictly descending (ties within same value)
+     * - [15, 14, 13] ✅ Strictly descending
+     * - [13, 13, 13] ✅ All tied values
+     *
+     * Invalid examples:
+     * - [13, 12, 13] ❌ Ascending violation (12 < 13)
+     * - [11, 12, 13] ❌ Fully ascending
+     *
+     * When ORDER BY mod_date DESC is executed, the database MUST return results in
+     * non-strictly descending order. A pattern like [13, 12, 13] indicates either:
+     * - Database didn't sort by the requested field
+     * - Results were scrambled after the query
+     * - There's a bug in reading/processing the results
+     *
+     * @param list the list of strings to check
+     * @return true if list is in non-strictly descending order, false otherwise
+     */
+    public static boolean isSortedDescWithTies(final List<String> list) {
+        if (list == null || list.size() <= 1) {
+            return true;
+        }
+
+        // Check that each element is >= the next (non-strictly descending)
+        for (int i = 0; i < list.size() - 1; i++) {
+            final String current = list.get(i);
+            final String next = list.get(i + 1);
+            int comparison = current.compareTo(next);
+
+            if (comparison < 0) {
+                // Current < next violates descending order
+                System.out.println("Descending order violation at index " + i +
+                    ": current=[" + current + "] < next=[" + next + "]");
+                System.out.println("Full list: " + list);
+                return false;
+            }
+            // comparison >= 0 is correct (current >= next)
+        }
+
+        return true;
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in ascending order (allowing ties).
+     *
+     * This validator checks non-strictly ascending order, meaning each element must be
+     * less than or equal to the next element. This correctly models SQL ORDER BY ASC
+     * behavior where tied values can appear in any order among themselves, but the overall
+     * sequence must be monotonically non-decreasing.
+     *
+     * Valid examples:
+     * - [11, 11, 12, 12, 13] ✅ Non-strictly ascending (ties within same value)
+     * - [11, 12, 13] ✅ Strictly ascending
+     * - [11, 11, 11] ✅ All tied values
+     *
+     * Invalid examples:
+     * - [11, 12, 11] ❌ Descending violation (12 > 11)
+     * - [13, 12, 11] ❌ Fully descending
+     *
+     * When ORDER BY mod_date ASC is executed, the database MUST return results in
+     * non-strictly ascending order. A pattern like [11, 12, 11] indicates either:
+     * - Database didn't sort by the requested field
+     * - Results were scrambled after the query
+     * - There's a bug in reading/processing the results
+     *
+     * @param list the list of strings to check
+     * @return true if list is in non-strictly ascending order, false otherwise
+     */
+    public static boolean isSortedAscWithTies(final List<String> list) {
+        if (list == null || list.size() <= 1) {
+            return true;
+        }
+
+        // Check that each element is <= the next (non-strictly ascending)
+        for (int i = 0; i < list.size() - 1; i++) {
+            final String current = list.get(i);
+            final String next = list.get(i + 1);
+            int comparison = current.compareTo(next);
+
+            if (comparison > 0) {
+                // Current > next violates ascending order
+                System.out.println("Ascending order violation at index " + i +
+                    ": current=[" + current + "] > next=[" + next + "]");
+                System.out.println("Full list: " + list);
+                return false;
+            }
+            // comparison <= 0 is correct (current <= next)
+        }
+
+        return true;
+    }
+
+    /**
+     * Extracts the rows from the output text by the field name
+     *
+     * @param fieldName the field name to extract
+     * @param inputText the input text
+     * @return the list of rows
+     */
+    private static List<String> extractRowsByFieldName(final String fieldName,
+            final String inputText) {
+        List<String> varNames = new ArrayList<>();
+        Pattern pattern = Pattern.compile(String.format("%s:\\s*\\[([^\\]]+)\\]", fieldName));
+        Matcher matcher = pattern.matcher(inputText);
+        while (matcher.find()) {
+            String extracted = matcher.group(1);
+            // For modDate fields, preserve the date format for proper comparison
+            // Dates are formatted as "yyyy-MM-dd HH:mm:ss" (second-level precision only)
+            // 
+            // DATA GRANULARITY NOTE:
+            // The date format only includes seconds, not milliseconds. This means:
+            // - Multiple content types modified within the same second will have identical dates
+            // - When dates are equal, the API should return items in a consistent order
+            //   (typically by ID or variable name as a secondary sort key)
+            // - Our sorting functions allow equal values (non-strict ordering) to handle this case
+            // - If sorting fails, it may indicate the API doesn't guarantee consistent ordering
+            //   when modDates are equal, which would be a bug
+            if ("modDate".equals(fieldName)) {
+                // Remove spaces and colons but keep hyphens for date comparison
+                // Format: "yyyy-MM-dd HH:mm:ss" -> "yyyy-MM-ddHHmmss"
+                extracted = extracted.replaceAll("[\\s:]", "");
+            } else {
+                // For other fields, remove all non-alphanumeric characters
+                extracted = extracted.replaceAll("[^a-zA-Z0-9]", "");
+            }
+            varNames.add(extracted);
+        }
+        return varNames;
     }
 
 }

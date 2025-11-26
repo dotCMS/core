@@ -1,9 +1,9 @@
 import { Subject } from 'rxjs';
 
-import { Directive, ElementRef, OnDestroy, Optional, Renderer2, Self } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, Renderer2, inject } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
-import { DotEditPageNavComponent } from '@portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
+import { DotEditPageNavComponent } from '../../dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
 
 const EDIT_PAGE_VARIANT = 'edit-page-variant-mode';
 
@@ -14,18 +14,22 @@ const EDIT_PAGE_VARIANT = 'edit-page-variant-mode';
  * 2. If is assigned to DotEditPageNavComponent set the component in isVariantMode
  */
 @Directive({
-    standalone: true,
     selector: '[dotExperimentClass]'
 })
 export class DotExperimentClassDirective implements OnDestroy {
+    private readonly route = inject(ActivatedRoute);
+    private renderer = inject(Renderer2);
+    private readonly dotEditPageNavComponent = inject(DotEditPageNavComponent, {
+        optional: true,
+        self: true
+    });
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private readonly route: ActivatedRoute,
-        private renderer: Renderer2,
-        hostElement: ElementRef,
-        @Optional() @Self() private readonly dotEditPageNavComponent: DotEditPageNavComponent
-    ) {
+    constructor() {
+        const renderer = this.renderer;
+        const hostElement = inject(ElementRef);
+
         this.route.queryParams.subscribe((queryParams) => {
             if (this.isEditPageVariant(queryParams)) {
                 renderer.addClass(hostElement.nativeElement, EDIT_PAGE_VARIANT);

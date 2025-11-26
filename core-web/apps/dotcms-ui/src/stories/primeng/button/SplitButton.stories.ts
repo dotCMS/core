@@ -1,5 +1,4 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -7,7 +6,7 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { BasicSplitButtonTemplate, OutlinedSplitButtonTemplate } from './templates';
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Button/SplitButton',
     decorators: [
         moduleMetadata({
@@ -22,9 +21,11 @@ export default {
                     'SplitButton groups a set of commands in an overlay with a default command: https://primeng.org/splitbutton'
             }
         }
-    },
-    props: {}
-} as Meta;
+    }
+};
+export default meta;
+
+type Story = StoryObj;
 
 const items = [
     {
@@ -58,35 +59,38 @@ const items = [
     }
 ];
 
-export const Basic: Story = () => {
-    return {
-        template: BasicSplitButtonTemplate,
-        props: {
-            items
+export const Basic: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: BasicSplitButtonTemplate
+            }
         }
-    };
-};
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: BasicSplitButtonTemplate
-        }
+    },
+    render: () => {
+        return {
+            template: BasicSplitButtonTemplate,
+            props: {
+                items
+            }
+        };
     }
 };
-export const Outlined: Story = () => {
-    return {
-        template: OutlinedSplitButtonTemplate,
-        props: {
-            items
-        }
-    };
-};
 
-Outlined.parameters = {
-    docs: {
-        source: {
-            code: OutlinedSplitButtonTemplate
+export const Outlined: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: OutlinedSplitButtonTemplate
+            }
         }
+    },
+    render: () => {
+        return {
+            template: OutlinedSplitButtonTemplate,
+            props: {
+                items
+            }
+        };
     }
 };

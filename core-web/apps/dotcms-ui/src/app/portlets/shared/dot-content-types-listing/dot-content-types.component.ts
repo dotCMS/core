@@ -1,12 +1,10 @@
-import * as _ from 'lodash';
 import { forkJoin, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -19,18 +17,27 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
+    DotActionMenuItem,
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
+    DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import { ActionHeaderOptions } from '@models/action-header';
-import { ButtonModel } from '@models/action-header/button.model';
-import { DataTableColumn } from '@models/data-table';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotAddToMenuComponent } from './components/dot-add-to-menu/dot-add-to-menu.component';
 import { DotContentTypeStore } from './dot-content-type.store';
+
+import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonModel } from '../../../shared/models/action-header/button.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
+import { DotBaseTypeSelectorComponent } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 type DotRowActions = {
     pushPublish: boolean;
@@ -50,9 +57,37 @@ type DotRowActions = {
     selector: 'dot-content-types',
     styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
-    providers: [DotContentTypeStore]
+    imports: [
+        DotListingDataTableComponent,
+        DotBaseTypeSelectorComponent,
+        DotAddToBundleComponent,
+        DotAddToMenuComponent,
+        DotPortletBaseComponent
+    ],
+    providers: [
+        DotContentTypeStore,
+        DotContentTypesInfoService,
+        DotCrudService,
+        DotContentTypeService,
+        DotAddToMenuService,
+        DotMenuService,
+        DotNavigationService
+    ]
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
+    private contentTypesInfoService = inject(DotContentTypesInfoService);
+    private crudService = inject(DotCrudService);
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotLicenseService = inject(DotLicenseService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private pushPublishService = inject(PushPublishService);
+    private route = inject(ActivatedRoute);
+    private router = inject(Router);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotContentTypeStore = inject(DotContentTypeStore);
+
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
     filterBy: string;
@@ -68,21 +103,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     public dotDynamicDialog: ViewContainerRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentTypesInfoService: DotContentTypesInfoService,
-        private crudService: DotCrudService,
-        private dotContentTypeService: DotContentTypeService,
-        private dotDialogService: DotAlertConfirmService,
-        private dotLicenseService: DotLicenseService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private pushPublishService: PushPublishService,
-        private route: ActivatedRoute,
-        private router: Router,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotContentTypeStore: DotContentTypeStore
-    ) {}
 
     ngOnInit() {
         forkJoin(
@@ -159,7 +179,10 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     }
 
     private setFilterByContentType(contentType: string) {
-        this.filterBy = _.startCase(_.toLower(contentType));
+        const lowerCased = contentType.toLowerCase();
+
+        this.filterBy = lowerCased.charAt(0).toUpperCase() + lowerCased.slice(1);
+
         this.paginatorExtraParams = { type: this.filterBy };
         this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);
@@ -173,8 +196,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: (item) => this.removeConfirmation(item),
-                    icon: 'delete'
+                    command: (item: DotCMSContentType) => this.removeConfirmation(item),
+                    icon: 'pi pi-trash'
                 },
                 shouldShow: (item) => !item.fixed && !item.defaultType
             }
@@ -208,7 +231,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: (item) => this.pushPublishContentType(item)
+                    command: (item: DotCMSContentType) => this.pushPublishContentType(item)
                 }
             });
         }
@@ -238,7 +261,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.copy'),
-                    command: (item: DotCMSContentType) => this.showCloneContentTypeDialog(item)
+                    command: (item: DotCMSContentType) => {
+                        this.showCloneContentTypeDialog(item);
+                    }
                 }
             });
         }

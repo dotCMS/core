@@ -1,29 +1,27 @@
 <div class="dialog__auto-complete-container field">
+    @let hasClasses = $hasClasses();
     <p-autoComplete
-        class="p-fluid"
-        [(ngModel)]="selectedClasses"
-        [unique]="true"
-        [suggestions]="filteredSuggestions"
-        [size]="446"
-        [multiple]="true"
-        [dropdown]="isJsonClasses$ | async"
-        [autofocus]="true"
         (completeMethod)="filterClasses($event)"
-        dotSelectItem
+        [(ngModel)]="$selectedClasses"
+        [unique]="UNIQUE_CLASSES"
+        [suggestions]="$filteredSuggestions()"
+        [multiple]="true"
+        [dropdown]="hasClasses"
+        [autofocus]="true"
+        dropdownMode="blank"
+        class="p-fluid"
         data-testId="autocomplete"
         inputId="auto-complete-input"
-        appendTo="body">
-    </p-autoComplete>
-    <ng-container *ngIf="isJsonClasses$ | async; else suggestionNotes">
+        (keyup.enter)="onEnterKey($event)"
+        appendTo="body" />
+    @if (hasClasses) {
         <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>
                 {{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}
             </li>
         </ul>
-    </ng-container>
-
-    <ng-template #suggestionNotes>
+    } @else {
         <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>
@@ -35,10 +33,10 @@
                     [innerHTML]="'dot.template.builder.autocomplete.setup.suggestions' | dm"></span>
             </li>
         </ul>
-    </ng-template>
+    }
 </div>
 <div class="dialog__actions-container">
     <p-button (onClick)="save()" data-testId="update-btn">
-        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
-    >
+        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}
+    </p-button>
 </div>

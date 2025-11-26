@@ -1,14 +1,23 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentTypeService,
+    DotESContentService,
+    DotMessageService,
+    DotSessionStorageService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
+
+import { DotPaletteComponent } from './dot-palette.component';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipe } from '../../../../view/pipes/dot-filter/dot-filter.pipe';
 
 const data = [
     {
@@ -116,36 +125,63 @@ const messageServiceMock = new MockDotMessageService({
     structure: 'Content Type'
 });
 
-export default {
-    title: 'DotCMS/ Content Palette',
+const meta: Meta<DotPaletteComponent> = {
+    title: 'DotCMS/Content Palette',
     component: DotPaletteComponent,
     decorators: [
         moduleMetadata({
-            declarations: [DotPaletteComponent],
-            imports: [CommonModule, DotIconModule, DotFilterPipeModule, DotMessagePipe],
+            imports: [
+                CommonModule,
+                DotIconComponent,
+                DotFilterPipe,
+                DotPaletteComponent,
+                DotMessagePipe,
+                BrowserAnimationsModule
+            ],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
-                { provide: DotMessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: DotContentTypeService,
+                    useValue: {
+                        getContentTypes: () => data,
+                        filterContentTypes: () => data
+                    }
+                },
+                {
+                    provide: DotESContentService,
+                    useValue: {
+                        get: () => []
+                    }
+                },
+                {
+                    provide: PaginatorService,
+                    useValue: {
+                        get: () => []
+                    }
+                },
+                {
+                    provide: DotSessionStorageService,
+                    useValue: {
+                        get: () => []
+                    }
+                }
             ]
         })
     ],
-    args: {
-        items: data
-    }
-} as Meta;
-
-export const Default: Story<DotPaletteComponent> = (props) => {
-    return {
-        component: DotPaletteComponent,
-        props,
-        template: `<dot-palette [items]='items' />`
-    };
+    render: (args) => ({
+        props: args,
+        template: `<dot-palette ${argsToTemplate(args)} />`
+    })
 };
+export default meta;
 
-export const Empty: Story<DotPaletteComponent> = (props) => {
-    return {
-        component: DotPaletteComponent,
-        props,
-        template: `<dot-palette [items]='[]' />`
-    };
+type Story = StoryObj<DotPaletteComponent>;
+
+export const Default: Story = {};
+
+export const Empty: Story = {
+    args: {
+        allowedContent: []
+    }
 };

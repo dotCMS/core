@@ -15,14 +15,15 @@ services:
       - dotcms-net
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+    image: opensearchproject/opensearch:1.3.6
     ports:
       - "9200:9200"
     environment:
       - discovery.type=single-node
       - cluster.name=elastic-cluster
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx1g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx1g -XX:-UseContainerSupport"
+      - plugins.security.disabled=true
     ulimits:
       memlock:
         soft: -1 # Set memlock to unlimited (no soft or hard limit)

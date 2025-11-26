@@ -1,77 +1,35 @@
-/* 
-* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
-* Copyright (c) 2023 dotCMS Inc.
-* 
-* With regard to the dotCMS Software and this code:
-* 
-* This software, source code and associated documentation files (the
-* "Software")  may only be modified and used if you (and any entity that
-* you represent) have:
-* 
-* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
-* of Service, available at https://www.dotcms.com/terms (the “Enterprise
-* Terms”) or have another agreement governing the licensing and use of the
-* Software between you and dotCMS. 2. Each dotCMS instance that uses
-* enterprise features enabled by the code in this directory is licensed
-* under these agreements and has a separate and valid dotCMS Enterprise
-* server key issued by dotCMS.
-* 
-* Subject to these terms, you are free to modify this Software and publish
-* patches to the Software if you agree that dotCMS and/or its licensors
-* (as applicable) retain all right, title and interest in and to all such
-* modifications and/or patches, and all such modifications and/or patches
-* may only be used, copied, modified, displayed, distributed, or otherwise
-* exploited with a valid dotCMS Enterprise license for the correct number
-* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
-* applicable) retain all right, title and interest in and to all such
-* modifications.  You are not granted any other rights beyond what is
-* expressly stated herein.  Subject to the foregoing, it is forbidden to
-* copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
-* For all third party components incorporated into the dotCMS Software,
-* those components are licensed under the original license provided by the
-* owner of the applicable component.
+/*
+*
+* Copyright (c) 2025 dotCMS LLC
+* Use of this software is governed by the Business Source License included
+* in the LICENSE file found at in the root directory of software.
+* SPDX-License-Identifier: BUSL-1.1
+*
 */
 
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publishing.*;
-import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publisher.pusher.wrapper.HostWrapper;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -81,6 +39,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -89,27 +48,39 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
- * This bundler will take the list of {@link Contentlet} (Host) objects that are
- * being pushed and will write them in the file system in the form of an XML
- * file. This information will be part of the bundle that will be pushed to the
- * destination server.
- * 
+ * This bundler will take the list of {@link Contentlet} (Host) objects that are being pushed and
+ * will write them in the file system in the form of an XML file. This information will be part of
+ * the bundle that will be pushed to the destination server.
+ *
  * @author Jorge Urdaneta
  * @version 1.0
  * @since Mar 7, 2013
- *
  */
 public class HostBundler implements IBundler {
 
 	private PushPublisherConfig config;
 	private User systemUser;
 	private ContentletAPI conAPI = null;
-	private UserAPI uAPI = null;
-	private PublisherAPI pubAPI = null;
-	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+    private PublisherAPI pubAPI = null;
+	private LanguageAPI langAPI = null;
+	private final PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 
 	public final static String HOST_EXTENSION = ".host.xml" ;
 
@@ -119,15 +90,14 @@ public class HostBundler implements IBundler {
 	}
 
 	@Override
-	public void setConfig(PublisherConfig pc) {
+	public void setConfig(final PublisherConfig pc) {
 		config = (PushPublisherConfig) pc;
 		conAPI = APILocator.getContentletAPI();
-		uAPI = APILocator.getUserAPI();
 		pubAPI = PublisherAPI.getInstance();
-
+		this.langAPI = APILocator.getLanguageAPI();
 		try {
-			systemUser = uAPI.getSystemUser();
-		} catch (DotDataException e) {
+			this.systemUser = APILocator.getUserAPI().getSystemUser();
+		} catch (final DotDataException e) {
 			Logger.fatal(HostBundler.class,e.getMessage(),e);
 		}
 	}
@@ -137,144 +107,188 @@ public class HostBundler implements IBundler {
     }
 
 	@Override
-	public void generate(BundleOutput output, BundlerStatus status)
-			throws DotBundleException {
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-	        throw new RuntimeException("need an enterprise pro license to run this bundler");
-	    }
+	@EnterpriseFeature
+	public void generate(final BundleOutput output, final BundlerStatus status) throws DotBundleException {
+		final Set<String> siteIds = config.getHostSet();
 		try {
-			Set<String> contents = config.getHostSet();
-
-			//Updating audit table
-			PublishAuditHistory currentStatusHistory = null;
-			if (!config.isDownloading()) {
-				currentStatusHistory = this.pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
-				if (currentStatusHistory == null) {
-					currentStatusHistory = new PublishAuditHistory();
-				}
-				currentStatusHistory.setBundleStart(new Date());
-				PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
-				this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
-						currentStatusHistory);
-			}
-            
-			if(UtilMethods.isSet(contents) && !contents.isEmpty()) { // this content set is a dependency of other assets, like htmlpages
-				List<Contentlet> contentList = new ArrayList<>();
-				for (String contentIdentifier : contents) {
-					try{
-						Contentlet workingContentlet;
-						List<Contentlet> results = APILocator.getContentletAPI()
-								.search("+identifier:" + contentIdentifier + " +working:true",
-									1, 0, null, systemUser, false);
-						if (UtilMethods.isSet(results)) {
-							workingContentlet = results.get(0);
-						} else {
-							workingContentlet = APILocator.getContentletAPI()
-									.findContentletByIdentifier(contentIdentifier, false,
-									APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-						}
-
-						Contentlet liveContentlet = null;
-						try {
-							List<Contentlet> returnedContent = APILocator.getContentletAPI()
-									.search("+identifier:" + contentIdentifier + " +live:true",
-										1, 0, null, systemUser, false);
-
-							if(UtilMethods.isSet(returnedContent)) {
-								liveContentlet = returnedContent.get(0);
-							} else {
-								liveContentlet = APILocator.getContentletAPI()
-										.findContentletByIdentifier(contentIdentifier, true,
-										APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-							}
-
-							if (liveContentlet == null) {
-								Logger.info(HostBundler.class, "Unable to find live version of contentlet with"
-										+ " identifier '"+ contentIdentifier);
-							}
-						} catch (DotDataException | DotSecurityException | DotContentletStateException e) {
-							// the process can work with only the working version, unpublished
-							Logger.info(HostBundler.class, "Error retrieving live contentlet with identifier '"
-								+ contentIdentifier +"' ("+ e.getMessage() +")");
-						}
-
-						// there should always be a working version
-						if(workingContentlet != null)
-							contentList.add(workingContentlet);
-						else
-							throw new DotBundleException("No working version of host " + contentIdentifier);
-						// the process can work with only the working version, unpublished
-						if(liveContentlet != null)
-							contentList.add(liveContentlet);
-
-					}catch(DotDataException de){
-						throw new DotBundleException("Data error on host content " + contentIdentifier, de);
-					}catch(DotSecurityException ds){
-						throw new DotBundleException("Security error on host content " + contentIdentifier, ds);
-					}catch(DotContentletStateException dc){
-						throw new DotBundleException("Content error on host " + contentIdentifier, dc);
-					}
-				}
-				Set<Contentlet> contentsToProcessWithFiles = getRelatedFilesAndContent(contentList);
-
-				for (Contentlet con : contentsToProcessWithFiles) {
-					writeFileToDisk(output, con);
+			final PublishAuditHistory currentAuditHistory = this.getCurrentPublishAuditHistory();
+			if (UtilMethods.isSet(siteIds)) {
+				// This content set is a dependency of other assets, like html pages
+				final List<Contentlet> siteAsContentList = this.getSitesAsContentlets(siteIds);
+				final Set<Contentlet> contentsToProcessWithFiles = this.getRelatedFilesAndContent(siteAsContentList);
+				for (final Contentlet con : contentsToProcessWithFiles) {
+					this.writeFileToDisk(output, con);
 					status.addCount();
 				}
 			}
-			if (currentStatusHistory != null && !this.config.isDownloading()) {
-				// Updating audit table
-				currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
-				currentStatusHistory.setBundleEnd(new Date());
-				PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
-				this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
-						currentStatusHistory);
-			}
-		} catch (Exception e) {
+			this.updateAuditHistory(currentAuditHistory);
+		} catch (final Exception e) {
 			status.addFailure();
-
-			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
-			+ e.getMessage() + ": Unable to pull content", e);
+			Logger.error(this, String.format("Failed to pull Sites with IDs: %s", siteIds), e);
+			throw new DotBundleException(String.format("Failed to pull content for Host Bundler: " +
+					"%s", ExceptionUtil.getErrorMessage(e)), e);
 		}
 	}
 
 	/**
-	 * 
-	 * @param cs
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * Returns the Publishing Audit History for the current bundle. Keep in mind that, depending on
+	 * the system load or the available resources of the dotCMS instance, parts of the audit
+	 * history may not be ready yet, which is expected.
+	 *
+	 * @return The current {@link PublishAuditHistory} object for the current bundle.
+	 *
+	 * @throws DotPublisherException An error occurred when retrieving or updating the bundle
+	 *                               status.
 	 */
-	private Set<Contentlet> getRelatedFilesAndContent(List<Contentlet> cs) throws DotDataException,
-			DotSecurityException {
-
-		Set<Contentlet> contentsToProcess = new HashSet<>();
-
-		//Getting all related content
-		for (Contentlet con : cs) {
-			Map<Relationship, List<Contentlet>> contentRel =
-					conAPI.findContentRelationships(con, systemUser);
-
-			for (Relationship rel : contentRel.keySet()) {
-				contentsToProcess.addAll(contentRel.get(rel));
+	private PublishAuditHistory getCurrentPublishAuditHistory() throws DotPublisherException {
+		PublishAuditHistory currentAuditHistory = null;
+		if (!config.isDownloading()) {
+			final PublishAuditStatus publishAuditStatus = this.pubAuditAPI.getPublishAuditStatus(this.config.getId());
+			if (null != publishAuditStatus) {
+				currentAuditHistory = this.pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
 			}
+			currentAuditHistory = null == currentAuditHistory ? new PublishAuditHistory() : currentAuditHistory;
+			currentAuditHistory.setBundleStart(new Date());
+			PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
+			this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
+					currentAuditHistory);
+		}
+		return currentAuditHistory;
+	}
 
-			contentsToProcess.add(con);
+	/**
+	 * Takes the list of Site IDs that have been included in this bundle, and returns them as a
+	 * list of their working and live versions in the form of {@link Contentlet} objects. Please
+	 * take into consideration that, even though not having a live version of a Site is permitted,
+	 * <b>there must ALWAYS be a working version of it</b>.
+	 *
+	 * @param siteIds The list of Site IDs to retrieve.
+	 *
+	 * @return A list of {@link Contentlet} objects representing the Sites to be bundled.
+	 *
+	 * @throws DotBundleException An error occurred when retrieving the Sites, or thw working
+	 *                            version of a Site was not found.
+	 */
+	private List<Contentlet> getSitesAsContentlets(final Set<String> siteIds) throws DotBundleException {
+		final List<Contentlet> siteAsContentList = new ArrayList<>();
+		for (final String siteIdentifier : siteIds) {
+			try {
+				final Contentlet workingSite = this.getSiteAsContentlet(siteIdentifier, false);
+				// There must always be a working version
+				if (null == workingSite) {
+					throw new DotBundleException(String.format("No working version of Site with ID '%s'" +
+							" was found", siteIdentifier));
+				}
+				siteAsContentList.add(workingSite);
+				try {
+					final Contentlet liveSite = this.getSiteAsContentlet(siteIdentifier, true);
+					if (liveSite != null) {
+						siteAsContentList.add(liveSite);
+					} else {
+						// The bundling process can work with only the working version, unpublished
+						Logger.warn(this, String.format("Unable to find live version of contentlet with identifier " +
+								"'%s'. The process will continue", siteIdentifier));
+					}
+				} catch (final DotDataException | DotSecurityException | DotContentletStateException e) {
+					// the process can work with only the working version, unpublished
+					Logger.warn(this, String.format("Could not retrieve live version of Site with ID " +
+							"'%s' (the process can continue): %s", siteIdentifier, ExceptionUtil.getErrorMessage(e)));
+				}
+			} catch (final DotDataException de) {
+				throw new DotBundleException(String.format("Data error on Site with ID '%s'", siteIdentifier), de);
+			} catch (final DotSecurityException ds) {
+				throw new DotBundleException(String.format("Security error on Site with ID '%s'", siteIdentifier), ds);
+			} catch (final DotContentletStateException dc) {
+				throw new DotBundleException(String.format("Content error on Site with ID '%s'", siteIdentifier), dc);
+			}
+		}
+		return siteAsContentList;
+	}
+
+	/**
+	 * Returns the specified Site ID as a Contentlet object. The Elasticsearch API will be used as
+	 * the first data source. If not present, the database will be used as a fallback.
+	 *
+	 * @param siteIdentifier The identifier of the Site to retrieve.
+	 * @param live           If the live version of the Site is required, set this to {@code true}.
+	 *
+	 * @return The Site as a {@link Contentlet} object.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException A User permission error has occurred.
+	 */
+	private Contentlet getSiteAsContentlet(final String siteIdentifier, final boolean live) throws DotDataException, DotSecurityException {
+		final List<Contentlet> results = this.conAPI
+				.search("+identifier:" + siteIdentifier + (live ? " +live:true" : " +working:true"),
+						1, 0, null, this.systemUser, DONT_RESPECT_FRONT_END_ROLES);
+		if (UtilMethods.isSet(results)) {
+			return results.get(0);
+		}
+		return this.conAPI.findContentletByIdentifier(siteIdentifier, live,
+				this.langAPI.getDefaultLanguage().getId(), this.systemUser, DONT_RESPECT_FRONT_END_ROLES);
+	}
+
+	/**
+	 * Updates the current {@link PublishAuditHistory} object with a new status indicating that the
+	 * bundle is being built right now.
+	 *
+	 * @param currentAuditHistory The current {@link PublishAuditHistory} object.
+	 *
+	 * @throws DotPublisherException An error occurred when updating the bundle status.
+	 */
+	private void updateAuditHistory(PublishAuditHistory currentAuditHistory) throws DotPublisherException {
+		if (currentAuditHistory != null && !this.config.isDownloading()) {
+			// Updating audit table
+			currentAuditHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
+			currentAuditHistory.setBundleEnd(new Date());
+			PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
+			this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
+					currentAuditHistory);
+		}
+	}
+
+	/**
+	 * Takes the list of Sites that are being bundled and generates a list of Contentlets that are
+	 * related to them. Such relationships may exist because of the following reasons:
+	 * <ul>
+	 *     <li>The Site has at least one field of type {@code Relationship}.</li>
+	 *     <li>The Site has at least one field of type {@code File}</li>
+	 * </ul>
+	 *
+	 * @param siteAsContentList The list of {@link Contentlet} objects representing a Site being
+	 *                          bundled.
+	 *
+	 * @return A set of {@link Contentlet} objects that are related to the Sites being bundled,
+	 * including the Sites themselves.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException Related data could not be retrieved.
+	 */
+	private Set<Contentlet> getRelatedFilesAndContent(final List<Contentlet> siteAsContentList) throws DotDataException,
+			DotSecurityException {
+		final Set<Contentlet> contentsToProcess = new HashSet<>();
+		// Getting all contents related to every Site in the list
+		for (final Contentlet siteAsContent : siteAsContentList) {
+			final Map<Relationship, List<Contentlet>> contentRelationships =
+					conAPI.findContentRelationships(siteAsContent, systemUser);
+			contentRelationships.forEach((key, value) -> contentsToProcess.addAll(value));
+			contentsToProcess.add(siteAsContent);
 		}
 
-		Set<Contentlet> contentsToProcessWithFiles = new HashSet<>();
+		final Set<Contentlet> contentsToProcessWithFiles = new HashSet<>();
 		//Getting all linked files
-		for(Contentlet con: contentsToProcess) {
-			List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-			for(Field ff : fields) {
-				if(ff.getFieldType().toString().equals(Field.FieldType.FILE.toString())) {
-					String identifier = (String) con.get(ff.getVelocityVarName());
-                                        if(UtilMethods.isSet(identifier)) {
-					    contentsToProcessWithFiles.addAll(conAPI.search("+identifier:"+identifier, 0, -1, null, systemUser, false));
-			                }
-                                }
+		for (final Contentlet contentlet : contentsToProcess) {
+			final List<Field> contentTypeFields = FieldsCache.getFieldsByStructureInode(contentlet.getContentTypeId());
+			for (final Field field : contentTypeFields) {
+				if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+					final String identifier = (String) contentlet.get(field.getVelocityVarName());
+					if (UtilMethods.isSet(identifier)) {
+					    contentsToProcessWithFiles.addAll(
+								this.conAPI.search("+identifier:" + identifier, 0, -1, null, this.systemUser, DONT_RESPECT_FRONT_END_ROLES));
+			        }
+				}
 			}
-			contentsToProcessWithFiles.add(con);
+			contentsToProcessWithFiles.add(contentlet);
 		}
 		return contentsToProcessWithFiles;
 	}
@@ -417,19 +431,17 @@ public class HostBundler implements IBundler {
 	}
 
 	/**
-	 * A simple file filter that looks for contentlet data files inside a
-	 * bundle.
+	 * A simple file filter that looks for Site data files inside a bundle.
 	 * 
 	 * @author Jorge Urdaneta
 	 * @version 1.0
 	 * @since Mar 7, 2013
 	 *
 	 */
-	public class HostBundlerFilter implements FileFilter{
+	public static class HostBundlerFilter implements FileFilter {
 
 		@Override
-		public boolean accept(File pathname) {
-
+		public boolean accept(final File pathname) {
 			return (pathname.isDirectory() || pathname.getName().endsWith(HOST_EXTENSION));
 		}
 

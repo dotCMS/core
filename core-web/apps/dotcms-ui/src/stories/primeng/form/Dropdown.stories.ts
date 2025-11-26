@@ -1,11 +1,22 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { NgStyle } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-export default {
+type Args = Dropdown & { width: string };
+
+const DropdownTemplate = `
+    <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+    <p><p-dropdown [options]="options" showClear="true" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+    <p><p-dropdown [options]="options" showClear="true" [filter]="true" filterBy="label" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+    <p><p-dropdown [options]="options" [disabled]="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
+    <hr />
+    <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
+`;
+
+const meta: Meta<Args> = {
     title: 'PrimeNG/Form/Dropdown',
     component: Dropdown,
     parameters: {
@@ -45,31 +56,38 @@ export default {
             { label: 'Paris', value: { id: 5, name: 'Paris', code: 'PRS' } }
         ],
         width: '300'
-    }
-} as Meta;
-
-const DropdownTemplate = `
-    <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-    <p><p-dropdown [options]="options" showClear="true" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-    <p><p-dropdown [options]="options" showClear="true" [filter]="true" filterBy="label" [editable]="true" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-    <p><p-dropdown [options]="options" [disabled]="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
-    <hr />
-    <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}" optionDisabled="inactive"></p-dropdown></p>
-`;
-const Template: Story<Dropdown> = (args: Dropdown) => {
-    return {
+    },
+    render: (args) => ({
         props: args,
         template: DropdownTemplate
-    };
+    })
+};
+export default meta;
+
+type Story = StoryObj<Args>;
+
+export const Default: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: DropdownTemplate
+            },
+            iframeHeight: 300
+        }
+    }
 };
 
-export const Primary: Story = Template.bind({});
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: DropdownTemplate
-        },
-        iframeHeight: 300
-    }
+export const CustomTemplate: Story = {
+    render: (args) => ({
+        props: args,
+        template: `
+        <p-dropdown [options]="options" [style]="{'width': width + 'px'}">
+            <ng-template let-selected pTemplate="selectedItem">
+                --{{ selected.label }}--
+            </ng-template>
+            <ng-template let-item pTemplate="item">
+                **{{ item.label }}**
+            </ng-template>
+        </p-dropdown>`
+    })
 };

@@ -11,6 +11,7 @@ import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
+import com.dotcms.api.client.pull.exception.PullException;
 import com.dotcms.api.client.util.SiteIterator;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
@@ -23,10 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
+import org.jboss.logging.Logger;
 
 @Dependent
 public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializable {
@@ -39,9 +41,13 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
     @Inject
     RemoteTraversalService remoteTraversalService;
 
+    @Inject
+    Logger logger;
+
     @ActivateRequestContext
     @Override
-    public List<FileTraverseResult> fetch(final Map<String, Object> customOptions) {
+    public List<FileTraverseResult> fetch(final boolean failFast,
+            final Map<String, Object> customOptions) {
 
         // ---
         // Fetching the all the existing sites
@@ -58,7 +64,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
         final List<FileTraverseResult> results = new ArrayList<>();
         for (final Site site : allSites) {
             final String sitePath = String.format("//%s", site.hostName());
-            results.add(fetch(sitePath, customOptions));
+            results.add(fetch(sitePath, failFast, customOptions));
         }
 
         return results;
@@ -66,10 +72,11 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
 
     @ActivateRequestContext
     @Override
-    public FileTraverseResult fetchByKey(String path, Map<String, Object> customOptions)
+    public FileTraverseResult fetchByKey(final String path, final boolean failFast,
+            final Map<String, Object> customOptions)
             throws NotFoundException {
 
-        return fetch(path, customOptions);
+        return fetch(path, failFast, customOptions);
     }
 
     /**
@@ -79,7 +86,8 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
      * @param customOptions The custom options for traversal.
      * @return The file traversal result.
      */
-    private FileTraverseResult fetch(String path, Map<String, Object> customOptions) {
+    private FileTraverseResult fetch(final String path, final boolean failFast,
+            final Map<String, Object> customOptions) {
 
         if (LocationUtils.isFolderURL(path)) { // Handling folders
 
@@ -101,7 +109,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
             var response = remoteTraversalService.traverseRemoteFolder(
                     path,
                     nonRecursive ? 0 : null,
-                    true,
+                    failFast, //We need to be able to instruct the service to fail fast.
                     includeFolderPatterns,
                     includeAssetPatterns,
                     excludeFolderPatterns,
@@ -109,12 +117,11 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
             );
 
             return FileTraverseResult.builder().
-                    tree(response.getRight()).
-                    exceptions(response.getLeft()).
+                    tree(response.treeNode()).
+                    exceptions(response.exceptions()).
                     build();
 
         } else { // Handling single files
-
             var asset = retrieveAssetInformation(path);
             return FileTraverseResult.builder().asset(asset).build();
         }
@@ -128,13 +135,25 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
      */
     AssetVersionsView retrieveAssetInformation(final String source) {
 
-        // Requesting the file info
-        final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
+        try {
+            // Requesting the file info
+            final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
-        // Execute the REST call to retrieve asset information
-        String encodedURL = encodePath(source);
-        var response = assetAPI.assetByPath(ByPathRequest.builder().assetPath(encodedURL).build());
-        return response.entity();
+            // Execute the REST call to retrieve asset information
+            String encodedURL = encodePath(source);
+            var response = assetAPI.assetByPath(
+                    ByPathRequest.builder().assetPath(encodedURL).build()
+            );
+            return response.entity();
+        } catch (Exception e) {
+            var message = String.format(
+                    "Error pulling content [%s]",
+                    source
+            );
+
+            logger.error(message, e);
+            throw new PullException(message, e);
+        }
     }
 
     /**

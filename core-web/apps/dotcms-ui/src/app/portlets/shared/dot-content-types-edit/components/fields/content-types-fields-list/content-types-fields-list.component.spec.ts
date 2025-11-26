@@ -7,7 +7,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
 
@@ -36,6 +36,16 @@ const itemsData = [
         clazz: 'tab'
     },
     {
+        label: 'Relationships Legacy',
+        id: 'relationships_tab',
+        clazz: 'relationships_tab'
+    },
+    {
+        label: 'Permission',
+        id: 'permissions_tab',
+        clazz: 'permissions_tab'
+    },
+    {
         label: 'Line Divider',
         clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
     }
@@ -48,8 +58,7 @@ describe('ContentTypesFieldsListComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [ContentTypesFieldsListComponent],
-            imports: [DragulaModule, DotIconModule],
+            imports: [ContentTypesFieldsListComponent, DragulaModule, DotIconComponent],
             providers: [
                 DragulaService,
                 {
@@ -74,9 +83,11 @@ describe('ContentTypesFieldsListComponent', () => {
             items = de.queryAll(By.css('li span'));
         });
 
-        it('should filter our tab field', () => {
+        it('should filter black listed fields', () => {
+            const backListFields = ['relationships_tab', 'permissions_tab', 'tab_divider'];
+
             items.forEach((el: DebugElement) => {
-                expect(el.nativeElement.textContent).not.toBe('Tab Divider');
+                expect(backListFields).not.toContain(el.nativeElement.textContent);
             });
         });
 
@@ -100,8 +111,10 @@ describe('ContentTypesFieldsListComponent', () => {
 
         it('should add dragula attr', () => {
             const ulElement = de.query(By.css('ul'));
-            expect('fields-bag').toEqual(ulElement.attributes['ng-reflect-dragula']);
-            expect('source').toEqual(ulElement.attributes['data-drag-type']);
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the dragula attribute directly on the native element
+            expect(ulElement.nativeElement.getAttribute('dragula')).toBe('fields-bag');
+            expect(ulElement.nativeElement.getAttribute('data-drag-type')).toBe('source');
         });
     });
 

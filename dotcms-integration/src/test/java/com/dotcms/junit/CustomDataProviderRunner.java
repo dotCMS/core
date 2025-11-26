@@ -1,33 +1,47 @@
 package com.dotcms.junit;
 
-import com.dotcms.aspects.DotAspectException;
-import com.dotcms.business.bytebuddy.ByteBuddyFactory;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.exception.DotRuntimeException;
+import static com.dotcms.util.IntegrationTestInitService.CONTAINER;
+
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.internal.DataConverter;
 import com.tngtech.java.junit.dataprovider.internal.TestGenerator;
 import com.tngtech.java.junit.dataprovider.internal.TestValidator;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-import org.apache.commons.logging.Log;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
 import org.junit.runner.Description;
+import org.junit.runner.RunWith;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
 public class CustomDataProviderRunner extends DataProviderRunner {
 
+    // We assume that any test annotated with any of the following runners is meant to be run with Weld
+    static final List<Class<?>> weldRunners = List.of(JUnit4WeldRunner.class, DataProviderWeldRunner.class);
+
+    /**
+     * Check if the given class is annotated with any of the Weld runners
+     * @param clazz the class to check
+     * @return true if the class is annotated with any of the Weld runners
+     */
+    static boolean isWeldRunnerPresent(Class<?> clazz) {
+        return Optional.ofNullable(clazz.getAnnotation(RunWith.class))
+                .map(RunWith::value)
+                .map(runnerClass -> weldRunners.stream()
+                        .anyMatch(weldRunner -> weldRunner.equals(runnerClass)))
+                .orElse(false);
+    }
+
+    private final boolean instantiateWithWeld;
 
     public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
+        instantiateWithWeld = isWeldRunnerPresent(clazz);
     }
 
     @Override
@@ -41,13 +55,12 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             runLeaf(runRules, description, notifier);
         }
     }
+
     @Override
     protected void initializeHelpers() {
         dataConverter = new DataConverter();
         testGenerator = new TestGenerator(dataConverter) {
-
-
-                @Override
+            @Override
             public List<FrameworkMethod> generateExplodedTestMethodsFor(FrameworkMethod testMethod,
                     FrameworkMethod dataProviderMethod) {
 
@@ -70,5 +83,15 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             }
         };
         testValidator = new TestValidator(dataConverter);
+    }
+
+    @Override
+    protected Object createTest() throws Exception {
+        if (instantiateWithWeld) {
+            final Class<?> javaClass = getTestClass().getJavaClass();
+            Logger.debug(this, String.format("Instantiating [%s] with Weld", javaClass));
+            return CONTAINER.select(javaClass).get();
+        }
+        return super.createTest();
     }
 }

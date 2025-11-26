@@ -16,11 +16,19 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
 
     @Override
     public int handleExecutionException(Exception ex, CommandLine commandLine, ParseResult parseResult) throws Exception {
+
+        // If this is a known interrupt exception, handle it gracefully
+        if (ex instanceof InterruptedException ||
+                (ex.getCause() != null && ex.getCause() instanceof InterruptedException)) {
+            commandLine.getErr().println("Command was interrupted");
+            return CommandLine.ExitCode.OK;
+        }
+
         String commandName = "UNKNOWN" ;
         boolean isShowErrors = false;
         final Object object = commandLine.getCommand();
         //This takes the parseResult and unwraps the subcommands to get the command that was executed
-        final Optional<CommandsChain> chain = SubcommandProcessor.process(parseResult);
+        final Optional<CommandsChain> chain = new SubcommandProcessor().process(parseResult);
         if (chain.isPresent()) {
             final CommandsChain commandsChain = chain.get();
             commandName = commandsChain.command();
@@ -32,7 +40,7 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
         if (object instanceof DotCommand) {
             final DotCommand command = (DotCommand) object;
             final OutputOptionMixin output = command.getOutput();
-            return output.handleCommandException(ex, message, isShowErrors);
+            return output.handleCommandException(ex, message, isShowErrors, true);
         } else {
             final OutputOptionMixin output = Arc.container().instance(OutputOptionMixin.class).get();
             if(null != output){

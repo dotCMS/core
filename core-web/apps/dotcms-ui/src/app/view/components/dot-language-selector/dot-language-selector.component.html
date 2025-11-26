@@ -1,23 +1,25 @@
 <div class="dot-language-selector h-full flex-auto flex align-items-center gap-2">
     <span class="icon-lg"><i class="pi pi-globe"></i></span>
     <div class="language-selector__field flex-grow-1 flex">
-        @if (!readonly){
-        <p-dropdown
-            class="p-dropdown-sm w-full"
-            [(ngModel)]="value"
-            [disabled]="disabled || languagesList().length === 0"
-            [options]="languagesList()"
-            (onChange)="selectedItem($event.value)"
-            data-testId="language-selector"
-            dataKey="id"
-            optionLabel="language" />
-        }@else{
-        <div class="h-full w-full flex align-items-center gap-3">
-            <span>
-                {{ value.language }}
-                <ng-container *ngIf="value.countryCode"> ({{ value.countryCode }}) </ng-container>
-            </span>
-        </div>
+        @if (!readonly) {
+            <p-dropdown
+                (onChange)="selectedItem($event.value)"
+                [(ngModel)]="value"
+                [disabled]="disabled || languagesList().length === 0"
+                [options]="languagesList()"
+                class="p-dropdown-sm w-full"
+                data-testId="language-selector"
+                dataKey="id"
+                optionLabel="language" />
+        } @else {
+            <div class="h-full w-full flex align-items-center gap-3">
+                <span>
+                    {{ value.language }}
+                    @if (value.countryCode) {
+                        ({{ value.countryCode }})
+                    }
+                </span>
+            </div>
         }
     </div>
 </div>

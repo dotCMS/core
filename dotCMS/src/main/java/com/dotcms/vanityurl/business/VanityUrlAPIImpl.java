@@ -1,27 +1,15 @@
 package com.dotcms.vanityurl.business;
 
-import java.net.URISyntaxException;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.util.URLUtils;
-import org.apache.http.HttpStatus;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
-import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
@@ -36,16 +24,28 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UtilMethods;
-
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
+
+import javax.servlet.http.HttpServletResponse;
+import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -116,7 +116,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   @Override
   public void populateAllVanityURLsCache() throws DotDataException {
-    for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), false)).getOrElse(List.of())) {
+    for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(),
+            HostAPI.SearchType.INCLUDE_SYSTEM_HOST)).getOrElse(List.of())) {
       populateVanityURLsCacheBySite(site);
     }
     populateVanityURLsCacheBySite(APILocator.getHostAPI().findSystemHost());
@@ -376,7 +377,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           final String queryString = request.getQueryString();
           final int responseCode = request.getResponseCode();
 
-          final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString : StringPool.BLANK);
+          final String newUrl = uri + (UtilMethods.isSet(queryString) ? StringPool.QUESTION + queryString : StringPool.BLANK);
 
           if (responseCode == 301 || responseCode == 302) {
               response.setStatus(responseCode);
@@ -442,6 +443,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     }
                 }
             }
+            if (UtilMethods.isSet(urlToEncode.getFragment())) {
+                uriBuilder.setFragment(urlToEncode.getFragment());
+            }
             return uriBuilder.build().toASCIIString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -459,5 +463,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public boolean isSelfReferenced(final CachedVanityUrl cachedVanityUrl, final String uri) {
+        return null != cachedVanityUrl && null != cachedVanityUrl.forwardTo
+                && cachedVanityUrl.forwardTo.equals(uri);
+    }
 
 }

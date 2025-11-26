@@ -1,0 +1,29 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,,,,,,,,,,,,,,,,,
+Create a Template with Default Structure,Templates,Advance,10,Functional,"1. Click on Create New Template.
+2. Add a Header, SYSTEM_CONTAINER to the body, and a Footer.",The template automatically saves after 2- 3 seconds without needing manual saving.,"-  User is logged in with appropriate permissions to create templates.
+-  The user is on the Templates section in the dotCMS admin panel.",,,,,,,,,,,,,,,,,,
+Add a Row to the Template Body,Templates,Advance,10,Functional,"1. Open the template.
+2. Add Row.",The row is automatically saved within 2- 3 seconds after being added.,"- A template with a SYSTEM_CONTAINER is already open for editing.
+- The user has the necessary permissions to edit the template.",,,,,,,,,,,,,,,,,,
+Add a Box to the Template Body,Templates,Advance,10,Functional,"1. Open the template.
+2. Add Box.",The box is automatically saved within 2- 3 seconds after being added.,"- A template with a SYSTEM_CONTAINER is already open for editing.
+- The user has the necessary permissions to edit the template.",,,,,,,,,,,,,,,,,,
+Delete the Header Section,Templates,Advance,10,Functional,"1. Open the template.
+2. Delete the Header section.",The Header gest deleted and the changes are automatically saved within 2- 3 seconds of the modification.,- A template with a header section already exist,,,,,,,,,,,,,,,,,,
+Delete the Footer Section,Templates,Advance,10,Functional,"1. Open the template.
+2. Delete the Footer section.",The Footer gest deleted and the changes are automatically saved within 2- 3 seconds of the modification.,- A template with a Footer section already exist,,,,,,,,,,,,,,,,,,
+Apply a Theme to the Template,Templates,Advance,10,Functional,"1. Open the template.
+2. Select a theme from the Theme options.",The theme is automatically applied and saved within 2- 3 seconds after the change.,"- User is logged in with access to the Themes feature.
+- The user is editing an existing template",,,,,,,,,,,,,,,,,,
+Assign Permissions to the Template,Templates,Advance,10,Functional,"1. Open the template.
+2. Navigate to the Permissions tab.
+3. Assign permissions to a specific role (e.g., Admin, Editor).",The assigned permissions are automatically saved within 2- 3 seconds after the change.,"- The user has access to the Permissions tab.
+- The template is open for editing.",,,,,,,,,,,,,,,,,,
+Save a Template Without a Body Container,Templates,Advance,10,Functional,"1. Create or open a template.
+2. Add only a Header and Footer, without adding a Body container (e.g., SYSTEM_CONTAINER).","The system allows the action, and the template is saved.",User is logged in and editing a new or existing template.,,,,,,,,,,,,,,,,,,
+Add a Row Without a Container,Templates,Advance,10,Functional,1. Attempt to add a row directly outside of the SYSTEM_CONTAINER or any other defined container.,"The system allows the action, and the template is saved.","A template is being edited, and the user has permissions to edit the layout.",,,,,,,,,,,,,,,,,,
+Remove All Containers and Save,Templates,Advance,10,Functional,"1. Delete all containers (Header, Body, Footer).","The system allows the action, and the template is saved and the default row is added",A template with multiple containers is open for editing.,,,,,,,,,,,,,,,,,,
+Edit a Template Without Permissions,Templates,Advance,10,Functional,1. Attempt to open and edit an existing template.,"The system prevents editing and does not allow automatic saving, displaying a permission error message.",- The user is logged in but does not have permission to edit templates.,,,,,,,,,,,,,,,,,,
+Add Multiple Rows and Containers,Templates,Advance,10,Functional,1. Add 20+ rows and containers to the SYSTEM_CONTAINER.,The system should automatically save the changes within 2- 3 seconds without performance issues.,"- User has access to edit templates, and the system has no limitations on the number of rows or containers.",,,,,,,,,,,,,,,,,,
+Duplicate Template Name,Templates,Advance,10,Functional,1. Create a new template with the same name as an existing one.,The system should let create templates with the same name,A template with the same name already exists in the system.,System lets creating templates with same names,,,,,,,,,,,,,,,,,
+API Tab Functionality for Large Template,Templates,Advance,10,Functional,1. Open the API tab for the template.,The API information should load quickly,The template has a complex structure with many containers and rows.,,,,,,,,,,,,,,,,,,

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -16,13 +16,14 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-experiments-configuration-targeting',
-    standalone: true,
     imports: [CommonModule, CardModule, DotMessagePipe, ButtonModule, TooltipModule],
     templateUrl: './dot-experiments-configuration-targeting.component.html',
     styleUrls: ['./dot-experiments-configuration-targeting.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTargetingComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     vm$: Observable<{
         experimentId: string;
         status: StepStatus;
@@ -31,10 +32,6 @@ export class DotExperimentsConfigurationTargetingComponent {
     }> = this.dotExperimentsConfigurationStore.targetStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     setupTargeting() {
         // to be implemented

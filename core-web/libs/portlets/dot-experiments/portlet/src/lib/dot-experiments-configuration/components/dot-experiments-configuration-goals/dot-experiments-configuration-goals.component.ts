@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,8 +21,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -33,14 +32,11 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
  */
 @Component({
     selector: 'dot-experiments-configuration-goals',
-    standalone: true,
     imports: [
         CommonModule,
-
         DotMessagePipe,
         DotDynamicDirective,
-        DotIconModule,
-
+        DotIconComponent,
         DotExperimentsDetailsTableComponent,
         // PrimeNg
         ButtonModule,
@@ -54,6 +50,11 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessagePipe = inject(DotMessagePipe);
+
     vm$: Observable<{
         experimentId: string;
         goals: Goals | null;
@@ -70,13 +71,6 @@ export class DotExperimentsConfigurationGoalsComponent {
     protected readonly GOAL_TYPES = GOAL_TYPES;
 
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessagePipe: DotMessagePipe
-    ) {}
 
     /**
      * Open the sidebar to select the principal goal

@@ -1,10 +1,13 @@
 package com.dotcms.rendering.velocity.directive;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -18,7 +21,6 @@ import org.apache.velocity.runtime.directive.StopCommand;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
-import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
@@ -26,7 +28,6 @@ import com.dotmarketing.util.Logger;
 
 
 abstract class DotDirective extends InputBase {
-
 
   private static final long serialVersionUID = 1L;
 
@@ -70,8 +71,17 @@ abstract class DotDirective extends InputBase {
     }
   }
 
-  
-  
+
+  /**
+   * Return the value from Cache if the Directive is using some kind of Cache level
+   * the default implementation return a Empty Optional.
+   *
+   * @return Value from cache
+   */
+  public Optional<String> getFromCache(final String[] arguments) {
+    return Optional.empty();
+  }
+
   final public boolean render(InternalContextAdapter context, Writer writer, Node node)
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
@@ -83,12 +93,15 @@ abstract class DotDirective extends InputBase {
         Object value = node.jjtGetChild(i).value(context);
         arguments[i]= (value == null) ? null : value.toString();
     }
-    
-    
 
-    
-    
+    final boolean dontCache = VelocityUtil.getDontUseDirectiveCache(context);
+    final Optional<String> fromCache = dontCache ?
+            Optional.empty() : getFromCache(arguments);
 
+    if (fromCache.isPresent()) {
+      writer.write(fromCache.get());
+      return true;
+    }
 
     RenderParams params = new RenderParams(request);
 
@@ -97,8 +110,19 @@ abstract class DotDirective extends InputBase {
       if(null ==templatePath) {
           throw new ResourceNotFoundException("null template");
       }
+      final boolean loadAndRender = shouldLoadAndRenderTemplate(context, arguments);
+      if (!loadAndRender) {
+        afterRender(StringUtils.EMPTY, arguments, context);
+        return true;
+      }
       Template t = loadTemplate(context, templatePath);
-      return this.renderTemplate(context, writer, t, templatePath);
+
+      final Writer innerWriter = new StringWriter();
+      final boolean result = this.renderTemplate(context, innerWriter, t, templatePath);
+      this.afterRender(innerWriter.toString(), arguments, context);
+      writer.write(innerWriter.toString());
+
+      return result;
     } catch(ParseErrorException|ResourceNotFoundException rnfe){
       context.remove("ContentIdentifier");
       postRender(context);
@@ -107,6 +131,30 @@ abstract class DotDirective extends InputBase {
 
   }
 
+  /**
+   * Call before render the Template, it allows to check if the Template should be loaded and rendered
+   * before the execution of {@link DotDirective#render(InternalContextAdapter, Writer, Node)}
+   * By default, it returns true, meaning the template will be loaded and rendered.
+   *
+   * @param context The context in which the directive is executed
+   * @param arguments The arguments passed to the directive
+   * @return True if the template should be loaded and rendered, false otherwise.
+   */
+  boolean shouldLoadAndRenderTemplate(final Context context, final String[] arguments) {
+    return true;
+  }
+
+  /**
+   * Call after render the Template, it allow you to do something before the return of
+   * the {@link DotDirective#render(InternalContextAdapter, Writer, Node)}
+   *
+   * @param render    Template content after render
+   * @param arguments Arguments passed to the directive
+   * @param context   The context in which the directive is executed
+   */
+  void afterRender(final String render, final String[] arguments, final Context context) {
+
+  }
 
 
   final boolean renderTemplate(InternalContextAdapter context, final Writer writer, final Template t, final String templatePath)
@@ -156,8 +204,5 @@ abstract class DotDirective extends InputBase {
 
     return true;
   }
-
-
-
 
 }

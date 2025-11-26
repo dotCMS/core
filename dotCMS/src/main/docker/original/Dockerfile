@@ -1,58 +1,89 @@
 # ----------------------------------------------
-# Stage 2:  Construct our container using the minimal-java image
-#           and copying the prebuilt dotcms
+# Stage 1: Construct our container using the minimal-java image and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:ms-jdk-11 as container-base
+# Need to specify the SDKMAN_JAVA_VERSION to a valid sdkman java version that is available in the dotcms/java-base image
+ARG SDKMAN_JAVA_VERSION="SDKMAN_JAVA_VERSION_ARG_NOT_SET"
 
+FROM dotcms/java-base:${SDKMAN_JAVA_VERSION} AS container-base
 WORKDIR /srv
 
 ENV DEBIAN_FRONTEND=noninteractive
-
-# Installing basic packages 
-RUN apt update \
-    && apt upgrade -y
-
-# Cleanup
-RUN apt purge --allow-remove-essential -y \
-    && apt autoremove -y \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
-RUN groupadd -f -g $USER_GID $USER_GROUP
-# Creating default non-user
-# the useradd
-RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
-
-RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
+# Ensure group and user are created with proper permissions
+RUN groupadd -g "$USER_GID" "$USER_GROUP" && \
+    useradd -l -d /srv -u "$USER_UID" -g "$USER_GROUP" -s /bin/bash "$USER_NAME" && \
+    mkdir -p /srv/utils /srv/templates /srv/config /srv/home /data/shared/assets /data/shared/felix/load /data/shared/felix/undeployed /data/local/dotsecure/license && \
+    chown -R "$USER_NAME:$USER_GROUP" /data && \
+    chown -R "$USER_NAME:$USER_GROUP" /srv
 
 # Copy our build
 COPY --chown=$USER_NAME:$USER_GROUP maven /srv/
 COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
-RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
-
-# Make scripts runable
-RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
+RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat && \
+    # Make scripts runnable
+    find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
     # Make plugin merging directories writable
-    find /srv/templates -type d -exec chmod 770 {} \;  && \
-    # Make dotcms user owner
-    mkdir -p /data/shared/assets && \
-    mkdir -p /data/shared/felix/load && \
-    mkdir -p /data/shared/felix/undeployed && \
-    mkdir -p /data/local/dotsecure/license && \
-    chown -R $USER_NAME:$USER_NAME /data
+    find /srv/templates -type d -exec chmod 770 {} \;
 
+# ----------------------------------------------
+# Stage 2: Final stage for minimal runtime image
+# ----------------------------------------------
+FROM ubuntu:24.04
 
-# Switching to non-root user to install SDKMAN!
+LABEL com.dotcms.contact="support@dotcms.com" \
+      com.dotcms.vendor="dotCMS LLC" \
+      com.dotcms.description="dotCMS Content Management System"
+
+# Install basic packages and tini
+RUN apt update && \
+    apt upgrade -y && \
+    apt install -y --no-install-recommends \
+        wget \
+        curl \
+        gnupg \
+        tini \
+        zip \
+        unzip \
+        libtcnative-1 \
+        tzdata \
+        ca-certificates \
+        libmimalloc2.0 \
+        openssl \
+        libapr1 \
+        libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install PostgreSQL client and pg_dump
+RUN apt update && \
+    apt install -y --no-install-recommends postgresql-common && \
+    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+    apt update && \
+    apt install -y --no-install-recommends postgresql-client-16 && \
+    /usr/bin/pg_dump --version || exit 1 && \
+    apt purge -y postgresql-common && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG USER_UID="65001"
+ARG USER_GID="65001"
+ARG USER_GROUP="dotcms"
+ARG USER_NAME="dotcms"
+
+# Ensure the group and user are created in the final image as well
+RUN groupadd -g "$USER_GID" "$USER_GROUP" && \
+    useradd -l -d /srv -u "$USER_UID" -g "$USER_GROUP" -s /bin/bash "$USER_NAME"
+
+COPY --from=container-base /java /java
+COPY --from=container-base /srv /srv
+COPY --from=container-base /data /data
+
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin:/usr/local/pgsql/bin
+ENV PATH=$PATH:/java/bin
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
@@ -62,6 +93,10 @@ CMD ["dotcms"]
 EXPOSE 4000
 # Java Debugging - must be configured via CMS_JAVA_OPTS
 EXPOSE 8000
+# JMX Remote Monitoring - must be configured via CMS_JAVA_OPTS
+EXPOSE 9999
+# JMX RMI Port - must be configured via CMS_JAVA_OPTS  
+EXPOSE 9998
 # Direct connect
 EXPOSE 8080
 # Connect from proxy, HTTP/80, non-secure

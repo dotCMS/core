@@ -1,27 +1,28 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <dot-portlet-base *ngIf="vm.working.identifier" [boxed]="false">
-        <dot-portlet-toolbar [title]="vm.working.title">
-            <ng-container *ngIf="vm.working.title" left>
-                <button
-                    class="p-button-text"
-                    [label]="'templates.edit' | dm"
-                    (click)="editTemplateProps()"
-                    data-testId="editTemplateButton"
-                    pButton
-                    icon="pi pi-pencil"></button>
-                <dot-api-link [href]="vm.apiLink"></dot-api-link>
-            </ng-container>
-        </dot-portlet-toolbar>
-        <!-- The observable returns a boolen, therefore we can not use  *ngIf="obs$ | async as obs" to subscribe to it -->
-        <ng-container *ngIf="{ value: didTemplateChanged$ | async } as didTemplateChanged">
+@if (vm$ | async; as vm) {
+    @if (vm.working.identifier) {
+        <dot-portlet-base [boxed]="false">
+            <dot-portlet-toolbar>
+                @if (vm.working.title) {
+                    <ng-container left>
+                        <button
+                            (click)="editTemplateProps()"
+                            [label]="'templates.edit' | dm"
+                            class="p-button-text"
+                            data-testId="editTemplateButton"
+                            pButton
+                            icon="pi pi-pencil"></button>
+                        <dot-api-link [href]="vm.apiLink" />
+                    </ng-container>
+                }
+            </dot-portlet-toolbar>
             <dot-template-builder
-                [didTemplateChanged]="didTemplateChanged.value"
-                [item]="vm.working"
                 (updateTemplate)="updateWorkingTemplate($event)"
                 (saveAndPublish)="saveAndPublishTemplate($event)"
                 (save)="saveTemplate($event)"
                 (cancel)="cancelTemplate()"
-                (custom)="onCustomEvent($event)"></dot-template-builder>
-        </ng-container>
-    </dot-portlet-base>
-</ng-container>
+                (custom)="onCustomEvent($event)"
+                [didTemplateChanged]="vm.didTemplateChanged"
+                [item]="vm.working" />
+        </dot-portlet-base>
+    }
+}

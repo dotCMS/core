@@ -7,25 +7,20 @@
             (onClick)="editClasses()"
             data-testid="row-style-class-button"
             styleClass="p-button-text p-button-sm p-button-rounded"
-            icon="pi pi-palette"
-        >
-        </p-button>
+            icon="pi pi-palette"></p-button>
         <div class="row__drag-container">
             <i
-                class="drag-container__drag-handler material-icons"
                 [style.font-size.px]="20"
-                data-testid="row-drag-handler"
-            >
+                class="drag-container__drag-handler material-icons"
+                data-testid="row-drag-handler">
                 drag_indicator
             </i>
         </div>
         <dotcms-remove-confirm-dialog
-            (deleteConfirmed)="deleteRow()"
-        ></dotcms-remove-confirm-dialog>
+            (deleteConfirmed)="deleteRow()"></dotcms-remove-confirm-dialog>
     </div>
     <dotcms-template-builder-background-columns
         [ngStyle]="{
             opacity: isResizing ? 1 : 0
-        }"
-    ></dotcms-template-builder-background-columns>
+        }"></dotcms-template-builder-background-columns>
 </div>

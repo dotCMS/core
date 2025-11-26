@@ -1,10 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
 import { SelectItem } from 'primeng/api';
+import { AutoCompleteSelectEvent, AutoCompleteUnselectEvent } from 'primeng/autocomplete';
 
 @Component({
     selector: 'dot-autocomplete-tags',
     templateUrl: './dot-autocomplete-tags.component.html',
-    styleUrls: ['./dot-autocomplete-tags.component.css']
+    styleUrls: ['./dot-autocomplete-tags.component.css'],
+    standalone: false
 })
 export class DotAutocompleteTagsComponent implements OnInit {
     @Input() inputId: string;
@@ -36,13 +39,14 @@ export class DotAutocompleteTagsComponent implements OnInit {
             event.currentTarget.value = null;
         }
     }
-    addItem(item: any) {
+    addItem(event: AutoCompleteSelectEvent) {
+        const { value } = event;
         this.value.splice(-1, 1);
-        this.value.push(item.value);
+        this.value.push(value);
         this.onChange.emit(this.value);
     }
 
-    removeItem(_item: any) {
+    removeItem(_event: AutoCompleteUnselectEvent) {
         this.onChange.emit(this.value);
     }
 }

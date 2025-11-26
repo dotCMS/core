@@ -4,7 +4,6 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.transform.TransformerLocator;
@@ -14,7 +13,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,31 +26,22 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
-import com.liferay.portal.model.User;
-import graphql.AssertException;
-import io.vavr.API;
-import java.util.ArrayList;
 
-import java.util.Collection;
+import java.util.*;
+
 import org.jetbrains.annotations.NotNull;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -66,28 +55,24 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     private static final String PAGE = "PAGE";
     private static final String CONTENTLET = "CONTENTLET";
     private static final String RELATION_TYPE = "RELATION_TYPE";
+    private static MultiTreeAPI multiTreeAPI;
+    private static MultiTree testMultiTree;
 
     final static int runs =2;
     final static int contentlets =5;
+
     @BeforeClass
     public static void initData() throws Exception {
         IntegrationTestInitService.getInstance().init();
-      //  testUpgradeTask();
-        buildInitalData();
-    }
-    
-    public static void testUpgradeTask() throws Exception {
-        Task04315UpdateMultiTreePK task = Task04315UpdateMultiTreePK.class.getDeclaredConstructor().newInstance();
-        task.executeUpgrade();
+        multiTreeAPI = APILocator.getMultiTreeAPI();
+        buildInitialData();
     }
 
-
-    public static void buildInitalData() throws Exception {
-        buildInitalData(VariantAPI.DEFAULT_VARIANT.name());
-
+    public static void buildInitialData() throws Exception {
+        buildInitialData(VariantAPI.DEFAULT_VARIANT.name());
     }
 
-    public static void buildInitalData(final String variantName) throws Exception {
+    public static void buildInitialData(final String variantName) throws Exception {
         for(int i=0;i<runs;i++) {
             for(int j=0;j<contentlets;j++) {
                 MultiTree mt = new MultiTree()
@@ -98,10 +83,40 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         .setInstanceId(RELATION_TYPE + i)
                         .setVariantId(variantName);
 
-                APILocator.getMultiTreeAPI().saveMultiTree(mt);
+                multiTreeAPI.saveMultiTree(mt);
             }
         }
 
+    }
+
+    private MultiTree createMultiTreeWithStyleProperties(final Map<String, Object> styleProperties)
+            throws DotDataException {
+        MultiTree multiTree = new MultiTree()
+                .setContainer(CONTAINER + 0)
+                .setHtmlPage(PAGE)
+                .setContentlet(CONTENTLET + 0)
+                .setTreeOrder(0)
+                .setInstanceId(RELATION_TYPE + 0)
+                .setStyleProperties(styleProperties);
+        multiTreeAPI.saveMultiTree(multiTree);
+        return multiTree;
+    }
+
+    private MultiTree retrieveMultiTree(int multiTreeIndex) throws DotDataException {
+        return multiTreeAPI.getMultiTree(
+                PAGE,
+                CONTAINER + multiTreeIndex,
+                CONTENTLET + multiTreeIndex,
+                RELATION_TYPE + multiTreeIndex
+        );
+    }
+
+    private Map<String, Object> createDefaultStyleProperties() {
+        Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("backgroundColor", "red");
+        styleProperties.put("fontSize", "16px");
+        styleProperties.put("padding", "10px");
+        return styleProperties;
     }
 
     /**
@@ -148,7 +163,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void testDeletes() throws Exception {
         deleteInitialData();
-        buildInitalData() ;
+        buildInitialData() ;
         List<MultiTree> all = APILocator.getMultiTreeAPI().getAllMultiTrees();
         
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
@@ -162,7 +177,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void testReorder() throws Exception {
         deleteInitialData();
-        buildInitalData();
+        buildInitialData();
 
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
@@ -191,8 +206,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         deleteInitialData();
-        buildInitalData();
-        buildInitalData(variant.name());
+        buildInitialData();
+        buildInitialData(variant.name());
 
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
@@ -249,8 +264,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public  void findByChild() throws Exception {
         deleteInitialData();
-        buildInitalData() ;
-        
+        buildInitialData() ;
+
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTreesByChild(CONTENTLET + "0");
         
         assertTrue("getByChild returns all results", list.size() == runs );
@@ -264,18 +279,23 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @AfterClass
     public static void deleteInitialData() throws Exception {
 
-        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
+        List<MultiTree> list = multiTreeAPI.getMultiTrees(PAGE);
 
         for(MultiTree tree : list) {
-            APILocator.getMultiTreeAPI().deleteMultiTree(tree);
+            multiTreeAPI.deleteMultiTree(tree);
+        }
+
+        if (testMultiTree != null) {
+            try {
+                multiTreeAPI.deleteMultiTree(testMultiTree);
+            } catch (DotDataException e) {
+                // ignore if already deleted
+            }
         }
 
     }
     
-    
-    
-    
-    
+
     @Test
     public  void testSaveMultiTree() throws Exception {
         MultiTree mt = new MultiTree()
@@ -290,20 +310,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
         assertTrue("multiTree save and get equals", mt.equals(mt2));
     }
-    
-    
-    
 
-    
-    
-    
     @Test
     public void testLegacyMultiTreeSave() throws Exception {
 
-        
         long time = System.currentTimeMillis();
 
-        
         MultiTree multiTree = new MultiTree();
         multiTree.setHtmlPage( PAGE+time);
         multiTree.setContainer( CONTAINER +time);
@@ -356,7 +368,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         // but the objects should contain the same data
         assert(trees.equals(cachedTrees));
 
-        // there is no container entry 
+        // there is no container entry
         assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
 
 
@@ -603,9 +615,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Structure structure = new StructureDataGen().nextPersisted();
         final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
         final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
-
-        
-        
         
         final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
 
@@ -986,14 +995,14 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 assertEquals(variantA.name(), multiTree.getVariantId());
                 assertEquals(DOT_PERSONALIZATION_DEFAULT, multiTree.getPersonalization());
             } else {
-                throw new AssertException("Contentlet not expected");
+                throw new AssertionError("Contentlet not expected");
             }
         }
     }
 
     /**
      * Method to Test: {@link MultiTreeAPI#getMultiTreesByVariant(String, String)} (String, String)}
-     * When: Create a Page with {@link MultiTree} is different {@link Variant} and call the 
+     * When: Create a Page with {@link MultiTree} is different {@link Variant} and call the
      * {@link MultiTreeAPI#getMultiTreesByVariant(String, String)} method just for a specific {@link Variant}
      * Should: Return just the {@link MultiTree} for that {@link Variant}
      */
@@ -1552,10 +1561,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
 
-        pageMultiTrees.rowKeySet().contains(container.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier());
+        assertTrue(pageMultiTrees.rowKeySet().contains(container.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier()));
     }
 
     /**
@@ -1593,10 +1602,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
 
-        pageMultiTrees.rowKeySet().contains(container.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier());
-        pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier());
+        assertTrue(pageMultiTrees.rowKeySet().contains(container.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier()));
+        assertTrue(pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier()));
     }
 
     private void createContentAndMultiTree(Container container, FileAssetContainer fileAssetContainer, HTMLPageAsset page) {
@@ -2913,4 +2922,1478 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_4.getIdentifier()));
         assertEquals(1, APILocator.getMultiTreeAPI().getAllContentletReferencesCount(contentlet_5.getIdentifier()));
     }
+
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have a Page with 4 containers all of them are different instances of the same containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you move the last instance to be the first one
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 2
+     * - Contentlet_2 : Add to the instance 3
+     * - Contentlet_3 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_4 : Add to the instance 1
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void moveContainerUpdateMultiTrees() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                .withContainer(container, "2")
+                .withContainer(container, "3")
+                .withContainer(container, "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "4", "1")
+            .change(container.getIdentifier(), "1", "2")
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "4")
+            .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()),
+                VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(5, multiTreesFromDB.size());
+
+        final Map<String, List<MultiTree>> groupedByInstanceId = multiTreesFromDB.stream()
+                .collect(Collectors.groupingBy(MultiTree::getRelationType));
+
+        for (final String intanceId : groupedByInstanceId.keySet()) {
+            final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
+
+            switch (intanceId){
+                case "1":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                case "2":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                case "3":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                case "4":
+                    assertEquals(2, multiTrees.size());
+
+                    List<String> contentlets = multiTrees.stream().map(MultiTree::getContentlet)
+                            .collect(Collectors.toList());
+                    assertTrue(contentlets.contains(contentlet_3.getIdentifier()));
+                    assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
+                    break;
+                default:
+                    throw new AssertionError("UUID not expected: " + intanceId);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have a Page with 4 containers all of them are different instances of the same containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you move the instance 2 and 3
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 3
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void moveJustTwoContainerUpdateMultiTrees() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                .withContainer(container, "2")
+                .withContainer(container, "3")
+                .withContainer(container, "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "2")
+            .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(5, multiTreesFromDB.size());
+
+        final Map<String, List<MultiTree>> groupedByInstanceId = multiTreesFromDB.stream()
+                .collect(Collectors.groupingBy(MultiTree::getRelationType));
+
+        for (final String intanceId : groupedByInstanceId.keySet()) {
+            final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
+
+            switch (intanceId){
+                case "1":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                case "2":
+                    assertEquals(2, multiTrees.size());
+
+                    List<String> contentlets = multiTrees.stream().map(MultiTree::getContentlet)
+                            .collect(Collectors.toList());
+                    assertTrue(contentlets.contains(contentlet_3.getIdentifier()));
+                    assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
+                    break;
+                case "3":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                case "4":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                default:
+                    throw new AssertionError("UUID not expected: " + intanceId);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have a Page with 4 containers all of them are different instances of the same containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you remove the instance 1
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : removed
+     * - Contentlet_2 : Add to the instance 1
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * @throws DotDataException
+     */
+    @Test
+   public void removeContainerUpdateMultiTrees() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                .withContainer(container, "2")
+                .withContainer(container, "3")
+                .withContainer(container, "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container.getIdentifier(), "1")
+            .change(container.getIdentifier(), "2", "1")
+            .change(container.getIdentifier(), "3", "2")
+            .change(container.getIdentifier(), "4", "3")
+            .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(4, multiTreesFromDB.size());
+
+        final Map<String, List<MultiTree>> groupedByInstanceId = multiTreesFromDB.stream()
+                .collect(Collectors.groupingBy(MultiTree::getRelationType));
+
+        for (final String intanceId : groupedByInstanceId.keySet()) {
+            final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
+
+            switch (intanceId){
+                case "1":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                case "2":
+                    assertEquals(2, multiTrees.size());
+
+                    List<String> contentlets = multiTrees.stream().map(multiTree -> multiTree.getContentlet())
+                            .collect(Collectors.toList());
+                    assertTrue(contentlets.contains(contentlet_3.getIdentifier()));
+                    assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
+                    break;
+                case "3":
+                    assertEquals(1, multiTrees.size());
+                    assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
+                    break;
+                default:
+                    throw new AssertionError("UUID not expected: " + intanceId);
+            }
+        }
+    }
+
+
+    private static void createMultiTrees(final HTMLPageAsset page,
+                                         Container container, Contentlet... contentlets) {
+
+        final Contentlet contentlet_1 = contentlets[0];
+        final Contentlet contentlet_2 = contentlets[1];
+        final Contentlet contentlet_3 = contentlets[2];
+        final Contentlet contentlet_4 = contentlets[3];
+        final Contentlet contentlet_5 = contentlets[4];
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("3")
+                .setContentlet(contentlet_5)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("4")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+    }
+
+    private Map<String, List<Map<String, Object>>> getMultiTreeByPageOrderByInstanceId(final String pageId,
+                                                                                       final ArrayList<Map<String, Object>> multiTreeResult,
+                                                                                       final int multiTreeCurrentIndex) {
+        int innerMultiCurrentIndex = multiTreeCurrentIndex;
+        final Map<String, List<Map<String, Object>>> multiTreesFromDB = new HashMap<>();
+
+        while (innerMultiCurrentIndex < multiTreeResult.size()) {
+            Map<String, Object> multiTreeMap = multiTreeResult.get(innerMultiCurrentIndex);
+
+            if (pageId.equals(multiTreeMap.get("parent1").toString())) {
+                String relationType = multiTreeMap.get("relation_type").toString();
+                innerMultiCurrentIndex++;
+
+                List<Map<String, Object>> contentlets = multiTreesFromDB.get(relationType);
+
+                if (contentlets == null) {
+                    contentlets = new ArrayList<>();
+
+                }
+                contentlets.add(multiTreeMap);
+                multiTreesFromDB.put(relationType, contentlets);
+            } else {
+                break;
+            }
+        }
+
+        return multiTreesFromDB;
+    }
+
+    private List<Map<String, Object>>getMultiTreeByPageOrder(final String pageId,
+                                                           final ArrayList<Map<String, Object>> multiTreeResult,
+                                                           final int multiTreeCurrentIndex) {
+        int innerMultiCurrentIndex = multiTreeCurrentIndex;
+        final List<Map<String, Object>> multiTreesFromDB = new ArrayList<>();
+
+        while (innerMultiCurrentIndex < multiTreeResult.size()) {
+            Map<String, Object> multiTreeMap = multiTreeResult.get(innerMultiCurrentIndex);
+
+            if (pageId.equals(multiTreeMap.get("parent1").toString())) {
+                innerMultiCurrentIndex++;
+                multiTreesFromDB.add(multiTreeMap);
+            } else {
+                break;
+            }
+        }
+
+        return multiTreesFromDB;
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have 10 Page with 4 containers all of them are different instances of the same containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you move last the instance to be the first one
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 2
+     * - Contentlet_2 : Add to the instance 3
+     * - Contentlet_3 : Add to the instance 4
+     * - Contentlet_5 : Add to the instance 4
+     * - Contentlet_4 : Add to the instance 1
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void moveContainerUpdateMultiTreesOnMultiplePages() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                .withContainer(container, "2")
+                .withContainer(container, "3")
+                .withContainer(container, "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "4", "1")
+            .change(container.getIdentifier(), "1", "2")
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "4")
+            .build();
+
+        final int pagesNumber = 20;
+        final HTMLPageAsset[] pages = new HTMLPageAsset[pagesNumber];
+
+        for (int i = 0; i < pagesNumber; i++) {
+            pages[i] = new HTMLPageDataGen(host, template).nextPersisted();
+            createMultiTrees(pages[i], container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+        }
+
+        final List<String> pageIds = Arrays.stream(pages)
+                .map(page -> page.getIdentifier())
+                .sorted(String::compareTo)
+                        .collect(Collectors.toList());
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
+
+        final String getMultiTreeQuery = "SELECT parent1,parent2,child,relation_type FROM multi_tree WHERE parent1 in (?" +
+                new String(new char[pageIds.size() - 1]).replace("\0", ", ?") + ") order by parent1";
+
+        final DotConnect dotConnect = new DotConnect().setSQL(getMultiTreeQuery);
+
+        pageIds.stream().forEach(pageId -> dotConnect.addParam(pageId));
+        final ArrayList<Map<String, Object>> multiTreeResult = dotConnect.loadResults();
+        int multiTreeCurrentIndex = 0;
+
+        for (int i = 0; i < pagesNumber; i++) {
+
+            final Map<String, List<Map<String, Object>>> groupedByInstanceId = getMultiTreeByPageOrderByInstanceId(pageIds.get(i),
+                    multiTreeResult, multiTreeCurrentIndex);
+
+            final int size = groupedByInstanceId.values().stream().map(List::size).reduce(0, Integer::sum);
+            multiTreeCurrentIndex = multiTreeCurrentIndex + size;
+
+            assertEquals(5, size);
+
+            for (final String intanceId : groupedByInstanceId.keySet()) {
+                final List<Map<String, Object>> multiTrees = groupedByInstanceId.get(intanceId);
+
+                switch (intanceId) {
+                    case "1":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).get("child"));
+                        break;
+                    case "2":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).get("child"));
+                        break;
+                    case "3":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).get("child"));
+                        break;
+                    case "4":
+                        assertEquals(2, multiTrees.size());
+
+                        List<String> contentlets = multiTrees.stream().map(multiTree -> multiTree.get("child").toString())
+                                .collect(Collectors.toList());
+                        assertTrue(contentlets.contains(contentlet_3.getIdentifier()));
+                        assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
+                        break;
+                    default:
+                        throw new AssertionError("UUID not expected: " + intanceId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have 100 Page with 4 containers all of them are different instances of the same containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * Should: Return the list of pages under 100 millis
+     *
+     * @throws DotDataException
+     */
+    @Test
+    @Ignore
+    public void moveContainerUpdateMultiTreesOnMultiplePagesPerformance() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                .withContainer(container, "2")
+                .withContainer(container, "3")
+                .withContainer(container, "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container.getIdentifier(), "4", "1")
+            .change(container.getIdentifier(), "1", "2")
+            .change(container.getIdentifier(), "2", "3")
+            .change(container.getIdentifier(), "3", "4")
+            .build();
+
+        final int pagesNumber = 100;
+        final HTMLPageAsset[] pages = new HTMLPageAsset[pagesNumber];
+
+        for (int i = 0; i < pagesNumber; i++) {
+            pages[i] = new HTMLPageDataGen(host, template).nextPersisted();
+            createMultiTrees(pages[i], container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+        }
+
+        final List<String> pageIds = Arrays.stream(pages)
+                .map(page -> page.getIdentifier())
+                .sorted(String::compareTo)
+                .collect(Collectors.toList());
+
+        long start = System.currentTimeMillis();
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
+        long end = System.currentTimeMillis();
+
+        assertTrue((end - start) < 100);
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have 20 Pages with 4 containers all of them are different instances of the same containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you remove the instance 1
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : removed
+     * - Contentlet_2 : Add to the instance 1
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void removeContainerUpdateMultiTreesMultiPages() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                .withContainer(container, "2")
+                .withContainer(container, "3")
+                .withContainer(container, "4")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final int pagesNumber = 20;
+        final HTMLPageAsset[] pages = new HTMLPageAsset[pagesNumber];
+
+        for (int i = 0; i < pagesNumber; i++) {
+            pages[i] = new HTMLPageDataGen(host, template).nextPersisted();
+            createMultiTrees(pages[i], container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+        }
+
+        final List<String> pageIds = Arrays.stream(pages)
+                .map(page -> page.getIdentifier())
+                .sorted(String::compareTo)
+                .collect(Collectors.toList());
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container.getIdentifier(), "1")
+            .change(container.getIdentifier(), "2", "1")
+            .change(container.getIdentifier(), "3", "2")
+            .change(container.getIdentifier(), "4", "3")
+            .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
+
+        final String getMultiTreeQuery = "SELECT parent1,parent2,child,relation_type FROM multi_tree WHERE parent1 in (?" +
+                new String(new char[pageIds.size() - 1]).replace("\0", ", ?") + ") order by parent1";
+
+        final DotConnect dotConnect = new DotConnect().setSQL(getMultiTreeQuery);
+
+        pageIds.stream().forEach(pageId -> dotConnect.addParam(pageId));
+
+        final ArrayList<Map<String, Object>> multiTreeResult = dotConnect.loadResults();
+        int multiTreeCurrentIndex = 0;
+
+        for (int i = 0; i < pagesNumber; i++) {
+
+            final Map<String, List<Map<String, Object>>> groupedByInstanceId = getMultiTreeByPageOrderByInstanceId(pageIds.get(i), multiTreeResult,
+                    multiTreeCurrentIndex);
+
+            final int size = groupedByInstanceId.values().stream().map(List::size).reduce(0, Integer::sum);
+            multiTreeCurrentIndex = multiTreeCurrentIndex + size;
+
+            assertEquals(4, size);
+
+            for (final String intanceId : groupedByInstanceId.keySet()) {
+                final List<Map<String, Object>> multiTrees = groupedByInstanceId.get(intanceId);
+
+                switch (intanceId) {
+                    case "1":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).get("child").toString());
+                        break;
+                    case "2":
+                        assertEquals(2, multiTrees.size());
+
+                        List<String> contentlets = multiTrees.stream().map(multiTree -> multiTree.get("child").toString())
+                                .collect(Collectors.toList());
+                        assertTrue(contentlets.contains(contentlet_3.getIdentifier()));
+                        assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
+                        break;
+                    case "3":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).get("child").toString());
+                        break;
+                    default:
+                        throw new AssertionError("UUID not expected: " + intanceId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have a Page with 5 containers instances from 3 different containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1, Container 1
+     * - Contentlet_2 : Add to the instance 1, Container 2
+     * - Contentlet_3 : Add to the instance 2, Container 2
+     * - Contentlet_4 : Add to the instance 1, Container 3
+     * - Contentlet_5 : Add to the instance 2, Container 1
+     *
+     * And you move the Inatnce 2 of the Container 1  for to be the first one
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_5 : Add to the instance 1, Container 1
+     * - Contentlet_1 : Add to the instance 2, Container 1
+     * - Contentlet_2 : Add to the instance 1, Container 2
+     * - Contentlet_3 : Add to the instance 2, Container 2
+     * - Contentlet_4 : Add to the instance 1, Container 3
+
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void moveContainersUpdateMultiTrees() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container_1 = new ContainerDataGen().nextPersisted();
+        final Container container_2 = new ContainerDataGen().nextPersisted();
+        final Container container_3 = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container_1, "1")
+                .withContainer(container_2, "1")
+                .withContainer(container_2, "2")
+                .withContainer(container_3, "1")
+                .withContainer(container_1, "2")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_1)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_2)
+                .setInstanceID("1")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_2)
+                .setInstanceID("2")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_3)
+                .setInstanceID("1")
+                .setContentlet(contentlet_5)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_1)
+                .setInstanceID("2")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .change(container_1.getIdentifier(), "2", "1")
+            .change(container_1.getIdentifier(), "1", "2")
+             .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(5, multiTreesFromDB.size());
+
+        for (MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContainer().equals(container_1.getIdentifier()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_4.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getContainer().equals(container_1.getIdentifier()) && multiTree.getRelationType().equals("2")) {
+                assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getContainer().equals(container_2.getIdentifier()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
+            }else if (multiTree.getContainer().equals(container_2.getIdentifier()) && multiTree.getRelationType().equals("2")) {
+                assertEquals(contentlet_3.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getContainer().equals(container_3.getIdentifier()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_5.getIdentifier(), multiTree.getContentlet());
+            }else {
+                throw new AssertionError("UUID not expected: Container " + multiTree.getContainer() + " UUID " + multiTree.getRelationType());
+            }
+        }
+
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have a Page with 5 containers instances from 3 different containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1, Container 1
+     * - Contentlet_2 : Add to the instance 1, Container 2
+     * - Contentlet_3 : Add to the instance 2, Container 2
+     * - Contentlet_4 : Add to the instance 1, Container 3
+     * - Contentlet_5 : Add to the instance 2, Container 1
+     *
+     * And you remove the instance 1 of COntainer 1
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Removed
+     * - Contentlet_2 : Add to the instance 1, Container 2
+     * - Contentlet_3 : Add to the instance 2, Container 2
+     * - Contentlet_4 : Add to the instance 1, Container 3
+     * - Contentlet_5 : Add to the instance 2, Container 1
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void removeContainersUpdateMultiTrees() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container_1 = new ContainerDataGen().nextPersisted();
+        final Container container_2 = new ContainerDataGen().nextPersisted();
+        final Container container_3 = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container_1, "1")
+                .withContainer(container_2, "1")
+                .withContainer(container_2, "2")
+                .withContainer(container_3, "1")
+                .withContainer(container_1, "2")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_1)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_2)
+                .setInstanceID("1")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_2)
+                .setInstanceID("2")
+                .setContentlet(contentlet_3)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_3)
+                .setInstanceID("1")
+                .setContentlet(contentlet_4)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container_1)
+                .setInstanceID("2")
+                .setContentlet(contentlet_5)
+                .nextPersisted();
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container_1.getIdentifier(), "1")
+            .change(container_1.getIdentifier(), "2", "1")
+            .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+        assertEquals(4, multiTreesFromDB.size());
+
+        for (MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getContainer().equals(container_1.getIdentifier()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_5.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getContainer().equals(container_2.getIdentifier()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getContainer().equals(container_2.getIdentifier()) && multiTree.getRelationType().equals("2")) {
+                assertEquals(contentlet_3.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getContainer().equals(container_3.getIdentifier()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_4.getIdentifier(), multiTree.getContentlet());
+            } else {
+                throw new AssertionError("UUID not expected: Container " + multiTree.getContainer() + " UUID " + multiTree.getRelationType());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have 20 Page with 5 containers instances from 3 different containers,
+     * and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1, Container 1
+     * - Contentlet_2 : Add to the instance 1, Container 2
+     * - Contentlet_3 : Add to the instance 2, Container 2
+     * - Contentlet_4 : Add to the instance 1, Container 3
+     * - Contentlet_5 : Add to the instance 2, Container 1
+     *
+     * And you remove the instance 1 of COntainer 1
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Removed
+     * - Contentlet_2 : Add to the instance 1, Container 2
+     * - Contentlet_3 : Add to the instance 2, Container 2
+     * - Contentlet_4 : Add to the instance 1, Container 3
+     * - Contentlet_5 : Add to the instance 2, Container 1
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void removeContainersUpdateMultiTreesMultiPages() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container_1 = new ContainerDataGen().nextPersisted();
+        final Container container_2 = new ContainerDataGen().nextPersisted();
+        final Container container_3 = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container_1, "1")
+                .withContainer(container_2, "1")
+                .withContainer(container_2, "2")
+                .withContainer(container_3, "1")
+                .withContainer(container_1, "2")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final int pagesNumber = 20;
+        final HTMLPageAsset[] pages = new HTMLPageAsset[pagesNumber];
+
+        for (int i = 0; i < pagesNumber; i++) {
+            pages[i] = new HTMLPageDataGen(host, template).nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(pages[i])
+                    .setContainer(container_1)
+                    .setInstanceID("1")
+                    .setContentlet(contentlet_1)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(pages[i])
+                    .setContainer(container_2)
+                    .setInstanceID("1")
+                    .setContentlet(contentlet_2)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(pages[i])
+                    .setContainer(container_2)
+                    .setInstanceID("2")
+                    .setContentlet(contentlet_3)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(pages[i])
+                    .setContainer(container_3)
+                    .setInstanceID("1")
+                    .setContentlet(contentlet_4)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(pages[i])
+                    .setContainer(container_1)
+                    .setInstanceID("2")
+                    .setContentlet(contentlet_5)
+                    .nextPersisted();
+        }
+
+        final List<String> pageIds = Arrays.stream(pages)
+                .map(page -> page.getIdentifier())
+                .sorted(String::compareTo)
+                .collect(Collectors.toList());
+
+        final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+            .remove(container_1.getIdentifier(), "1")
+            .change(container_1.getIdentifier(), "2", "1")
+            .build();
+
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
+
+
+        final String getMultiTreeQuery = "SELECT parent1,parent2,child,relation_type FROM multi_tree WHERE parent1 in (?" +
+                new String(new char[pageIds.size() - 1]).replace("\0", ", ?") + ") order by parent1";
+
+        final DotConnect dotConnect = new DotConnect().setSQL(getMultiTreeQuery);
+        pageIds.stream().forEach(pageId -> dotConnect.addParam(pageId));
+
+        final ArrayList<Map<String, Object>> multiTreeResult = dotConnect.loadResults();
+        int multiTreeCurrentIndex = 0;
+
+        for (int i = 0; i < pagesNumber; i++) {
+
+            final List<Map<String, Object>> multiTress = getMultiTreeByPageOrder(pageIds.get(i), multiTreeResult,
+                    multiTreeCurrentIndex);
+
+            multiTreeCurrentIndex += multiTress.size();
+
+            assertEquals(4, multiTress.size());
+
+            for (final Map<String, Object> multiTree : multiTress) {
+
+                if (multiTree.get("parent2").equals(container_1.getIdentifier()) && multiTree.get("relation_type").equals("1")) {
+                    assertEquals(contentlet_5.getIdentifier(), multiTree.get("child"));
+                } else if (multiTree.get("parent2").equals(container_2.getIdentifier()) && multiTree.get("relation_type").equals("1")) {
+                    assertEquals(contentlet_2.getIdentifier(), multiTree.get("child"));
+                } else if (multiTree.get("parent2").equals(container_2.getIdentifier()) && multiTree.get("relation_type").equals("2")) {
+                    assertEquals(contentlet_3.getIdentifier(), multiTree.get("child"));
+                } else if (multiTree.get("parent2").equals(container_3.getIdentifier()) && multiTree.get("relation_type").equals("1")) {
+                    assertEquals(contentlet_4.getIdentifier(), multiTree.get("child"));
+                } else {
+                    throw new AssertionError("UUID not expected: Container " + multiTree.get("parent2") + " UUID " + multiTree.get("relation_type"));
+                }
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have disabled the DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag, and You have a Page with 4 containers
+     * all of them are different instances of the same containers, and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you remove the instance 1
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : ORPHANED
+     * - Contentlet_2 : Add to the instance 1
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void removeContainerUpdateMultiTreesWithOrphaned() throws DotDataException {
+
+        boolean deleteOrphanedContentsFromContainer = Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true);
+        MultiTreeAPIImpl.setDeleteOrphanedContentsFromContainer(false);
+
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Container container = new ContainerDataGen().nextPersisted();
+            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+
+            final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                    .withContainer(container, "2")
+                    .withContainer(container, "3")
+                    .withContainer(container, "4")
+                    .next();
+
+            final Template template = new TemplateDataGen()
+                    .drawed(true)
+                    .drawedBody(templateLayout)
+                    .nextPersisted();
+
+            final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+            createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+            final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+                .remove(container.getIdentifier(), "1")
+                .change(container.getIdentifier(), "2", "1")
+                .change(container.getIdentifier(), "3", "2")
+                .change(container.getIdentifier(), "4", "3")
+                .build();
+
+            APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
+
+            final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+            assertEquals(5, multiTreesFromDB.size());
+
+            final Map<String, List<MultiTree>> groupedByInstanceId = multiTreesFromDB.stream()
+                    .collect(Collectors.groupingBy(MultiTree::getRelationType));
+
+            for (final String intanceId : groupedByInstanceId.keySet()) {
+                final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
+
+                switch (intanceId) {
+                    case "-1":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_1.getIdentifier(), multiTrees.get(0).getContentlet());
+                        break;
+                    case "1":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
+                        break;
+                    case "2":
+                        assertEquals(2, multiTrees.size());
+
+                        List<String> contentlets = multiTrees.stream().map(multiTree -> multiTree.getContentlet())
+                                .collect(Collectors.toList());
+                        assertTrue(contentlets.contains(contentlet_3.getIdentifier()));
+                        assertTrue(contentlets.contains(contentlet_5.getIdentifier()));
+                        break;
+                    case "3":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
+                        break;
+                    default:
+                        throw new AssertionError("UUID not expected: " + intanceId);
+                }
+            }
+        } finally {
+            MultiTreeAPIImpl.setDeleteOrphanedContentsFromContainer(deleteOrphanedContentsFromContainer);
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(String, LayoutChanges)}
+     * When: You have enabled the DELETE_ORPHANED_CONTENTS_FROM_CONTAINER flag, and You have a Page with 4 containers
+     * all of them are different instances of the same containers, and you have 5 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     * - Contentlet_3 : Add to the instance 3
+     * - Contentlet_5 : Add to the instance 3
+     * - Contentlet_4 : Add to the instance 4
+     *
+     * And you remove the instance 1
+     *
+     * Should: The Contentlets should finish as:
+     *
+     * - Contentlet_1 : ORPHANED
+     * - Contentlet_2 : Add to the instance 1
+     * - Contentlet_3 : Add to the instance 2
+     * - Contentlet_5 : Add to the instance 2
+     * - Contentlet_4 : Add to the instance 3
+     *
+     *  Also the page had a Contentlet_6 orphaned content
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void removeContainerUpdateMultiTreesWhenAlreadyExistsOrphaned() throws DotDataException {
+
+        boolean deleteOrphanedContentsFromContainer = Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true);
+        MultiTreeAPIImpl.setDeleteOrphanedContentsFromContainer(false);
+
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Container container = new ContainerDataGen().nextPersisted();
+            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_5 = new ContentletDataGen(contentType).nextPersisted();
+            final Contentlet contentlet_6 = new ContentletDataGen(contentType).nextPersisted();
+
+            final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container, "1")
+                    .withContainer(container, "2")
+                    .withContainer(container, "3")
+                    .withContainer(container, "4")
+                    .next();
+
+            final Template template = new TemplateDataGen()
+                    .drawed(true)
+                    .drawedBody(templateLayout)
+                    .nextPersisted();
+
+            final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+            createMultiTrees(page, container, contentlet_1, contentlet_2, contentlet_3, contentlet_4, contentlet_5);
+
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setInstanceID("-1")
+                    .setContentlet(contentlet_6)
+                    .nextPersisted();
+
+
+            final LayoutChanges layoutChanges = new LayoutChanges.Builder()
+                .remove(container.getIdentifier(), "1")
+                .change(container.getIdentifier(), "2", "1")
+                .change(container.getIdentifier(), "3", "2")
+                .change(container.getIdentifier(), "4", "3")
+                .build();
+
+            APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
+
+            final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+            assertEquals(6, multiTreesFromDB.size());
+
+            final Map<String, List<MultiTree>> groupedByInstanceId = multiTreesFromDB.stream()
+                    .collect(Collectors.groupingBy(MultiTree::getRelationType));
+
+            for (final String intanceId : groupedByInstanceId.keySet()) {
+                final List<MultiTree> multiTrees = groupedByInstanceId.get(intanceId);
+
+                switch (intanceId) {
+                    case "-1":
+                        assertEquals(2, multiTrees.size());
+
+                        List<String> contentlets_1 = multiTrees.stream().map(multiTree -> multiTree.getContentlet())
+                                .collect(Collectors.toList());
+
+                        assertTrue(contentlets_1.contains(contentlet_1.getIdentifier()));
+                        assertTrue(contentlets_1.contains(contentlet_6.getIdentifier()));
+                        break;
+                    case "1":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_2.getIdentifier(), multiTrees.get(0).getContentlet());
+                        break;
+                    case "2":
+                        assertEquals(2, multiTrees.size());
+
+                        List<String> contentlets_2 = multiTrees.stream().map(multiTree -> multiTree.getContentlet())
+                                .collect(Collectors.toList());
+                        assertTrue(contentlets_2.contains(contentlet_3.getIdentifier()));
+                        assertTrue(contentlets_2.contains(contentlet_5.getIdentifier()));
+                        break;
+                    case "3":
+                        assertEquals(1, multiTrees.size());
+                        assertEquals(contentlet_4.getIdentifier(), multiTrees.get(0).getContentlet());
+                        break;
+                    default:
+                        throw new AssertionError("UUID not expected: " + intanceId);
+                }
+            }
+        } finally {
+            MultiTreeAPIImpl.setDeleteOrphanedContentsFromContainer(deleteOrphanedContentsFromContainer);
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#}
+     *
+     * When: A page is using an Advance Template with the follow code:
+     *
+     * #parseContainer('[Container_id]');
+     *
+     * Pay attention to the fact that the parseContainer function only takes one parameter.
+     * A Contentlet is then added to this Container.
+     *
+     * Should: return one MultiTree and one Container Instance for this page
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void getPageMultiTreesWithAdvanceTemplate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .withContentType(contentType, "")
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .host(host)
+                .body("#parseContainer('" + container.getIdentifier() + "')")
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet)
+                .setInstanceID("dotParser_1")
+                .nextPersisted();
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI()
+                .getPageMultiTrees(htmlPageAsset, false);
+
+        final Map<String, Set<PersonalizedContentlet>> contentletsOrderByUUID = pageMultiTrees.row(container.getIdentifier());
+
+        assertEquals(1, contentletsOrderByUUID.size());
+
+        Set<PersonalizedContentlet> contentlets = contentletsOrderByUUID.get("dotParser_1");
+
+        assertEquals(1, contentlets.size());
+        assertEquals(contentlet.getIdentifier(), contentlets.iterator().next().getContentletId());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#}
+     *
+     * When: A page is using an Advance Template with the follow code:
+     *
+     * #parseContainer('[Container_id]');
+     *
+     * Pay attention to the fact that the parseContainer function only takes one parameter.
+     * Container_id is a File Container
+     * A Contentlet is then added to this Container.
+     *
+     * Should: return one MultiTree and one Container Instance for this page
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void getPageMultiTreesWithAdvanceTemplateAndFileContainer() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        FileAssetContainer container = new ContainerAsFileDataGen()
+                .contentType(contentType, "")
+                .nextPersisted();
+
+
+        container = (FileAssetContainer) APILocator.getContainerAPI()
+                .find(container.getInode(), APILocator.systemUser(), true);
+
+
+        final Template template = new TemplateDataGen()
+                .host(host)
+                .body("#parseContainer('" + container.getPath() + "')")
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet)
+                .setInstanceID("dotParser_1")
+                .nextPersisted();
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI()
+                .getPageMultiTrees(htmlPageAsset, false);
+
+        final Map<String, Set<PersonalizedContentlet>> contentletsOrderByUUID = pageMultiTrees.row(container.getIdentifier());
+
+        assertEquals(1, contentletsOrderByUUID.size());
+
+        Set<PersonalizedContentlet> contentlets = contentletsOrderByUUID.get("dotParser_1");
+
+        assertEquals(1, contentlets.size());
+        assertEquals(contentlet.getIdentifier(), contentlets.iterator().next().getContentletId());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with style properties
+     * Should: return the MultiTree with the style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void createAndPersist_styleProperties() throws DotDataException {
+        Map<String, Object> styleProperties = createDefaultStyleProperties();
+        testMultiTree = createMultiTreeWithStyleProperties(styleProperties);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNotNull("Style properties should not be null", retrieved.getStyleProperties());
+        assertEquals("Style properties should have 3 entries", 3,
+                retrieved.getStyleProperties().size());
+        assertEquals("Background color should match", "red",
+                retrieved.getStyleProperties().get("backgroundColor"));
+        assertEquals("Font size should match", "16px",
+                retrieved.getStyleProperties().get("fontSize"));
+        assertEquals("Padding should match", "10px",
+                retrieved.getStyleProperties().get("padding"));
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You update a MultiTree with style properties
+     * Should: return the MultiTree with the updated style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testUpdate_styleProperties() throws Exception {
+        Map<String, Object> originalProperties = createDefaultStyleProperties();
+        testMultiTree = createMultiTreeWithStyleProperties(originalProperties);
+
+        // Update with new style properties
+        Map<String, Object> updatedProperties = new HashMap<>();
+        updatedProperties.put("backgroundColor", "#ff0000");
+        updatedProperties.put("margin", "20px");
+
+        testMultiTree.setStyleProperties(updatedProperties);
+        multiTreeAPI.saveMultiTree(testMultiTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Updated style properties should not be null",
+                retrieved.getStyleProperties());
+        assertEquals("Updated style properties should have 2 entries", 2,
+                retrieved.getStyleProperties().size());
+        assertEquals("Updated background color should match", "#ff0000",
+                retrieved.getStyleProperties().get("backgroundColor"));
+        assertEquals("Margin should match", "20px",
+                retrieved.getStyleProperties().get("margin"));
+        assertNull("Font size should not exist in updated properties",
+                retrieved.getStyleProperties().get("fontSize"));
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You update a MultiTree with style properties to null
+     * Should: return the MultiTree with null style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testUpdate_stylePropertiesToNull() throws Exception {
+        Map<String, Object> originalProperties = createDefaultStyleProperties();
+        testMultiTree = createMultiTreeWithStyleProperties(originalProperties);
+
+        // Set style properties to null
+        testMultiTree.setStyleProperties(null);
+        multiTreeAPI.saveMultiTree(testMultiTree);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNull("NULL style properties should be persisted",
+                retrieved.getStyleProperties());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with null style properties
+     * Should: return the MultiTree with null style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testCreate_withNullStyleProperties() throws Exception {
+        testMultiTree = createMultiTreeWithStyleProperties(null);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
+     * When: You create a new MultiTree with empty style properties
+     * Should: return the MultiTree with empty style properties
+     * @throws DotDataException Exception when accessing the database
+     */
+    @Test
+    public void testCreate_withEmptyStyleProperties() throws Exception {
+        Map<String, Object> emptyProperties = new HashMap<>();
+        testMultiTree = createMultiTreeWithStyleProperties(emptyProperties);
+
+        MultiTree retrieved = retrieveMultiTree(0);
+
+        assertNotNull("Retrieved multiTree should not be null", retrieved);
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
+    }
+
 }

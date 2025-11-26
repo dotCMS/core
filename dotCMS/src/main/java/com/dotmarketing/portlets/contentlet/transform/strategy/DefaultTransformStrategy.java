@@ -1,21 +1,41 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.BASE_TYPE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.CONTENT_TYPE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HAS_TITLE_IMAGE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_NAME;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LIVE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
+import com.dotcms.api.APIProvider;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.*;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
@@ -29,45 +49,13 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 
-import com.dotcms.api.APIProvider;
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.storage.model.Metadata;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import java.io.File;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * If any Options marked as property is found this class gets instantiated since props are most likely to be resolved here
  */
 public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentlet> {
 
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
+    public static final String SHORTY_ID = "shortyId";
 
     /**
      * Main constructor
@@ -117,6 +105,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         final ContentType type = contentlet.getContentType();
 
         map.put(IDENTIFIER_KEY, contentlet.getIdentifier());
+        map.put(SHORTY_ID, APILocator.getShortyAPI().shortify(contentlet.getIdentifier()));
         map.put(INODE_KEY, contentlet.getInode());
         map.put(TITTLE_KEY, contentlet.getTitle());
         map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
@@ -132,9 +121,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
            map.put(TITLE_IMAGE_KEY, TITLE_IMAGE_NOT_FOUND);
         }
 
-        final Host host = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
-        map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
-        map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
+        final Host site = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
+        map.put(HOST_NAME, site != null ? site.getHostname() : NOT_APPLICABLE);
+        map.put(HOST_KEY, site != null ? site.getIdentifier() : NOT_APPLICABLE);
 
         final String urlMap = toolBox.contentletAPI
                 .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
@@ -149,6 +138,43 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             if (null != url) {
                 map.put(URL_FIELD, url);
             }
+        }
+
+        //Expose disabled_wysiwyg to manage text areas and wysiwyg modes.
+        map.put(DISABLED_WYSIWYG_KEY, contentlet.getDisabledWysiwyg());
+
+        this.addAuditProperties(contentlet, map);
+    }
+
+    /**
+     * Adds all the required audit attributes to the Contentlet's data map.
+     *
+     * @param contentlet           The Contentlet to add the audit properties to.
+     * @param contentletProperties The map of properties to add the audit properties to.
+     *
+     * @throws DotDataException     An error occurred when retrieving data from the database.
+     * @throws DotSecurityException A User permission error has occurred.
+     */
+    private void addAuditProperties(final Contentlet contentlet,
+                                    final Map<String, Object> contentletProperties) throws DotDataException, DotSecurityException {
+        final User modUser = Try.of(() -> toolBox.userAPI.loadUserById(contentlet.getModUser())).getOrNull();
+        final User owner = Try.of(() -> toolBox.userAPI.loadUserById(contentlet.getOwner())).getOrNull();
+        if (contentletProperties.containsKey(MOD_USER_KEY)) {
+            contentletProperties.put(MOD_USER_NAME_KEY, null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
+        }
+        if (contentletProperties.containsKey(OWNER_KEY)) {
+            contentletProperties.put(OWNER_USER_NAME_KEY, null != owner ? owner.getFullName() : NOT_APPLICABLE);
+        }
+        final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
+        if (null != identifier && UtilMethods.isSet(identifier.getId()) && !IdentifierAPI.IDENT404.equals(identifier.getAssetType())) {
+            contentletProperties.put(CREATION_DATE_KEY, identifier.getCreateDate());
+        }
+        if (contentlet.isLive()) {
+            final Optional<ContentletVersionInfo> versionInfoOpt =
+                    this.toolBox.versionableAPI.getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
+            versionInfoOpt.ifPresent(contentletVersionInfo -> contentletProperties.put(PUBLISH_DATE_KEY, contentletVersionInfo.getPublishDate()));
+            contentletProperties.put(PUBLISH_USER_KEY, null != modUser ? modUser.getUserId() : NOT_APPLICABLE);
+            contentletProperties.put(PUBLISH_USER_NAME_KEY, null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
         }
     }
 
@@ -358,6 +384,13 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
+        final Optional<String> lockedByOpt = Try.of(()->toolBox.versionableAPI.getLockedBy(contentlet)).getOrElse(Optional.empty());
+        if (lockedByOpt.isPresent()) {
+
+            final User user = toolBox.userAPI.loadUserById(lockedByOpt.get());
+            map.put("lockedBy", Map.of("userId", user.getUserId(),
+                    "firstName", user.getFirstName(), "lastName", user.getLastName()));
+        }
 
         final Optional<ContentletVersionInfo> versionInfo =
                 APILocator.getVersionableAPI().getContentletVersionInfo(

@@ -14,11 +14,12 @@ export class DotCustomReuseStrategyService implements RouteReuseStrategy {
     }
 
     shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
-        return future.routeConfig === curr.routeConfig
-            ? future.data.reuseRoute === false
-                ? false
-                : true
-            : false;
+        if (future.routeConfig !== curr.routeConfig) {
+            return false;
+        }
+
+        // If it's not explicitly set to false, reuse the route
+        return future.data.reuseRoute !== false;
     }
 
     store(_route: ActivatedRouteSnapshot, _handle: DetachedRouteHandle | null): void {

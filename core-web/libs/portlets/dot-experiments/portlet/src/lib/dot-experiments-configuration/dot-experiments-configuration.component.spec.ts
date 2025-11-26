@@ -1,3 +1,4 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import {
     byTestId,
     createComponentFactory,
@@ -5,7 +6,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -17,17 +18,19 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu } from 'primeng/menu';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import {
+    DotExperimentsService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
+import { DotAddToBundleComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    getExperimentMock,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
+} from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -84,8 +87,9 @@ const defaultVmMock: ConfigurationViewModel = {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: `p-confirmPopup`,
-    template: `ConfirmPopupMockComponent`,
-    standalone: true
+    template: `
+        ConfirmPopupMockComponent
+    `
 })
 export class ConfirmPopupMockComponent {}
 
@@ -97,8 +101,11 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [MockModule(DotAddToBundleModule), DotMessagePipe],
-
+        imports: [
+            MockComponent(DotAddToBundleComponent),
+            MockComponent(DotExperimentsConfigurationSchedulingComponent),
+            DotMessagePipe
+        ],
         providers: [
             ConfirmationService,
             {
@@ -126,6 +133,11 @@ describe('DotExperimentsConfigurationComponent', () => {
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
 
         jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+    });
+
+    afterEach(() => {
+        jest.resetAllMocks();
+        jest.restoreAllMocks();
     });
 
     it('should show the skeleton component when is loading', () => {
@@ -187,7 +199,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[1].command();
+        spectator.query(Menu).model[1].command({ originalEvent: createFakeEvent('click') });
 
         spectator.query(ConfirmDialog).accept();
 
@@ -203,7 +215,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[5].command();
+        spectator.query(Menu).model[5].command({ originalEvent: createFakeEvent('click') });
 
         spectator.detectComponentChanges();
 
@@ -229,7 +241,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[3].command();
+        spectator.query(Menu).model[3].command({ originalEvent: createFakeEvent('click') });
 
         spectator.query(ConfirmDialog).accept();
 

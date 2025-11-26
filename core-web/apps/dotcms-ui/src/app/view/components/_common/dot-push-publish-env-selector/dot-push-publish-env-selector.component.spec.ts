@@ -8,12 +8,13 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
+
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 export class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];
@@ -42,11 +43,14 @@ export class PushPublishServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <form [formGroup]="group">
-        <dot-push-publish-env-selector
-            showList="true"
-            formControlName="environment"></dot-push-publish-env-selector>
-    </form>`
+    template: `
+        <form [formGroup]="group">
+            <dot-push-publish-env-selector
+                showList="true"
+                formControlName="environment"></dot-push-publish-env-selector>
+        </form>
+    `,
+    standalone: false
 })
 class TestHostComponent {
     group: UntypedFormGroup;
@@ -73,8 +77,8 @@ describe('PushPublishEnvSelectorComponent', () => {
         pushPublishServiceMock = new PushPublishServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [PushPublishEnvSelectorComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, DotMessagePipe],
+            declarations: [TestHostComponent],
+            imports: [PushPublishEnvSelectorComponent, BrowserAnimationsModule, DotMessagePipe],
             providers: [
                 PushPublishService,
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
@@ -91,7 +95,7 @@ describe('PushPublishEnvSelectorComponent', () => {
         comp.selectedEnvironmentIds = [];
         expect(comp.selectedEnvironmentIds).toEqual([]);
 
-        spyOn(comp, 'propagateChange');
+        jest.spyOn(comp, 'propagateChange');
         comp.valueChange(new Event('MouseEvent'), [
             {
                 id: '22e332',
@@ -120,7 +124,7 @@ describe('PushPublishEnvSelectorComponent', () => {
         const component: PushPublishEnvSelectorComponent = de.componentInstance;
         comp.selectedEnvironmentIds = [];
 
-        spyOn(component, 'writeValue');
+        jest.spyOn(component, 'writeValue');
         comp.valueChange(new Event('MouseEvent'), [
             {
                 id: '12345ab',
@@ -144,8 +148,10 @@ describe('PushPublishEnvSelectorComponent', () => {
                 name: 'my environment'
             }
         ];
-        spyOn(pushPublishServiceMock, 'getEnvironments').and.returnValue(observableOf(environment));
-        spyOn(comp, 'propagateChange');
+        jest.spyOn(pushPublishServiceMock, 'getEnvironments').mockReturnValue(
+            observableOf(environment)
+        );
+        jest.spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual(environment);
         expect(comp.pushEnvironments).toEqual(environment);
@@ -153,11 +159,11 @@ describe('PushPublishEnvSelectorComponent', () => {
     });
 
     it('should populate the environments previously selected by the user', () => {
-        spyOnProperty(pushPublishServiceMock, 'lastEnvironmentPushed', 'get').and.returnValue([
-            '22e332',
-            'joa08'
-        ]);
-        spyOn(comp, 'propagateChange');
+        Object.defineProperty(pushPublishServiceMock, 'lastEnvironmentPushed', {
+            value: ['22e332', 'joa08'],
+            writable: true
+        });
+        jest.spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual([
             {

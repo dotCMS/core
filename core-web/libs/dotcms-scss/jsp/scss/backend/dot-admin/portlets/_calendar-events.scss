@@ -14,7 +14,7 @@
 
     .portlet-toolbar__info {
         flex: 1 0 auto;
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
         justify-content: center;
     }
 }
@@ -122,7 +122,7 @@
 }
 
 .dayNumberSection {
-    font-size: 11px;
+    font-size: $font-size-xs;
 }
 
 .dayNumber {
@@ -158,7 +158,7 @@
 .dayEventsSection span {
     font-weight: bold;
     text-transform: uppercase;
-    font-size: 77%;
+    font-size: $font-size-xs;
 }
 
 /* NAV MENU STYLES */
@@ -220,7 +220,7 @@
 
 #eventDetailTitle {
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: $font-size-lmd;
     padding-bottom: 5px;
     width: 459;
     overflow: hidden;

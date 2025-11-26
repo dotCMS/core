@@ -1,18 +1,17 @@
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta, componentWrapperDecorator } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { DropdownModule, Dropdown } from 'primeng/dropdown';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotContainersServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContainerOptionsDirective } from './dot-container-options.directive';
-import { MockContainersDropdownComponent } from './mock-containers-dropdown.component';
 
-export default {
-    title: 'Container Options Directive',
-    component: MockContainersDropdownComponent,
+const meta: Meta = {
+    title: 'DotCMS/Container Options Directive',
+    component: Dropdown,
     decorators: [
         moduleMetadata({
             imports: [BrowserAnimationsModule, DotContainerOptionsDirective, DropdownModule],
@@ -26,14 +25,22 @@ export default {
                     useValue: new DotContainersServiceMock()
                 }
             ]
-        })
-    ]
-} as Meta<DotContainerOptionsDirective>;
+        }),
+        componentWrapperDecorator(
+            (story) =>
+                `<div class="card flex justify-content-center  w-50rem h-25rem">${story}</div>`
+        )
+    ],
+    parameters: {
+        layout: 'centered'
+    },
+    render: (args) => ({
+        props: args,
+        template: `<p-dropdown placeholder="Select a container" dotContainerOptions />`
+    })
+};
+export default meta;
 
-const OptionsDirective: Story<MockContainersDropdownComponent> = (
-    args: MockContainersDropdownComponent
-) => ({
-    props: args
-});
+type Story = StoryObj;
 
-export const Base = OptionsDirective.bind({});
+export const Base: Story = {};

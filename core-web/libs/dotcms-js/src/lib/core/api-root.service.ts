@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
-import { UserModel } from './shared/user.model';
+import { Injectable, inject } from '@angular/core';
+
 import { LoggerService } from './logger.service';
+import { UserModel } from './shared/user.model';
 
 @Injectable()
 export class ApiRoot {
+    private loggerService = inject(LoggerService);
+
     siteId = '48190c8c-42c4-46af-8d1a-0cd5db894797';
     authUser: UserModel;
     hideFireOn = false;
@@ -16,6 +19,7 @@ export class ApiRoot {
         if (query && query.length) {
             idx = query.indexOf(token);
         }
+
         if (idx >= 0) {
             let end = query.indexOf('&', idx);
             end = end !== -1 ? end : query.length;
@@ -25,7 +29,9 @@ export class ApiRoot {
         return result;
     }
 
-    constructor(authUser: UserModel, private loggerService: LoggerService) {
+    constructor() {
+        const authUser = inject(UserModel);
+
         this.authUser = authUser;
 
         try {
@@ -35,11 +41,13 @@ export class ApiRoot {
                     query = document.location.hash.substr(document.location.hash.indexOf('?') + 1);
                 }
             }
+
             const siteId = ApiRoot.parseQueryParam(query, 'realmId');
             if (siteId) {
                 this.siteId = siteId;
                 this.loggerService.debug('Site Id set to ', this.siteId);
             }
+
             const hideFireOn = ApiRoot.parseQueryParam(query, 'hideFireOn');
             if (hideFireOn) {
                 this.hideFireOn = hideFireOn === 'true' || hideFireOn === '1';

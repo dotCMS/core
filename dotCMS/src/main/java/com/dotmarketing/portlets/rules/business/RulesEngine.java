@@ -148,9 +148,9 @@ public final class RulesEngine {
 	 * Triggers a specific category of Rules associated to the specified parent
 	 * object based on the requested resource.
 	 * 
-	 * @param req
+	 * @param request
 	 *            - The {@link HttpServletRequest} object.
-	 * @param res
+	 * @param response
 	 *            - The {@link HttpServletResponse} object.
 	 * @param parent
 	 *            - The object whose associated rules will be fired. For
@@ -159,62 +159,53 @@ public final class RulesEngine {
 	 *            - The category of the rules that will be fired: Every page,
 	 *            every request, etc.
 	 */
-	public static void fireRules(HttpServletRequest req, HttpServletResponse res, Ruleable parent, Rule.FireOn fireOn) {
+	public static void fireRules(final HttpServletRequest request, final HttpServletResponse response,
+								 final Ruleable parent, final Rule.FireOn fireOn) {
 
         //Check for the proper license level, the rules engine is an enterprise feature only
         if ( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level ) {
             return;
         }
-        if(res.isCommitted()) {
+        if(response.isCommitted()) {
           return;
         }
-        if (!UtilMethods.isSet(req)) {
+        if (!UtilMethods.isSet(request)) {
         	throw new DotRuntimeException("ERROR: HttpServletRequest is null");
         }
-        
-        // do not run rules in admin mode
-        PageMode mode= PageMode.get(req);
-        if(mode.isAdmin) {
-          final boolean fireRulesFromParameter =Try.of(()->Boolean.valueOf
-				  (req.getParameter("fireRules"))).getOrElse(false);
-          final boolean fireRulesFromAttribute =Try.of(()-> Boolean.valueOf((Boolean)
-				  req.getAttribute("fireRules"))).getOrElse(false);
 
-          if(!fireRulesFromParameter && !fireRulesFromAttribute) {
-            return;
-          }
-        }
         
-        final Set<String> alreadyFiredRulesFor =req.getAttribute(DOT_RULES_FIRED_ALREADY)!=null?(Set<String>)req.getAttribute(DOT_RULES_FIRED_ALREADY):new HashSet<String>();
+        final Set<String> alreadyFiredRulesFor =request.getAttribute(DOT_RULES_FIRED_ALREADY)!=null?(Set<String>)request.getAttribute(DOT_RULES_FIRED_ALREADY):new HashSet<String>();
         final String ruleRunKey = parent.getIdentifier() +"_"+ fireOn.name();
         if(alreadyFiredRulesFor.contains(ruleRunKey)) {
           Logger.warn(RulesEngine.class, "we have already run the rules for:" + ruleRunKey);
           return;
         }
         alreadyFiredRulesFor.add(ruleRunKey);
-        req.setAttribute(DOT_RULES_FIRED_ALREADY,alreadyFiredRulesFor);
+        request.setAttribute(DOT_RULES_FIRED_ALREADY,alreadyFiredRulesFor);
 
-		if (SKIP_RULES_EXECUTION.equalsIgnoreCase(req.getParameter(WebKeys.RULES_ENGINE_PARAM))
-				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(req.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
+		if (SKIP_RULES_EXECUTION.equalsIgnoreCase(request.getParameter(WebKeys.RULES_ENGINE_PARAM))
+				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(request.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
 			return;
 		}
         if (!UtilMethods.isSet(parent)) {
         	return;
         }
 
-        User systemUser = APILocator.systemUser();
+        final User systemUser = APILocator.systemUser();
 
         try {
 
-			Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(parent.getIdentifier(), systemUser, false,
+			final Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(parent.getIdentifier(), systemUser, false,
 					fireOn);
-            for (Rule rule : rules) {
+            for (final Rule rule : rules) {
                 try {
+
+					request.setAttribute(WebKeys.RULES_ENGINE_PARAM_CURRENT_RULE_ID, rule.getId());
                 	long before = System.currentTimeMillis();
                     rule.checkValid(); // @todo ggranum: this should actually be done on writing to the DB, or at worst reading from.
-                    boolean evaled = rule.evaluate(req, res);
+                    boolean evaled = rule.evaluate(request, response);
 
-                    if(res.isCommitted()) {
+                    if(response.isCommitted()) {
                       return;
                     }
 					if (evaled) {
@@ -228,7 +219,7 @@ public final class RulesEngine {
 						rCopy.setShortCircuit(rule.isShortCircuit());
 						rCopy.setModDate(rule.getModDate());
 						
-						trackFiredRule(rCopy, req);
+						trackFiredRule(rCopy, request);
 					}
                     long after = System.currentTimeMillis();
         			if((after - before) > SLOW_RULE_LOG_MIN) {

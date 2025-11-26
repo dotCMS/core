@@ -1,0 +1,85 @@
+[
+  {
+    "name": "ai",
+    "collections": ["AI.postman_collection"]
+  },
+  {
+    "name": "category-content",
+    "collections": [
+      "Category.postman_collection",
+      "ContentResourceV1.postman_collection",
+      "ContentTypeResourceTests",
+      "Content_Resource.postman_collection"
+    ]
+  },
+  {
+    "name": "container",
+    "collections": [
+      "ContainerResource.postman_collection",
+      "Containers.postman_collection"
+    ]
+  },
+  {
+    "name": "experiment",
+    "collections": [
+      "Experiments_Resource.postman_collection",
+      "Experiment_Result.postman_collection"
+    ]
+  },
+  {
+    "name": "graphql",
+    "collections": ["GraphQLTests"]
+  },
+  {
+    "name": "page",
+    "collections": ["PagesResourceTests"]
+  },
+  {
+    "name": "pp",
+    "collections": [
+      "PublishQueueResource",
+      "Push_Publish_from_sender.postman_collection",
+      "Push_Publish_JWT_Token_Test.postman_collection",
+      "PushPublishFilterResource.postman_collection"
+    ]
+  },
+  {
+    "name": "template",
+    "collections": ["Template_Resource.postman_collection"]
+  },
+  {
+    "name": "workflow",
+    "collections": ["Workflow_Resource_Tests"]
+  },
+  {
+    "name": "default-split",
+    "collections": [
+      "ApiToken_Resource.postman_collection",
+      "ContentImportResource.postman_collection",
+      "Manifest_Download_End_Point.postman_collection",
+      "Osgi.postman_collection",
+      "Page_Version_with_different_Templates.postman_collection",
+      "Permission_Resource.postman_collection",
+      "Promote_Variant.postman_collection",
+      "Relationship_cache_in_push_publish.postman_collection",
+      "ResourceLink.postman_collection",
+      "RoleResource.postman_collection",
+      "Scripting_Resource.postman_collection",
+      "Site_Resource.postman_collection",
+      "System.postman_collection",
+      "SystemTable.postman_collection",
+      "Tags_Resource_V2.postman_collection",
+      "TempAPI.postman_collection",
+      "ThemeResource.postman_collection",
+      "ToolGroupResource.postman_collection",
+      "UIComponents.postman_collection",
+      "UserResource.postman_collection",
+      "User_Include_Into_Experiment.postman_collection",
+      "VelocityMacro.postman_collection",
+      "VelocitySecrets.postman_collection",
+      "VersionableResource.postman_collection",
+      "Visitor.postman_collection",
+      "WebAssets.postman_collection"
+    ]
+  }
+]

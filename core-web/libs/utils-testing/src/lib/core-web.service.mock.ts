@@ -1,7 +1,5 @@
-import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map, filter } from 'rxjs/operators';
-import { ResponseView } from '@dotcms/dotcms-js';
+
 import {
     HttpClient,
     HttpRequest,
@@ -11,11 +9,15 @@ import {
     HttpParams,
     HttpHeaders
 } from '@angular/common/http';
-import { DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { Injectable, inject } from '@angular/core';
+
+import { map, filter } from 'rxjs/operators';
+
+import { ResponseView, DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 
 @Injectable()
 export class CoreWebServiceMock {
-    constructor(private _http: HttpClient) {}
+    private _http = inject(HttpClient);
 
     request<T = unknown>(
         options: DotRequestOptionsArgs
@@ -58,6 +60,11 @@ export class CoreWebServiceMock {
     requestView<T = unknown>(options: DotRequestOptionsArgs): Observable<ResponseView<T>> {
         if (!options.method) {
             options.method = 'GET';
+        }
+
+        // Ensure url is defined to avoid HttpRequest constructor errors
+        if (!options.url) {
+            options.url = '';
         }
 
         const optionsArgs = {

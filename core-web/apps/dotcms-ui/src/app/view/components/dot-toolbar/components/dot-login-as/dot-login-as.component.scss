@@ -1,15 +1,13 @@
 @use "variables" as *;
 @import "mixins";
 
+:host {
+    display: block;
+}
+
 .login-as {
-    width: 300px;
-}
-
-.login-as__error-message {
-    color: $red;
-    margin-top: 0;
-}
-
-input[type="password"] {
-    width: 100%;
+    &__error-message {
+        color: $error;
+        margin-bottom: $spacing-3;
+    }
 }

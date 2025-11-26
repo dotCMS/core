@@ -1,5 +1,4 @@
 import autoScroll from 'dom-autoscroller';
-import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';
 
@@ -14,21 +13,22 @@ import {
     Output,
     Renderer2,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
@@ -44,9 +44,19 @@ import { FieldPropertyService } from '../service/field-properties.service';
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
-    templateUrl: './content-type-fields-drop-zone.component.html'
+    templateUrl: './content-type-fields-drop-zone.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
+    private dotMessageService = inject(DotMessageService);
+    private fieldDragDropService = inject(FieldDragDropService);
+    private fieldPropertyService = inject(FieldPropertyService);
+    private dotEventsService = inject(DotEventsService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dragulaService = inject(DragulaService);
+    private elRef = inject(ElementRef);
+    private rendered = inject(Renderer2);
+
     readonly OVERVIEW_TAB_INDEX = 0;
     readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
 
@@ -78,17 +88,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private fieldDragDropService: FieldDragDropService,
-        private fieldPropertyService: FieldPropertyService,
-        private dotEventsService: DotEventsService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dragulaService: DragulaService,
-        private elRef: ElementRef,
-        private rendered: Renderer2
-    ) {}
-
     private _loading: boolean;
 
     get loading(): boolean {
@@ -115,7 +114,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
-            return FieldUtil.isColumnBreak(item.clazz);
+            return item.clazz === DotCMSClazzes.COLUMN_BREAK;
         });
     }
 
@@ -224,7 +223,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.layout && changes.layout.currentValue) {
-            this.fieldRows = _.cloneDeep(changes.layout.currentValue);
+            this.fieldRows = structuredClone(changes.layout.currentValue);
         }
     }
 
@@ -369,7 +368,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
-        this.fieldRows = _.cloneDeep(this.layout);
+        this.fieldRows = structuredClone(this.layout);
     }
 
     /**
@@ -428,15 +427,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.dialogActions = controls;
     }
 
-    private setDroppedField(droppedField: DotCMSContentTypeField): void {
-        this.currentField = droppedField;
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
-    }
-
     protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
+    }
+
+    private setDroppedField(droppedField: DotCMSContentTypeField): void {
+        this.currentField = droppedField;
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private emitSaveFields(layout: DotCMSContentTypeLayoutRow[]): void {

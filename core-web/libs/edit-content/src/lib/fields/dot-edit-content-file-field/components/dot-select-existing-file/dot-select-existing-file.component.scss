@@ -1,0 +1,22 @@
+@use "variables" as *;
+
+.file-selector {
+    height: 45rem;
+    .file-selector__sidebar {
+        flex: 0 0 auto;
+        min-width: 16rem;
+        width: 25%;
+        border-right: $field-border-size solid $color-palette-gray-400;
+        ::ng-deep {
+            .p-tree {
+                border: 0px;
+                padding: 0px;
+            }
+        }
+    }
+    .file-selector__main {
+        margin-top: 1px;
+        border-radius: $border-radius-md;
+        border: $field-border-size solid $color-palette-gray-400;
+    }
+}

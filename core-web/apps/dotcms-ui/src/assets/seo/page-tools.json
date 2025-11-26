@@ -5,21 +5,21 @@
             "title": "Wave",
             "description": "The WAVE® evaluation suite helps educate authors on how to make their web content more accessible to individuals with disabilities. WAVE can identify many accessibility and Web Content Accessibility Guideline (WCAG) errors, but also facilitates human evaluation of web content.",
             "tags": ["Accessibility", "WCAG"],
-            "runnableLink": "https://wave.webaim.org/report#/{requestHostName}{currentUrl}{siteId}{languageId}"
+            "runnableLink": "https://wave.webaim.org/report#/{requestHostName}{currentUrl}{urlSearchParams}"
         },
         {
             "icon": "assets/seo/mozilla.png",
             "title": "Mozilla Observatory",
             "description": "The Mozilla Observatory has helped hundreds of thousands of websites by teaching developers, system administrators, and security professionals how to configure their sites safely and securely. ",
             "tags": ["Security", "Best Practices"],
-            "runnableLink": "https://observatory.mozilla.org/analyze/{requestHostName}"
+            "runnableLink": "https://developer.mozilla.org/en-US/observatory/analyze?host={domainName}"
         },
         {
             "icon": "assets/seo/security-headers.png",
             "title": "Security Headers",
             "description": "This tool is designed to help you better deploy and understand modern security features that are available for your website. It will provide a simple to understand grading system for how well your site follows best practices, as well as suggestions for how to make improvement.",
             "tags": ["Security", "Best Practices"],
-            "runnableLink": "https://securityheaders.com/?q={requestHostName}{currentUrl}{siteId}{languageId}&followRedirects=on"
+            "runnableLink": "https://securityheaders.com/?q={requestHostName}{currentUrl}{urlSearchParams}&followRedirects=on"
         }
     ]
 }

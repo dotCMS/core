@@ -1,0 +1,126 @@
+name: Release Candidate Process
+on:
+  workflow_dispatch:
+    inputs:
+      initial_sha:
+        description: 'Initial commit sha'
+        required: true
+      last_sha:
+        description: 'Last commit sha'
+        required: true
+      labels:
+        description: 'Comma delimited labels to add/remove'
+        required: false
+        default: 'Release Candidate'
+      label_operation:
+        description: 'Label operation (ADD or REMOVE) to perform'
+        type: choice
+        options:
+          - Add
+          - Remove
+          - None
+        required: true
+        default: 'ADD'
+      tag_name:
+        description: 'Tag name to create'
+        required: false
+        default: 'release_candidate'
+
+jobs:
+  release-candidate-process:
+    name: Release process automation
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      ref: ${{ steps.set-common-vars.outputs.ref }}
+    steps:
+      -
+        run: echo "Github Context:"
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+      -
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      -
+        uses: ./.github/actions/core-cicd/cleanup-runner
+      -
+        name: Generate changelog
+        id: changelog
+        uses: ./.github/actions/legacy-release/rc-changelog
+        with:
+          branch: ${{ github.ref_name }}
+          initial_sha: ${{ github.event.inputs.initial_sha }}
+          last_sha: ${{ github.event.inputs.last_sha }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Label issues
+        uses: ./.github/actions/issues/issue-labeler
+        with:
+          issues_json: ${{ steps.changelog.outputs.issues_flat }}
+          labels: ${{ github.event.inputs.labels }}
+          operation: ${{ github.event.inputs.label_operation }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        if: github.event.inputs.label_operation != 'None'
+      -
+        name: Create RC tag
+        run: |
+          git fetch --tags
+          git reset --hard ${{ github.event.inputs.last_sha }}
+          if git show-ref --tags "${RELEASE_CANDIDATE_TAG}" --quiet; then
+            git tag -d ${RELEASE_CANDIDATE_TAG}
+            git push origin :refs/tags/${RELEASE_CANDIDATE_TAG}
+          fi
+          
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+          
+          git tag -a ${RELEASE_CANDIDATE_TAG} -m 'Release candidate tag'
+          git push origin "${RELEASE_CANDIDATE_TAG}"
+        env:
+          RELEASE_CANDIDATE_TAG: ${{ github.event.inputs.tag_name }}
+        if: env.RELEASE_CANDIDATE_TAG != ''
+      -
+        name: Changelog report
+        uses: ./.github/actions/legacy-release/changelog-report
+        with:
+          issues_json: ${{ steps.changelog.outputs.issues_json }}
+          tag: ${{ github.event.inputs.tag_name }}
+          format: md
+      -
+        name: Set Common Vars
+        id: set-common-vars
+        run: |
+          echo "ref=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+
+  build_push_image:
+    name: Build/Push Image
+    needs: release-candidate-process
+    uses: ./.github/workflows/legacy-release_comp_maven-build-docker-image.yml
+    with:
+      ref: ${{ needs.release-candidate-process.outputs.ref }}
+      docker_platforms: linux/amd64,linux/arm64
+    secrets:
+      docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+      ghcr_io_username: ${{ secrets.DOCKER_USERNAME }}
+      ghcr_io_token: ${{ secrets.GHCR_TOKEN }}
+
+  notification:
+    name: Release process automation
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: [release-candidate-process, build_push_image]
+    steps:
+      -
+        name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.CODE_FREEZE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Attention dotters: New pre-release created!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
+          SLACK_MESSAGE: "<!channel> A release candidate has been successfully created :hatching_chick: with tags: [${{ needs.build_push_image.outputs.tags }}] :docker:"
+        if: success()

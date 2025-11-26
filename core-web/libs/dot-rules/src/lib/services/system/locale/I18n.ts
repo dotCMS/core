@@ -1,14 +1,16 @@
 import { defer as observableDefer, Observer } from 'rxjs';
-
-import { catchError, map } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { HttpResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+
+import { catchError, map } from 'rxjs/operators';
+
 import { ApiRoot } from '@dotcms/dotcms-js';
-import { Verify } from '../../validation/Verify';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { CoreWebService, HttpCode } from '@dotcms/dotcms-js';
-import { HttpResponse } from '@angular/common/http';
+
+import { Verify } from '../../validation/Verify';
 
 export class TreeNode {
     [key: string]: TreeNode | any;
@@ -28,12 +30,13 @@ export class TreeNode {
     $addAllFromJson(key: string, childJson: any): void {
         const cNode = this.$child(key);
         if (Verify.isString(childJson)) {
-            cNode._value = childJson;
+            cNode._value = childJson.toString();
         } else {
             Object.keys(childJson).forEach((cKey) => {
                 cNode.$addAllFromJson(cKey, childJson[cKey]);
             });
         }
+
         cNode._loaded = true;
     }
 
@@ -74,6 +77,7 @@ export class TreeNode {
             child._loading = this._loading;
             this[cKey] = child;
         }
+
         return child;
     }
 
@@ -83,6 +87,7 @@ export class TreeNode {
         if (path.length > 1) {
             child = child.$descendant(path.slice(1));
         }
+
         return child;
     }
 
@@ -93,15 +98,16 @@ export class TreeNode {
 
 @Injectable()
 export class I18nService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     root: TreeNode;
     private _apiRoot: ApiRoot;
     private _baseUrl;
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._apiRoot = apiRoot;
         this._baseUrl = '/api/v1/system/i18n';
         this.root = new TreeNode(null, 'root');
@@ -153,6 +159,7 @@ export class I18nService {
                                     err
                                 );
                             }
+
                             return Observable.create((obs) => {
                                 obs.next(defaultValue);
                             });
@@ -185,6 +192,7 @@ export class I18nService {
                         } else {
                             v = cNode._value;
                         }
+
                         obs.next(v);
                         obs.complete();
                     });

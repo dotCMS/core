@@ -1,16 +1,7 @@
 package com.dotmarketing.portlets.containers.model;
 
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotmarketing.beans.Host;
-
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -19,8 +10,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vavr.control.Try;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * This is a {@link Container} plus a list of {@link FileAsset}
@@ -97,6 +96,12 @@ public class FileAssetContainer extends Container {
 
     public void setContainerStructuresAssets(List<FileAsset> containerStructuresAssets) {
         this.containerStructuresAssets = containerStructuresAssets.stream().map(f->f.getInode()).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    // we override it, in order to do the permissionable behind a contentlet object
+    @Override
+    public String getPermissionType() {
+        return Contentlet.class.getCanonicalName();
     }
 
     public void addMetaData(final String key, final Object value) {

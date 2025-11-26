@@ -5,12 +5,13 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,15 +24,14 @@ import java.util.Optional;
 public interface ExperimentsAPI {
 
     String PRIMARY_GOAL = "primary";
-    Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
-    Lazy<Integer> EXPERIMENTS_DEFAULT_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_DEFAULT_DURATION", 14));
-    Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 7));
-    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 14));
+    String EXPERIMENTS_MAX_DURATION_KEY = "EXPERIMENTS_MAX_DURATION";
+    String EXPERIMENTS_DEFAULT_DURATION_KEY = "EXPERIMENTS_DEFAULT_DURATION";
+    String EXPERIMENTS_MIN_DURATION_KEY = "EXPERIMENTS_MIN_DURATION";
+    String EXPERIMENTS_LOOKBACK_WINDOW_KEY = "EXPERIMENTS_LOOKBACK_WINDOW";
 
     enum Health {
         OK, NOT_CONFIGURED, CONFIGURATION_ERROR
     }
-
 
     /**
      * Save a new experiment when the Experiment doesn't have an id
@@ -61,7 +61,7 @@ public interface ExperimentsAPI {
     /**
      * Deletes the Experiment matching the provided id, and just Validate Permission
      */
-    public void forceDelete(final String id, final User user) throws DotDataException, DotSecurityException;
+    void forceDelete(final String id, final User user) throws DotDataException, DotSecurityException;
 
     /**
      * Returns experiments based on the provided filters in {@link ExperimentFilter}
@@ -86,7 +86,7 @@ public interface ExperimentsAPI {
      * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
      * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
      * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
-     * <li>Unable to start if difference between {@link Scheduling#endDate()} and {@link Scheduling#startDate()} is more than {@link ExperimentsAPI#EXPERIMENTS_MAX_DURATION}
+     * <li>Unable to start if difference between {@link Scheduling#endDate()} and {@link Scheduling#startDate()} is more than {@link ExperimentsAPI#EXPERIMENTS_MAX_DURATION_KEY}
      *
      * @return
      */
@@ -145,7 +145,7 @@ public interface ExperimentsAPI {
      * <li>Provided {@link Scheduling#startDate()} needs to be now or in the future
      * <li>Provided {@link Scheduling#endDate()} needs to be in the future
      * <li>Provided {@link Scheduling#endDate()} needs to be after provided {@link Scheduling#startDate()}
-     * <li>Difference between provided {@link Scheduling#endDate()} and {@link Scheduling#startDate()} needs to be less or equal than {@link ExperimentsAPI#EXPERIMENTS_MAX_DURATION}
+     * <li>Difference between provided {@link Scheduling#endDate()} and {@link Scheduling#startDate()} needs to be less or equal than {@link ExperimentsAPI#EXPERIMENTS_MAX_DURATION_KEY}
      */
     Scheduling validateScheduling(final Scheduling scheduling);
 
@@ -182,6 +182,13 @@ public interface ExperimentsAPI {
     List<Experiment> getRunningExperiments() throws DotDataException;
 
     /**
+     * Return a list of the current RUNNING Experiments on the specific {@link Host}.
+     *
+     * @return
+     */
+    List<Experiment> getRunningExperiments(final Host host) throws DotDataException;
+
+    /**
      * Return a {@link Experiment}'s {@link Rule}
      *
      * @param experiment
@@ -199,7 +206,8 @@ public interface ExperimentsAPI {
      * @see ConfigExperimentUtil#isExperimentEnabled()
      *
      */
-    boolean isAnyExperimentRunning() throws DotDataException;
+    boolean isAnyExperimentRunning(final Host host) throws DotDataException;
+
 
     /**
      * Return the Experiment partial or total result.
@@ -210,8 +218,6 @@ public interface ExperimentsAPI {
      */
     ExperimentResults getResults(Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
-
-    List<Experiment> cacheRunningExperiments() throws DotDataException;
 
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
@@ -248,5 +254,19 @@ public interface ExperimentsAPI {
      * @throws DotDataException
      */
     Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
+
+    /**
+     * Return the collection of experiments that are active on this Page. This includes all the experiments
+     * currently active on the Page. It means all experiments with the status DRAFT, SCHEDULED or
+     * RUNNING Experiment on this Page
+     *
+     * @param pageIdentifier to Filter the Experiments.
+     *
+     * @return
+     * @throws DotDataException
+     */
+    Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
+
+    int getExperimentsLookbackWindow();
 
 }

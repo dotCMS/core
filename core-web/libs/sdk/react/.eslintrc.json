@@ -1,5 +1,5 @@
 {
-    "extends": ["plugin:@nrwl/nx/react", "../../../.eslintrc.json"],
+    "extends": ["plugin:@nx/react", "../../../.eslintrc.base.json"],
     "ignorePatterns": ["!**/*"],
     "overrides": [
         {
@@ -13,6 +13,19 @@
         {
             "files": ["*.js", "*.jsx"],
             "rules": {}
+        },
+        {
+            "files": [
+                "**/*.spec.ts",
+                "**/*.spec.tsx",
+                "**/*.test.ts",
+                "**/*.test.tsx",
+                "**/*.spec.js",
+                "**/*.test.js"
+            ],
+            "rules": {
+                "@typescript-eslint/no-explicit-any": "off"
+            }
         }
     ]
 }

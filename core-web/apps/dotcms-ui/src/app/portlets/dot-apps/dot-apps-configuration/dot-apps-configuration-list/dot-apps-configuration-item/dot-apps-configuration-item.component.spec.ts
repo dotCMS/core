@@ -7,13 +7,13 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
+
+import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 const messages = {
     'apps.key': 'Key',
@@ -54,14 +54,15 @@ describe('DotAppsConfigurationItemComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 CommonModule,
-                DotCopyLinkModule,
+                DotCopyLinkComponent,
                 TooltipModule,
                 HttpClientTestingModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 ButtonModule,
-                DotMessagePipe
+                DotMessagePipe,
+                DotAppsConfigurationItemComponent
             ],
-            declarations: [DotAppsConfigurationItemComponent],
+            declarations: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotAlertConfirmService,
@@ -82,8 +83,9 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-list__name'))
-                    .nativeElement.innerText
+                fixture.debugElement
+                    .query(By.css('.dot-apps-configuration-list__name'))
+                    .nativeElement.textContent.trim()
             ).toBe(sites[0].name);
 
             expect(
@@ -113,10 +115,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit export action with a site', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const exportBtn = fixture.debugElement.query(By.css('[data-testId="export"]'));
 
-            spyOn(component.export, 'emit');
+            jest.spyOn(component.export, 'emit');
 
             exportBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -124,17 +126,18 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.export.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.export.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit delete action', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const deleteBtn = fixture.debugElement.query(By.css('[data-testId="delete"]'));
 
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
-            spyOn(component.delete, 'emit');
+            jest.spyOn(component.delete, 'emit');
 
             deleteBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -143,13 +146,14 @@ describe('DotAppsConfigurationItemComponent', () => {
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.delete.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.delete.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit edit action with a site', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const editBtn = fixture.debugElement.query(By.css('[data-testId="edit"]'));
 
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit');
 
             editBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -157,20 +161,22 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit edit action when host component clicked', () => {
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit');
             fixture.debugElement.triggerEventHandler('click', {
                 stopPropagation: () => {
                     //
                 }
             });
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should not emit edit action when host label clicked', () => {
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit');
             fixture.debugElement.query(By.css('dot-copy-link')).nativeElement.click();
             expect(component.edit.emit).toHaveBeenCalledTimes(0);
         });
@@ -192,10 +198,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action with No site', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const createBtn = fixture.debugElement.query(By.css('[data-testId="add"]'));
 
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit');
 
             createBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -203,6 +209,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[1]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

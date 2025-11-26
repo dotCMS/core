@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 
 @Injectable({

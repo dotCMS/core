@@ -27,11 +27,11 @@ public interface HostFactory {
      * Finds a Site in the repository, based on its name. If it cannot be found or if an error ocurred, the "default"
      * Site will be returned instead.
      *
-     * @param siteName The name of the Site
-     *
+     * @param siteName            The name of the Site
+     * @param retrieveLiveVersion
      * @return The Site with the specified name.
      */
-    Host bySiteName(final String siteName);
+    Host bySiteName(final String siteName, boolean retrieveLiveVersion);
 
     /**
      * Returns the Site that matches the specified alias. Depending on the existing data, the result may vary:
@@ -46,11 +46,11 @@ public interface HostFactory {
      *  </li>
      * </ol>
      *
-     * @param alias The alias of the Site.
-     *
+     * @param alias               The alias of the Site.
+     * @param retrieveLiveVersion
      * @return The {@link Host} object matching the alias, the "default" Site, or the first Site from the result set.
      */
-    Host byAlias(final String alias);
+    Host byAlias(final String alias, boolean retrieveLiveVersion);
 
     /**
      * Returns the list of Sites in your dotCMS repository retrieved <b>directly from the data source</b> matching the
@@ -102,6 +102,29 @@ public interface HostFactory {
      *                              operation.
      */
     List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns the list of Sites in your dotCMS repository retrieved <b>directly from the data source</b> matching the
+     * specified search criteria. This method also allows you to retrieve the live version of the Site, if it exists.
+     *
+     * @param limit                 Limit of results returned in the response, for pagination purposes. If set equal or
+     *                              lower than zero, this parameter will be ignored.
+     * @param offset                Expected offset of results in the response, for pagination purposes. If set equal or
+     *                              lower than zero, this parameter will be ignored.
+     * @param orderBy               Optional sorting criterion, as specified by the available columns in: {@link
+     *                              com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST} .
+     * @param includeSystemHost     If the System Host should be included in the results, set to {@code true}.
+     * @param retrieveLiveVersion   If the live version of the Site should be retrieved, set to {@code true}.
+
+     * @return The list of {@link Host} objects.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    List<Host> findAll(final int limit, final int offset, final String orderBy,
+                       final boolean includeSystemHost, final boolean retrieveLiveVersion)
             throws DotDataException, DotSecurityException;
 
     /**
@@ -165,17 +188,17 @@ public interface HostFactory {
     /**
      * Returns the "default" Site in the current data repository.
      *
-     * @param contentTypeId Content Type Inode of the current "Host" type.
-     * @param columnName    For non-JSON databases, the name of the database column that determines whether a Site is
-     *                      the default one or not.
-     *
+     * @param contentTypeId        Content Type Inode of the current "Host" type.
+     * @param columnName           For non-JSON databases, the name of the database column that determines whether a Site is
+     *                             the default one or not.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
      * @return The Site with the specified name, or the "default" Site.
-     *
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws DotSecurityException The specified User does not have the required permissions to perform this
      *                              operation.
      */
-    Optional<Host> findDefaultHost(final String contentTypeId, final String columnName) throws DotDataException, DotSecurityException;
+    Optional<Host> findDefaultHost(final String contentTypeId, final String columnName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * Returns all live Sites in dotCMS.

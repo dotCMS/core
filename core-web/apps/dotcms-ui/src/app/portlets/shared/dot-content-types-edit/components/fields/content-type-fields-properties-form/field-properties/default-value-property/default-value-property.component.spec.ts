@@ -9,9 +9,8 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DefaultValuePropertyComponent } from './index';
 
@@ -32,7 +31,7 @@ describe('DefaultValuePropertyComponent', () => {
             declarations: [DefaultValuePropertyComponent],
             imports: [
                 ReactiveFormsModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotFieldValidationMessageComponent
             ],

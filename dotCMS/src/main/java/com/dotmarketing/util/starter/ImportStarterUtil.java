@@ -1,8 +1,5 @@
 package com.dotmarketing.util.starter;
 
-import static com.dotcms.util.ConversionUtils.toLong;
-import static com.dotmarketing.util.ConfigUtils.getDeclaredDefaultLanguage;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -16,6 +13,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.FactoryLocator;
@@ -60,13 +58,14 @@ import com.liferay.util.EncryptorException;
 import com.liferay.util.FileUtil;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +81,9 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
-import org.apache.commons.beanutils.BeanUtils;
+
+import static com.dotcms.util.ConversionUtils.toLong;
+import static com.dotmarketing.util.ConfigUtils.getDeclaredDefaultLanguage;
 
 
 /**
@@ -98,9 +99,10 @@ import org.apache.commons.beanutils.BeanUtils;
 public class ImportStarterUtil {
 
     /**
-     * The path where tmp files are stored. This gets wiped alot
+     * Fully configurable path for the backup directory.
      */
-    private String backupTempFilePath = ConfigUtils.getBackupPath() + File.separator + "temp";
+    private static final String BACKUP_DIRECTORY = ConfigUtils.getBackupPath();
+    private String backupTempFilePath = BACKUP_DIRECTORY + File.separator + "temp";
     private ArrayList<String> classesWithIdentity = new ArrayList<>();
     private Map<String, String> sequences;
     private Map<String, String> tableIDColumns;
@@ -215,6 +217,12 @@ public class ImportStarterUtil {
 
                 doJSONFileImport(file, entity.type());
 
+                if (entity.fileName().startsWith(Contentlet.class.getCanonicalName())) {
+                    // content types and relationships are imported before sites
+                    // so we need to clear the host cache to avoid missed hosts references
+                    CacheLocator.getHostCache().clearCache();
+                }
+
                 if (Contentlet.class.getCanonicalName().equals(entity.fileName())){
                     updateContentletToNewDefaultLang();
                 }
@@ -279,6 +287,9 @@ public class ImportStarterUtil {
                 ident.setAssetName(ident.getAssetName());
             }
             Logger.info(this, "Importing folder path " + ident.getParentPath() + ident.getAssetName());
+            if(FolderAPI.OLD_SYSTEM_FOLDER_ID.equals(ident.getId())) {
+                ident.setId(FolderAPI.SYSTEM_FOLDER);
+            }
             APILocator.getIdentifierAPI().save(ident);
         }
 
@@ -286,6 +297,7 @@ public class ImportStarterUtil {
         for (final Identifier ident : otherIdents) {
             APILocator.getIdentifierAPI().save(ident);
         }
+
     }
 
     /**
@@ -392,9 +404,17 @@ public class ImportStarterUtil {
      * Deletes all files from the backupTempFilePath
      */
     private void deleteTempFiles() {
-        File f = new File(backupTempFilePath);
-
-        FileUtil.deltree(f, true);
+        try {
+            Path tempDir = Paths.get(getBackupTempFilePath());
+            if (Files.exists(tempDir)) {
+                Files.walk(tempDir)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        } catch (IOException e) {
+            Logger.error(this, "Error cleaning up temp files", e);
+        }
     }
 
 
@@ -923,41 +943,45 @@ public class ImportStarterUtil {
     }
 
     /**
+     * Validates the zip file and ensures proper setup using Java NIO features.
+     * Handles directory creation safely and ensures concurrency safety.
      *
-     * @return
+     * @return true if the zip file is valid and successfully processed.
      */
     public boolean validateZipFile() {
-        String tempdir = getBackupTempFilePath();
+        String tempDirPath = getBackupTempFilePath();
 
         if (starterZip == null || !starterZip.exists()) {
-            throw new DotStateException("Starter.zip does not exist:" + starterZip);
+            throw new DotStateException("Starter.zip does not exist: " + starterZip);
         }
 
         try {
+            // Clean up temp directory before processing
             deleteTempFiles();
 
-            File ftempDir = new File(tempdir);
-            ftempDir.mkdirs();
-            File tempZip = new File(tempdir + File.separator + starterZip.getName());
-            tempZip.createNewFile();
+            Path tempDir = Paths.get(tempDirPath);
 
-            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(starterZip.toPath()));
-                    final WritableByteChannel outputChannel =
-                            Channels.newChannel(Files.newOutputStream(tempZip.toPath()))) {
+            // Create the temp directory if it does not exist
 
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            if (!Files.exists(tempDir)) {
+                Files.createDirectories(tempDir);
+            } else if (!Files.isDirectory(tempDir)) {
+                throw new DotRuntimeException("Backup path exists but is not a directory: " + backupTempFilePath);
             }
 
-            /*
-             * Unzip zipped backups
-             */
-            if (starterZip != null && starterZip.getName().toLowerCase().endsWith(".zip")) {
-                ZipFile z = new ZipFile(starterZip);
-                ZipUtil.extract(z, new File(backupTempFilePath));
+            // Extract the zip file contents into the temp directory
+            if (starterZip.getName().toLowerCase().endsWith(".zip")) {
+                try (ZipFile zipFile = new ZipFile(starterZip)) {
+                    ZipUtil.extract(zipFile, tempDir.toFile());
+                }
             }
+
+            // Process the extracted contents (if needed)
+            Logger.info(this, String.format("Successfully processed starter.zip in: %s", tempDir));
+
             return true;
-        } catch (Exception e) {
-            throw new DotStateException("Starter.zip invalid:" + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new DotStateException("Error processing starter.zip: " + e.getMessage(), e);
         }
     }
 

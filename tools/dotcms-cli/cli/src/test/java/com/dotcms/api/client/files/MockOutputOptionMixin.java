@@ -1,19 +1,31 @@
 package com.dotcms.api.client.files;
 
-import com.dotcms.cli.common.OutputOptionMixin;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.cli.common.DotExitCodeExceptionMapper;
+import com.dotcms.cli.common.OutputOptionMixin;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import org.mockito.Mockito;
+import picocli.CommandLine;
 
 public class MockOutputOptionMixin extends OutputOptionMixin {
 
     private StringWriter mockOut;
     private StringWriter mockErr;
+    private CommandLine mockCommandLine;
 
     public MockOutputOptionMixin() {
         // Create StringWriter instances for mock output and error streams
         mockOut = new StringWriter();
         mockErr = new StringWriter();
+        mockCommandLine = Mockito.mock(CommandLine.class);
+        when(mockCommandLine.getExitCodeExceptionMapper()).thenReturn(new DotExitCodeExceptionMapper());
+    }
+
+    @Override
+    public CommandLine commandLine() {
+        return mockCommandLine;
     }
 
     @Override
@@ -23,7 +35,7 @@ public class MockOutputOptionMixin extends OutputOptionMixin {
 
     @Override
     public void error(String msg) {
-        out().print(msg);
+        err().print(msg);
     }
 
     @Override
@@ -74,4 +86,11 @@ public class MockOutputOptionMixin extends OutputOptionMixin {
         }
     }
 
+    public String getMockOut() {
+        return mockOut.toString();
+    }
+
+    public String getMockErr() {
+        return mockErr.toString();
+    }
 }

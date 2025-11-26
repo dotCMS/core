@@ -18,9 +18,14 @@ public final class WorkflowSQL {
 
 	public static final String SELECT_SCHEME= "select * from workflow_scheme where id = ?";
 	public static final String SELECT_SCHEME_NAME= "select * from workflow_scheme where name = ?";
+	public static final String SELECT_SCHEME_BY_VARIABLE_NAME = "SELECT * FROM workflow_scheme WHERE lower(variable_name) LIKE ?";
 
 	public static final String SELECT_TASK_NULL_BY_STRUCT= "select task.* FROM workflow_task task INNER JOIN contentlet con ON con.identifier = task.webasset INNER JOIN contentlet_version_info cvi ON cvi.working_inode = con.inode"
 			+ " WHERE task.status is NULL AND con.structure_inode=?";
+
+	public static final String SELECT_COUNT_BY_VARIABLE_NAME =
+			"SELECT count(*) AS test FROM workflow_scheme "
+					+ "WHERE lower(variable_name) LIKE ?";
 
 	public static final String SELECT_NULL_TASK_CONTENTLET_FOR_WORKFLOW = "select c.identifier from contentlet c join workflow_scheme_x_structure wss on c.structure_inode = wss.structure_id and wss.scheme_id = ? where c.identifier in (select t.webasset from workflow_task t where t.status is null)";
 	public static final String SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT= "select * from  workflow_task where webasset in (select identifier from contentlet where contentlet.structure_inode = ? group by identifier) ";
@@ -29,7 +34,7 @@ public final class WorkflowSQL {
 	public static final String INSERT_SCHEME_FOR_STRUCT= "insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values ( ?, ?, ?)";
 	public static final String SELECT_SCHEME_BY_STRUCT= "select * from workflow_scheme, workflow_scheme_x_structure where workflow_scheme.id = workflow_scheme_x_structure.scheme_id and workflow_scheme_x_structure.structure_id = ?";
 
-	public static final String INSERT_SCHEME= "insert into workflow_scheme (id, name, description, archived, mandatory, default_scheme, mod_date) values (?,?,?,?,?,?,?)";
+	public static final String INSERT_SCHEME = "insert into workflow_scheme (id, name, variable_name, description, archived, mandatory, default_scheme, mod_date) values (?,?,?,?,?,?,?,?)";
 
 	public static final String UPDATE_SCHEME= "update workflow_scheme set name = ?, description =?, archived=?, mandatory=?, mod_date=? where id =? ";
 

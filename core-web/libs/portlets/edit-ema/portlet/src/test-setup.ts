@@ -1,12 +1,26 @@
-import 'jest-preset-angular/setup-jest';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
-import { SplitButtonMockComponent, SplitButtonMockModule } from '@dotcms/utils-testing';
+import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-/*
- * This is a workaround for the following PrimeNg issue: https://github.com/primefaces/primeng/issues/12945
- * They already fixed it, but it's not in the latest v15 LTS yet: https://github.com/primefaces/primeng/pull/13597
- */
-jest.mock('primeng/splitbutton', () => ({
-    SplitButtonModule: SplitButtonMockModule,
-    SplitButton: SplitButtonMockComponent
-}));
+setupZoneTestEnv({
+    errorOnUnknownElements: true,
+    errorOnUnknownProperties: true
+});
+
+// Setup global mocks
+setupResizeObserverMock();
+
+// Workaround for the following issue:
+// https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
+const originalConsoleError = console.error;
+const jsDomCssError = 'Error: Could not parse CSS stylesheet';
+console.error = (...params) => {
+    if (!params.find((p) => p.toString().includes(jsDomCssError))) {
+        originalConsoleError(...params);
+    }
+};
+
+// Filter all console warnings during tests
+console.warn = () => {
+    // do nothing so it doesn't print warnings that are not relevant to the tests
+};

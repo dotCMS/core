@@ -15,6 +15,7 @@ import {
     HostListener,
     inject,
     Input,
+    OnChanges,
     OnInit,
     Output,
     signal,
@@ -35,15 +36,15 @@ import { debounceTime } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { dotVelocityLanguageDefinition } from '../../../../custom-languages/velocity-monaco-language';
+import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '../../dot-edit-content-binary-field.component';
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 
 const DEFAULT_FILE_TYPE = 'text';
 @Component({
-    selector: 'dot-dot-binary-field-editor',
-    standalone: true,
+    selector: 'dot-binary-field-editor',
     imports: [
         CommonModule,
         MonacoEditorModule,
@@ -58,7 +59,7 @@ const DEFAULT_FILE_TYPE = 'text';
     styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldEditorComponent implements OnInit {
+export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
     @Input() fileName = '';
     @Input() fileContent = '';
     @Input() allowFileNameEdit = true;
@@ -67,7 +68,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
     @Output() readonly cancel = new EventEmitter<void>();
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
     readonly form = new FormGroup({
-        name: new FormControl('', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]),
+        name: new FormControl('', [Validators.required]),
         content: new FormControl('')
     });
     mimeType = '';
@@ -129,11 +130,26 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         );
     }
 
+    ngOnChanges(): void {
+        this.setFormValues();
+        if (window.monaco) {
+            this.setEditorLanguage(this.fileName);
+        }
+    }
+
     onEditorInit() {
         this.editor = this.editorRef.editor;
         if (this.fileName) {
             this.setEditorLanguage(this.fileName);
         }
+
+        window.monaco.languages.register({
+            id: 'velocity',
+            extensions: ['.vtl'],
+            mimetypes: ['text/x-velocity']
+        });
+
+        window.monaco.languages.setMonarchTokensProvider('velocity', dotVelocityLanguageDefinition);
     }
 
     onSubmit(): void {
@@ -172,23 +188,44 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         });
     }
 
-    private setEditorLanguage(fileName: string = '') {
-        const fileExtension = fileName?.includes('.') ? fileName.split('.').pop() : '';
-        const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
-        this.mimeType = mimetypes?.[0];
-        this.extension = extensions?.[0];
+    private setEditorLanguage(fileName = '') {
+        const fileExtension = this.extractFileExtension(fileName);
 
+        if (fileExtension === 'vtl') {
+            this.setVelocityLanguage();
+        } else {
+            this.updateLanguageForFileExtension(fileExtension);
+        }
+
+        this.validateFileType();
+        this.cd.detectChanges();
+    }
+
+    private extractFileExtension(fileName: string) {
+        return fileName?.includes('.') ? fileName.split('.').pop() : '';
+    }
+
+    private setVelocityLanguage() {
+        this.mimeType = 'text/x-velocity';
+        this.extension = 'vtl';
+        this.updateEditorLanguage('velocity');
+    }
+
+    private updateLanguageForFileExtension(fileExtension: string) {
+        const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
+        this.mimeType = mimetypes?.[0] || 'plain/text';
+        this.extension = extensions?.[0] || 'txt';
+        this.updateEditorLanguage(id);
+    }
+
+    private validateFileType() {
         const isValidType = this.dotBinaryFieldValidatorService.isValidType({
             extension: this.extension,
             mimeType: this.mimeType
         });
-
-        if (fileExtension && !isValidType) {
+        if (!isValidType) {
             this.name.setErrors({ invalidExtension: this.invalidFileMessage });
         }
-
-        this.updateEditorLanguage(id);
-        this.cd.detectChanges();
     }
 
     private getLanguage(fileExtension: string) {
@@ -198,7 +235,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
             .find((language) => language.extensions?.includes(`.${fileExtension}`));
     }
 
-    private updateEditorLanguage(languageId: string = 'text') {
+    private updateEditorLanguage(languageId = 'text') {
         this.languageType.set(languageId);
     }
 

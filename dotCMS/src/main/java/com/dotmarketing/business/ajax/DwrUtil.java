@@ -27,7 +27,7 @@ import java.util.Optional;
  * Provides utility methods for DWR-related classes that allow developers to retrieve common-use
  * information such as:
  * <ul>
- *     <li>The current Session, Servlet Context, and DWR objects.</li>
+ *     <li>The current Session, Request, Servlet Context, and DWR objects.</li>
  *     <li>The currently logged-in User and their Roles.</li>
  *     <li>Portlet validation data.</li>>
  * </ul>
@@ -174,6 +174,16 @@ public class DwrUtil {
     public static ServletContext getServletContext() {
         final WebContext ctx = WebContextFactory.get();
         return ctx.getServletContext();
+    }
+
+    /**
+     * Returns the current HTTP Request object from the DWR Web Context Factory.
+     *
+     * @return The current instance of the {@link HttpServletRequest} object.
+     */
+    public static HttpServletRequest getHttpServletRequest() {
+        final WebContext ctx = WebContextFactory.get();
+        return ctx.getHttpServletRequest();
     }
 
 }

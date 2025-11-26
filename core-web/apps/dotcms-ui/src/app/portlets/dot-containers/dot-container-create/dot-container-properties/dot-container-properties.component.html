@@ -1,46 +1,46 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <form [formGroup]="form">
         <div class="dot-container-properties__button-container">
             <button
-                class="p-button-outlined p-button-md"
-                [label]="'Cancel' | dm"
                 (click)="cancel()"
+                [label]="'Cancel' | dm"
+                class="p-button-outlined p-button-md"
                 pButton
                 type="button"></button>
             <button
-                class="p-button-primary p-button-md"
+                (click)="save()"
                 [disabled]="vm.invalidForm"
                 [label]="'Save' | dm"
-                (click)="save()"
+                class="p-button-primary p-button-md"
                 data-testId="saveBtn"
                 pButton
                 type="submit"></button>
         </div>
         <div class="dot-container-properties__title-container">
             <div class="field">
-                <label class="block" for="title">{{
-                    'message.containers.create.title' | dm
-                }}</label>
+                <label class="block" for="title">
+                    {{ 'message.containers.create.title' | dm }}
+                </label>
                 <div class="dot-container-properties__title-container-content">
                     <input
+                        [required]="true"
                         class="dot-container-properties__title-input w-25rem"
                         id="title"
-                        [required]="true"
                         data-testId="title"
                         dotAutofocus
                         type="text"
                         pInputText
                         formControlName="title" />
-                    <dot-api-link
-                        *ngIf="form?.value?.identifier"
-                        [href]="vm.apiLink"></dot-api-link>
+                    @if (form?.value?.identifier) {
+                        <dot-api-link [href]="vm.apiLink"></dot-api-link>
+                    }
                 </div>
             </div>
         </div>
         <div class="field">
-            <label class="block" for="description">{{
-                'message.containers.create.description' | dm
-            }}</label>
+            <label class="block" for="description">
+                {{ 'message.containers.create.description' | dm }}
+            </label>
             <input
                 class="dot-container-properties__description-input w-25rem"
                 id="description"
@@ -50,52 +50,55 @@
                 pInputText />
         </div>
         <div class="field">
-            <label class="block" dotFieldRequired for="max-contents">{{
-                'message.containers.create.max_contents' | dm
-            }}</label>
+            <label class="block" dotFieldRequired for="max-contents">
+                {{ 'message.containers.create.max_contents' | dm }}
+            </label>
             <input
+                [required]="true"
                 class="dot-container-properties__max-contents-input"
                 id="max-contents"
-                [required]="true"
                 data-testId="max-contents"
                 type="number"
                 min="0"
                 formControlName="maxContentlets"
                 pInputText />
-            <button
-                class="p-button-info dot-container-properties__button-clear"
-                *ngIf="vm.isContentTypeVisible"
-                [label]="'message.containers.create.clear' | dm"
-                (click)="clearContentConfirmationModal()"
-                data-testId="clearContent"
-                pButton
-                type="button"></button>
+            @if (vm.isContentTypeVisible) {
+                <button
+                    (click)="clearContentConfirmationModal()"
+                    [label]="'message.containers.create.clear' | dm"
+                    class="p-button-info dot-container-properties__button-clear"
+                    data-testId="clearContent"
+                    pButton
+                    type="button"></button>
+            }
         </div>
-
-        <div
-            class="dot-container-properties__code-loop-container"
-            *ngIf="vm.isContentTypeVisible"
-            [@contentTypeAnimation]>
-            <dot-loop-editor
-                [isEditorVisible]="vm.showPrePostLoopInput"
-                (buttonClick)="showLoopInput()"
-                label="pre_loop"
-                formControlName="preLoop"></dot-loop-editor>
-            <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form"></dot-container-code>
-            <dot-loop-editor
-                [isEditorVisible]="vm.showPrePostLoopInput"
-                (buttonClick)="showLoopInput()"
-                formControlName="postLoop"
-                label="post_loop"></dot-loop-editor>
-        </div>
-        <div class="field" *ngIf="!vm.isContentTypeVisible">
-            <label class="block" dotFieldRequired for="code">Code</label>
-            <dot-textarea-content
-                id="code"
-                [show]="['code']"
-                data-testId="code"
-                formControlName="code"
-                language="html"></dot-textarea-content>
-        </div>
+        @if (vm.isContentTypeVisible) {
+            <div class="dot-container-properties__code-loop-container" [@contentTypeAnimation]>
+                <dot-loop-editor
+                    (buttonClick)="showLoopInput()"
+                    [isEditorVisible]="vm.showPrePostLoopInput"
+                    label="pre_loop"
+                    formControlName="preLoop"></dot-loop-editor>
+                <dot-container-code
+                    [contentTypes]="vm.contentTypes"
+                    [fg]="form"></dot-container-code>
+                <dot-loop-editor
+                    (buttonClick)="showLoopInput()"
+                    [isEditorVisible]="vm.showPrePostLoopInput"
+                    formControlName="postLoop"
+                    label="post_loop"></dot-loop-editor>
+            </div>
+        }
+        @if (!vm.isContentTypeVisible) {
+            <div class="field">
+                <label class="block" dotFieldRequired for="code">Code</label>
+                <dot-textarea-content
+                    [show]="['code']"
+                    id="code"
+                    data-testId="code"
+                    formControlName="code"
+                    language="html"></dot-textarea-content>
+            </div>
+        }
     </form>
-</ng-container>
+}

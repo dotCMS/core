@@ -1,10 +1,17 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-export default {
+const FloatLabelTemplate = `
+  <span class="p-float-label">
+    <input type="text" id="inputtext" pInputText [(ngModel)]="value1">
+    <label for="inputtext">Enter Name</label>
+  </span>
+`;
+
+const meta: Meta = {
     title: 'PrimeNG/Form/FloatLabel',
     parameters: {
         docs: {
@@ -21,31 +28,22 @@ export default {
     ],
     args: {
         checked: false
-    }
-} as Meta;
-
-const FloatLabelTemplate = `
-  <span class="p-float-label">
-    <input type="text" id="inputtext" pInputText [(ngModel)]="value1">
-    <label for="inputtext">Enter Name</label>
-  </span>
-`;
-
-const Template: Story<{ checked: boolean }> = (props: { checked: boolean }) => {
-    const template = FloatLabelTemplate;
-
-    return {
-        props,
-        template
-    };
+    },
+    render: (args) => ({
+        props: args,
+        template: FloatLabelTemplate
+    })
 };
+export default meta;
 
-export const Basic: Story = Template.bind({});
+type Story = StoryObj;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: FloatLabelTemplate
+export const Basic: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: FloatLabelTemplate
+            }
         }
     }
 };

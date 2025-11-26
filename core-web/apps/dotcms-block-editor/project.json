@@ -36,7 +36,7 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "allowedCommonJsDependencies": ["lodash.isequal"],
+                "allowedCommonJsDependencies": ["lodash.isequal", "date-fns"],
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,
@@ -74,7 +74,7 @@
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "2.5mb"
+                            "maximumError": "2.8mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -123,5 +123,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

@@ -1,11 +1,16 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SidebarModule } from 'primeng/sidebar';
 
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -14,6 +19,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };
@@ -27,23 +33,29 @@ export interface BlockEditorInput {
 @Component({
     selector: 'dot-block-editor-sidebar',
     templateUrl: './dot-block-editor-sidebar.component.html',
-    styleUrls: ['./dot-block-editor-sidebar.component.scss']
+    styleUrls: ['./dot-block-editor-sidebar.component.scss'],
+    imports: [
+        FormsModule,
+        BlockEditorModule,
+        SidebarModule,
+        ButtonModule,
+        ConfirmDialogModule,
+        DotMessagePipe
+    ]
 })
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotEventsService = inject(DotEventsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotContentTypeService = inject(DotContentTypeService);
+
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
     blockEditorInput: BlockEditorInput;
     showVideoThumbnail: boolean;
     saving = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotEventsService: DotEventsService,
-        private dotMessageService: DotMessageService,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotContentTypeService: DotContentTypeService
-    ) {}
 
     ngOnInit(): void {
         const content$ = this.dotEventsService.listen<HTMLDivElement>('edit-block-editor').pipe(

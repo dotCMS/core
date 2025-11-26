@@ -1,5 +1,6 @@
 package com.dotcms.util.xstream;
 
+import java.util.regex.Pattern;
 import com.dotmarketing.util.Logger;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -33,14 +34,15 @@ public class XStreamHandler {
             }
         };
 
-        xstream.allowTypesByWildcard(new String[] {
-                "com.dotcms.**", "com.dotmarketing.**", "com.google.common.collect.**", "java.lang.**",
-                "java.util.**", "java.sql.**", "com.thoughtworks.xstream.mapper.**"
-        });
+        //Allow only the classes that are in the trusted list
+        xstream.allowTypesByWildcard(TrustedListMatcher.patterns);
 
         xstream.addPermission(aClass -> {
-            Logger.warn(aClass, aClass.getCanonicalName()
-                    + " should be included in the xstream white list");
+            //If the class is not in the trusted list, log a warning
+            if (!TrustedListMatcher.matches(aClass)) {
+                Logger.warn(aClass, aClass.getCanonicalName()
+                        + " should be included in the xstream trusted list");
+            }
             return true;
         });
 
@@ -55,4 +57,40 @@ public class XStreamHandler {
     public static XStream newXStreamInstance() {
         return newXStreamInstance(null);
     }
+
+    public static class TrustedListMatcher {
+
+        private TrustedListMatcher(){
+            //Private constructor to avoid instantiation
+        }
+
+        static final String[] patterns = {
+                "com.dotcms.**", "com.dotmarketing.**", "com.google.common.collect.**",
+                "java.lang.**",
+                "java.util.**", "java.sql.**", "com.thoughtworks.xstream.mapper.**"
+        };
+
+        private static final Pattern[] compiledPatterns = compilePatterns();
+
+        private static Pattern[] compilePatterns() {
+            final Pattern[] compiledPatterns = new Pattern[TrustedListMatcher.patterns.length];
+            for (int i = 0; i < TrustedListMatcher.patterns.length; i++) {
+                // Replace '**' with '.*' to match any subpackage or class
+                final String regex = TrustedListMatcher.patterns[i].replace("**", ".*");
+                compiledPatterns[i] = Pattern.compile(regex);
+            }
+            return compiledPatterns;
+        }
+
+        public static boolean matches(Class<?> clazz) {
+            String className = clazz.getName();
+            for (Pattern pattern : compiledPatterns) {
+                if (pattern.matcher(className).matches()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
 }

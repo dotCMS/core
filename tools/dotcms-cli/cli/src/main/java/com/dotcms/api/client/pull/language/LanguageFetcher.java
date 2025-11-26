@@ -7,11 +7,10 @@ import com.dotcms.model.language.Language;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 
 @Dependent
@@ -24,27 +23,27 @@ public class LanguageFetcher implements ContentFetcher<Language>, Serializable {
 
     @ActivateRequestContext
     @Override
-    public List<Language> fetch(final Map<String, Object> customOptions) {
+    public List<Language> fetch(final boolean failFast, final Map<String, Object> customOptions) {
 
         final var languageAPI = clientFactory.getClient(LanguageAPI.class);
-        return languageAPI.list().entity();
+        return languageAPI.listForPull().entity();
     }
 
     @ActivateRequestContext
     @Override
     public Language fetchByKey(final String languageIsoOrId,
-            final Map<String, Object> customOptions) throws NotFoundException {
+            boolean failFast, final Map<String, Object> customOptions) throws NotFoundException {
 
         final Language language;
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
         if (StringUtils.isNumeric(languageIsoOrId)) {
-            language = languageAPI.findById(languageIsoOrId).entity();
+            language = languageAPI.findByIdForPull(languageIsoOrId).entity();
         } else {
-            language = languageAPI.getFromLanguageIsoCode(languageIsoOrId).entity();
+            language = languageAPI.getFromLanguageIsoCodeForPull(languageIsoOrId).entity();
         }
-        final Optional<Long> id = language.id();
-        if (id.isPresent() && id.get() > 0) {
+        final String isoCode = language.isoCode();
+        if (!StringUtils.isEmpty(isoCode)) {
             return language;
         }
 

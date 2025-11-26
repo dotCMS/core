@@ -10,6 +10,7 @@ import {
     Host,
     h
 } from '@stencil/core';
+
 import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     checkProp,
@@ -117,14 +118,12 @@ export class DotSelectComponent {
                         class={getErrorClass(this.status.dotValid)}
                         id={getId(this.name)}
                         disabled={this.shouldBeDisabled()}
-                        onChange={(event: Event) => this.setValue(event)}
-                    >
+                        onChange={(event: Event) => this.setValue(event)}>
                         {this._options.map((item: DotOption) => {
                             return (
                                 <option
                                     selected={this.value === item.value ? true : null}
-                                    value={item.value}
-                                >
+                                    value={item.value}>
                                     {item.label}
                                 </option>
                             );

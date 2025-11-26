@@ -1,26 +1,5 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -32,12 +11,36 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CLEAR_EXISTING_DATA;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.HISTORY_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 /**
  * This Class is the entry point to realize any transformation
@@ -162,7 +165,7 @@ public class DotTransformerBuilder {
     public DotTransformerBuilder webAssetOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(
-                EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
+                EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS, BINARIES));
         return this;
     }
 
@@ -189,12 +192,12 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder dotAssetOptions(){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS, BINARIES));
         return this;
     }
 
     /**
-     * Fine Tuned to be consumed from ContentResource
+     * Fine-Tuned to be consumed from ContentResource
      * @return
      */
     public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
@@ -209,7 +212,7 @@ public class DotTransformerBuilder {
     }
 
     /**
-     * Fine Tuned to be consumed from ContentResource
+     * Fine-Tuned to be consumed from ContentResource
      * @return
      */
     public DotTransformerBuilder allOptions(final boolean allCategoriesInfo){
@@ -234,12 +237,41 @@ public class DotTransformerBuilder {
     }
 
     /**
-     * Dont know where? to go land here.
+     * Don't know where? to go land here.
      * @return
      */
     public DotTransformerBuilder defaultOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        return this;
+    }
+
+    /**
+     * This transformer provides a view for the History of a Contentlet. It exposes a minified map
+     * of properties, just like the data you can see in the History tab in the Content Editor page.
+     * As such, all the other Contentlet properties are removed by default.
+     *
+     * @return The {@link DotTransformerBuilder} instance.
+     */
+    public DotTransformerBuilder historyToMapTransformer(){
+        optionsHolder.clear();
+        optionsHolder.addAll(EnumSet.of(CLEAR_EXISTING_DATA, HISTORY_VIEW));
+        return this;
+    }
+
+    /**
+     * This opens the door to say we want to skip rendering code
+     * @param renderFields boolean true if we want to render the fields, otherwise false
+     * @return the builder
+     */
+    public DotTransformerBuilder renderFields(final boolean renderFields){
+        if (renderFields) {
+            optionsHolder.add(TransformOptions.RENDER_FIELDS);
+        } else {
+            optionsHolder.remove(TransformOptions.RENDER_FIELDS);
+            //By default, Widget Strategy render widget code. If we want to skip it, we need to add this option
+            optionsHolder.add(TransformOptions.SKIP_WIDGET_CODE_RENDERING);
+        }
         return this;
     }
 

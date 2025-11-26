@@ -1,15 +1,14 @@
-<dot-dialog
-    width="500px"
-    *ngIf="visible"
-    [header]="'modes.persona.add.persona' | dm"
-    [visible]="visible"
-    [actions]="dialogActions"
-    [appendToBody]="true"
-    (hide)="closeDialog()"
->
-    <dot-create-persona-form
-        #personaForm
-        (isValid)="handlerFormValidState($event)"
-        [personaName]="personaName"
-    ></dot-create-persona-form>
-</dot-dialog>
+@if (visible) {
+    <dot-dialog
+        (hide)="closeDialog()"
+        [header]="'modes.persona.add.persona' | dm"
+        [visible]="visible"
+        [actions]="dialogActions"
+        [appendToBody]="true"
+        width="500px">
+        <dot-create-persona-form
+            (isValid)="handlerFormValidState($event)"
+            [personaName]="personaName"
+            #personaForm></dot-create-persona-form>
+    </dot-dialog>
+}

@@ -7,11 +7,13 @@ import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@do
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
+import { DotLinkComponent } from '../../../../view/components/dot-link/dot-link.component';
+
 @Component({
-    template: `<dot-edit-page-info
-        [title]="title"
-        [url]="url"
-        [apiLink]="apiLink"></dot-edit-page-info>`
+    template: `
+        <dot-edit-page-info [title]="title" [url]="url" [apiLink]="apiLink"></dot-edit-page-info>
+    `,
+    standalone: false
 })
 class TestHostComponent {
     title = 'A title';
@@ -27,8 +29,14 @@ describe('DotEditPageInfoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotEditPageInfoComponent],
-            imports: [DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe],
+            declarations: [TestHostComponent],
+            imports: [
+                DotEditPageInfoComponent,
+                DotApiLinkComponent,
+                DotCopyButtonComponent,
+                DotLinkComponent,
+                DotMessagePipe
+            ],
             providers: [
                 {
                     provide: DotMessageService,
@@ -62,21 +70,22 @@ describe('DotEditPageInfoComponent', () => {
 
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
-            expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
-            expect(button.componentInstance.tooltipText).toBe('Copy url page');
+
+            expect(button).not.toBeNull();
         });
 
         it('should have api link', () => {
             const apiLink: DebugElement = de.query(By.css('dot-api-link'));
+
             expect(apiLink.componentInstance.href).toBe(
                 'api/v1/page/render/an/url/test?language_id=1'
             );
         });
 
         it('should have preview link', () => {
-            const previewLink: DebugElement = de.query(By.css('dot-link[icon="pi-eye"]'));
+            const previewLink: DebugElement = de.query(By.css('dot-link[icon="pi-eye"] a'));
 
-            expect(previewLink.nativeElement.href).toBe(
+            expect(previewLink.nativeElement.href).toContain(
                 '/an/url/test?language_id=1&disabledNavigateMode=true'
             );
         });

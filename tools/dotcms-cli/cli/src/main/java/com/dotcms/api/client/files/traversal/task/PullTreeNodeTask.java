@@ -17,10 +17,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -28,7 +27,8 @@ import org.jboss.logging.Logger;
  * Recursive task for pulling the contents of a tree node from a remote server.
  */
 @Dependent
-public class PullTreeNodeTask extends TaskProcessor {
+public class PullTreeNodeTask extends
+        TaskProcessor<PullTreeNodeTaskParams, CompletableFuture<List<Exception>>> {
 
     private final ManagedExecutor executor;
 
@@ -70,14 +70,13 @@ public class PullTreeNodeTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final PullTreeNodeTaskParams params) {
+    @Override
+    public void setTaskParams(final PullTreeNodeTaskParams params) {
         this.traversalTaskParams = params;
     }
 
-    public List<Exception> compute() {
-
-        CompletionService<List<Exception>> completionService =
-                new ExecutorCompletionService<>(executor);
+    @Override
+    public CompletableFuture<List<Exception>> compute() {
 
         var errors = new ArrayList<Exception>();
 
@@ -89,7 +88,7 @@ public class PullTreeNodeTask extends TaskProcessor {
             );
         } catch (Exception e) {
             if (traversalTaskParams.failFast()) {
-                throw e;
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
@@ -105,7 +104,7 @@ public class PullTreeNodeTask extends TaskProcessor {
                 );
             } catch (Exception e) {
                 if (traversalTaskParams.failFast()) {
-                    throw e;
+                    return CompletableFuture.failedFuture(e);
                 } else {
                     errors.add(e);
                 }
@@ -113,36 +112,51 @@ public class PullTreeNodeTask extends TaskProcessor {
         }
 
         // Recursively build the file system tree for the children nodes
+        return handleChildren(errors);
+    }
+
+    /**
+     * Recursively build the file system tree for the children nodes
+     *
+     * @param errors the list of errors to add to
+     */
+    private CompletableFuture<List<Exception>> handleChildren(ArrayList<Exception> errors) {
+
         if (traversalTaskParams.rootNode().children() != null &&
                 !traversalTaskParams.rootNode().children().isEmpty()) {
 
-            var toProcessCount = 0;
+            List<CompletableFuture<List<Exception>>> futures = new ArrayList<>();
 
             for (TreeNode child : traversalTaskParams.rootNode().children()) {
+
                 var task = new PullTreeNodeTask(
                         logger,
                         executor,
                         downloader,
                         fileHashService
                 );
-                task.setTraversalParams(PullTreeNodeTaskParams.builder()
+                task.setTaskParams(PullTreeNodeTaskParams.builder()
                         .from(traversalTaskParams)
                         .rootNode(child)
                         .build()
                 );
-                completionService.submit(task::compute);
-                toProcessCount++;
+
+                CompletableFuture<List<Exception>> future = CompletableFuture.supplyAsync(
+                        task::compute, executor
+                ).thenCompose(Function.identity());
+                futures.add(future);
             }
 
-            // Wait for all tasks to complete and gather the results
-            Function<List<Exception>, Void> processFunction = taskResult -> {
-                errors.addAll(taskResult);
-                return null;
-            };
-            processTasks(toProcessCount, completionService, processFunction);
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(ignored -> {
+                        for (CompletableFuture<List<Exception>> future : futures) {
+                            errors.addAll(future.join());
+                        }
+                        return errors;
+                    });
         }
 
-        return errors;
+        return CompletableFuture.completedFuture(errors);
     }
 
     /**

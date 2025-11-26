@@ -16,8 +16,8 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,12 +78,6 @@ class SiteAPIIT {
         }catch (Exception e){
             Assertions.assertTrue(e instanceof NotFoundException);
         }
-    }
-
-    @Test
-    void Test_Current_Site() {
-        ResponseEntityView<Site> currentSiteResponse = clientFactory.getClient(SiteAPI.class).current();
-        Assertions.assertNotNull(currentSiteResponse);
     }
 
     @Test

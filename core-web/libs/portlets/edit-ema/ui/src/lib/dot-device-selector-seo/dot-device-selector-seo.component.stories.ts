@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions';
-import { moduleMetadata } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta, argsToTemplate } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -14,7 +14,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
@@ -25,7 +25,7 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.device.selector.title': 'Devices',
     'editpage.device.selector.media.tile': 'Social Media Tiles',
     'editpage.device.selector.search.engine': 'Search Engine Results Pages',
-    'editpage.device.selector.new.tab': 'Open in New Tab',
+    'editpage.device.selector.new.tab': 'Open Published Version',
     'editpage.device.selector.mobile.portrait': 'Mobile Portrait',
     'editpage.device.selector.mobile.landscape': 'Mobile Landscape',
     'editpage.device.selector.hd.monitor': 'HD Monitor',
@@ -38,7 +38,7 @@ const mockActivatedRoute = {
     snapshot: {}
 };
 
-export default {
+const meta: Meta<DotDeviceSelectorSeoComponent> = {
     title: 'dotcms/Device Selector SEO',
     component: DotDeviceSelectorSeoComponent,
     decorators: [
@@ -66,27 +66,39 @@ export default {
                         request: () => of(mockDotDevices)
                     }
                 },
-                { provide: ActivatedRoute, useValue: mockActivatedRoute }
+                { provide: ActivatedRoute, useValue: mockActivatedRoute },
+                {
+                    provide: DotCurrentUserService,
+                    useValue: {
+                        getCurrentUser: () =>
+                            of({
+                                admin: false,
+                                email: 'admin@adminc.com',
+                                givenName: 'admin',
+                                roleId: '1',
+                                surname: 'admin',
+                                userId: '1'
+                            })
+                    }
+                }
             ]
         })
-    ]
-};
-
-export const Default = () => {
-    const handleClick = () => {
-        // open selector logic
-    };
-
-    return {
-        template: `
-        <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
-        <dot-device-selector-seo #op></dot-device-selector-seo>
-      `,
-        props: {
-            handleClick,
+    ],
+    render: (args) => {
+        return {
             props: {
+                ...args,
                 selected: action('selected')
-            }
-        }
-    };
+            },
+            template: `
+                <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+                <dot-device-selector-seo #op ${argsToTemplate(args)} />
+            `
+        };
+    }
 };
+export default meta;
+
+type Story = StoryObj<DotDeviceSelectorSeoComponent>;
+
+export const Default: Story = {};

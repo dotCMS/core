@@ -50,7 +50,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.ext.ContextResolver;
+import jakarta.ws.rs.ext.ContextResolver;
 
 public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
 

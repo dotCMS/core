@@ -1,12 +1,13 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.util.HashSet;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
@@ -14,6 +15,9 @@ public abstract class AbstractFilesCommand {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected AuthenticationMixin authenticationMixin;
 
     @CommandLine.Mixin
     protected HelpOptionMixin helpOption;

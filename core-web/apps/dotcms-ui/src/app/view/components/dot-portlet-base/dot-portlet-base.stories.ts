@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { moduleMetadata } from '@storybook/angular';
+import { moduleMetadata, Meta, StoryObj, componentWrapperDecorator } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -12,14 +12,13 @@ import { DotApiLinkComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
-import { DotPortletBaseModule } from './dot-portlet-base.module';
 
 const MessageMocks = new MockDotMessageService({
     cancel: 'Cancel',
     actions: 'Actions'
 });
 
-export default {
+const meta: Meta = {
     title: 'DotCMS/Portlet',
     component: DotPortletBaseComponent,
     decorators: [
@@ -34,19 +33,15 @@ export default {
                 BrowserAnimationsModule,
                 ButtonModule,
                 CheckboxModule,
-                DotPortletBaseModule,
+                DotPortletBaseComponent,
                 DotApiLinkComponent,
                 TabViewModule
             ]
         }),
-        (storyFunc) => {
-            const story = storyFunc();
-
-            return {
-                ...story,
-                template: `<div style="background-color: #f1f3f4; width: 100%; overflow: hidden; border: solid 1px #ccc">${story.template}</div>`
-            };
-        }
+        componentWrapperDecorator(
+            (story) =>
+                `<div style="background-color: #f1f3f4; width: 100%; overflow: hidden; border: solid 1px #ccc">${story}</div>`
+        )
     ],
     parameters: {
         docs: {
@@ -58,6 +53,9 @@ export default {
         }
     }
 };
+export default meta;
+
+type Story = StoryObj;
 
 const portletContent = (text = `Hello, I'm the portlet content`) => {
     return `
@@ -72,19 +70,21 @@ const NoActionsTemplate = `
     ${portletContent()}
 </dot-portlet-base>
 `;
-export const NoActions = () => ({
-    props: {
+export const NoActions: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: NoActionsTemplate
+            }
+        }
+    },
+    args: {
         title: 'This is the portlet title'
     },
-    template: NoActionsTemplate
-});
-
-NoActions.parameters = {
-    docs: {
-        source: {
-            code: NoActionsTemplate
-        }
-    }
+    render: (args) => ({
+        props: args,
+        template: NoActionsTemplate
+    })
 };
 
 const BasicActionsTemplate = `
@@ -93,8 +93,15 @@ const BasicActionsTemplate = `
     ${portletContent()}
 </dot-portlet-base>
 `;
-export const BasicActions = () => ({
-    props: {
+export const BasicActions: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: BasicActionsTemplate
+            }
+        }
+    },
+    args: {
         title: 'Adding Save and Cancel Button',
         portletActions: {
             primary: [
@@ -110,15 +117,10 @@ export const BasicActions = () => ({
             }
         }
     },
-    template: BasicActionsTemplate
-});
-
-BasicActions.parameters = {
-    docs: {
-        source: {
-            code: BasicActionsTemplate
-        }
-    }
+    render: (args) => ({
+        props: args,
+        template: NoActionsTemplate
+    })
 };
 
 const MultipleActionsTemplate = `
@@ -127,8 +129,16 @@ const MultipleActionsTemplate = `
     ${portletContent()}
 </dot-portlet-base>
 `;
-export const MultipleActions = () => ({
-    props: {
+
+export const MultipleActions: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: MultipleActionsTemplate
+            }
+        }
+    },
+    args: {
         title: 'Multiple Actions',
         portletActions: {
             primary: [
@@ -156,15 +166,10 @@ export const MultipleActions = () => ({
             }
         }
     },
-    template: MultipleActionsTemplate
-});
-
-MultipleActions.parameters = {
-    docs: {
-        source: {
-            code: MultipleActionsTemplate
-        }
-    }
+    render: (args) => ({
+        props: args,
+        template: MultipleActionsTemplate
+    })
 };
 
 const ExtraActionsTemplate = `
@@ -182,8 +187,15 @@ const ExtraActionsTemplate = `
     ${portletContent()}
 </dot-portlet-base>
 `;
-export const ExtraActions = () => ({
-    props: {
+export const ExtraActions: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: ExtraActionsTemplate
+            }
+        }
+    },
+    args: {
         title: 'Extra Actions',
         portletActions: {
             primary: [
@@ -199,15 +211,10 @@ export const ExtraActions = () => ({
             }
         }
     },
-    template: ExtraActionsTemplate
-});
-
-ExtraActions.parameters = {
-    docs: {
-        source: {
-            code: ExtraActionsTemplate
-        }
-    }
+    render: (args) => ({
+        props: args,
+        template: ExtraActionsTemplate
+    })
 };
 
 const WithTabsTemplate = `
@@ -220,8 +227,15 @@ const WithTabsTemplate = `
     </p-tabView>
 </dot-portlet-base>
 `;
-export const WithTabs = () => ({
-    props: {
+export const WithTabs: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: WithTabsTemplate
+            }
+        }
+    },
+    args: {
         title: 'Tabbed Portlet',
         portletActions: {
             primary: [
@@ -237,13 +251,8 @@ export const WithTabs = () => ({
             }
         }
     },
-    template: WithTabsTemplate
-});
-
-WithTabs.parameters = {
-    docs: {
-        source: {
-            code: WithTabsTemplate
-        }
-    }
+    render: (args) => ({
+        props: args,
+        template: WithTabsTemplate
+    })
 };

@@ -39,6 +39,8 @@
  *
  * title: non-required - Title of the dialog.
  *
+ * variantName: non-required - this is used to search content of particular variant.
+ * 
  * onFileSelected: non-required - JS script or JS function callback to be executed when the user selects a content from the results,
  *
  * the content object is passed to the function.
@@ -54,6 +56,8 @@ dojo.require('dijit.form.Button');
 dojo.require('dijit.layout.BorderContainer');
 
 var isNg = new URLSearchParams(document.location.search).get('ng');
+// This variable maps to the values declared in Field.FieldType.HOST_OR_FOLDER
+const HOST_OR_FOLDER = "host or folder"
 
 dojo.declare(
     'dotcms.dijit.form.ContentSelector',
@@ -102,6 +106,7 @@ dojo.declare(
         selectButtonLabel: 'Select',
         useRelateContentOnSelect: false,
         selectedInodesSet: new Set(),
+        variantName: 'DEFAULT',
 
         setSelectedInode: function (selectBtn) {
             if (selectBtn.checked) {
@@ -305,13 +310,31 @@ dojo.declare(
             }
         },
 
+        _getSiteFolderFieldDefaultHTML: function (){
+            const defaultSiteFolderField = {
+                "fieldContentlet": "system_field",
+                "fieldFieldType": HOST_OR_FOLDER,
+                "fieldName": "Site or Folder",
+                "fieldValues": "",
+                "fieldVelocityVarName": "siteOrFolder",
+            }
+
+            var htmlstr = "<dl class='vertical'>";
+            htmlstr += '<dt><label>' + this._fieldName(defaultSiteFolderField) + '</label></dt>';
+            htmlstr += '<dd>' + this._renderSearchField(defaultSiteFolderField) + '</dd>';
+            htmlstr += '</dl>';
+
+            return htmlstr;
+        },
+
         _fillFields: function (data) {
             this.currentStructureFields = data;
             this.search_fields_table.innerHTML = '';
+            this.site_folder_field_pop.innerHTML = '';
             var htmlstr = "<dl class='vertical'>";
             for (var i = 0; i < data.length; i++) {
                 var type = data[i]['fieldFieldType'];
-                if (type == 'category' || type == 'hidden') {
+                if (type == 'category' || type == 'hidden' || type == HOST_OR_FOLDER) {
                     continue;
                 }
                 htmlstr +=
@@ -319,8 +342,13 @@ dojo.declare(
                 htmlstr += '<dd>' + this._renderSearchField(data[i]) + '</dd>';
             }
             htmlstr += '</dl>';
+
+            const siteFolderFieldHtml = this._getSiteFolderFieldDefaultHTML();
+            dojo.place(siteFolderFieldHtml, this.site_folder_field_pop);
             dojo.place(htmlstr, this.search_fields_table);
+
             dojo.parser.parse(this.search_fields_table);
+            dojo.parser.parse(this.site_folder_field_pop);
             eval(this.setDotFieldTypeStr);
         },
 
@@ -335,6 +363,7 @@ dojo.declare(
 
         // DOTCMS-3896
         _renderSearchField: function (field) {
+
             var fieldVelocityVarName = field['fieldVelocityVarName'];
             var fieldContentlet = field['fieldContentlet'];
             var value = '';
@@ -373,7 +402,6 @@ dojo.declare(
                             this.structureVelVar +
                             '.' +
                             fieldVelocityVarName +
-                            this.dialogCounter +
                             '"> ' +
                             actual_option[0] +
                             '<br>\n';
@@ -1012,7 +1040,7 @@ dojo.declare(
                             values = formField.value;
                             name = formField.name.substring(
                                 0,
-                                formField.name.length - 1
+                                formField.name.length
                             );
                             fieldsValues[fieldsValues.length] = name;
                             fieldsValues[fieldsValues.length] = values;
@@ -1072,7 +1100,6 @@ dojo.declare(
                     });
             }
 
-            const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
             ContentletAjax.searchContentlets(
                 searchFor,
                 fieldsValues,
@@ -1086,7 +1113,7 @@ dojo.declare(
                 this.currentSortBy,
                 null,
                 null,
-                variantName,
+                this.variantName,
                 dojo.hitch(this, this._fillResults)
             );
 
@@ -1147,6 +1174,16 @@ dojo.declare(
             //Filling Headers
             var row = table.insertRow(table.rows.length);
 
+            // Add checkbox/select column header FIRST
+            var cell = row.insertCell(row.cells.length);
+            cell.setAttribute('class', 'beta');
+            cell.setAttribute('className', 'beta');
+            if (this.multiple == 'true') {
+                cell.innerHTML = '<b>Select</b>';
+            } else {
+                cell.innerHTML = '<b></b>'; // Empty for single select
+            }
+
             var cell = row.insertCell(row.cells.length);
             cell.setAttribute('class', 'beta');
             cell.setAttribute('className', 'beta');
@@ -1167,11 +1204,6 @@ dojo.declare(
             cell.setAttribute('style', 'min-width:120px;');
             cell.innerHTML =
                 '<b>' + this.availableLanguages[0]['title'] + '</b>';
-
-            var cell = row.insertCell(row.cells.length);
-            cell.setAttribute('class', 'beta');
-            cell.setAttribute('className', 'beta');
-            cell.setAttribute('width', '5%');
 
             var style = document.createElement('style');
             style.type = 'text/css';
@@ -1205,7 +1237,7 @@ dojo.declare(
 
                 // Select button functionality
                 var selected = function (scope, content) {
-                    if (this.useRelateContentOnSelect) {
+                    if (scope.useRelateContentOnSelect) {
                         scope._doRelateContent(content);
                     } else {
                         scope._onContentSelected(content);
@@ -1222,6 +1254,15 @@ dojo.declare(
                             asset
                         );
                     }
+                }
+
+                // Add checkbox/select button cell FIRST
+                var cell = row.insertCell(row.cells.length);
+                cell.setAttribute('id', i);
+                if (this.multiple == 'true') {
+                    cell.innerHTML = this._checkButton(cellData);
+                } else {
+                    cell.innerHTML = this._selectButton(cellData);
                 }
 
                 var cell = row.insertCell(row.cells.length);
@@ -1274,14 +1315,6 @@ dojo.declare(
                             this.availableLanguages[l]['countryCode'] +
                             ')';
                     }
-                }
-
-                var cell = row.insertCell(row.cells.length);
-                cell.setAttribute('id', i);
-                if (this.multiple == 'true') {
-                    cell.innerHTML = this._checkButton(cellData);
-                } else {
-                    cell.innerHTML = this._selectButton(cellData);
                 }
             }
 

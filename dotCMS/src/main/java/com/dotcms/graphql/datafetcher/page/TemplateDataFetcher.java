@@ -15,10 +15,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.model.User;
-import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.io.CharArrayReader;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
@@ -26,19 +26,19 @@ import java.util.Objects;
  * This DataFetcher returns a {@link Map} representing a {@link Template} associated to the originally
  * requested {@link HTMLPageAsset}.
  */
-public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
+public class TemplateDataFetcher extends RedirectAwareDataFetcher<Map<Object, Object>> {
     @Override
-    public Map<Object, Object> get(final DataFetchingEnvironment environment) throws Exception {
+    public Map<Object, Object> safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context) throws Exception {
         try {
-            final DotGraphQLContext context = environment.getContext();
             final User user = context.getUser();
             final Contentlet contentlet = environment.getSource();
-
             final String pageModeAsString = (String) context.getParam("pageMode");
 
             final PageMode mode = PageMode.get(pageModeAsString);
 
             final String templateId = contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
+
+            Logger.debug(this, ()-> "Fetching template: " + templateId);
 
             final Template template = getTemplate(templateId, mode);
 
@@ -47,6 +47,11 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    protected Map<Object, Object> onRedirect() {
+        return Collections.emptyMap();
     }
 
     private Template getTemplate(final String templateId,

@@ -1,98 +1,79 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+@if (vm$ | async; as vm) {
+    <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}"
-        ></dot-sidebar-header>
-
+            dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}"></dot-sidebar-header>
         <div class="experiment-traffic-split__form-wrapper flex flex-column">
             <form
-                class="p-fluid"
                 [formGroup]="form"
+                class="p-fluid"
                 data-testId="add-traffic-split-form"
-                novalidate
-            >
-                <div class="field">
+                novalidate>
+                <div class="experiment-traffic-split__radio">
                     <label>
                         {{ 'experiments.configure.traffic.split.name' | dm }}
                     </label>
                     <p-radioButton
+                        (click)="splitVariantsEvenly()"
                         [label]="'experiments.configure.traffic.split.evenly' | dm"
                         [value]="splitEvenly"
-                        (click)="splitVariantsEvenly()"
-                        formControlName="type"
-                    >
-                    </p-radioButton>
+                        formControlName="type"></p-radioButton>
                     <p-radioButton
                         [label]="'experiments.configure.traffic.split.custom' | dm"
                         [value]="customPercentages"
-                        formControlName="type"
-                    >
-                    </p-radioButton>
+                        formControlName="type"></p-radioButton>
                 </div>
-
                 <div class="experiment-traffic-split__variants">
                     <header class="experiment-traffic-split__variants-header">
                         <span>{{ 'variant' | dm }}</span>
                         <span class="experiment-traffic-split__variants-weight">%</span>
                     </header>
                     <ng-container formArrayName="variants">
-                        <div
-                            class="experiment-traffic-split__variants-item"
-                            *ngFor="let variant of variants.controls; let i = index"
-                            [formGroupName]="i"
-                        >
-                            <span
-                                class="experiment-traffic-split__variants-name"
-                                data-testId="variant-name"
-                            >
-                                {{ variant.value.name }}
-                            </span>
-                            <p-inputNumber
-                                class="experiment-traffic-split__variants-weight p-inputtext-sm"
-                                *ngIf="
-                                    form.value.type === customPercentages;
-                                    else splitEvenTemplate
-                                "
-                                [maxFractionDigits]="2"
-                                [max]="100"
-                                [min]="0"
-                                (onInput)="checkControl(i, $event.value)"
-                                formControlName="weight"
-                                mode="decimal"
-                            >
-                            </p-inputNumber>
-
-                            <ng-template #splitEvenTemplate>
+                        @for (variant of variants.controls; track variant; let i = $index) {
+                            <div
+                                [formGroupName]="i"
+                                class="experiment-traffic-split__variants-item">
                                 <span
-                                    class="experiment-traffic-split__variants-weight"
-                                    data-testId="variant-weight"
-                                    >{{ variant.value.weight }}</span
-                                >
-                            </ng-template>
-                        </div>
+                                    class="experiment-traffic-split__variants-name"
+                                    data-testId="variant-name">
+                                    {{ variant.value.name }}
+                                </span>
+                                @if (form.value.type === customPercentages) {
+                                    <p-inputNumber
+                                        (onInput)="checkControl(i, $event.value)"
+                                        [maxFractionDigits]="2"
+                                        [max]="100"
+                                        [min]="0"
+                                        class="experiment-traffic-split__variants-weight p-inputtext-sm"
+                                        formControlName="weight"
+                                        mode="decimal"></p-inputNumber>
+                                } @else {
+                                    <span
+                                        class="experiment-traffic-split__variants-weight"
+                                        data-testId="variant-weight">
+                                        {{ variant.value.weight }}
+                                    </span>
+                                }
+                            </div>
+                        }
                     </ng-container>
                 </div>
-
-                <small
-                    class="p-invalid align-self-end"
-                    *ngIf="variants.invalid"
-                    data-testId="dotErrorMsg"
-                >
-                    {{ 'experiments.configure.traffic.split.variants.error' | dm }}
-                </small>
+                @if (variants.invalid) {
+                    <small class="p-invalid align-self-end" data-testId="dotErrorMsg">
+                        {{ 'experiments.configure.traffic.split.variants.error' | dm }}
+                    </small>
+                }
             </form>
         </div>
     </p-sidebar>
     <ng-template #actionHeaderBtnTpl>
         <button
+            (click)="save(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
-            (click)="save(vm.experimentId)"
             data-testId="add-traffic-split-button"
             label="{{ 'Done' | dm }}"
             pButton
-            type="submit"
-        ></button>
+            type="submit"></button>
     </ng-template>
-</ng-container>
+}

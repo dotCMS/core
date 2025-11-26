@@ -6,10 +6,10 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +24,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -31,6 +32,7 @@ import java.util.concurrent.Future;
  * Redis Resource
  * @author jsanca
  */
+@Tag(name = "System")
 @VisibleForTesting // This is not expose, visible only for internal testing
 @Path("/v1/redis")
 public class RedisResource {
@@ -198,7 +200,7 @@ public class RedisResource {
         final long rowsAffected  = UtilMethods.isSet(fields)?
                 this.client.deleteHash(key, fields.toArray(new String[]{})):0;
 
-        return Response.ok(new ResponseEntityView(CollectionsUtils.map("rowsAffected", rowsAffected))).build();
+        return Response.ok(new ResponseEntityView(Map.of("rowsAffected", rowsAffected))).build();
     }
 
     /////// INCREMENT

@@ -1,0 +1,83 @@
+@use "variables" as *;
+
+.edit-content-dialog {
+    height: 100%;
+    min-height: 60vh;
+}
+
+// Loading state
+.edit-content-dialog__loading {
+    padding: $spacing-6;
+
+    i {
+        font-size: $font-size-xxl;
+        color: $color-palette-primary;
+        margin-bottom: $spacing-3;
+    }
+
+    p {
+        margin: 0;
+        color: $color-palette-gray-600;
+    }
+}
+
+// Error state
+.edit-content-dialog__error {
+    padding: $spacing-6;
+
+    i {
+        font-size: $font-size-xxl;
+        color: $color-palette-secondary;
+        margin-bottom: $spacing-3;
+    }
+
+    h3 {
+        margin: 0 0 $spacing-2 0;
+        color: $color-palette-gray-700;
+    }
+
+    p {
+        margin: 0 0 $spacing-2 0;
+        color: $color-palette-gray-600;
+
+        &:last-child {
+            background: $color-palette-secondary-op-10;
+            border: 1px solid $color-palette-secondary-op-30;
+            border-radius: $border-radius-md;
+            padding: $spacing-2 $spacing-3;
+            color: $color-palette-secondary;
+            font-size: $font-size-sm;
+            word-break: break-word;
+        }
+    }
+}
+
+// Dialog-specific overrides when used in PrimeNG dialog
+:host ::ng-deep {
+    .p-dialog-content {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .p-dialog-footer {
+        padding: 0;
+        border: none;
+    }
+
+    // Hide the beta message in dialog context for cleaner appearance
+    .edit-content-layout__topBar {
+        .edit-content-layout__beta-message {
+            display: none;
+        }
+    }
+
+    // Ensure proper scrolling in dialog context
+    .edit-content-layout__body {
+        overflow-y: auto;
+    }
+
+    // Adjust sidebar in dialog context
+    .edit-content-layout__sidebar {
+        border-left: 1px solid $color-palette-gray-300;
+    }
+}

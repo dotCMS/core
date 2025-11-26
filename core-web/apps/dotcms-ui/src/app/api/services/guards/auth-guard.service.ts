@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -13,7 +13,8 @@ import { LoginService } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class AuthGuardService implements CanActivate {
-    constructor(private dotRouterService: DotRouterService, private loginService: LoginService) {}
+    private dotRouterService = inject(DotRouterService);
+    private loginService = inject(LoginService);
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return this.loginService.isLogin$.pipe(

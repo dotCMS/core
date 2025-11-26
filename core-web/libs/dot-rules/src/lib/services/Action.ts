@@ -1,13 +1,13 @@
 import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
+
+import { HttpResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+
 import { ApiRoot } from '@dotcms/dotcms-js';
-import { ServerSideTypeModel } from './ServerSideFieldModel';
-import { HttpResponse } from '@angular/common/http';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { ActionModel } from './Rule';
 import {
     UNKNOWN_RESPONSE_ERROR,
     CwError,
@@ -18,8 +18,14 @@ import {
 import { LoggerService } from '@dotcms/dotcms-js';
 import { HttpCode } from '@dotcms/dotcms-js';
 
+import { ActionModel } from './Rule';
+import { ServerSideTypeModel } from './ServerSideFieldModel';
+
 @Injectable()
 export class ActionService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     private _typeName = 'Action';
 
     private _actionsEndpointUrl: string;
@@ -36,6 +42,7 @@ export class ActionService {
             const param = json.parameters[key];
             ra.setParameter(key, param.value);
         });
+
         return ra;
     }
 
@@ -44,14 +51,13 @@ export class ActionService {
         json.actionlet = action.type.key;
         json.priority = action.priority;
         json.parameters = action.parameters;
+
         return json;
     }
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._actionsEndpointUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`;
     }
 
@@ -60,6 +66,7 @@ export class ActionService {
         if (childPath) {
             path = `${path}${childPath}`;
         }
+
         return this.coreWebService
             .request({
                 url: path
@@ -80,6 +87,7 @@ export class ActionService {
                             path
                         );
                     }
+
                     return observableEmpty();
                 })
             );
@@ -93,6 +101,7 @@ export class ActionService {
         return this.all(ruleKey, keys, ruleActionTypes).pipe(
             reduce((acc: ActionModel[], item: ActionModel) => {
                 acc.push(item);
+
                 return acc;
             }, [])
         );
@@ -119,6 +128,7 @@ export class ActionService {
             map((json: any) => {
                 json.id = key;
                 json.key = key;
+
                 return ActionService.fromJson(ruleActionTypes[json.actionlet], json);
             })
         );
@@ -130,6 +140,7 @@ export class ActionService {
             throw new Error(`This should be thrown from a checkValid function on the model,
 and should provide the info needed to make the user aware of the fix.`);
         }
+
         const json = ActionService.toJson(model);
         json.owningRule = ruleId;
         const path = this._getPath(ruleId);
@@ -144,9 +155,11 @@ and should provide the info needed to make the user aware of the fix.`);
                 map((res: HttpResponse<any>) => {
                     const json: any = res;
                     model.key = json.id;
+
                     return model;
                 })
             );
+
         return add.pipe(catchError(this._catchRequestError('add')));
     }
 
@@ -156,6 +169,7 @@ and should provide the info needed to make the user aware of the fix.`);
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
         }
+
         if (!model.isPersisted()) {
             this.createRuleAction(ruleId, model);
         } else {
@@ -172,6 +186,7 @@ and should provide the info needed to make the user aware of the fix.`);
                         return model;
                     })
                 );
+
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
@@ -187,6 +202,7 @@ and should provide the info needed to make the user aware of the fix.`);
                     return model;
                 })
             );
+
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 
@@ -195,6 +211,7 @@ and should provide the info needed to make the user aware of the fix.`);
         if (key) {
             p = p + key;
         }
+
         return p;
     }
 
@@ -239,6 +256,7 @@ and should provide the info needed to make the user aware of the fix.`);
                     );
                 }
             }
+
             return null;
         };
     }

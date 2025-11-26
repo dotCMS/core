@@ -11,11 +11,13 @@ import com.dotmarketing.util.SecurityLogger;
 public abstract class DotExceptionMapper<T extends Throwable>
         implements javax.ws.rs.ext.ExceptionMapper<T> {
 
+    protected DotExceptionMapper() {}
+
     @Override
     public Response toResponse(final T exception) {
         SecurityLogger.logInfo(DotSecurityExceptionMapper.class, exception.getMessage());
 
-        return ExceptionMapperUtil.createResponse(exception, this.getErrorKey(), Response.Status.FORBIDDEN);
+        return ExceptionMapperUtil.createResponse(exception, this.getErrorKey(),  this.getErrorStatus());
     }
 
     protected abstract String getErrorKey();

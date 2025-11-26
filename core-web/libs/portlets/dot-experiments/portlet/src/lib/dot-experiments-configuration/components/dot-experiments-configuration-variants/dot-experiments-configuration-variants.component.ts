@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -15,7 +15,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
@@ -27,8 +27,12 @@ import {
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import {
+    DotCopyButtonComponent,
+    DotDynamicDirective,
+    DotIconComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import {
@@ -40,16 +44,13 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,
-        DotIconModule,
-        DotExperimentsConfigurationVariantsAddComponent,
+        DotIconComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
-
         //PrimeNg
         CardModule,
         InplaceModule,
@@ -65,6 +66,12 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
@@ -77,15 +84,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
     protected readonly DotExperimentStatusList = DotExperimentStatus;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotSessionStorageService: DotSessionStorageService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute
-    ) {}
+    protected readonly url = this.getUrl();
 
     /**
      * Edit the name of the selected variant
@@ -153,7 +152,6 @@ export class DotExperimentsConfigurationVariantsComponent {
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
     goToEditPageVariant(variant: Variant, mode: DotPageMode) {
-        this.dotSessionStorageService.setVariationId(variant.id);
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 variantName: variant.id,
@@ -184,5 +182,54 @@ export class DotExperimentsConfigurationVariantsComponent {
         if (this.componentRef) {
             this.sidebarHost.viewContainerRef.clear();
         }
+    }
+
+    private getUrl(): string {
+        const firstUrl = window.location.href;
+
+        // Check if 'url=' exists in the current URL
+        if (!firstUrl.includes('url=')) {
+            return window.location.origin;
+        }
+
+        const splitUrl = firstUrl.split('url=')[1] || '';
+
+        // Ensure splitUrl is not empty before applying .replace()
+        if (!splitUrl.trim()) {
+            return window.location.origin;
+        }
+
+        const processedUrl = firstUrl
+            .split('url=')[1]
+            .replace('&', '?')
+            .replace(/%3A/g, ':')
+            .replace(/%2F/g, '/');
+
+        let finalUrl: string;
+
+        let url: URL;
+
+        try {
+            // Try parsing as a full URL
+            url = new URL(
+                `${processedUrl}${
+                    processedUrl.indexOf('?') != -1 ? '&' : '?'
+                }disabledNavigateMode=true&mode=LIVE`
+            );
+        } catch {
+            // Fallback to relative URL using window.location.origin
+            const cleanProcessedUrl = processedUrl.startsWith('/')
+                ? processedUrl.substring(1)
+                : processedUrl;
+            url = new URL(
+                `${window.location.origin}/${cleanProcessedUrl}${
+                    processedUrl.indexOf('?') != -1 ? '&' : '?'
+                }disabledNavigateMode=true&mode=LIVE`
+            );
+        } finally {
+            finalUrl = url.toString();
+        }
+
+        return finalUrl;
     }
 }

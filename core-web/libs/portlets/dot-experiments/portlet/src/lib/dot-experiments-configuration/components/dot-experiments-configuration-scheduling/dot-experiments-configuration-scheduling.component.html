@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
             <h2 class="flex align-items-center gap-1 uppercase" data-testId="scheduling-card-name">
@@ -7,58 +7,61 @@
                     [size]="16"
                     data-testId="schedule-step-done"
                     name="check_circle"></dot-icon>
-
                 {{ 'experiments.configure.scheduling.name' | dm }}
             </h2>
         </ng-template>
-
         <p-card styleClass="card-rounded">
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
-                    <span data-testId="scheduling-card-title-row">{{
-                        'experiments.configure.scheduling.start' | dm
-                    }}</span>
+                    <span data-testId="scheduling-card-title-row">
+                        {{ 'experiments.configure.scheduling.start' | dm }}
+                    </span>
                 </div>
-
                 <div
                     [pTooltip]="vm.disabledTooltipLabel | dm"
                     [tooltipDisabled]="!vm.disabledTooltipLabel"
                     data-testId="tooltip-on-disabled"
                     tooltipPosition="bottom">
                     <button
-                        class="p-button-sm p-button-link"
-                        [disabled]="vm.disabledTooltipLabel"
                         (click)="setupSchedule()"
+                        [disabled]="vm.disabledTooltipLabel"
+                        class="p-button-sm p-button-link"
                         data-testId="scheduling-setup-button"
                         pButton>
-                        <ng-container
-                            *ngIf="
-                                !(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate);
-                                else dateRange
-                            ">
+                        @if (!(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate)) {
                             {{ 'experiments.configure.scheduling.setup' | dm }}
-                        </ng-container>
+                        } @else {
+                            @if (!!vm.scheduling?.startDate) {
+                                <span>
+                                    {{ 'start' | dm | titlecase }}:
+                                    <span>
+                                        {{
+                                            vm.scheduling.startDate
+                                                | date: 'EEE, LLL dd, y, h:mm aa zz'
+                                        }}
+                                    </span>
+                                </span>
+                            }
+                            @if (vm.scheduling?.startDate && vm.scheduling.endDate) {
+                                <span class="scheduling-setup-date-spacing">-</span>
+                            }
+                            @if (!!vm.scheduling?.endDate) {
+                                <span>
+                                    {{ 'end' | dm | titlecase }}:
+                                    <span>
+                                        {{
+                                            vm.scheduling.endDate
+                                                | date: 'EEE, LLL dd, y, h:mm aa zz'
+                                        }}
+                                    </span>
+                                </span>
+                            }
+                        }
                     </button>
                 </div>
             </div>
         </p-card>
     </p-card>
-
-    <ng-template #dateRange>
-        <span *ngIf="!!vm.scheduling?.startDate">
-            {{ 'start' | dm | titlecase }}:
-            <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
-        </span>
-        <span
-            class="scheduling-setup-date-spacing"
-            *ngIf="vm.scheduling?.startDate && vm.scheduling.endDate"
-            >-</span
-        >
-        <span *ngIf="!!vm.scheduling?.endDate">
-            {{ 'end' | dm | titlecase }}:
-            <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
-        </span>
-    </ng-template>
-</ng-container>
+}
 
 <ng-container dotDynamic></ng-container>

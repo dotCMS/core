@@ -1,0 +1,179 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.dotcms</groupId>
+        <artifactId>dotcms-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>dotcms-test-jmeter</artifactId>
+    <packaging>pom</packaging>
+
+    <name>test-jmeter</name>
+
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jmeterScript>core-sessions.jmx</jmeterScript>
+        <jmeter.host>localhost</jmeter.host>
+        <jmeter.port>8080</jmeter.port>
+        <jmeter.scheme>http</jmeter.scheme>
+        <jmeter.rampup>60</jmeter.rampup>
+        <jmeter.startup.delay>5</jmeter.startup.delay>
+        <jmeter.test.duration>300</jmeter.test.duration>
+        <jmeter.thread.number>10</jmeter.thread.number>
+        <jmeter.admin.password>admin</jmeter.admin.password>
+        <!-- Analytics specific properties -->
+        <jmeter.events.per.second>1</jmeter.events.per.second>
+        <jmeter.analytics.key>js.cluster1.customer1.loadtest</jmeter.analytics.key>
+        <jmeter.max.response.time>5000</jmeter.max.response.time>
+        <!-- JMeter memory settings for high load testing -->
+        <jmeter.jvm.xms>1024m</jmeter.jvm.xms>
+        <jmeter.jvm.xmx>8g</jmeter.jvm.xmx>
+        <jmeter.jvm.metaspace>512m</jmeter.jvm.metaspace>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+        <id>jmeter-standalone</id>
+        <activation>
+            <property>
+                <name>jmeter.test.skip</name>
+                <value>false</value>
+            </property>
+        </activation>
+        <build>
+            <plugins>
+
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>clean-reports</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                            <configuration>
+                                <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                                <failOnError>false</failOnError>
+                                <filesets>
+                                    <fileset>
+                                        <directory>target</directory>
+                                        <includes>
+                                            <include>jmeter/reports/**/*</include>
+                                        </includes>
+                                    </fileset>
+                                </filesets>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+
+
+                <plugin>
+                    <groupId>com.lazerycode.jmeter</groupId>
+                    <artifactId>jmeter-maven-plugin</artifactId>
+                    <executions>
+                        <!-- Generate JMeter configuration -->
+                        <execution>
+                            <id>configuration</id>
+                            <goals>
+                                <goal>configure</goal>
+                            </goals>
+                        </execution>
+                        <!-- Run JMeter tests -->
+                        <execution>
+                            <id>jmeter-tests</id>
+                            <goals>
+                                <goal>jmeter</goal>
+                            </goals>
+                        </execution>
+                        <!-- Fail build on errors in test -->
+                        <execution>
+                            <id>jmeter-check-results</id>
+                            <goals>
+                                <goal>results</goal>
+                            </goals>
+                        </execution>
+
+                    </executions>
+                    <configuration>
+                        <testFilesDirectory>${project.basedir}/jmx-tests</testFilesDirectory>
+                        <testResultsTimestamp>true</testResultsTimestamp>
+                        
+                        <!-- JVM settings for high load testing -->
+                        <jMeterProcessJVMSettings>
+                            <arguments>
+                                <argument>-XX:MaxMetaspaceSize=${jmeter.jvm.metaspace}</argument>
+                                <argument>-Xmx${jmeter.jvm.xmx}</argument>
+                                <argument>-Xms${jmeter.jvm.xms}</argument>
+                                <argument>-server</argument>
+                                <argument>-XX:+UseG1GC</argument>
+                                <argument>-XX:MaxGCPauseMillis=100</argument>
+                                <argument>-XX:G1ReservePercent=20</argument>
+                            </arguments>
+                        </jMeterProcessJVMSettings>
+
+                        <propertiesUser>
+                            <jmeter.save.saveservice.output_format>csv</jmeter.save.saveservice.output_format>
+                            <CookieManager.save.cookies>true</CookieManager.save.cookies>
+                            <sample_variables>JVM_HOSTNAME,SESSION_ID,X_DOT_SERVER,response_time,success,timestamp,thread_id</sample_variables>
+                            <resultcollector.action_if_file_exists>DELETE</resultcollector.action_if_file_exists>
+                            <host>${jmeter.host}</host>
+                            <port>${jmeter.port}</port>
+                            <scheme>${jmeter.scheme}</scheme>
+                            <rampup>${jmeter.rampup}</rampup>
+                            <admin.password>${jmeter.admin.password}</admin.password>
+                            <startup.delay>${jmeter.startup.delay}</startup.delay>
+                            <test.duration>${jmeter.test.duration}</test.duration>
+                            <thread.number>${jmeter.thread.number}</thread.number>
+                            <!-- Analytics specific properties -->
+                            <events.per.second>${jmeter.events.per.second}</events.per.second>
+                            <analytics.key>${jmeter.analytics.key}</analytics.key>
+                            <max.response.time>${jmeter.max.response.time}</max.response.time>
+                        </propertiesUser>
+                        <testFilesIncluded>
+                            <jMeterTestFile>${jmeterScript}</jMeterTestFile>
+                        </testFilesIncluded>
+                        <generateReports>true</generateReports>
+                        <ignoreResultFailures>true</ignoreResultFailures>
+
+
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </build>
+        </profile>
+        <profile>
+            <id>jmeter.env.password</id>
+            <activation>
+                <property>
+                    <name>jmeter.env.password</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <jmeter.admin.password>${env.JMETER_ADMIN_PASSWORD}</jmeter.admin.password>
+            </properties>
+        </profile>
+    </profiles>
+
+
+</project>

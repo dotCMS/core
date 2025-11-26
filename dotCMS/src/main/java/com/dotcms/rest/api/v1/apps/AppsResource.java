@@ -34,12 +34,20 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 /**
  * Resource API that deals with secrets and their usage on third-party apps integrations.
  */
 @Path("/v1/apps")
+@Tag(name = "Apps", description = "Third-party application integration and configuration")
 public class AppsResource {
 
     private final WebResource webResource;
@@ -168,7 +176,7 @@ public class AppsResource {
             final Optional<AppView> appSiteDetailedView = helper
                         .getAppSiteDetailedView(key, siteId, user);
             if (appSiteDetailedView.isPresent()) {
-                return Response.ok(new ResponseEntityView(appSiteDetailedView.get()))
+                return Response.ok(new ResponseEntityView<>(appSiteDetailedView.get()))
                 .build(); // 200
             }
             throw new DoesNotExistException(String.format(
@@ -258,7 +266,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.saveSecretForm(key, siteId, secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),

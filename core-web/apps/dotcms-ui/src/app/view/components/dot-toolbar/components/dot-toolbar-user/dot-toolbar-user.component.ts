@@ -1,41 +1,56 @@
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { AsyncPipe, CommonModule } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotGravatarDirective } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
-import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
+import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
+import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
 
 @Component({
     providers: [DotToolbarUserStore],
     selector: 'dot-toolbar-user',
     styleUrls: ['./dot-toolbar-user.component.scss'],
-    templateUrl: 'dot-toolbar-user.component.html',
+    templateUrl: './dot-toolbar-user.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
+        CommonModule,
         DotGravatarDirective,
         AvatarModule,
-        DotLoginAsModule,
-        DotMyAccountModule,
-        DotPipesModule,
+        DotLoginAsComponent,
+        DotMyAccountComponent,
         MenuModule,
-        AsyncPipe,
-        NgIf
+        AsyncPipe
     ]
 })
 export class DotToolbarUserComponent implements OnInit {
-    vm$ = this.store.vm$;
+    readonly store = inject(DotToolbarUserStore);
 
-    constructor(private store: DotToolbarUserStore) {}
+    vm$ = this.store.vm$;
+    $menu = viewChild<Menu>('menu');
+    $showMask = signal<boolean>(false);
 
     ngOnInit(): void {
         this.store.init();
+    }
+
+    toggleMenu(event: Event): void {
+        this.$menu().toggle(event);
+        this.$showMask.update((value) => !value);
+    }
+
+    hideMask(): void {
+        this.$showMask.update(() => false);
     }
 }

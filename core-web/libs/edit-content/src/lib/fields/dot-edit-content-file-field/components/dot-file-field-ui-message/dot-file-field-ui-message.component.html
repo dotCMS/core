@@ -1,0 +1,13 @@
+@let uiMessage = $uiMessage();
+
+<div
+    [ngClass]="uiMessage.severity"
+    [class.disabled]="disabled"
+    class="icon-container"
+    data-testId="ui-message-icon-container">
+    <i [ngClass]="uiMessage.icon" data-testId="ui-message-icon" class="icon"></i>
+</div>
+<div [class.disabled]="disabled" class="text">
+    <div [innerHTML]="uiMessage.message | dm: uiMessage?.args" data-testId="ui-message-span"></div>
+    <ng-content></ng-content>
+</div>

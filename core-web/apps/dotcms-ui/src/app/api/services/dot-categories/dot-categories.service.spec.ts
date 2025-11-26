@@ -3,12 +3,9 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import {
-    CATEGORY_SOURCE,
-    DotCategory
-} from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { CATEGORY_SOURCE, DotCategory } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import {
@@ -18,6 +15,12 @@ import {
 } from './dot-categories.service';
 
 const mockCategory: DotCategory = {
+    active: false,
+    childrenCount: 0,
+    description: '',
+    iDate: 0,
+    keywords: '',
+    owner: '',
     categoryId: '1222',
     categoryName: 'Test',
     key: 'adsdsd',

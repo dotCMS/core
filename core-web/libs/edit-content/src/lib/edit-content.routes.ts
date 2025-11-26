@@ -1,7 +1,7 @@
 import { Route } from '@angular/router';
 
+import { DotEditContentLayoutComponent } from './components/dot-edit-content-layout/dot-edit-content.layout.component';
 import { EditContentShellComponent } from './edit-content.shell.component';
-import { EditContentLayoutComponent } from './feature/edit-content/edit-content.layout.component';
 
 export const DotEditContentRoutes: Route[] = [
     {
@@ -11,9 +11,13 @@ export const DotEditContentRoutes: Route[] = [
             {
                 path: 'new/:contentType',
                 title: 'Create Content',
-                component: EditContentLayoutComponent
+                component: DotEditContentLayoutComponent
             },
-            { path: ':id', title: 'Edit Content', component: EditContentLayoutComponent }
+            {
+                path: ':id',
+                title: 'Edit Content',
+                component: DotEditContentLayoutComponent
+            }
         ]
     }
 ];

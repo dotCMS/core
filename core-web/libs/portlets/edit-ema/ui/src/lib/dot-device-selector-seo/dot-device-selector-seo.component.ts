@@ -8,7 +8,8 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -26,14 +27,13 @@ import {
     DotCurrentUser,
     DotDevice,
     DotDeviceListItem,
-    SEO_MEDIA_TYPES,
     SocialMediaOption,
-    socialMediaTiles
+    SOCIAL_MEDIA_TILES
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 
 @Component({
-    standalone: true,
     imports: [
         CommonModule,
         DropdownModule,
@@ -46,15 +46,26 @@ import { DotMessagePipe } from '@dotcms/ui';
         RouterLink,
         DividerModule
     ],
-    providers: [DotDevicesService],
+    providers: [
+        DotDevicesService,
+        {
+            provide: WINDOW,
+            useValue: window
+        }
+    ],
     selector: 'dot-device-selector-seo',
     templateUrl: './dot-device-selector-seo.component.html',
     styleUrls: ['./dot-device-selector-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDeviceSelectorSeoComponent implements OnInit {
+    private dotDevicesService = inject(DotDevicesService);
+    private dotMessageService = inject(DotMessageService);
+    private dotCurrentUser = inject(DotCurrentUserService);
+    private window = inject<Window>(WINDOW);
+
     @Input() value: DotDevice;
-    @Input() hideMediaTiles = false;
+    @Input() hideSocialMedia = false;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
@@ -68,7 +79,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
-    socialMediaTiles: SocialMediaOption[];
+    SOCIAL_MEDIA_TILES: SocialMediaOption[];
 
     defaultOptions: DotDeviceListItem[] = [
         {
@@ -121,21 +132,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         }
     ];
 
-    constructor(
-        private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private dotCurrentUser: DotCurrentUserService
-    ) {}
-
     ngOnInit() {
         this.options$ = this.getOptions();
         this.isCMSAdmin$ = this.checkIfCMSAdmin();
-        this.socialMediaTiles = Object.values(socialMediaTiles).filter(
-            (item) =>
-                item.value === SEO_MEDIA_TYPES.FACEBOOK ||
-                item.value === SEO_MEDIA_TYPES.TWITTER ||
-                item.value === SEO_MEDIA_TYPES.LINKEDIN
-        );
+        this.SOCIAL_MEDIA_TILES = Object.values(SOCIAL_MEDIA_TILES);
     }
 
     /**
@@ -203,11 +203,29 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input()
     set apiLink(value: string) {
         if (value) {
-            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
+            const frontEndUrl = `${value.replace(/api\/v1\/page\/(render|json)\//, '')}`;
 
-            this.previewUrl = `${frontEndUrl}${
-                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-            }disabledNavigateMode=true`;
+            const cleanMode = frontEndUrl.replace(/[?&]mode=(.*)/, ''); // Clean the mode so the Live always takes effect
+
+            let url: URL;
+
+            try {
+                // Sometimes the host is specified in the url so this will work
+                url = new URL(
+                    `${cleanMode}${
+                        frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+                    }disabledNavigateMode=true&mode=LIVE`
+                );
+            } catch {
+                // In case it is not a valid URL, we will use the current location
+                url = new URL(
+                    `${this.window.location.origin}/${cleanMode}${
+                        frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+                    }disabledNavigateMode=true&mode=LIVE`
+                );
+            } finally {
+                this.previewUrl = url.toString();
+            }
         }
     }
 }

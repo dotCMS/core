@@ -15,13 +15,11 @@ export default {
         min: '',
         max: '',
         step: '',
-        type: 'date',
-
+        type: 'date'
     }
 };
 
 export const InputCalendar = (args) => {
-
     const inputcalendar = document.createElement('dot-input-calendar');
 
     for (const item in args) {

@@ -4,16 +4,10 @@ import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -23,7 +17,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
@@ -33,9 +33,29 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import org.elasticsearch.common.collect.Map;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -43,7 +63,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static java.util.Collections.EMPTY_MAP;
 
 /**
@@ -51,6 +70,8 @@ import static java.util.Collections.EMPTY_MAP;
  * @author jsanca
  */
 @Path("/v1/authentication")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Authentication")
 public class CreateJsonWebTokenResource implements Serializable {
 
     private final static int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT_VALUE = 30;
@@ -87,13 +108,35 @@ public class CreateJsonWebTokenResource implements Serializable {
         this.securityLoggerServiceAPI   = securityLoggerServiceAPI;
     }
 
+    @Operation(
+        summary = "Create JSON Web Token (deprecated)",
+        description = "Creates a new JSON Web Token for API authentication. This method is deprecated."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JWT created successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJwtTokenView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication failed",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/api-token")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Deprecated
+    @Hidden //not shown in API playground
     public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
+                                         @RequestBody(description = "Token creation form containing user credentials and expiration settings", 
+                                                    required = true,
+                                                    content = @Content(schema = @Schema(implementation = CreateTokenForm.class)))
                                          final CreateTokenForm createTokenForm) {
 
         final String userId = createTokenForm.user;
@@ -122,7 +165,7 @@ public class CreateJsonWebTokenResource implements Serializable {
                 this.securityLoggerServiceAPI.logInfo(this.getClass(),
                         "A Json Web Token " + userId.toLowerCase() + " is being created from IP: " +
                                 HttpRequestDataUtil.getRemoteAddress(request));
-                res = Response.ok(new ResponseEntityView(map("token",
+                res = Response.ok(new ResponseEntityView<>(Map.of("token",
                         createJsonWebToken(user, jwtMaxAgeDays, request.getRemoteAddr(), createTokenForm.label)), EMPTY_MAP)).build(); // 200
             } else {
 

@@ -10,6 +10,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -50,12 +51,18 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @VisibleForTesting
     protected GraphqlAPIImpl(final GraphQLSchemaCache schemaCache) {
+        //Register types
         typesProviders.add(ContentAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(PageAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(QueryMetadataTypeProvider.INSTANCE);
+        typesProviders.add(PaginationTypeProvider.INSTANCE);
+        typesProviders.add(NavigationTypeProvider.INSTANCE);
+        //Register Fields
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(PageAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(QueryMetadataFieldProvider.INSTANCE);
+        fieldsProviders.add(PaginationFieldProvider.INSTANCE);
+        fieldsProviders.add(NavigationFieldProvider.INSTANCE);
         this.schemaCache = schemaCache;
     }
 
@@ -129,7 +136,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             return;
         }
 
-        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);;
+        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);
 
 
     }
@@ -164,8 +171,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     @LogTime(loggingLevel = "INFO")
     @VisibleForTesting
     protected GraphQLSchema generateSchema(final User user) {
+
+        Logger.debug(this, ()-> "Generating GraphQL Schema for the user: " + user.getUserId());
         final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
+        Logger.debug(this, ()-> "Generating types by providers");
         for (GraphQLTypesProvider typesProvider : typesProviders) {
             try {
                 graphQLTypes.addAll(typesProvider.getTypes());
@@ -178,14 +188,14 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // let's log if we are including dupe types
         final Map<String, GraphQLType> localTypesMap = new HashMap<>();
         graphQLTypes.forEach((type)-> {
-            if(localTypesMap.containsKey(type.getName())) {
-                Logger.warn(this, "Dupe GraphQLType detected!: " + type.getName());
+            if(localTypesMap.containsKey(TypeUtil.getName(type))) {
+                Logger.warn(this, "Dupe GraphQLType detected!: " + TypeUtil.getName(type));
                 // removing dupes based on Config property
                 if(Config.getBooleanProperty("GRAPHQL_REMOVE_DUPLICATED_TYPES", false)) {
                     return;
                 }
             }
-            localTypesMap.put(type.getName(), type);
+            localTypesMap.put(TypeUtil.getName(type), type);
         });
 
         final Set<GraphQLType> finalTypesSet = new HashSet<>(localTypesMap.values());
@@ -193,8 +203,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         final List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
+        Logger.debug(this, ()-> "Generating fields by providers");
         for (GraphQLFieldsProvider fieldsProvider : fieldsProviders) {
             try {
+
+                Logger.debug(this, ()-> "Getting fields for provider: " + fieldsProvider.getClass());
                 fieldDefinitions.addAll(fieldsProvider.getFields());
             } catch (DotDataException e) {
                 Logger.error("Unable to get types for type provider:" + fieldsProvider.getClass(), e);
@@ -207,9 +220,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final GraphQLCodeRegistry.Builder codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry();
 
         if(user.isAnonymousUser()) {
+            Logger.debug(this, ()-> "Setting NoIntrospectionGraphqlFieldVisibility, the user is anonymous");
             codeRegistryBuilder.fieldVisibility(
                     NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY).build();
         } else {
+            Logger.debug(this, ()-> "Setting NoIntrospectionGraphqlFieldVisibility, the user is not anonymous");
             codeRegistryBuilder.fieldVisibility(
                     DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY).build();
         }
@@ -238,10 +253,19 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .type(GraphQLInt)
                     .build())
                 .argument(GraphQLArgument.newArgument()
+                    .name("page")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
                     .name("sortBy")
                     .type(GraphQLString)
                     .build())
                 .type(list(InterfaceType.CONTENTLET.getType()))
                 .dataFetcher(new ContentletDataFetcher()));
+    }
+
+    @VisibleForTesting
+    Set<GraphQLTypesProvider> getRegisteredTypesProviders() {
+        return java.util.Collections.unmodifiableSet(typesProviders);
     }
 }

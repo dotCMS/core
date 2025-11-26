@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -10,20 +12,23 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService, DotEventsService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { MockDotMessageService, CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletBaseMockComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletToolbarMockComponent {
     @Input() actions;
@@ -31,13 +36,15 @@ export class DotPortletToolbarMockComponent {
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-container-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotContainerSelectorMockComponent {
     @Output() swap = new EventEmitter<any>();
@@ -52,7 +59,8 @@ export class DotContainerSelectorMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
@@ -98,20 +106,26 @@ describe('DotTemplateAdvancedComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            imports: [DotTemplateAdvancedComponent, FormsModule, ReactiveFormsModule],
             declarations: [
-                DotTemplateAdvancedComponent,
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotContainerSelectorMockComponent,
                 DotTextareaContentMockComponent,
                 MockDotGlobalMessageComponent
             ],
-            imports: [FormsModule, ReactiveFormsModule],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                }
+                },
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                DotEventsService,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
     });
@@ -126,7 +140,7 @@ describe('DotTemplateAdvancedComponent', () => {
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
             name: 'testEditor',
-            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
+            editor: { executeEdits: jest.fn(), getSelection: () => 100 }
         });
     });
 
@@ -144,10 +158,10 @@ describe('DotTemplateAdvancedComponent', () => {
                     {
                         label: 'Save',
                         disabled: true,
-                        command: jasmine.any(Function)
+                        command: expect.any(Function)
                     }
                 ],
-                cancel: jasmine.any(Function)
+                cancel: expect.any(Function)
             });
         });
 
@@ -165,20 +179,21 @@ describe('DotTemplateAdvancedComponent', () => {
             expect(code.attributes.formControlName).toBe('body');
             expect(code.attributes.height).toBe('100%');
             expect(code.attributes.language).toBe('html');
-            expect(code.attributes['ng-reflect-show']).toBe('code');
+            const codeComponent = code.componentInstance as DotTextareaContentMockComponent;
+            expect(codeComponent.show).toEqual(['code']);
         });
     });
 
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
-            const updateTemplate = spyOn(component.updateTemplate, 'emit');
+            const updateTemplate = jest.spyOn(component.updateTemplate, 'emit');
             component.form.get('body').setValue('<body></body>');
 
             expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
         });
 
         it('should have form and fields', () => {
-            spyOn(Date, 'now').and.returnValue(1111111);
+            jest.spyOn(Date, 'now').mockReturnValue(1111111);
             const container = de.query(By.css('dot-container-selector'));
 
             container.triggerEventHandler('swap', {

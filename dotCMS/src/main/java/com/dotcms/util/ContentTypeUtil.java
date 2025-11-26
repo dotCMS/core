@@ -1,7 +1,5 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -20,11 +18,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 /**
  * Utility class for the {@link ContentTypeResource} end-point and other Content
@@ -154,7 +151,7 @@ public class ContentTypeUtil {
      * Returns the action URL for the specified Content Type. Valid layouts must
      * be returned by the {@link User} requesting this data; otherwise, the URL
      * will not be returned. This means that a layout must contain at least one
-     * portlet.
+     * portlet. The user's language will be considered to return results
      *
      * @param request
      *            - The {@link HttpServletRequest} object.
@@ -166,25 +163,48 @@ public class ContentTypeUtil {
      * @param strutsAction - struts action url to execute
      * @return The action URL associated to the specified Content Type.
      */
-    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction) {
+    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction){
+        return getActionUrl(request, contentTypeInode, user, strutsAction, null);
+
+    }
+
+    /**
+     * Returns the action URL for the specified Content Type. Valid layouts must
+     * be returned by the {@link User} requesting this data; otherwise, the URL
+     * will not be returned. This means that a layout must contain at least one
+     * portlet.
+     *
+     * @param request
+     *            - The {@link HttpServletRequest} object.
+     * @param contentTypeInode
+     *            - The Inode of the Content Type whose action URL will be
+     *            returned.
+     * @param user
+     *            - The user performing this action.
+     * @param strutsAction - struts action url to execute
+     * @param languageId - The language to be used for the search
+     * @return The action URL associated to the specified Content Type.
+     */
+    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction, final String languageId) {
         final List<Layout> layouts;
+        final String resolvedLanguageId = Objects.isNull(languageId) ? this.getLanguageId(user.getLanguageId()).toString() : languageId;
         String actionUrl = StringUtils.EMPTY;
-        String referrer = StringUtils.EMPTY;
+        String referrer;
         try {
             layouts = this.layoutAPI.loadLayoutsForUser(user);
             if (UtilMethods.isSet(layouts)) {
                 final Layout contentLayout = getContentPortletLayout(layouts);
-                referrer = generateReferrerUrl(request, contentLayout, contentTypeInode, user);
+                referrer = generateReferrerUrl(request, contentLayout, contentTypeInode, resolvedLanguageId);
                 final PortletURL portletURL =
                         new PortletURLImpl(request, PortletID.CONTENT.toString(), contentLayout.getId(), true);
                 portletURL.setWindowState(WindowState.MAXIMIZED);
-                portletURL.setParameters(map(
+                portletURL.setParameters(new HashMap<>(Map.of(
                         "struts_action", new String[] {strutsAction},
                         "cmd", new String[] {"new"},
                         "referer", new String[] {referrer},
                         "inode", new String[] {""},
                         "selectedStructure", new String[] {contentTypeInode},
-                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()}));
+                        "lang", new String[] {resolvedLanguageId})));
                 actionUrl = portletURL.toString();
             } else {
                 Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
@@ -204,25 +224,25 @@ public class ContentTypeUtil {
      * redirected to after performing an operation in the back-end. For example, this can be used by
      * the "+" sign component that adds different types of content to the system, as it indicates
      * where to return after adding new content.
-     * 
+     *
      * @param request - The {@link HttpServletRequest} object.
      * @param layout - The layout where the user will be redirected after performing his task.
      * @param contentTypeInode - The Inode of the content type used by the new content.
-     * @param user - The user performing this action.
+     * @param languageId - The languageId.
      * @return The referrer URL.
      * @throws WindowStateException If the portlet does not support the
      *         {@link WindowState.MAXIMIZED} state.
      */
     private String generateReferrerUrl(final HttpServletRequest request, final Layout layout, final String contentTypeInode,
-                    final User user) throws WindowStateException {
+                                       final String languageId) throws WindowStateException {
         final PortletURL portletURL = new PortletURLImpl(request, PortletID.CONTENT.toString(), layout.getId(), true);
         portletURL.setWindowState(WindowState.MAXIMIZED);
-        portletURL.setParameters(map(
-                        "struts_action", new String[] {"/ext/contentlet/view_contentlets"}, 
-                        "cmd", new String[] {"new"}, 
-                        "inode", new String[] {""}, 
-                        "structure_id", new String[] {contentTypeInode}, 
-                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()}));
+        portletURL.setParameters(new HashMap<>(Map.of(
+                "struts_action", new String[] {"/ext/contentlet/view_contentlets"},
+                "cmd", new String[] {"new"},
+                "inode", new String[] {""},
+                "structure_id", new String[] {contentTypeInode},
+                "lang", new String[] {languageId})));
         return portletURL.toString();
     }
 

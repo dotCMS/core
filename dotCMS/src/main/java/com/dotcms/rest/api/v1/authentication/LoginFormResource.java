@@ -15,6 +15,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
 import com.dotcms.rest.api.LanguageView;
 import com.dotcms.rest.api.v1.I18NForm;
@@ -34,6 +35,14 @@ import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
 
 
 /**
@@ -41,6 +50,8 @@ import java.util.Map;
  * @author jsanca
  */
 @Path("/v1/loginform")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Authentication")
 public class LoginFormResource implements Serializable {
 
     private final LanguageAPI languageAPI;
@@ -71,13 +82,33 @@ public class LoginFormResource implements Serializable {
         this.webResource     = webResource;
     }
 
+    @Operation(
+        summary = "Get login form configuration",
+        description = "Retrieves login form configuration including company details, available languages, and localized messages"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Login form configuration retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoginFormView.class))),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - security exception",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     // todo: add the https annotation
     @POST
     @JSONP
     @NoCache
     @InitRequestRequired
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response loginForm(@Context final HttpServletRequest request,
+                                         @RequestBody(description = "Internationalization form containing language and country preferences", 
+                                                    required = true,
+                                                    content = @Content(schema = @Schema(implementation = I18NForm.class)))
                                          final I18NForm i18nForm) {
 
         Response res = null;
@@ -124,7 +155,7 @@ public class LoginFormResource implements Serializable {
                             userLocale.getDisplayName(userLocale)))
                 .companyEmail("@" + defaultCompany.getMx());
 
-            res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
+            res = Response.ok(new ResponseEntityView<>(builder.build(), messagesMap)).build(); // 200
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);

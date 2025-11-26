@@ -43,7 +43,7 @@ public class ContainerHolder implements Serializable{
                 Logger.error(this, e.getMessage(), e);
             }
 
-            containerUUIDS.add(new ContainerUUID(containerIdOrPath, containerUUID.getUUID()));
+            containerUUIDS.add(new ContainerUUID(containerIdOrPath, containerUUID.getUUID(), containerUUID.getHistoryUUIDs()));
         }
 
         return containerUUIDS;

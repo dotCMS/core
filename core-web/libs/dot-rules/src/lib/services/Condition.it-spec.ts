@@ -1,16 +1,18 @@
-import { RuleModel, RuleService, ConditionGroupModel, ConditionModel } from './Rule';
-import { ConditionService } from './Condition';
+import { Subscription, Observable } from 'rxjs';
+
 import { ReflectiveInjector } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
 import { ApiRoot } from '@dotcms/dotcms-js';
 import { UserModel } from '@dotcms/dotcms-js';
-import { ActionService } from './Action';
-import { ConditionGroupService } from './ConditionGroup';
-import { I18nService } from './system/locale/I18n';
-
 import { CwError } from '@dotcms/dotcms-js';
-import { BrowserModule } from '@angular/platform-browser';
-import { Subscription, Observable } from 'rxjs';
+
+import { ActionService } from './Action';
+import { ConditionService } from './Condition';
+import { ConditionGroupService } from './ConditionGroup';
+import { RuleModel, RuleService, ConditionGroupModel, ConditionModel } from './Rule';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
+import { I18nService } from './system/locale/I18n';
 
 const injector = ReflectiveInjector.resolveAndCreate([
     ApiRoot,

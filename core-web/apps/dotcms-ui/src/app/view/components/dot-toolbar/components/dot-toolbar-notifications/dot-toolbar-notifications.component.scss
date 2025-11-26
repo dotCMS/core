@@ -1,85 +1,50 @@
 @use "variables" as *;
 
 $notification-padding: $spacing-3;
-$notification-dot-badge-size: 0.625rem;
 
-:host {
+.dot-notifications {
+    width: 21rem;
+}
+
+.dot-notifications__button-active {
+    background-color: $color-palette-primary-op-20;
+    border-radius: 50%;
+}
+
+.dot-notifications__title {
+    font-size: $font-size-lmd;
+    margin: 0;
+}
+
+.dot-notifications__footer {
+    text-align: center;
+}
+
+.dot-notifications__footer button {
+    margin: auto;
+}
+
+.dot-notifications__empty {
     display: flex;
-    position: relative;
+    border-top: solid 1px $color-palette-gray-200;
+    flex-direction: column;
+    align-items: center;
+    padding: $spacing-4 0;
+}
 
-    .toolbar-notifications__container {
-        position: relative;
-        margin-left: $spacing-1;
-    }
+.dot-notifications__empty-title {
+    font-size: $font-size-default;
+    font-weight: $font-weight-semi-bold;
+}
 
-    .dot-toolbar-notifications__button-active {
-        background-color: $color-palette-primary-op-20;
-        border-radius: 50%;
-    }
+.dot-notifications__empty-info {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-800;
+}
 
-    .dot-toolbar__badge {
-        background-color: $color-accessible-text-fuchsia;
-        border-radius: $notification-dot-badge-size;
-        color: $white;
-        width: $notification-dot-badge-size;
-        height: $notification-dot-badge-size;
-        position: absolute;
-        left: 28px;
-        top: 2px;
-    }
-
-    .toolbar-notifications {
-        padding: $notification-padding 0 $notification-padding $notification-padding;
-        width: 350px;
-        margin: $spacing-1;
-
-        &:before {
-            background: $white;
-            content: "";
-            height: 10px;
-            position: absolute;
-            right: 15px;
-            top: -5px;
-            transform: rotate(45deg);
-            width: 10px;
-        }
-    }
-
-    .toolbar-notifications__heading {
-        display: flex;
-        justify-content: space-between;
-        padding-right: $notification-padding;
-    }
-
-    .toolbar-notifications__title {
-        font-size: $font-size-lg;
-        margin: 0;
-        padding-bottom: $spacing-0;
-    }
-
-    .toolbar-notifications__footer {
-        text-align: center;
-    }
-
-    .toolbar-notifications__footer button {
-        margin: auto;
-    }
-
-    .dot-toolbar-notifications__empty {
-        display: flex;
-        border-top: solid 1px $color-palette-gray-200;
-        flex-direction: column;
-        align-items: center;
-        padding: $spacing-4 0;
-    }
-
-    .dot-toolbar-notifications__empty-title {
-        font-size: $font-size-default;
-        font-weight: $font-weight-semi-bold;
-    }
-
-    .dot-toolbar-notifications__empty-info {
-        font-size: $font-size-sm;
-        color: $color-palette-gray-800;
-    }
+.dot-notifications-list {
+    list-style: none;
+    margin: 0;
+    max-height: 600px;
+    overflow-x: hidden;
 }

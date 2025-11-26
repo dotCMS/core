@@ -19,12 +19,14 @@ import { DotLoopEditorComponent } from './dot-loop-editor.component';
 
 @Component({
     selector: `dot-host-component`,
-    template: `<dot-loop-editor
-        [formControl]="editor"
-        [label]="label"
-        [isEditorVisible]="isEditorVisible"
-        (buttonClick)="showLoopInput()"
-    ></dot-loop-editor>`
+    template: `
+        <dot-loop-editor
+            (buttonClick)="showLoopInput()"
+            [formControl]="editor"
+            [label]="label"
+            [isEditorVisible]="isEditorVisible"></dot-loop-editor>
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     isEditorVisible = true;
@@ -45,7 +47,8 @@ class DotTestHostComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input() show;
@@ -82,12 +85,14 @@ describe('DotLoopEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [DotTextareaContentMockComponent, DotTestHostComponent],
+            imports: [
                 DotLoopEditorComponent,
-                DotTextareaContentMockComponent,
-                DotTestHostComponent
+                DotMessagePipe,
+                ButtonModule,
+                ReactiveFormsModule,
+                BrowserAnimationsModule
             ],
-            imports: [DotMessagePipe, ButtonModule, ReactiveFormsModule, BrowserAnimationsModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
@@ -104,7 +109,7 @@ describe('DotLoopEditorComponent', () => {
 
     it('should show pre_loop', () => {
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
-        expect(label.innerText).toBe('Pre-loop');
+        expect(label.textContent.trim()).toBe('Pre-loop');
     });
 
     it('should show post_loop', () => {
@@ -112,7 +117,7 @@ describe('DotLoopEditorComponent', () => {
         fixture.detectChanges();
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
-        expect(label.innerText).toBe('Post-loop');
+        expect(label.textContent.trim()).toBe('Post-loop');
     });
 
     it('should show pre post loop button when Editor is not visible', () => {
@@ -120,7 +125,7 @@ describe('DotLoopEditorComponent', () => {
         fixture.detectChanges();
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const showEditorBtn = de.query(By.css('[data-testId="showEditorBtn"]'));
-        spyOn(de.componentInstance.buttonClick, 'emit');
+        jest.spyOn(de.componentInstance.buttonClick, 'emit');
         showEditorBtn.triggerEventHandler('click');
         expect(showEditorBtn).toBeDefined();
         expect(de.componentInstance.buttonClick.emit).toHaveBeenCalled();

@@ -1,29 +1,27 @@
-<div *ngIf="items.length; else emptyBlock">
-    <h3 *ngIf="!!title">{{ title }}</h3>
-    <dot-suggestion-list #list>
-        <ng-container *ngFor="let item of items; let i = index">
-            <dot-suggestions-list-item
-                *ngIf="item.id !== 'divider'; else divider"
-                [command]="item.command"
-                [index]="item.tabindex || i"
-                [label]="item.label"
-                [url]="item.icon"
-                [data]="item.data"
-                [disabled]="item.disabled"
-            >
-            </dot-suggestions-list-item>
-            <ng-template #divider>
-                <div class="divider"></div>
-            </ng-template>
-        </ng-container>
-    </dot-suggestion-list>
-</div>
-
-<ng-template #emptyBlock>
+@if (sortedItems.length) {
+    <div>
+        @if (!!title) {
+            <h3>{{ title }}</h3>
+        }
+        <dot-suggestion-list #list>
+            @for (item of sortedItems; track item) {
+                @if (item.id !== 'divider') {
+                    <dot-suggestions-list-item
+                        [command]="item.command"
+                        [index]="item.tabindex || $index"
+                        [label]="item.label"
+                        [url]="item.icon"
+                        [data]="item.data"
+                        [disabled]="item.disabled" />
+                } @else {
+                    <div class="divider"></div>
+                }
+            }
+        </dot-suggestion-list>
+    </div>
+} @else {
     <dot-empty-message
-        [title]="noResultsMessage"
-        [showBackBtn]="!isFilterActive"
         (back)="handleBackButton()"
-    >
-    </dot-empty-message>
-</ng-template>
+        [title]="noResultsMessage"
+        [showBackBtn]="!isFilterActive"></dot-empty-message>
+}

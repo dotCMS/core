@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -8,34 +8,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { RippleModule } from 'primeng/ripple';
-
-export default {
-    title: 'PrimeNG/Form/InputText/InputGroup',
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'Text, icon, buttons and other content can be grouped next to an input.: https://primeng.org/inputgroup'
-            }
-        }
-    },
-    decorators: [
-        moduleMetadata({
-            imports: [
-                FormsModule,
-                InputTextModule,
-                ButtonModule,
-                CheckboxModule,
-                RadioButtonModule,
-                RippleModule,
-                BrowserAnimationsModule
-            ]
-        })
-    ],
-    args: {
-        text: 'Placeholder text'
-    }
-} as Meta;
 
 const InputGroupTemplate = `
 <div class="grid p-fluid">
@@ -120,23 +92,47 @@ const InputGroupTemplate = `
 </div>
 `;
 
-const Template: Story<{
-    text: string;
-}> = (props: { text: string }) => {
-    const template = InputGroupTemplate;
-
-    return {
-        props,
-        template
-    };
+const meta: Meta = {
+    title: 'PrimeNG/Form/InputText/InputGroup',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Text, icon, buttons and other content can be grouped next to an input.: https://primeng.org/inputgroup'
+            }
+        }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                FormsModule,
+                InputTextModule,
+                ButtonModule,
+                CheckboxModule,
+                RadioButtonModule,
+                RippleModule,
+                BrowserAnimationsModule
+            ]
+        })
+    ],
+    args: {
+        text: 'Placeholder text'
+    },
+    render: (args) => ({
+        props: args,
+        template: InputGroupTemplate
+    })
 };
+export default meta;
 
-export const Primary: Story = Template.bind({});
+type Story = StoryObj;
 
-Primary.parameters = {
-    docs: {
-        source: {
-            code: InputGroupTemplate
+export const Primary: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: InputGroupTemplate
+            }
         }
     }
 };

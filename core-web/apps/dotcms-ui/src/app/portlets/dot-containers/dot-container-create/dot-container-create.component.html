@@ -6,18 +6,21 @@
                     <dot-container-properties></dot-container-properties>
                 </ng-template>
             </p-tabPanel>
-            <p-tabPanel *ngIf="containerId" [header]="'message.containers.tab.permissions' | dm">
-                <ng-template pTemplate="content">
-                    <dot-container-permissions
-                        [containerId]="containerId"
-                    ></dot-container-permissions>
-                </ng-template>
-            </p-tabPanel>
-            <p-tabPanel *ngIf="containerId" [header]="'message.containers.tab.history' | dm">
-                <ng-template pTemplate="content">
-                    <dot-container-history [containerId]="containerId"></dot-container-history>
-                </ng-template>
-            </p-tabPanel>
+            @if (containerId) {
+                <p-tabPanel [header]="'message.containers.tab.permissions' | dm">
+                    <ng-template pTemplate="content">
+                        <dot-container-permissions
+                            [containerId]="containerId"></dot-container-permissions>
+                    </ng-template>
+                </p-tabPanel>
+            }
+            @if (containerId) {
+                <p-tabPanel [header]="'message.containers.tab.history' | dm">
+                    <ng-template pTemplate="content">
+                        <dot-container-history [containerId]="containerId"></dot-container-history>
+                    </ng-template>
+                </p-tabPanel>
+            }
         </p-tabView>
     </div>
     <dot-global-message></dot-global-message>

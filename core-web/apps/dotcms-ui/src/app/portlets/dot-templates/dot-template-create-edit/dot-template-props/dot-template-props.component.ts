@@ -1,27 +1,60 @@
 import { Observable } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { map, startWith } from 'rxjs/operators';
+
+import { DotTempFileUploadService } from '@dotcms/data-access';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotFormDialogComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
+
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
+
+import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 
 @Component({
     selector: 'dot-template-props',
     templateUrl: './dot-template-props.component.html',
-    styleUrls: ['./dot-template-props.component.scss']
+    styleUrls: ['./dot-template-props.component.scss'],
+    providers: [DotTempFileUploadService],
+    imports: [
+        CommonModule,
+        DotFieldValidationMessageComponent,
+        DotFormDialogComponent,
+        FormsModule,
+        InputTextModule,
+        InputTextareaModule,
+        ReactiveFormsModule,
+        DotMessagePipe,
+        DotTemplateThumbnailFieldComponent,
+        DotThemeSelectorDropdownComponent,
+        DotFieldRequiredDirective
+    ]
 })
 export class DotTemplatePropsComponent implements OnInit {
+    private ref = inject(DynamicDialogRef);
+    private config = inject(DynamicDialogConfig);
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
     isFormValid$: Observable<boolean>;
-
-    constructor(
-        private ref: DynamicDialogRef,
-        private config: DynamicDialogConfig,
-        private fb: UntypedFormBuilder
-    ) {}
 
     ngOnInit(): void {
         const { template } = this.config.data;

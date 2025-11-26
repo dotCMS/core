@@ -110,7 +110,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getKeyValueForm(buttonDisabled: boolean): JSX.Element {
+    private getKeyValueForm(buttonDisabled: boolean) {
         return (
             <tr>
                 <td class="key-value-table-form__key">
@@ -139,8 +139,7 @@ export class DotKeyValueComponent {
                     <button
                         class="key-value-form__save__button"
                         type="submit"
-                        disabled={buttonDisabled}
-                    >
+                        disabled={buttonDisabled}>
                         {this.addButtonLabel}
                     </button>
                 </td>
@@ -148,7 +147,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListForm(buttonDisabled: boolean): JSX.Element {
+    private getWhiteListForm(buttonDisabled: boolean) {
         return (
             <tr>
                 <td class="key-value-table-form__key">{this.getWhiteListKeysDropdown()}</td>
@@ -159,8 +158,7 @@ export class DotKeyValueComponent {
                     <button
                         class="key-value-form__save__button"
                         type="submit"
-                        disabled={buttonDisabled}
-                    >
+                        disabled={buttonDisabled}>
                         {this.addButtonLabel}
                     </button>
                 </td>
@@ -184,13 +182,12 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListKeysDropdown(): JSX.Element {
+    private getWhiteListKeysDropdown() {
         return (
             <select
                 disabled={this.disabled}
                 name="key"
-                onChange={(event: Event) => this.changeWhiteListKey(event)}
-            >
+                onChange={(event: Event) => this.changeWhiteListKey(event)}>
                 <option value="">{this.emptyDropdownOptionLabel}</option>
                 {Object.keys(this.whiteListArray).map((key: string) => {
                     return <option value={key}>{key}</option>;
@@ -199,13 +196,12 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListValuesDropdown(): JSX.Element {
+    private getWhiteListValuesDropdown() {
         return (
             <select
                 disabled={this.disabled}
                 name="value"
-                onChange={(event: Event) => this.changeWhiteListValue(event)}
-            >
+                onChange={(event: Event) => this.changeWhiteListValue(event)}>
                 <option value="">{this.emptyDropdownOptionLabel}</option>
                 {this.whiteListArray[this.selectedWhiteListKey].map((item: string) => {
                     return <option value={item}>{item}</option>;

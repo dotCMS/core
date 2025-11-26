@@ -1,0 +1,18 @@
+@let options = $options();
+
+@if (options?.actionIcon) {
+    <p-button
+        (onClick)="handleAction()"
+        [icon]="options?.actionIcon"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        data-testId="info-action"></p-button>
+}
+
+<div class="info-container">
+    @if (!!options?.icon) {
+        <i [class]="options?.icon + ' info-container__icon'" data-testId="info-icon"></i>
+    }
+    <span
+        [innerHTML]="options?.info.message | dm: options?.info.args"
+        data-testId="info-text"></span>
+</div>

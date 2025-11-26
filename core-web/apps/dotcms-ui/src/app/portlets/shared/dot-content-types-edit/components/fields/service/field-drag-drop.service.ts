@@ -1,14 +1,13 @@
-import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { merge, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { filter, map, tap } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { FieldUtil } from '@dotcms/utils-testing';
+import { FieldUtil } from '@dotcms/utils';
 
 const MAX_COLS_PER_ROW = 4;
 
@@ -52,6 +51,10 @@ export interface DropFieldData {
 
 @Injectable()
 export class FieldDragDropService {
+    private dragulaService = inject(DragulaService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+
     private static readonly FIELD_BAG_NAME = 'fields-bag';
     private static readonly FIELD_ROW_BAG_NAME = 'fields-row-bag';
     private static readonly FIELD_ROW_BAG_CLASS_OVER = 'row-columns__item--over';
@@ -63,18 +66,14 @@ export class FieldDragDropService {
     private currentFullRowEl: HTMLElement = null;
     private currentColumnOvered: Element;
 
-    constructor(
-        private dragulaService: DragulaService,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService
-    ) {
-        const dragulaOver$ = dragulaService.over();
-        const dragulaDropModel$ = dragulaService.dropModel();
+    constructor() {
+        const dragulaOver$ = this.dragulaService.over();
+        const dragulaDropModel$ = this.dragulaService.dropModel();
 
         const isRowFull = () => !!this.currentFullRowEl;
         const wasDrop = (target) => target === null;
 
-        merge(dragulaService.drop(), dragulaOver$)
+        merge(this.dragulaService.drop(), dragulaOver$)
             .pipe(filter(isRowFull))
             .subscribe(({ target }: DragulaCustomEvent) => {
                 this.clearCurrentFullRowEl();
@@ -122,7 +121,7 @@ export class FieldDragDropService {
                 }
             );
 
-        dragulaService
+        this.dragulaService
             .dragend()
             .pipe(filter(() => !!this.currentColumnOvered))
             .subscribe(() => {
@@ -184,7 +183,7 @@ export class FieldDragDropService {
                 copy: this.shouldCopy.bind(this),
                 accepts: this.shouldAccepts.bind(this),
                 moves: this.shouldMovesField,
-                copyItem: (item) => _.cloneDeep(item)
+                copyItem: (item) => structuredClone(item)
             });
         }
     }
@@ -200,7 +199,7 @@ export class FieldDragDropService {
                 copy: this.shouldCopy.bind(this),
                 accepts: this.shouldAccepts.bind(this),
                 moves: this.shouldMoveRow.bind(this),
-                copyItem: (item) => _.cloneDeep(item)
+                copyItem: (item) => structuredClone(item)
             });
         }
     }

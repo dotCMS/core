@@ -28,9 +28,9 @@ import {
     SuggestionsCommandProps,
     SuggestionsComponent
 } from '../../shared';
+import { NodeTypes } from '../../shared/utils';
 import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
-import { NodeTypes } from '../bubble-menu/models';
 
 const AI_BLOCK_EXTENSIONS_IDS = [AI_CONTENT_PROMPT_EXTENSION_NAME, AI_IMAGE_PROMPT_EXTENSION_NAME];
 declare module '@tiptap/core' {
@@ -254,15 +254,12 @@ export const ActionsMenu = (
 
     function onBeforeStart({ editor }): void {
         editor.commands.freezeScroll(true);
-        const isTableCell =
-            findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
-            NodeTypes.TABLE_CELL;
 
         const isCodeBlock =
             findParentNode(editor.view.state.selection.$from, [NodeTypes.CODE_BLOCK])?.type.name ===
             NodeTypes.CODE_BLOCK;
 
-        shouldShow = !isTableCell && !isCodeBlock;
+        shouldShow = !isCodeBlock;
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
@@ -397,6 +394,7 @@ export const ActionsMenu = (
 
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
+        priority: 1000, // If open, give priority on events
 
         addOptions() {
             return {

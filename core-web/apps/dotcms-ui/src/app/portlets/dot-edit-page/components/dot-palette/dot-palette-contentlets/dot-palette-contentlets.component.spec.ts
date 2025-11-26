@@ -9,16 +9,15 @@ import { By } from '@angular/platform-browser';
 import { LazyLoadEvent } from 'primeng/api';
 import { PaginatorModule } from 'primeng/paginator';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
 
-import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipe } from '../../../../../view/pipes/dot-filter/dot-filter.pipe';
+import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 export const contentletFormDataMock = {
     baseType: 'FORM',
@@ -65,9 +64,9 @@ export const contentletProductDataMock = {
         <dot-palette-contentlets
             [items]="items"
             [loading]="loading"
-            [totalRecords]="totalRecords"
-        ></dot-palette-contentlets>
-    `
+            [totalRecords]="totalRecords"></dot-palette-contentlets>
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() items: DotCMSContentlet[];
@@ -81,12 +80,13 @@ class TestHostComponent {
 
 @Injectable()
 class MockDotContentletEditorService {
-    setDraggedContentType = jasmine.createSpy('setDraggedContentType');
+    setDraggedContentType = jest.fn();
 }
 
 @Component({
     selector: 'dot-contentlet-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotContentletIconMockComponent {
     @Input() icon: string;
@@ -102,19 +102,15 @@ describe('DotPaletteContentletsComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotPaletteContentletsComponent,
-                DotContentletIconMockComponent
-            ],
+            declarations: [TestHostComponent, DotContentletIconMockComponent],
             imports: [
-                DotPipesModule,
+                DotPaletteContentletsComponent,
                 DotMessagePipe,
-                DotSpinnerModule,
-                DotIconModule,
-                DotFilterPipeModule,
+                DotSpinnerComponent,
+                DotIconComponent,
+                DotFilterPipe,
                 FormsModule,
-                DotPaletteInputFilterModule,
+                DotPaletteInputFilterComponent,
                 HttpClientTestingModule,
                 PaginatorModule
             ],
@@ -166,7 +162,7 @@ describe('DotPaletteContentletsComponent', () => {
     });
 
     it('should emit paginate event', async () => {
-        spyOn(component.paginate, 'emit').and.callThrough();
+        jest.spyOn(component.paginate, 'emit');
         const productsArray = [];
         for (let index = 0; index < 30; index++) {
             productsArray.push(contentletProductDataMock);
@@ -185,7 +181,7 @@ describe('DotPaletteContentletsComponent', () => {
         expect(paginatorContainer.componentInstance.rows).toBe(25);
         expect(paginatorContainer.componentInstance.totalRecords).toBe(30);
         expect(paginatorContainer.componentInstance.showFirstLastIcon).toBe(false);
-        expect(paginatorContainer.componentInstance.pageLinkSize).toBe('2');
+        expect(paginatorContainer.componentInstance.pageLinkSize).toBe(2);
 
         paginatorContainer.componentInstance.onPageChange.emit({ first: 25 });
 
@@ -198,7 +194,7 @@ describe('DotPaletteContentletsComponent', () => {
     });
 
     it('should emit go back', async () => {
-        spyOn(component.back, 'emit').and.callThrough();
+        jest.spyOn(component.back, 'emit');
 
         fixtureHost.detectChanges();
         await fixtureHost.whenStable();
@@ -220,13 +216,13 @@ describe('DotPaletteContentletsComponent', () => {
         const content = fixtureHost.debugElement.query(By.css('[data-testId="paletteItem"]'));
         content.triggerEventHandler('dragstart', contentletProductDataMock);
 
-        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledOnceWith(
+        expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledWith(
             (<any>contentletProductDataMock) as DotCMSContentlet
         );
     });
 
     it('should filter Product item', async () => {
-        spyOn(component.filter, 'emit').and.callThrough();
+        jest.spyOn(component.filter, 'emit');
         fixtureHost.detectChanges();
         await fixtureHost.whenStable();
 
@@ -236,5 +232,6 @@ describe('DotPaletteContentletsComponent', () => {
         fixtureHost.detectChanges();
 
         expect(component.filter.emit).toHaveBeenCalledWith('test');
+        expect(component.filter.emit).toHaveBeenCalledTimes(1);
     });
 });

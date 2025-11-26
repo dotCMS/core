@@ -12,6 +12,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  * @author jsanca
  */
 @Path("/v1/storages")
+@Tag(name = "System Storage")
 public class StorageResource {
 
     private final WebResource webResource;

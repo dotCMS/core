@@ -1,32 +1,30 @@
 import { GridStackWidget } from 'gridstack';
 import { DDElementHost } from 'gridstack/dist/dd-element';
 
-import { NgIf } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     ElementRef,
     HostListener,
-    Input
+    Input,
+    inject
 } from '@angular/core';
 
 @Component({
     selector: 'dotcms-add-widget',
     templateUrl: './add-widget.component.html',
     styleUrls: ['./add-widget.component.scss'],
-    standalone: true,
-    imports: [NgIf],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddWidgetComponent implements AfterViewInit {
+    private el = inject(ElementRef);
+
     @Input() label = 'Add Widget';
     @Input() icon = '';
     @Input() gridstackOptions: GridStackWidget;
 
     protected imageError = false;
-
-    constructor(private el: ElementRef) {}
 
     ngAfterViewInit(): void {
         this.el.nativeElement.gridstackNode = {

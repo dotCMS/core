@@ -1,9 +1,9 @@
-<form class="wrapper" [formGroup]="form">
+<form [formGroup]="form" class="wrapper">
     <div class="field">
         <label for="allowed-file-type">{{ 'binary-field.settings.allow.type' | dm }}</label>
         <input
-            id="allowed-file-type"
             [style]="{ width: '100%' }"
+            id="allowed-file-type"
             formControlName="accept"
             placeholder="ex: image/*"
             pInputText
@@ -12,20 +12,21 @@
             <a
                 href="https://www.dotcms.com/docs/latest/field-variables#BinaryField"
                 target="_blank"
-                rel="noopener"
-                >{{ 'binary-field-settings.system.link.to.documentation' | dm }}</a
-            >
+                rel="noopener">
+                {{ 'binary-field-settings.system.link.to.documentation' | dm }}
+            </a>
         </small>
     </div>
-    @for( option of systemOptions; track option.key ) {
-    <p-divider
-        [style]="{
-            margin: '1rem 0'
-        }"></p-divider>
-    <div class="horizontal-field" formGroupName="systemOptions">
-        <p class="info" [innerHTML]="option.message | dm"></p>
-        <p-inputSwitch [formControlName]="option.key" data-testId="setting-switch"></p-inputSwitch>
-    </div>
-
+    @for (option of systemOptions; track option.key) {
+        <p-divider
+            [style]="{
+                margin: '1rem 0'
+            }"></p-divider>
+        <div class="horizontal-field" formGroupName="systemOptions">
+            <p [innerHTML]="option.message | dm" class="info"></p>
+            <p-inputSwitch
+                [formControlName]="option.key"
+                data-testId="setting-switch"></p-inputSwitch>
+        </div>
     }
 </form>

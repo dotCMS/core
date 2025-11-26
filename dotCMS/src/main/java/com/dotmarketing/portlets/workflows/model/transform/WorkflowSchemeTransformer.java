@@ -40,6 +40,7 @@ public class WorkflowSchemeTransformer implements DBTransformer<WorkflowScheme> 
         scheme.setEntryActionId((String) map.get("entry_action_id"));
         scheme.setId((String) map.get("id"));
         scheme.setName((String) map.get("name"));
+        scheme.setVariableName((String) map.get("variable_name"));
         scheme.setDescription((String) map.get("description"));
         scheme.setModDate((Date) map.get("mod_date"));
         scheme.setMandatory(ConversionUtils.toBooleanFromDb(map.getOrDefault("mandatory",false)));

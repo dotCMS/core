@@ -1,6 +1,7 @@
 package com.dotcms.workflow.form;
 
 import com.dotmarketing.business.PermissionAPI;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
@@ -8,6 +9,11 @@ import com.dotcms.rest.api.Validated;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Form to fire an action in the workflow
+ * @author jsanca
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(builder = FireActionForm.Builder.class)
 public class FireActionForm extends Validated {
 
@@ -108,6 +114,7 @@ public class FireActionForm extends Validated {
         this.individualPermissions = builder.individualPermissions;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Builder {
 
         @JsonProperty()

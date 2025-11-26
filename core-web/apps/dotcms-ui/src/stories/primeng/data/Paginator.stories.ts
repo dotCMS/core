@@ -1,9 +1,8 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
-import { PaginatorModule } from 'primeng/paginator';
+import { Paginator, PaginatorModule } from 'primeng/paginator';
 
-export default {
+const meta: Meta<Paginator> = {
     title: 'PrimeNG/Data/Paginator',
     decorators: [
         moduleMetadata({
@@ -15,23 +14,25 @@ export default {
         docs: {
             description: {
                 component:
-                    'Paginator is a generic component to display content in paged format.: https://primefaces.org/primeng/showcase/#/paginator'
+                    'Paginator is a generic component to display content in paged format.: https://primeng.org/paginator'
             }
         }
+    },
+    render: (args) => {
+        return {
+            props: { ...args },
+            template: `<p-paginator ${argsToTemplate(args)} />`
+        };
     }
-} as Meta;
-
-const BasicTemplate = `<p-paginator [rows]="10" [totalRecords]="100" pageLinkSize="3"></p-paginator>`;
-export const Basic: Story = () => {
-    return {
-        template: BasicTemplate
-    };
 };
+export default meta;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: BasicTemplate
-        }
+type Story = StoryObj<Paginator>;
+
+export const Primary: Story = {
+    args: {
+        rows: 10,
+        totalRecords: 100,
+        pageLinkSize: 3
     }
 };

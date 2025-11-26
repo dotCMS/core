@@ -1,0 +1,61 @@
+{
+  "page": {
+    "type": "json_object",
+    "required": true,
+    "allowed_attributes": {
+      "url": {
+        "type": "string",
+        "required": true
+      },
+      "title": {
+        "type": "string",
+        "required": true
+      },
+      "language_id": {
+        "type": "string"
+      },
+      "persona": {
+        "type": "string"
+      },
+      "doc_encoding": {
+        "type": "string",
+        "required": true
+      },
+      "doc_path": {
+        "type": "string"
+      },
+      "doc_host": {
+        "type": "string"
+      },
+      "doc_protocol": {
+        "type": "string"
+      },
+      "doc_hash": {
+        "type": "string"
+      },
+      "doc_search": {
+        "type": "string"
+      }
+    }
+  },
+  "utm": {
+    "type": "json_object",
+    "allowed_attributes": {
+      "medium": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      },
+      "campaign": {
+        "type": "string"
+      },
+      "term": {
+        "type": "string"
+      },
+      "content": {
+        "type": "string"
+      }
+    }
+  }
+}

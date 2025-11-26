@@ -1,10 +1,12 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.repackage.org.directwebremoting.guice.ApplicationScoped;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+import org.junit.runner.RunWith;
 
 /**
  * Test for the {@link ContentTypeInitializer}

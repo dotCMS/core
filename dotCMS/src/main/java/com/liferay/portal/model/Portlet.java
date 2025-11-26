@@ -1,26 +1,38 @@
 package com.liferay.portal.model;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletPK;
 import com.liferay.portlet.ConcretePortletWrapper;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * This class represents a portlet in the dotCMS administration portal, i.e.; the back-end.
+ * <p>In dotCMS, a portlet is a page that you can access when you log into the back-end. It allows
+ * you to visualize and/or interact with information in your content repository. For instance,
+ * the Site Browser, the Content Search, and the Maintenance page are examples of portlets.
+ * Developers can create their own custom portlets as well, if required.</p>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class Portlet extends PortletModel {
 
   private static final long serialVersionUID = 1L;
-  private final String portletId;
-  private final Map<String, String> initParams;
-  private final String portletClass, portletSource;
+
+  protected transient Map<String, String> initParams;
+  protected String portletId;
+  protected String portletClass;
+  protected String portletSource;
+  protected String portletUrl;
 
   public static final String MAINTENANCE = "maintenance";
-    public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
+  public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
 
   @Deprecated
   public Portlet(PortletPK pk) {
@@ -31,7 +43,7 @@ public class Portlet extends PortletModel {
     initParams = new HashMap<>();
     portletClass = null;
     portletSource="xml";
-
+    portletUrl = null;
   }
 
   public Portlet(String portletId, String portletClass, Map<String, String> initParams) {
@@ -40,7 +52,25 @@ public class Portlet extends PortletModel {
     this.initParams = initParams;
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
+  }
 
+  public Portlet(String portletId, String groupId, String portletClass, Map<String, String> initParams) {
+    super(portletId, groupId, "dotcms.org", null, false, null, true);
+    this.portletId = portletId;
+    this.initParams = initParams;
+    this.portletClass = portletClass;
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
+  }
+
+  public Portlet(String portletId, String portletClass, Map<String, String> initParams, String portletUrl) {
+    super(portletId, "", "dotcms.org", null, false, null, true);
+    this.portletId = portletId;
+    this.initParams = initParams;
+    this.portletClass = portletClass;
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = portletUrl;
   }
 
   @Deprecated
@@ -59,6 +89,7 @@ public class Portlet extends PortletModel {
     this.initParams = new HashMap<>();
     this.portletClass = null;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
   }
 
   @Deprecated
@@ -73,6 +104,7 @@ public class Portlet extends PortletModel {
     this.initParams = initParams;
     this.portletClass = portletClass;
     this.portletSource=initParams.getOrDefault("portletSource", "xml");
+    this.portletUrl = null;
   }
 
   /**
@@ -146,6 +178,24 @@ public class Portlet extends PortletModel {
    */
   public String getResourceBundle() {
     return "com.liferay.portlet.StrutsResourceBundle" ;
+  }
+
+  /**
+   * Gets the portlet URL.
+   *
+   * @return the portlet URL
+   */
+  public String getPortletUrl() {
+    return this.portletUrl;
+  }
+
+  /**
+   * Sets the portlet URL.
+   *
+   * @param portletUrl the portlet URL
+   */
+  public void setPortletUrl(String portletUrl) {
+    this.portletUrl = portletUrl;
   }
 
   @Override

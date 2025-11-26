@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -25,7 +27,9 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 
@@ -65,12 +69,25 @@ public interface ContentletAPI {
 			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
 	};
 
+	/**
+	 * Returns the {@link Contentlet} date formats
+	 * @return String array of formats
+	 */
+	default String [] getContentletDateFormats () {
+
+		final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
+				ContentletAPI.DEFAULT_DATE_FORMATS);
+
+		return dateFormats;
+	}
+
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
 	/**
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
 	 * of content.  Doesn't respect permissions.
+	 *
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
 	 * @return List<Contentlet> list of contentlets
@@ -85,7 +102,21 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
+	/**
+	 * Finds a {@link Contentlet} Object given the inode
+	 *
+	 * @param inode {@link Contentlet}'s inode
+	 * @param user to check permission
+	 * @param respectFrontendRoles if it is true then Frontend permission are checked
+	 * @param ignoreBlockEditor if it is true then the StoryBlock must not be hydrated
+	 *
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Contentlet find(String inode, User user, boolean respectFrontendRoles, boolean ignoreBlockEditor) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
@@ -180,6 +211,7 @@ public interface ContentletAPI {
 	/**
 	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
 	 * to the database if not found based on its identifier
+	 *
 	 * @param identifier 
 	 * @param live Retrieves the live version. If false retrieves the working version
 	 * @param languageId languageId The LanguageId of the content version we'd like to retrieve
@@ -207,6 +239,25 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+
+	/**
+	 * Retrieves a contentlet directly from the database based on its identifier, languageId and variantId and future time machine date.
+	 * If the contentlet has been created passing an expire-date this method will try to match the timeMachineDate within the publish-date and the expire-date
+	 * If the contentlet isn't found or permissions are not granted it will return null
+	 * @param identifier The contentlet's identifier
+	 * @param languageId The languageId of the contentlet
+	 * @param variantId The variantId of the contentlet
+	 * @param timeMachineDate The date to retrieve the contentlet from
+	 * @param user The user requesting the contentlet
+	 * @param respectFrontendRoles A flag to indicate whether front-end roles are respected
+	 * @return if the contentlet is found it will return the contentlet, if not it will return null
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 */
+	Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId,
+			Date timeMachineDate, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
      * Retrieves a contentlet from the database by its identifier and the working version.
@@ -318,6 +369,7 @@ public interface ContentletAPI {
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
 	 * is that the user can specify which content type want to include and exclude.
 	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty if will return all the contentlets.
+	 *
 	 * @param parentHost
 	 * @param includingContentTypes this is a list of content types that you would like to include in the results
 	 * @param excludingContentTypes this is a list of content types that you would like to exclude in the results
@@ -397,8 +449,36 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 */
-	public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles)
+	Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return The copied {@link Contentlet} object.
+	 *
+	 * @throws DotDataException            An error occurred when interacting with the database.
+	 * @throws DotSecurityException        The specified User does not have the necessary
+	 *                                     permissions to perform this action.
+	 * @throws DotContentletStateException The Contentlet being copied doesn't contain valid
+	 *                                     information.
+	 */
+	Contentlet copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+							  final Host site, final User user, final boolean respectFrontendRoles) throws DotDataException
+	 , DotSecurityException, DotContentletStateException;
 	
 	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
@@ -414,7 +494,34 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException
 	 */
-	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+	Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return The copied {@link Contentlet} object.
+	 *
+	 * @throws DotDataException            An error occurred when interacting with the database.
+	 * @throws DotSecurityException        The specified User does not have the necessary
+	 *                                     permissions to perform this action.
+	 * @throws DotContentletStateException The Contentlet being copied doesn't contain valid
+	 *                                     information.
+	 */
+	Contentlet copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+							  final Folder folder, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
@@ -450,6 +557,76 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 */
 	Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder. When
+	 * copying a File Asset, the value of the {@code opySuffix} parameter will be appended to the
+	 * file name.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param copySuffix           The suffix that will be appended to the file name, if
+	 *                             applicable.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return The copied {@link Contentlet} object.
+	 *
+	 * @throws DotDataException            An error occurred when interacting with the database.
+	 * @throws DotSecurityException        The specified User does not have the necessary
+	 *                                     permissions to perform this action.
+	 * @throws DotContentletStateException The Contentlet being copied doesn't contain valid
+	 *                                     information.
+	 */
+	Contentlet copyContentlet(final Contentlet contentletToCopy, final ContentType contentType,
+							  final Host site, final Folder folder, final User user, final String copySuffix,
+							  final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,
+			DotContentletStateException;
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param contentsPerPage      The maximum number of items to return per page.
+	 * @param page                 The page number to retrieve.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return A PaginatedContentList object containing the paginated search results.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	PaginatedContentList<Contentlet> searchPaginatedByPage(String luceneQuery, int contentsPerPage,
+			int page, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param limit                The maximum number of items to return per page.
+	 * @param offset               The offset to start retrieving items from.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return A PaginatedContentList object containing the paginated search results.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	PaginatedContentList<Contentlet> searchPaginated(String luceneQuery, int limit,
+			int offset, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -755,18 +932,25 @@ public interface ContentletAPI {
 	 * @throws DotStateException 
 	 */
 	public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,DotContentletStateException, DotContentletStateException, DotStateException;
-	
-	/**
-	 * Publishes a piece of content. 
-	 * @param contentlets
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotContentletStateException
-	 * @throws DotStateException
-	 */
-	public void publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,DotContentletStateException, DotStateException;
+
+    /**
+     * Publishes the list of specified Contentlets.
+     *
+     * @param contentlets          The list of {@link Contentlet} objects to publish.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If front-end Roles for the specified User must be validated, set
+     *                             this to {@code true}.
+     *
+     * @throws DotSecurityException        The specified user does not have the required permissions
+     *                                     to perform this action.
+     * @throws DotDataException            An error occurred when interacting with the database.
+     * @throws DotContentletStateException The current status of a Contentlet is causing it to not
+     *                                     be able to be published.
+     * @throws DotStateException           The current status of a Contentlet is causing it to not
+     *                                     be able to be published.
+     */
+    void publish(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
 	/**
 	 * This method unpublishes the given contentlet
@@ -1704,6 +1888,7 @@ public interface ContentletAPI {
 	/**
 	 * Retrieves all versions for a contentlet identifier.
 	 * Note: This method could pull too many versions.
+	 *
 	 * @param identifier - Identifier object that belongs to a contentlet
 	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
 	 * 	should be brought here). @see {@link ContentletAPI#copyContentlet(Contentlet, Host, Folder, User, String, boolean)} method,
@@ -1718,6 +1903,21 @@ public interface ContentletAPI {
 	 */
 
 	public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
+
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     *
+     * @return The list of contentlet versions matching the specified criteria.
+     *
+     * @throws DotSecurityException The specified user does not have permission to retrieve the
+     *                              versions.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
+    List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
@@ -1800,6 +2000,15 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
+	 */
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException;
 	
 	/**
 	 * Use to validate your contentlet.
@@ -1818,11 +2027,40 @@ public interface ContentletAPI {
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
+	@WrapInTransaction
 	public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException;
 
 	@CloseDBIfOpened
+	@WrapInTransaction
 	void validateContentletNoRels(Contentlet contentlet,
 			List<Category> cats) throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param contentRelationships Contentlet's relationships
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@WrapInTransaction
+	void validateContentlet(Contentlet contentlet,
+									 ContentletRelationships contentRelationships,List<Category> cats, boolean preview )
+			throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@CloseDBIfOpened
+	@WrapInTransaction
+	void validateContentletNoRels(Contentlet contentlet,
+								  List<Category> cats, boolean preview) throws DotContentletValidationException;
 
 	/**
 	 * Use to validate your contentlet.
@@ -1833,7 +2071,9 @@ public interface ContentletAPI {
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats) throws DotContentletValidationException;
-	
+
+
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
@@ -2286,6 +2526,39 @@ public interface ContentletAPI {
 	 */
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
+
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If the content is not found in the language passed in
+	 * then the method will try to "fallback" and return the content in the default language based on the properties set in the dotmarketing-config.properties
+	 * @param identifier
+	 * @param live
+	 * @param incomingLangId
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param variantName
+	 * @return
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+															  boolean respectFrontendRoles, String variantName);
+
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If
+	 * the content is not found in the language passed in
+	 *
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param variantId
+	 * @param timeMachine
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+			final long incomingLangId, String variantId, final Date timeMachine, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * System function for finding a contentlet by inode via the database

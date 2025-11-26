@@ -1,7 +1,5 @@
 package com.dotcms.jitsu;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.http.CircuitBreakerUrl;
@@ -11,17 +9,22 @@ import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * POSTs events to established endpoint in EVENT_LOG_POSTING_URL config property using the token set in
@@ -33,7 +36,7 @@ public class EventLogRunnable implements Runnable {
         HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
     private final AnalyticsApp analyticsApp;
-    private final EventsPayload eventPayload;
+    private final Supplier<EventsPayload> eventPayload;
 
     @VisibleForTesting
     public EventLogRunnable(final Host host) {
@@ -53,7 +56,36 @@ public class EventLogRunnable implements Runnable {
                 "Analytics key is missing, cannot log event without a key to identify data with");
         }
 
-        this.eventPayload = eventPayload;
+        this.eventPayload = ()->eventPayload;
+    }
+
+    public EventLogRunnable(final Host site, final Supplier<List<Map<String, Serializable>>> payloadSupplier) {
+        analyticsApp = AnalyticsHelper.get().appFromHost(site);
+
+        if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
+            throw new IllegalStateException("Event log URL is missing, cannot log event to an unknown URL");
+        }
+
+        if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsKey())) {
+            throw new IllegalStateException(
+                    "Analytics key is missing, cannot log event without a key to identify data with");
+        }
+
+        this.eventPayload = ()-> convertToEventPayload(payloadSupplier.get());
+    }
+
+    /**
+     * Returns the generated event payload as an {@link Optional} object.
+     *
+     * @return {@link Optional} of {@link EventsPayload}.
+     */
+    public Optional<EventsPayload> getEventPayload() {
+        return Optional.ofNullable(eventPayload.get());
+    }
+
+    protected EventsPayload convertToEventPayload(final List<Map<String, Serializable>> listStringSerializableMap) {
+
+        return new AnalyticsEventsPayload(listStringSerializableMap);
     }
 
     @Override
@@ -62,9 +94,14 @@ public class EventLogRunnable implements Runnable {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
-        for (EventPayload payload : eventPayload.payloads()) {
+        for (EventPayload payload : eventPayload.get().payloads()) {
+
+            Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + payload);
 
             sendEvent(builder, payload).ifPresent(response -> {
+                Logger.debug(EventLogRunnable.class, "Jitsu Event Response: " + response.getStatusCode() +
+                 ", message: " + response.getResponse());
+
                 if (response.getStatusCode() != HttpStatus.SC_OK) {
                     Logger.warn(
                             this.getClass(),
@@ -77,7 +114,6 @@ public class EventLogRunnable implements Runnable {
                 }
             });
         }
-
     }
 
 
@@ -85,17 +121,24 @@ public class EventLogRunnable implements Runnable {
         return  CircuitBreakerUrl.builder()
             .setMethod(Method.POST)
             .setUrl(url)
-            .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+            .setParams(Map.of("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
             .setTimeout(4000)
             .setHeaders(POSTING_HEADERS)
-            .setThrowWhenNot2xx(false);
+            .setThrowWhenError(false);
     }
 
 
     public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
-        final CircuitBreakerUrl postLog = builder
-                .setRawData(payload.toString())
-                .build();
+        final String userAgent = payload.contains(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME) ?
+                payload.get(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME).toString() : null;
+
+        final CircuitBreakerUrlBuilder circuitBreakerUrlBuilder = builder.setRawData(payload.toString());
+
+        if (UtilMethods.isSet(userAgent)) {
+            circuitBreakerUrlBuilder.setHeaders(Map.of(HttpHeaders.USER_AGENT, userAgent));
+        }
+
+        final CircuitBreakerUrl postLog = circuitBreakerUrlBuilder.build();
 
         return Optional.ofNullable(
                         Try.of(postLog::doResponse)

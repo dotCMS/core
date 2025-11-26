@@ -10,17 +10,19 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCMSClazzes } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ValuesPropertyComponent } from './index';
 
+import { DotFieldHelperComponent } from '../../../../../../../../view/components/dot-field-helper/dot-field-helper.component';
+
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input() field: NgControl;
@@ -36,7 +38,8 @@ class TestFieldValidationMessageComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input() show;
@@ -74,7 +77,12 @@ describe('ValuesPropertyComponent', () => {
                 ValuesPropertyComponent,
                 DotTextareaContentMockComponent
             ],
-            imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule, DotMessagePipe],
+            imports: [
+                DotFieldHelperComponent,
+                ReactiveFormsModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe
+            ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 
@@ -134,7 +142,7 @@ describe('ValuesPropertyComponent', () => {
     });
 
     it('should hide dot-helper except for required', () => {
-        comp.property.field.clazz = 'random';
+        comp.property.field.clazz = DotCMSClazzes.TEXT;
         fixture.detectChanges();
         const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
 

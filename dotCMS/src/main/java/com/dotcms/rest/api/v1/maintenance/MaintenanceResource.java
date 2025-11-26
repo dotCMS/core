@@ -6,13 +6,16 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
+import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -24,6 +27,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,6 +51,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -58,6 +64,7 @@ import java.util.concurrent.TimeUnit;
  * @since Oct 21st, 2020
  */
 @Path("/v1/maintenance")
+@Tag(name = "Maintenance", description = "System maintenance and administration operations")
 @SuppressWarnings("serial")
 public class MaintenanceResource implements Serializable {
 
@@ -239,10 +246,24 @@ public class MaintenanceResource implements Serializable {
         public void write(OutputStream output) throws IOException, WebApplicationException {
 
             synchronized (PGDumpStreamingOutput.class) {
+                final long startTime = System.currentTimeMillis();
+                long bytesWritten = 0;
+                
                 try (InputStream input = DbExporterUtil.exportSql()) {
-                    IOUtils.copy(input, output);
+                    Logger.info(this.getClass(), "Starting database dump stream to client...");
+                    bytesWritten = IOUtils.copyLarge(input, output);
+                    
+                    final long durationMs = System.currentTimeMillis() - startTime;
+                    final String sizeFormatted = ConversionUtils.toHumanReadableByteSize(bytesWritten);
+                    
+                    Logger.info(this.getClass(), "=== DATABASE DUMP STREAM COMPLETED ===");
+                    Logger.info(this.getClass(), "Bytes streamed: " + sizeFormatted + " (" + bytesWritten + " bytes)");
+                    Logger.info(this.getClass(), "Duration: " + DateUtil.humanReadableFormat(Duration.of(durationMs, ChronoUnit.MILLIS)));
+                    Logger.info(this.getClass(), "==========================================");
 
                 } catch (Exception e) {
+                    Logger.error(this.getClass(), "Database dump streaming failed after " + 
+                               (System.currentTimeMillis() - startTime) + "ms, " + bytesWritten + " bytes written", e);
                     throw new DotRuntimeException(e);
                 }
             }
@@ -256,7 +277,7 @@ public class MaintenanceResource implements Serializable {
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param oldAssets If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
-     *
+     * @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
      * @return The {@link StreamingOutput} with the compressed file.
      */
     @Path("/_downloadAssets")
@@ -266,7 +287,12 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
-                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
+                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
+                                         @QueryParam("maxSize") String maxSize) {
+
+
+
+        final long maxFileSize = SizeUtil.convertToBytes(maxSize);
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
@@ -274,7 +300,7 @@ public class MaintenanceResource implements Serializable {
                 zipName, oldAssets));
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedAssets(output, oldAssets);
+            exportStarterUtil.streamCompressedAssets(output, oldAssets, maxFileSize);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
@@ -289,6 +315,7 @@ public class MaintenanceResource implements Serializable {
      *
      * @param request  http request
      * @param response http response
+     *  @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
      * @return octet stream response with octet stream
      */
     @Path("/_downloadStarter")
@@ -297,8 +324,9 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
-                                          @Context final HttpServletResponse response) {
-        return downloadStarter(request, response, false, true);
+                                          @Context final HttpServletResponse response,
+                                            @QueryParam("maxSize") String maxSize) {
+        return downloadStarter(request, response, false, true, maxSize);
     }
 
     /**
@@ -315,8 +343,9 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
-                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
-        return downloadStarter(request, response, true, oldAssets);
+                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
+                                                    @QueryParam("maxSize") String maxSize) {
+        return downloadStarter(request, response, true, oldAssets, maxSize);
     }
 
     /**
@@ -327,11 +356,14 @@ public class MaintenanceResource implements Serializable {
      * @param response      The current instance of the {@link HttpServletResponse}.
      * @param includeAssets If the generated Starter must include all assets as well, set this to {@code true}.
      * @param oldAssets     If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
+     * @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
      *
      * @return The streamed Starter ZIP file.
      */
     private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
-                                     final boolean includeAssets, final boolean oldAssets) {
+                                     final boolean includeAssets, final boolean oldAssets, final String maxSize) {
+
+        final long maxFileSize = SizeUtil.convertToBytes(maxSize);
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
@@ -340,7 +372,7 @@ public class MaintenanceResource implements Serializable {
 
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedStarter(output, includeAssets, oldAssets);
+            exportStarterUtil.streamCompressedStarter(output, includeAssets, oldAssets, maxFileSize);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));
@@ -360,7 +392,7 @@ public class MaintenanceResource implements Serializable {
     private InitDataObject assertBackendUser(HttpServletRequest request, HttpServletResponse response) {
         return new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
-                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requireAdmin(true)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requiredPortlet(Portlet.MAINTENANCE)

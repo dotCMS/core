@@ -1,10 +1,11 @@
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
-import { ChangeDetectorRef, Directive, OnDestroy, OnInit, Optional, Self } from '@angular/core';
+import { ChangeDetectorRef, Directive, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Dropdown } from 'primeng/dropdown';
 
-import { catchError, debounceTime, map, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, map, switchMap } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -23,21 +24,19 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
  * @class DotContainerOptionsDirective
  */
 @Directive({
-    selector: 'p-dropdown[dotContainerOptions]',
-    standalone: true
+    selector: 'p-dropdown[dotContainerOptions]'
 })
-export class DotContainerOptionsDirective implements OnInit, OnDestroy {
+export class DotContainerOptionsDirective implements OnInit {
+    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly dotContainersService = inject(DotContainersService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
     private readonly control: Dropdown;
     private readonly maxOptions = 10;
     private readonly loadErrorMessage: string;
-    private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        @Optional() @Self() private readonly primeDropdown: Dropdown,
-        private readonly dotContainersService: DotContainersService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly changeDetectorRef: ChangeDetectorRef
-    ) {
+    constructor() {
         this.control = this.primeDropdown;
         this.loadErrorMessage = this.dotMessageService.get(
             'dot.template.builder.box.containers.error'
@@ -49,6 +48,16 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.optionDisabled = 'inactive';
             this.control.filterBy = 'value.friendlyName,value.title';
+
+            this.control.onFilter
+                .pipe(
+                    takeUntilDestroyed(),
+                    debounceTime(500),
+                    switchMap((event: { filter: string }) => {
+                        return this.fetchContainerOptions(event.filter);
+                    })
+                )
+                .subscribe((options) => this.setOptions(options));
         } else {
             console.warn('ContainerOptionsDirective is for use with PrimeNg Dropdown');
         }
@@ -58,19 +67,10 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
         this.fetchContainerOptions().subscribe((options) => {
             this.control.options = this.control.options || options; // avoid overwriting if they were already set
         });
-        this.control.onFilter
-            .pipe(
-                takeUntil(this.destroy$),
-                debounceTime(500),
-                switchMap((event: { filter: string }) => {
-                    return this.fetchContainerOptions(event.filter);
-                })
-            )
-            .subscribe((options) => this.setOptions(options));
     }
 
     private fetchContainerOptions(
-        filter: string = ''
+        filter = ''
     ): Observable<DotDropdownGroupSelectOption<DotContainer>[]> {
         return this.dotContainersService.getFiltered(filter, this.maxOptions, true).pipe(
             map((containerEntities) => {
@@ -144,10 +144,5 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
 
             return acc;
         }, {});
-    }
-
-    ngOnDestroy() {
-        this.destroy$.next(true);
-        this.destroy$.complete();
     }
 }

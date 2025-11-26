@@ -146,7 +146,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
                     {
                         provide: DynamicDialogRef,
                         useValue: {
-                            close: jasmine.createSpy()
+                            close: jest.fn()
                         }
                     },
                     {
@@ -154,7 +154,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
                         useValue: {
                             data: {
                                 contentTypeVariable: 'contentType',
-                                onSave: jasmine.createSpy()
+                                onSave: jest.fn()
                             }
                         }
                     },
@@ -179,7 +179,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
             .compileComponents();
 
         store = TestBed.inject(DotPageStore);
-        spyOn(store, 'getPageTypes');
+        jest.spyOn(store, 'getPageTypes');
         fixture = TestBed.createComponent(DotPagesCreatePageDialogComponent);
         de = fixture.debugElement;
         dotRouterService = TestBed.inject(DotRouterService);
@@ -241,46 +241,6 @@ describe('DotPagesCreatePageDialogComponent', () => {
         input.nativeElement.dispatchEvent(new Event('keyup'));
         fixture.componentInstance.pageTypes$.subscribe((data) => {
             expect(data).toEqual(mockContentTypes);
-        });
-    });
-
-    describe("when it's content editor 2 enabled", () => {
-        beforeEach(async () => await setupTestingModule(true));
-
-        it('should redirect url when click on page', () => {
-            const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
-            pageType.triggerEventHandler('click', mockContentType.variable);
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-                `content/new/${mockContentType.variable}`
-            );
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-    });
-
-    describe("when it's content editor 2 enabled and limited content types", () => {
-        beforeEach(async () => await setupTestingModule(true, [mockContentType.variable, 'test']));
-
-        it('should redirect url when click on page', () => {
-            const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
-            pageType.triggerEventHandler('click', mockContentType.variable);
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-                `content/new/${mockContentType.variable}`
-            );
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-
-        it('should redirect url when click on page for content type test', () => {
-            const pageType = de.queryAll(By.css(`.dot-pages-create-page-dialog__page-item`))[1];
-            pageType.triggerEventHandler('click');
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith(`content/new/test`);
-            expect(dialogRef.close).toHaveBeenCalled();
-        });
-
-        it('should not redirect to new edit content url when click on page', () => {
-            const pageType = de.queryAll(By.css(`.dot-pages-create-page-dialog__page-item`))[2];
-            pageType.triggerEventHandler('click');
-            expect(dotRouterService.goToURL).toHaveBeenCalledWith('/pages/new/notAvailable');
-            expect(dialogRef.close).toHaveBeenCalled();
         });
     });
 });

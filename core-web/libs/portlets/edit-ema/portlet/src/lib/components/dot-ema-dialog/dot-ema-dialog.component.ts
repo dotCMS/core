@@ -1,57 +1,79 @@
 import { fromEvent } from 'rxjs';
 
-import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
     ElementRef,
     EventEmitter,
+    NgZone,
     Output,
     ViewChild,
-    inject
+    computed,
+    inject,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
+import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { take } from 'rxjs/operators';
 
+import { DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import {
-    CreateFromPaletteAction,
-    DialogStatus,
-    DotEmaDialogStore
-} from './store/dot-ema-dialog.store';
+    DotCMSBaseTypesContentTypes,
+    DotCMSWorkflowActionEvent,
+    DotContentCompareEvent
+} from '@dotcms/dotcms-models';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
+import { DotSpinnerComponent, SafeUrlPipe } from '@dotcms/ui';
 
-import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload } from '../../shared/models';
+import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
+
+import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
+import { DialogStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
+import {
+    ActionPayload,
+    CreateContentletAction,
+    CreateFromPaletteAction,
+    DialogAction,
+    EditContentletPayload,
+    VTLFile
+} from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
     selector: 'dot-edit-ema-dialog',
-    standalone: true,
     templateUrl: './dot-ema-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
-        NgSwitch,
-        NgSwitchCase,
-        NgStyle,
         SafeUrlPipe,
         EmaFormSelectorComponent,
         DialogModule,
-        DotSpinnerModule
+        DotSpinnerComponent,
+        DotContentCompareComponent
     ],
-    providers: [DotEmaDialogStore]
+    providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
 })
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
-    @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() action = new EventEmitter<DialogAction>();
+    @Output() reloadFromDialog = new EventEmitter<void>();
+
+    $compareData = signal<DotContentCompareEvent | null>(null);
+
+    $compareDataExists = computed(() => !!this.$compareData());
 
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly store = inject(DotEmaDialogStore);
+    private readonly workflowActions = inject(DotEmaWorkflowActionsService);
+    private readonly ngZone = inject(NgZone);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly messageService = inject(MessageService);
+    private readonly dotUiColorsService = inject(DotUiColorsService);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
@@ -68,25 +90,29 @@ export class DotEmaDialogComponent {
         this.store.resetDialog();
     }
 
+    resetActionPayload() {
+        this.store.resetActionPayload();
+    }
+
     /**
      * Add contentlet
      *
-     * @param {ActionPayload} payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
-    addContentlet(payload: ActionPayload): void {
+    addContentlet(actionPayload: ActionPayload): void {
         this.store.addContentlet({
-            containerId: payload.container.identifier,
-            acceptTypes: payload.container.acceptTypes ?? '*',
-            language_id: payload.language_id,
-            payload
+            containerId: actionPayload.container.identifier,
+            acceptTypes: actionPayload.container.acceptTypes ?? '*',
+            language_id: actionPayload.language_id,
+            actionPayload
         });
     }
 
     /**
      * Add Form
      *
-     * @param {ActionPayload} _payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
     addForm(payload: ActionPayload): void {
@@ -96,40 +122,75 @@ export class DotEmaDialogComponent {
     /**
      * Add Widget
      *
-     * @param {ActionPayload} payload
+     * @param {ActionPayload} actionPayload
      * @memberof EditEmaEditorComponent
      */
-    addWidget(payload: ActionPayload): void {
+    addWidget(actionPayload: ActionPayload): void {
         this.store.addContentlet({
-            containerId: payload.container.identifier,
+            containerId: actionPayload.container.identifier,
             acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
-            language_id: payload.language_id,
-            payload
-        });
-    }
-    /**
-     * Edit contentlet
-     *
-     * @param {ActionPayload} payload
-     * @memberof EditEmaEditorComponent
-     */
-    editContentlet(payload: Partial<ActionPayload>) {
-        this.store.editContentlet({
-            inode: payload.contentlet.inode,
-            title: payload.contentlet.title
+            language_id: actionPayload.language_id,
+            actionPayload
         });
     }
 
     /**
-     * Create contentlet form
+     * Edit contentlet
      *
-     * @param {{ url: string; contentType: string }} { url, contentType }
+     * @param {EditContentletPayload} contentlet
      * @memberof DotEmaDialogComponent
      */
-    createContentlet({ url, contentType }: { url: string; contentType: string }) {
+    editContentlet(payload: EditContentletPayload) {
+        this.store.editContentlet(payload);
+    }
+
+    /**
+     * Edits a VTL contentlet.
+     *
+     * @param {VTLFile} vtlFile - The VTL file to edit.
+     * @memberof DotEmaDialogComponent
+     */
+    editVTLContentlet(vtlFile: VTLFile) {
+        this.store.editContentlet({
+            inode: vtlFile.inode,
+            title: vtlFile.name
+        });
+    }
+
+    /**
+     * Translate page
+     *
+     * @param {({ page: DotPage; newLanguage: number | string })} { page, newLanguage }
+     * @memberof DotEmaDialogComponent
+     */
+    translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number | string }) {
+        this.store.translatePage({ page, newLanguage });
+    }
+
+    /**
+     * Edit URL Content Map Contentlet
+     *
+     * @param {DotCMSURLContentMap} { inode, title }
+     * @memberof DotEmaDialogComponent
+     */
+    editUrlContentMapContentlet({ inode, title }: DotCMSURLContentMap) {
+        this.store.editUrlContentMapContentlet({
+            inode,
+            title
+        });
+    }
+
+    /**
+     * Create contentlet in the edit content
+     *
+     * @param {CreateContentletAction} { url, contentType, payload }
+     * @memberof DotEmaDialogComponent
+     */
+    createContentlet({ url, contentType, actionPayload }: CreateContentletAction) {
         this.store.createContentlet({
             url,
-            contentType
+            contentType,
+            actionPayload
         });
     }
 
@@ -139,12 +200,109 @@ export class DotEmaDialogComponent {
      * @param {CreateFromPaletteAction} { variable, name, payload }
      * @memberof DotEmaDialogComponent
      */
-    createContentletFromPalette({ variable, name, payload }: CreateFromPaletteAction) {
+    createContentletFromPalette({
+        variable,
+        name,
+        actionPayload,
+        language_id
+    }: CreateFromPaletteAction) {
         this.store.createContentletFromPalette({
             variable,
             name,
-            payload
+            actionPayload,
+            language_id
         });
+    }
+
+    /**
+     * Show loading iframe
+     *
+     * @param {string} [title]
+     * @memberof DotEmaDialogComponent
+     */
+    showLoadingIframe(title?: string) {
+        this.store.loadingIframe(title ?? '');
+    }
+
+    /**
+     * Handle workflow event
+     *
+     * @param {DotCMSWorkflowActionEvent} event
+     * @memberof DotEmaDialogComponent
+     */
+    handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
+        this.workflowActions
+            .handleWorkflowAction(event, this.callEmbeddedFunction.bind(this))
+            .pipe(take(1))
+            .subscribe(({ callback, args, summary, detail }) => {
+                // We know is an error when we have summary and detail
+                if (summary && detail) {
+                    this.messageService.add({
+                        life: 2000,
+                        severity: 'error',
+                        summary,
+                        detail
+                    });
+                } else {
+                    this.callEmbeddedFunction(callback, args);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.dotMessageService.get('Workflow-Action'),
+                        detail: this.dotMessageService.get('edit.content.fire.action.success'),
+                        life: 2000
+                    });
+                }
+            });
+    }
+
+    /**
+     * Reload iframe
+     *
+     * @memberof DotEmaDialogComponent
+     */
+    reloadIframe() {
+        this.iframe.nativeElement.contentWindow.location.reload();
+    }
+
+    /**
+     * Call embedded function
+     *
+     * @private
+     * @param {string} callback
+     * @param {unknown[]} args
+     * @memberof DotEmaDialogComponent
+     */
+    private callEmbeddedFunction(
+        callback: string,
+        args: unknown[] = [],
+        whenFinished?: () => void
+    ) {
+        this.ngZone.run(() => {
+            this.iframe.nativeElement.contentWindow?.[callback]?.(...args);
+            whenFinished?.();
+        });
+    }
+
+    /**
+     * Open dialog on URL
+     *
+     * @param {string} url
+     * @param {string} title
+     * @memberof DotEmaDialogComponent
+     */
+    openDialogOnUrl(url: string, title: string) {
+        this.store.openDialogOnURL({ url, title });
+    }
+
+    protected onHide() {
+        const event = new CustomEvent('ng-event', {
+            detail: {
+                name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+            }
+        });
+
+        this.emitAction(event);
+        this.resetDialog();
     }
 
     /**
@@ -155,16 +313,67 @@ export class DotEmaDialogComponent {
      */
     protected onIframeLoad() {
         this.store.setStatus(this.dialogStatus.INIT);
-        // This event is destroyed when you close the dialog
 
+        // Inject CSS variables into iframe
+        const iframeDoc = this.getIframeDocument();
+        if (iframeDoc) {
+            this.dotUiColorsService.setColors(iframeDoc.querySelector('html'));
+        }
+
+        // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
-            this.iframe.nativeElement.contentWindow.document,
+            iframeDoc,
             'ng-event'
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
-                this.action.emit({ event, payload: this.dialogState().payload });
+                this.emitAction(event);
+
+                switch (event.detail.name) {
+                    case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
+                        this.store.resetDialog();
+
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.COMPARE_CONTENTLET: {
+                        this.ngZone.run(() => {
+                            this.$compareData.set(<DotContentCompareEvent>event.detail.data);
+                        });
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
+                        // The edit content emits this for savings when translating a page and does not emit anything when changing the content
+                        if (this.dialogState().form.isTranslation) {
+                            this.store.setSaved();
+
+                            if (event.detail.payload.isMoveAction) {
+                                this.reloadIframe();
+                            }
+                        } else {
+                            this.store.setDirty();
+                        }
+
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.OPEN_WIZARD: {
+                        this.handleWorkflowEvent(event.detail.data);
+                        break;
+                    }
+
+                    case NG_CUSTOM_EVENTS.SAVE_PAGE: {
+                        this.store.setSaved();
+
+                        if (event.detail.payload.isMoveAction) {
+                            this.reloadIframe();
+                        }
+
+                        break;
+                    }
+                }
             });
     }
 
@@ -185,6 +394,43 @@ export class DotEmaDialogComponent {
             }
         });
 
-        this.action.emit({ event: customEvent, payload: this.dialogState().payload });
+        this.emitAction(customEvent);
+    }
+
+    /**
+     * Brings back the dialog to the previous state and triggers a reload event.
+     * @param options - The options for bringing back the dialog.
+     * @param options.name - The name of the dialog.
+     * @param options.args - The arguments for the dialog.
+     */
+    bringBack({ name, args }: { name: string; args: string[] } = { name: '', args: [] }) {
+        this.$compareData.set(null);
+        this.callEmbeddedFunction(name, args, () => this.reloadFromDialog.emit());
+    }
+
+    /**
+     * Close compare dialog
+     *
+     * @memberof DotEmaDialogComponent
+     */
+    closeCompareDialog() {
+        this.$compareData.set(null);
+    }
+
+    private emitAction(event: CustomEvent) {
+        const { actionPayload, form, clientAction } = this.dialogState();
+
+        this.action.emit({ event, actionPayload, form, clientAction });
+    }
+
+    /**
+     * Get iframe document
+     *
+     * @protected
+     * @returns {Document | null}
+     * @memberof DotEmaDialogComponent
+     */
+    protected getIframeDocument(): Document | null {
+        return this.iframe?.nativeElement?.contentWindow?.document || null;
     }
 }

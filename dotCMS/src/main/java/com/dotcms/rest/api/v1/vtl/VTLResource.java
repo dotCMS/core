@@ -48,9 +48,11 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @Path("/vtl")
+@Tag(name = "Templates", description = "Template design and management")
 public class VTLResource {
 
     public static final String IDENTIFIER = "identifier";
@@ -75,12 +77,15 @@ public class VTLResource {
      * using the velocity engine.
      *
      * "get.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * 
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
      */
     @GET
     @Path("/{folder}/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
@@ -88,11 +93,15 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
 
+    /**
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
+     */
     @GET
     @Path("/{folder}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         final Map<String, Object> bodyMap) {
@@ -329,6 +338,9 @@ public class VTLResource {
     /**
      * Same as {@link #get} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "velocity" property
+     * 
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
      */
     @GET
     @Path("/dynamic/{pathParam:.*}")
@@ -344,6 +356,10 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
 
+    /**
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
+     */
     @GET
     @Path("/dynamic")
     @NoCache
@@ -505,11 +521,12 @@ public class VTLResource {
 
             final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
 
-            final Map<String, Object> contextParams = CollectionsUtils.map(
-                    "pathParam", pathParam,
-                    "queryParams", uriInfo.getQueryParameters(),
-                    "bodyMap", bodyMap,
-                    "binaries", Arrays.asList(binaries));
+            final Map<String, Object> contextParams = new HashMap<>();
+
+            contextParams.put("pathParam", pathParam);
+            contextParams.put("queryParams", uriInfo.getQueryParameters());
+            contextParams.put("bodyMap", bodyMap);
+            contextParams.put("binaries", Arrays.asList(binaries));
 
             try(Reader reader = velocityReader.getVelocity(velocityReaderParams)){
                 return evalVelocity(request, response, reader, contextParams,

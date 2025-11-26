@@ -1,54 +1,30 @@
-<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.liferay.util.Xss"%>
-<%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.common.model.ContentletSearch"%>
-<%@page import="com.dotmarketing.util.PortletURLUtil"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="java.util.Calendar"%>
-<%@page import="com.dotmarketing.util.DateUtil"%>
-<%@page import="com.liferay.util.cal.CalendarUtil"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
-<%@page import="com.dotmarketing.business.Layout"%>
-<%@page import="com.liferay.portal.util.WebKeys"%>
-<%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
+<%@ page import="com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus" %>
+
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <%
 User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 if(user == null){
-	response.setStatus(403);
+	response.setStatus(HttpStatus.SC_FORBIDDEN);
 	return;
 }
 String query = request.getParameter("query");
-if(!UtilMethods.isSet(query)){
-	query = "";
+if (!UtilMethods.isSet(query)) {
+	query = null != session.getAttribute(com.dotmarketing.util.WebKeys.EXECUTED_LUCENE_QUERY)
+		? (String) session.getAttribute(com.dotmarketing.util.WebKeys.EXECUTED_LUCENE_QUERY)
+		: "";
 }
-String submitURL = com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"query-tool");
-String translatedQuery = "";
 String sortBy = request.getParameter("sort");
 String offset = request.getParameter("offset");
 String limit = request.getParameter("limit");
-boolean reindex = request.getParameter("reindexResults")!= null;
 String userToPullID = request.getParameter("userId");
-List<ContentletSearch> iresults =  null;
-List<Contentlet> cons = null;
-int counter = 1;
 boolean userIsAdmin = false;
-User userForPull = user;
-long startAPISearchPull = 0;
-long afterAPISearchPull = 0;
-long startAPIPull = 0;
-long afterAPIPull = 0;
-
-
-String nastyError = null;
 
 if(!UtilMethods.isSet(sortBy)){
 	sortBy = "";
@@ -62,9 +38,6 @@ if(!UtilMethods.isSet(limit)){
 
 if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
 	userIsAdmin = true;
-	if(UtilMethods.isSet(userToPullID)){
-		userForPull = APILocator.getUserAPI().loadUserById(userToPullID,APILocator.getUserAPI().getSystemUser(),true);
-	}
 }
 
 if(!UtilMethods.isSet(userToPullID)){
@@ -73,48 +46,10 @@ if(!UtilMethods.isSet(userToPullID)){
 
 if(query == null){
 	query = "";
-}else{
-
-	startAPISearchPull = Calendar.getInstance().getTimeInMillis();
-
-
-	try{
-
-		afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
-		startAPIPull = Calendar.getInstance().getTimeInMillis();
-
-
-		if (UtilMethods.isSet(query)) {
-			iresults =  APILocator.getContentletAPI().searchIndex(query,new Integer(limit),new Integer(offset),sortBy,userForPull,true);
-			cons = APILocator.getContentletAPI().search(query,new Integer(limit),new Integer(offset),sortBy,userForPull,true);
-		}
-		else {
-			iresults =  new ArrayList();
-			cons = new ArrayList();
-		}
-		afterAPIPull = Calendar.getInstance().getTimeInMillis();
-
-		if(cons.size() > 0 && reindex){
-			for(Contentlet con : cons) {
-				con.setLowIndexPriority(true);
-				//APILocator.getDistributedJournalAPI().addContentIndexEntryToDelete(con.getIdentifier());
-				//APILocator.getDistributedJournalAPI().addContentIndexEntry(con);
-			}
-		}
-
-	}
-	catch(Exception pe){
-		iresults = new ArrayList();
-		nastyError = pe.toString();
-	}
 }
-
-Layout layout = (Layout) request.getAttribute(WebKeys.LAYOUT);
-
-String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id="+PortletID.QUERY_TOOL+"&");
-
 query = Xss.strip(query);
 %>
+
 <script>
 	dojo.require("dijit.form.NumberTextBox");
 
@@ -123,7 +58,7 @@ query = Xss.strip(query);
 		luceneLoadingMode();
 		var form = document.forms.luceneQueryForm;
 		var formData = new FormData(form);
-		fetch('/api/content/_search', {
+		fetch('/api/content/_search?rememberQuery=true', {
 			method: 'post',
 			headers: {
 				'Content-Type': 'application/json'
@@ -161,8 +96,9 @@ query = Xss.strip(query);
 	}
 
 	function setContentletItem(contentlet, index) {
+
 		return `<tr><th><strong>${index}.</th><th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
-				<th><a onclick="return openContent(event, '${contentlet.inode}')" href="/dotAdmin/#/c/content/${contentlet.inode}">
+				<th><a onclick="return openContent(event, '${contentlet.inode}', '${contentlet.variant}')" href="/dotAdmin/#/c/content/${contentlet.inode}&variantName=${contentlet.variant ?? 'DEFAULT'}">
 				${contentlet.title}</a></th></tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
 				<td width="90%">${contentlet.contentType}</td>
@@ -224,9 +160,9 @@ query = Xss.strip(query);
 		luceneResultTable.innerHTML = `<tr><td><div style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div></td></tr>`;
 	}
 
-	function openContent(event, inode)	{
+	function openContent(event, inode, variantName)	{
 		if (! hastModifiers(event)){
-			window.parent.location = `/dotAdmin/#/c/content/${inode}`;
+			window.parent.location = `/dotAdmin/#/c/content/${inode}&variantName=${variantName ?? 'DEFAULT'}`;
 			return false;
 		}
 		return true;
@@ -321,4 +257,3 @@ query = Xss.strip(query);
 		</div>
 	</div>
 </div>
-

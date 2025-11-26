@@ -2,22 +2,23 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.PushTreeNodeTaskParams;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTaskParams;
+import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import com.dotcms.api.traversal.Filter;
-import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.concurrent.CompletionException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -59,7 +60,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
      */
     @ActivateRequestContext
     @Override
-    public Pair<List<Exception>, TreeNode> traverseRemoteFolder(
+    public TraverseTaskResult traverseRemoteFolder(
             final String path,
             final Integer depth,
             final boolean failFast,
@@ -93,7 +94,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 retriever
         );
 
-        task.setTraversalParams(RemoteFolderTraversalTaskParams.builder()
+        task.setTaskParams(RemoteFolderTraversalTaskParams.builder()
                 .filter(filter)
                 .siteName(dotCMSPath.site())
                 .folder(FolderView.builder()
@@ -108,7 +109,16 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 .build()
         );
 
-        return task.compute();
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**
@@ -143,7 +153,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 pusher
         );
         
-        task.setTraversalParams(PushTreeNodeTaskParams.builder()
+        task.setTaskParams(PushTreeNodeTaskParams.builder()
                 .workspacePath(traverseParams.workspacePath())
                 .localPaths(traverseParams.localPaths())
                 .rootNode(traverseParams.rootNode())
@@ -154,7 +164,16 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 .build()
         );
 
-        return task.compute();
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**

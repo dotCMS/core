@@ -1,6 +1,7 @@
 import { merge, Observable } from 'rxjs';
 
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { filter, pluck } from 'rxjs/operators';
@@ -8,6 +9,7 @@ import { filter, pluck } from 'rxjs/operators';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 /**
  * Allow user to add a contentlet to DotCMS instance
@@ -19,20 +21,19 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 @Component({
     selector: 'dot-create-contentlet',
     templateUrl: './dot-create-contentlet.component.html',
-    styleUrls: ['./dot-create-contentlet.component.scss']
+    styleUrls: ['./dot-create-contentlet.component.scss'],
+    imports: [CommonModule, DotContentletWrapperComponent]
 })
 export class DotCreateContentletComponent implements OnInit {
+    private dotRouterService = inject(DotRouterService);
+    private dotIframeService = inject(DotIframeService);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private route = inject(ActivatedRoute);
+
     @Output() shutdown: EventEmitter<unknown> = new EventEmitter();
     url$: Observable<string>;
     @Output()
     custom: EventEmitter<unknown> = new EventEmitter();
-
-    constructor(
-        private dotRouterService: DotRouterService,
-        private dotIframeService: DotIframeService,
-        private dotContentletEditorService: DotContentletEditorService,
-        private route: ActivatedRoute
-    ) {}
 
     ngOnInit() {
         this.url$ = merge(

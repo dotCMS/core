@@ -1,7 +1,9 @@
 import { ReflectiveInjector, Provider } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
 import { UserModel } from '@dotcms/dotcms-js';
 import { ApiRoot } from '@dotcms/dotcms-js';
-import { BrowserModule } from '@angular/platform-browser';
+
 import { I18nService } from './I18n';
 
 const injector = ReflectiveInjector.resolveAndCreate([

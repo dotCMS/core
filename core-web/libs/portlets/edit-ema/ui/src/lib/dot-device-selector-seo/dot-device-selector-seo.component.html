@@ -1,11 +1,10 @@
-<div
-    class="dot-device-selector-mask"
-    *ngIf="deviceSelector.overlayVisible"
-    data-testId="selector-mask"></div>
+@if (deviceSelector.overlayVisible) {
+    <div class="dot-device-selector-mask" data-testId="selector-mask"></div>
+}
 
 <p-overlayPanel
-    #deviceSelector
     (onHide)="onHideDeviceSelector()"
+    #deviceSelector
     data-testId="p-overlaypanel-selector"
     styleClass="dot-device-selector__overlayPanel">
     <div class="dot-device-selector__column" data-testId="dot-devices-selector">
@@ -14,117 +13,122 @@
                 <h3 class="dot-device-selector__header-title">
                     {{ 'editpage.device.selector.title' | dm }}
                 </h3>
-                <a
-                    *ngIf="isCMSAdmin$ | async"
-                    [routerLink]="linkToAddDevice"
-                    [queryParams]="linkToEditDeviceQueryParams"
-                    data-testId="dot-device-link-add">
-                    <p-button
-                        icon="pi pi-plus"
-                        styleClass="p-button-rounded p-button-text"></p-button>
-                </a>
+                @if (isCMSAdmin$ | async) {
+                    <a
+                        [routerLink]="linkToAddDevice"
+                        [queryParams]="linkToEditDeviceQueryParams"
+                        data-testId="dot-device-link-add">
+                        <p-button
+                            icon="pi pi-pencil"
+                            styleClass="p-button-rounded p-button-text"></p-button>
+                    </a>
+                }
             </div>
             <div class="dot-device-selector__grid">
                 <ul class="device-list">
-                    <li class="device-list-item" *ngFor="let option of defaultOptions">
-                        <button class="device-list__button" (click)="change(option)">
-                            <i [class]="option.icon"></i>
-                            <div class="device-list-item__content">
-                                <span class="device-list-item__name">{{ option.name }}</span>
-                                <span class="device-list-item__dimensions">
-                                    {{ option.cssHeight | number }} x
-                                    {{ option.cssWidth | number }}
-                                </span>
-                            </div>
-                        </button>
-                    </li>
+                    @for (option of defaultOptions; track $index) {
+                        <li class="device-list-item">
+                            <button (click)="change(option)" class="device-list__button">
+                                <i [class]="option.icon"></i>
+                                <div class="device-list-item__content">
+                                    <span class="device-list-item__name">{{ option.name }}</span>
+                                    <span class="device-list-item__dimensions">
+                                        {{ option.cssWidth | number }} x
+                                        {{ option.cssHeight | number }}
+                                    </span>
+                                </div>
+                            </button>
+                        </li>
+                    }
                 </ul>
                 <p-divider [align]="'center'" layout="vertical"></p-divider>
                 <ul class="device-list">
-                    <li
-                        class="device-list-item"
-                        *ngFor="let option of options$ | async"
-                        data-testId="device-selector-option">
-                        <button class="device-list__button" (click)="change(option)">
-                            <div class="device-list-item__content">
-                                <span class="device-list-item__name">{{ option.name }}</span>
-                                <span class="device-list-item__dimensions"
-                                    >{{ option.cssHeight | number }} x
-                                    {{ option.cssWidth | number }}</span
-                                >
-                            </div>
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="dot-device-selector__link--container" *ngIf="hideMediaTiles">
-            <a
-                class="dot-device-selector__link"
-                [href]="previewUrl"
-                data-testId="dot-device-selector-link-secondary"
-                target="_blank">
-                {{ 'editpage.device.selector.new.tab' | dm }}
-            </a>
-            <i class="pi pi-external-link"></i>
-        </div>
-    </div>
-    <div
-        class="dot-device-selector__column"
-        *ngIf="!hideMediaTiles"
-        data-testId="social-media-tiles">
-        <div class="dot-device-selector__panel">
-            <div class="dot-device-selector__header">
-                <h3 class="dot-device-selector__header-title">
-                    {{ 'editpage.device.selector.media.tile' | dm }}
-                </h3>
-            </div>
-            <div class="dot-device-selector__content">
-                <ul class="device-list">
-                    <li
-                        class="device-list-item device-list-item-media"
-                        *ngFor="let tile of socialMediaTiles">
-                        <button
-                            class="device-list__button"
-                            (click)="changeSeoMediaEvent(tile.value); deviceSelector.hide()"
-                            data-testId="device-list-button">
-                            <i [class]="tile.icon"></i>
-                            <span class="device-list-item__name">{{ tile.label }}</span>
-                        </button>
-                    </li>
+                    @for (option of options$ | async; track $index) {
+                        <li class="device-list-item" data-testId="device-selector-option">
+                            <button (click)="change(option)" class="device-list__button">
+                                <div class="device-list-item__content">
+                                    <span class="device-list-item__name">{{ option.name }}</span>
+                                    <span class="device-list-item__dimensions">
+                                        {{ option.cssWidth | number }} x
+                                        {{ option.cssHeight | number }}
+                                    </span>
+                                </div>
+                            </button>
+                        </li>
+                    }
                 </ul>
             </div>
         </div>
 
-        <div class="dot-device-selector__panel">
-            <div class="dot-device-selector__header">
-                <h3 class="dot-device-selector__header-title">
-                    {{ 'editpage.device.selector.search.engine' | dm }}
-                </h3>
+        @if (hideSocialMedia) {
+            <div class="dot-device-selector__link--container">
+                <a
+                    [href]="previewUrl"
+                    class="dot-device-selector__link"
+                    data-testId="dot-device-selector-link-secondary"
+                    target="_blank">
+                    {{ 'editpage.device.selector.new.tab' | dm }}
+                </a>
+                <i class="pi pi-external-link"></i>
             </div>
-            <div class="dot-device-selector__content">
-                <ul class="device-list">
-                    <li class="device-list-item device-list-item-media">
-                        <button
-                            class="device-list__button"
-                            (click)="changeSeoMediaEvent('Google'); deviceSelector.hide()"
-                            data-testId="device-list-button-media">
-                            <i class="pi pi-google"></i>
-                            <span class="device-list-item__name">Google</span>
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="dot-device-selector__link--container">
-            <a
-                class="dot-device-selector__link"
-                [href]="previewUrl"
-                data-testId="dot-device-selector-link"
-                target="_blank">
-                {{ 'editpage.device.selector.new.tab' | dm }}
-            </a>
-            <i class="pi pi-external-link"></i>
-        </div>
+        }
     </div>
+
+    @if (!hideSocialMedia) {
+        <div class="dot-device-selector__column" data-testId="social-media-tiles">
+            <div class="dot-device-selector__panel">
+                <div class="dot-device-selector__header">
+                    <h3 class="dot-device-selector__header-title">
+                        {{ 'editpage.device.selector.media.tile' | dm }}
+                    </h3>
+                </div>
+                <div class="dot-device-selector__content">
+                    <ul class="device-list">
+                        @for (tile of SOCIAL_MEDIA_TILES; track $index) {
+                            <li class="device-list-item device-list-item-media">
+                                <button
+                                    (click)="changeSeoMediaEvent(tile.value); deviceSelector.hide()"
+                                    class="device-list__button"
+                                    data-testId="device-list-button">
+                                    <i [class]="tile.icon"></i>
+                                    <span class="device-list-item__name">{{ tile.label }}</span>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+
+            <div class="dot-device-selector__panel">
+                <div class="dot-device-selector__header">
+                    <h3 class="dot-device-selector__header-title">
+                        {{ 'editpage.device.selector.search.engine' | dm }}
+                    </h3>
+                </div>
+                <div class="dot-device-selector__content">
+                    <ul class="device-list">
+                        <li class="device-list-item device-list-item-media">
+                            <button
+                                (click)="changeSeoMediaEvent('Google'); deviceSelector.hide()"
+                                class="device-list__button"
+                                data-testId="device-list-button-media">
+                                <i class="pi pi-google"></i>
+                                <span class="device-list-item__name">Google</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="dot-device-selector__link--container">
+                <a
+                    [href]="previewUrl"
+                    class="dot-device-selector__link"
+                    data-testId="dot-device-selector-link"
+                    target="_blank">
+                    {{ 'editpage.device.selector.new.tab' | dm }}
+                </a>
+                <i class="pi pi-external-link"></i>
+            </div>
+        </div>
+    }
 </p-overlayPanel>

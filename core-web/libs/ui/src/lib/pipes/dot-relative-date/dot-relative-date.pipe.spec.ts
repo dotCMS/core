@@ -1,18 +1,28 @@
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotRelativeDatePipe } from '@dotcms/ui';
-import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
+import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotRelativeDatePipe } from './dot-relative-date.pipe';
 
 const ONE_DAY = 86400000;
-
-const TWO_DAYS = ONE_DAY * 2;
 
 const EIGHT_DAYS = ONE_DAY * 8;
 
 const DATE = '2020/12/3';
 const DATE_AND_TIME = '2020/12/3, 10:08 PM';
+
+const getDateAndTimeFormat = (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+};
 
 describe('DotRelativeDatePipe', () => {
     let formatDateService: DotFormatDateService;
@@ -29,6 +39,15 @@ describe('DotRelativeDatePipe', () => {
                     provide: DotcmsConfigService,
                     useClass: DotcmsConfigServiceMock
                 },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({
+                        'relative.date.now': 'Now',
+                        'relative.date.minute.ago': '1 minute ago',
+                        'relative.date.minutes.ago': '{0} minutes ago',
+                        'relative.date.hours.ago': '{0} hours ago'
+                    })
+                },
                 DotFormatDateService,
                 DotRelativeDatePipe
             ]
@@ -39,32 +58,41 @@ describe('DotRelativeDatePipe', () => {
     });
 
     describe('relative', () => {
-        it('should set relative date', fakeAsync(() => {
+        it('should set `now` is the time is null', () => {
+            expect(pipe.transform(null)).toEqual('Now');
+        });
+
+        it('should set relative date', () => {
             const date = new Date();
+            expect(pipe.transform(date.getTime())).toEqual('Now');
+        });
 
-            tick(1000);
+        it('should return relative date even if it is hardcoded date', () => {
+            const date = new Date();
+            date.setDate(date.getDate() - 2);
+            const dateFormat = getDateAndTimeFormat(date);
 
-            expect(pipe.transform(date.getTime())).toEqual('1 second ago');
-        }));
+            expect(pipe.transform(dateFormat)).toEqual('2 days ago');
+        });
 
-        it('should return relative date even if it is hardcoded date', fakeAsync(() => {
-            const date = DATE;
-            jasmine.clock().mockDate(new Date(DATE));
+        it('should return relative date even if it is hardcoded date with time', () => {
+            const date = new Date();
+            date.setDate(date.getDate() - 1);
+            const dateAndTime = getDateAndTimeFormat(date);
+            expect(pipe.transform(dateAndTime)).toEqual('1 day ago');
+        });
 
-            jasmine.clock().tick(TWO_DAYS);
+        it('should return minutes ago for time less than 2 hours', () => {
+            const date = new Date();
+            date.setMinutes(date.getMinutes() - 30);
+            expect(pipe.transform(date.getTime())).toEqual('30 minutes ago');
+        });
 
-            expect(pipe.transform(date)).toEqual('2 days ago');
-        }));
-
-        it('should return relative date even if it is hardcoded date with time', fakeAsync(() => {
-            const date = DATE_AND_TIME;
-
-            jasmine.clock().mockDate(new Date(DATE_AND_TIME));
-
-            jasmine.clock().tick(ONE_DAY);
-
-            expect(pipe.transform(date)).toEqual('1 day ago');
-        }));
+        it('should return hours ago for time less than 24 hours', () => {
+            const date = new Date();
+            date.setHours(date.getHours() - 5);
+            expect(pipe.transform(date.getTime())).toEqual('5 hours ago');
+        });
     });
 
     describe('format date', () => {
@@ -98,24 +126,20 @@ describe('DotRelativeDatePipe', () => {
             expect(pipe.transform(date)).toEqual('12/03/2020');
         }));
 
-        it('should return formated date after N days', fakeAsync(() => {
+        it('should return formated date after N days when timeStampAfter is less than N days', () => {
             const date = new Date();
-
             const N_DAYS = Math.round(Math.random() * 10);
+            const timeStampAfter = N_DAYS - 1;
 
-            // Plus one because we need to go over N Days
-            const N_DAYS_MILLISECONDS = (N_DAYS + 1) * ONE_DAY;
-
-            tick(N_DAYS_MILLISECONDS);
-
-            expect(pipe.transform(date.getTime(), 'MM/dd/yyyy', N_DAYS)).toEqual(
+            date.setDate(date.getDate() - N_DAYS); //Set the date to N days before
+            expect(pipe.transform(date.getTime(), 'MM/dd/yyyy', timeStampAfter)).toEqual(
                 date.toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'
                 })
             );
-        }));
+        });
 
         it('should return formated date with specified format', fakeAsync(() => {
             const date = new Date();

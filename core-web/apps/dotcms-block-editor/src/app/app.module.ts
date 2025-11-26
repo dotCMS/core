@@ -10,7 +10,8 @@ import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotPropertiesService, DotContentSearchService } from '@dotcms/data-access';
+import { DotAssetSearchComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 
@@ -24,9 +25,10 @@ import { AppComponent } from './app.component';
         BlockEditorModule,
         OrderListModule,
         ListboxModule,
-        HttpClientModule
+        HttpClientModule,
+        DotAssetSearchComponent
     ],
-    providers: [DotPropertiesService]
+    providers: [DotPropertiesService, DotContentSearchService]
 })
 export class AppModule implements DoBootstrap {
     constructor(private injector: Injector) {}

@@ -1,14 +1,13 @@
-<p-dropdown
-    #dropdown
-    (onChange)="handleChange($event)"
-    *ngIf="actions$ | async as actions"
-    [(ngModel)]="value"
-    [autoDisplayFirst]="false"
-    [disabled]="disabled || actions.length === 0"
-    [group]="true"
-    [options]="actions"
-    [placeholder]="'contenttypes.selector.workflow.action' | dm"
-    [showClear]="true"
-    [style]="{ width: '100%' }"
-    appendTo="body"
-></p-dropdown>
+@if (actions$ | async; as actions) {
+    <p-dropdown
+        (onChange)="handleChange($event)"
+        [(ngModel)]="value"
+        [disabled]="disabled || actions.length === 0"
+        [group]="true"
+        [options]="actions"
+        [placeholder]="'contenttypes.selector.workflow.action' | dm"
+        [showClear]="true"
+        [style]="{ width: '100%' }"
+        #dropdown
+        appendTo="body" />
+}

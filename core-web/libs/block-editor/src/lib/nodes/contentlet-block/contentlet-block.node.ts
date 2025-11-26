@@ -1,12 +1,15 @@
-import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
+import { DOMOutputSpec } from 'prosemirror-model';
 
 import { Injector } from '@angular/core';
 
 import { Node, NodeViewRenderer } from '@tiptap/core';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { ContentletBlockComponent } from './contentlet-block.component';
 
 import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
+import { contentletToJSON } from '../../shared';
 
 export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
@@ -18,43 +21,57 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         group: 'block',
         inline: false,
         draggable: true,
+        selectable: true,
 
-        // ...configuration
         addAttributes() {
             return {
                 data: {
                     default: null,
-                    parseHTML: (element) => ({
-                        data: element.getAttribute('data')
-                    }),
-                    renderHTML: (attributes) => {
-                        return { data: attributes.data };
+                    rendered: true,
+                    parseHTML: (element) => {
+                        return {
+                            data: element.getAttribute('data')
+                        };
+                    },
+                    renderHTML: ({ data }) => {
+                        return { data };
                     }
                 }
             };
         },
 
-        parseHTML(): ParseRule[] {
-            return [{ tag: 'dotcms-contentlet-block' }];
-        },
-
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            let img = ['span', {}];
-            if (HTMLAttributes.data.hasTitleImage) {
-                img = ['img', { src: HTMLAttributes.data.image }];
+            const { data } = HTMLAttributes;
+            const rawData: DotCMSContentlet = data;
+
+            if (!rawData) {
+                return ['div', { 'data-dotCMS-contentlet': 'true' }];
             }
 
-            return [
-                'div',
-                ['h3', { class: HTMLAttributes.data.title }, HTMLAttributes.data.title],
-                ['div', HTMLAttributes.data.identifier],
-                img,
-                ['div', {}, HTMLAttributes.data.language]
+            const titleText = rawData.title ?? '';
+            const identifierText = rawData.identifier ?? '';
+            const languageText = rawData.language ?? rawData.languageId ?? '';
+            const hasImage = Boolean(rawData.titleImage || rawData.image);
+            const image = `/dA/${rawData.inode}`;
+
+            const children: DOMOutputSpec[] = [
+                ['h3', String(titleText)],
+                ['div', String(identifierText)],
+                ['div', {}, String(languageText)]
             ];
+
+            if (hasImage) {
+                children.splice(2, 0, ['img', { src: String(image) }]);
+            }
+
+            return ['div', { 'data-dotCMS-contentlet': 'true' }, ...children];
         },
 
         addNodeView(): NodeViewRenderer {
-            return AngularNodeViewRenderer(ContentletBlockComponent, { injector });
+            return AngularNodeViewRenderer(ContentletBlockComponent, {
+                injector,
+                toJSON: contentletToJSON
+            });
         }
     });
 };

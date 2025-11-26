@@ -1,17 +1,17 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LazyLoadEvent, MenuItem } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
-import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
-import { DataTableColumn } from '@models/data-table';
+import { DotActionMenuItem, DotCategory, DotMenuItemCommandEvent } from '@dotcms/dotcms-models';
+
+import { DotCategoriesService } from '../../../../api/services/dot-categories/dot-categories.service';
+import { DataTableColumn } from '../../../../shared/models/data-table/data-table-column';
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];
@@ -29,27 +29,10 @@ export interface DotCategoriesListState {
 
 @Injectable()
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private categoryService: DotCategoriesService
-    ) {
-        super();
-        this.setState({
-            categoriesBulkActions: this.getCategoriesBulkActions(),
-            categoriesActions: this.getCategoriesActions(),
-            tableColumns: this.getCategoriesColumns(),
-            selectedCategories: [],
-            categories: [],
-            categoryBreadCrumbs: [],
-            currentPage: this.categoryService.currentPage,
-            paginationPerPage: this.categoryService.paginationPerPage,
-            totalRecords: this.categoryService.totalRecords,
-            sortField: null,
-            sortOrder: OrderDirection.ASC
-        });
-    }
-    readonly vm$ = this.select((state: DotCategoriesListState) => state);
+    private dotMessageService = inject(DotMessageService);
+    private categoryService = inject(DotCategoriesService);
 
+    readonly vm$ = this.select((state: DotCategoriesListState) => state);
     /**
      * Get categories breadcrumbs
      * @memberof DotCategoriesListStore
@@ -61,7 +44,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             };
         }
     );
-
     /**
      * A function that updates the state of the store.
      * @param state DotCategoryListState
@@ -76,7 +58,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             };
         }
     );
-
     /** A function that updates the state of the store.
      * @param state DotCategoryListState
      * @param categories DotCategory[]
@@ -95,7 +76,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             };
         }
     );
-
     /**
      * Add cateogry in breadcrumb
      * @memberof DotCategoriesListStore
@@ -128,9 +108,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             };
         }
     );
-
-    // EFFECTS
-
     /**
      * > This function returns an observable of an array of DotCategory objects
      * @returns Observable<DotCategory[]>
@@ -150,6 +127,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         );
     });
 
+    // EFFECTS
     /**
      * > This function returns an observable of an array of DotCategory objects
      * @returns Observable<DotCategory[]>
@@ -168,6 +146,23 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             })
         );
     });
+
+    constructor() {
+        super();
+        this.setState({
+            categoriesBulkActions: this.getCategoriesBulkActions(),
+            categoriesActions: this.getCategoriesActions(),
+            tableColumns: this.getCategoriesColumns(),
+            selectedCategories: [],
+            categories: [],
+            categoryBreadCrumbs: [],
+            currentPage: this.categoryService.currentPage,
+            paginationPerPage: this.categoryService.paginationPerPage,
+            totalRecords: this.categoryService.totalRecords,
+            sortField: null,
+            sortOrder: OrderDirection.ASC
+        });
+    }
 
     /**
      * It returns an array of objects with a label property
@@ -194,7 +189,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             {
                 menuItem: {
                     label: this.dotMessageService.get('View Children'),
-                    command: (event) => {
+                    command: (event: DotMenuItemCommandEvent) => {
                         this.getChildrenCategories({
                             sortOrder: 1,
                             filters: {

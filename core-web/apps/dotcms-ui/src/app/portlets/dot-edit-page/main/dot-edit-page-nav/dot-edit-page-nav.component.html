@@ -1,36 +1,36 @@
 <ul class="edit-page-nav">
-    <li *ngFor="let item of model | async" data-testId="menuListItems">
-        <div *ngIf="!item.needsEntepriseLicense; then basic; else enterprise"></div>
-        <ng-template #basic>
-            <a
-                class="edit-page-nav__item"
-                [ngClass]="{
-                    'edit-page-nav__item--disabled': item.disabled,
-                    'edit-page-nav__item--active': item.link
-                        ? item.link.startsWith(this.route.snapshot.firstChild.url[0].path)
-                        : null
-                }"
-                [queryParams]="route.queryParams | async"
-                [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
-                (click)="item.action ? item.action(pageState.page.inode) : ''"
-                pTooltip="{{ item.tooltip }}">
-                <dot-icon [name]="item.icon" size="32"></dot-icon>
-                <span class="edit-page-nav__item-text" data-testId="menuListItemText"
-                    >{{ item.label }}
+    @for (item of model | async; track item.label) {
+        <li data-testId="menuListItems">
+            @if (!item.needsEntepriseLicense) {
+                <a
+                    (click)="item.action ? item.action(pageState.page.inode) : ''"
+                    [ngClass]="{
+                        'edit-page-nav__item--disabled': item.disabled,
+                        'edit-page-nav__item--active': item.link
+                            ? item.link.startsWith(this.route.snapshot.firstChild.url[0].path)
+                            : null
+                    }"
+                    [queryParams]="route.queryParams | async"
+                    [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
+                    class="edit-page-nav__item"
+                    pTooltip="{{ item.tooltip }}">
+                    <dot-icon [name]="item.icon" size="32"></dot-icon>
+                    <span class="edit-page-nav__item-text" data-testId="menuListItemText">
+                        {{ item.label }}
+                    </span>
+                </a>
+            } @else {
+                <span
+                    [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
+                    class="edit-page-nav__item edit-page-nav__item--disabled"
+                    tooltipPosition="left">
+                    <dot-icon [name]="item.icon" size="32"></dot-icon>
+                    <span class="edit-page-nav__item-text" data-testId="menuListItemText">
+                        {{ item.label }}
+                    </span>
                 </span>
-            </a>
-        </ng-template>
-        <ng-template #enterprise>
-            <span
-                class="edit-page-nav__item edit-page-nav__item--disabled"
-                [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
-                tooltipPosition="left">
-                <dot-icon [name]="item.icon" size="32"></dot-icon>
-                <span class="edit-page-nav__item-text" data-testId="menuListItemText">{{
-                    item.label
-                }}</span>
-            </span>
-        </ng-template>
-    </li>
+            }
+        </li>
+    }
 </ul>
-<dot-page-tools-seo #pageTools [currentPageUrlParams]="currentUrlParams"></dot-page-tools-seo>
+<dot-page-tools-seo [currentPageUrlParams]="currentUrlParams" #pageTools></dot-page-tools-seo>

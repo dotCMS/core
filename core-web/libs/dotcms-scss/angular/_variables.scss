@@ -14,8 +14,11 @@
 @use "../shared/mixins" as *;
 
 $input-border-color-hover: $color-palette-primary;
-$input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
-    inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary;
+$input-inset-shadow:
+    inset 0 0 0 1px $color-palette-primary,
+    inset 0 0 0 1px $color-palette-primary,
+    inset 0 0 0 1px $color-palette-primary,
+    inset 0 0 0 1px $color-palette-primary;
 $input-border-color: $color-palette-gray-500;
 $input-border-color-focus: $color-palette-gray-500;
 $input-bg-color: $color-palette-gray-500;
@@ -36,10 +39,6 @@ $button-text-color-disabled: $color-palette-gray-500;
 $button-text-color: $color-palette-gray-500;
 $button-shadow-focus: 0 0 0 4px $color-palette-secondary-op-20;
 
-// Tables
-$th-text-color: $color-palette-gray-500;
-$table-border-color: $color-palette-gray-500;
-
 $warn: $orange;
 $info: $color-palette-secondary;
 
@@ -47,6 +46,7 @@ $info: $color-palette-secondary;
 $field-tiny-height: 28px;
 $field-disabled-opacity: 0.38;
 $line-height: 1.5em;
+$line-height-relative: 140%;
 
 // ICONS
 $md-icon-size-normal: 18px;
@@ -58,17 +58,17 @@ $md-icon-size-extra-big: 2rem;
 $basic-speed: 150ms;
 
 // LAYOUT
-$toolbar-height: 60px;
+$toolbar-height: 4.375rem;
 $toolbar-background: $white;
 $toolbar-color: $black;
 $navigation-item-height: 48px;
-$navigation-width: 220px;
-$navigation-width-collased: 70px;
+$navigation-width: 16.875rem;
+$navigation-width-collased: 4.5rem;
 $content-palette-width: 16rem;
 
 //Dot Secondary Toolbar
-$dot-secondary-toolbar-height: 52px;
-$dot-secondary-toolbar-main-height: 68px;
+$dot-secondary-toolbar-height: 3.25rem;
+$dot-secondary-toolbar-main-height: 4.25rem;
 
 // GRIDS
 $gutter-width: $spacing-9;

@@ -10,7 +10,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -140,8 +140,8 @@ describe('DotPagesListingPanelComponent', () => {
     describe('Empty state', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                declarations: [DotPagesListingPanelComponent],
                 imports: [
+                    DotPagesListingPanelComponent,
                     CommonModule,
                     ButtonModule,
                     CheckboxModule,
@@ -175,22 +175,26 @@ describe('DotPagesListingPanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getPages');
-            spyOn(store, 'getPageTypes');
-            spyOn(store, 'setKeyword');
-            spyOn(store, 'setLanguageId');
-            spyOn(store, 'setArchived');
-            spyOn(store, 'setSessionStorageFilterParams');
-            spyOn(component.goToUrl, 'emit');
-            spyOn(component.pageChange, 'emit');
+            jest.spyOn(store, 'getPages');
+            jest.spyOn(store, 'getPageTypes');
+            jest.spyOn(store, 'setKeyword');
+            jest.spyOn(store, 'setLanguageId');
+            jest.spyOn(store, 'setArchived');
+            jest.spyOn(store, 'setSessionStorageFilterParams');
+            jest.spyOn(component.goToUrl, 'emit');
+            jest.spyOn(component.pageChange, 'emit');
 
             fixture.detectChanges();
             await fixture.whenStable();
         });
 
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('should set table with params', () => {
-            const elem = de.query(By.css('p-table')).componentInstance;
-            expect(elem.loading).toBe(undefined);
+            const elem: Table = de.query(By.css('p-table')).componentInstance;
+            expect(elem.loading).toBe(false);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
             expect(elem.sortField).toEqual('modDate');
@@ -230,16 +234,22 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should send event to filter keyword', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
-            elem.triggerEventHandler('input', { target: { value: 'test' } });
+            elem.nativeElement.focus();
+            elem.nativeElement.value = 'test';
+            elem.triggerEventHandler('input');
 
             expect(store.setKeyword).toHaveBeenCalledWith('test');
+            expect(store.setKeyword).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
         it('should send event to filter keyword when cleaning', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
-            elem.triggerEventHandler('input', { target: { value: 'test' } });
+            elem.nativeElement.focus();
+            elem.nativeElement.value = 'test';
+            elem.triggerEventHandler('input');
 
             const elemClean = de.query(
                 By.css('[data-testid="dot-pages-listing-header__keyword-input-clear"]')
@@ -248,7 +258,9 @@ describe('DotPagesListingPanelComponent', () => {
             elemClean.triggerEventHandler('click', {});
 
             expect(store.setKeyword).toHaveBeenCalledWith('');
+            expect(store.setKeyword).toHaveBeenCalled();
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(2);
         });
 
@@ -257,7 +269,9 @@ describe('DotPagesListingPanelComponent', () => {
             elem.triggerEventHandler('onChange', { value: '1' });
 
             expect(store.setLanguageId).toHaveBeenCalledWith('1');
+            expect(store.setLanguageId).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -266,7 +280,9 @@ describe('DotPagesListingPanelComponent', () => {
             elem.triggerEventHandler('onChange', { checked: '1' });
 
             expect(store.setArchived).toHaveBeenCalledWith('1');
+            expect(store.setArchived).toHaveBeenCalledTimes(1);
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.getPages).toHaveBeenCalled();
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
@@ -274,7 +290,7 @@ describe('DotPagesListingPanelComponent', () => {
             const elem = de.query(By.css('p-table'));
             elem.triggerEventHandler('onRowSelect', { data: { url: 'abc123', languageId: '1' } });
 
-            expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
+            expect(component.goToUrl.emit).toHaveBeenCalledWith(
                 'abc123?language_id=1&device_inode='
             );
         });

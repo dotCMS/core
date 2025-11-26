@@ -1,0 +1,192 @@
+name: 'Deploy Docker Artifact'
+description: 'Build and push a docker image to a registry from a Docker context passed from a run'
+inputs:
+  docker_platforms:
+    description: 'Docker platforms to build the image on'
+    required: false
+    default: 'linux/amd64'
+  docker_registry:
+    description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
+    required: false
+    default: 'DOCKER.IO'
+  build_run_id:
+    description: 'The run id of the build to pull the artifact from'
+    required: false
+  docker_context:
+    description: 'The path to the docker context to build the image from'
+    required: false
+  image_name:
+    description: 'The name of the image to build'
+    required: true
+  commit_id:
+    description: 'The commit id that triggered the build'
+    required: true
+  ref:
+    description: 'The branch or type of build to tag the image with'
+    required: true
+  docker-use-ref:
+    description: 'The branch or type of build to tag the image with'
+    required: false
+    default: 'true'
+  version:
+    description: 'The version or tag to apply to the image unless building a snapshot'
+    required: false
+  latest:
+    description: 'If true, the image will be tagged as latest, usually reserved for the agile release e.g. dotcms/dotcms:latest'
+    default: 'false'
+  do_deploy:
+    description: 'Actually do the final deploy, set to false for testing'
+    required: true
+    default: 'true'
+  docker_io_username:
+    description: 'Docker.io username'
+    required: false
+  docker_io_token:
+    description: 'Docker.io token'
+    required: false
+  ghcr_io_username:
+    description: 'GHCR.io username'
+    required: false
+  ghcr_io_token:
+    description: 'GHCR.io token'
+    required: false
+  github_token:
+    description: 'github token'
+    required: true
+  build_args:
+    description: 'Build arguments to pass to the Docker build'
+    required: false
+    default: ''
+outputs:
+  tags:
+    description: "The tags that were used to build the image"
+    value: ${{ steps.convert_tags.outputs.space_separated_tags }}
+runs:
+  using: "composite"
+  steps:
+    - name: Download Docker Build Context
+      uses: actions/download-artifact@v4
+      if: inputs.build_run_id # Only download the artifact if a build run id is provided
+      with:
+        name: docker-build-context
+        path: ${{ github.workspace }}
+        run-id: ${{ inputs.build_run_id }}
+        github-token: ${{ inputs.github_token }}
+    - name: Setup Context
+      id: setup-context
+      env:
+        CONTEXT_TMP_PATH: /tmp/docker-context
+      run: |
+        if [ "${{ inputs.docker_context }}" != "" ]; then
+            echo "using provided docker context ${{ inputs.docker_context }}"
+            echo "docker_context=docker/${{ inputs.docker_context }}" >> $GITHUB_OUTPUT
+        else
+            echo "using artifact docker context"
+            rm -rf ${CONTEXT_TMP_PATH}
+            mkdir -p ${CONTEXT_TMP_PATH}
+            tar -xvf docker-build.tar -C ${CONTEXT_TMP_PATH}
+            echo "docker_context=${CONTEXT_TMP_PATH}" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+    - name: Set Common Vars
+      shell: bash
+      id: set-common-vars
+      env:
+        LATEST: ${{ inputs.latest }}
+        REF: ${{ inputs.ref }}
+        USE_REF: ${{ inputs.docker-use-ref }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        
+        # Set defaults for flags
+        enable_latest=false
+        RESULT=""
+        
+        # Determine REF_TO_USE based on USE_REF
+        REF_TO_USE=""
+        if [[ "$USE_REF" == "true" && -n "$REF" ]]; then
+          REF_TO_USE="$REF"
+        fi
+        
+        # Determine RESULT based on REF_TO_USE and VERSION
+        if [[ -n "$REF_TO_USE" && -n "$VERSION" ]]; then
+          RESULT="${REF_TO_USE}_${VERSION}"
+        elif [[ -n "$REF_TO_USE" ]]; then
+          RESULT="$REF_TO_USE"
+        elif [[ -n "$VERSION" ]]; then
+          RESULT="$VERSION"
+        else
+          echo "ERROR: No version or ref provided"
+          exit 1
+        fi
+        
+        # Conditional for setting latest version flag
+        if [[ -n "$VERSION" && "$USE_REF" != "true" && "$LATEST" == "true" ]]; then
+          enable_latest=true
+        fi
+        
+        echo "FULL_TAGS_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "type=raw,value=${RESULT}_{{sha}},enable=true" >> $GITHUB_ENV
+          echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV
+          echo "type=raw,value=latest,enable=${enable_latest}" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+    - name: Docker.io login
+      uses: docker/login-action@v3.0.0
+      with:
+        username: ${{ inputs.docker_io_username }}
+        password: ${{ inputs.docker_io_token }}
+      if: (inputs.docker_registry == 'DOCKER.IO' || inputs.docker_registry == 'BOTH') && inputs.do_deploy == 'true'
+
+    - name: GHCR.io login
+      uses: docker/login-action@v3.0.0
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.ghcr_io_username }}
+        password: ${{ inputs.ghcr_io_token }}
+      if: (inputs.docker_registry == 'GHCR.IO' || inputs.docker_registry == 'BOTH') && inputs.do_deploy == 'true'
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3.6.0
+      with:
+        image: tonistiigi/binfmt:qemu-v7.0.0-28
+        platforms: ${{ inputs.docker_platforms }}
+
+    - name: Docker Metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ inputs.image_name }}
+        tags: ${{ env.FULL_TAGS_OUTPUT }}
+      if: success()
+
+    - name: Convert tags to space-separated string
+      id: convert_tags
+      shell: bash
+      run: echo "space_separated_tags=$(echo '${{ steps.meta.outputs.tags }}' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+    - name: Debug Docker Metadata
+      shell: bash
+      run: |
+        echo "${{ fromJSON(steps.meta.outputs.json) }}"
+        echo "tags=$(echo ${{ steps.meta.outputs.tags }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
+        echo "version=${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
+      if: success()
+
+    - name: Docker Setup Buildx
+      uses: docker/setup-buildx-action@v3.10.0
+      with:
+        version: v0.23.0 # version of buildx https://github.com/docker/buildx/releases supports API v2 GitHub cache (>= v0.21.0)
+        platforms: ${{ inputs.docker_platforms }}
+    - name: Build/Push Docker Image
+      uses: docker/build-push-action@v6.15.0
+      with:
+        context: ${{ steps.setup-context.outputs.docker_context }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ inputs.docker_platforms }}
+        pull: true
+        push: ${{ inputs.do_deploy }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: ${{ inputs.build_args }}

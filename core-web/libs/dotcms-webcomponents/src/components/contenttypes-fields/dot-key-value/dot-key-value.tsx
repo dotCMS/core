@@ -277,8 +277,7 @@ export class DotKeyValueComponent {
                     tabIndex={this.hint ? 0 : null}
                     label={this.label}
                     required={this.required}
-                    name={this.name}
-                >
+                    name={this.name}>
                     {!this.disabled ? this.getKeyValueForm() : ''}
                     <key-value-table
                         onClick={(e: MouseEvent) => {
@@ -295,7 +294,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getKeyValueForm(): JSX.Element {
+    private getKeyValueForm() {
         return (
             <key-value-form
                 onLostFocus={this.blurHandler.bind(this)}

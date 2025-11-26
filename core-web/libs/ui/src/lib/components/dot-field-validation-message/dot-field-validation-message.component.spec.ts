@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
-import { byTestId } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotFieldValidationMessageComponent } from './dot-field-validation-message.component';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'contentType.errors.input.maxlength': 'Value must be no more than {0} characters',
@@ -18,7 +20,7 @@ const messageServiceMock = new MockDotMessageService({
     'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
 });
 
-@Component({ selector: 'dot-custom-host', template: '' })
+@Component({ selector: 'dot-custom-host', template: '', standalone: false })
 class CustomHostComponent {
     defaultMessage = 'Required';
     control = new UntypedFormControl('', [Validators.required, Validators.pattern(/^.+\..+$/)]);

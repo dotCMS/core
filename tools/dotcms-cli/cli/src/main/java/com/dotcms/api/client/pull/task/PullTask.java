@@ -8,10 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.function.Function;
-import javax.enterprise.context.Dependent;
+import java.util.concurrent.CompletableFuture;
+import jakarta.enterprise.context.Dependent;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -21,7 +19,8 @@ import org.jboss.logging.Logger;
  * @param <T> the type of content being pulled and processed
  */
 @Dependent
-public class PullTask<T> extends TaskProcessor {
+public class PullTask<T> extends
+        TaskProcessor<PullTaskParams<T>, CompletableFuture<List<Exception>>> {
 
     private PullTaskParams<T> params;
 
@@ -51,6 +50,7 @@ public class PullTask<T> extends TaskProcessor {
      *
      * @param params The parameters for the PullTask
      */
+    @Override
     public void setTaskParams(final PullTaskParams<T> params) {
         this.params = params;
     }
@@ -58,53 +58,50 @@ public class PullTask<T> extends TaskProcessor {
     /**
      * Computes the contents to pull
      */
-    public List<Exception> compute() {
-
-        CompletionService<List<Exception>> completionService =
-                new ExecutorCompletionService<>(executor);
-
-        var errors = new ArrayList<Exception>();
+    @Override
+    public CompletableFuture<List<Exception>> compute() {
 
         if (this.params.contents().size() <= THRESHOLD) {
 
-            // If the list is small enough, process sequentially
-            for (var content : this.params.contents()) {
-                try {
-                    toDiskContent(content);
-                } catch (Exception e) {
-                    if (this.params.failFast()) {
-                        throw e;
-                    } else {
-                        errors.add(e);
+            return CompletableFuture.supplyAsync(() -> {
+
+                List<Exception> errors = new ArrayList<>();
+
+                // If the list is small enough, process sequentially
+                for (var content : this.params.contents()) {
+                    try {
+                        toDiskContent(content);
+                    } catch (Exception e) {
+                        if (this.params.failFast()) {
+                            throw e;
+                        } else {
+                            errors.add(e);
+                        }
+                    } finally {
+                        this.params.progressBar().incrementStep();
                     }
-                } finally {
-                    this.params.progressBar().incrementStep();
                 }
-            }
+                return errors;
+            }, executor).exceptionally(e -> {
+                if (e.getCause() instanceof PullException) {
+                    throw (PullException) e.getCause();
+                } else {
+                    throw new PullException(e.getCause().getMessage(), e.getCause());
+                }
+            });
 
-        } else {
-
-            // If the list is large, split it into smaller tasks
-            int toProcessCount = splitTasks(completionService);
-
-            // Wait for all tasks to complete and gather the results
-            Function<List<Exception>, Void> processFunction = taskResult -> {
-                errors.addAll(taskResult);
-                return null;
-            };
-            processTasks(toProcessCount, completionService, processFunction);
         }
 
-        return errors;
+        // If the list is large, split it into smaller tasks
+        return splitTasks();
     }
 
     /**
      * Splits a list of T objects into separate tasks.
      *
-     * @param completionService The CompletionService to submit tasks to.
-     * @return The number of tasks to process.
+     * @return A CompletableFuture representing the combined results of the separate tasks.
      */
-    private int splitTasks(final CompletionService<List<Exception>> completionService) {
+    private CompletableFuture<List<Exception>> splitTasks() {
 
         int mid = this.params.contents().size() / 2;
         var paramsTask1 = this.params.withContents(
@@ -116,14 +113,17 @@ public class PullTask<T> extends TaskProcessor {
 
         PullTask<T> task1 = new PullTask<>(logger, mapperService, executor);
         task1.setTaskParams(paramsTask1);
+        var futureTask1 = task1.compute();
 
         PullTask<T> task2 = new PullTask<>(logger, mapperService, executor);
         task2.setTaskParams(paramsTask2);
+        var futureTask2 = task2.compute();
 
-        completionService.submit(task1::compute);
-        completionService.submit(task2::compute);
-
-        return 2;
+        return futureTask1.thenCombine(futureTask2, (list1, list2) -> {
+            var combinedList = new ArrayList<>(list1);
+            combinedList.addAll(list2);
+            return combinedList;
+        });
     }
 
     /**

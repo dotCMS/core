@@ -67,6 +67,7 @@
     .p-splitbutton-defaultbutton:enabled,
     .p-splitbutton-menubutton:enabled {
         @extend #outlined-primary-severity;
+        color: $color-palette-primary;
     }
 
     &.p-button-sm {
@@ -84,6 +85,7 @@
         .p-splitbutton-defaultbutton:enabled,
         .p-splitbutton-menubutton:enabled {
             @extend #outlined-secondary-severity;
+            color: $color-palette-secondary;
         }
 
         &.p-button-sm {
@@ -106,6 +108,21 @@
         .p-splitbutton-defaultbutton:disabled,
         .p-splitbutton-menubutton:disabled {
             @extend #button-disabled-outlined;
+        }
+    }
+}
+
+// Severity for text button
+.p-splitbutton.p-button-text {
+    @extend #text-primary-severity;
+
+    .p-button {
+        &,
+        &:hover,
+        &:focus {
+            color: $color-palette-primary;
+            background-color: transparent;
+            border: transparent;
         }
     }
 }

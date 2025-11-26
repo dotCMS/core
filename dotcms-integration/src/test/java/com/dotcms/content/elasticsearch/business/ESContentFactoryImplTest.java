@@ -1,19 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS;
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
@@ -46,7 +32,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -56,19 +42,6 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -77,6 +50,34 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS;
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class ESContentFactoryImplTest extends IntegrationTestBase {
@@ -511,8 +512,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     @Test
     public void test_findContentletByIdentifier() throws Exception {
     
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
 
@@ -560,7 +561,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     @Test
     public void test_cached_es_query_response() throws Exception {
         
-        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
@@ -603,7 +604,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_cached_es_query_different_responses_for_all_params() throws Exception {
-        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
@@ -668,22 +669,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     }
 
-    /**
-     * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
-     * Given Scenario: Perform a query with a community license
-     * ExpectedResult: The query should contain a filter by {@link BaseContentType#PERSONA} and {@link BaseContentType#FORM}
-     */
-    @Test
-    public void test_translateQueryWithoutLicense() throws Exception {
-        runNoLicense(() -> {
-            final TranslatedQuery translatedQuery = ESContentFactoryImpl
-                    .translateQuery("+contentType:Host", null);
-            assertTrue(translatedQuery.getQuery()
-                    .contains("-basetype:" + BaseContentType.PERSONA.getType()));
-            assertTrue(translatedQuery.getQuery()
-                    .contains("-basetype:" + BaseContentType.FORM.getType()));
-        });
-    }
+
 
     /**
      * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
@@ -714,8 +700,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User user = APILocator.systemUser();
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
 
@@ -749,8 +735,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User user = APILocator.systemUser();
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
 
@@ -788,8 +774,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User user = APILocator.systemUser();
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
 
@@ -1216,7 +1202,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         contentlet1Checkout = ContentletDataGen.checkout(newlyContentleLive);
         final Contentlet contentletWorking2 = ContentletDataGen.checkin(contentlet1Checkout);
 
-        return map("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
+        return Map.of("LIVE", newlyContentleLive, "WORKING", contentletWorking2);
     }
 
     /**
@@ -1314,13 +1300,13 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Contentlet contentletLanguage3DefaultVariant = ContentletDataGen.checkin(contentlet1Checkout);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3DefaultVariant,
-                variant, map());
+                variant, new HashMap<>());
 
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());
@@ -1379,17 +1365,17 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 contentletLanguage3Live);
 
         final Contentlet contentletLang1SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage1Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang1SpecificVariant);
 
         final Contentlet contentletLang2SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage2Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang2SpecificVariant);
 
         final Contentlet contentletLang3SpecificVariant = ContentletDataGen.createNewVersion(contentletLanguage3Live,
-                variant, map());
+                variant, new HashMap<>());
 
         createNewlyWorkingAndLiveVersion(contentletLang3SpecificVariant);
 

@@ -1,0 +1,26 @@
+name: Post Issue Edited
+on:
+  issues:
+    types: [ edited, labeled ]
+
+jobs:
+  frontend-notify:
+    name: Issue Resolve Actions
+    uses: ./.github/workflows/issue_comp_frontend-notify.yml
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  next-release-label-update:
+    name: Next Release label update
+    if: github.event.action == 'labeled'
+    uses: ./.github/workflows/issue_comp_label-conditional-labeling.yml
+    with:
+      issue_number: ${{ github.event.issue.number }}
+      evaluating_labels: 'QA : Approved,QA : Passed Internal,QA : Passed,QA : Not Needed'
+      evaluated_labels: '${{ github.event.label.name }}'
+      ignore_issue_labels: 'Next Release'
+      new_labels: 'Next Release'
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}

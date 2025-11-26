@@ -1,28 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotRouterService,
+    DotFormatDateService,
     DotIframeService,
-    DotFormatDateService
+    DotRouterService,
+    DotUiColorsService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import {
+    CoreWebService,
+    DotcmsEventsService,
+    LoginService,
+    LoggerService,
+    StringUtils
+} from '@dotcms/dotcms-js';
+import {
+    CoreWebServiceMock,
+    DotcmsEventsServiceMock,
+    LoginServiceMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
 
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
@@ -42,111 +53,132 @@ class DotIframeMockComponent {
 }
 
 describe('DotCreateContentletComponent', () => {
-    let de: DebugElement;
-    let fixture: ComponentFixture<DotCreateContentletComponent>;
-    let dotCreateContentletWrapper: DebugElement;
-    let dotCreateContentletWrapperComponent: DotContentletWrapperComponent;
-    let component: DotCreateContentletComponent;
-    let routeService: ActivatedRoute;
+    let spectator: Spectator<DotCreateContentletComponent>;
     let dotIframeService: DotIframeService;
-    let routerService;
+    let routerService: DotRouterService;
+    let routeService: ActivatedRoute;
     const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
         new DotContentletEditorServiceMock();
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [RouterTestingModule, HttpClientTestingModule],
-            declarations: [
-                DotCreateContentletComponent,
-                DotContentletWrapperComponent,
-                DotIframeMockComponent
-            ],
-            providers: [
-                DotIframeService,
-                DotEventsService,
-                DotFormatDateService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                {
-                    provide: DotContentletEditorService,
-                    useValue: dotContentletEditorServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotRouterService,
-                    useClass: MockDotRouterService
-                },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        get data() {
-                            return of({ url: undefined });
-                        }
+    const createComponent = createComponentFactory({
+        component: DotCreateContentletComponent,
+        imports: [HttpClientTestingModule, DotContentletWrapperComponent, DotIframeMockComponent],
+        providers: [
+            DotIframeService,
+            DotEventsService,
+            DotFormatDateService,
+            DotAlertConfirmService,
+            DotUiColorsService,
+            IframeOverlayService,
+            ConfirmationService,
+            LoggerService,
+            StringUtils,
+            {
+                provide: DotContentletEditorService,
+                useValue: dotContentletEditorServiceMock
+            },
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            },
+            {
+                provide: DotRouterService,
+                useClass: MockDotRouterService
+            },
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    get data() {
+                        return of({ url: undefined });
+                    },
+                    snapshot: {
+                        queryParams: {}
                     }
                 }
-            ]
-        });
-    }));
+            }
+        ],
+        detectChanges: false
+    });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotCreateContentletComponent);
-        de = fixture.debugElement;
-        component = de.componentInstance;
-
-        dotCreateContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
-        dotCreateContentletWrapperComponent = dotCreateContentletWrapper.componentInstance;
-        routeService = TestBed.inject(ActivatedRoute);
-        routerService = TestBed.inject(DotRouterService);
-        dotIframeService = TestBed.inject(DotIframeService);
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
-        spyOn(dotIframeService, 'reloadData');
+        spectator = createComponent({
+            detectChanges: false
+        });
+        routeService = spectator.inject(ActivatedRoute);
+        routerService = spectator.inject(DotRouterService);
+        dotIframeService = spectator.inject(DotIframeService);
+        jest.spyOn(spectator.component.shutdown, 'emit');
+        jest.spyOn(spectator.component.custom, 'emit');
+        jest.spyOn(dotIframeService, 'reloadData');
     });
 
     it('should have dot-contentlet-wrapper', () => {
+        spectator.detectChanges();
+        const dotCreateContentletWrapper = spectator.query('dot-contentlet-wrapper');
         expect(dotCreateContentletWrapper).toBeTruthy();
     });
 
     it('should emit shutdown and redirect to Content page when coming from starter', () => {
-        routerService.currentSavedURL = '/c/content/new/';
-        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
-        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+        jest.spyOn(routerService, 'currentSavedURL', 'get').mockReturnValue('/c/content/new/');
+        spectator.detectChanges();
+        spectator.component.onClose({});
+        expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {
-        routerService.currentSavedURL = '/pages/new/';
-        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
-        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+        jest.spyOn(routerService, 'currentSavedURL', 'get').mockReturnValue('/pages/new/');
+        spectator.detectChanges();
+        spectator.component.onClose({});
+        expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should emit custom', () => {
-        dotCreateContentletWrapper.triggerEventHandler('custom', {});
-        expect(component.custom.emit).toHaveBeenCalledTimes(1);
+        spectator.detectChanges();
+        spectator.triggerEventHandler('dot-contentlet-wrapper', 'custom', {});
+        expect(spectator.component.custom.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should have url in null', () => {
+        spectator.detectChanges();
+        const dotCreateContentletWrapperComponent = spectator.query(
+            'dot-contentlet-wrapper'
+        ) as unknown as DotContentletWrapperComponent;
         expect(dotCreateContentletWrapperComponent.url).toEqual(undefined);
     });
 
-    it('should set url from service', () => {
-        spyOnProperty(dotContentletEditorServiceMock, 'createUrl$', 'get').and.returnValue(
+    it('should set url from service', (done) => {
+        const dotContentletEditorService = spectator.inject(DotContentletEditorService);
+        jest.spyOn(dotContentletEditorService, 'createUrl$', 'get').mockReturnValue(
             of('hello.world.com')
         );
-        fixture.detectChanges();
-        expect(dotCreateContentletWrapperComponent.url).toEqual('hello.world.com');
+
+        spectator.component.ngOnInit();
+
+        spectator.component.url$.subscribe((url) => {
+            expect(url).toEqual('hello.world.com');
+            done();
+        });
     });
 
-    it('should set url from resolver', () => {
-        spyOnProperty<any>(routeService, 'data').and.returnValue(of({ url: 'url.from.resolver' }));
-        fixture.detectChanges();
-        expect(dotCreateContentletWrapperComponent.url).toEqual('url.from.resolver');
+    it('should set url from resolver', (done) => {
+        const dotContentletEditorService = spectator.inject(DotContentletEditorService);
+        // Reset the service mock to return undefined so the resolver value is used
+        jest.spyOn(dotContentletEditorService, 'createUrl$', 'get').mockReturnValue(of(undefined));
+        jest.spyOn(routeService, 'data', 'get').mockReturnValue(of({ url: 'url.from.resolver' }));
+
+        spectator.component.ngOnInit();
+
+        spectator.component.url$.subscribe((url) => {
+            expect(url).toEqual('url.from.resolver');
+            done();
+        });
     });
 });

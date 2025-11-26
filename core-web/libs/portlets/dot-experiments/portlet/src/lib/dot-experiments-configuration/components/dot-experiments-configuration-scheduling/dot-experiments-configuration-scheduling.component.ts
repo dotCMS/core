@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -15,20 +15,18 @@ import {
     RangeOfDateAndTime,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
 
 @Component({
     selector: 'dot-experiments-configuration-scheduling',
-    standalone: true,
     imports: [
         CommonModule,
         DotDynamicDirective,
         DotMessagePipe,
-        DotIconModule,
+        DotIconComponent,
         // PrimeNg
         CardModule,
         ButtonModule,
@@ -39,6 +37,8 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingComponent {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+
     vm$: Observable<{
         experimentId: string;
         scheduling: RangeOfDateAndTime;
@@ -51,10 +51,6 @@ export class DotExperimentsConfigurationSchedulingComponent {
 
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
 
     /**
      * Open the sidebar to set the Scheduling

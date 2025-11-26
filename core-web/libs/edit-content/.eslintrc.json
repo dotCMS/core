@@ -1,10 +1,15 @@
 {
-    "extends": ["../../.eslintrc.json"],
+    "extends": ["../../.eslintrc.base.json"],
     "ignorePatterns": ["!**/*"],
     "overrides": [
         {
             "files": ["*.ts"],
+            "extends": [
+                "plugin:@nx/angular",
+                "plugin:@angular-eslint/template/process-inline-templates"
+            ],
             "rules": {
+                "@angular-eslint/no-host-metadata-property": 0,
                 "@angular-eslint/directive-selector": [
                     "error",
                     {
@@ -20,12 +25,12 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ]
-            },
-            "extends": [
-                "plugin:@nx/angular",
-                "plugin:@angular-eslint/template/process-inline-templates"
-            ]
+                ],
+                "@angular-eslint/prefer-standalone": "off",
+                "@angular-eslint/no-input-rename": "off",
+                "@angular-eslint/no-output-on-prefix": "off",
+                "@angular-eslint/no-output-native": "off"
+            }
         },
         {
             "files": ["*.html"],

@@ -1,91 +1,92 @@
-<ng-container *ngIf="userData$ | async as user">
+@if (userData$ | async; as user) {
     <div class="grid dot-starter-top-content">
         <div class="col-12 dot-starter-header">
             <div>
-                <h2 class="dot-starter-title" data-testId="dot-starter-title">
-                    {{ 'starter.title' | dm }}
-                </h2>
                 <p
-                    class="dot-starter-description"
-                    [innerHTML]="'starter.description' | dm : [user.username]"></p>
+                    [innerHTML]="'starter.description' | dm: [user.username]"
+                    class="dot-starter-description mt-5"></p>
             </div>
             <p-checkbox
+                (onChange)="handleVisibility($event.checked)"
                 [binary]="true"
-                [label]="'starter.dont.show' | dm"
-                (onChange)="handleVisibility($event.checked)"></p-checkbox>
+                [label]="'starter.dont.show' | dm" />
         </div>
         <div class="col-12">
             <div class="grid">
                 <div class="md:col-12">
                     <div class="dot-starter-top-main__section">
-                        <a
-                            class="dot-starter-top-main__block"
-                            *ngIf="user.showCreateDataModelLink"
-                            data-testId="starter.main.link.data.model"
-                            routerLink="/content-types-angular/create/content">
-                            <div class="dot-starter-top-main__link-number">
-                                <span></span>
-                            </div>
-                            <div class="dot-starter-top-main__link-data">
-                                <h4>
-                                    {{ 'starter.main.link.data.model.title' | dm }}
-                                </h4>
-                                <p>
-                                    {{ 'starter.main.link.data.model.description' | dm }}
-                                </p>
-                            </div>
-                        </a>
-                        <a
-                            class="dot-starter-top-main__block"
-                            *ngIf="user.showCreateContentLink"
-                            data-testId="starter.main.link.content"
-                            routerLink="/c/content/new/webPageContent">
-                            <div class="dot-starter-top-main__link-number">
-                                <span></span>
-                            </div>
-                            <div class="dot-starter-top-main__link-data">
-                                <h4>
-                                    {{ 'starter.main.link.add.content.title' | dm }}
-                                </h4>
-                                <p>
-                                    {{ 'starter.main.link.add.content.description' | dm }}
-                                </p>
-                            </div>
-                        </a>
-                        <a
-                            class="dot-starter-top-main__block"
-                            *ngIf="user.showCreateTemplateLink"
-                            data-testId="starter.main.link.design.layout"
-                            routerLink="/templates/new/designer">
-                            <div class="dot-starter-top-main__link-number">
-                                <span></span>
-                            </div>
-                            <div class="dot-starter-top-main__link-data">
-                                <h4>
-                                    {{ 'starter.main.link.design.layout.title' | dm }}
-                                </h4>
-                                <p>
-                                    {{ 'starter.main.link.design.layout.description' | dm }}
-                                </p>
-                            </div>
-                        </a>
-                        <a
-                            class="dot-starter-top-main__block"
-                            *ngIf="user.showCreatePageLink"
-                            data-testId="starter.main.link.create.page"
-                            routerLink="/c/content/new/htmlpageasset">
-                            <div class="dot-starter-top-main__link-number">
-                                <span></span>
-                            </div>
-                            <div class="dot-starter-top-main__link-data">
-                                <h4>
-                                    {{ 'starter.main.link.create.page.title' | dm }}
-                                </h4>
-                                <p>
-                                    {{ 'starter.main.link.create.page.description' | dm }}
-                                </p>
-                            </div>
-                        </a>
+                        @if (user.showCreateDataModelLink) {
+                            <a
+                                class="dot-starter-top-main__block"
+                                data-testId="starter.main.link.data.model"
+                                routerLink="/content-types-angular/create/content">
+                                <div class="dot-starter-top-main__link-number">
+                                    <span></span>
+                                </div>
+                                <div class="dot-starter-top-main__link-data">
+                                    <h4>
+                                        {{ 'starter.main.link.data.model.title' | dm }}
+                                    </h4>
+                                    <p>
+                                        {{ 'starter.main.link.data.model.description' | dm }}
+                                    </p>
+                                </div>
+                            </a>
+                        }
+                        @if (user.showCreateContentLink) {
+                            <a
+                                class="dot-starter-top-main__block"
+                                data-testId="starter.main.link.content"
+                                routerLink="/c/content/new/webPageContent">
+                                <div class="dot-starter-top-main__link-number">
+                                    <span></span>
+                                </div>
+                                <div class="dot-starter-top-main__link-data">
+                                    <h4>
+                                        {{ 'starter.main.link.add.content.title' | dm }}
+                                    </h4>
+                                    <p>
+                                        {{ 'starter.main.link.add.content.description' | dm }}
+                                    </p>
+                                </div>
+                            </a>
+                        }
+                        @if (user.showCreateTemplateLink) {
+                            <a
+                                class="dot-starter-top-main__block"
+                                data-testId="starter.main.link.design.layout"
+                                routerLink="/templates/new/designer">
+                                <div class="dot-starter-top-main__link-number">
+                                    <span></span>
+                                </div>
+                                <div class="dot-starter-top-main__link-data">
+                                    <h4>
+                                        {{ 'starter.main.link.design.layout.title' | dm }}
+                                    </h4>
+                                    <p>
+                                        {{ 'starter.main.link.design.layout.description' | dm }}
+                                    </p>
+                                </div>
+                            </a>
+                        }
+                        @if (user.showCreatePageLink) {
+                            <a
+                                class="dot-starter-top-main__block"
+                                data-testId="starter.main.link.create.page"
+                                routerLink="/c/content/new/htmlpageasset">
+                                <div class="dot-starter-top-main__link-number">
+                                    <span></span>
+                                </div>
+                                <div class="dot-starter-top-main__link-data">
+                                    <h4>
+                                        {{ 'starter.main.link.create.page.title' | dm }}
+                                    </h4>
+                                    <p>
+                                        {{ 'starter.main.link.create.page.description' | dm }}
+                                    </p>
+                                </div>
+                            </a>
+                        }
                     </div>
                 </div>
                 <div class="md:col-12 dot-starter-offset">
@@ -93,7 +94,6 @@
                         {{ 'starter.side.title' | dm }}
                     </h5>
                 </div>
-
                 <div class="md:col-12 lg:col-6 dot-starter-offset">
                     <a
                         class="dot-starter-top-secondary__block"
@@ -153,7 +153,6 @@
                             </p>
                         </div>
                     </a>
-
                     <a
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"
@@ -172,7 +171,6 @@
             </div>
         </div>
     </div>
-
     <div class="dot-starter-bottom-content">
         <div class="md:col-12">
             <h3 class="dot-starter-top-main__title" data-test="dot-resources-title">
@@ -276,4 +274,4 @@
             </a>
         </div>
     </div>
-</ng-container>
+}

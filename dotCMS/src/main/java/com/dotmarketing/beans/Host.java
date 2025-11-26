@@ -1,6 +1,7 @@
 package com.dotmarketing.beans;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
@@ -10,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
+import io.vavr.control.Try;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +26,8 @@ import java.util.Map;
  */
 public class Host extends Contentlet implements Permissionable,Treeable,Parentable {
 
-	/**
+    public static final String SYSTEM_HOST_SITENAME = "System Host";
+    /**
      *
      */
 	private static final long serialVersionUID = 1L;
@@ -61,7 +64,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
     public static final String HOST_VELOCITY_VAR_NAME = "Host";
     
     public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
-    
+
 	@Override
 	public String getInode() {
 		return super.getInode();
@@ -185,7 +188,14 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	}
 
 	public String getTagStorage() {
-		return (String) map.get(TAG_STORAGE);
+		Host host = Try.of(()->
+				APILocator.getHostAPI().find(map.get(TAG_STORAGE).toString(), APILocator.systemUser(), false)).getOrNull();
+
+		if(UtilMethods.isSet(()->host.getIdentifier())) {
+			return host.getIdentifier();
+		}
+
+		return Host.SYSTEM_HOST;
 	}
 
 	public void setTagStorage(String tagStorageId) {

@@ -15,21 +15,23 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -72,6 +74,9 @@ class PushCommandIT extends CommandTest {
     @Spy
     PushCommand pushCommand;
 
+    @Inject
+    Logger logger;
+
     @BeforeEach
     void setUp() throws IOException {
         MockitoAnnotations.openMocks(this);
@@ -110,6 +115,38 @@ class PushCommandIT extends CommandTest {
             deleteTempDirectory(tempFolder);
         }
     }
+
+    /**
+     * Given scenario: A push command is executed using a relative path.
+     * Expected result: The command should find the folder to push and complete successfully with an exit code 0 (OK).
+     * @throws IOException
+     */
+    @Test
+    void testPushWithRelativePath() throws IOException {
+
+        // Create a temporal folder for the push
+        var tempFolder = createTempFolder();
+        // And a workspace for it
+        workspaceManager.getOrCreate(tempFolder);
+
+        // Get the relative path of the temporal folder
+        var relativePath = Path.of("").toAbsolutePath().relativize(tempFolder.toAbsolutePath());
+
+        try {
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                final int status = commandLine.execute(PushCommand.NAME,
+                        relativePath.toString(), "--dry-run");
+                Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+
 
     /**
      * This test checks for a situation where an incorrect option is passed to the push command.
@@ -300,5 +337,233 @@ class PushCommandIT extends CommandTest {
             deleteTempDirectory(tempFolder);
         }
     }
+
+    /**
+     * Given scenario: A push command is executed in watch mode. Then we simulate changes in the file system using a separate thread
+     * Expected Result: The command that starts in watch mode remains suspended until changes are made. Then it should process the changes and exit.
+     * We simply verify that the command reports it
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Test
+    void testSimplePushInWatchMode() throws IOException, InterruptedException {
+
+        // Create a temporary folder for the push
+        Path tempFolder = createTempFolder();
+        // And a workspace for it
+        workspaceManager.getOrCreate(tempFolder);
+
+        try {
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                // Latch to signal when the changes are done
+                CountDownLatch changeLatch = new CountDownLatch(1);
+                // Latch to wait for command processing time
+                CountDownLatch commandLatch = new CountDownLatch(1);
+                // Latch to signal that the command has started
+                CountDownLatch commandStartLatch = new CountDownLatch(1);
+                logger.debug("Starting command thread. Command will remain suspended until changes are made in a separate thread");
+                // Start the command execution in a new thread
+                Thread commandThread = new Thread(() -> {
+                    commandLine.setOut(out);
+                    commandLine.setErr(out);
+                    try {
+                        commandStartLatch.countDown(); // Signal that the command has started
+                        commandLine.execute(PushCommand.NAME,
+                                tempFolder.toAbsolutePath().toString(), "--watch", "1");
+                    } catch (Exception e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        commandLatch.countDown();
+                    }
+                });
+                commandThread.start();
+
+                // Wait for the command to start
+                commandStartLatch.await();
+
+                // Scheduled executor for introducing delay
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+                    // Simulate changes in the tempFolder with a delay
+                    logger.debug(
+                            "Starting change task. This will create a new file in the temp folder (workspace) and feed it with content every second. during: a 5 seconds total time");
+                    Runnable changeTask = () -> {
+                        try {
+                            final Path newFile = tempFolder.resolve("newFile.txt");
+                            Files.createFile(newFile);
+                            for (int i = 0; i < 5; i++) {
+                                // Create a new file
+                                Files.writeString(newFile, "Hello, world! " + i + "\n");
+                                // Use a latch to control timing
+                                CountDownLatch innerLatch = new CountDownLatch(1);
+                                logger.debug(" File updated now will be waiting for 1 second");
+                                scheduler.schedule(innerLatch::countDown, 1, TimeUnit.SECONDS);
+                                innerLatch.await();
+                            }
+                        } catch (IOException | InterruptedException e) {
+                            // Quietly ignore exceptions
+                        } finally {
+                            changeLatch.countDown();
+                        }
+                    };
+
+                    // Schedule the change task to run immediately
+                    scheduler.execute(changeTask);
+
+                    // Wait for changes to be made
+                    changeLatch.await();
+
+                    // Allow some time for the command to process the changes
+                    commandLatch.await(10, TimeUnit.SECONDS);
+
+                    // Interrupt the command thread to simulate sending a signal like CTRL-C
+                    logger.debug(
+                            "Interrupting command thread. This will simulate a signal like CTRL-C");
+                    commandThread.interrupt();
+                    commandThread.join();
+                    logger.debug("Shutting down scheduler");
+                    // Terminate the scheduler
+                    scheduler.shutdown();
+                    scheduler.awaitTermination(10, TimeUnit.SECONDS);
+
+                    logger.debug("Running assertions");
+                    // Validate the output of the command
+                    final String output = writer.toString();
+                    Assertions.assertTrue(output.contains("No changes in Languages to push"));
+                    Assertions.assertTrue(output.contains("No changes in Sites to push"));
+                    Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
+                    Assertions.assertTrue(output.contains(" No changes in Files to push"));
+
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+
+    /**
+     * Given scenario: A push command is executed in watch mode. Then we simulate changes in the file system using a separate thread
+     * The path to the workspace is a relative path e.g.  files/live/en-us/default
+     * We're trying to simulate a case on which we're running the command from a valid existing workspace
+     * But passing a relative path to the files folder we want to push
+     * Expected Result: The command that starts in watch mode remains suspended until changes are made. Then it should process the changes and exit.
+     * It should be able to resolve any relative path and succeed at pushing the changes. No exceptions should be thrown
+     * we should be able to deal with relative paths
+     * examples
+     *    -  push files/demo.com/en-us/live/folder-to-watch --watch
+     *    -  push ./files/demo.com/en-us/live/folder-to-watch --watch
+     *
+     * @throws IOException if there's a problem accessing the files and folders needed for the test.
+     * @throws InterruptedException if there's a problem with the thread synchronization.
+     */
+    @Test
+    void testPullThenPushUsingRelativePathInWatchMode() throws IOException, InterruptedException {
+        // Create a temporary folder for the push
+        Path tempFolder = createTempFolder();
+        // And a workspace for it
+        workspaceManager.getOrCreate(tempFolder);
+        try {
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                //Let's seed the workspace with some content
+                int status = commandLine.execute(PullCommand.NAME,
+                        "--workspace", tempFolder.toAbsolutePath().toString());
+
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                Assertions.assertTrue(tempFolder.toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("content-types").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("languages").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("sites").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("files").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve(Path.of("files","live")).toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve(Path.of("files","working")).toFile().isDirectory());
+
+                //Now let's create a relative path to the workspace
+                final Path folderToWatchPath = Path.of("files", "live", "en-us", "default", "folder-to-watch");
+                final Path resolvedFolderToWatchPath = tempFolder.resolve(folderToWatchPath);
+                //Create the directory we're going to watch
+                Files.createDirectories(resolvedFolderToWatchPath);
+
+                // Latch to signal when the changes are done
+                CountDownLatch changeLatch = new CountDownLatch(1);
+                // Latch to wait for command processing time
+                CountDownLatch commandLatch = new CountDownLatch(1);
+                // Latch to signal that the command has started
+                CountDownLatch commandStartLatch = new CountDownLatch(1);
+                logger.debug("Starting command thread. Command will remain suspended until changes are made in a separate thread");
+                // Start the command execution in a new thread This time using a relative path
+                Thread commandThread = new Thread(() -> {
+                    commandLine.setOut(out);
+                    commandLine.setErr(out);
+                    try {
+                        commandStartLatch.countDown(); // Signal that the command has started
+                        commandLine.execute(PushCommand.NAME,
+                                // Path to the files folder
+                                resolvedFolderToWatchPath.toString(),
+                                "--watch", "1");
+                    } catch (Exception e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        commandLatch.countDown();
+                    }
+                });
+                commandThread.start();
+
+                // Wait for the command to start
+                commandStartLatch.await();
+
+                //Now Let's introduce a change in the workspace
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+                // Simulate changes in the tempFolder with a delay
+                Runnable changeTask = () -> {
+                    try {
+                        final Path newFile = resolvedFolderToWatchPath.resolve("newFile.txt");
+                        Files.createFile(newFile);
+                        for (int i = 0; i < 5; i++) {
+                            // Create a new file
+                            Files.writeString(newFile, "Hello, world! " + i + "\n");
+                            // Use a latch to control timing
+                            CountDownLatch innerLatch = new CountDownLatch(1);
+                            logger.debug(" File updated now will be waiting for 1 second");
+                            scheduler.schedule(innerLatch::countDown, 1, TimeUnit.SECONDS);
+                            innerLatch.await();
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        changeLatch.countDown();
+                    }
+                };
+
+                // Schedule the change task to run immediately
+                scheduler.execute(changeTask);
+
+                // Wait for changes to be made
+                changeLatch.await();
+
+                // Allow some time for the command to process the changes
+                commandLatch.await(10, TimeUnit.SECONDS);
+                logger.debug("Running assertions");
+                // Validate the output of the command
+                final String output = writer.toString();
+                Assertions.assertTrue(output.contains("Running in Watch Mode on"));
+                Assertions.assertTrue(output.contains("No changes in Languages to push"));
+                Assertions.assertTrue(output.contains("No changes in Sites to push"));
+                Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
+                //Asser no exceptions were thrown
+                Assertions.assertFalse(output.contains("Exception"));
+                Assertions.assertFalse(output.contains("Unable to access the path"));
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
 
 }

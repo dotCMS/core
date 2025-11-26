@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
             <div class="flex justify-content-between">
@@ -8,117 +8,115 @@
                         [size]="16"
                         data-testId="goal-title-step-done"
                         name="check_circle"></dot-icon>
-                    <span class="p-label-input-required" data-testId="goals-card-name">{{
-                        'experiments.configure.goals.name' | dm
-                    }}</span>
+                    <span class="p-label-input-required" data-testId="goals-card-name">
+                        {{ 'experiments.configure.goals.name' | dm }}
+                    </span>
                 </h2>
             </div>
-
             <h3 class="flex description" data-testId="goals-empty-msg">
                 {{ 'experiments.configure.goals.no.seleted.goal.message' | dm }}
             </h3>
         </ng-template>
-
-        <ng-container *ngIf="vm.goals">
+        @if (vm.goals) {
             <div class="grid">
                 <div class="col-12">
-                    <dot-experiments-details-table
-                        *ngIf="vm.goals.primary.conditions.length; else titleTpl"
-                        [data]="vm.goals.primary.conditions"
-                        [isEmpty]="false"
-                        [title]="titleTpl">
-                        <ng-template #headers>
-                            <div
-                                class="flex col flex-wrap align-items-center"
-                                data-testId="goal-header-parameter">
-                                {{
-                                    vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
-                                        ? ('experiments.goal.conditions.query.parameter' | dm)
-                                        : ('experiments.goal.conditions.parameter' | dm)
-                                }}
+                    @if (vm.goals.primary.conditions.length) {
+                        <dot-experiments-details-table
+                            [data]="vm.goals.primary.conditions"
+                            [isEmpty]="false"
+                            [title]="titleTpl">
+                            <ng-template #headers>
+                                <div
+                                    class="flex col flex-wrap align-items-center"
+                                    data-testId="goal-header-parameter">
+                                    {{
+                                        vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
+                                            ? ('experiments.goal.conditions.query.parameter' | dm)
+                                            : ('experiments.goal.conditions.parameter' | dm)
+                                    }}
+                                </div>
+                                <div class="flex col flex-wrap align-items-center">
+                                    {{ 'experiments.goal.conditions.operator' | dm }}
+                                </div>
+                                <div class="flex col flex-wrap align-items-center">
+                                    {{ 'experiments.goal.conditions.value' | dm }}
+                                </div>
+                            </ng-template>
+                            <ng-template #rows let-row>
+                                <div class="flex col flex-wrap align-items-center capitalize">
+                                    @if (row.isDefault) {
+                                        <span data-testId="goal-default-parameter">
+                                            {{ 'experiments.goal.conditions.default' | dm }}
+                                        </span>
+                                        -
+                                    }
+                                    {{
+                                        vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
+                                            ? row.value.name
+                                            : row.parameter
+                                    }}
+                                </div>
+                                <div class="flex col flex-wrap align-content-center capitalize">
+                                    {{ row.operator | lowercase }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center"
+                                    data-testId="goal-value">
+                                    {{
+                                        vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
+                                            ? row.value.value
+                                            : row.value
+                                    }}
+                                </div>
+                            </ng-template>
+                        </dot-experiments-details-table>
+                    } @else {
+                        <div class="flex align-items-center flex-1">
+                            <h3 class="flex-grow-1 flex gap-1 detail__title">
+                                <span data-testId="goal-label-type-goal">
+                                    {{ GOALS_METADATA_MAP[vm.goals.primary.type].label | dm }}
+                                </span>
+                                -
+                                <span data-testId="goal-label-name-goal">
+                                    {{ vm.goals.primary.name | dm }}
+                                </span>
+                            </h3>
+                            <div class="flex-none flex align-items-center delete">
+                                <div
+                                    [pTooltip]="vm.disabledTooltipLabel | dm"
+                                    [tooltipDisabled]="!vm.disabledTooltipLabel"
+                                    data-testId="tooltip-on-disabled"
+                                    tooltipPosition="bottom">
+                                    <button
+                                        (click)="deleteGoal($event, 'primary', vm.experimentId)"
+                                        [disabled]="vm.disabledTooltipLabel"
+                                        [pTooltip]="'experiments.configure.variants.delete' | dm"
+                                        [tooltipDisabled]="!!vm.disabledTooltipLabel"
+                                        class="p-button-rounded p-button-text p-button-danger"
+                                        data-testId="goal-delete-button"
+                                        icon="pi pi-trash"
+                                        pButton></button>
+                                </div>
                             </div>
-                            <div class="flex col flex-wrap align-items-center">
-                                {{ 'experiments.goal.conditions.operator' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center">
-                                {{ 'experiments.goal.conditions.value' | dm }}
-                            </div>
-                        </ng-template>
-                        <ng-template #rows let-row>
-                            <div class="flex col flex-wrap align-items-center capitalize">
-                                <ng-container *ngIf="row.isDefault"
-                                    ><span data-testId="goal-default-parameter">{{
-                                        'experiments.goal.conditions.default' | dm
-                                    }}</span>
-                                    -
-                                </ng-container>
-                                {{
-                                    vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
-                                        ? row.value.name
-                                        : row.parameter
-                                }}
-                            </div>
-
-                            <div class="flex col flex-wrap align-content-center capitalize">
-                                {{ row.operator | lowercase }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-items-center"
-                                data-testId="goal-value">
-                                {{
-                                    vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
-                                        ? row.value.value
-                                        : row.value
-                                }}
-                            </div>
-                        </ng-template>
-                    </dot-experiments-details-table>
+                        </div>
+                    }
                 </div>
             </div>
-        </ng-container>
+        }
         <ng-template pTemplate="footer">
             <div>
                 <button
-                    class="p-button-sm p-button-outlined"
+                    (click)="openSelectGoalSidebar()"
                     [disabled]="!!vm.goals || !vm.isExperimentADraft || vm.disabledTooltipLabel"
                     [pTooltip]="vm.disabledTooltipLabel | dm"
                     [tooltipDisabled]="!vm.disabledTooltipLabel"
-                    (click)="openSelectGoalSidebar()"
+                    class="p-button-sm p-button-outlined"
                     data-testId="goals-add-button"
                     label="{{ 'experiments.configure.goals.add' | dm }}"
                     pButton></button>
             </div>
         </ng-template>
     </p-card>
-
-    <ng-template #titleTpl>
-        <div class="flex align-items-center flex-1">
-            <h3 class="flex-grow-1 flex gap-1 detail__title">
-                <span data-testId="goal-label-type-goal"
-                    >{{ GOALS_METADATA_MAP[vm.goals.primary.type].label | dm }}
-                </span>
-                -
-                <span data-testId="goal-label-name-goal">{{ vm.goals.primary.name | dm }}</span>
-            </h3>
-            <div class="flex-none flex align-items-center delete">
-                <div
-                    [pTooltip]="vm.disabledTooltipLabel | dm"
-                    [tooltipDisabled]="!vm.disabledTooltipLabel"
-                    data-testId="tooltip-on-disabled"
-                    tooltipPosition="bottom">
-                    <button
-                        class="p-button-rounded p-button-text p-button-danger"
-                        [disabled]="vm.disabledTooltipLabel"
-                        [pTooltip]="'experiments.configure.variants.delete' | dm"
-                        [tooltipDisabled]="!!vm.disabledTooltipLabel"
-                        (click)="deleteGoal($event, 'primary', vm.experimentId)"
-                        data-testId="goal-delete-button"
-                        icon="pi pi-trash"
-                        pButton></button>
-                </div>
-            </div>
-        </div>
-    </ng-template>
-</ng-container>
+}
 
 <ng-container dotDynamic></ng-container>

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -12,9 +12,16 @@ export interface DotContentletLockResponse {
     message: string;
 }
 
+/**
+ * Service to lock and unlock contentlets.
+ *
+ * @export
+ * @class DotContentletLockerService
+ * @deprecated Use DotContentletService.lockContent and DotContentletService.unlockContent instead.
+ */
 @Injectable()
 export class DotContentletLockerService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Lock a content asset

@@ -1,15 +1,26 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+
+import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
+import { DotPageSelectorComponent } from '../../dot-page-selector/dot-page-selector.component';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -33,11 +44,23 @@ interface DotCommentAndAssignValue {
 @Component({
     selector: 'dot-comment-and-assign-form',
     templateUrl: './dot-comment-and-assign-form.component.html',
-    styleUrls: ['./dot-comment-and-assign-form.component.scss']
+    styleUrls: ['./dot-comment-and-assign-form.component.scss'],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        InputTextareaModule,
+        DropdownModule,
+        DotPageSelectorComponent,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>
 {
+    private dotRolesService = inject(DotRolesService);
+    fb = inject(UntypedFormBuilder);
+
     @Input() data: DotCommentAndAssignData;
     @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();
@@ -45,8 +68,6 @@ export class DotCommentAndAssignFormComponent
     dotRoles: SelectItem[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private dotRolesService: DotRolesService, public fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         if (this.data) {

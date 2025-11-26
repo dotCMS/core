@@ -1,0 +1,54 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,Assigned to: ,Status,Issue link,,,,,,,,,,,,,,
+Basic Text Entry,WYSIWYG,WYSIWYG,10,Functional,"1.Enter the text ""Hello, World!"" into the editor.","The text ""Hello, World!"" is displayed in the editor without any formatting.",WYSIWYG editor is open,,,,,,,,,,,,,,,,,,
+Text Formatting,WYSIWYG,WYSIWYG,10,Functional,"1.Select the text.
+2.Click the ""Bold"" button and observe.
+3.Click the ""Italic"" button and observe.
+4.Click the ""Underline"" button and observe.","The selected text appears bold, italicized, and underlined.","WYSIWYG editor is open, and some text is entered.",,,,,,,,,,,,,,,,,,
+Text Alignment,WYSIWYG,WYSIWYG,10,Functional,"1.Select all text.
+2.Click each alignment option (Left, Center, Right, Justify) and observe each time.", The text aligns as per the selected alignment option.,WYSIWYG editor is open with multiple lines of text.,,,,,,,,,,,,,,,,,,
+Font and Font Size Change,WYSIWYG,WYSIWYG,10,Functional,"1.Select the text.
+2.Change the font to ""Arial"" and size to ""16pt.""",The selected text changes to Arial font with a size of 16pt.,WYSIWYG editor is open with some text entered.,,,,,,,,,,,,,,,,,,
+Lists,WYSIWYG,WYSIWYG,10,Functional,"1.Enter a few lines of text.
+2.Select the lines and click the ""Bullet list"" button.
+3.Click the ""Numbered list"" button for another set of lines",Text appears as a bulleted list and a numbered list respectively.,WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Hyperlink Creation,WYSIWYG,WYSIWYG,10,Functional,"1.Select the text.
+2.Click the ""Insert Link"" button and enter a valid URL (e.g., https://example.com).",The selected text becomes a clickable hyperlink redirecting to https://example.com.,WYSIWYG editor is open with some text.,,,,,,,,,,,,,,,,,,
+Image Insertion,WYSIWYG,WYSIWYG,10,Functional,"1.Click the ""Insert Image"" button.
+2.Select a valid image file.",The selected image appears in the editor and can be resized or aligned.,WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Invalid URL in Hyperlink,WYSIWYG,WYSIWYG,10,Functional,"1.Select the text.
+2.Click the ""Insert Link"" button and enter an invalid URL (e.g., invalid_url).","An error message is displayed, or the link is not created.", WYSIWYG editor is open with some text,,,,,,,,,,,,,,,,,,
+Invalid Image File Type,WYSIWYG,WYSIWYG,10,Functional,"1. Attempt to open and edit an existing template.1.Click the ""Insert Image"" button.
+2.Select an unsupported file type (e.g., .exe).","The editor shows an error, preventing the image upload.",WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Oversized Image Upload,WYSIWYG,WYSIWYG,10,Functional,"1.Click the ""Insert Image"" button.
+2.Select an oversized image file (e.g., 50 MB).",The editor displays an error or compresses the image if supported.,WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Empty Input,WYSIWYG,WYSIWYG,10,Functional,1.Attempt to submit content without entering any text or media.,The system handles the submission without error or prompts the user to add content.,WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Long Text Without Spaces,WYSIWYG,WYSIWYG,10,Functional,"1.Enter a very long word (e.g., 200 characters without spaces).",The editor handles the text without breaking layout; text is wrapped or scrollable if necessary.,WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Combination of All Formatting Options,WYSIWYG,WYSIWYG,10,Functional,"1.Select the text.
+2.Apply multiple formatting options (bold, italic, underline, color, alignment).",The text reflects all selected formatting without conflicts.,WYSIWYG editor is open,,,,,,,,,,,,,,,,,,
+Copy-Paste from External Sources,WYSIWYG,WYSIWYG,10,Functional,"1.Copy text from Word or Google Docs with various formatting.
+2.Paste it into the editor.",The pasted content retains formatting as closely as possible to the original.,WYSIWYG editor is open.,,,,,,,,,,,,,,,,,,
+Special Characters and Emojis,WYSIWYG,WYSIWYG,10,Functional,"1.Enter special characters (e.g., ©, %,&,*) into the editor.",The special characters and emojis display correctly without breaking the editor.,WYSIWYG editor is open,,,,,,,,,,,,,,,,,,
+Basic HTML Editing,WYSIWYG,WYSIWYG,10,Functional,"1.Enter basic HTML code, such as <p>Hello, World!</p>.
+2.Switch back to WYSIWYG view to check if the text renders correctly.","""Hello, World!"" displays in the WYSIWYG view as regular text.",WYSIWYG editor is open,,,,,,,,,,,,,,,,,,
+Text Formatting Tags,WYSIWYG,WYSIWYG,10,Functional,"1.Enter HTML tags for formatting, such as <b>Bold</b>, <i>Italic</i>, and <u>Underline</u>.
+ 2.Switch to WYSIWYG view.","The text appears with bold, italic, and underline formatting as specified in the HTML.",WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Adding Links in Code View,WYSIWYG,WYSIWYG,10,Functional,"1.Enter an HTML anchor tag: <a href=""https://example.com"">Example Link</a>.
+2.Switch back to WYSIWYG view.","“Example Link” appears as a clickable hyperlink, opening https://example.com when clicked.", WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Image Tag Addition,WYSIWYG,WYSIWYG,10,Functional,"1.Enter an HTML <img> tag with a valid image URL: <img src=""https://example.com/image.jpg"" alt=""Example Image"">.
+2.Switch to WYSIWYG view.",The image is displayed in the editor with the specified source and alt text, WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Correctly Structured HTML,WYSIWYG,WYSIWYG,10,Functional,"1.Enter properly nested HTML tags, such as <div><p><b>Nested Text</b></p></div>.
+2.Switch back to WYSIWYG view.","""Nested Text"" appears with the correct formatting and hierarchy as per the HTML structure.",WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Incorrect HTML Structure,WYSIWYG,WYSIWYG,10,Functional,"1.Enter incorrectly structured HTML, such as <b><i>Incorrect HTML</b></i>.
+2.Switch to WYSIWYG view and observe the result.","The editor ignores or removes the invalid tag, displaying only the text ""Invalid Tag.""", WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Invalid Attribute Values,WYSIWYG,WYSIWYG,10,Functional,"1.Enter an image tag with an invalid URL, e.g., <img src=""invalid_url"" alt=""Invalid Image"">.
+2.Switch to WYSIWYG view.","The system prevents editing and does not allow automatic saving, displaying a permission error message.",WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Unsupported File Types in Code,WYSIWYG,WYSIWYG,10,Functional,"1.Enter an <embed> tag with an unsupported file type, such as <embed src=""file.exe"">.
+2.Switch to WYSIWYG view.",The editor ignores the tag or displays an error indicating the file type is unsupported.,WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Long HTML Content,WYSIWYG,WYSIWYG,10,Functional,"1.Paste a large amount of HTML content (e.g., 10,000+ characters).
+2.Switch to WYSIWYG view.",The editor handles the large content smoothly without lag or crash.,WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Invalid Inline Style Syntax,WYSIWYG,WYSIWYG,10,Functional,"1.Add an HTML element with an inline style using incorrect syntax: <p style=""color:; font-weight:bold;"">Styled Text</p>.
+2.Switch to WYSIWYG view.","The editor ignores the invalid style, but the text ""Styled Text"" remains visible.",WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Concurrent Editing in Code and WYSIWYG Views,WYSIWYG,WYSIWYG,10,Functional,"1.Make changes to the HTML in code view.
+2.Quickly switch to WYSIWYG view, then back to code view.","The changes remain consistent between views, and no data is lost.", WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,
+Invalid Inline Event Handler,WYSIWYG,WYSIWYG,10,Functional,"1.Enter an element with an invalid inline event handler: <button onclick=""invalidFunction()"">Click Me</button>.
+2.Switch to WYSIWYG view and click the button.","The button displays in the WYSIWYG view, but the invalid function does not execute or cause errors.", WYSIWYG editor is open in code view.,,,,,,,,,,,,,,,,,,

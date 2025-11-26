@@ -1,0 +1,8 @@
+@if (isEditMode) {
+    <editor
+        #tinyEditor
+        [init]="init"
+        [initialValue]="content"
+        (onMouseDown)="onMouseDown($event)"
+        (onFocusOut)="onFocusOut()" />
+}

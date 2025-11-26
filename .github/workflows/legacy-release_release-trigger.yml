@@ -1,0 +1,69 @@
+name: Release Trigger
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd)'
+        required: true
+      commit_hash:
+        description: 'Commit Hash'
+        required: true
+
+jobs:
+  release-trigger:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: Create Release Branch
+        id: create-release-branch
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+          
+          RELEASE_VERSION=${{ github.event.inputs.release_version }}
+          RELEASE_TAG="v${RELEASE_VERSION}"
+          RELEASE_BRANCH="release-${RELEASE_VERSION}"
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
+          echo "RELEASE_BRANCH=${RELEASE_BRANCH}" >> $GITHUB_ENV
+          
+          if git rev-parse "${RELEASE_TAG}" >/dev/null 2>&1; then 
+            echo "Tag ${RELEASE_TAG} exists, removing it"
+            git push origin :refs/tags/${RELEASE_TAG}
+          fi
+
+          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${RELEASE_BRANCH} | wc -l | tr -d '[:space:]')
+          [[ "${remote}" == '1' ]] \
+            && echo "Release branch ${RELEASE_BRANCH} already exists, removing it" \
+            && git push origin :${RELEASE_BRANCH}
+          
+          git reset --hard ${{ github.event.inputs.commit_hash }}
+          git checkout -b ${RELEASE_BRANCH}
+          git push origin ${RELEASE_BRANCH}
+
+      - name: Modify gradle.properties
+        run: |
+          sed -i 's/dotcmsReleaseVersion=.*/dotcmsReleaseVersion=${{ env.RELEASE_VERSION }}/' dotCMS/gradle.properties
+          git commit -am "Update dotCmsReleaseVersion to ${{ env.RELEASE_VERSION }}"
+          RELEASE_COMMIT=$(git log -1 --pretty=%H)
+          echo "RELEASE_COMMIT: ${RELEASE_COMMIT}"
+          git push origin ${{ env.RELEASE_BRANCH }}
+          echo "RELEASE_COMMIT=${RELEASE_COMMIT}" >> $GITHUB_ENV
+
+      - name: Create Release
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/dotCMS/core/releases \
+            -d '{"tag_name": "${{ env.RELEASE_TAG }}", "name": "Release ${{ env.RELEASE_VERSION }}", "target_commitish": "${{ env.RELEASE_COMMIT }}", "draft": false, "prerelease": false, "generate_release_notes": false}'

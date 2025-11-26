@@ -1,11 +1,14 @@
 @use "variables" as *;
 
 .p-contextmenu {
-    padding: $spacing-1 0;
+    padding: $spacing-0;
     background: $white;
     color: $black;
     border: 0 none;
-    box-shadow: 0 2px 4px -1px $color-palette-black-op-20, 0 4px 5px 0 $color-palette-black-op-10,
+    border-radius: $border-radius-md;
+    box-shadow:
+        0 2px 4px -1px $color-palette-black-op-20,
+        0 4px 5px 0 $color-palette-black-op-10,
         0 1px 10px 0 $color-palette-black-op-10;
     width: 12.5rem;
 }
@@ -48,16 +51,35 @@
 }
 
 .p-contextmenu .p-menuitem-link:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
+    background: $bg-highlight;
+    outline: 2px solid $color-palette-primary;
+    outline-offset: -2px;
+}
+
+/* PrimeNG keyboard navigation focus styles */
+.p-contextmenu .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus > .p-menuitem-content {
+    background: $bg-highlight;
+}
+
+.p-contextmenu
+    .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+    > .p-menuitem-content
+    .p-menuitem-link {
+    background: $bg-highlight;
+    color: $text-color-hover;
+}
+
+.p-contextmenu .p-menuitem.p-focus > .p-menuitem-content .p-menuitem-text {
+    color: $text-color-hover;
 }
 
 .p-contextmenu .p-submenu-list {
     padding: $spacing-1 0;
     background: $white;
     border: 0 none;
-    box-shadow: 0 2px 4px -1px $color-palette-black-op-20, 0 4px 5px 0 $color-palette-black-op-10,
+    box-shadow:
+        0 2px 4px -1px $color-palette-black-op-20,
+        0 4px 5px 0 $color-palette-black-op-10,
         0 1px 10px 0 $color-palette-black-op-10;
 }
 
@@ -80,5 +102,9 @@
 }
 
 .p-contextmenu .p-submenu-icon {
-    font-size: 0.875rem;
+    font-size: $font-size-sm;
+}
+
+.p-contextmenu ul {
+    outline: none;
 }

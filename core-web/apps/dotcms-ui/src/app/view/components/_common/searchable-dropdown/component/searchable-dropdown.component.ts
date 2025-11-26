@@ -1,6 +1,6 @@
-import * as _ from 'lodash';
 import { fromEvent } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
@@ -17,15 +17,20 @@ import {
     SimpleChange,
     SimpleChanges,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { PrimeTemplate } from 'primeng/api';
-import { DataView } from 'primeng/dataview';
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { ButtonModule } from 'primeng/button';
+import { DataView, DataViewLazyLoadEvent, DataViewModule } from 'primeng/dataview';
+import { InputTextModule } from 'primeng/inputtext';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { debounceTime, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Dropdown with pagination and global search
@@ -43,15 +48,27 @@ import { debounceTime, tap } from 'rxjs/operators';
     ],
     selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
-    templateUrl: './searchable-dropdown.component.html'
+    templateUrl: './searchable-dropdown.component.html',
+    imports: [
+        CommonModule,
+        FormsModule,
+        ButtonModule,
+        DataViewModule,
+        InputTextModule,
+        OverlayPanelModule,
+        DotIconComponent,
+        DotMessagePipe
+    ]
 })
 export class SearchableDropdownComponent
     implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
 {
+    private cd = inject(ChangeDetectorRef);
+
     @Input()
     data: Record<string, unknown>[];
 
-    @Input() action: (action: unknown) => void;
+    @Input() action: (event: Event) => void;
 
     @Input()
     labelPropertyName: string | string[];
@@ -143,24 +160,11 @@ export class SearchableDropdownComponent
     value: unknown;
     overlayPanelMinHeight: string;
     options: unknown[];
-    label: string;
+    label: string | null = null;
     externalSelectTemplate: TemplateRef<unknown>;
 
     selectedOptionIndex = 0;
     selectedOptionValue = '';
-
-    keyMap: string[] = [
-        'Shift',
-        'Alt',
-        'Control',
-        'Meta',
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight'
-    ];
-
-    constructor(private cd: ChangeDetectorRef) {}
 
     propagateChange = (_: unknown) => {
         /**/
@@ -188,12 +192,12 @@ export class SearchableDropdownComponent
                             this.selectDropdownOption(keyboardEvent.key);
                         }
                     }),
+                    map((keyboardEvent: KeyboardEvent) => keyboardEvent.target['value']),
+                    distinctUntilChanged(),
                     debounceTime(500)
                 )
-                .subscribe((keyboardEvent: KeyboardEvent) => {
-                    if (!this.isModifierKey(keyboardEvent.key)) {
-                        this.filterChange.emit(keyboardEvent.target['value']);
-                    }
+                .subscribe((value: string) => {
+                    this.filterChange.emit(value);
                 });
         }
     }
@@ -201,7 +205,7 @@ export class SearchableDropdownComponent
     ngAfterContentInit() {
         this.totalRecords = this.totalRecords || this.data?.length;
         this.templates.forEach((item: PrimeTemplate) => {
-            if (item.getType() === 'listItem') {
+            if (item.getType() === 'list') {
                 this.externalItemListTemplate = item.template;
             } else if (item.getType() === 'select') {
                 this.externalSelectTemplate = item.template;
@@ -261,13 +265,17 @@ export class SearchableDropdownComponent
      * @param {PaginationEvent} event
      * @memberof SearchableDropdownComponent
      */
-    paginate(event: PaginationEvent): void {
-        const paginationEvent = Object.assign({}, event);
+    paginate(event: DataViewLazyLoadEvent): void {
+        const paginationEvent = {
+            first: event.first,
+            rows: event.rows,
+            filter: ''
+        };
         if (this.searchInput) {
             paginationEvent.filter = this.searchInput.nativeElement.value;
         }
 
-        this.pageChange.emit(paginationEvent);
+        this.pageChange.emit(paginationEvent as PaginationEvent);
     }
 
     /**
@@ -399,7 +407,7 @@ export class SearchableDropdownComponent
 
     private setOptions(change: SimpleChanges): void {
         if (change.data && change.data.currentValue) {
-            this.options = _.cloneDeep(change.data.currentValue).map((item) => {
+            this.options = structuredClone(change.data.currentValue).map((item) => {
                 item.label = this.getItemLabel(item);
 
                 return item;
@@ -407,10 +415,6 @@ export class SearchableDropdownComponent
             this.selectedOptionValue = this.getItemLabel(this.options[0]);
             this.selectedOptionIndex = 0;
         }
-    }
-
-    private isModifierKey(key: string): boolean {
-        return this.keyMap.includes(key);
     }
 
     private usePlaceholder(placeholderChange: SimpleChange): boolean {
@@ -423,13 +427,13 @@ export class SearchableDropdownComponent
         this.setLabel();
     }
 
-    private getValueLabelPropertyName(): string {
+    public getValueLabelPropertyName(): string {
         return Array.isArray(this.labelPropertyName)
             ? this.labelPropertyName[0]
             : this.labelPropertyName;
     }
 
-    private getValueToPropagate(): string {
+    private getValueToPropagate() {
         return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }

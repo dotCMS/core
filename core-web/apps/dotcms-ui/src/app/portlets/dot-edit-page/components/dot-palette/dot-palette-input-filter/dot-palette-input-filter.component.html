@@ -1,25 +1,23 @@
-<button
-    *ngIf="goBackBtn"
-    class="dot-palette-input-filter__back-btn"
-    data-testId="goBackBtn"
-    (click)="goBack.emit()"
->
-    <dot-icon data-testId="goBack" name="keyboard_arrow_left" size="18"></dot-icon>
-</button>
+@if (goBackBtn) {
+    <button
+        (click)="goBack.emit()"
+        class="dot-palette-input-filter__back-btn"
+        data-testId="goBackBtn">
+        <dot-icon data-testId="goBack" name="keyboard_arrow_left" size="18"></dot-icon>
+    </button>
+}
 
 <input
-    #searchInput
-    data-testId="searchInput"
     [(ngModel)]="value"
     [placeholder]="'Search' | dm | uppercase"
+    #searchInput
+    data-testId="searchInput"
     pInputText
     type="text"
-    class="p-inputtext-sm"
-/>
+    class="p-inputtext-sm" />
 
 <dot-icon
     name="search"
     class="dot-palette-input-filter__search-icon"
     data-testId="searchIcon"
-    size="18"
-></dot-icon>
+    size="18"></dot-icon>

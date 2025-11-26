@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import javax.ws.rs.NotSupportedException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -267,5 +268,4 @@ public class Category extends Inode implements Serializable, ManifestItem {
 				.title(this.getCategoryName())
 				.build();
 	}
-
 }

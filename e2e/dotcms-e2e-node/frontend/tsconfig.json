@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@pages": ["./src/pages/index"],
+      "@locators/*": ["./src/locators/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@data/*": ["./src/data/*"],
+      "@models/*": ["./src/models/*"],
+      "@requests/*": ["./src/requests/*"],
+      "@components/*": ["./src/components/*"]
+    }
+  }
+}

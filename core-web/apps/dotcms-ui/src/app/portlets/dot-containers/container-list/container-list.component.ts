@@ -1,21 +1,30 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
+    inject,
     OnDestroy,
     QueryList,
     ViewChild,
     ViewChildren
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
-import { Menu } from 'primeng/menu';
+import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
+import { TableModule } from 'primeng/table';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotMessageDisplayService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
@@ -24,45 +33,81 @@ import {
     DotContentState,
     CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType
+    DotMessageType,
+    DotActionMenuItem
 } from '@dotcms/dotcms-models';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
+
+import { DotContainerListResolver } from './dot-container-list-resolver.service';
+import { DotContainerListStore } from './store/dot-container-list.store';
+
+import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
+import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
     styleUrls: ['./container-list.component.scss'],
-    providers: [DotContainerListStore]
+    imports: [
+        CommonModule,
+        DotPortletBaseComponent,
+        TableModule,
+        DotContentTypeSelectorComponent,
+        DotMessagePipe,
+        ButtonModule,
+        CheckboxModule,
+        MenuModule,
+        DotAddToBundleComponent,
+        DotActionMenuButtonComponent,
+        DotRelativeDatePipe,
+        ActionHeaderComponent,
+        InputTextModule
+    ],
+    providers: [
+        DotContainerListStore,
+        DotContainerListResolver,
+        DotSiteBrowserService,
+        DotContainersService,
+        DialogService
+    ]
 })
 export class ContainerListComponent implements OnDestroy {
+    private dotMessageService = inject(DotMessageService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dialogService = inject(DialogService);
+    private siteService = inject(SiteService);
+
     @ViewChild('actionsMenu')
     actionsMenu: Menu;
     @ViewChildren('tableRow')
     tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
 
-    vm$ = this.store.vm$;
-    notify$ = this.store.notify$;
+    readonly #store = inject(DotContainerListStore);
+
+    vm$ = this.#store.vm$;
+    notify$ = this.#store.notify$;
 
     selectedContainers: DotContainer[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private store: DotContainerListStore,
-        private dotMessageService: DotMessageService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dialogService: DialogService,
-        private siteService: SiteService
-    ) {
+    constructor() {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
             this.selectedContainers = [];
         });
 
-        this.siteService.switchSite$
-            .pipe(skip(1)) // Skip initialization
-            .subscribe(({ identifier }) => this.store.getContainersByHost(identifier));
+        this.siteService.switchSite$.subscribe(({ identifier }) =>
+            this.#store.getContainersByHost(identifier)
+        );
     }
 
     ngOnDestroy(): void {
@@ -76,7 +121,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     changeContentTypeSelector(value: string) {
-        this.store.getContainersByContentType(value);
+        this.#store.getContainersByContentType(value);
     }
 
     /**
@@ -95,7 +140,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleRowClick(container: DotContainer) {
-        this.store.editContainer(container);
+        this.#store.editContainer(container);
     }
 
     /**
@@ -105,7 +150,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleArchivedFilter(checked: boolean): void {
-        this.store.getContainersByArchiveState(checked);
+        this.#store.getContainersByArchiveState(checked);
     }
 
     /**
@@ -115,7 +160,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     handleQueryFilter(query: string): void {
-        this.store.getContainersByQuery(query);
+        this.#store.getContainersByQuery(query);
     }
 
     /**
@@ -125,7 +170,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof DotContainerListComponent
      */
     loadDataPaginationEvent({ first }: { first: number }): void {
-        this.store.getContainersWithOffset(first);
+        this.#store.getContainersWithOffset(first);
     }
 
     /**
@@ -134,11 +179,11 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     resetBundleIdentifier(): void {
-        this.store.updateBundleIdentifier(null);
+        this.#store.updateBundleIdentifier(null);
     }
 
     setContainerActions(container: DotContainer): DotActionMenuItem[] {
-        return this.store.getContainerActions(container);
+        return this.#store.getContainerActions(container);
     }
 
     /**
@@ -176,7 +221,7 @@ export class ContainerListComponent implements OnDestroy {
                 container.identifier !== 'SYSTEM_CONTAINER' &&
                 container.source !== CONTAINER_SOURCE.FILE
         );
-        this.store.updateSelectedContainers(filterContainers);
+        this.#store.updateSelectedContainers(filterContainers);
     }
 
     private notifyResult(
@@ -194,8 +239,8 @@ export class ContainerListComponent implements OnDestroy {
             this.showToastNotification(message);
         }
 
-        this.store.clearSelectedContainers();
-        this.store.loadCurrentContainersPage();
+        this.#store.clearSelectedContainers();
+        this.#store.loadCurrentContainersPage();
     }
 
     private showToastNotification(message: string): void {

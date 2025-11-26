@@ -1,21 +1,21 @@
-<div class="field" [formGroup]="group">
-    <dot-field-helper
-        *ngIf="helpText && isValidHelperClass()"
-        [message]="helpText"
-    ></dot-field-helper>
-    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
-        'contenttypes.field.properties.value.label' | dm
-    }}</label>
+<div [formGroup]="group" class="flex flex-column">
+    <div class="flex align-items-center flex-wrap">
+        <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
+            {{ 'contenttypes.field.properties.value.label' | dm }}
+        </label>
+        @if (helpText && isValidHelperClass()) {
+            <dot-field-helper [message]="helpText"></dot-field-helper>
+        }
+    </div>
     <dot-textarea-content
-        #value
         [id]="property.name"
         [formControlName]="property.name"
         [show]="['code']"
-        height="15.7rem"
-    ></dot-textarea-content>
+        #value
+        height="15.7rem"></dot-textarea-content>
     <dot-field-validation-message
         [field]="group.controls[property.name]"
-        message="{{ 'contenttypes.field.properties.value.message' | dm }}"
-    >
-    </dot-field-validation-message>
+        message="{{
+            'contenttypes.field.properties.value.message' | dm
+        }}"></dot-field-validation-message>
 </div>

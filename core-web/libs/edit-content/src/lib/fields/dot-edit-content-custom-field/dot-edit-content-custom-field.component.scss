@@ -1,8 +1,23 @@
 @use "variables" as *;
 
+:host.no-label {
+    margin-top: -1rem;
+}
+
 iframe {
+    height: 0;
+    min-height: 0;
+    border: none;
+    overflow: hidden;
     display: block;
     width: 100%;
+    opacity: 0;
+    transition:
+        height $basic-speed ease-in-out,
+        opacity $basic-speed ease-in;
+    &.loaded {
+        opacity: 1;
+    }
 }
 
 .legacy-custom-field--fullscreen {
@@ -14,10 +29,8 @@ iframe {
     left: 0;
 }
 
-p-button {
-    position: absolute;
-    top: $spacing-4;
-    right: $spacing-9;
-    z-index: 99999;
-    cursor: pointer;
+.disabled-input {
+    background-color: $color-palette-gray-100;
+    color: $color-palette-gray-500;
+    cursor: not-allowed;
 }

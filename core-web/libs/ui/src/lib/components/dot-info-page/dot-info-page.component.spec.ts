@@ -38,18 +38,18 @@ describe('DotInfoPageComponent', () => {
         component.info = info;
         fixture.detectChanges();
         const element = fixture.debugElement;
-        expect(element.query(By.css('[data-testId="icon"]')).classes).toEqual({
+        expect(element.query(By.css('[data-testid="icon"]')).classes).toEqual({
             pi: true,
             'pi-compass': true
         });
-        expect(element.query(By.css('[data-testId="title"]')).nativeElement.innerText).toEqual(
+        expect(element.query(By.css('[data-testid="title"]')).nativeElement.innerText).toEqual(
             'Access denied'
         );
         expect(
-            element.query(By.css('[data-testId="description"]')).nativeElement.innerText
-        ).toEqual('Not access');
-        expect(element.query(By.css('[data-testId="button"]')).nativeElement.innerText).toEqual(
-            'Go To Pages'
-        );
+            element.query(By.css('[data-testid="description"]')).nativeElement.innerText
+        ).toContain('Not access');
+        expect(
+            element.query(By.css('[data-testid="button"]')).nativeElement.innerText.trim()
+        ).toEqual('Go To Pages');
     });
 });

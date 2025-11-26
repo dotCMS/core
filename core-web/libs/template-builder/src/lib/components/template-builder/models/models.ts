@@ -1,6 +1,6 @@
 import { GridStackNode, GridStackOptions, GridStackWidget } from 'gridstack';
 
-import { DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
+import { DotContainer, DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 export const SYSTEM_CONTAINER_IDENTIFIER = 'SYSTEM_CONTAINER';
 
@@ -70,6 +70,9 @@ export interface DotTemplateBuilderState {
     layoutProperties: DotTemplateLayoutProperties;
     resizingRowID: string;
     themeId: string;
+    shouldEmit: boolean;
+    templateIdentifier: string;
+    defaultContainer?: DotContainer;
 }
 
 export type WidgetType = 'col' | 'row';

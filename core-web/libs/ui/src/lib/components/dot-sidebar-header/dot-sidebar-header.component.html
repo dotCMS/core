@@ -1,0 +1,19 @@
+<div class="dot-sidebar-header-wrapper">
+    <div class="grid dot-sidebar-header">
+        <div class="flex col align-items-center">
+            <button
+                (click)="closePrimeNgSidebar()"
+                class="p-button-rounded p-button-text"
+                data-testid="header-close-icon"
+                icon="pi pi-times"
+                pButton></button>
+            <h2 data-testid="header-title">{{ dotTitle }}</h2>
+        </div>
+
+        @if (actionButtonTpl) {
+            <div class="col-fixed">
+                <ng-container *ngTemplateOutlet="actionButtonTpl"></ng-container>
+            </div>
+        }
+    </div>
+</div>

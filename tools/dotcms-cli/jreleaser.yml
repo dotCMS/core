@@ -20,12 +20,12 @@ project:
 
   snapshot:
     pattern: .*-SNAPSHOT
-    label: 'dotcms-cli{{projectVersion}}'
+    label: 'dotcms-cli-{{projectVersion}}'
     fullChangelog: true
 
 release:
   github:
-    tagName: 'dotcms-cli{{projectVersion}}'
+    tagName: 'dotcms-cli-{{projectVersion}}'
     releaseName: 'dotcms-cli - {{projectVersion}}'
     overwrite: false
     changelog:
@@ -47,19 +47,26 @@ distributions:
     active: ALWAYS
     stereotype: CLI
     artifacts:
-      - path: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}-runner.jar'
-        transform: '{{artifactsDir}}/dotcms-cli-{{projectVersion}}.jar'
+      - path: '{{m2Dir}}/com/dotcms/dotcms-cli/{{projectVersion}}/dotcms-cli-{{projectVersion}}-runner.jar'
+        platform: 'linux-x86_64'
+        extraProperties:
+          optional: 'true'
+
   dotcms-cli-native:
     type: BINARY
-    artifacts:
-      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
+    artifacts:              
+      - path: '{{artifactsDir}}/cli-artifacts-osx-aarch_64/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
         platform: 'osx-aarch_64'
-      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
+        extraProperties:
+          optional: 'true'
+      - path: '{{artifactsDir}}/cli-artifacts-osx-x86_64/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
         platform: 'osx-x86_64'
-      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
+        extraProperties:
+          optional: 'true'
+      - path: '{{artifactsDir}}/cli-artifacts-linux-x86_64/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
         platform: 'linux-x86_64'
-#      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-windows-x86_64.zip'
-#        platform: 'windows-x86_64'
+        extraProperties:
+          optional: 'true'
 
 upload:
   artifactory:

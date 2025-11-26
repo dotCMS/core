@@ -24,6 +24,26 @@ import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.Base64;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.File;
@@ -62,16 +82,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.imageio.ImageIO;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
+import java.util.Set;
 
 /**
  * Provides several widely used routines that handle, verify or format many data structures, such as
@@ -142,6 +153,8 @@ public class UtilMethods {
     static HashMap<String, String> daysOfWeek = null;
 
     private static final String UTILMETHODS_DEFAULT_ENCODING = "UTF-8";
+
+    private static final Set<String> VECTOR_EXTENSIONS = Set.of("svg", "eps", "ai", "dxf");
 
     public static final java.util.Date pidmsToDate(String d) {
         java.text.ParsePosition pos = new java.text.ParsePosition(0);
@@ -234,11 +247,45 @@ public class UtilMethods {
         }
     }
 
-    public static final boolean isImage(String x) {
-        if (x == null)
+    /**
+     * Checks if a file path corresponds to an image based on its extension.
+     * If the input appears to be a URL, query parameters are removed before checking the extension.
+     *
+     * @param fileName The file path or name to check
+     * @return true if the file has an image extension, false otherwise
+     */
+    public static boolean isImage(final String fileName) {
+        if (UtilMethods.isEmpty(fileName)) {
             return false;
+        }
 
-        return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
+        String cleanFileName = fileName;
+
+        // Check if fileName appears to be a URL
+        boolean isLikelyUrl = cleanFileName.matches("^(https?://|www\\.).+") ||
+                (cleanFileName.contains("/") && cleanFileName.contains("."));
+
+        // Remove query parameters only if it looks like a URL
+        if (isLikelyUrl) {
+            int queryIndex = cleanFileName.indexOf('?');
+            if (queryIndex > 0) {
+                cleanFileName = cleanFileName.substring(0, queryIndex);
+            }
+
+            // Also remove URL fragments as they're not part of the file
+            int fragmentIndex = cleanFileName.indexOf('#');
+            if (fragmentIndex > 0) {
+                cleanFileName = cleanFileName.substring(0, fragmentIndex);
+            }
+        }
+
+        final String imageName = cleanFileName.toLowerCase();
+        for (final String ext : FileUtil.IMAGE_EXTENSIONS.get()) {
+            if (imageName.endsWith(ext)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static final String getMonthFromNow() {
@@ -394,8 +441,12 @@ public class UtilMethods {
         return (x != null);
     }
 
-    public static final boolean isSet(Object x) {
+    public static boolean isSet(Object x) {
         return (x != null);
+    }
+
+    public static boolean isNotSet(Object x) {
+        return !isSet(x);
     }
 
     public static final boolean isSetCrumb(String x) {
@@ -466,6 +517,95 @@ public class UtilMethods {
                 .matches(
                         "((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-z0-9\\._\\-,]+)*[a-z0-9\\-_\\.\\s\\%]+(\\?[a-z0-9=%&\\.\\-,#]+)?",
                         url);
+    }
+
+    public static boolean isValidStrictURL(String urlString) {
+        try {
+            URI uri = new URI(urlString);
+            return uri.getScheme() != null && uri.getHost() != null;
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    public static String fileName(URI uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        try {
+            return Paths.get(uri).getFileName().toString();
+        } catch (Exception e) {
+            // Fallback to manual extraction
+            String path = uri.getPath();
+            return path != null ? path.substring(path.lastIndexOf('/') + 1) : null;
+        }
+    }
+
+
+    /**
+     * Validates if a string follows dotCMS internal path notation: /folder/asset or /asset
+     * Rules:
+     * - Must start with /
+     * - Can have multiple folder levels separated by /
+     * - No empty segments (no //)
+     * - No trailing / unless it's root
+     * - Valid characters for folder/asset names
+     */
+    public static boolean isValidDotCMSPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+
+        // Must start with /
+        if (!path.startsWith("/")) {
+            return false;
+        }
+
+        // Root path is valid
+        if (path.equals("/")) {
+            return true;
+        }
+
+        // Cannot end with / (except root)
+        if (path.endsWith("/")) {
+            return false;
+        }
+
+        // Cannot contain // (double slashes)
+        if (path.contains("//")) {
+            return false;
+        }
+
+        // Split and validate each segment
+        String[] segments = path.split("/");
+
+        // First segment is always empty (because of leading /)
+        for (int i = 1; i < segments.length; i++) {
+            String segment = segments[i];
+
+            // No empty segments
+            if (segment.isEmpty()) {
+                return false;
+            }
+
+            // Validate segment characters (adjust regex as needed for dotCMS rules)
+            if (!isValidPathSegment(segment)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates individual path segment (folder or asset name)
+     * Adjust this regex based on dotCMS naming rules
+     */
+    private static boolean isValidPathSegment(String segment) {
+        // Basic validation - adjust based on dotCMS requirements
+        // This allows alphanumeric, dots, dashes, underscores
+        return segment.matches("^[a-zA-Z0-9._-]+$");
     }
 
     public static final boolean isValidEmail(Object email) {
@@ -1026,13 +1166,31 @@ public class UtilMethods {
         return sb.toString();
     }
 
-    public static String getFileExtension(String x) {
-    	String r = "";
+    /**
+     * This method returns the extension of the file 
+     * */
+    public static String getFileExtension(String fileName) {
+    	String result = "";
         try {
-            if (x.lastIndexOf(".") != -1) {
-                return x.substring(x.lastIndexOf(".") + 1).toLowerCase();
+            if (fileName.lastIndexOf(StringPool.PERIOD) != -1) {
+                return fileName.substring(fileName.lastIndexOf(StringPool.PERIOD) + 1).toLowerCase();
             } else {
-                return r;
+                return result;
+            }
+        } catch (Exception e) {
+            return "ukn";
+        }
+    }
+    /**
+     * This method returns the extension of the file ignoring the case of the extension
+     * */
+    public static String getFileExtensionIgnoreCase(String fileName){
+        String result = "";
+        try {
+            if (fileName.lastIndexOf(StringPool.PERIOD) != -1) {
+                return fileName.substring(fileName.lastIndexOf(StringPool.PERIOD) + 1);
+            } else {
+                return result;
             }
         } catch (Exception e) {
             return "ukn";
@@ -1358,6 +1516,12 @@ public class UtilMethods {
 
 
         return "";
+    }
+
+    public static String escapeHTMLCodeFromJSON(String json) {
+        json = json.replace("&#58;",":")
+                .replace("&#44;",",");
+        return json;
     }
 
 
@@ -3645,4 +3809,78 @@ public class UtilMethods {
     public static <T> T isSetOrGet(final T toEvaluate, final T defaultValue){
         return UtilMethods.isSet(toEvaluate) ? toEvaluate : defaultValue;
     }
+
+
+    /**
+     * Finds if the length of the given value is valid
+     *
+     * @param value
+     * @param maxLength
+     * @param <T>
+     * @return
+     */
+    public static <T extends CharSequence> boolean exceedsMaxLength(final T value, final int maxLength) {
+        return value != null && value.length() > maxLength;
+    }
+
+    /**
+     * Extracts the user id from a User object or returns null if the object is null
+     *
+     * @param user User object
+     * @return User id or null
+     */
+    public static String extractUserIdOrNull(final User user) {
+        return Optional.ofNullable(user).map(User::getUserId).orElse(null);
+    }
+
+    /**
+     * Determines whether the given file extension corresponds to a vector image format.
+     *
+     * @param fileExtension The extension of the file to be checked.
+     * @return true if the file extension indicates a vector image format; false otherwise.
+     */
+    public static boolean isVectorImage(String fileExtension) {
+        return VECTOR_EXTENSIONS.contains(fileExtension);
+    }
+
+    /**
+    *  Check if the given string is a valid Lucene query
+    *  The method uses the Apache Lucene library to parse the query and check for any syntax error, if it throws an exception that means the query is invalid
+    *  Additionally the method includes a check to ensure that a simple term query (just a simple string) is not considered valid
+    *  @param query String to be checked
+    */
+    public static boolean isLuceneQuery(String query) {
+        try {
+            final QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
+            // Allow wildcards in the query
+            parser.setAllowLeadingWildcard(true);
+            final Query parsedQuery = parser.parse(query);
+
+            // A valid Lucene query should not be a simple term query that exactly matches the input string
+            if (parsedQuery instanceof TermQuery) {
+                Term term = ((TermQuery) parsedQuery).getTerm();
+                return !(term.field().equals("defaultField") && term.text().equalsIgnoreCase(query));
+            }
+            
+            return true;
+        } catch (org.apache.lucene.queryparser.classic.ParseException e) {
+            return false; // If parsing fails, it's not a valid Lucene query
+        }
+    }
+
+
+   public static String base64Encode(String incomingString){
+      if(incomingString == null){
+         return null;
+      }
+      return Base64.getEncoder().encodeToString(incomingString.getBytes());
+   }
+
+   public static String base64Decode(String incomingString){
+      if(incomingString == null){
+         return null;
+      }
+      return new String(Base64.getDecoder().decode(incomingString));
+   }
+
 }

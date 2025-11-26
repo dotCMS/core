@@ -7,15 +7,18 @@ import com.dotcms.analytics.model.AccessTokenErrorType;
 import com.dotcms.analytics.model.AccessTokenStatus;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.TokenStatus;
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.WebResource;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -25,8 +28,6 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 
 /**
@@ -41,34 +44,21 @@ import java.util.function.BiPredicate;
  *
  * @author vico
  */
-public class AnalyticsHelper {
+public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private static final Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(AnalyticsHelper::new);
+    private static final Lazy<AnalyticsHelper> INSTANCE = Lazy.of(AnalyticsHelper::new);
 
     public static AnalyticsHelper get(){
-        return analyticsHelper.get();
+        return INSTANCE.get();
     }
 
-    private  AnalyticsHelper() {}
+    private final AtomicLong accessTokenTtl;
+    private final AtomicLong accessTokenTtlWindow;
 
-    /**
-     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
-     *
-     * @param statusCode http status code
-     * @return true if the response http status is considered tobe successful, otherwise false
-     */
-    public boolean isSuccessResponse(final int statusCode) {
-        return Response.Status.Family.familyOf(statusCode) == Response.Status.Family.SUCCESSFUL;
-    }
-
-    /**
-     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
-     *
-     * @param response http response representation
-     * @return true if the response http status is considered tobe successful, otherwise false
-     */
-    public boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
-        return isSuccessResponse(response.getStatusCode());
+    private AnalyticsHelper() {
+        accessTokenTtl = new AtomicLong(resolveAccessTokenTtl());
+        accessTokenTtlWindow = new AtomicLong(resolveAccessTokenTtlWindow());
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
     }
 
     /**
@@ -84,7 +74,8 @@ public class AnalyticsHelper {
     }
 
     /**
-     * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token and deserializes to {@link AnalyticsKey}.
+     * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token
+     * and deserializes to {@link AnalyticsKey}.
      *
      * @param response http response representation
      * @return an {@link Optional<AnalyticsKey>} instance holding the analytics key data
@@ -101,11 +92,13 @@ public class AnalyticsHelper {
      * @return true if current time is in the TTL window
      */
     private boolean filterIssueDate(final AccessToken accessToken, final BiPredicate<Instant, Instant> filter) {
+        final long tokenTtl = Optional.ofNullable(accessToken.expiresIn().longValue()).orElse(accessTokenTtl.get());
         return Optional.ofNullable(accessToken.issueDate())
             .map(issuedAt -> {
                 final Instant now = Instant.now();
-                final Instant expireDate = issuedAt.plusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL);
-                return now.isBefore(expireDate) && (filter == null || filter.test(now, expireDate));
+                final Instant expireDate = issuedAt.plusSeconds(tokenTtl);
+                return now.isBefore(expireDate) &&
+                        Optional.ofNullable(filter).map(f -> f.test(now, expireDate)).orElse (true);
             })
             .orElseGet(() -> {
                 Logger.warn(AnalyticsHelper.class, "ACCESS_TOKEN does not have a issued date, filtering token out");
@@ -132,7 +125,7 @@ public class AnalyticsHelper {
     public boolean isTokenInWindow(final AccessToken accessToken) {
         return filterIssueDate(
             accessToken,
-            (now, expireDate) -> now.isAfter(expireDate.minusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW)));
+            (now, expireDate) -> now.isAfter(expireDate.minusSeconds(accessTokenTtlWindow.get())));
     }
 
     /**
@@ -198,6 +191,25 @@ public class AnalyticsHelper {
         }
     }
 
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        if (event.getKey().contains(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY)) {
+            accessTokenTtl.set(resolveAccessTokenTtl());
+        } else if (event.getKey().contains(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY)) {
+            accessTokenTtlWindow.set(resolveAccessTokenTtlWindow());
+        }
+    }
+
+    private long resolveAccessTokenTtl() {
+        return Config.getLongProperty(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY, TimeUnit.HOURS.toSeconds(1));
+    }
+
+    private long resolveAccessTokenTtlWindow() {
+        return Config.getLongProperty(
+                AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY,
+                TimeUnit.MINUTES.toSeconds(1));
+    }
+
     /**
      * Evaluates if provided {@link TokenStatus} is {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
      *
@@ -213,12 +225,25 @@ public class AnalyticsHelper {
      * when add in the corresponding header.
      *
      * @param accessToken provided access token
+     * @param type token type (most of times it will be 'Bearer')
+     * @return the actual string value of token for header usage
+     * @throws AnalyticsException when validating token
+     */
+    public String formatToken(final AccessToken accessToken, final String type) throws AnalyticsException {
+        checkAccessToken(accessToken);
+        return StringUtils.defaultIfBlank(type, StringPool.BLANK) + accessToken.accessToken();
+    }
+
+    /**
+     * Extracts actual access token value from {@link AccessToken} and prepends the "Bearer " prefix to be used
+     * when add in the corresponding header.
+     *
+     * @param accessToken provided access token
      * @return the actual string value of token for header usage
      * @throws AnalyticsException when validating token
      */
     public String formatBearer(final AccessToken accessToken) throws AnalyticsException {
-        checkAccessToken(accessToken);
-        return JsonWebTokenAuthCredentialProcessor.BEARER + accessToken.accessToken();
+        return formatToken(accessToken, AnalyticsAPI.BEARER);
     }
 
     /**
@@ -251,7 +276,7 @@ public class AnalyticsHelper {
      */
     public void throwFromResponse(final CircuitBreakerUrl.Response<AccessToken> response,
                                          final String message) throws AnalyticsException {
-        if (isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 
@@ -431,16 +456,27 @@ public class AnalyticsHelper {
      */
     public AnalyticsApp resolveAnalyticsApp(final User user) throws DotDataException, DotSecurityException {
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        try {
-            return appFromHost(currentHost);
+        return resolveAnalyticsApp(user, currentHost);
+    }
+
+    public AnalyticsApp resolveAnalyticsApp(final User user, final String siteId)
+            throws DotDataException, DotSecurityException {
+        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+        return resolveAnalyticsApp(user, host);
+    }
+
+    public AnalyticsApp resolveAnalyticsApp(final User user, final Host site)
+            throws DotDataException, DotSecurityException {
+         try {
+            return appFromHost(site);
         } catch (final IllegalStateException e) {
             throw new DotDataException(
-                Try.of(() ->
-                        LanguageUtil.get(
-                            user,
-                            "analytics.app.not.configured",
-                            AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
-                    .getOrElse(String.format("Analytics App not found for host: %s", currentHost.getHostname())));
+                    Try.of(() ->
+                                    LanguageUtil.get(
+                                            user,
+                                            "analytics.app.not.configured",
+                                            AnalyticsHelper.get().extractMissingAnalyticsProps(e)))
+                            .getOrElse(String.format("Analytics App not found for host: %s", site.getHostname())));
         }
     }
 

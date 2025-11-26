@@ -1,0 +1,748 @@
+{
+	"info": {
+		"_postman_id": "e01f8671-adc7-4d6e-a33c-096d1f2686be",
+		"name": "Accessibility Checker Tests",
+		"description": "This Postman Collection verifies that the Accessibility Checker -- a.k.a. AChecker -- is working as expected after being migrated from a DWR class to a REST Endpoint. Basically, this new endpoint exposes two methods:\n\n1. Retrieving the list of Accessiblity Guidelines that Content Authors can use to validate content.\n    \n2. Send the validation request to the specific service, and receive the list of errors/suggestions that must be followed in order to make the content comply with the selected Accessibility Guideline(s).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36604690"
+	},
+	"item": [
+		{
+			"name": "Retrieval And Validation",
+			"item": [
+				{
+					"name": "Successful Requests",
+					"item": [
+						{
+							"name": "Get Accessibility Guidelines",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned data must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var entity = pm.response.json().entity;",
+											"    const expectedGuidelines = [\"BITV1\", \"508\", \"STANCA\", \"WCAG1-A\", \"WCAG1-AA\", \"WCAG1-AAA\", \"WCAG2-A\", \"WCAG2-AA\", \"WCAG2-AAA\"];",
+											"    const expectedCount = expectedGuidelines.length;",
+											"    var counter = 0;",
+											"",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving Accessibility Guidelines\");",
+											"    pm.expect(entity.length).to.eql(expectedCount, \"Expected to retrieve \" + expectedCount + \" Accessibility Guidelines\");",
+											"",
+											"    for (let guideline of entity) {",
+											"        if (expectedGuidelines.find((element) => element == guideline.abbr)) {",
+											"            counter++;",
+											"        }",
+											"    }",
+											"",
+											"    pm.expect(counter).to.eql(expectedCount, \"Retrieved data doesn't include all the expected Accessibility Guideline abbreviations\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/guidelines",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"guidelines"
+									]
+								},
+								"description": "Returns the list of available Accessibility Guidelines for content validation."
+							},
+							"response": []
+						},
+						{
+							"name": "Validate Content Against a Guideline",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned data must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var entity = pm.response.json().entity;",
+											"    const expectedErrors = 3;",
+											"",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving validation results from the specified Accessibility Guideline\");",
+											"    pm.expect(entity.errors.length).to.eql(expectedErrors, \"Expected to retrieve \" + expectedErrors + \" validation errors for the specified Accessibility Guideline\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "Validates content against a single Accessibility Guideline."
+							},
+							"response": []
+						},
+						{
+							"name": "Validate Content Against Several Guidelines",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned data must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var entity = pm.response.json().entity;",
+											"    const expectedErrors = 4;",
+											"",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving validation results from the specified Accessibility Guideline\");",
+											"    pm.expect(entity.errors.length).to.eql(expectedErrors, \"Expected to retrieve \" + expectedErrors + \" validation errors for the specified Accessibility Guideline\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1,WCAG1-AAA\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "Validates content against a more than one Accessibility Guideline. You can specify more as comma-separated values."
+							},
+							"response": []
+						},
+						{
+							"name": "Non-Specified Language",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned data must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var entity = pm.response.json().entity;",
+											"    const expectedErrors = 3;",
+											"",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving validation results from the specified Accessibility Guideline\");",
+											"    pm.expect(entity.errors.length).to.eql(expectedErrors, \"Expected to retrieve \" + expectedErrors + \" validation errors for the specified Accessibility Guideline\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "Validate content without specifying a language. This won't affect how the guideline validation works. It's just for dotCMS purposes."
+							},
+							"response": []
+						},
+						{
+							"name": "Non-Specified Fragment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned data must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var entity = pm.response.json().entity;",
+											"    const expectedErrors = 5;",
+											"",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving validation results from the specified Accessibility Guideline\");",
+											"    pm.expect(entity.errors.length).to.eql(expectedErrors, \"Expected to retrieve \" + expectedErrors + \" validation errors for the specified Accessibility Guideline\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "Validate a content with the `fragment` attribute set to `false`. This means that our API will NOT automatically include the required HTML code to the content for the Accessibliity Guideline service to validate it correctly. Therefore, more errors will be present."
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"Guideline retrieval must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Failure Requests",
+					"item": [
+						{
+							"name": "Non-Specified Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned error message must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.expect(jsonData.message).to.eql(\"'content' parameter cannot be empty\", \"Error message is NOT the expected one\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lang\": \"en\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "The `content` attribute is required. This request will fail."
+							},
+							"response": []
+						},
+						{
+							"name": "Non-Specified Guidelines",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Returned error message must be the expected one\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.expect(jsonData.message).to.eql(\"'guidelines' parameter cannot be empty\", \"Error message is NOT the expected one\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"fragment\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "The `guidelines` attribute is required. This request will fail."
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"Guideline retrieval must be Bad Request\", function() {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Authentication Required",
+					"item": [
+						{
+							"name": "Get Accessibility Guidelines",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/guidelines",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"guidelines"
+									]
+								},
+								"description": "Returns the list of available Accessibility Guidelines for content validation."
+							},
+							"response": []
+						},
+						{
+							"name": "Validate Content Against a Guideline",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"guidelines_abbr\", \"BITV1\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/achecker/_validate",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"achecker",
+										"_validate"
+									]
+								},
+								"description": "Validates content against a single Accessibility Guideline."
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"Guideline retrieval must be Unauthorized\", function() {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Unsupported Media Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/achecker/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"achecker",
+								"_validate"
+							]
+						},
+						"description": "The `guidelines` attribute is required. This request will fail."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

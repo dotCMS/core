@@ -1,0 +1,143 @@
+@let contentlet = $store.contentlet();
+@let contentType = $store.contentType();
+@let activeIndex = $store.activeSidebarTab();
+
+<!-- Information Component -->
+@let isLoadingInformation = $store.isLoadingInformation();
+@let referencePagesCount = $store.information.relatedContent();
+
+<aside class="content-sidebar h-full">
+    <p-tabView
+        [activeIndex]="activeIndex"
+        (onChange)="onActiveIndexChange($event)"
+        styleClass="h-full flex flex-column"
+        data-testId="sidebar-tabs">
+        <!-- Add prepend and append areas to the tabs -->
+        <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
+
+        <p-tabPanel class="flex flex-column tab-panel">
+            <ng-template pTemplate="header">
+                <i class="pi pi-info-circle"></i>
+            </ng-template>
+
+            <!-- Information section -->
+            <dot-edit-content-sidebar-section
+                [title]="'edit.content.sidebar.general.title' | dm"
+                class="h-full">
+                <ng-template #sectionAction>
+                    @if (!$store.isNew() && !$store.isCopyingLocale()) {
+                        <dot-copy-button
+                            [copy]="contentlet.identifier"
+                            [label]="contentlet.shortyId"
+                            [tooltipText]="'Identifier' | dm"></dot-copy-button>
+                    }
+                </ng-template>
+
+                <dot-edit-content-sidebar-information
+                    [data]="{
+                        contentlet: contentlet,
+                        contentType: contentType,
+                        loading: isLoadingInformation,
+                        referencesPageCount: referencePagesCount
+                    }"
+                    data-testId="information" />
+            </dot-edit-content-sidebar-section>
+
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
+                <dot-edit-content-sidebar-locales
+                    [locales]="$store.locales()"
+                    [defaultLocale]="$store.systemDefaultLocale()"
+                    [currentLocale]="$store.currentLocale()"
+                    [isLoading]="$store.isLoadingLocales()"
+                    (switchLocale)="$store.switchLocale($event)"
+                    data-testId="locales" />
+            </dot-edit-content-sidebar-section>
+
+            <!-- Workflow section -->
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.workflow.title' | dm">
+                <dot-edit-content-sidebar-workflow
+                    [workflowSelection]="$workflowSelection()"
+                    [(showDialog)]="$showDialog"
+                    (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                    [resetWorkflowAction]="$store.getResetWorkflowAction()"
+                    (onResetWorkflow)="fireWorkflowAction($event)"
+                    [workflow]="$workflow()"
+                    [isLoading]="$store.isLoadingWorkflow()"
+                    data-testId="workflow" />
+            </dot-edit-content-sidebar-section>
+        </p-tabPanel>
+        <p-tabPanel class="h-full flex-column tab-panel tab-panel--history">
+            <ng-template pTemplate="header">
+                <i class="pi pi-history"></i>
+            </ng-template>
+            <ng-template pTemplate="content">
+                <!-- History section -->
+                <dot-edit-content-sidebar-history
+                    [historyItems]="$versionsItems()"
+                    [status]="$historyStatus()"
+                    [contentIdentifier]="$store.contentlet()?.identifier || ''"
+                    [historyPagination]="$versionsPagination()"
+                    [historicalVersionInode]="$store.historicalVersionInode()"
+                    [pushPublishHistoryItems]="$pushPublishHistoryItems()"
+                    [pushPublishHistoryPagination]="$pushPublishHistoryPagination()"
+                    (historyPageChange)="onVersionsPageChange($event)"
+                    (pushPublishPageChange)="onPushPublishPageChange($event)"
+                    (timelineItemAction)="onTimelineItemAction($event)"
+                    (deletePushPublishHistory)="onDeletePushPublishHistory()"
+                    data-testId="history" />
+            </ng-template>
+        </p-tabPanel>
+
+        <p-tabPanel class="h-full flex-column tab-panel tab-panel--activities">
+            <ng-template pTemplate="header">
+                <i class="pi pi-comment"></i>
+            </ng-template>
+            <ng-template pTemplate="content">
+                <!-- Activities section -->
+                <dot-edit-content-sidebar-activities
+                    [initialContentletState]="$initialContentletState()"
+                    [activities]="$activities()"
+                    [status]="$activitiesStatus()"
+                    (commentSubmitted)="onCommentSubmitted($event)"
+                    data-testId="activities" />
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
+</aside>
+
+<!-- Confirmation dialog for delete actions -->
+<p-confirmDialog></p-confirmDialog>
+
+<!-- Append template to add to the tabs -->
+<ng-template #appendContent>
+    <div class="content-sidebar__close">
+        <button
+            class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+            (click)="$store.toggleSidebar()"
+            data-testId="toggle-button">
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <rect
+                    x="2.70588"
+                    y="3.17658"
+                    width="14.5882"
+                    height="13.647"
+                    rx="1.17647"
+                    stroke="#426BF0"
+                    stroke-width="1.41176" />
+                <line
+                    x1="12.3528"
+                    y1="16.1223"
+                    x2="12.3528"
+                    y2="3.87806"
+                    stroke="#426BF0"
+                    stroke-width="1.88235" />
+                <rect x="10.8887" y="3.77783" width="6.22222" height="12.4444" fill="#426BF0" />
+            </svg>
+        </button>
+    </div>
+</ng-template>

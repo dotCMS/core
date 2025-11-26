@@ -11,12 +11,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Factory to create {@link CubeJSClient} instances.
  *
  * @author vico
  */
+@ApplicationScoped
 public class CubeJSClientFactoryImpl implements CubeJSClientFactory {
 
     private static AnalyticsHelper analyticsHelper = AnalyticsHelper.get();
@@ -45,6 +47,11 @@ public class CubeJSClientFactoryImpl implements CubeJSClientFactory {
     @Override
     public CubeJSClient create(final User user) throws DotDataException, DotSecurityException {
         return create(analyticsHelper.resolveAnalyticsApp(user));
+    }
+
+    @Override
+    public CubeJSClient create(final User user, final String siteId) throws DotDataException, DotSecurityException {
+        return create(analyticsHelper.resolveAnalyticsApp(user, siteId));
     }
 
     @VisibleForTesting

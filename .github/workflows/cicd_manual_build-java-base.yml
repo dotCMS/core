@@ -1,0 +1,57 @@
+name: Build SDKMan Base Java Image
+run-name: Base Image for ${{ inputs.sdkman_java_version }} by @${{ github.actor }}
+on:
+  workflow_dispatch:
+    inputs:
+      sdkman_java_version:
+        description: 'SDKMAN version string run "sdk list java" for options'
+        required: true
+      multi_arch:
+        description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
+        type: boolean
+        required: false
+        default: true
+      push:
+        description: 'Push flag'
+        type: boolean
+        required: false
+        default: true
+jobs:
+  build_image:
+    name: Build Docker Base Image
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+      - name: Set Common Vars
+        run: |
+          PLATFORMS='linux/amd64'
+          [[ "${{ github.event.inputs.multi_arch }}" == 'true' ]] && PLATFORMS='linux/amd64,linux/arm64'
+
+          echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.6.0
+        with:
+          platforms: amd64,arm64
+        if: github.event.inputs.multi_arch == 'true'
+      - id: docker-setup-buildx
+        name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v3.10.0
+        with:
+          version: v0.23.0 # version of buildx https://github.com/docker/buildx/releases
+          platforms: ${{ env.PLATFORMS }}
+        if: github.event.inputs.multi_arch == 'true'
+      - name: Docker Hub login
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6.15.0
+        with:
+          context: ./docker/java-base
+          push: ${{ github.event.inputs.push }}
+          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}
+          platforms: ${{ env.PLATFORMS }}
+          build-args:
+            SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}

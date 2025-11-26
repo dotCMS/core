@@ -86,7 +86,71 @@ public interface ContentTypeFactory {
 	
 	List<ContentType> search(String search, BaseContentType type, String orderBy, int limit, int offset) throws DotDataException;
 
+	/**
+	 * Returns a list of Content Types based on the specified list of search criteria that live in
+	 * the specified Site.
+
+	 * @param search  Allows you to add more conditions to the query via SQL code. It's internally
+	 *                sanitized by the API.
+	 * @param type    The Base Content Type to search for.
+	 * @param orderBy The order-by clause, which is internally sanitized by the API.
+	 * @param limit   The maximum number of returned items in the result set, for pagination
+	 *                purposes.
+	 * @param offset  The page number of the result set, for pagination purposes.
+	 * @param hostId  The ID of the Site that the Content Types live in.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
 	List<ContentType> search(String search, int type, String orderBy, int limit, int offset,String hostId) throws DotDataException;
+
+	/**
+	 * Returns a list of Content Types based on the specified list of search criteria. In
+	 * particular, this method allows you to search for Content Types in a specific list of Sites.
+	 *
+	 * @param sites   The list of one or more Site IDs to search for Content Types.
+	 * @param search  Allows you to add more conditions to the query via SQL code. It's internally
+	 *                sanitized by this Factory.
+	 * @param type    The Base Content Type to search for.
+	 * @param orderBy The order-by clause, which is internally sanitized by this Factory.
+	 * @param limit   The maximum number of returned items in the result set, for pagination
+	 *                purposes.
+	 * @param offset  The requested page number of the result set, for pagination purposes.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	List<ContentType> search(final List<String> sites, final String search, final int type, final String orderBy, final int limit, final int offset) throws DotDataException;
+
+	/**
+	 * Returns a list of Content Types matching multiple base types in a single efficient query.
+	 * This method uses a UNION query at the database level to combine results from multiple
+	 * base types, sort them, and paginate efficiently.
+	 * <p>
+	 * This is more efficient than querying each type separately and combining results in memory,
+	 * especially when dealing with large numbers of content types.
+	 *
+	 * @param search  Allows you to add more conditions to the query via SQL code. It's internally
+	 *                sanitized by this Factory.
+	 * @param types   The collection of Base Content Types to search for (must not be empty).
+	 * @param orderBy The order-by clause, which is internally sanitized by this Factory.
+	 * @param limit   The maximum number of returned items in the result set, for pagination
+	 *                purposes. Use -1 for no limit.
+	 * @param offset  The requested page number of the result set, for pagination purposes.
+	 * @param siteId  The ID of the Site that the Content Types live in. Can be null or empty for all sites.
+	 * @param requestedContentTypes Optional list of specific content type variables to ensure are included.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria,
+	 *         sorted and paginated as requested.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
+										   final String orderBy, final int limit, final int offset,
+										   final String siteId, final List<String> requestedContentTypes)
+			throws DotDataException;
 
 	int searchCount(String search, BaseContentType baseType) throws DotDataException;
 
@@ -132,4 +196,5 @@ public interface ContentTypeFactory {
 	 * @return
 	 */
 	long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException;
+
 }

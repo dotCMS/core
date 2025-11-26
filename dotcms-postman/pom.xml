@@ -3,201 +3,169 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>dotcms-build-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../build-parent/pom.xml</relativePath>
+        <artifactId>dotcms-nodejs-parent</artifactId>
+        <version>${revision}${sha1}${changelist}</version>
+        <relativePath>../nodejs-parent/pom.xml</relativePath>
     </parent>
 
     <packaging>jar</packaging>
     <artifactId>dotcms-postman</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <db.port>5432</db.port>
-        <es.port>9200</es.port>
-        <tomcat.port>8080</tomcat.port>
-        <docker.version.tag>${project.version}</docker.version.tag>
-        <docker.push.skip>true</docker.push.skip>
-        <docker.platforms></docker.platforms>
-        <fabric8.dynamic-port>true</fabric8.dynamic-port>
-        <skipDockerEnv>false</skipDockerEnv>
+        <!--suppress UnresolvedMavenProperty -->
+        <postman.collections>${ext.postman.collections}</postman.collections>
+        <license.use>true</license.use>
+        <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <clean.docker.volumes>true</clean.docker.volumes>
-    </properties>
+        <buildDocker>true</buildDocker>
+        <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
+        <docker.wm.volume>./src/test/resources</docker.wm.volume>
+        <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
+        <testdata.dir>${project.build.directory}/testdata</testdata.dir>
+        <cleanup.before.tests>true</cleanup.before.tests>
+        <postman.test.skip>true</postman.test.skip>
+        <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
+        <skip.npm.install>false</skip.npm.install>
+        <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
+        <postman.collection.dir>src/main/resources/postman</postman.collection.dir>
+        <wiremock.port>50505</wiremock.port>
+        <wiremock.api.key>${ext.wiremock.api.key}</wiremock.api.key>
+        <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
+        <tomcat.port>8080</tomcat.port>
+        <docker.jacoco.skip>false</docker.jacoco.skip>
+    </properties>   
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <executions>
+                    <execution> 
+                        <id>install</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${skip.npm.install}</skip>
+                            <arguments>${yarn.install.cmd}</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run node script</id>
+                        <!-- Adjust the phase as per your requirement -->
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                        <configuration>
+                            <skip>${postman.test.skip}</skip>
+                            <arguments>run start --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</arguments>
+                            <!-- 'start' is the script name defined in package.json -->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <skipTests>${postman.test.skip}</skipTests> <!-- This will skip the test execution -->
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <phase>none</phase> <!-- This disables automatic test execution in the integration-test phase -->
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal> <!-- This ensures the verify goal is still active -->
+                        </goals>
+                        <configuration>
+                            <!-- Configuration specific to verify goal can go here if needed -->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <showLogs>true</showLogs>
                     <follow>true</follow>
+                    <skip>${postman.test.skip}</skip>
                     <imagesMap>
-                        <dotcms>
-                            <name>${DOTCMS_IMAGE}</name>
-                            <external>
-                                <type>properties</type>
-                                <prefix>dockerCore</prefix>
-                                <mode>override</mode>
-                            </external>
-                            <build>
-                                <cleanup>false</cleanup>
-                                <dockerFileDir>${project.basedir}/src/main/docker/original</dockerFileDir>
-                                <buildx>
-                                    <platforms>
-                                        <platform>${docker.platforms}</platform>
-                                    </platforms>
-                                </buildx>
-                                <assembly>
-                                    <descriptor>original/docker-descriptor.xml</descriptor>
-                                    <targetDir>/maven</targetDir>
-                                </assembly>
-                            </build>
+                        <wiremock>
+                            <name>${docker.image.wiremock}</name>
                             <run>
                                 <ports>
-                                    <port>tomcat.port:${tomcat.port}</port>
+                                    <port>wiremock.port:8080</port>
                                 </ports>
+                                <volumes>
+                                    <bind>
+                                        <volume>${docker.wm.volume}:${docker.wm.volume.internal}</volume>
+                                    </bind>
+                                </volumes>
+                                <log>
+                                    <prefix>[WireMock]</prefix>
+                                    <color>green</color>
+                                </log>
+                            </run>
+                        </wiremock>
+                        <dotcms>
+                            <run>
                                 <env>
-                                    <file.encoding>UTF-8</file.encoding>
                                     <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
-
-                                    <!-- Why is this without DOT_ -->
-                                    <DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DB_BASE_URL>
-                                    <DB_USERNAME>postgres</DB_USERNAME>
-                                    <DB_PASSWORD>postgres</DB_PASSWORD>
                                     <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
-
-                                    <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
-                                    <DOT_DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DOT_DB_BASE_URL>
-                                    <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-                                    <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
-                                    <DOT_ES_ENDPOINTS>http://es:9200</DOT_ES_ENDPOINTS>
-                                    <DOT_ES_PROTOCOL>http</DOT_ES_PROTOCOL>
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
+                                    <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
-                                    <WAIT_FOR_DEPS>15</WAIT_FOR_DEPS>
-                                    <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
+                                    <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
+                                    <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+                                    <DOT_AI_API_URL>http://wm:8080/c</DOT_AI_API_URL>
+                                    <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
+                                    <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
+                                    <DOT_AI_MODELS_API_URL>http://wm:8080/m</DOT_AI_MODELS_API_URL>
                                 </env>
-                                <volumes>
-                                    <bind>
-                                        <volume>${project.build.directory}/docker-volumes/dotcms/license/license.dat:/data/local/dotsecure/license/license.dat</volume>
-                                    </bind>
-                                </volumes>
-                                <wait>
-                                    <log>Started bridged http service</log>
-                                    <time>200000</time>
-                                </wait>
-                                <links>
-                                    <link>database:db</link>
-                                    <link>elasticsearch:es</link>
+                                <links combine.children="append">
+                                    <link>wiremock:wm</link>
                                 </links>
-                                <log>
-                                    <prefix>DOTCMS:</prefix>
-                                    <color>cyan</color>
-                                </log>
                             </run>
                         </dotcms>
-                        <database>
-                            <name>postgres:15</name>
-                            <run>
-                                <cmd>postgres -c max_connections=1024 -c shared_buffers=256MB</cmd>
-                                <ports>
-                                    <port>db.port:${db.port}</port>
-                                </ports>
-                                <env>
-                                    <POSTGRES_USER>postgres</POSTGRES_USER>
-                                    <POSTGRES_PASSWORD>postgres</POSTGRES_PASSWORD>
-                                    <POSTGRES_DB>dotcms</POSTGRES_DB>
-                                </env>
-                                <wait>
-                                    <log>database system is ready to accept connections</log>
-                                    <time>20000</time>
-                                </wait>
-                                <log>
-                                    <prefix>DB:</prefix>
-                                    <color>magenta</color>
-                                </log>
-                            </run>
-                        </database>
-                        <elasticsearch>
-                            <name>docker.elastic.co/elasticsearch/elasticsearch:7.11.2</name>
-                            <run>
-                                <env>
-                                    <cluster.name>elastic-cluster</cluster.name>
-                                    <discovery.type>single-node</discovery.type>
-                                    <data></data>
-                                    <bootstrap.memory_lock>true</bootstrap.memory_lock>
-                                    <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
-                                    <CLI_JAVA_OPTS>-Xms3g -Xmx3g</CLI_JAVA_OPTS>
-                                </env>
-                                <ports>
-                                    <port>es.port:9200</port>
-                                </ports>
-                                <ulimits>
-                                    <ulimit>
-                                        <name>memlock</name>
-                                        <hard>-1</hard>
-                                        <soft>-1</soft>
-                                    </ulimit>
-                                </ulimits>
-                                <wait>
-                                    <http>
-                                        <url>http://localhost:${es.port}</url>
-                                    </http>
-                                    <time>30000</time>
-                                </wait>
-
-                                <log>
-                                    <prefix>ES:</prefix>
-                                    <color>blue</color>
-                                </log>
-                            </run>
-                        </elasticsearch>
                     </imagesMap>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>pt-up</id>
+                        <id>cleanup-at-start</id>
+                        <goals>
+                            <goal>stop</goal>
+                            <goal>volume-remove</goal>
+                        </goals>
                         <phase>pre-integration-test</phase>
+                    </execution>
+                    <execution>
+                        <id>start</id>
                         <goals>
                             <goal>start</goal>
                         </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                        </configuration>
+                        <phase>pre-integration-test</phase>
                     </execution>
                     <execution>
-                        <id>pt-down</id>
-                        <phase>post-integration-test</phase>
+                        <id>stop</id>
                         <goals>
                             <goal>stop</goal>
                         </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${version.exec.plugin}</version>
-                <executions>
-                    <execution>
-                        <id>postman-tests</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                            <executable>./runtests.sh</executable>
-                            <commandlineArgs>${postman.collections}</commandlineArgs>
-                        </configuration>
+                        <!-- should be post-integration test but need to make sure it does not stop
+                        before dump of jacoco -->
+                        <phase>verify</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -206,29 +174,5 @@
 
     <profiles>
     </profiles>
-
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
 
 </project>

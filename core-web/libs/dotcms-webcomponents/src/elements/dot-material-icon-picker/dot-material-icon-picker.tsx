@@ -148,7 +148,7 @@ export class DotMaterialIcon {
         }
     };
 
-    getSuggestionElement = (suggestion: string): JSX.Element => {
+    getSuggestionElement = (suggestion: string) => {
         const isSelected =
             this.selectedSuggestionIndex !== undefined &&
             suggestion === this.suggestionArr[this.selectedSuggestionIndex];
@@ -159,8 +159,7 @@ export class DotMaterialIcon {
                     'dot-material-icon__option ' +
                     (isSelected ? 'dot-material-icon__option-selected' : '')
                 }
-                onClick={() => this.onSelect(suggestion)}
-            >
+                onClick={() => this.onSelect(suggestion)}>
                 <label id={suggestion + '_Id'}>
                     <mwc-icon aria-labelledby={suggestion + '_Id'}>{suggestion}</mwc-icon>
                     {suggestion}
@@ -188,14 +187,12 @@ export class DotMaterialIcon {
                 }}
                 style={{
                     'font-size': this.size
-                }}
-            >
+                }}>
                 <div class="dot-material-icon__select-container">
                     <div class="dot-material-icon__select-input">
                         <mwc-icon
                             class="dot-material-icon__preview"
-                            style={{ color: this.colorValue }}
-                        >
+                            style={{ color: this.colorValue }}>
                             {this.value === LABEL_IMPORTANT_ICON ? '' : this.value}
                         </mwc-icon>
                         <input
@@ -217,8 +214,7 @@ export class DotMaterialIcon {
                             onClick={(e: MouseEvent) => {
                                 e.preventDefault();
                                 this.onFocus(true);
-                            }}
-                        >
+                            }}>
                             <mwc-icon>expand_more</mwc-icon>
                         </button>
                     </div>
@@ -226,8 +222,7 @@ export class DotMaterialIcon {
                         <ul
                             class="dot-material-icon__list"
                             role="listbox"
-                            hidden={!this.showSuggestions}
-                        >
+                            hidden={!this.showSuggestions}>
                             {this.suggestionArr.map((suggestion) =>
                                 this.getSuggestionElement(suggestion)
                             )}
@@ -247,7 +242,7 @@ export class DotMaterialIcon {
         });
     }
 
-    private getColorPicker(show: string): JSX.Element {
+    private getColorPicker(show: string) {
         return show === 'true' ? (
             <div>
                 <label htmlFor="iconColor" class="dot-material-icon__color-label">

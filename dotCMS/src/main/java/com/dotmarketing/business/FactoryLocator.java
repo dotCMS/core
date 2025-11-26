@@ -1,7 +1,11 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.attributes.CustomAttributeFactory;
+import com.dotcms.analytics.attributes.CustomAttributeFactoryImpl;
+import com.dotcms.analytics.content.ContentAnalyticsFactory;
 import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
@@ -22,6 +26,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
 import com.dotcms.experiments.business.ExperimentsFactory;
 import com.dotcms.experiments.business.ExperimentsFactoryImpl;
+import com.dotcms.languagevariable.business.LanguageVariableFactory;
+import com.dotcms.languagevariable.business.LanguageVariableFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
@@ -32,6 +38,10 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
 import com.dotcms.publisher.environment.business.EnvironmentFactory;
 import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
+import com.dotcms.variant.VariantFactory;
+import com.dotcms.variant.VariantFactoryImpl;
+import com.dotmarketing.business.portal.PortletFactory;
+import com.dotmarketing.business.portal.PortletFactoryImpl;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
@@ -61,8 +71,6 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
-import com.dotcms.variant.VariantFactory;
-import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;
@@ -265,7 +273,38 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
 
     public static CubeJSClientFactory getCubeJSClientFactory() {
-        return (CubeJSClientFactory) getInstance(FactoryIndex.CUBEJS_CLIENT_FACTORY);
+        return CDIUtils.getBeanThrows(CubeJSClientFactory.class);
+    }
+
+    /**
+     * Returns the Factory object that handles operations related to {@link LanguageVariable} in dotCMS.
+     * @return
+     */
+    public static LanguageVariableFactory getLanguageVariableFactory() {
+        return (LanguageVariableFactory) getInstance(FactoryIndex.LANGUAGE_VARIABLE_FACTORY);
+    }
+
+    public static CustomAttributeFactory getAnalyticsCustomAttributeFactory() {
+        return (CustomAttributeFactory) getInstance(FactoryIndex.ANALYTICS_CUSTOM_ATTRIBUTES_FACTORY);
+    }
+
+    /**
+     * Returns the Factory object that handles operations related to {@link ContentAnalyticsFactory}
+     * in dotCMS.
+     *
+     * @return An instance of the {@link ContentAnalyticsFactory} object.
+     */
+    public static ContentAnalyticsFactory getContentAnalyticsFactory() {
+        return CDIUtils.getBeanThrows(ContentAnalyticsFactory.class);
+    }
+
+    /**
+     * Returns a singleton of the {@link PortletFactory} class.
+     *
+     * @return The {@link PortletFactory} singleton.
+     */
+    public static PortletFactory getPortletFactory() {
+        return (PortletFactory) getInstance(FactoryIndex.PORTLET_FACTORY);
     }
 
     private static Object getInstance(FactoryIndex index) {
@@ -345,7 +384,9 @@ enum FactoryIndex
     VARIANT_FACTORY,
     EXPERIMENTS_FACTORY,
     SYSTEM_TABLE_FACTORY,
-    CUBEJS_CLIENT_FACTORY;
+    LANGUAGE_VARIABLE_FACTORY,
+    PORTLET_FACTORY,
+    ANALYTICS_CUSTOM_ATTRIBUTES_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -384,12 +425,14 @@ enum FactoryIndex
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
-            case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
+            case VARIANT_FACTORY : return new VariantFactoryImpl();
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
             case SYSTEM_TABLE_FACTORY: return new SystemTableFactoryImpl();
-            case CUBEJS_CLIENT_FACTORY: return new CubeJSClientFactoryImpl();
+            case LANGUAGE_VARIABLE_FACTORY: return new LanguageVariableFactoryImpl();
+            case PORTLET_FACTORY: return new PortletFactoryImpl();
+            case ANALYTICS_CUSTOM_ATTRIBUTES_FACTORY: return new CustomAttributeFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
-}
 
+}

@@ -17,6 +17,8 @@ public class KeyValueFieldDataFetcher implements DataFetcher<List<Map<String, Ob
         try {
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
+
+            Logger.debug(this, ()-> "Fetching key-value field for contentlet: " + contentlet.getIdentifier() + " field: " + var);
             final List<Map<String, Object>> keyValueMaps = new ArrayList<>();
 
             contentlet.getKeyValueProperty(var).forEach((key, value) -> {

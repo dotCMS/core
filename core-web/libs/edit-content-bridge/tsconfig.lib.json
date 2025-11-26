@@ -1,0 +1,20 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../../dist/out-tsc",
+        "declaration": true,
+        "module": "ES2015",
+        "moduleResolution": "bundler",
+        "target": "ES2015",
+        "lib": ["es2020", "dom"],
+        "types": ["node", "vite/client"]
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/jest.config.ts",
+        "**/*.stories.ts",
+        "**/*.stories.js"
+    ]
+}

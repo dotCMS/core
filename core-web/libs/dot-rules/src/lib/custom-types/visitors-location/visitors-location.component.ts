@@ -1,7 +1,16 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ChangeDetectionStrategy,
+    inject
+} from '@angular/core';
 import { UntypedFormControl } from '@angular/forms';
+
 import { LoggerService } from '@dotcms/dotcms-js';
+
 import { GCircle } from '../../models/gcircle.model';
 
 const UNITS = {
@@ -26,56 +35,54 @@ const UNITS = {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DecimalPipe],
     selector: 'cw-visitors-location-component',
-    template: `<div
-            flex
-            layout="row"
-            class="cw-visitors-location cw-condition-component-body"
-            *ngIf="comparisonDropdown != null"
-        >
-            <cw-input-dropdown
-                flex
-                class="cw-input"
-                [options]="comparisonDropdown.options"
-                [formControl]="comparisonDropdown.control"
-                [required]="true"
-                [class.cw-comparator-selector]="true"
-                (onDropDownChange)="comparisonChange.emit($event)"
-                placeholder="{{ comparisonDropdown.placeholder }}"
-            >
-            </cw-input-dropdown>
-            <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-                <input
-                    pInputText
-                    class="cw-latLong"
-                    [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
-                    [readonly]="true"
-                />
-                <label class="cw-input-label-right">{{ preferredUnit }}</label>
+    template: `
+        @if (comparisonDropdown !== null) {
+            <div flex layout="row" class="cw-visitors-location cw-condition-component-body">
+                <cw-input-dropdown
+                    (onDropDownChange)="comparisonChange.emit($event)"
+                    [options]="comparisonDropdown.options"
+                    [formControl]="comparisonDropdown.control"
+                    [required]="true"
+                    [class.cw-comparator-selector]="true"
+                    flex
+                    class="cw-input"
+                    placeholder="{{ comparisonDropdown.placeholder }}"></cw-input-dropdown>
+                <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
+                    <input
+                        [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
+                        [readonly]="true"
+                        pInputText
+                        class="cw-latLong" />
+                    <label class="cw-input-label-right">{{ preferredUnit }}</label>
+                </div>
+                <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
+                    <label class="cw-input-label-left">{{ fromLabel }}</label>
+                    <input [value]="getLatLong()" [readonly]="true" pInputText class="cw-radius" />
+                </div>
+                <div flex layout="column" class="cw-input cw-last">
+                    <button
+                        (click)="toggleMap()"
+                        pButton
+                        class="p-button-secondary"
+                        icon="pi pi-plus"
+                        label="Show Map"
+                        aria-label="Show Map"></button>
+                </div>
             </div>
-            <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-                <label class="cw-input-label-left">{{ fromLabel }}</label>
-                <input pInputText class="cw-radius" [value]="getLatLong()" [readonly]="true" />
-            </div>
-            <div flex layout="column" class="cw-input cw-last">
-                <button
-                    pButton
-                    class="p-button-secondary"
-                    icon="pi pi-plus"
-                    label="Show Map"
-                    aria-label="Show Map"
-                    (click)="toggleMap()"
-                ></button>
-            </div>
-        </div>
+        }
         <cw-area-picker-dialog-component
-            [headerText]="'Select an area'"
-            [hidden]="!showingMap"
-            [circle]="circle"
             (circleUpdate)="onUpdate($event)"
             (cancel)="showingMap = !showingMap"
-        ></cw-area-picker-dialog-component> `
+            [headerText]="'Select an area'"
+            [hidden]="!showingMap"
+            [circle]="circle"></cw-area-picker-dialog-component>
+    `,
+    standalone: false
 })
 export class VisitorsLocationComponent {
+    decimalPipe = inject(DecimalPipe);
+    private loggerService = inject(LoggerService);
+
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };
     @Input() comparisonValue: string;
     @Input() comparisonControl: UntypedFormControl;
@@ -90,7 +97,9 @@ export class VisitorsLocationComponent {
     showingMap = false;
     comparisonDropdown: any;
 
-    constructor(public decimalPipe: DecimalPipe, private loggerService: LoggerService) {
+    constructor() {
+        const loggerService = this.loggerService;
+
         loggerService.info('VisitorsLocationComponent', 'constructor');
     }
 
@@ -113,12 +122,14 @@ export class VisitorsLocationComponent {
         const lng = this.circle.center.lng;
         const latStr = this.decimalPipe.transform(parseFloat(lat + ''), '1.6-6');
         const lngStr = this.decimalPipe.transform(parseFloat(lng + ''), '1.6-6');
+
         return latStr + ', ' + lngStr;
     }
 
     getRadiusInPreferredUnit(): number {
         const r = this.circle.radius;
         this.loggerService.info('VisitorsLocationComponent', 'getRadiusInPreferredUnit', r);
+
         return UNITS.m[this.preferredUnit](r);
     }
 

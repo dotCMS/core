@@ -1,0 +1,146 @@
+# action.yml
+name: 'Slack Channel Resolver'
+on:
+  workflow_call:
+    inputs:
+      github_users:
+        description: 'Github users space delimited list'
+        type: string
+        required: false
+        default: ''
+      default_channel:
+        description: 'Default channel'
+        type: string
+        required: false
+      default_channel_id:
+        description: 'Default channel ID'
+        type: string
+        required: false
+      branch:
+        description: 'Branch'
+        type: string
+        required: false
+        default: main
+      continue_on_error:
+        description: 'Continue on error'
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      channel_ids:
+        value: ${{ jobs.slack-channel-resolver.outputs.channel_ids }}
+      mappings_json:
+        value: ${{ jobs.slack-channel-resolver.outputs.mappings_json }}
+    secrets:
+      CI_MACHINE_USER:
+        description: 'CI machine user'
+        required: true
+      CI_MACHINE_TOKEN:
+        description: 'CI machine token'
+        required: true
+      SLACK_BOT_TOKEN:
+        description: 'Slack bot token'
+        required: true
+
+jobs:
+  slack-channel-resolver:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      channel_ids: ${{ steps.resolve-channels.outputs.channel_ids }}
+      mappings_json: ${{ steps.resolve-channels.outputs.mappings_json }}
+    steps:
+      - name: Resolve Users
+        id: resolve-users
+        shell: bash
+        run: |
+          github_users="${{ inputs.github_users }}"
+          default_channel=${{ inputs.default_channel }}
+          [[ -z "${github_users}" && -n "${default_channel}" ]] && github_users=${default_channel}
+          
+          echo "github_users: [${github_users}]"
+          echo "github_users=${github_users}" >> $GITHUB_OUTPUT
+
+      - name: Resolve Channels
+        id: resolve-channels
+        continue-on-error: ${{ inputs.continue_on_error }}
+        shell: bash
+        run: |
+          github_users="${{ steps.resolve-users.outputs.github_users }}"
+          echo "Found github users: [${github_users}]"
+          github_users_array=(${github_users})
+          
+          githack_host=raw.githack.com
+          githack_core_repo_url=https://${githack_host}/${{ github.repository }}
+          slack_mappings_file=slack-mappings.json
+          slack_mapping_url=${githack_core_repo_url}/${{ inputs.branch }}/.github/data/${slack_mappings_file}
+          json=$(curl -s ${slack_mapping_url} | jq -c .)
+          echo "json: ${json}"
+          
+          echo "Looking for [${github_user}]"
+          channel_ids=
+          for github_user in "${github_users_array[@]}"; do
+            channel_id=$( \
+              jq ".[] | select(.github_user == \"${github_user}\")" <<< "${json}" | \
+              jq -r '.slack_id' \
+            )
+            echo "Resolved channel id [${channel_id}] from [${slack_mappings_file}]"
+          
+            if [[ -z "${channel_id}" ]]; then
+              echo "Channel id could not be resolved from [${slack_mappings_file}]. Attempting to resolve from Github user email."
+              user_email=$( \
+                curl \
+                  -u ${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }} \
+                  --request GET \
+                  -s \
+                  https://api.github.com/users/${github_user} | \
+                grep "\"email\":" | \
+                sed "s/\"email\"://g" | \
+                tr -d '",[:space:]' \
+              )
+              echo "Resolved user email: [${user_email}]"
+            
+              if [[ -n "${user_email}" && "${user_email}" != 'null' ]]; then
+                channel_id=$( \
+                  curl \
+                    --request GET \
+                    --header "Content-type: application/json" \
+                    --header "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+                    -s \
+                    "https://slack.com/api/users.lookupByEmail?email=${user_email}" | \
+                  python3 -m json.tool | \
+                  grep "\"id\":" | \
+                  sed "s/\"id\"://g" | \
+                  tr -d '",[:space:]' \
+                )
+          
+                echo "Resolved channel id [${channel_id}] from email [${user_email}]"
+              else
+                echo "Could not resolve email for [${github_user}], skipping it"
+              fi
+            fi
+
+            if [[ -n "${channel_id}" && "${channel_id}" != 'null' ]]; then
+              channel_ids="${channel_ids} ${channel_id}"
+            fi
+          done
+          
+          default_channel_id=${{ inputs.default_channel_id }}
+          [[ -z "${channel_ids}" && -n "${default_channel_id}" ]] \
+            && echo "Channel id could not be resolved, defaulting to channel id: [${default_channel_id}]" \
+            && channel_ids=${default_channel_id}
+          
+          channel_ids=$(echo "${channel_ids}" | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          if [[ -n "${channel_ids}" ]]; then
+            channel_ids_array=(${channel_ids})
+            declare -A deduped_array
+            for element in "${channel_ids_array[@]}"; do
+              deduped_array["$element"]=1
+            done
+            
+            deduped_channel_ids=("${!deduped_array[@]}")
+            channel_ids=$(printf '%s\n' "${deduped_channel_ids[@]}" | jq -R . | jq -s . | tr -d '\n' | tr -d ' ')
+          fi
+          
+          echo "mappings_json=${json}" >> $GITHUB_OUTPUT
+          echo "channel_ids: [${channel_ids}]"
+          echo "channel_ids=${channel_ids}" >> $GITHUB_OUTPUT

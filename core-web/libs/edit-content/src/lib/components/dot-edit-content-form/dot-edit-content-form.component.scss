@@ -1,45 +1,145 @@
 @use "variables" as *;
 
+$tab-min-height: 52px;
+
 :host {
-    min-width: 0; // Make it shrinkable
+    min-width: 0;
     overflow: auto;
-
-    ::ng-deep {
-        .p-tabview {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .p-tabview-panels {
-            flex: 1;
-            overflow: auto;
-            padding: $spacing-4;
-        }
-    }
-    .form__layout {
-        padding: $spacing-4;
-    }
 }
 
-form {
+// Edit Content Form
+.dot-edit-content-form {
     height: 100%;
 }
 
-.row {
+.dot-edit-content-form__layout {
+    padding: $spacing-4;
+}
+
+.dot-edit-content-form__layout-row {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
     gap: $spacing-4;
     margin-bottom: $spacing-4;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 }
 
-.row:last-child {
-    margin-bottom: 0;
-}
-
-.column {
+.dot-edit-content-form__layout-column {
     display: flex;
     flex-direction: column;
     gap: $spacing-4;
+}
+
+// Edit Content Actions
+.dot-edit-content-actions {
+    min-height: $tab-min-height;
+}
+
+.dot-edit-content-actions__left {
+    gap: $spacing-4;
+}
+
+.dot-edit-content-actions__right {
+    gap: $spacing-4;
+    margin-left: auto;
+}
+
+.dot-edit-content-actions__sidebar-toggle {
+    border-left: solid 1px $color-palette-gray-300;
+    transition: all $basic-speed ease-in-out;
+    opacity: 1;
+    transform: translateX(0);
+    overflow: hidden;
+    min-height: $tab-min-height;
+    min-width: 64px;
+    justify-content: center;
+}
+
+.dot-edit-content-actions__sidebar-toggle--hidden {
+    opacity: 0;
+    transform: translateX(100%);
+    max-width: 0;
+    padding: 0;
+    margin: 0;
+    border-left: none;
+    min-width: 0;
+}
+
+.dot-edit-content-actions__sidebar-btn {
+    rect {
+        stroke: $color-palette-primary;
+    }
+
+    path {
+        fill: $color-palette-primary;
+    }
+    transition: all $basic-speed ease-in-out;
+}
+
+// PrimeNG Tabview Overrides
+::ng-deep {
+    .p-tabview-nav {
+        flex: none;
+    }
+    .tabview-append-content {
+        min-height: $tab-min-height;
+        display: flex;
+        align-items: center;
+    }
+    .dot-edit-content-tabview {
+        .p-tabview-nav-container {
+            padding: 0;
+            border-bottom: solid 1px $color-palette-gray-300;
+            border-right: none;
+            overflow: initial;
+            position: sticky;
+            top: 0;
+            background-color: $white;
+            z-index: 10;
+        }
+
+        .p-tabview-nav-content .p-tabview-nav {
+            border: none;
+            border-left: solid 1px $color-palette-gray-300;
+            border-right: solid 1px $color-palette-gray-300;
+            min-height: $tab-min-height;
+            min-width: auto;
+        }
+
+        .p-tabview-nav-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: $spacing-3;
+            overflow: visible;
+            flex-wrap: wrap;
+        }
+
+        &.dot-edit-content-tabview--single-tab {
+            ul.p-tabview-nav {
+                display: none;
+            }
+
+            .tabview-append-content {
+                border-left: solid 1px $color-palette-gray-300;
+                padding-left: $spacing-3;
+            }
+        }
+    }
+
+    .p-tabview-nav-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .tabview-append-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
 }

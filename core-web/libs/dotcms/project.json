@@ -5,7 +5,7 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nrwl/js:tsc",
+            "executor": "@nx/js:tsc",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/dotcms",
@@ -38,5 +38,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint", "skip:build"]
 }

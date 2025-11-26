@@ -1,24 +1,29 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAppsSite } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-apps-configuration-item',
     templateUrl: './dot-apps-configuration-item.component.html',
-    styleUrls: ['./dot-apps-configuration-item.component.scss']
+    styleUrls: ['./dot-apps-configuration-item.component.scss'],
+    imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule]
 })
 export class DotAppsConfigurationItemComponent {
+    private dotMessageService = inject(DotMessageService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+
     @Input() site: DotAppsSite;
 
     @Output() edit = new EventEmitter<DotAppsSite>();
     @Output() export = new EventEmitter<DotAppsSite>();
     @Output() delete = new EventEmitter<DotAppsSite>();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotAlertConfirmService: DotAlertConfirmService
-    ) {}
 
     @HostListener('click', ['$event'])
     public onClick(event: MouseEvent): void {

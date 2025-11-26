@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.browsertree;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -16,11 +14,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -30,7 +26,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -38,6 +38,7 @@ import org.glassfish.jersey.server.JSONP;
  */
 @Deprecated
 @Path("/v1/browsertree")
+@Tag(name = "Browser Tree", description = "File and folder browser tree operations")
 public class BrowserTreeResource implements Serializable {
     private final WebResource webResource;
     private final BrowserTreeHelper browserTreeHelper;
@@ -98,7 +99,7 @@ public class BrowserTreeResource implements Serializable {
                     .collect(Collectors.toList());;
 
             response = Response.ok(new ResponseEntityView
-                    (map(   "result",         assetResults
+                    (Map.of(   "result",         assetResults
                     ),
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
                                     "cancel", "Change-Host"))
@@ -154,7 +155,7 @@ public class BrowserTreeResource implements Serializable {
                     .collect(Collectors.toList());
 
             response = Response.ok(new ResponseEntityView
-                    (map(   "result",         assetResults
+                    (Map.of(   "result",         assetResults
                     ),
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
                                     "cancel", "Change-Host"))

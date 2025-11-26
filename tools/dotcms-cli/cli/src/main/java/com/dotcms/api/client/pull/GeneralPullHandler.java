@@ -3,6 +3,7 @@ package com.dotcms.api.client.pull;
 import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.pull.task.PullTask;
 import com.dotcms.api.client.pull.task.PullTaskParams;
+import com.dotcms.api.client.util.ErrorHandlingUtil;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -10,7 +11,7 @@ import com.dotcms.model.pull.PullOptions;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -32,6 +33,9 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
     Logger logger;
 
     @Inject
+    ErrorHandlingUtil errorHandlerUtil;
+
+    @Inject
     ManagedExecutor executor;
 
     /**
@@ -46,11 +50,9 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
      */
     public abstract String fileName(T content);
 
-    public boolean pull(List<T> contents,
+    public int pull(List<T> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
-
-        var failed = false;
 
         output.info(startPullingHeader(contents));
 
@@ -85,7 +87,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
                             progressBar(progressBar).build()
                     );
 
-                    return task.compute();
+                    return task.compute().join();
                 });
         progressBar.setFuture(pullFuture);
 
@@ -99,13 +101,7 @@ public abstract class GeneralPullHandler<T> extends PullHandler<T> {
         CompletableFuture.allOf(pullFuture, animationFuture).join();
 
         var errors = pullFuture.get();
-
-        printErrors(errors, output);
-        if (!errors.isEmpty()) {
-            failed = true;
-        }
-
-        return failed;
+        return errorHandlerUtil.handlePullExceptions(errors, output);
     }
 
 }

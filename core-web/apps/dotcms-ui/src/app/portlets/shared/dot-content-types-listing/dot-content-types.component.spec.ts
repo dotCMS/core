@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf, throwError as observableThrowError } from 'rxjs';
+import { Observable, of, throwError as observableThrowError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
@@ -14,18 +14,17 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
 
-import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotFormatDateService,
     DotHttpErrorHandled,
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -39,11 +38,14 @@ import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/d
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
-    MockDotMessageService
+    MockDotMessageService,
+    MockPushPublishService
 } from '@dotcms/utils-testing';
-import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 
+import { DotContentTypeStore } from './dot-content-type.store';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
+
+import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 const DELETE_MENU_ITEM_INDEX = 4;
 const ADD_TO_MENU_INDEX = 2;
@@ -56,7 +58,8 @@ class MockDotContentTypeService {
 
 @Component({
     selector: 'dot-dot-content-type-copy-dialog',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotContentTypeCloneDialogComponent {
     @Input()
@@ -71,7 +74,8 @@ class MockDotContentTypeCloneDialogComponent {
 
 @Component({
     selector: 'dot-base-type-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotBaseTypeSelectorComponent {
     @Input() value: SelectItem;
@@ -81,30 +85,14 @@ class MockDotBaseTypeSelectorComponent {
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return observableOf(true);
-    }
-}
-
-@Injectable()
-export class MockPushPublishService {
-    getEnvironments() {
-        return observableOf([
-            {
-                id: '123',
-                name: 'Environment 1'
-            },
-            {
-                id: '456',
-                name: 'Environment 2'
-            }
-        ]);
+        return of(true);
     }
 }
 
 @Injectable()
 class MockDotHttpErrorManagerService {
     handle(_err: ResponseView): Observable<DotHttpErrorHandled> {
-        return observableOf({
+        return of({
             redirected: false,
             status: HttpCode.BAD_REQUEST
         });
@@ -116,10 +104,28 @@ class MockDotContentTypeStore {}
 
 @Component({
     selector: 'dot-add-to-bundle ',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class MockDotAddToBundleComponent {
     @Input() assetIdentifier: string;
+    @Output() cancel = new EventEmitter<boolean>();
+}
+
+@Component({
+    selector: 'dot-portlet-base',
+    template: '<ng-content></ng-content>'
+})
+class MockDotPortletBaseComponent {
+    @Input() boxed = true;
+}
+
+@Component({
+    selector: 'dot-add-to-menu',
+    template: ''
+})
+class MockDotAddToMenuComponent {
+    @Input() contentType;
     @Output() cancel = new EventEmitter<boolean>();
 }
 
@@ -156,19 +162,21 @@ describe('DotContentTypesPortletComponent', () => {
 
         TestBed.configureTestingModule({
             declarations: [
-                DotContentTypesPortletComponent,
                 MockDotBaseTypeSelectorComponent,
                 MockDotAddToBundleComponent,
                 MockDotContentTypeCloneDialogComponent
             ],
             imports: [
+                DotContentTypesPortletComponent,
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: DotContentTypesPortletComponent }
                 ]),
                 BrowserAnimationsModule,
-                DotListingDataTableModule,
+                DotListingDataTableComponent,
                 ReactiveFormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                MockDotPortletBaseComponent,
+                MockDotAddToMenuComponent
             ],
             providers: [
                 DotContentTypesInfoService,
@@ -207,8 +215,8 @@ describe('DotContentTypesPortletComponent', () => {
             DotPushPublishDialogService
         );
 
-        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
-            observableOf([
+        jest.spyOn(dotContentletService, 'getAllContentTypes').mockReturnValue(
+            of([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
                 { name: 'FORM', label: 'Form', types: [] }
@@ -265,16 +273,17 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        spyOn(crudService, 'delete').and.returnValue(observableOf(mockContentType));
+        jest.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
 
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
+        expect(crudService.delete).toHaveBeenCalledTimes(1);
     });
 
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
@@ -290,7 +299,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
         fixture.detectChanges();
         expect(
@@ -303,13 +312,13 @@ describe('DotContentTypesPortletComponent', () => {
         ).toEqual([
             {
                 label: 'Delete',
-                icon: 'delete'
+                icon: 'pi pi-trash'
             }
         ]);
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(observableOf([]));
+        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         fixture.detectChanges();
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
@@ -322,7 +331,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open push publish dialog', () => {
         fixture.detectChanges();
-        spyOn(dotPushPublishDialogService, 'open').and.callThrough();
+        jest.spyOn(dotPushPublishDialogService, 'open');
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -411,10 +420,11 @@ describe('DotContentTypesPortletComponent', () => {
     it('should emit changes in base types selector', () => {
         fixture.detectChanges();
         baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
-        spyOn(comp, 'changeBaseTypeSelector');
+        jest.spyOn(comp, 'changeBaseTypeSelector');
         baseTypesSelector.selected.emit('test');
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
+        expect(comp.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
     });
 
     it('should handle error if is not possible delete the content type', () => {
@@ -444,12 +454,12 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(crudService, 'delete').and.returnValue(observableThrowError(forbiddenError));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -492,9 +502,10 @@ describe('DotContentTypesPortletComponent', () => {
 
     describe('filterBy', () => {
         beforeEach(() => {
-            router.data = observableOf({
+            router.data = of({
                 filterBy: 'FORM'
             });
+
             fixture.detectChanges();
         });
 
@@ -504,7 +515,6 @@ describe('DotContentTypesPortletComponent', () => {
         });
 
         it('should set filterBy params', () => {
-            fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
             expect(comp.listing.paginatorService.extraParams.get('type')).toBe('Form');
             expect(comp.actionHeaderOptions.primary.model).toBe(null);

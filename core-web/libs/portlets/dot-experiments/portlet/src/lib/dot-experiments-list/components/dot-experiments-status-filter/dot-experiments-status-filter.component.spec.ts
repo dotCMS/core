@@ -6,9 +6,8 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsStatusFilterComponent } from './dot-experiments-status-filter.component';
 

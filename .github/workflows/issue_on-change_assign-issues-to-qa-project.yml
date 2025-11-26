@@ -1,0 +1,20 @@
+name: Assign issues with `Passed Internal QA` label to QA project
+on:
+  issues:
+    types: [labeled]
+jobs:
+  assign_one_project:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    name: Assign to QA Project
+    env:
+      QA_PROJECT_ID: 6
+      COLUMN_NAME: Backlog
+      MY_GITHUB_TOKEN: ${{ secrets.PROJECT_GITHUB_TOKEN }}
+    steps:
+      - name: Assign issues with `Passed Internal QA` label to QA project
+        uses: srggrs/assign-one-project-github-action@1.1.3
+        if: |
+          contains(github.event.issue.labels.*.name, 'Passed Internal QA')
+        with:
+          project: 'https://github.com/orgs/dotCMS/projects/${{ env.QA_PROJECT_ID }}'
+          column_name: ${{ env.COLUMN_NAME }}

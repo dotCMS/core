@@ -5,16 +5,28 @@ import com.dotcms.api.tree.Parentable;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,6 +47,36 @@ public class FileAssetAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * This tests that a file asset wrapped in FileAssetMap can be serialized to a JSON string see <a href="https://github.com/dotCMS/core/issues/30464">30464</a>
+     * For security reasons I'm also removing the file from the rendered contentlet to make sure it is not serialized giving away the file path.
+     * Given scenario: A file asset is created and persisted then wrapped in a FileAssetMap
+     * Expected result: The FileAssetMap can be serialized to a JSON string
+     * @throws Exception
+     */
+    @Test
+    public void Test_FileAssetMap_Can_Be_Serialized()
+            throws Exception {
+        final File file = TestDataUtils.nextBinaryFile(TestFile.JPG);
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+        final Contentlet fileAssetContentlet = fileAssetDataGen.nextPersisted();
+        final FileAssetMap fileAssetMap = FileAssetMap.of(fileAssetContentlet);
+        // First test using a jackson mapper
+        final ObjectMapper defaultMapper = DotObjectMapperProvider.createDefaultMapper();
+         String asString = defaultMapper.writeValueAsString(fileAssetMap);
+        Assert.assertNotNull(asString);
+        Assert.assertTrue(asString.startsWith("{"));
+        Assert.assertTrue(asString.endsWith("}"));
+        //Test no file attribute is present
+        Assert.assertFalse(asString.contains("\"file\":"));
+        // Now test the old-fashioned way
+        asString = new JSONObject(fileAssetMap).toString();
+        Assert.assertTrue(asString.startsWith("{"));
+        Assert.assertTrue(asString.endsWith("}"));
+        //Test no file attribute is present
+        Assert.assertFalse(asString.contains("\"file\":"));
+    }
 
     @Test
     public void Test_Modify_Identifier_File_Name_Then_Recover_File_Then_Expect_Mismatch()
@@ -86,9 +128,9 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
     }
 
-    @Test
+   @Test
     public void Test_Rename_File_Asset_Then_Recover_File_Then_Expect_Match()
-            throws Exception {
+            throws Exception { 
 
         final User user = APILocator.systemUser();
         final Folder parentFolder = new FolderDataGen().nextPersisted();

@@ -5,6 +5,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 
 import java.util.List;
+import java.util.Set;
 
 public interface TagFactory {
 
@@ -78,6 +79,17 @@ public interface TagFactory {
      * @return  a list of tags filtered by tag name or host name
      */
     public List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas, String sort, int start, int count);
+
+    /**
+     * Gets the count of tags filtered by tag name and/or host name
+     * @param tagName tag name filter
+     * @param hostFilter host name or ID filter
+     * @param globalTagsFilter include global tags
+     * @param excludePersonas True if Persona Tags should be exclude from the count
+     * @return count of filtered tags
+     * @throws DotDataException
+     */
+    public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas) throws DotDataException;
 
     /**
      * Update the specified tagInode related to a tag
@@ -190,4 +202,11 @@ public interface TagFactory {
      * @throws DotDataException
      */
     public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException;
+
+    /**
+     * Get top tags for a given site id
+     * @param hostId String site id
+     * @return Set of top tags
+     */
+    Set<String> getTopTagsBySiteId(String siteId) throws DotDataException;
 }

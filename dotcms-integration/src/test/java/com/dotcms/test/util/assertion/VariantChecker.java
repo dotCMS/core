@@ -1,11 +1,8 @@
 package com.dotcms.test.util.assertion;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.experiments.model.Experiment;
 import com.dotcms.variant.model.Variant;
+
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -15,7 +12,7 @@ public class VariantChecker implements AssertionChecker<Variant> {
 
     @Override
     public Map<String, Object> getFileArguments(final Variant variant, final File file) {
-        return map(
+        return Map.of(
                 "name", variant.name(),
                 "description", variant.description().get()
         );

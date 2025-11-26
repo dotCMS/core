@@ -2,9 +2,10 @@ import { Component, DebugElement, ElementRef, Input, SimpleChange, ViewChild } f
 import { ComponentFixture, ComponentFixtureAutoDetect, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-
 import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.component';
+
+import { IframeComponent } from '../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-iframe',
@@ -21,10 +22,14 @@ describe('CategoriesPermissionsComponent', () => {
     let de: DebugElement;
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotCategoriesPermissionsComponent, IframeMockComponent],
-            imports: [DotPortletBaseModule],
+            imports: [DotCategoriesPermissionsComponent, DotPortletBaseComponent],
             providers: [{ provide: ComponentFixtureAutoDetect, useValue: true }]
-        }).compileComponents();
+        })
+            .overrideComponent(DotCategoriesPermissionsComponent, {
+                remove: { imports: [IframeComponent] },
+                add: { imports: [IframeMockComponent] }
+            })
+            .compileComponents();
 
         fixture = TestBed.createComponent(DotCategoriesPermissionsComponent);
         component = fixture.componentInstance;

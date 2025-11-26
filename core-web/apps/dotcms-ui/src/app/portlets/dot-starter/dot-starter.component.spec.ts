@@ -1,14 +1,12 @@
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { CheckboxModule, Checkbox } from 'primeng/checkbox';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -20,6 +18,8 @@ import {
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
+
+import { DotAccountService } from '../../api/services/dot-account-service';
 
 const messages = {
     'starter.title': 'Welcome!',
@@ -59,13 +59,13 @@ const messages = {
     'starter.footer.link.feedback.description': 'Feedback description'
 };
 
-const routeDatamock = {
+const routeDataMock = {
     userData: {
         user: {
             email: 'admin@dotcms.com',
             givenName: 'Admin',
             roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
-            surnaname: 'User',
+            surname: 'User',
             userId: 'testId'
         },
         permissions: {
@@ -77,275 +77,249 @@ const routeDatamock = {
     }
 };
 
+const routeDataWithoutPermissionsMock = {
+    userData: {
+        user: {
+            email: 'admin@dotcms.com',
+            givenName: 'Admin',
+            roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+            surname: 'User',
+            userId: 'testId'
+        },
+        permissions: {
+            STRUCTURES: { canRead: true, canWrite: false },
+            HTMLPAGES: { canRead: true, canWrite: false },
+            TEMPLATES: { canRead: true, canWrite: false },
+            CONTENTLETS: { canRead: true, canWrite: false }
+        }
+    }
+};
+
 class ActivatedRouteMock {
     get data() {
-        return {};
-    }
-}
-
-class DotAccountServiceMock {
-    addStarterPage() {
-        return of(true);
-    }
-
-    removeStarterPage() {
-        return of(true);
+        return of(routeDataMock);
     }
 }
 
 describe('DotStarterComponent', () => {
-    let fixture: ComponentFixture<DotStarterComponent>;
-    let de: DebugElement;
-    const messageServiceMock = new MockDotMessageService(messages);
-    let dotAccountService: DotAccountService;
-    let activatedRoute: ActivatedRoute;
+    describe('With user permissions', () => {
+        let spectator: Spectator<DotStarterComponent>;
+        const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [DotMessagePipe, CheckboxModule, HttpClientTestingModule],
-            declarations: [DotStarterComponent],
+        const createComponent = createComponentFactory({
+            component: DotStarterComponent,
+            imports: [DotMessagePipe, CheckboxModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                },
+                { provide: ActivatedRoute, useClass: ActivatedRouteMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotStarterResolver,
-                { provide: DotAccountService, useClass: DotAccountServiceMock }
+                mockProvider(DotAccountService, {
+                    addStarterPage: jest.fn().mockReturnValue(of(true)),
+                    removeStarterPage: jest.fn().mockReturnValue(of(true))
+                })
             ]
         });
 
-        fixture = TestBed.createComponent(DotStarterComponent);
-
-        de = fixture.debugElement;
-        dotAccountService = TestBed.inject(DotAccountService);
-        activatedRoute = TestBed.inject(ActivatedRoute);
-    }));
-
-    describe('With user permissions', () => {
         beforeEach(() => {
-            spyOnProperty(activatedRoute, 'data').and.returnValue(of(routeDatamock));
-            fixture.detectChanges();
+            spectator = createComponent();
         });
 
-        it('should set proper labels to the main container', () => {
-            expect(
-                de.query(By.css('[data-testId="dot-starter-title"]')).nativeElement.innerText
-            ).toContain(messageServiceMock.get('starter.title'));
-            expect(de.query(By.css('.dot-starter-description')).nativeElement.innerText).toContain(
-                'You are logged in as Admin. To help you get started building with dotCMS we provided some quick links.'
-            );
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.data.model"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.data.model.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.data.model"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.data.model.description'));
+        describe('With user permissions', () => {
+            it('should set proper labels to the main container', () => {
+                expect(spectator.query('.dot-starter-description')).toHaveText(
+                    'You are logged in as Admin. To help you get started building with dotCMS we provided some quick links.'
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.content"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.add.content.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.content"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.add.content.description'));
+                expect(spectator.query(byTestId('starter.main.link.data.model'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.data.model.title')
+                );
+                expect(spectator.query(byTestId('starter.main.link.data.model'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.data.model.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.design.layout"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.design.layout.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.design.layout"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.design.layout.description'));
+                expect(spectator.query(byTestId('starter.main.link.content'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.add.content.title')
+                );
+                expect(spectator.query(byTestId('starter.main.link.content'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.add.content.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.create.page"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.create.page.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.create.page"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.main.link.create.page.description'));
-        });
+                expect(spectator.query(byTestId('starter.main.link.design.layout'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.design.layout.title')
+                );
+                expect(spectator.query(byTestId('starter.main.link.design.layout'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.design.layout.description')
+                );
 
-        it('should set proper labels to the side container', () => {
-            expect(
-                de.query(By.css('[data-testId="dot-side-title"]')).nativeElement.innerText
-            ).toContain(messageServiceMock.get('starter.side.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.graphQl"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.graphQl.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.graphQl"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.graphQl.description'));
+                expect(spectator.query(byTestId('starter.main.link.create.page'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.create.page.title')
+                );
+                expect(spectator.query(byTestId('starter.main.link.create.page'))).toHaveText(
+                    messageServiceMock.get('starter.main.link.create.page.description')
+                );
+            });
 
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.content"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.content.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.content"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.content.description'));
+            it('should set proper labels to the side container', () => {
+                expect(spectator.query(byTestId('dot-side-title'))).toHaveText(
+                    messageServiceMock.get('starter.side.title')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.image.processing"] h4'))
-                    .nativeElement.innerText
-            ).toContain(messageServiceMock.get('starter.side.link.image.processing.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.image.processing"] p'))
-                    .nativeElement.innerText
-            ).toContain(messageServiceMock.get('starter.side.link.image.processing.description'));
+                expect(spectator.query(byTestId('starter.side.link.graphQl'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.graphQl.title')
+                );
+                expect(spectator.query(byTestId('starter.side.link.graphQl'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.graphQl.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.page.layout"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.page.layout.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.page.layout"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.page.layout.description'));
+                expect(spectator.query(byTestId('starter.side.link.content'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.content.title')
+                );
+                expect(spectator.query(byTestId('starter.side.link.content'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.content.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.generate.key"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.generate.key.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.side.link.generate.key"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.side.link.generate.key.description'));
-        });
+                expect(spectator.query(byTestId('starter.side.link.image.processing'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.image.processing.title')
+                );
+                expect(spectator.query(byTestId('starter.side.link.image.processing'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.image.processing.description')
+                );
 
-        it('should set proper labels to the footer container', () => {
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.documentation"] h4'))
-                    .nativeElement.innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.documentation.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.documentation"] p'))
-                    .nativeElement.innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.documentation.description'));
+                expect(spectator.query(byTestId('starter.side.link.page.layout'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.page.layout.title')
+                );
+                expect(spectator.query(byTestId('starter.side.link.page.layout'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.page.layout.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.examples"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.examples.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.examples"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.examples.description'));
+                expect(spectator.query(byTestId('starter.side.link.generate.key'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.generate.key.title')
+                );
+                expect(spectator.query(byTestId('starter.side.link.generate.key'))).toHaveText(
+                    messageServiceMock.get('starter.side.link.generate.key.description')
+                );
+            });
 
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.community"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.community.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.community"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.community.description'));
+            it('should set proper labels to the footer container', () => {
+                expect(spectator.query(byTestId('starter.footer.link.documentation'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.documentation.title')
+                );
+                expect(spectator.query(byTestId('starter.footer.link.documentation'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.documentation.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.training"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.training.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.training"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.training.description'));
+                expect(spectator.query(byTestId('starter.footer.link.examples'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.examples.title')
+                );
+                expect(spectator.query(byTestId('starter.footer.link.examples'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.examples.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.review"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.review.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.review"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.review.description'));
+                expect(spectator.query(byTestId('starter.footer.link.community'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.community.title')
+                );
+                expect(spectator.query(byTestId('starter.footer.link.community'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.community.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.feedback"] h4')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.feedback.title'));
-            expect(
-                de.query(By.css('[data-testId="starter.footer.link.feedback"] p')).nativeElement
-                    .innerText
-            ).toContain(messageServiceMock.get('starter.footer.link.feedback.description'));
-        });
+                expect(spectator.query(byTestId('starter.footer.link.training'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.training.title')
+                );
+                expect(spectator.query(byTestId('starter.footer.link.training'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.training.description')
+                );
 
-        it('should have right links to internal portlets', () => {
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.data.model"]')).nativeElement
-                    .attributes['routerLink'].value
-            ).toEqual('/content-types-angular/create/content');
+                expect(spectator.query(byTestId('starter.footer.link.review'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.review.title')
+                );
+                expect(spectator.query(byTestId('starter.footer.link.review'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.review.description')
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.content"]')).nativeElement
-                    .attributes['routerLink'].value
-            ).toEqual('/c/content/new/webPageContent');
+                expect(spectator.query(byTestId('starter.footer.link.feedback'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.feedback.title')
+                );
+                expect(spectator.query(byTestId('starter.footer.link.feedback'))).toHaveText(
+                    messageServiceMock.get('starter.footer.link.feedback.description')
+                );
+            });
 
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.design.layout"]')).nativeElement
-                    .attributes['routerLink'].value
-            ).toEqual('/templates/new/designer');
+            it('should have right links to internal portlets', () => {
+                expect(spectator.query(byTestId('starter.main.link.data.model'))).toHaveAttribute(
+                    'routerLink',
+                    '/content-types-angular/create/content'
+                );
 
-            expect(
-                de.query(By.css('[data-testId="starter.main.link.create.page"]')).nativeElement
-                    .attributes['routerLink'].value
-            ).toEqual('/c/content/new/htmlpageasset');
-        });
+                expect(spectator.query(byTestId('starter.main.link.content'))).toHaveAttribute(
+                    'routerLink',
+                    '/c/content/new/webPageContent'
+                );
 
-        it('should call the endpoint to hide/show the portlet', () => {
-            const checkBox: Checkbox = de.query(By.css('p-checkbox')).componentInstance;
-            const boxEl = fixture.nativeElement.querySelector('.p-checkbox-box');
+                expect(
+                    spectator.query(byTestId('starter.main.link.design.layout'))
+                ).toHaveAttribute('routerLink', '/templates/new/designer');
 
-            spyOn(dotAccountService, 'addStarterPage').and.callThrough();
-            spyOn(dotAccountService, 'removeStarterPage').and.callThrough();
+                expect(spectator.query(byTestId('starter.main.link.create.page'))).toHaveAttribute(
+                    'routerLink',
+                    '/c/content/new/htmlpageasset'
+                );
+            });
 
-            expect(checkBox.label).toEqual(messageServiceMock.get('starter.dont.show'));
-            boxEl.click();
-            expect(dotAccountService.removeStarterPage).toHaveBeenCalledTimes(1);
-            boxEl.click();
-            expect(dotAccountService.addStarterPage).toHaveBeenCalledTimes(1);
+            it('should call the endpoint to hide/show the portlet', () => {
+                const dotAccountService = spectator.inject(DotAccountService);
+                const checkbox = spectator.query(Checkbox);
+
+                expect(checkbox.label).toBe(messageServiceMock.get('starter.dont.show'));
+
+                spectator.component.handleVisibility(true);
+                expect(dotAccountService.removeStarterPage).toHaveBeenCalledTimes(1);
+
+                spectator.component.handleVisibility(false);
+                expect(dotAccountService.addStarterPage).toHaveBeenCalledTimes(1);
+            });
         });
     });
 
     describe('Without user permissions', () => {
-        beforeEach(() => {
-            spyOnProperty(activatedRoute, 'data').and.returnValue(
-                of({
-                    userData: {
-                        user: {
-                            email: 'admin@dotcms.com',
-                            givenName: 'Admin',
-                            roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
-                            surnaname: 'User',
-                            userId: 'testId'
-                        },
-                        permissions: {
-                            STRUCTURES: { canRead: true, canWrite: false },
-                            HTMLPAGES: { canRead: true, canWrite: false },
-                            TEMPLATES: { canRead: true, canWrite: false },
-                            CONTENTLETS: { canRead: true, canWrite: false }
-                        }
-                    }
+        let spectator: Spectator<DotStarterComponent>;
+        const messageServiceMock = new MockDotMessageService(messages);
+
+        const createComponent = createComponentFactory({
+            component: DotStarterComponent,
+            imports: [DotMessagePipe, CheckboxModule],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useValue: { data: of(routeDataWithoutPermissionsMock) }
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                DotStarterResolver,
+                mockProvider(DotAccountService, {
+                    addStarterPage: jest.fn().mockReturnValue(of(true)),
+                    removeStarterPage: jest.fn().mockReturnValue(of(true))
                 })
-            );
-            fixture.detectChanges();
+            ]
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
         });
 
         it('should hide links from the main container', () => {
-            expect(de.query(By.css('[data-testId="starter.main.link.data.model"]'))).toBeFalsy();
-            expect(de.query(By.css('[data-testId="starter.main.link.content"]'))).toBeFalsy();
-            expect(de.query(By.css('[data-testId="starter.main.link.design.layout"]'))).toBeFalsy();
-            expect(de.query(By.css('[data-testId="starter.main.link.create.page"]'))).toBeFalsy();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('starter.main.link.data.model'))).toBeFalsy();
+            expect(spectator.query(byTestId('starter.main.link.content'))).toBeFalsy();
+            expect(spectator.query(byTestId('starter.main.link.design.layout'))).toBeFalsy();
+            expect(spectator.query(byTestId('starter.main.link.create.page'))).toBeFalsy();
         });
     });
 });

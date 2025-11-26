@@ -10,6 +10,7 @@ import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.DotCliIgnoreFileFilter;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.asset.AbstractAssetSync.PushType;
@@ -21,18 +22,17 @@ import com.dotcms.model.asset.FolderSync.Builder;
 import com.dotcms.model.asset.FolderView;
 import com.google.common.base.Strings;
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import javax.enterprise.context.Dependent;
-import javax.ws.rs.NotFoundException;
-import org.apache.commons.lang3.tuple.Pair;
+import jakarta.enterprise.context.Dependent;
+import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -44,7 +44,8 @@ import org.jboss.logging.Logger;
  * allowing for faster traversal of large directory structures.
  */
 @Dependent
-public class LocalFolderTraversalTask extends TaskProcessor {
+public class LocalFolderTraversalTask extends
+        TaskProcessor<LocalFolderTraversalTaskParams, CompletableFuture<TraverseTaskResult>> {
 
     private final ManagedExecutor executor;
 
@@ -85,21 +86,34 @@ public class LocalFolderTraversalTask extends TaskProcessor {
      *
      * @param params The traversal parameters
      */
-    public void setTraversalParams(final LocalFolderTraversalTaskParams params) {
+    @Override
+    public void setTaskParams(final LocalFolderTraversalTaskParams params) {
         this.traversalTaskParams = params;
+    }
+
+    /**
+     * Returns the appropriate FileFilter based on whether DotCliIgnore is configured.
+     * If DotCliIgnore is present in the task parameters, returns a DotCliIgnoreFileFilter
+     * that filters based on .dotcliignore patterns. Otherwise, returns the default HiddenFileFilter.
+     *
+     * @return FileFilter instance for filtering files during traversal
+     */
+    private FileFilter getFileFilter() {
+        return traversalTaskParams.dotCliIgnore()
+                .map(DotCliIgnoreFileFilter::new)
+                .map(FileFilter.class::cast)
+                .orElse(new HiddenFileFilter());
     }
 
     /**
      * Executes the folder traversal task and returns a TreeNode representing the directory tree
      * rooted at the folder specified in the constructor.
      *
-     * @return A Pair object containing a list of exceptions encountered during traversal and the
-     * resulting TreeNode representing the directory tree at the specified folder.
+     * @return A CompletableFuture containing the TreeNode representing the directory tree rooted at
+     * the folder specified in the constructor and a list of exceptions encountered during traversal.
      */
-    public Pair<List<Exception>, TreeNode> compute() {
-
-        CompletionService<Pair<List<Exception>, TreeNode>> completionService =
-                new ExecutorCompletionService<>(executor);
+    @Override
+    public CompletableFuture<TraverseTaskResult> compute() {
 
         var errors = new ArrayList<Exception>();
 
@@ -113,19 +127,37 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                     localPathStructure));
         } catch (Exception e) {
             if (traversalTaskParams.failFast()) {
-                throw e;
+                return CompletableFuture.failedFuture(e);
             } else {
                 errors.add(e);
             }
         }
 
+        return handleFolder(errors, currentNode, folderOrFile);
+    }
+
+    /**
+     * Handles a folder by traversing it and its subdirectories, creating tasks to process each
+     * subdirectory. Any encountered errors are stored in an ArrayList and the resulting tree node
+     * is returned.
+     *
+     * @param errors       The list of exceptions encountered during traversal.
+     * @param currentNode  The current tree node.
+     * @param folderOrFile The folder or file to handle.
+     * @return A CompletableFuture containing the list of exceptions encountered and the resulting
+     * tree node.
+     */
+    private CompletableFuture<TraverseTaskResult> handleFolder(
+            final ArrayList<Exception> errors, final AtomicReference<TreeNode> currentNode,
+            final File folderOrFile) {
+
         if (null != currentNode.get() && folderOrFile.isDirectory()) {
 
-            File[] files = folderOrFile.listFiles(new HiddenFileFilter());
+            List<CompletableFuture<TraverseTaskResult>> futures = new ArrayList<>();
+
+            File[] files = folderOrFile.listFiles(getFileFilter());
 
             if (files != null) {
-
-                var toProcessCount = 0;
 
                 for (File file : files) {
 
@@ -135,28 +167,46 @@ public class LocalFolderTraversalTask extends TaskProcessor {
                                 logger, executor, retriever, fileHashService
                         );
 
-                        subTask.setTraversalParams(LocalFolderTraversalTaskParams.builder()
+                        subTask.setTaskParams(LocalFolderTraversalTaskParams.builder()
                                 .from(traversalTaskParams)
                                 .sourcePath(file.getAbsolutePath())
                                 .build()
                         );
 
-                        completionService.submit(subTask::compute);
-                        toProcessCount++;
+                        CompletableFuture<TraverseTaskResult> future =
+                                CompletableFuture.supplyAsync(
+                                        subTask::compute, executor
+                                ).thenCompose(Function.identity());
+                        futures.add(future);
                     }
                 }
 
-                // Wait for all tasks to complete and gather the results
-                Function<Pair<List<Exception>, TreeNode>, Void> processFunction = taskResult -> {
-                    errors.addAll(taskResult.getLeft());
-                    currentNode.get().addChild(taskResult.getRight());
-                    return null;
-                };
-                processTasks(toProcessCount, completionService, processFunction);
+                return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                        .thenApply(ignored -> {
+                            for (CompletableFuture<TraverseTaskResult> future : futures) {
+                                var taskResult = future.join();
+                                errors.addAll(taskResult.exceptions());
+                                taskResult.treeNode().ifPresent(currentNode.get()::addChild);
+                            }
+
+                            final TreeNode treeNode = currentNode.get();
+                            //If the task failed to complete ad the exception got added to the list
+                            // of errors instead of being thrown current node will be null
+                            return TraverseTaskResult.builder()
+                                    .treeNode(Optional.ofNullable(treeNode))
+                                    .exceptions(errors)
+                                    .build();
+                        });
             }
         }
 
-        return Pair.of(errors, currentNode.get());
+        final TreeNode treeNode = currentNode.get();
+        //If the task failed to complete ad the exception got added to the list of errors instead
+        // of being thrown current node will be null
+        return CompletableFuture.completedFuture(TraverseTaskResult.builder()
+                .treeNode(Optional.ofNullable(treeNode))
+                .exceptions(errors)
+                .build());
     }
 
     /**
@@ -179,7 +229,7 @@ public class LocalFolderTraversalTask extends TaskProcessor {
 
             var assetVersions = AssetVersionsView.builder();
 
-            File[] files = folderOrFile.listFiles(new HiddenFileFilter());
+            File[] files = folderOrFile.listFiles(getFileFilter());
 
             try {
                 // First, retrieving the folder from the remote server

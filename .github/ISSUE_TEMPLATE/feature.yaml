@@ -1,123 +1,87 @@
 name: Feature
-description: I need to change the way something works, or create new functionality. 
-labels: ['Type : New Functionality', Triage]
-projects: ["dotCMS/7"]
+description: Specific functionality within an EPIC that provides particular value
+title: "[FEATURE] "
+labels: []
+type: feature
+assignees: []
 
 body:
-
   - type: markdown
     attributes:
       value: |
-        If you have any questions about how to use this form, check out [How dotCMS uses GitHub](https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw).
+        **Note: This template is intended for Product team use only.**
+        
+        Features are specific groupings of functionality within an EPIC that provide particular value.
 
   - type: textarea
-    id: parent-issue
+    id: problem
     attributes:
-      label: "Parent Issue"
-      description: "If this work is part of another epic or story, please please include a GitHub issue link to the parent issue."
-      placeholder:
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: user-story
-    attributes:
-      label: "User Story"
-      description: "As a ___, I want to be able to ___, so I can ___."
-      placeholder:
-      value: 
+      label: Problem
+      description: Explain in detail what user problem this feature will solve
+      placeholder: "Describe the specific user pain point..."
     validations:
       required: true
 
   - type: textarea
-    id: acceptance-criteria 
+    id: goal
     attributes:
-      label: "Acceptance Criteria"
-      description: "What objective needs to be met in order to resolve this?"
-      placeholder: 
-      value: 
+      label: Goal
+      description: Describe the value this delivers to the user or dotCMS. Be specific.
+      placeholder: "Users will be able to... which will result in..."
     validations:
       required: true
 
-  - type: dropdown
-    id: proposed-objective
+  - type: checkboxes
+    id: personas
     attributes:
-      label: "Proposed Objective"
-      description: 
+      label: Target Personas
+      description: Select the personas this feature affects
       options:
-        - "Please Select"
-        - "Application Performance"
-        - "Cloud Engineering"
-        - "Code Maintenance"
-        - "Core Features"
-        - "Customer Success"
-        - "Customer Support"
-        - "Documentation"
-        - "Integrations"
-        - "Marketing"
-        - "Quality Assurance"
-        - "Reliability"
-        - "Sales"
-        - "Security & Privacy"
-        - "Technical User Experience"
-        - "User Experience"
-    validations:
-      required: true
+        - label: Developer teams
+        - label: Content teams
+        - label: DevOps teams
+        - label: System administrators (dotCMS)
 
-  - type: dropdown
-    id: proposed-prioritiy
+  - type: textarea
+    id: demo-expectations
     attributes:
-      label: "Proposed Priority"
-      description: 
-      options:
-        - "Please Select"
-        - "Priority 1 - Show Stopper"
-        - "Priority 2 - Important"
-        - "Priority 3 - Average"
-        - "Priority 4 - Trivial"
+      label: Demo Expectations
+      description: Describe exactly what someone can show in a bi-weekly demo to prove the value is delivered
+      placeholder: "In the demo, we will show..."
     validations:
       required: true
 
   - type: textarea
-    id: external-links 
+    id: acceptance-criteria
     attributes:
-      label: "External Links... Slack Conversations, Support Tickets, Figma Designs, etc."
-      description: "Provide links to any support tickets or Slack conversations that help explain the problem or desired outcome."
-      placeholder: 
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: assumptions
-    attributes:
-      label: "Assumptions & Initiation Needs"
-      description: "List relevant assumptions, pre-requisite steps, or issues that need to be completed before this issue can be worked on."
-      placeholder:
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
-    id: qa-note
-    attributes:
-      label: "Quality Assurance Notes & Workarounds"
-      description: "Add any additional notes for QA you would like; this field is also for use by the QA Team once the issue is in progress."
-      placeholder:
-      value:
-    validations:
-      required: false
-
-  - type: textarea
-    id: sub-tasks
-    attributes:
-      label: "Sub-Tasks & Estimates"
-      description: "Use a task-list format, and feel free to @ people responsible for completion."
+      label: Acceptance Criteria
+      description: Specific, measurable criteria for feature completion
       placeholder: |
-        - [ ] Some Task Related to this Issue (4 points)
-        - [ ] Some Task for Damen (2 points) @damen-dotcms
-      value:
+        - [ ] Criteria 1
+        - [ ] Criteria 2
+        - [ ] Criteria 3
     validations:
       required: false
 
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: User Stories
+      description: Break down into specific user stories
+      placeholder: |
+        - As a [persona], I want [functionality], so that [benefit]
+        - As a [persona], I want [functionality], so that [benefit]
+    validations:
+      required: false
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Related resources
+      placeholder: |
+        - [Design mockups](url)
+        - [Technical specs](url)
+        - [Research](url)
+    validations:
+      required: false

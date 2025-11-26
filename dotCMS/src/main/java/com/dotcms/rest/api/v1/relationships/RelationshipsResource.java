@@ -16,6 +16,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,9 +29,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**
@@ -40,6 +41,7 @@ import static com.dotcms.util.CollectionsUtils.toImmutableList;
  * @author nollymar
  */
 @Path("/v1/relationships")
+@Tag(name = "Relationships", description = "Content relationship management")
 public class RelationshipsResource {
 
     private final WebResource webResource;
@@ -75,7 +77,7 @@ public class RelationshipsResource {
                               label = cardinality.name();
                           }
 
-                          return map(
+                          return Map.of(
                                   "name", cardinality.name(),
                                   "id", cardinality.ordinal(),
                                   "label", label
@@ -116,7 +118,8 @@ public class RelationshipsResource {
         try {
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
 
-            final Map<String, Object> params = map(RelationshipPaginator.CONTENT_TYPE_PARAM,
+            final Map<String, Object> params = new HashMap<>();
+            params.put(RelationshipPaginator.CONTENT_TYPE_PARAM,
                     contentType);
             return paginationUtil.getPage(request, user, null, page, perPage, params);
         } catch (Exception e) {

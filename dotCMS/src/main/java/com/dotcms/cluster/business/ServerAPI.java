@@ -3,11 +3,17 @@ package com.dotcms.cluster.business;
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.exception.DotDataException;
 
+import com.dotmarketing.util.UUIDUtil;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.util.List;
 
 public interface ServerAPI {
 
+	/**
+	 * this is the UNIQUE identifier for the server instance
+	 */
+	final static Lazy<String> SERVER_ID = Lazy.of(UUIDUtil::uuid);
 	public void saveServer(Server server) throws DotDataException;
 
 	public Server getServer(String serverId) throws DotDataException;

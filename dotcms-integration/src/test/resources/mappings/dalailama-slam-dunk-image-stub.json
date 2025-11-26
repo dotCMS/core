@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/i",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.prompt == 'Image of Dalai Lama winning a slam dunk contest')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "created": 1713989422,
+      "data": [
+        {
+          "revised_prompt": "A religious figure, an Asian man in traditional red and yellow monk attire, is in the midst of a slam dunk contest. With great agility and excitement, he jumps high to dunk the basketball into the hoop, the crowd erupting in cheers. The scene is set in a bustling basketball court with spectators on the edge of their seats, witnessing this unexpected victory.",
+          "url": "http://localhost:50505/s/dalailama"
+        }
+      ]
+    }
+  }
+}

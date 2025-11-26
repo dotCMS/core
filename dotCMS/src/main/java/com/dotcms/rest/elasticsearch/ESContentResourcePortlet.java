@@ -1,18 +1,11 @@
 package com.dotcms.rest.elasticsearch;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.NumberUtil.toInt;
-
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import com.dotcms.rest.*;
+import com.dotcms.rest.BaseRestPortlet;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResourceResponse;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -21,14 +14,30 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.apache.commons.io.IOUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
 
 @Path("/es")
+@Tag(name = "Search", description = "Content search and query operations")
 public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();
@@ -101,15 +110,15 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			for(Object x : esresult){
 				final Contentlet c = (Contentlet) x;
 				try {
-
-					final JSONObject jsonObject = ContentResource
-							.contentletToJSON(c, request, response,
+					final ContentHelper contentHelper = ContentHelper.getInstance();
+					final JSONObject jsonObject = contentHelper
+							.contentletToJSON(c, response,
 									"false", user, allCategoriesInfo);
 					jsonCons.put(jsonObject);
 
 					//load relationships
 					if (depth!= -1){
-						ContentResource
+						contentHelper
 								.addRelationshipsToJSON(request, response,
 										"false", user, depth, true, c,
 										jsonObject, null, -1, liveParam, allCategoriesInfo);

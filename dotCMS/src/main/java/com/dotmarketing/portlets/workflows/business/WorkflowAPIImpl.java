@@ -2,6 +2,12 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
+import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
+import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
+import com.dotcms.ai.workflow.OpenAIContentPromptActionlet;
+import com.dotcms.ai.workflow.OpenAIGenerateImageActionlet;
+import com.dotcms.ai.workflow.OpenAITranslationActionlet;
+import com.dotcms.ai.workflow.OpenAIVisionAutoTagActionlet;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -70,7 +76,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AnalyticsFireUserEventActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.AsyncEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
 import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
@@ -90,13 +98,13 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ReindexContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetApproversActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
@@ -166,6 +174,7 @@ import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
@@ -236,47 +245,57 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final String BULK_ACTIONS_CONTENTLET_FETCH_STEP = "workflow.action.bulk.fetch.step";
 
+	private static final String LICENSE_REQUIRED_MESSAGE_KEY = "Workflow-Schemes-License-required";
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
 		actionletClasses = new ArrayList<>();
 
-		// Add default actionlet classes
-		actionletClasses.addAll(Arrays.asList(
-				CommentOnWorkflowActionlet.class,
-				NotifyUsersActionlet.class,
-				ArchiveContentActionlet.class,
-				DeleteContentActionlet.class,
-				DestroyContentActionlet.class,
-				CheckinContentActionlet.class,
-				CheckoutContentActionlet.class,
-				UnpublishContentActionlet.class,
-				PublishContentActionlet.class,
-				NotifyAssigneeActionlet.class,
-				UnarchiveContentActionlet.class,
-				ResetTaskActionlet.class,
-				MultipleApproverActionlet.class,
-				FourEyeApproverActionlet.class,
-				TwitterActionlet.class,
-				PushPublishActionlet.class,
-				CheckURLAccessibilityActionlet.class,
-                EmailActionlet.class,
-                SetValueActionlet.class,
-                ReindexContentActionlet.class,
-                PushNowActionlet.class,
-				TranslationActionlet.class,
-				SaveContentActionlet.class,
-				SaveContentAsDraftActionlet.class,
-				CopyActionlet.class,
-				MessageActionlet.class,
-				VelocityScriptActionlet.class,
-				JsScriptActionlet.class,
-				LargeMessageActionlet.class,
-				SendFormEmailActionlet.class,
-				ResetApproversActionlet.class,
-				RekognitionActionlet.class,
-				MoveContentActionlet.class
-		));
+      // Add default actionlet classes
+      actionletClasses.addAll(Arrays.asList(
+              CommentOnWorkflowActionlet.class,
+              NotifyUsersActionlet.class,
+              ArchiveContentActionlet.class,
+              DeleteContentActionlet.class,
+              DestroyContentActionlet.class,
+              CheckinContentActionlet.class,
+              CheckoutContentActionlet.class,
+              UnpublishContentActionlet.class,
+              PublishContentActionlet.class,
+              NotifyAssigneeActionlet.class,
+              UnarchiveContentActionlet.class,
+              ResetTaskActionlet.class,
+              ResetPermissionsActionlet.class,
+              MultipleApproverActionlet.class,
+              FourEyeApproverActionlet.class,
+              PushPublishActionlet.class,
+              CheckURLAccessibilityActionlet.class,
+              EmailActionlet.class,
+              AsyncEmailActionlet.class,
+              SetValueActionlet.class,
+              ReindexContentActionlet.class,
+              PushNowActionlet.class,
+              TranslationActionlet.class,
+              SaveContentActionlet.class,
+              SaveContentAsDraftActionlet.class,
+              CopyActionlet.class,
+              MessageActionlet.class,
+              VelocityScriptActionlet.class,
+              JsScriptActionlet.class,
+              LargeMessageActionlet.class,
+              SendFormEmailActionlet.class,
+              ResetApproversActionlet.class,
+              RekognitionActionlet.class,
+              MoveContentActionlet.class,
+              DotEmbeddingsActionlet.class,
+              OpenAIContentPromptActionlet.class,
+              OpenAIGenerateImageActionlet.class,
+              OpenAIAutoTagActionlet.class,
+              AnalyticsFireUserEventActionlet.class,
+              OpenAIVisionAutoTagActionlet.class,
+              OpenAITranslationActionlet.class
+      ));
 
 		refreshWorkFlowActionletMap();
 		registerBundleService();
@@ -354,16 +373,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void registerBundleService () {
-		if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-			// Register main service
-			BundleContext context = HostActivator.instance().getBundleContext();
-			if (null != context) {
-				Hashtable<String, String> props = new Hashtable<>();
-				context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
-			} else {
-				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
-			}
+
+		// force init if not already done
+		OSGIUtil.getInstance().initializeFramework();
+		if (System.getProperty(WebKeys.OSGI_ENABLED) == null) {
+			// OSGI is not inited
+			throw new DotRuntimeException("Unable to register WorkflowAPIOsgiService as OSGI is not inited");
 		}
+
+		BundleContext context = HostActivator.instance().getBundleContext();
+		if (context == null) {
+			throw new DotRuntimeException("Bundle Context is null, WorkflowAPIOsgiService has been not registered");
+		}
+		if (context.getServiceReference(WorkflowAPIOsgiService.class.getName()) == null) {
+			Hashtable<String, String> props = new Hashtable<>();
+			context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+		}
+
 	}
 
 	/**
@@ -398,7 +424,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         // if the class calling the workflow api is not friend, so checks the validation
         if (!this.getFriendClass().isFriend()) {
             if (!hasValidLicense()) {
-                throw new InvalidLicenseException("Workflow-Schemes-License-required");
+                throw new InvalidLicenseException(LICENSE_REQUIRED_MESSAGE_KEY);
             }
 
             boolean hasAccessToPortlet = false;
@@ -596,13 +622,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public WorkflowScheme findScheme(final String id) throws DotDataException, DotSecurityException {
+	public WorkflowScheme findScheme(final String idOrVar) throws DotDataException, DotSecurityException {
 
-		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
+		final String schemeIdOrVar = this.getLongId(idOrVar, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
-		validateWorkflowLicense(schemeId, "Workflow-Schemes-License-required");
+		validateWorkflowLicense(schemeIdOrVar, LICENSE_REQUIRED_MESSAGE_KEY);
 
-		return workFlowFactory.findScheme(schemeId);
+		return workFlowFactory.findScheme(schemeIdOrVar);
 	}
 
 	@Override
@@ -720,7 +746,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<ContentType> findContentTypesForScheme(final WorkflowScheme workflowScheme) {
 
-		validateWorkflowLicense(workflowScheme.getId(), "Workflow-Schemes-License-required");
+		validateWorkflowLicense(workflowScheme.getId(), LICENSE_REQUIRED_MESSAGE_KEY);
 		try {
 			return workFlowFactory.findContentTypesByScheme(workflowScheme);
 		}catch(Exception e){
@@ -1391,7 +1417,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException {
+	public List<IFileAsset> findWorkflowTaskFilesAsContent(final WorkflowTask task, final User user) throws DotDataException{
 
 		final List<Contentlet> contents =  workFlowFactory.findWorkflowTaskFilesAsContent(task, user);
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);
@@ -1462,9 +1488,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					comment}, false);
 
 			if ( processor.getContextMap().containsKey("type") && WorkflowHistoryType.APPROVAL == processor.getContextMap().get("type")) {
-				description = "{\"description\":'"+ description +
-						"', \"type\":'" + WorkflowHistoryType.APPROVAL.name() +
-						"', \"state\":'"+  WorkflowHistoryState.NONE.name() +"\" }";
+				description = "{\"description\":\""+ description +
+						"\", \"type\":\"" + WorkflowHistoryType.APPROVAL.name() +
+						"\", \"state\":\""+  WorkflowHistoryState.NONE.name() +"\" }";
 			}
 
 			history.setChangeDescription(description);
@@ -1569,10 +1595,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // findActions.
 
 	private void validateWorkflowLicense(String scheme, String message) {
-		if (!SYSTEM_WORKFLOW_ID.equals(scheme)) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException(message);
-			}
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)
+				&& (!hasValidLicense() && !this.getFriendClass().isFriend())) {
+			throw new InvalidLicenseException(message);
 		}
 	}
 
@@ -1615,7 +1640,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return workflowActions;
     }
 
-    private void fillActionInfo(final WorkflowAction action,
+	/*
+	 * This method will fill the action info based on the action classes
+	 * @param action
+	 * @param actionClasses
+	 */
+	@Override
+    public void fillActionInfo(final WorkflowAction action,
                                 final List<WorkflowActionClass> actionClasses) {
 
 	    boolean isSave        = false;
@@ -1628,6 +1659,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         boolean isPushPublish = false;
 		boolean isMove        = false;
 		boolean isMoveHasPath = false;
+		boolean isComment     = false;
+		boolean isReset       = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
 
@@ -1642,6 +1675,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			    isDelete      |= (null != actionlet) && actionlet.delete();
 			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
+			    isComment     |= (null != actionlet) && actionlet.comment();
+				isReset       |= (null != actionlet) && actionlet.reset();
 
 			/*
 			 * In order to determine if an action is moveable, it needs to have a MoveContentActionlet assigned AND
@@ -1668,6 +1703,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         action.setPushPublishActionlet(isPushPublish);
         action.setMoveActionlet(isMove);
         action.setMoveActionletHashPath(isMoveHasPath);
+		action.setCommentActionlet(isComment);
+		action.setResetable(isReset);
     }
 
 
@@ -1678,7 +1715,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
     }
-	
+
 	 /**
      * This method will return the list of workflows actions available to a user on any give
      * piece of content, based on how and who has the content locked and what workflow step the content
@@ -1691,7 +1728,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return this.findAvailableActions(contentlet, user, RenderMode.LISTING);
     }
-	
+
 	/**
 	 * This method will return the list of workflows actions available to a user on any give
 	 * piece of content, based on how and who has the content locked and what workflow step the content
@@ -1752,7 +1789,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		for (final WorkflowAction workflowAction : unfilteredActions) {
 
 			if (this.workflowStatusFilter.filter(workflowAction,
-					new ContentletStateOptions(isNew, isPublished, isArchived, canLock, isLocked, renderMode))) {
+					new ContentletStateOptions(isNew, isPublished, isArchived,
+							canLock(canLock, workflowAction), isLocked, renderMode))) {
 
             	actions.add(workflowAction);
             }
@@ -1761,6 +1799,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return actions.build();
 	}
 
+	/**
+	 * Figure out the can lock, if the can lock is false, check if the workflow has
+	 * 1) the lock action
+	 * 2) if forze lock is enabled
+	 * if both conditions are meet, then the can lock is true
+	 * @param canLock
+	 * @param workflowAction
+	 * @return boolean
+	 */
+	private boolean canLock(final boolean canLock, final WorkflowAction workflowAction) {
+
+		if (!canLock && Objects.nonNull(workflowAction)) {
+
+			final List<WorkflowActionClass> actionClasses = Try.of(()->this.findActionClasses(workflowAction)).getOrNull();
+			if(Objects.nonNull(actionClasses)) {
+
+				return actionClasses.stream().filter(actionClass -> actionClass.getClazz().equals(CheckinContentActionlet.class.getName()))
+						.map(actionClass -> Try.of(()->this.findParamsForActionClass(actionClass)).getOrNull())
+						.filter(workflowActionClassParameterMap -> Objects.nonNull(workflowActionClassParameterMap)  &&
+								workflowActionClassParameterMap.containsKey(CheckinContentActionlet.FORCE_UNLOCK_ALLOWED))
+						.anyMatch(workflowActionClassParameterMap -> "true".equalsIgnoreCase(
+								workflowActionClassParameterMap.get(CheckinContentActionlet.FORCE_UNLOCK_ALLOWED).getValue()));
+			}
+		}
+
+		return canLock;
+	}
 
 
 	/**
@@ -2212,13 +2277,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// Delete action class
 			final int orderOfActionClassToDelete = actionClass.getOrder();
 			workFlowFactory.deleteActionClass(actionClass);
-			
-			// We don't need to get "complete" base action object from the database 
+
+			// We don't need to get "complete" base action object from the database
 			// to retrieve all action classes from him. So, we can create the base action object
 			// with the "action id" contain in actionClass parameter.
 			WorkflowAction baseAction = new WorkflowAction();
 			baseAction.setId(actionClass.getActionId());
-			
+
 			// Reorder the action classes in the database
 			final List<WorkflowActionClass> actionClasses = findActionClasses(baseAction);
 			if((actionClasses.size() > 1) && (actionClasses.size() != orderOfActionClassToDelete)) {
@@ -2261,12 +2326,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			List<WorkflowActionClass> actionClasses = null;
 			try {
-				// We don't need to get "complete" base action object from the database 
+				// We don't need to get "complete" base action object from the database
 				// to retrieve all action classes from him. So, we can create the base action object
 				// with the "action id" contain in actionClass parameter.
 				final WorkflowAction baseAction = new WorkflowAction();
 				baseAction.setId(actionClass.getActionId());
-				
+
 				actionClasses = findActionClasses(baseAction);
 			} catch (Exception e) {
 				throw new DotDataException(e.getLocalizedMessage());
@@ -2391,12 +2456,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	@Override
 	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException,DotWorkflowException{
-
 		try{
 			if(!processor.inProcess()){
 				return;
 			}
-
 			processor.getContentlet().setActionId(processor.getAction().getId());
 
 			final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
@@ -2406,7 +2469,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					final WorkFlowActionlet actionlet = actionClass.getActionlet();
 					final Map<String,WorkflowActionClassParameter> params = findParamsForActionClass(actionClass);
 					if (processor.isRunningBulk() && actionlet instanceof BatchAction) {
-						final BatchAction batchable = BatchAction.class.cast(actionlet);
+						final BatchAction batchable = (BatchAction) actionlet;
 						batchable.preBatchAction(processor, actionClass, params);
 						//gather data to run in batch later
 					} else {
@@ -2434,14 +2497,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
 				}
 			}
-		} catch(Exception e) {
-
-			/* Show a more descriptive error of what caused an issue here */
-			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
-			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-			throw new DotWorkflowException(e.getMessage(), e);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("Failed to fire Workflow Action '%s' [%s]: %s",
+					processor.getAction().getName(), processor.getAction().getId(), ExceptionUtil.getErrorMessage(e));
+			Logger.error(WorkflowAPIImpl.class, errorMsg);
+			Logger.debug(WorkflowAPIImpl.class, errorMsg, e);
+			throw new DotWorkflowException(ExceptionUtil.getErrorMessage(e), e);
 		} finally {
-
 			// not matters what we need to reindex in deferred the index just in case.
 			if (UtilMethods.isSet(processor.getContentlet()) &&
 					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {
@@ -2625,21 +2687,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
 
-
-		boolean canLock      = false;
-		boolean isLocked     = false;
-		boolean isPublish    = false;
-		boolean isArchived   = false;
-
-		try {
-
-			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
-			isLocked     = isNew? true :  APILocator.getVersionableAPI().isLocked(contentlet);
-			isPublish    = isNew? false:  APILocator.getVersionableAPI().hasLiveVersion(contentlet);
-			isArchived   = isNew? false:  APILocator.getVersionableAPI().isDeleted(contentlet);
-		} catch(Exception e) {
-
-		}
+		final boolean canLock    = Try.of(()->APILocator.getContentletAPI().canLock(contentlet, user)).getOrElse(false);
+		final boolean isLocked   = isNew? true :  Try.of(()->APILocator.getVersionableAPI().isLocked(contentlet)).getOrElse(false);
+		final boolean isPublish  = isNew? false:  Try.of(()->APILocator.getVersionableAPI().hasLiveVersion(contentlet)).getOrElse(false);
+		final boolean isArchived = isNew? false:  Try.of(()->APILocator.getVersionableAPI().isDeleted(contentlet)).getOrElse(false);
 
 		final List<WorkflowStep> steps = findStepsByContentlet(contentlet, false);
 
@@ -2737,7 +2788,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						String.join(" wfstep:", workflowAssociatedStepsIds));
 		final long withinStepsCount = APILocator.getContentletAPI()
 				.indexCount(contentletsWithinStepsQuery, user, RESPECT_FRONTEND_ROLES);
-		
+
 		return (totalCount - withinStepsCount);
 	}
 
@@ -3498,7 +3549,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 
 				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
-						|| contentlet.isWorking();
+						|| contentlet.isWorking() ||
+						APILocator.getVersionableAPI().hasWorkingVersionInAnyOtherLanguage(contentlet, contentlet.getLanguageId());
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil
@@ -3875,14 +3927,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
-	 * with the replacement user id 
+    * with the replacement user id
 	 * @param userId User Identifier
 	 * @param userRoleId The role id of the user
 	 * @param replacementUserId The user id of the replacement user
 	 * @param replacementUserRoleId The role Id of the replacemente user
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+    * @throws DotSecurityException
 	 */
 	@WrapInTransaction
 	@Override
@@ -3894,12 +3946,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	/**
 	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
-	 * with the replacement step id 
+    * with the replacement step id
 	 * @param stepId Step Identifier
 	 * @param replacementStepId The step id of the replacement step
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+    * @throws DotSecurityException
 	 */
 	@WrapInTransaction
 	@Override
@@ -4442,8 +4494,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final WorkflowTask task = new WorkflowTask();
 		final Date now          = new Date();
-		
-		task.setTitle(title);
+
+      task.setTitle(title);
 		task.setDescription(description);
 		task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
 		task.setModDate(now);

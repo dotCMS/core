@@ -2,12 +2,11 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
 import static java.io.File.separator;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -15,30 +14,57 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.PersonaDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.liferay.portal.auth.PrincipalThreadLocal;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
@@ -119,11 +145,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -138,17 +164,26 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.ZoneOffset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
@@ -168,12 +203,12 @@ import org.mockito.Mockito;
  * Created by Jonathan Gamba. Date: 3/20/12 Time: 12:12 PM
  */
 
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void testDotAsset_Checkin() throws DotDataException, DotSecurityException, IOException {
-
         // 1) creates a dotasset for test
         final String variable = "testDotAsset" + System.currentTimeMillis();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
@@ -2608,6 +2643,20 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Create a relationship field with the given name and cardinality
+     */
+    private com.dotcms.contenttype.model.field.Field createRelationshipField(final String relationName,
+                                                                             final ContentType parentContentType, final String childContentTypeVar,
+                                                                             final int cardinality) throws DotSecurityException, DotDataException {
+
+        final com.dotcms.contenttype.model.field.Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
+                .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                .relationType(childContentTypeVar).build();
+
+        return fieldAPI.save(newField, user);
+    }
+
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName,
             final String parentContentTypeID, final String childContentTypeVariable)
             throws DotDataException, DotSecurityException {
@@ -3036,10 +3085,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             final Contentlet newContentlet = createContentlet(testStructure, null, false);
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
             contentletAPI.delete(newContentlet, user, false);
-            final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user,
-                    false);
-            assertTrue(!UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(
-                    foundContentlet.getInode()));
+            
+            // Wait for the contentlet to be deleted asynchronously
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+                return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
+            });
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(),
                     "contentlet");
@@ -3063,12 +3114,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final User chrisPublisher = TestUserUtils.getChrisPublisherUser();
         final User adminUser = TestUserUtils.getAdminUser();
-        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
-        final String languageCode1 = languageCodeDataGen.next();
-        final Language language1 = new LanguageDataGen().languageCode(languageCode1)
+
+        final Language language1 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
-        final String languageCode2 = languageCodeDataGen.next();
-        final Language language2 = new LanguageDataGen().languageCode(languageCode2)
+
+        final Language language2 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
         final Structure testStructure = createStructure(
                 "JUnit Test Destroy Structure_" + new Date().getTime(),
@@ -3117,12 +3167,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final User adminUser2 = TestUserUtils.getAdminUser();
         final User adminUser = TestUserUtils.getAdminUser();
-        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
-        final String languageCode1 = languageCodeDataGen.next();
-        final Language language1 = new LanguageDataGen().languageCode(languageCode1)
+
+        final Language language1 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
-        final String languageCode2 = languageCodeDataGen.next();
-        final Language language2 = new LanguageDataGen().languageCode(languageCode2)
+
+        final Language language2 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
         final Structure testStructure = createStructure(
                 "JUnit Test Destroy Structure_" + new Date().getTime(),
@@ -4843,7 +4892,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             binaryField2 = fieldAPI.save(binaryField2, user);
 
             //Creating a temporary File to use in the binary fields.
-            File imageFile = temporaryFolder.newFile("ImageFile.png");
+            File imageFile = getTemporaryFolder().newFile("ImageFile.png");
             writeTextIntoFile(imageFile, "This is the same image");
 
             contentlet = new Contentlet();
@@ -4947,7 +4996,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             binaryField = fieldAPI.save(binaryField, user);
 
             //Creating a temporary binary file
-            imageFile = temporaryFolder.newFile("BinaryFile.txt");
+            imageFile = getTemporaryFolder().newFile("BinaryFile.txt");
             writeTextIntoFile(imageFile, "This is the same file");
 
             initialContent = new Contentlet();
@@ -5357,7 +5406,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File",
                     typeWithBinary.id());
             File textFileVersion1 = createTempFileWithText(FILE_V1_NAME, FILE_V1_NAME);
-            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+            Map<String, Object> fieldValues = Map.of(textField.variable(), "contentV1",
                     binaryField.variable(), textFileVersion1);
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(),
                     fieldValues);
@@ -5409,7 +5458,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File",
                     typeWithBinary.id());
             File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_CONTENT);
-            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+            Map<String, Object> fieldValues = Map.of(textField.variable(), "contentV1",
                     binaryField.variable(), textFileVersion1);
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(),
                     fieldValues);
@@ -6963,8 +7012,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = new ContentletDataGen(parentContentType.id())
                     .languageId(languageAPI.getDefaultLanguage().getId()).next();
 
-            parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(childContent)), user, false);
+            parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
 
             Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
                     .findContentRelationships(parentContent, user);
@@ -6999,6 +7047,108 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario: When the user copy a content with a cardinality 1 to 1 the content copied should not have any relationship
+     * ExpectedResult: The content copied should not have any relationship.
+     *
+     */
+    @Test
+    public void test_resultOfCopyContWithCardinality_OneToOne_shouldNotHaveRelationWithCotents() throws DotDataException, DotSecurityException {
+
+        //Create a child with a text field
+        final ContentType childCT = new ContentTypeDataGen().name("child").nextPersisted();
+        final com.dotcms.contenttype.model.field.Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(childCT.id())
+                .unique(false)
+                .type(TextField.class)
+                .nextPersisted();
+
+        //Create a parent with a relationship to the child
+        final ContentType parentCT = new ContentTypeDataGen().nextPersisted();
+        //create the relation field
+        final com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("children", parentCT,
+                childCT.variable(), WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+        //get the relationship
+        final Relationship relationship = relationshipAPI
+                .getRelationshipFromField(parentField, user);
+
+
+        //create the contentlets
+        final Contentlet childContent = new ContentletDataGen(childCT).setProperty("title", "childCont").nextPersisted();
+
+        Contentlet parentContent = new ContentletDataGen(parentCT.id())
+                .languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+
+        parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
+
+        Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
+                .findContentRelationships(parentContent, user);
+
+        //old content relationship
+        final Map<Relationship, List<Contentlet>> oldContRelationShip = contentletAPI.findContentRelationships(childContent, user);
+        assertEquals(1, oldContRelationShip.get(relationship).size());
+
+
+        final Contentlet copiedContentlet = contentletAPI.copyContentlet(childContent, user, false);
+        //copy content relationship
+        final Map<Relationship, List<Contentlet>> contentRelationships = contentletAPI.findContentRelationships(copiedContentlet, user);
+
+        assertEquals(0, contentRelationships.get(relationship).size());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario: When the user copy a content with a cardinality N to 1 the content copied should not have any relationship
+     * ExpectedResult: The content copied should not have any relationship.
+     *
+     */
+    @Test
+    public void test_resultOfCopyContWithCardinality_ManyToOne_shouldNotHaveRelationWithCotents() throws DotDataException, DotSecurityException {
+
+        //Create a child with a text field
+        final ContentType childCT = new ContentTypeDataGen().name("child").nextPersisted();
+        final com.dotcms.contenttype.model.field.Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(childCT.id())
+                .unique(false)
+                .type(TextField.class)
+                .nextPersisted();
+
+        //Create a parent with a relationship to the child
+        final ContentType parentCT = new ContentTypeDataGen().nextPersisted();
+        //create the relation field
+        final com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("children", parentCT,
+                childCT.variable(), WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal());
+        //get the relationship
+        final Relationship relationship = relationshipAPI
+                .getRelationshipFromField(parentField, user);
+
+
+        //create the contentlets
+        final Contentlet childContent = new ContentletDataGen(childCT).setProperty("title", "childCont").nextPersisted();
+
+        Contentlet parentContent = new ContentletDataGen(parentCT.id())
+                .languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+
+        parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
+
+        Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
+                .findContentRelationships(parentContent, user);
+
+        //old content relationship
+        final Map<Relationship, List<Contentlet>> oldContRelationShip = contentletAPI.findContentRelationships(childContent, user);
+        assertEquals(1, oldContRelationShip.get(relationship).size());
+
+
+        final Contentlet copiedContentlet = contentletAPI.copyContentlet(childContent, user, false);
+        //copy content relationship
+        final Map<Relationship, List<Contentlet>> contentRelationships = contentletAPI.findContentRelationships(copiedContentlet, user);
+
+        assertEquals(0, contentRelationships.get(relationship).size());
+    }
+
     @Test
     public void testMoveContentDependenciesFromChildSelfRelated()
             throws DotDataException, DotSecurityException {
@@ -7022,8 +7172,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
                     .next();
 
-            parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(childContent)), user, false);
+            parentContent = contentletAPI.checkin(parentContent, Map.of(relationship, CollectionsUtils.list(childContent)), user, false);
 
             List<Contentlet> relatedContent = relationshipAPI.dbRelatedContent(relationship,
                     parentContent, true);
@@ -7083,8 +7232,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = new ContentletDataGen(parentContentType.id())
                     .languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
 
-            childContent = contentletAPI.checkin(childContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(parentContent)), user, false);
+            childContent = contentletAPI.checkin(childContent, Map.of(relationship, CollectionsUtils.list(parentContent)), user, false);
 
             Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
                     .findContentRelationships(childContent, user);
@@ -7428,7 +7576,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     private File createTempFileWithText(String name, String text) throws IOException {
-        File tempFile = temporaryFolder.newFile(name);
+        File tempFile = getTemporaryFolder().newFile(name);
         writeTextIntoFile(tempFile, text);
         return tempFile;
     }
@@ -8376,5 +8524,306 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertNotNull(mostRecentPublishedContent);
         assertEquals(contentInode, mostRecentPublishedContent.getInode());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with key value and title and sets to it
+     * Should: should be properly set, taking a Map as an input
+     */
+    @Test
+    public void test_setContentletProperty_key_value() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyValuePropName = "mykeyvalue";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyValuePropName)
+                .contentTypeId(contentType.id())
+                .type(KeyValueField.class)
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final Map<String, Object> keyValueObj = Map.of("key1", "value2");
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Contentlet contentlet = contentletDataGen.next();
+        contentlet.setProperty("title", "Test");
+        APILocator.getContentletAPI().setContentletProperty(contentlet, new LegacyFieldTransformer(field).asOldField(), keyValueObj);
+        final Contentlet publishedContentlet = ContentletDataGen.checkin(contentlet);
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Map keyValueRetrieved = (Map) contentRetrieved.get(keyValuePropName);
+        assertEquals(keyValueRetrieved, keyValueObj);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with json field and title and sets to it
+     * Should: should be properly set, taking a Map as an input
+     */
+    @Test
+    public void test_setContentletProperty_json_field() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyValuePropName = "mykeyvalue";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyValuePropName)
+                .contentTypeId(contentType.id())
+                .type(JSONField.class)
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final Map<String, Object> keyValueObj = Map.of("key1", "value2");
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Contentlet contentlet = contentletDataGen.next();
+        APILocator.getContentletAPI().setContentletProperty(contentlet, new LegacyFieldTransformer(field).asOldField(), keyValueObj);
+        final Contentlet publishedContentlet = ContentletDataGen.checkin(contentlet);
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        Object keyValueRetrieved = contentRetrieved.get(keyValuePropName);
+        if (keyValueRetrieved instanceof String) {
+            keyValueRetrieved = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil
+                    .JSONValueToHashMap(keyValueRetrieved.toString());
+        }
+        assertEquals(keyValueRetrieved, keyValueObj);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with long text and title and sets to it
+     * Should: should be properly set, taking a String as an input
+     */
+    @Test
+    public void test_setContentletProperty_long_text() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "description";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(TextAreaField.class)
+                .nextPersisted();
+
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final String value = "LOoooooooooooooooooooooooong teeeeeeeeeeeeext";
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+
+        final String valueRetrieved = (String) publishedContentlet.get(keyPropName);
+        assertEquals(value, valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with date and title and sets to it
+     * Should: should be properly set, taking a Date as an input
+     */
+    @Test
+    public void test_setContentletProperty_date() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "date";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(DateField.class)
+                .defaultValue("now")
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Date value = new Date();
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+
+        final Date valueRetrieved = (Date) publishedContentlet.get(keyPropName);
+        assertEquals(value, valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with float and title and sets to it
+     * Should: should be properly set, taking a float as an input
+     */
+    @Test
+    public void test_setContentletProperty_float() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "number";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .dataType(DataTypes.FLOAT)
+                .defaultValue("0")
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Float value = 3.14f;
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        assertNotNull(publishedContentlet);
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+
+        final Number valueRetrieved = (Number) publishedContentlet.get(keyPropName);
+        assertEquals(value, valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with binary and title and sets to it
+     * Should: should be properly set, taking a file as an input
+     */
+    @Test
+    public void test_setContentletProperty_file() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "file";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(BinaryField.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final File value = com.dotmarketing.util.FileUtil.createTemporaryFile("test", ".txt");
+        contentletDataGen.setProperty(keyPropName, value);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final File valueRetrieved = (File) contentRetrieved.get(keyPropName);
+        assertEquals(value.getName(), valueRetrieved.getName());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with text and description and sets to it
+     * Should: should be properly set, taking a String as an input and returned as a boolean
+     */
+    @Test
+    public void test_setContentletProperty_bool() throws Exception {
+
+        String testVal = "true|true\r\nfalse|false";
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "description";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(RadioField.class)
+                .dataType(DataTypes.BOOL)
+                .values(testVal)
+                .nextPersisted();
+
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final String value = "t";
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+
+        final Boolean valueRetrieved = (Boolean) publishedContentlet.get(keyPropName);
+        assertTrue(valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with int and title and sets to it
+     * Should: should be properly set, taking a int as an input
+     */
+    @Test
+    public void test_setContentletProperty_int() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "number";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .dataType(DataTypes.INTEGER)
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Integer value = 3;
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+
+        final Number valueRetrieved = (Number) publishedContentlet.get(keyPropName);
+        assertEquals(value.longValue(), valueRetrieved);
     }
 }

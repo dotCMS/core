@@ -6,7 +6,7 @@ export default {
         docs: {
             page: readme
         }
-    },
+    }
 };
 
 export const Draft = () => {
@@ -16,7 +16,7 @@ export const Draft = () => {
             content: {
                 live: 'false',
                 working: 'true',
-                deleted: 'false',
+                deleted: 'false'
             }
         }
     ];
@@ -92,4 +92,3 @@ export const Published = () => {
 
     return stateIcon;
 };
-

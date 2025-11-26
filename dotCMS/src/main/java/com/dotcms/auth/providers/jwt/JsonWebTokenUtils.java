@@ -6,6 +6,7 @@ import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -93,7 +94,7 @@ public class JsonWebTokenUtils {
         // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
         return this.jsonWebTokenService.generateUserToken(
                 new UserToken.Builder().id(user.getRememberMeToken())
-                        .subject(user.getUserId())
+                        .subject(PublicEncryptionFactory.encryptString(user.getUserId()))
                         .modificationDate(user.getModificationDate())
                         .expiresDate(jwtMaxAge > 0 ?
                                 DateUtil.daysToMillis(jwtMaxAge) :

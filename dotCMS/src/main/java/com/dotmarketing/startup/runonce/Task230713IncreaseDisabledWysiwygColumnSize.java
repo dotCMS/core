@@ -2,9 +2,13 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Logger;
+
+import java.util.Map;
 
 /**
  * This Upgrade Task increases the size of the {@code contentlet.disabled_wysiwyg} column to 1000.
@@ -25,7 +29,8 @@ public class Task230713IncreaseDisabledWysiwygColumnSize implements StartupTask 
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !(new DotDatabaseMetaData().isColumnLengthExpected("contentlet",
+                "disabled_wysiwyg", "1000"));
     }
 
     @Override

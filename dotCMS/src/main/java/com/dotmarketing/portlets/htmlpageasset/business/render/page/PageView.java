@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -13,6 +15,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,11 +24,12 @@ import java.util.Optional;
  * Represents the different parts that make up the structure of an HTML Page in the system and its
  * associated data structures. A dotCMS page is basically composed of:
  * <ul>
- * <li>The HTML Page.</li>
- * <li>Its template.</li>
- * <li>The site it's located in.</li>
- * <li>The list of containers.</li>
- * <li>Its template layout.</li>
+ *  <li>The HTML Page.</li>
+ *  <li>Its template.</li>
+ *  <li>The site it's located in.</li>
+ *  <li>The list of containers.</li>
+ *  <li>Its template layout.</li>
+ *  <li>Any other required piece of information related to the page and how it should be rendered.</li>
  * </ul>
  *
  * @author Will Ezell
@@ -51,6 +55,28 @@ public class PageView implements Serializable {
     private int numberContents = 0;
     final String pageUrlMapper;
     final boolean live;
+    final VanityURLView vanityUrl;
+    final Experiment runningExperiment;
+
+    /**
+     * Creates an instance of this class with default values.
+     */
+    PageView() {
+        this.site = new Host();
+        this.template = new Template();
+        this.containers = Collections.emptyList();
+        this.htmlPageAsset = new HTMLPageAsset();
+        this.layout = null;
+        this.viewAs = new ViewAsPageStatus.Builder().build();
+        this.canCreateTemplate = false;
+        this.canEditTemplate = false;
+        this.pageUrlMapper = null;
+        this.numberContents = 0;
+        this.live = false;
+        this.urlContent = null;
+        this.runningExperiment = null;
+        this.vanityUrl = null;
+    }
 
     /**
      * Creates an instance of this class based on a builder.
@@ -69,6 +95,8 @@ public class PageView implements Serializable {
         this.numberContents = getContentsNumber();
         this.live = builder.live;
         this.urlContent = builder.urlContent;
+        this.runningExperiment = builder.runningExperiment;
+        this.vanityUrl = builder.vanityUrl;
     }
 
     public boolean isLive() {
@@ -184,6 +212,14 @@ public class PageView implements Serializable {
         return urlContent;
     }
 
+    public Experiment getRunningExperiment() {
+        return runningExperiment;
+    }
+
+    public VanityURLView getVanityUrl() {
+        return this.vanityUrl;
+    }
+
     public static class Builder {
 
         //  The {@link Host} where the HTML Page lives in.
@@ -202,6 +238,8 @@ public class PageView implements Serializable {
         private  Contentlet urlContent;
         private String pageUrlMapper;
         private boolean live;
+        private Experiment runningExperiment;
+        private VanityURLView vanityUrl;
 
         public Builder site(final Host site) {
             this.site = site;
@@ -258,9 +296,20 @@ public class PageView implements Serializable {
             return this;
         }
 
+        public Builder runningExperiment(final Experiment runningExperiment) {
+            this.runningExperiment = runningExperiment;
+            return this;
+        }
+
+        public Builder vanityUrl(final VanityURLView vanityUrl) {
+            this.vanityUrl = vanityUrl;
+            return this;
+        }
+
         public PageView build() {
             return new PageView(this);
         }
+
     }
 
 }

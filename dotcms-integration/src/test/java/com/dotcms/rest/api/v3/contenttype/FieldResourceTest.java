@@ -1,8 +1,19 @@
 package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.field.layout.*;
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutColumn;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutValidationException;
+import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -11,30 +22,35 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import javax.ws.rs.core.Response;
-
-import com.dotcms.rest.exception.NotFoundException;
-import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONException;
+import java.util.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.*;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class FieldResourceTest {
 
@@ -702,16 +718,16 @@ public class FieldResourceTest {
 
         final List<Field> fields = createLayoutWithMultiRow(type);
         final List<Map<String, Object>> layout = list(
-                map("divider", getMap(fields.get(0)), "columns", list(
-                        map("columnDivider", getMap(fields.get(1)), "fields", list()),
-                        map("columnDivider", getMap(fields.get(2)), "fields", list(getMap(fields.get(3)))),
-                        map("columnDivider", getMap(fields.get(4)), "fields", list(getMap(fields.get(5)))),
-                        map("columnDivider", getMap(fields.get(6)), "fields", list()),
-                        map("columnDivider", getMap(fields.get(12)), "fields", list())
+                Map.of("divider", getMap(fields.get(0)), "columns", list(
+                        Map.of("columnDivider", getMap(fields.get(1)), "fields", list()),
+                        Map.of("columnDivider", getMap(fields.get(2)), "fields", list(getMap(fields.get(3)))),
+                        Map.of("columnDivider", getMap(fields.get(4)), "fields", list(getMap(fields.get(5)))),
+                        Map.of("columnDivider", getMap(fields.get(6)), "fields", list()),
+                        Map.of("columnDivider", getMap(fields.get(12)), "fields", list())
                 )),
-                map("divider", getMap(fields.get(7)), "columns", list(
-                        map("columnDivider", getMap(fields.get(8)), "fields", list(getMap(fields.get(9)))),
-                        map("columnDivider", getMap(fields.get(10)), "fields", list(getMap(fields.get(11))))
+                Map.of("divider", getMap(fields.get(7)), "columns", list(
+                        Map.of("columnDivider", getMap(fields.get(8)), "fields", list(getMap(fields.get(9)))),
+                        Map.of("columnDivider", getMap(fields.get(10)), "fields", list(getMap(fields.get(11))))
                 ))
         );
 
@@ -1038,7 +1054,7 @@ public class FieldResourceTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }

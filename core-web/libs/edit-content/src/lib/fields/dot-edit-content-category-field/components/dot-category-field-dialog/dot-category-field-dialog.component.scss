@@ -1,0 +1,99 @@
+@use "variables" as *;
+
+:host ::ng-deep .p-breadcrumb {
+    > ul > li {
+        &:last-child a {
+            pointer-events: none;
+            .p-menuitem-text {
+                color: $black;
+                font-weight: $font-weight-bold;
+            }
+        }
+    }
+}
+
+.category-field__header {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-0;
+    padding: $spacing-1 $spacing-4;
+}
+
+.category-field__header-title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-medium-bold;
+    margin: 0;
+}
+
+.category-field__content {
+    display: flex;
+    flex-direction: row;
+    margin: auto;
+    background-color: $color-palette-gray-300;
+    padding: $spacing-4;
+    gap: $spacing-1;
+}
+
+.category-field__left-pane,
+.category-field__right-pane {
+    gap: $spacing-1;
+}
+
+.category-field__left-pane {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: $spacing-1;
+    max-width: 75vw;
+    overflow: hidden;
+    height: 100%;
+}
+
+.category-field__right-pane {
+    flex: 0 0 25%;
+    gap: $spacing-1;
+    padding: $spacing-3;
+    &.empty {
+        padding-left: 0;
+    }
+}
+
+.category-field__categories,
+.category-field__right-pane {
+    border: $field-border-size solid $color-palette-gray-400;
+    border-radius: $border-radius-md;
+    background-color: $white;
+    overflow: hidden;
+}
+
+.category-field__selected-categories-list {
+    overflow-y: auto;
+    scrollbar-gutter: auto;
+}
+
+:host ::ng-deep {
+    .category-field__dialog.p-dialog {
+        min-height: 90%;
+        height: 100%;
+        width: 75vw;
+
+        .p-dialog-content {
+            padding: 0;
+            height: 100%;
+        }
+    }
+}
+
+.category-field__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: $spacing-3;
+
+    p {
+        text-align: center;
+        font-size: $font-size-sm;
+    }
+}

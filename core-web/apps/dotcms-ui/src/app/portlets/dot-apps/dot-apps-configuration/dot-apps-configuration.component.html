@@ -1,52 +1,49 @@
 <div class="dot-apps-configuration__container">
-    <dot-apps-configuration-header *ngIf="apps" [app]="apps"></dot-apps-configuration-header>
+    @if (apps) {
+        <dot-apps-configuration-header [app]="apps"></dot-apps-configuration-header>
+    }
     <div class="dot-apps-configuration__body">
         <div>
             <div class="dot-apps-configuration__action_header">
                 <input
+                    [placeholder]="'apps.search.placeholder' | dm"
                     pInputText
                     #searchInput
-                    type="text"
-                    [placeholder]="'apps.search.placeholder' | dm"
-                />
+                    type="text" />
                 <div>
                     <button
+                        (click)="confirmExport()"
+                        [label]="'apps.confirmation.export.all.button' | dm"
+                        [disabled]="!apps.configurationsCount"
                         pButton
                         link
                         icon="pi pi-download"
-                        class="dot-apps-configuration__action_export_button"
-                        [label]="'apps.confirmation.export.all.button' | dm"
-                        [disabled]="!apps.configurationsCount"
-                        (click)="confirmExport()"
-                    ></button>
+                        class="dot-apps-configuration__action_export_button"></button>
                     <button
-                        pButton
-                        link
-                        icon="pi pi-trash"
+                        (click)="deleteAllConfigurations()"
                         [label]="'apps.confirmation.delete.all.button' | dm"
                         [disabled]="!apps.configurationsCount"
-                        (click)="deleteAllConfigurations()"
-                    ></button>
+                        pButton
+                        link
+                        icon="pi pi-trash"></button>
                 </div>
             </div>
             <dot-apps-configuration-list
-                [siteConfigurations]="apps.sites"
-                [hideLoadDataButton]="hideLoadDataButton"
-                [itemsPerPage]="paginationPerPage"
                 (loadData)="loadData($event)"
                 (edit)="gotoConfiguration($event)"
                 (export)="confirmExport($event)"
                 (delete)="deleteConfiguration($event)"
-            ></dot-apps-configuration-list>
+                [siteConfigurations]="apps.sites"
+                [hideLoadDataButton]="hideLoadDataButton"
+                [itemsPerPage]="paginationPerPage"></dot-apps-configuration-list>
         </div>
     </div>
 </div>
 
 <dot-apps-import-export-dialog
-    #importExportDialog
+    (shutdown)="onClosedDialog()"
     [app]="apps"
     [site]="siteSelected"
     [action]="importExportDialogAction"
     [show]="showDialog"
-    (shutdown)="onClosedDialog()"
-></dot-apps-import-export-dialog>
+    #importExportDialog></dot-apps-import-export-dialog>

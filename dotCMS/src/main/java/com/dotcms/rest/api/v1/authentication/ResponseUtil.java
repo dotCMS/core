@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.DUPLICATE_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.MALFORMED_MULTIPART_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.causedBy;
@@ -164,6 +165,10 @@ public class ResponseUtil implements Serializable {
             return createUnAuthorizedResponse(e);
         }
 
+        if(causedBy(e, MALFORMED_MULTIPART_EXCEPTIONS)){
+            return createMalformedMultipartResponse(e);
+        }
+
         if(causedBy(e, BAD_REQUEST_EXCEPTIONS)){
             final Throwable causedByException = ExceptionUtil.getCauseBy(e, BAD_REQUEST_EXCEPTIONS);
             return ExceptionMapperUtil.createResponse(null != causedByException? causedByException:e,
@@ -212,6 +217,34 @@ public class ResponseUtil implements Serializable {
     }
 
     /**
+     * Creates a response for a malformed multipart request. This method attempts to process the
+     * provided exception, identifying if it matches certain known exception types indicating an
+     * issue with the multipart data. If so, it returns a specific error response; otherwise, it
+     * defaults to a more general error response.
+     *
+     * @param e The exception representing the error encountered during the handling of the
+     *          multipart request.
+     * @return A {@code Response} instance with the appropriate HTTP status and error message based
+     * on the exception details.
+     */
+    private static Response createMalformedMultipartResponse(final Throwable e) {
+
+        Throwable causedByException = ExceptionUtil.getCauseBy(e, MALFORMED_MULTIPART_EXCEPTIONS);
+        if (null != causedByException
+                && !(causedByException instanceof javax.ws.rs.BadRequestException)) {
+
+            final var message = String.format(
+                    "The multipart data is missing or improperly formatted. "
+                            + "Please check your request and try again. [%s]",
+                    causedByException.getMessage());
+
+            return ExceptionMapperUtil.createResponse(message, Response.Status.BAD_REQUEST);
+        }
+
+        return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+    }
+
+    /**
      * In case of an invalid access attempt this will fulfill the response so it can be interpreted by a front-end consumer
      * @param e Exception
      * @return Response
@@ -230,7 +263,7 @@ public class ResponseUtil implements Serializable {
      */
     public static <T> void  handleAsyncResponse (final Future<T> future, final AsyncResponse asyncResponse) {
 
-        handleAsyncResponse(() -> Response.ok(new ResponseEntityView(DotConcurrentFactory.get(future))).build(), asyncResponse);
+        handleAsyncResponse(() -> Response.ok(new ResponseEntityView<>(DotConcurrentFactory.get(future))).build(), asyncResponse);
     } // handleAsyncResponse
 
     /**

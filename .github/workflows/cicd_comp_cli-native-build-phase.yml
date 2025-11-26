@@ -1,0 +1,112 @@
+# CLI Native Build Phase Workflow
+#
+# This reusable workflow is responsible for building native images of the CLI tool
+# for different operating systems. It can be configured to build for multiple platforms
+# or just for Linux, depending on the input parameters.
+#
+# Due to the extra runner requirements and extra cost of macOS runners, the workflow is currently run only after merging to main
+# We may change this or test a single native build before this stage in the future for extra coverage.
+# Native builds should not act different based upon changes to core server so we should be able to restrict these builds/tests
+# to only run on changes to the CLI tool.
+#
+# Key features:
+# - Configurable native image building based on input
+# - Dynamic OS matrix generation for multi-platform builds
+# - Artifact upload for each built distribution
+# - Reusable Maven job action for consistent build environment setup
+# - Artifact reuse from previous workflow runs
+
+name: CLI Native Build Phase
+
+on:
+  workflow_call:
+    inputs:
+      buildNativeImage:
+        type: boolean
+        required: true
+      branch:
+        type: string
+        required: true
+      artifact-run-id:
+        default: ${{ github.run_id }}
+        type: string
+      version:
+        description: 'The version of the build'
+        required: false
+        type: string
+        default: '1.0.0-SNAPSHOT'
+    outputs:
+      artifact-id:
+        description: 'The ID of the uploaded artifact'
+        value: ${{ jobs.build.outputs.artifact-id }}
+      artifact-url:
+        description: 'The URL of the uploaded artifact'
+        value: ${{ jobs.build.outputs.artifact-url }}
+
+env:
+  BRANCH: ${{ inputs.branch || github.ref_name }}
+  SKIP_TESTS: true
+  ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Job to determine the OS matrix for the build
+  os-runners:
+    name: 'Get OS matrix'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      runners: ${{ steps.set-os.outputs.runners }}
+    steps:
+      - name: 'Set OS'
+        id: set-os
+        run: |
+          if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
+            RUNNERS='[{ "os": "ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-${{ vars.MACOS_INTEL_RUNNER_VERSION || '15-intel' }}", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-${{ vars.MACOS_SILICON_RUNNER_VERSION || '14' }}", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
+          else
+            RUNNERS='[{ "os": "ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}", "label": "Linux", "platform": "linux-x86_64" }]'
+          fi
+          echo "runners=$RUNNERS" >> $GITHUB_OUTPUT
+
+  # Job to build native images for each OS in the matrix
+  build:
+    needs: os-runners
+    name: 'Build native image on ${{ matrix.label }}'
+    strategy:
+      fail-fast: true
+      matrix:
+        include: ${{ fromJSON( needs.os-runners.outputs.runners ) }}
+    runs-on: ${{ matrix.os }}
+    outputs:
+      artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
+      artifact-url: ${{ steps.upload-artifact.outputs.artifact-url }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+
+      # Use custom Maven job action to build the native image
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          cleanup-runner: true
+          stage-name: "Build Native Image ${{ matrix.label }}"
+          maven-args: "package -Pnative -Pdist -DskipTests=$SKIP_TESTS -pl :dotcms-cli"
+          native: true
+          generates-test-results: false
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          version: ${{ inputs.version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload the built distribution as an artifact
+      - name: 'Upload built distribution'
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-artifacts-${{ matrix.platform }}
+          path: |
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
+          retention-days: 2
+          if-no-files-found: ignore

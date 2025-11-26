@@ -1,7 +1,6 @@
-<dot-iframe-dialog
-    *ngIf="!!url"
-    (shutdown)="onClose()"
-    [header]="'editpage.content.contentlet.menu.reorder.title' | dm"
-    [url]="url"
->
-</dot-iframe-dialog>
+@if (!!url) {
+    <dot-iframe-dialog
+        (shutdown)="onClose()"
+        [header]="'editpage.content.contentlet.menu.reorder.title' | dm"
+        [url]="url" />
+}

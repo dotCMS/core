@@ -1,6 +1,10 @@
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -24,7 +28,7 @@ describe('DotConvertWysiwygToBlockComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotConvertWysiwygToBlockComponent],
-            imports: [DotMessagePipe],
+            imports: [DotMessagePipe, FormsModule, CheckboxModule, ButtonModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -46,11 +50,11 @@ describe('DotConvertWysiwygToBlockComponent', () => {
         const iUnderstand = de.query(By.css('[data-testId="iUnderstand"]')).nativeElement;
         const buttonConvert = de.query(By.css('[data-testId="buttonConvert"]')).nativeElement;
 
-        expect(infoHeader.innerText).toBe('Info Header');
-        expect(infoContent.innerText).toBe('Info Content');
-        expect(header.innerText).toBe('Header');
-        expect(content.innerText).toBe('Content');
-        expect(iUnderstand.innerText).toBe('I understand');
-        expect(buttonConvert.innerText).toBe('Button');
+        expect(infoHeader.textContent.trim()).toBe('Info Header');
+        expect(infoContent.textContent.trim()).toBe('Info Content');
+        expect(header.textContent.trim()).toBe('Header');
+        expect(content.textContent.trim()).toBe('Content');
+        expect(iUnderstand.textContent.trim()).toBe('I understand');
+        expect(buttonConvert.textContent.trim()).toBe('Button');
     });
 });

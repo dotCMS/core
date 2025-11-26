@@ -1,15 +1,13 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotEventsService,
     DotMessageService,
     DotRouterService,
+    DotSystemConfigService,
     DotIframeService
 } from '@dotcms/data-access';
 import {
@@ -23,9 +21,15 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
+
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { LOCATION_TOKEN } from '../../../../../../providers';
+import { dotEventSocketURLFactory } from '../../../../../../test/dot-test-bed';
+import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotToolbarUserStore', () => {
     let store: DotToolbarUserStore;
@@ -59,7 +63,14 @@ describe('DotToolbarUserStore', () => {
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                { provide: LoginService, useClass: LoginServiceMock }
+                { provide: LoginService, useClass: LoginServiceMock },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
 
@@ -84,20 +95,20 @@ describe('DotToolbarUserStore', () => {
                 email: mockAuth.loginAsUser.emailAddress,
                 name: mockAuth.loginAsUser.name
             });
-            expect(showLoginAs).toBeFalse();
-            expect(showMyAccount).toBeFalse();
+            expect(showLoginAs).toBe(false);
+            expect(showMyAccount).toBe(false);
         });
     });
 
     it('should trigger loginService logoutAs, navigate to first portlet and reload the page when logoutAs is called', fakeAsync(() => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
 
-        spyOn(loginService, 'logoutAs').and.callThrough();
-        spyOn(locationService, 'reload');
+        jest.spyOn(loginService, 'logoutAs');
+        jest.spyOn(locationService, 'reload');
 
         store.logoutAs();
 
@@ -112,14 +123,14 @@ describe('DotToolbarUserStore', () => {
         it('should change its state value to true', () => {
             store.showLoginAs(true);
             store.state$.subscribe((state) => {
-                expect(state.showLoginAs).toBeTrue();
+                expect(state.showLoginAs).toBe(true);
             });
         });
 
         it('should change its state value to false', () => {
             store.showLoginAs(false);
             store.state$.subscribe((state) => {
-                expect(state.showLoginAs).toBeFalse();
+                expect(state.showLoginAs).toBe(false);
             });
         });
     });
@@ -128,14 +139,14 @@ describe('DotToolbarUserStore', () => {
         it('should change its state value to true', () => {
             store.showMyAccount(true);
             store.state$.subscribe((state) => {
-                expect(state.showMyAccount).toBeTrue();
+                expect(state.showMyAccount).toBe(true);
             });
         });
 
         it('should change its state value to false', () => {
             store.showMyAccount(false);
             store.state$.subscribe((state) => {
-                expect(state.showMyAccount).toBeFalse();
+                expect(state.showMyAccount).toBe(false);
             });
         });
     });

@@ -1,21 +1,24 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+import { DataViewModule } from 'primeng/dataview';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import {
-    DotAddVariableState,
-    DotAddVariableStore
-} from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFieldContent } from './dot-add-variable.models';
+import { DotFieldsService } from './services/dot-fields.service';
+import { DotAddVariableState, DotAddVariableStore } from './store/dot-add-variable.store';
 
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
     styleUrls: ['./dot-add-variable.component.scss'],
-    providers: [DotAddVariableStore]
+    imports: [CommonModule, ButtonModule, DataViewModule, DotMessagePipe],
+    providers: [DotAddVariableStore, DotFieldsService]
 })
 export class DotAddVariableComponent implements OnInit {
     private readonly store = inject(DotAddVariableStore);

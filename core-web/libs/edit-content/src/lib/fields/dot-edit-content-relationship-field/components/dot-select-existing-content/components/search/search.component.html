@@ -1,0 +1,55 @@
+<form [formGroup]="form" #formElement>
+    <p-inputGroup styleClass="flex align-items-center">
+        <i class="pi pi-search ml-1 mr-1 search-icon"></i>
+        @for (filter of $activeFilters(); track filter.value) {
+            <p-chip
+                [label]="filter.label"
+                [removable]="true"
+                (onRemove)="removeFilter(filter.type)"
+                [styleClass]="'mr-2 p-chip-sm flex align-items-center'" />
+        }
+        <input
+            pInputText
+            type="text"
+            class="content-search__input w-22rem h-auto"
+            [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
+            formControlName="query" />
+        <p-button
+            (onClick)="popover.toggle($event, formElement)"
+            data-testid="open-filters-button"
+            size="small"
+            type="button"
+            icon="pi pi-sliders-h"
+            [text]="true" />
+    </p-inputGroup>
+
+    <p-overlayPanel #popover styleClass="w-24rem">
+        <div class="flex flex-column gap-4">
+            <div class="flex flex-column gap-4" formGroupName="systemSearchableFields">
+                <dot-language-field formControlName="languageId" />
+                <dot-site-field formControlName="siteOrFolderId" />
+            </div>
+
+            <div class="flex justify-content-end gap-2">
+                <p-button
+                    (onClick)="clearForm()"
+                    data-testid="clear-button"
+                    [label]="'dot.file.relationship.dialog.search.btn.clear' | dm"
+                    type="button"
+                    size="small"
+                    text="true"
+                    severity="primary"
+                    outline="true" />
+
+                <p-button
+                    [loading]="$isLoading()"
+                    (onClick)="doSearch()"
+                    data-testid="search-button"
+                    [label]="'dot.file.relationship.dialog.search.btn.search' | dm"
+                    size="small"
+                    type="submit"
+                    severity="primary" />
+            </div>
+        </div>
+    </p-overlayPanel>
+</form>

@@ -9,24 +9,10 @@ p-autocomplete.p-inputwrapper-focus {
 
 .p-fluid .p-autocomplete.p-component, // To override the default behavior
 .p-autocomplete.p-component {
-    display: grid;
+    display: flex;
     align-items: center;
-    grid-template-columns: auto repeat(3, max-content); // This will make the grid to remove the columns that are not in the grid
 }
 
-.p-autocomplete-clearable
-    .p-autocomplete:not(.p-autocomplete-dd).p-component.p-autocomplete-multiple:has(
-        .p-icon-wrapper
-    ) {
-    align-items: baseline;
-    grid-template-columns: max-content auto; // When have icon, have 2 grids: icon and tags
-}
-
-//Dropdown with clear button
-.p-autocomplete-clearable
-    .p-autocomplete.p-component.p-autocomplete-dd.p-autocomplete-multiple:has(.p-icon-wrapper) {
-    grid-template-columns: max-content 1fr auto;
-}
 .p-autocomplete {
     @extend #form-field-extend;
     height: auto;
@@ -78,6 +64,38 @@ p-autocomplete.p-inputwrapper-focus {
         }
     }
 
+    // Disabled state styles
+    &.p-disabled,
+    &:disabled {
+        @extend #form-field-disabled;
+        cursor: not-allowed;
+
+        .p-autocomplete-input.p-component,
+        .p-autocomplete-input.p-component:disabled {
+            color: $color-palette-gray-500;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        .p-autocomplete-dropdown.p-button.p-element {
+            background-color: $color-palette-gray-200;
+            color: $color-palette-gray-500;
+            cursor: not-allowed;
+
+            &:hover,
+            &:focus,
+            &:active {
+                background-color: $color-palette-gray-200;
+                color: $color-palette-gray-500;
+            }
+        }
+
+        .p-autocomplete-loader,
+        .p-autocomplete-clear-icon {
+            color: $color-palette-gray-500;
+        }
+    }
+
     &.p-autocomplete-multiple {
         .p-autocomplete-multiple-container {
             display: flex;
@@ -95,6 +113,19 @@ p-autocomplete.p-inputwrapper-focus {
 
             .p-autocomplete-token {
                 @extend #field-chip;
+
+                .p-autocomplete-token-label {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+            }
+
+            .p-autocomplete-token-icon {
+                .pi {
+                    width: $icon-sm-box;
+                    font-size: $icon-sm;
+                }
             }
 
             .p-autocomplete-input-token {
@@ -105,6 +136,29 @@ p-autocomplete.p-inputwrapper-focus {
                     padding: 0;
                     margin: 0;
                     height: 1.5rem;
+                }
+            }
+        }
+
+        // Disabled state for multiple autocomplete
+        &.p-disabled,
+        &:disabled {
+            .p-autocomplete-multiple-container {
+                background: $color-palette-gray-100;
+                cursor: not-allowed;
+
+                .p-autocomplete-token {
+                    background: $color-palette-gray-200;
+                    color: $color-palette-gray-500;
+
+                    .p-autocomplete-token-icon {
+                        color: $color-palette-gray-500;
+                    }
+                }
+
+                .p-autocomplete-input-token input {
+                    color: $color-palette-gray-500;
+                    cursor: not-allowed;
                 }
             }
         }
@@ -136,6 +190,10 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
             &.p-highlight {
                 @extend #field-panel-item-highlight;
             }
+
+            &.p-focus {
+                background-color: $color-palette-primary-300;
+            }
         }
     }
 }
@@ -143,6 +201,8 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
 .p-autocomplete-dropdown.p-element.p-button {
     @extend #field-trigger;
     grid-column-start: 4;
+    height: 100%;
+    min-height: 2.5rem;
 
     .p-button-icon {
         @extend #field-trigger-icon;
@@ -156,4 +216,9 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
     &.p-focus {
         outline: none;
     }
+}
+
+.p-button-icon-only.p-autocomplete-dropdown:not(.p-splitbutton-menubutton) {
+    height: 100%;
+    min-height: 2.5rem;
 }

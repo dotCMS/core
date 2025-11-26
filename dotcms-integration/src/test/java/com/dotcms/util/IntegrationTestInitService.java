@@ -12,14 +12,12 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
-
-import java.io.File;
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.awaitility.Awaitility;
-import org.awaitility.Duration;
+import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import org.mockito.Mockito;
 
 /**
@@ -36,6 +34,15 @@ public class IntegrationTestInitService {
         SystemProperties.getProperties();
     }
 
+    public static final Weld WELD;
+    public static final WeldContainer CONTAINER;
+
+    static {
+        WELD = new Weld("IntegrationTestInitService");
+        CONTAINER = WELD.initialize();
+    }
+
+
     private IntegrationTestInitService() {
     }
 
@@ -44,18 +51,15 @@ public class IntegrationTestInitService {
         return service;
     }
 
-
     public void init() throws Exception {
         try {
             if (initCompleted.compareAndSet(false, true)) {
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);
 
-
-
                 Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
                 Awaitility.setDefaultPollDelay(Duration.ZERO);
-                Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);
+                Awaitility.setDefaultTimeout(Duration.ofMinutes(1));
 
                 ConfigTestHelper._setupFakeTestingContext();
 
@@ -72,8 +76,12 @@ public class IntegrationTestInitService {
                 Config.setProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS", 0);
 
                 Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
+
                 // Init other dotCMS services.
                 DotInitializationService.getInstance().initialize();
+
+                APILocator.getDotAIAPI().getEmbeddingsAPI().initEmbeddingsTable();
+                Logger.info(this, "Integration Test Init Service initialized");
             }
         } catch (Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);
@@ -86,6 +94,5 @@ public class IntegrationTestInitService {
         ModuleConfig config = factoryObject.createModuleConfig("");
         Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
     }
-    
-    
+
 }

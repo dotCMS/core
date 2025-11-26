@@ -1,7 +1,11 @@
-<span #lockedPageMessage class="page-info__locked-by-message" *ngIf="show">
-    {{ 'editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName] }}
-</span>
+@if (show) {
+    <span #lockedPageMessage class="page-info__locked-by-message">
+        {{ 'editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName] }}
+    </span>
+}
 
-<span #lockedPageMessage class="page-info__cant-edit-message" *ngIf="!pageState.page.canEdit">
-    {{ 'editpage.toolbar.page.cant.edit' | dm }}
-</span>
+@if (!pageState.page.canEdit) {
+    <span #lockedPageMessage class="page-info__cant-edit-message">
+        {{ 'editpage.toolbar.page.cant.edit' | dm }}
+    </span>
+}

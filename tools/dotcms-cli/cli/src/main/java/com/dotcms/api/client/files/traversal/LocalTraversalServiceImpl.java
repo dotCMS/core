@@ -5,22 +5,26 @@ import static com.dotcms.common.AssetsUtils.parseLocalPath;
 import com.dotcms.api.client.FileHashCalculatorService;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTaskParams;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTaskParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
+import com.dotcms.cli.common.DotCliIgnore;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import java.util.concurrent.CompletionException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
@@ -100,7 +104,14 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 fileHashCalculatorService
         );
 
-        task.setTraversalParams(LocalFolderTraversalTaskParams.builder()
+        // Create DotCliIgnore instance with hierarchical loading
+        // Load patterns from the source path up to the workspace root
+        final File sourceFile = new File(params.sourcePath());
+        final Path sourcePath = sourceFile.isDirectory() ? sourceFile.toPath() : sourceFile.getParentFile().toPath();
+        final Path workspaceRoot = workspace.toPath();
+        final DotCliIgnore dotCliIgnore = DotCliIgnore.create(sourcePath, workspaceRoot);
+
+        task.setTaskParams(LocalFolderTraversalTaskParams.builder()
                 .siteExists(siteExists)
                 .sourcePath(params.sourcePath())
                 .workspace(params.workspace())
@@ -108,14 +119,24 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 .removeFolders(params.removeFolders())
                 .ignoreEmptyFolders(params.ignoreEmptyFolders())
                 .failFast(params.failFast())
+                .dotCliIgnore(dotCliIgnore)
                 .build()
         );
 
-        var result = task.compute();
-        return TraverseResult.builder()
-                .exceptions(result.getLeft())
-                .localPaths(localPath)
-                .treeNode(result.getRight()).build();
+        try {
+            var result = task.compute().join();
+            return TraverseResult.builder()
+                    .exceptions(result.exceptions())
+                    .localPaths(localPath)
+                    .treeNode(result.treeNode()).build();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
     /**
@@ -150,7 +171,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 fileHashCalculatorService
         );
 
-        task.setTraversalParams(PullTreeNodeTaskParams.builder()
+        task.setTaskParams(PullTreeNodeTaskParams.builder()
                 .rootNode(filteredRoot)
                 .destination(rootPath.toString())
                 .overwrite(overwrite)
@@ -161,7 +182,16 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 .build()
         );
 
-        return task.compute();
+        try {
+            return task.compute().join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TraversalTaskException) {
+                throw (TraversalTaskException) cause;
+            } else {
+                throw new TraversalTaskException(cause.getMessage(), cause);
+            }
+        }
     }
 
 }

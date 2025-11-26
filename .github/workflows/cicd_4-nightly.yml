@@ -1,0 +1,120 @@
+# Nightly Build-Test-Deploy Workflow
+#
+# This workflow is triggered nightly or manually via workflow_dispatch.
+# It orchestrates a comprehensive nightly build, test, and deployment process.
+#
+# Key features:
+# - Scheduled to run nightly at 3:18 AM
+# - Manual trigger option with configurable inputs
+# - Comprehensive process including build, tests, CLI artifact building, and deployment
+# - Optional NPM package publishing
+# - Deployment to the nightly environment
+# - Final reporting of the workflow status
+
+name: '-4 Nightly Workflow'
+
+on:
+  schedule:
+    - cron: "18 3 * * *" # every night at 3:18 AM
+  workflow_dispatch:
+    inputs:
+      reuse-previous-build:
+        description: 'Indicates if the workflow should reuse the previous build'
+        type: boolean
+        default: false
+      build-on-missing-artifacts:
+        type: boolean
+        description: 'Indicates if the workflow should build on missing artifacts'
+        default: true
+      publish-npm-cli:
+        type: boolean
+        description: 'Indicates if the workflow should publish the NPM package on the registry'
+        default: false
+      run-all-tests:
+        description: 'Run all tests'
+        type: boolean
+        default: true
+
+jobs:
+  # Initialize the nightly build process
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }}
+
+  # Build job - only runs if no artifacts were found during initialization
+  build:
+    name: Nightly Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    permissions:
+      contents: read
+      packages: write
+
+  # Test job - runs all tests by default
+  test:
+    name: Nightly Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      run-all-tests: ${{ inputs.run-all-tests || true }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+    permissions:
+      contents: read
+      packages: write
+
+  # CLI Build job - builds CLI artifacts
+  build-cli:
+    name: Nightly CLI Build
+    needs: [ initialize, test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
+    with:
+      buildNativeImage: true
+      branch: ${{ github.ref }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+
+  # Deployment job - deploys to the nightly environment
+  deployment:
+    needs: [ initialize,build-cli,test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      environment: nightly
+      deploy-dev-image: true
+      publish-npm-cli: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-cli == true ) || github.event_name == 'schedule' }}
+      reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Finalize job - aggregates results from previous jobs
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, build-cli, test, deployment ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report job - generates and sends the final workflow report
+  report:
+    name: Report
+    if: always()
+    needs: [ finalize ]
+    uses: ./.github/workflows/cicd_post-workflow-reporting.yml
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

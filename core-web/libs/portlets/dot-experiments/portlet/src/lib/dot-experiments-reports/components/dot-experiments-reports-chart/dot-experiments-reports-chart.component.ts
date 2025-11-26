@@ -1,6 +1,5 @@
 import { ChartData } from 'chart.js';
 
-import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 
 import { ChartModule } from 'primeng/chart';
@@ -14,9 +13,8 @@ import { htmlLegendPlugin } from './chartjs/plugins/dotHtmlLegend-chartjs.plugin
 import { getRandomUUID } from '../../../shared/dot-experiment.utils';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-reports-chart',
-    imports: [ChartModule, NgIf, SkeletonModule, DotMessagePipe],
+    imports: [ChartModule, SkeletonModule, DotMessagePipe],
     templateUrl: './dot-experiments-reports-chart.component.html',
     styleUrls: ['./dot-experiments-reports-chart.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

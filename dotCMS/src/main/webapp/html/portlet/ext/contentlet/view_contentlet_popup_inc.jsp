@@ -241,7 +241,7 @@ if(!hasPermissions) {
                <td>
                    <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE || isUrlMap  ){ %>
                        <%session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, content.getHost()); %>
-                       <div style="padding:3px;"><a style="color:#0E80CB;" target="workflowWindow" text-decoration: underline;" href="/dotAdmin/#/edit-page/content?url=<%= editPath%>"><%= editPath%></a></div>
+                       <div style="padding:3px;"><a style="color:#0E80CB;" target="workflowWindow" text-decoration: underline;" href="/dotAdmin/#/edit-page/content?url=<%= editPath+ "&language_id=" + lang.getId()%>"><%= editPath%></a></div>
                    <%}else  if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ){ %>
                        <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" href="#" onclick="dotPreviewFile('/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=id.getAssetName() %>?mode=PREVIEW_MODE')" >/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=id.getAssetName() %>?mode=PREVIEW_MODE</a></div>
                    <%} %>

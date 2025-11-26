@@ -322,7 +322,7 @@
 								</dl>
 								<dl>
 									<dt>
-										<label for="workflowActionId">
+										<label for="workflowActionId" class="required">
 											<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
 										</label>
 									</dt>

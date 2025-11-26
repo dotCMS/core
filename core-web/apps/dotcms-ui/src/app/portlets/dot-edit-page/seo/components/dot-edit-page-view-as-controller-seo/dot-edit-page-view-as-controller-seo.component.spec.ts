@@ -1,27 +1,27 @@
 import { of } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output, Injectable } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { TooltipModule } from 'primeng/tooltip';
+import { TooltipModule, Tooltip } from 'primeng/tooltip';
 
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotDevicesService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPersonasService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+import { DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -35,16 +35,20 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as-controller-seo.component';
 
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-test-host',
-    template: `<dot-edit-page-view-as-controller-seo
-        [pageState]="pageState"></dot-edit-page-view-as-controller-seo>`
+    template: `
+        <dot-edit-page-view-as-controller-seo
+            [pageState]="pageState"></dot-edit-page-view-as-controller-seo>
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     @Input()
@@ -53,7 +57,8 @@ class DotTestHostComponent {
 
 @Component({
     selector: 'dot-persona-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPersonaSelectorComponent {
     @Input()
@@ -70,7 +75,8 @@ class MockDotPersonaSelectorComponent {
 
 @Component({
     selector: 'dot-device-selector-seo',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotDeviceSelectorComponent {
     @Input()
@@ -81,7 +87,8 @@ class MockDotDeviceSelectorComponent {
 
 @Component({
     selector: 'dot-language-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLanguageSelectorComponent {
     @Input()
@@ -97,6 +104,11 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.previewing': 'Previewing',
     'editpage.viewas.default.device': 'Default Device'
 });
+
+@Injectable()
+class MockDotWorkflowActionsFireService {
+    fireWorkflowAction = jest.fn().mockReturnValue(of({}));
+}
 
 describe('DotEditPageViewAsControllerSeoComponent', () => {
     let componentHost: DotTestHostComponent;
@@ -120,7 +132,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 DotEditPageViewAsControllerSeoComponent,
                 BrowserAnimationsModule,
                 TooltipModule,
-                DotPipesModule
+                DotSafeHtmlPipe
             ],
             providers: [
                 DotSessionStorageService,
@@ -156,6 +168,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: DotWorkflowActionsFireService,
+                    useClass: MockDotWorkflowActionsFireService
                 }
             ]
         });
@@ -171,7 +187,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
     describe('community license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -187,10 +203,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
     describe('enterprise license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            spyOn(component, 'changePersonaHandler').and.callThrough();
-            spyOn(component, 'changeDeviceHandler').and.callThrough();
-            spyOn(component, 'changeLanguageHandler').and.callThrough();
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(component, 'changePersonaHandler');
+            jest.spyOn(component, 'changeDeviceHandler');
+            jest.spyOn(component, 'changeLanguageHandler');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -228,13 +244,17 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.changePersonaHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Language selector', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('body');
-            expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Access PrimeNG Tooltip directive to verify position
+            const tooltipDirective = languageSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Language', () => {
@@ -249,6 +269,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
+            expect(component.changeLanguageHandler).toHaveBeenCalledTimes(1);
         });
     });
 });

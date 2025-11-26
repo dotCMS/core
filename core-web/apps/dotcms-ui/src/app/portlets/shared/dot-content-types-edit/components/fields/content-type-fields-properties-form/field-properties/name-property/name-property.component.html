@@ -1,26 +1,24 @@
-<div class="field" [formGroup]="group">
+<div [formGroup]="group" class="field">
     <label [for]="property.name" dotFieldRequired>
-        {{ 'contenttypes.field.properties.name.label' | dm }}</label
-    >
+        {{ 'contenttypes.field.properties.name.label' | dm }}
+    </label>
     <input
-        class="name__input"
         [formControlName]="property.name"
         [id]="property.name"
+        class="name__input"
         dotAutofocus
         pInputText
         type="text"
-        maxlength="255"
-    />
+        maxlength="255" />
     <dot-field-validation-message
         [message]="'contenttypes.field.properties.name.error.required' | dm"
-        [field]="group.controls[property.name]"
-    >
-    </dot-field-validation-message>
-    <div class="form__field-variable" *ngIf="property.field.variable">
-        <b>{{ 'contenttypes.field.properties.name.variable' | dm }}: </b>
-        <dot-copy-link
-            [label]="property.field.variable"
-            [copy]="property.field.variable"
-        ></dot-copy-link>
-    </div>
+        [field]="group.controls[property.name]"></dot-field-validation-message>
+    @if (property.field.variable) {
+        <div class="form__field-variable">
+            <b>{{ 'contenttypes.field.properties.name.variable' | dm }}:</b>
+            <dot-copy-link
+                [label]="property.field.variable"
+                [copy]="property.field.variable"></dot-copy-link>
+        </div>
+    }
 </div>

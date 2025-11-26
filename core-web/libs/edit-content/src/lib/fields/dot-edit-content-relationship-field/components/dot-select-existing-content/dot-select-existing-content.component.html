@@ -1,0 +1,126 @@
+@let data = store.filteredData();
+@let columns = store.columns();
+@let pagination = store.pagination();
+@let selectionMode = store.selectionMode();
+
+<div class="w-full h-full">
+    @if (store.errorMessage()) {
+        <div
+            class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base">
+            <p>{{ store.errorMessage() | dm }}</p>
+        </div>
+    } @else {
+        <p-table
+            [columns]="columns"
+            [value]="data"
+            [selectionMode]="selectionMode"
+            [(selection)]="$selectionItems"
+            [loading]="store.isLoading()"
+            [paginator]="true"
+            [first]="pagination.offset"
+            [rows]="pagination.rowsPerPage"
+            (onPage)="store.setOffset($event)"
+            [scrollable]="true"
+            [rowHover]="false"
+            [reorderableColumns]="false"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{first} - {last} of {totalRecords}"
+            [showPageLinks]="false"
+            [showFirstLastIcon]="false"
+            scrollHeight="36rem"
+            styleClass="dotTable p-datatable-existing-content w-full">
+            <ng-template pTemplate="header" styleClass="relative" let-columns>
+                <tr>
+                    <th
+                        scope="col"
+                        class="max-w-5rem"
+                        pFrozenColumn
+                        alignFrozen="left"
+                        [frozen]="true">
+                        @if (selectionMode === 'multiple') {
+                            <p-tableHeaderCheckbox />
+                        }
+                    </th>
+                    <th scope="col" [colSpan]="2" class="max-w-11rem" [pSortableColumn]="'title'">
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.title' | dm }}
+                        </span>
+                        <p-sortIcon [field]="'title'" />
+                    </th>
+                    @for (column of columns; track $index) {
+                        <th class="max-w-11rem" scope="col" [pSortableColumn]="column.field">
+                            <span class="capitalize">{{ column.header }}</span>
+                            <p-sortIcon [field]="column.field" />
+                        </th>
+                    }
+                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'language'">
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.language' | dm }}
+                        </span>
+                    </th>
+                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'status'">
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.status' | dm }}
+                        </span>
+                    </th>
+                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'modDate'">
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.last.modified' | dm }}
+                        </span>
+                        <p-sortIcon [field]="'modDate'" />
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td [colSpan]="columns.length + $staticColumns()" class="border-none">
+                        <div class="flex justify-content-center p-6 text-base gap-2">
+                            <i class="pi pi-folder-open"></i>
+                            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item let-columns="columns">
+                <tr [class.p-highlight]="checkIfSelected(item)">
+                    <td class="max-w-5rem" pFrozenColumn alignFrozen="left" [frozen]="true">
+                        @if (selectionMode === 'multiple') {
+                            <p-tableCheckbox [value]="item" />
+                        } @else {
+                            <p-tableRadioButton [value]="item" />
+                        }
+                    </td>
+                    <td class="column-thumbnail">
+                        <div class="container-thumbnail">
+                            <dot-contentlet-thumbnail
+                                [iconSize]="'30px'"
+                                [contentlet]="item"
+                                [playableVideo]="false"
+                                data-testId="contentlet-thumbnail" />
+                        </div>
+                    </td>
+                    <td class="max-w-11rem">
+                        <p class="truncate-text">{{ item.title }}</p>
+                    </td>
+                    @for (column of columns; track $index) {
+                        <td class="max-w-11rem">
+                            <p class="truncate-text">{{ item[column.field] }}</p>
+                        </td>
+                    }
+                    <td class="max-w-11rem">
+                        <p class="truncate-text">{{ item.language | language }}</p>
+                    </td>
+                    <td class="max-w-11rem">
+                        @let status = item | contentletStatus;
+                        <p-chip
+                            [styleClass]="'p-chip-sm ' + status.classes"
+                            [label]="status.label" />
+                    </td>
+                    <td class="max-w-11rem">
+                        <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+</div>

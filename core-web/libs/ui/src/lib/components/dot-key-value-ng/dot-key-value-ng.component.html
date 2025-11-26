@@ -1,45 +1,35 @@
+@let variableList = $variableList();
+
 <p-table
-    #table
     [value]="variableList()"
-    (keydown.enter)="$event.stopPropagation()"
-    sortField="clazz"
-    sortOrder="0"
-    dataKey="id">
+    #table
+    dataKey="key"
+    (onRowReorder)="reorderVariables()"
+    styleClass="dotTable p-datatable-key-value">
     <ng-template pTemplate="header" let-columns>
-        <tr data-testId="header">
-            <th class="dot-key-value__header-keyValue-label" scope="col">
-                {{ 'keyValue.key_header.label' | dm }}
-            </th>
-            <th class="dot-key-value__header-keyValue-label" scope="col">
-                {{ 'keyValue.value_header.label' | dm }}
-            </th>
-            <th *ngIf="showHiddenField" scope="col" cclass="dot-key-value__header-hidden-label">
-                {{ 'keyValue.hidden_header.label' | dm }}
-            </th>
-            <th class="dot-key-value__header-actions-label" scope="col">
-                {{ 'keyValue.actions_header.label' | dm }}
-            </th>
-        </tr>
-        <dot-key-value-table-input-row
-            [autoFocus]="autoFocus"
-            [showHiddenField]="showHiddenField"
-            [forbiddenkeys]="forbiddenkeys()"
-            (save)="saveVariable($event)">
-        </dot-key-value-table-input-row>
+        <dot-key-value-table-header-row
+            (save)="saveVariable($event)"
+            [showHiddenField]="$showHiddenField()"
+            [dragAndDrop]="$dragAndDrop()"
+            [forbiddenkeys]="$forbiddenkeys()" />
     </ng-template>
     <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
-            #tableRow
-            [showHiddenField]="showHiddenField"
-            [variable]="variable"
             (delete)="deleteVariable(rowIndex)"
-            (save)="updateKeyValue($event, rowIndex)">
-        </dot-key-value-table-row>
+            (save)="updateKeyValue($event, rowIndex)"
+            [showHiddenField]="$showHiddenField()"
+            [variable]="variable"
+            [index]="rowIndex"
+            [dragAndDrop]="$dragAndDrop()"
+            #tableRow />
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
-        <tr data-testId="no-rows">
-            <td [attr.colspan]="showHiddenField ? 4 : 3">
-                {{ 'keyValue.value_no_rows.label' | dm }}
+        <tr>
+            <td [attr.colspan]="$colspan()">
+                <div class="flex p-2 gap-2 justify-content-center" data-testId="no-rows">
+                    <i class="pi pi-folder-open"></i>
+                    <p class="text-500">{{ 'keyValue.value_no_rows.label' | dm }}</p>
+                </div>
             </td>
         </tr>
     </ng-template>

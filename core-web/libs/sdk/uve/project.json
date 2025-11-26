@@ -1,0 +1,67 @@
+{
+    "name": "sdk-uve",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/uve/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/sdk/uve/jest.config.ts",
+                "testEnvironment": "jsdom"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["libs/sdk/uve/**/*.ts"]
+            }
+        },
+        "build": {
+            "executor": "@nx/rollup:rollup",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "main": "libs/sdk/uve/src/index.ts",
+                "additionalEntryPoints": ["libs/sdk/uve/src/internal.ts"],
+                "generateExportsField": true,
+                "outputPath": "dist/libs/sdk/uve",
+                "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
+                "project": "libs/sdk/uve/package.json",
+                "entryFile": "libs/sdk/uve/src/index.ts",
+                "compiler": "babel",
+                "format": ["esm", "cjs"],
+                "extractCss": false,
+                "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }]
+            }
+        },
+        "build:js": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../dotCMS/src/main/webapp/ext/uve",
+                "outputFileName": "dot-uve",
+                "format": ["esm"],
+                "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
+                "project": "libs/sdk/uve/package.json",
+                "entryFile": "libs/sdk/uve/src/script/sdk-editor.ts",
+                "external": ["react/jsx-runtime"],
+                "compiler": "tsc",
+                "extractCss": false,
+                "minify": true,
+                "declaration": false,
+                "generatePackageJson": false,
+                "esbuildOptions": {
+                    "banner": {
+                        "js": "(function(){"
+                    },
+                    "footer": {
+                        "js": "})();"
+                    }
+                }
+            }
+        }
+    }
+}

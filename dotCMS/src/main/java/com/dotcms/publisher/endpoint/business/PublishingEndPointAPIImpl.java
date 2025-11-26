@@ -1,12 +1,12 @@
 package com.dotcms.publisher.endpoint.business;
 
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.exception.DotDataException;
+
+import java.util.List;
 
 /**
  * Implementation of publishing_end_point API.
@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
  */
 public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 
+	final com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory factory = new com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory();
 	private PublishingEndPointFactory publishingEndPointFactory;
 
 	public PublishingEndPointAPIImpl(PublishingEndPointFactory publishingEndPointFactory){
@@ -128,5 +129,10 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	public void setPublishingEndPointFactory(
 			PublishingEndPointFactory publishingEndPointFactory) {
 		this.publishingEndPointFactory = publishingEndPointFactory;
+	}
+
+	@Override
+	public PublishingEndPoint createEndPoint(final String protocol) {
+		return this.factory.getPublishingEndPoint(protocol);
 	}
 }

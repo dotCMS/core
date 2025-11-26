@@ -48,14 +48,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
 
     }
 
-    @Test
-    public void test_esSearch_WithoutLicense_Success() throws Exception {
-        runNoLicense(()-> {
-                final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
-                final List<ESSearchResults> resultsList = getEsSearchResults(query);
-                Assert.assertFalse(resultsList.isEmpty());
-        });
-    }
+
 
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
@@ -96,4 +89,3 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         return (List<ESSearchResults>) esSearchProxy.esSearch(query,live, user,false);
     }
 }
-

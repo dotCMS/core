@@ -1,5 +1,7 @@
 package com.dotcms;
 
+import com.dotcms.ai.workflow.OpenAIGenerateImageActionletTest;
+import com.dotcms.analytics.track.RequestMatcherTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
@@ -27,9 +29,11 @@ import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionletTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
+import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariablesTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -61,7 +65,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.liferay.portal.ejb.UserUtilTest.class,
         com.liferay.util.LocaleUtilTest.class,
         com.dotcms.languagevariable.business.LanguageVariableAPITest.class,
-        com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptorIntegrationTest.class,
         com.dotcms.publishing.PublisherAPITest.class,
         com.dotcms.publishing.remote.RemoteReceiverLanguageResolutionTest.class,
         com.dotcms.cluster.business.ServerAPIImplTest.class,
@@ -89,17 +92,33 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.assets.business.PushedAssetsAPITest.class,
         com.dotcms.notification.business.NotificationAPITest.class,
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
-        com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
-        com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
-        com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
-        com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
-        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
         ExperimentUrlPatternCalculatorIntegrationTest.class,
-        JsEngineTest.class
+        JsEngineTest.class,
+        Task240306MigrateLegacyLanguageVariablesTest.class,
+        EmailActionletTest.class,
+        OpenAIGenerateImageActionletTest.class,
+        RequestMatcherTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIFTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest.class,
+        com.dotmarketing.portlets.rules.business.RulesCacheFTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
+        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
+        com.dotmarketing.portlets.folders.business.FolderAPITest.class,
+        com.dotmarketing.portlets.containers.business.ContainerAPITest.class,
+        com.dotmarketing.portlets.containers.business.FileAssetContainerUtilTest.class,
+        com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest.class,
+        com.dotmarketing.portlets.structure.factories.StructureFactoryTest.class,
+        com.dotmarketing.portlets.structure.factories.FieldFactoryTest.class,
+        com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
+        com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
 })
 
 public class MainSuite1a {

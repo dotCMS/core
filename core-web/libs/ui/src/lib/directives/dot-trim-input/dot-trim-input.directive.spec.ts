@@ -1,14 +1,17 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormsModule, NgControl } from '@angular/forms';
 
-import { DotTrimInputDirective } from '@dotcms/ui';
+import { DotTrimInputDirective } from './dot-trim-input.directive';
 
 const STRING_WITH_SPACES = '   Test Value   ';
 
 @Component({
-    template: `<input [(ngModel)]="name" dotTrimInput data-testId="input-to-trim" />`
+    standalone: false,
+    template: `
+        <input [(ngModel)]="name" dotTrimInput data-testId="input-to-trim" />
+    `
 })
 export class DotTrimInputHostMockComponent {
     name = STRING_WITH_SPACES;
@@ -32,7 +35,7 @@ describe('DotTrimInputDirective', () => {
 
         await spectator.fixture.whenStable();
 
-        expect(spectator.query(byTestId('input-to-trim'))).toExist();
+        expect(spectator.query(byTestId('input-to-trim'))).toBeTruthy();
         expect(input.value).toBe(STRING_WITH_SPACES);
 
         spectator.dispatchFakeEvent(input, 'blur');

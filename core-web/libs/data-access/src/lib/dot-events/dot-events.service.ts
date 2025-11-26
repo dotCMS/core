@@ -24,7 +24,7 @@ export class DotEventsService {
         // TODO: need to make this method to support multiple events
         return this.subject
             .asObservable()
-            .pipe(filter((res: DotEvent<T>) => res.name === eventName));
+            .pipe(filter((res) => res.name === eventName)) as Observable<DotEvent<T>>;
     }
 
     /**

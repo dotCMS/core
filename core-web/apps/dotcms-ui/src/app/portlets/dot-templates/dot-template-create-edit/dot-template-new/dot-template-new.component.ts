@@ -1,21 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { take } from 'rxjs/operators';
 
-import {
-    DotBinaryOptionSelectorComponent,
-    BINARY_OPTION
-} from '@dotcms/app/portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { BINARY_OPTION, DotBinaryOptionSelectorComponent } from '@dotcms/ui';
+
+import { DotTemplateCreateEditResolver } from '../resolvers/dot-template-create-edit.resolver';
 
 @Component({
     selector: 'dot-dot-template-new',
     templateUrl: './dot-template-new.component.html',
-    styleUrls: ['./dot-template-new.component.scss']
+    styleUrls: ['./dot-template-new.component.scss'],
+    providers: [DialogService, DotTemplateCreateEditResolver]
 })
 export class DotTemplateNewComponent implements OnInit {
+    private dialogService = inject(DialogService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+
     private readonly options: BINARY_OPTION = {
         option1: {
             value: 'designer',
@@ -30,12 +34,6 @@ export class DotTemplateNewComponent implements OnInit {
             label: 'templates.template.selector.label.advanced'
         }
     };
-
-    constructor(
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService
-    ) {}
 
     ngOnInit(): void {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {

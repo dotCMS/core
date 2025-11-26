@@ -6,13 +6,11 @@ describe('DotAutocompleteTagsComponent', () => {
     let component: DotAutocompleteTagsComponent;
     let fixture: ComponentFixture<DotAutocompleteTagsComponent>;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotAutocompleteTagsComponent]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotAutocompleteTagsComponent]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotAutocompleteTagsComponent);

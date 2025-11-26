@@ -9,11 +9,11 @@ import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { DotUploadFileService, FileStatus } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { ImageNode } from '../../../nodes';
-import { DotUploadFileService, FileStatus } from '../../../shared';
-import { getNodeCoords } from '../../bubble-menu/utils';
+import { getNodeCoords } from '../../../shared';
 import { FloatingButtonComponent } from '../floating-button.component';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {

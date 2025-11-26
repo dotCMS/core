@@ -21,6 +21,8 @@ import java.util.Optional;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
+import static com.dotcms.contenttype.model.type.DotAssetContentType.ASSET_FIELD_VAR;
+
 public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Object>> {
 
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
@@ -35,6 +37,9 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
             if (imageField.isEmpty()) {
                 return Collections.emptyMap();
             }
+
+            Logger.debug(this, () -> "Fetching title image for contentlet: " + contentlet.getIdentifier() +
+                    " field: " + imageField.get().variable());
 
             Map<String, Object> titleImageMap = Collections.emptyMap();
 
@@ -54,7 +59,8 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                 final Contentlet imageContentlet = imageContentletOptional.get();
 
                 if (imageContentlet.getTitleImage().isPresent()) {
-                    final Metadata imageFile = imageContentletOptional.get().getBinaryMetadata(FILE_ASSET);
+                    final String fileVariable = imageContentlet.isDotAsset() ? ASSET_FIELD_VAR : FILE_ASSET;
+                    final Metadata imageFile = imageContentletOptional.get().getBinaryMetadata(fileVariable);
 
                     titleImageMap = BinaryToMapTransformer.transform(imageFile, imageContentlet, imageContentlet.getTitleImage().get());
                 }

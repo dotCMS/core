@@ -22,6 +22,7 @@ package org.apache.velocity.runtime.resource;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
 import com.dotcms.rendering.velocity.services.VelocityType;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -294,9 +295,10 @@ public class ResourceManagerImpl
          * (static content from #include) with a Template.
          */
 
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final String resourceKey = resourceType + resourceName;
-        Resource resource = globalCache.get(resourceKey);
+
+        //Do not cache content resources when TimeMachine is running
+        Resource resource = TimeMachineUtil.isNotRunning() ? globalCache.get(resourceKey) : null;
 
         if (resource != null)
         {
@@ -355,8 +357,8 @@ public class ResourceManagerImpl
                  *  it's not in the cache, so load it.
                  */    
                 resource = loadResource(resourceName, resourceType, encoding);
-
-                if (DotResourceLoader.getInstance().isCachingOn())
+                //do not cache content resources when TimeMachine is running
+                if (DotResourceLoader.getInstance().isCachingOn() && TimeMachineUtil.isNotRunning() )
                 {
                     globalCache.put(resourceKey, resource);
                 }

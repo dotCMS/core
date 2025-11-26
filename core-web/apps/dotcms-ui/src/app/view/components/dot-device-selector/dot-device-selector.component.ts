@@ -8,33 +8,38 @@ import {
     OnChanges,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { DropdownModule } from 'primeng/dropdown';
 
 import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
+import { DotIconComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-device-selector',
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DropdownModule, FormsModule, DotIconComponent],
+    providers: [DotDevicesService]
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {
+    private dotDevicesService = inject(DotDevicesService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly cd = inject(ChangeDetectorRef);
+
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotDevice[] = [];
     placeholder = '';
-
-    constructor(
-        private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private readonly cd: ChangeDetectorRef
-    ) {}
 
     ngOnInit() {
         this.loadOptions();

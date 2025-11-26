@@ -1,0 +1,42 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@eslint/js": "^9.17.0",
+    "@faker-js/faker": "9.3.0",
+    "@playwright/test": "^1.48.2",
+    "@types/node": "^22.5.4",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "axe-html-reporter": "^2.2.11",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-playwright": "^2.1.0",
+    "prettier": "3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  },
+  "dependencies": {
+    "jsdom": "^25.0.1",
+    "xml2js": "^0.6.2"
+  },
+  "scripts": {
+    "show-report": "if [[ \"$CURRENT_ENV\" != \"ci\" ]]; then yarn playwright show-report; fi",
+    "start": "PLAYWRIGHT_JUNIT_SUITE_ID=nodee2etestsuite PLAYWRIGHT_JUNIT_SUITE_NAME='E2E Node Test Suite' PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' yarn playwright test ${PLAYWRIGHT_SPECIFIC} ${PLAYWRIGHT_DEBUG}; EXIT_CODE=$?; yarn run show-report; exit $EXIT_CODE",
+    "start-local": "CURRENT_ENV=local yarn run start",
+    "start-dev": "CURRENT_ENV=dev yarn run start",
+    "start-ci": "CURRENT_ENV=ci yarn run start",
+    "codegen": "yarn playwright codegen",
+    "ui:local": "CURRENT_ENV=local yarn playwright test --ui",
+    "ui:local-dev": "CURRENT_ENV=dev yarn playwright test --ui",
+    "ui:ci": "CURRENT_ENV=ci yarn playwright test --ui",
+    "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "ts:check": "tsc -p tsconfig.json --noEmit"
+  }
+}

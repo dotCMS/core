@@ -1,10 +1,11 @@
 import { DotCMSContentType } from './dot-content-types.model';
+import { DotCMSWorkflow, WorkflowStep } from './dot-workflow.model';
 
 export interface DotCMSWorkflowActionEvent {
     workflow: DotCMSWorkflowAction;
     callback: string;
     inode: string;
-    selectedInodes: string | string[];
+    selectedInodes?: string | string[];
 }
 
 export interface DotCMSWorkflowAction {
@@ -24,6 +25,19 @@ export interface DotCMSWorkflowAction {
     showOn: string[];
     actionInputs: DotCMSWorkflowInput[];
     metadata?: Record<string, string>;
+    hasArchiveActionlet?: boolean;
+    hasCommentActionlet?: boolean;
+    hasDeleteActionlet?: boolean;
+    hasDestroyActionlet?: boolean;
+    hasMoveActionletActionlet?: boolean;
+    hasMoveActionletHasPathActionlet?: boolean;
+    hasOnlyBatchActionlet?: boolean;
+    hasPublishActionlet?: boolean;
+    hasPushPublishActionlet?: boolean;
+    hasResetActionlet?: boolean;
+    hasSaveActionlet?: boolean;
+    hasUnarchiveActionlet?: boolean;
+    hasUnpublishActionlet?: boolean;
 }
 
 export enum DotCMSSystemActionType {
@@ -57,4 +71,10 @@ export interface DotCMSSystemAction {
 export interface DotCMSWorkflowInput {
     id: string;
     body: any;
+}
+
+export interface DotCMSContentletWorkflowActions {
+    scheme: DotCMSWorkflow;
+    action: DotCMSWorkflowAction;
+    firstStep: WorkflowStep;
 }

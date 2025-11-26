@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
@@ -7,17 +9,15 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
     DotRouterService,
-    DotIframeService,
-    DotFormatDateService
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -41,7 +41,10 @@ import {
 
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
@@ -55,7 +58,14 @@ describe('DotAddContentletComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAddContentletComponent, DotContentletWrapperComponent],
+            imports: [
+                DotAddContentletComponent,
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                BrowserAnimationsModule,
+                RouterTestingModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
                 DotMenuService,
@@ -77,6 +87,15 @@ describe('DotAddContentletComponent', () => {
                 ApiRoot,
                 DotIframeService,
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false),
+                        show: jest.fn(),
+                        hide: jest.fn(),
+                        toggle: jest.fn()
+                    }
+                },
                 DotcmsEventsService,
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
@@ -84,12 +103,6 @@ describe('DotAddContentletComponent', () => {
                 LoggerService,
                 StringUtils,
                 UserModel
-            ],
-            imports: [
-                DotIframeDialogModule,
-                BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule
             ]
         });
     }));
@@ -100,8 +113,8 @@ describe('DotAddContentletComponent', () => {
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
+        jest.spyOn(component.shutdown, 'emit');
+        jest.spyOn(component.custom, 'emit');
 
         fixture.detectChanges();
 
@@ -136,8 +149,8 @@ describe('DotAddContentletComponent', () => {
                     baseTypes: 'content,form'
                 },
                 events: {
-                    load: jasmine.createSpy('load'),
-                    keyDown: jasmine.createSpy('keyDown')
+                    load: jest.fn(),
+                    keyDown: jest.fn()
                 }
             });
 

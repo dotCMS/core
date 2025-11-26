@@ -1,0 +1,39 @@
+name: '-2 Merge Group Check'
+on:
+  merge_group:
+    types: [ checks_requested ]
+    branches: [ main, master ]
+jobs:
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+  build:
+    name: Merge Group Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    permissions:
+      contents: read
+      packages: write
+  test:
+    name: Merge Group Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
+      integration: ${{ needs.initialize.outputs.backend == 'true' }}
+      postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      karate: ${{ needs.initialize.outputs.backend == 'true' }}
+      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
+      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ test ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      needsData: ${{ toJson(needs) }}

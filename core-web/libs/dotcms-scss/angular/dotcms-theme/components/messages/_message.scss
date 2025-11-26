@@ -1,137 +1,164 @@
 @use "variables" as *;
+
+/* Base styles for inline messages */
 .p-inline-message {
     padding: $spacing-2 $spacing-2;
     margin: 0;
-    border-radius: $border-radius-xs;
-}
-.p-inline-message.p-inline-message-info {
-    background: #b3e5fc;
-    border: solid transparent;
-    border-width: 1px;
-    color: #01579b;
-}
-.p-inline-message.p-inline-message-info .p-inline-message-icon {
-    color: #01579b;
-}
-.p-inline-message.p-inline-message-success {
-    background: #c8e6c9;
-    border: solid transparent;
-    border-width: 1px;
-    color: #1b5e20;
-}
-.p-inline-message.p-inline-message-success .p-inline-message-icon {
-    color: #1b5e20;
-}
-.p-inline-message.p-inline-message-warn {
-    background: #ffecb3;
-    border: solid transparent;
-    border-width: 1px;
-    color: #7f6003;
-}
-.p-inline-message.p-inline-message-warn .p-inline-message-icon {
-    color: #7f6003;
-}
-.p-inline-message.p-inline-message-error {
-    background: #ffcdd2;
-    border: solid transparent;
-    border-width: 1px;
-    color: #b71c1c;
-}
-.p-inline-message.p-inline-message-error .p-inline-message-icon {
-    color: #b71c1c;
-}
-.p-inline-message .p-inline-message-icon {
-    font-size: $font-size-md;
-    margin-right: $spacing-1;
-}
-.p-inline-message .p-inline-message-text {
-    font-size: $font-size-md;
-}
-.p-inline-message.p-inline-message-icon-only .p-inline-message-icon {
-    margin-right: 0;
+    border-radius: $border-radius-md;
+    background: transparent;
+    border: 1px solid;
 }
 
+/* Styles for each type of inline message */
+.p-inline-message.p-inline-message-info {
+    background: transparent;
+    border-color: $color-palette-blue;
+    color: $black;
+}
+
+.p-inline-message.p-inline-message-success {
+    background: transparent;
+    border-color: $color-palette-green;
+    color: $black;
+}
+
+.p-inline-message.p-inline-message-warn {
+    background: transparent;
+    border-color: $color-palette-yellow;
+    color: $black;
+}
+
+.p-inline-message.p-inline-message-error {
+    background: transparent;
+    border-color: $color-palette-red;
+    color: $black;
+}
+
+/* Base styles for regular messages */
 .p-message {
-    margin: $spacing-2 0;
-    border-radius: $border-radius-xs;
+    margin: 0;
+    position: relative;
+    background: transparent;
+    border: 1px solid transparent;
+    min-height: 38px;
+    display: flex;
+    align-content: center;
+    flex-wrap: wrap;
+
+    .p-message-wrapper {
+        padding: 0 $spacing-4;
+        height: 100%;
+        width: 100%;
+    }
+
+    .p-message-text {
+        font-size: $font-size-md;
+        font-weight: $font-weight-semi-bold;
+    }
+
+    .p-message-icon {
+        font-size: $font-size-lg;
+        margin-right: $spacing-1;
+    }
 }
-.p-message .p-message-wrapper {
-    padding: $spacing-3 $spacing-4;
+
+/* Specific styles for each message type */
+.p-message.p-message-info {
+    background: $color-palette-blue-tint;
+    border: none;
+    color: $color-palette-blue-shade;
+
+    .p-message-icon {
+        color: $color-palette-blue-shade;
+    }
 }
+
+.p-message.p-message-success {
+    background: $color-palette-green-op-07;
+    border: none;
+    color: $color-palette-green;
+
+    .p-message-icon {
+        color: $color-palette-green;
+    }
+}
+
+.p-message.p-message-warning {
+    background: $color-accessible-text-yellow-bg;
+    border: none;
+    color: $color-accessible-text-yellow;
+
+    .p-message-icon,
+    .p-message-text {
+        color: $color-accessible-text-yellow;
+    }
+
+    .p-button-icon {
+        color: $color-accessible-text-yellow !important;
+    }
+}
+
+.p-message.p-message-error {
+    background: $color-palette-red-op-07;
+    border: none;
+    color: $color-palette-red;
+
+    .p-message-icon {
+        color: $color-palette-red;
+    }
+}
+
+/* Styles for close button */
 .p-message .p-message-close {
     width: $spacing-5;
     height: $spacing-5;
     border-radius: 50%;
     background: transparent;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    transition:
+        background-color $basic-speed,
+        color $basic-speed,
+        box-shadow $basic-speed;
+
+    &:hover {
+        background: $color-palette-white-op-30;
+    }
+
+    &:focus {
+        outline: 0 none;
+        outline-offset: 0;
+        box-shadow: none;
+    }
 }
-.p-message .p-message-close:hover {
-    background: $color-palette-white-op-30;
+
+/* Styles for centered messages */
+.p-message.message-centered .p-message-wrapper {
+    justify-content: center;
 }
-.p-message .p-message-close:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: none;
+
+/* Text and details */
+.p-message {
+    .p-message-summary {
+        font-weight: $font-weight-bold;
+    }
+
+    .p-message-detail {
+        margin-left: $spacing-1;
+    }
 }
-.p-message.p-message-info {
-    background: #b3e5fc;
-    border: solid transparent;
-    border-width: 0 0 0 0;
-    color: #01579b;
-}
-.p-message.p-message-info .p-message-icon {
-    color: #01579b;
-}
-.p-message.p-message-info .p-message-close {
-    color: #01579b;
-}
-.p-message.p-message-success {
-    background: #c8e6c9;
-    border: solid transparent;
-    border-width: 0 0 0 0;
-    color: #1b5e20;
-}
-.p-message.p-message-success .p-message-icon {
-    color: #1b5e20;
-}
-.p-message.p-message-success .p-message-close {
-    color: #1b5e20;
-}
-.p-message.p-message-warn {
-    background: #ffecb3;
-    border: solid transparent;
-    border-width: 0 0 0 0;
-    color: #7f6003;
-}
-.p-message.p-message-warn .p-message-icon {
-    color: #7f6003;
-}
-.p-message.p-message-warn .p-message-close {
-    color: #7f6003;
-}
-.p-message.p-message-error {
-    background: #ffcdd2;
-    border: solid transparent;
-    border-width: 0 0 0 0;
-    color: #b71c1c;
-}
-.p-message.p-message-error .p-message-icon {
-    color: #b71c1c;
-}
-.p-message.p-message-error .p-message-close {
-    color: #b71c1c;
-}
-.p-message .p-message-text {
-    font-size: $font-size-md;
+
+/* Styles for Warning text */
+.p-message.p-message-warn .p-message-text:has(> span)::before {
+    content: "Warning ";
     font-weight: $font-weight-semi-bold;
 }
-.p-message .p-message-icon {
-    font-size: $font-size-xl;
-    margin-right: $spacing-1;
-}
-.p-message .p-message-summary {
-    font-weight: 700;
-}
-.p-message .p-message-detail {
-    margin-left: $spacing-1;
+
+/* Styles for links inside messages */
+.p-message .p-message-text a {
+    color: var(--primary-color);
+    text-decoration: none;
+    margin-left: $spacing-0;
+
+    &:hover {
+        text-decoration: underline;
+    }
 }

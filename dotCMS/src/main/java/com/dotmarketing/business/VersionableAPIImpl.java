@@ -9,15 +9,21 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.Debouncer;
+import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -27,9 +33,12 @@ import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import io.vavr.control.Try;
+
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -40,9 +49,10 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	private final VersionableFactory versionableFactory;
 	private final PermissionAPI permissionAPI;
-    final Debouncer debouncer = new Debouncer();
+    final UniqueFieldValidationStrategyResolver uniqueFieldValidationStrategyResolver;
 
 	public VersionableAPIImpl() {
+        this.uniqueFieldValidationStrategyResolver = CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
 		versionableFactory = FactoryLocator.getVersionableFactory();
 		permissionAPI = APILocator.getPermissionAPI();
 	}
@@ -346,6 +356,24 @@ public class VersionableAPIImpl implements VersionableAPI {
 
     @CloseDBIfOpened
     @Override
+    public boolean hasWorkingVersionInAnyOtherLanguage(Versionable versionable, final long versionableLanguageId) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId())) {
+            return false;
+        }
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType())) {
+            return false;
+        }
+
+        // only contents are multi language
+        return "contentlet".equals(identifier.getAssetType())?
+                !this.versionableFactory.getWorkingVersionsExcludingLanguage(identifier.getId(), versionableLanguageId).isEmpty():false;
+    }
+
+    @CloseDBIfOpened
+    @Override
     public boolean isWorking(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
 
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
@@ -391,8 +419,19 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionInfo.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
 
-        versionInfo.setLiveInode(null);
-        versionableFactory.saveVersionInfo(versionInfo, true);
+        try {
+            ContentletVersionInfo copy =  versionInfo instanceof ContentletVersionInfo  ?
+                    (ContentletVersionInfo) BeanUtils.cloneBean(versionInfo) : null;
+
+            versionInfo.setLiveInode(null);
+            versionableFactory.saveVersionInfo(versionInfo, true);
+
+            if (UtilMethods.isSet(copy)) {
+                uniqueFieldValidationStrategyResolver.get().afterUnpublish(copy);
+            }
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @WrapInTransaction
@@ -441,6 +480,8 @@ public class VersionableAPIImpl implements VersionableAPI {
         newInfo.setLiveInode( null );
         newInfo.setPublishDate(null);
         versionableFactory.saveContentletVersionInfo( newInfo, true );
+
+        uniqueFieldValidationStrategyResolver.get().afterUnpublish(contentletVersionInfo.get());
     }
 
     @WrapInTransaction
@@ -486,17 +527,11 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
 
             //Get the structure for this contentlet
-            final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( contentlet.getStructureInode() );
-
-            if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
-                if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
-                    final Runnable futurePublishDateRunnable = ()->
-                    {futurePublishDateMessage(versionable.getModUser());};
-                    debouncer.debounce("contentPublishDateError"+versionable.getModUser(),futurePublishDateRunnable,5000,TimeUnit.MILLISECONDS);
-                    return;
-                }
+            final ContentType contentType = contentlet.getContentType();
+            if (ContentPublishDateUtil.notifyIfFuturePublishDate(contentType, identifier, versionable.getModUser())) {
+                return;
             }
-            if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+            if ( UtilMethods.isSet( contentType.expireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
                 if ( UtilMethods.isSet( identifier.getSysExpireDate() ) && identifier.getSysExpireDate().before( new Date() ) ) {
                     throw new ExpiredContentletPublishStateException( contentlet );
                 }
@@ -505,6 +540,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             newInfo.setLiveInode(versionable.getInode());
             newInfo.setPublishDate(new Date());
             versionableFactory.saveContentletVersionInfo( newInfo, true );
+
+            uniqueFieldValidationStrategyResolver.get().afterPublish(versionable.getInode());
         } else {
 
             final VersionInfo info = versionableFactory.getVersionInfo( versionable.getVersionId() );
@@ -517,22 +554,6 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
     }
 
-    /**
-     * Method to encapsulate the logic of a growl message when content has a future publish date
-     * @param user user to show the growl
-     */
-    private void futurePublishDateMessage(final String user){
-        final String message = Try.of(() -> LanguageUtil.get("message.contentlet.publish.future.date"))
-                .getOrElse("The content was saved successfully but cannot be published because"
-                        + " it is scheduled to be published on future date.");
-        final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder()
-                .setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
-                .setSeverity(MessageSeverity.SUCCESS).setLife(5000);
-
-        SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
-                ImmutableList.of(user));
-        Logger.debug(this,message);
-    }
 
     @WrapInTransaction
     @Override
@@ -708,7 +729,9 @@ public class VersionableAPIImpl implements VersionableAPI {
 	@Override
 	@CloseDBIfOpened
 	public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier) throws DotDataException, DotStateException {
-	  return versionableFactory.findAllContentletVersionInfos(identifier);
+
+        Logger.debug(this, "Finding the contentlet version infos, for the id: " + identifier);
+	    return versionableFactory.findAllContentletVersionInfos(identifier);
 	}
 
     @Override
@@ -767,14 +790,18 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	@WrapInTransaction
     @Override
-	public void deleteContentletVersionInfo(final String identifier, final long lang) throws DotDataException {
-	    versionableFactory.deleteContentletVersionInfo(identifier, lang);
-	}
+	public void deleteContentletVersionInfoByLanguage(final Contentlet contentlet) throws DotDataException {
+	    versionableFactory.deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        APILocator.getLocalSystemEventsAPI().notify(new DeleteContentletVersionInfoEvent(contentlet));
+    }
 
     @WrapInTransaction
     @Override
-    public void deleteContentletVersionInfo(final String identifier, final String variantId) throws DotDataException {
-        versionableFactory.deleteContentletVersionInfo(identifier, variantId);
+    public void deleteContentletVersionInfoByVariant(final Contentlet contentlet) throws DotDataException {
+        versionableFactory.deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getVariantId());
+
+        APILocator.getLocalSystemEventsAPI().notify(new DeleteContentletVersionInfoEvent(contentlet, true));
     }
 
 	@CloseDBIfOpened

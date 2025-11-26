@@ -1,0 +1,189 @@
+# Test Phase Workflow
+#
+# This reusable workflow is responsible for running various types of tests on the codebase.
+# It includes JVM unit tests, CLI tests, frontend tests, integration tests, and Postman tests.
+#
+# Key features:
+# - Configurable test execution based on input parameters
+# - Parallel execution of different test suites  
+# - Matrix strategy for running multiple test suites concurrently
+# - Reusable Maven job action for consistent test environment setup
+# - Artifact reuse from previous workflow runs
+# - DRY configuration using external YAML config
+
+name: Test Phase
+
+on:
+  workflow_call:
+    inputs:
+      run-all-tests:
+        type: boolean
+        default: false
+      artifact-run-id:
+        default: ${{ github.run_id }}
+        type: string
+      jvm_unit_test:
+        required: false
+        type: boolean
+        default: false
+      cli:
+        required: false
+        type: boolean
+        default: false
+      frontend:
+        required: false
+        type: boolean
+        default: false
+      postman:
+        required: false
+        type: boolean
+        default: false
+      karate:
+        required: false
+        type: boolean
+        default: false
+      integration:
+        required: false
+        type: boolean
+        default: false
+      e2e:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      DOTCMS_LICENSE:
+        required: true
+
+env:
+  ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
+
+jobs:
+  # Generate test matrix from external configuration
+  setup-matrix:
+    name: Setup Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Parse test configuration
+        id: parse-config
+        uses: mikefarah/yq@v4.47.1
+        with:
+          cmd: yq -o=json .github/test-matrix.yml > config.json
+
+      - name: Generate test matrix
+        id: generate-matrix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read the parsed JSON configuration
+            const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+            
+            // Build matrix from configuration
+            const matrix = [];
+            const inputs = {
+              'run-all-tests': ${{ inputs.run-all-tests }},
+              'jvm_unit_test': ${{ inputs.jvm_unit_test }},
+              'cli': ${{ inputs.cli }},
+              'frontend': ${{ inputs.frontend }}, 
+              'postman': ${{ inputs.postman }},
+              'karate': ${{ inputs.karate }},
+              'integration': ${{ inputs.integration }},
+              'e2e': ${{ inputs.e2e }}
+            };
+            
+            // Process each test type
+            for (const [testType, testConfig] of Object.entries(config.test_types)) {
+              const shouldRun = inputs['run-all-tests'] || inputs[testConfig.condition_input];
+              
+              if (!shouldRun) {
+                console.log(`Skipping ${testType} tests - not enabled`);
+                continue;
+              }
+              
+              // Process each suite in this test type
+              for (const suite of testConfig.suites) {
+                const testEntry = {
+                  // Inherit global defaults
+                  ...config.defaults,
+                  // Inherit test type defaults
+                  ...testConfig.defaults,
+                  // Apply suite-specific config
+                  ...suite,
+                  // Add metadata
+                  test_type: testType,
+                  condition_input: testConfig.condition_input
+                };
+                
+                // Build Maven args
+                if (testEntry.test_class) {
+                  // For integration/karate tests with test_class
+                  testEntry.maven_args = `${testEntry.base_maven_args} -Dit.test=${testEntry.test_class}`;
+                } else if (testEntry.collection) {
+                  // For postman tests with collection
+                  testEntry.maven_args = `${testEntry.base_maven_args} -Dpostman.collections=${testEntry.collection}`;
+                  testEntry.stage_name = `Postman ${testEntry.collection}`;
+                } else if (testEntry.maven_args && testEntry.base_maven_args) {
+                  // Combine base_maven_args first, then suite-specific maven_args
+                  testEntry.maven_args = `${testEntry.base_maven_args} ${testEntry.maven_args}`;
+                } else if (!testEntry.maven_args && testEntry.base_maven_args) {
+                  // Use base_maven_args if no specific maven_args
+                  testEntry.maven_args = testEntry.base_maven_args;
+                }
+                
+                // Clean up temporary fields
+                delete testEntry.base_maven_args;
+                delete testEntry.test_class;
+                delete testEntry.collection;
+                
+                matrix.push(testEntry);
+              }
+            }
+            
+            console.log(`Generated matrix with ${matrix.length} test configurations`);
+            
+            // Output the matrix
+            core.setOutput('matrix', JSON.stringify({ include: matrix }));
+            core.setOutput('has-tests', matrix.length > 0 ? 'true' : 'false');
+
+  # Run all tests using the generated matrix
+  test-matrix:
+    name: ${{ matrix.name }}
+    needs: setup-matrix
+    if: needs.setup-matrix.outputs.has-tests == 'true'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: ${{ matrix.timeout_minutes }}
+    env:
+      MAVEN_OPTS: ${{ matrix.maven_opts }}
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
+
+    steps:          
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Run ${{ matrix.name }}
+        uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: ${{ matrix.stage_name }}
+          maven-args: ${{ matrix.maven_args }}
+          generates-test-results: ${{ matrix.generates_test_results }}
+          cleanup-runner: ${{ matrix.cleanup_runner }}
+          dotcms-license: ${{ matrix.needs_license == true && secrets.DOTCMS_LICENSE || '' }}
+          requires-node: ${{ matrix.needs_node == true }}
+          needs-docker-image: ${{ matrix.needs_docker == true }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
+

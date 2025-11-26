@@ -13,14 +13,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
-import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
-import { DotIframeDialogModule } from '@components/dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
@@ -32,34 +29,37 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+import { DotIframeDialogComponent } from '../../../../../view/components/dot-iframe-dialog/dot-iframe-dialog.component';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller-seo',
     templateUrl: './dot-edit-page-view-as-controller-seo.component.html',
     styleUrls: ['./dot-edit-page-view-as-controller-seo.component.scss'],
-    standalone: true,
     imports: [
         CommonModule,
         DropdownModule,
         FormsModule,
         TooltipModule,
-        DotPersonaSelectorModule,
+        DotPersonaSelectorComponent,
         DotLanguageSelectorComponent,
-        DotDeviceSelectorModule,
-        DotPipesModule,
-        DotIconModule,
         CheckboxModule,
         ConfirmDialogModule,
-        DotIframeDialogModule,
+        DotIframeDialogComponent,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditPageViewAsControllerSeoComponent implements OnInit {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+    private router = inject(Router);
+
     isEnterpriseLicense$: Observable<boolean>;
     showEditJSPDialog = signal(false);
     urlEditPageIframeDialog = signal('');
@@ -69,15 +69,9 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     private confirmationService = inject(ConfirmationService);
 
     private readonly customEventsHandler;
+    dotPageStateService = inject(DotPageStateService);
 
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotLicenseService: DotLicenseService,
-        private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService,
-        private router: Router
-    ) {
+    constructor() {
         this.customEventsHandler = {
             close: ({ detail: { data } }: CustomEvent) => {
                 this.showEditJSPDialog.set(false);

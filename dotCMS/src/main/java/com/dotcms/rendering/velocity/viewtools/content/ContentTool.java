@@ -3,7 +3,6 @@ package com.dotcms.rendering.velocity.viewtools.content;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
@@ -15,6 +14,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -23,6 +24,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -61,6 +63,7 @@ public class ContentTool implements ViewTool {
 	private Host currentHost;
 	private PageMode mode;
 	private Language language;
+
 	public void init(Object initData) {
 		this.req = ((ViewContext) initData).getRequest();
 
@@ -102,18 +105,52 @@ public class ContentTool implements ViewTool {
 	 * Will pull a single piece of content for you based on the inode or identifier. It will always
 	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
 	 * identifier.  If it is an inode this is ignored.
+	 * In this case the object will be hydrated with all properties associated to the contentlet
+	 * Will return NULL if not found
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
+	 * @return NULL if not found
+	 */
+	public ContentMap findHydrated(String inodeOrIdentifier) {
+
+		return find(inodeOrIdentifier, true);
+	}
+
+	/**
+	 * Will pull a single piece of content for you based on the inode or identifier. It will always
+	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
+	 * identifier.  If it is an inode this is ignored.
 	 * Will return NULL if not found
 	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier) {
+
+		return find(inodeOrIdentifier, false);
+	}
+
+	/**
+	 * Will pull a single piece of content for you based on the inode or identifier. It will always
+	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
+	 * identifier.  If it is an inode this is ignored.
+	 * Will return NULL if not found
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
+	 * @param hydrateRelated Should the content be hydrated with all properties associated to the contentlet
+	 * @return NULL if not found
+	 */
+	public ContentMap find(String inodeOrIdentifier, final boolean hydrateRelated) {
 		final long sessionLang = language.getId();
-		
 	    try {
     		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE, sessionLang);
     		if(c== null || !InodeUtils.isSet(c.getInode())){
     			return null;
     		}
+
+			if(hydrateRelated) {
+				final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+						.hydratedContentMapTransformer().content(c).build();
+				c = myTransformer.hydrate().get(0);
+			}
+
     		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
 	    }
 	    catch(Throwable ex) {
@@ -176,6 +213,7 @@ public class ContentTool implements ViewTool {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
     	    ret.setQuery(cons.getQuery());
+			ret.setTotalResults(cons.getTotalResults());
     		return ret;
 	    }
 	    catch(Throwable ex) {
@@ -185,6 +223,63 @@ public class ContentTool implements ViewTool {
             throw new RuntimeException(ex);
         }
 	}
+
+    /**
+     * Hydrates a {@link ContentMap}
+     * @param cm
+     * @return
+     */
+    public ContentMap hydrate (final ContentMap cm) {
+
+        final Contentlet originalContentlet = cm.getContentObject();
+        return hydrate(originalContentlet);
+    }
+
+    /**
+     * Hydrates a {@link ContentMap}
+     * @param cm
+     * @return
+     */
+    public ContentMap hydrate (final Contentlet originalContentlet) {
+
+        final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+                .hydratedContentMapTransformer().content(originalContentlet).build();
+        final Contentlet hydratedContentlet = myTransformer.hydrate().get(0);
+        return new ContentMap(hydratedContentlet, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
+    }
+
+    /**
+     * Pulls the content associated to the query and arguments but hydrating the content maps returned
+     * @param query
+     * @param offset
+     * @param limit
+     * @param sort
+     * @return PaginatedArrayList of {@link ContentMap}
+     */
+    public PaginatedArrayList<ContentMap> pullHydrated(final String query, final int offset,
+                                                       final int limit, final String sort){
+        try {
+
+            final PaginatedArrayList<ContentMap> resultList = new PaginatedArrayList<>();
+
+            final PaginatedArrayList<Contentlet> contentletsRetrieved = ContentUtils.pull(
+                    ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req),
+                    offset, limit, sort, user, tmDate);
+            for(final Contentlet contentlet : contentletsRetrieved) {
+
+                resultList.add(hydrate(contentlet));
+            }
+
+            resultList.setQuery(contentletsRetrieved.getQuery());
+            resultList.setTotalResults(contentletsRetrieved.getTotalResults());
+            return resultList;
+        } catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.pull. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
+    }
 	
 	/**
 	 * Will return a ContentMap object which can be used on dotCMS front end. 
@@ -240,25 +335,21 @@ public class ContentTool implements ViewTool {
 	public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
 		PaginatedContentList<ContentMap> ret = new PaginatedContentList<>();
 		try {
-    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(
-    	    		ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage, contentsPerPage, sort,
-					user, tmDate);
+			final PaginatedContentList<Contentlet> cons = ContentUtils.pullPerPage(
+					ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage,
+					contentsPerPage, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
-    
-    	    if(cons != null && cons.size() > 0){
-    			long minIndex = (currentPage - 1) * contentsPerPage;
-    	        long totalCount = cons.getTotalResults();
-    	        long maxIndex = contentsPerPage * currentPage;
-    	        if((minIndex + contentsPerPage) >= totalCount){
-    	        	maxIndex = totalCount;
-    	        }
-    			ret.setTotalResults(cons.getTotalResults());
-    			ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
-    			ret.setNextPage(maxIndex < totalCount);
-    			ret.setPreviousPage(minIndex > 0);
-    	    }
+
+			ret.setQuery(cons.getQuery());
+			ret.setLimit(cons.getLimit());
+			ret.setOffset(cons.getOffset());
+			ret.setCurrentPage(cons.getCurrentPage());
+			ret.setTotalResults(cons.getTotalResults());
+			ret.setTotalPages(cons.getTotalPages());
+			ret.setNextPage(cons.isNextPage());
+			ret.setPreviousPage(cons.isPreviousPage());
 		}
 		catch(Throwable ex) {
 		    if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {

@@ -1,6 +1,11 @@
 import { Observable } from 'rxjs';
 
-import { Component, Input, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { DropdownModule } from 'primeng/dropdown';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
@@ -8,6 +13,7 @@ import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
@@ -18,26 +24,37 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+import { DotDeviceSelectorComponent } from '../../../../../view/components/dot-device-selector/dot-device-selector.component';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller',
     templateUrl: './dot-edit-page-view-as-controller.component.html',
-    styleUrls: ['./dot-edit-page-view-as-controller.component.scss']
+    styleUrls: ['./dot-edit-page-view-as-controller.component.scss'],
+    imports: [
+        CommonModule,
+        DropdownModule,
+        FormsModule,
+        TooltipModule,
+        DotPersonaSelectorComponent,
+        DotLanguageSelectorComponent,
+        DotDeviceSelectorComponent,
+        DotMessagePipe
+    ]
 })
 export class DotEditPageViewAsControllerComponent implements OnInit {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotLicenseService = inject(DotLicenseService);
+    dotPageStateService = inject(DotPageStateService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+
     isEnterpriseLicense$: Observable<boolean>;
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotLicenseService: DotLicenseService,
-        public dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
-    ) {}
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();

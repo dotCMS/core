@@ -5,14 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -26,8 +26,14 @@ describe('DotPaletteInputFilterComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPaletteInputFilterComponent, MockDotIconComponent],
-            imports: [DotPipesModule, DotMessagePipe, HttpClientTestingModule, FormsModule],
+            declarations: [MockDotIconComponent],
+            imports: [
+                DotPaletteInputFilterComponent,
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                HttpClientTestingModule,
+                FormsModule
+            ],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }]
         });
 
@@ -44,12 +50,13 @@ describe('DotPaletteInputFilterComponent', () => {
     });
 
     it('should go Back when Go Back button clicked', async () => {
-        spyOn(comp.filter, 'emit').and.callThrough();
+        jest.spyOn(comp.filter, 'emit');
         const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
         comp.value = 'hello';
         const event = new KeyboardEvent('keyup');
         input.dispatchEvent(event);
         await fixture.whenStable();
         expect(comp.filter.emit).toHaveBeenCalledWith('hello');
+        expect(comp.filter.emit).toHaveBeenCalledTimes(1);
     });
 });

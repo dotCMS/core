@@ -1,21 +1,47 @@
-import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
+import {
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { FileUploadModule } from 'primeng/fileupload';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
+import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
+import { camelCase } from '@dotcms/utils';
+
+import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
+import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
+import { DotSiteSelectorFieldComponent } from '../../_common/dot-site-selector-field/dot-site-selector-field.component';
 
 @Component({
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',
-    styleUrls: ['./dot-create-persona-form.component.scss']
+    styleUrls: ['./dot-create-persona-form.component.scss'],
+    imports: [
+        ReactiveFormsModule,
+        FileUploadModule,
+        InputTextModule,
+        ButtonModule,
+        DotMessagePipe,
+        DotFieldValidationMessageComponent,
+        DotSiteSelectorFieldComponent,
+        DotAutocompleteTagsComponent
+    ]
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private siteService = inject(SiteService);
+
     @Input() personaName = '';
     @Output() isValid: EventEmitter<boolean> = new EventEmitter();
 
@@ -23,8 +49,6 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     tempUploadedFile: DotCMSTempFile;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private fb: UntypedFormBuilder, private siteService: SiteService) {}
 
     ngOnInit() {
         this.initPersonaForm();
@@ -63,7 +87,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      * @memberof DotCreatePersonaFormComponent
      */
     setKeyTag(): void {
-        this.form.get('keyTag').setValue(_.camelCase(this.form.get('name').value));
+        this.form.get('keyTag').setValue(camelCase(this.form.get('name').value));
     }
 
     /**

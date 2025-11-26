@@ -18,7 +18,7 @@ import com.dotmarketing.portlets.templates.model.Template;
  */
 public class JsonMapper {
 
-    public static final ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
 
     static {
         mapper.addMixInAnnotations(Permissionable.class, PermissionableMixIn.class);

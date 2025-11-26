@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import java.util.Date;
 import java.util.List;
@@ -11,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
 public interface VersionableAPI {
@@ -269,7 +271,18 @@ public interface VersionableAPI {
 	 * @throws DotSecurityException
 	 */
 	boolean isWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
-	
+
+	/**
+	 * Tells if has working version in any language.
+	 *
+	 * @param versionable
+	 * @return true if it has the working version. False if not
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	boolean hasWorkingVersionInAnyOtherLanguage(Versionable versionable, long versionableLanguageId) throws DotDataException, DotStateException,DotSecurityException;
+
 	/**
 	 * Sets the versionable as the working version for its identifier
 	 * 
@@ -398,8 +411,8 @@ public interface VersionableAPI {
 	
 	void deleteVersionInfo(String identifier) throws DotDataException;
 	
-	void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException;
-	void deleteContentletVersionInfo(String identifier, final String variantId) throws DotDataException;
+	void deleteContentletVersionInfoByLanguage(final Contentlet contentlet) throws DotDataException;
+	void deleteContentletVersionInfoByVariant(final Contentlet contentlet) throws DotDataException;
 
 	boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
 	

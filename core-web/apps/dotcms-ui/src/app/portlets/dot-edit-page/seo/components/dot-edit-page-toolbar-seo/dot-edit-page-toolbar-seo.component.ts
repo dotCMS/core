@@ -8,7 +8,8 @@ import {
     OnChanges,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -20,8 +21,6 @@ import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -32,49 +31,42 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import {
-    DotFavoritePageComponent,
-    DotDeviceSelectorSeoComponent
-} from '@dotcms/portlets/dot-ema/ui';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
+import { DotEditPageWorkflowsActionsComponent } from '../../../content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.component';
 import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.component';
 import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-as-controller-seo/dot-edit-page-view-as-controller-seo.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-edit-page-toolbar-seo',
     templateUrl: './dot-edit-page-toolbar-seo.component.html',
     styleUrls: ['./dot-edit-page-toolbar-seo.component.scss'],
-    providers: [DialogService, DotPropertiesService],
+    providers: [DialogService],
     imports: [
         ButtonModule,
         CommonModule,
         CheckboxModule,
-        DotEditPageWorkflowsActionsModule,
+        DotEditPageWorkflowsActionsComponent,
         DotEditPageViewAsControllerSeoComponent,
-        DotSecondaryToolbarModule,
+        DotSecondaryToolbarComponent,
         FormsModule,
         ToolbarModule,
         TooltipModule,
-        DotPipesModule,
-        DotGlobalMessageModule,
-        DotFavoritePageComponent,
-        DotIconModule,
-        DotEditPageNavDirective,
+        DotGlobalMessageComponent,
         RouterLink,
         TagModule,
         DotEditPageInfoSeoComponent,
-        DotDeviceSelectorSeoComponent,
         DotEditPageStateControllerSeoComponent,
         DotMessagePipe
     ]
 })
 export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDestroy {
+    private dotLicenseService = inject(DotLicenseService);
+    private dotConfigurationService = inject(DotPropertiesService);
+
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
     @Input() runningExperiment: DotExperiment | null = null;
@@ -93,11 +85,6 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotConfigurationService: DotPropertiesService
-    ) {}
-
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
         this.dotConfigurationService
@@ -107,12 +94,12 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
             });
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
-        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
+        this.apiLink = this.getApiLink();
     }
 
     ngOnChanges(): void {
         this.pageRenderedHtml = this.updateRenderedHtml();
-
+        this.apiLink = this.getApiLink();
         this.showWhatsChanged =
             this.pageState.state.mode === DotPageMode.PREVIEW &&
             !('persona' in this.pageState.viewAs) &&
@@ -140,5 +127,9 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
         return this.pageState?.params.viewAs.mode === DotPageMode.PREVIEW
             ? this.pageState.params.page.rendered
             : this.pageRenderedHtml;
+    }
+
+    private getApiLink(): string {
+        return `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
     }
 }

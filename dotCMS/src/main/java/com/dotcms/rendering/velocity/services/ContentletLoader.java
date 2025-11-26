@@ -18,7 +18,9 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import static com.dotcms.util.FunctionUtils.getOrDefault;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -42,8 +44,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -53,6 +53,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
  * Provides the Velocity Engine with the objects that are or can be used when rendering content.
@@ -179,10 +180,13 @@ public class ContentletLoader implements DotLoader {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
                 if (UtilMethods.isSet(contFieldValueObject)) {
                     if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
+                        // Replace empty relationship collections with $contents.getEmptyList()
+                        final String jsonStr = contFieldValueObject.toString()
+                                .replaceAll(":\\s*\\[\\s*\\]", ":\\$contents.getEmptyList()");
                         sb.append("#set($")
                                 .append(field.variable())
                                 .append("= $json.generate(")
-                                .append(contFieldValueObject)
+                                .append(jsonStr)
                                 .append("))");
                     } else {
                         Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
@@ -634,35 +638,34 @@ public class ContentletLoader implements DotLoader {
     public InputStream writeObject(final VelocityResourceKey key)
             throws DotStateException, DotDataException, DotSecurityException {
 
-        long language = Long.valueOf(key.language);
+        final long language = Long.parseLong(key.language);
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language, key.id1, key.mode, APILocator.systemUser());
 
-        Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1,
+        final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1,
                 renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey());
 
-        Contentlet contentlet = (key.mode.showLive)
-                ? APILocator.getContentletAPI().find(info.get().getLiveInode(),
-                        APILocator.systemUser(), false)
-                : APILocator.getContentletAPI().find(info.get().getWorkingInode(),
+        if(info.isEmpty()){
+            throw new ResourceNotFoundException("cannot find content version info for key: " + key);
+        }
+
+        final ContentletVersionInfo contentletVersionInfo = info.get();
+        final String inode = key.mode.showLive
+                ? contentletVersionInfo.getLiveInode()
+                : contentletVersionInfo.getWorkingInode();
+
+        final Contentlet contentlet =
+                 APILocator.getContentletAPI().find(inode,
                         APILocator.systemUser(), false);
 
-        Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
+        final String liveWorkingLabel = getOrDefault(key.mode.showLive,()->"live",()->"working");
+
+        Logger.debug(this, String.format("DotResourceLoader:\tWriting out contentlet \"%s\" inode = %s", liveWorkingLabel, inode));
         if (null == contentlet) {
             throw new ResourceNotFoundException("cannot find content for: " + key);
         }
         return buildVelocity(contentlet, key.mode, key.path);
     }
-
-    private boolean shouldCheckForVersionInfoInDefaultLanguage(long language) {
-        return language != defaultLang && APILocator.getLanguageAPI()
-                .canDefaultContentToDefaultLanguage();
-    }
-
-    private boolean isLiveVersionNotAvailable(VelocityResourceKey key, ContentletVersionInfo info) {
-        return info == null || key.mode.showLive && !UtilMethods.isSet(info.getLiveInode());
-    }
-
 
     @Override
     public void invalidate(Object obj, PageMode mode) {

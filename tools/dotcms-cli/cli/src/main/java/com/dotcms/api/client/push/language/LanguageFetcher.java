@@ -5,9 +5,9 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.ContentFetcher;
 import com.dotcms.model.language.Language;
 import java.util.List;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 
 @Dependent
 public class LanguageFetcher implements ContentFetcher<Language> {

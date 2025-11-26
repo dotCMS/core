@@ -288,6 +288,31 @@ public class PageModeTest {
 
     }
 
+    /**
+     * Given Scenario: We're simply testing that setting a page mode works as expected despite the fact that it is not set in the session
+     * Expected Result: The page mode should be set to the mode we set it to, and we should be able to get it back consistently
+     */
+    @Test
+    public void Simple_Set_Page_Mode() {
+        HttpServletRequest request = backEndRequest();
+        PageMode.setPageMode(request, PageMode.EDIT_MODE, false);
+        assert (PageMode.get(request) == PageMode.EDIT_MODE);
+
+        PageMode.setPageMode(request, PageMode.EDIT_MODE);
+        assert (PageMode.get(request) == PageMode.EDIT_MODE);
+
+        PageMode.setPageMode(request, PageMode.LIVE, false);
+        assert (PageMode.get(request) == PageMode.LIVE);
+
+        PageMode.setPageMode(request, PageMode.LIVE);
+        assert (PageMode.get(request) == PageMode.LIVE);
+
+        PageMode.setPageMode(request, PageMode.PREVIEW_MODE, false);
+        assert (PageMode.get(request) == PageMode.PREVIEW_MODE);
+
+        PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
+        assert (PageMode.get(request) == PageMode.PREVIEW_MODE);
+    }
 
 
 }

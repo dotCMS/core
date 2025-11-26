@@ -68,6 +68,42 @@ describe('DotWorkflowActionsFireService', () => {
         });
     });
 
+    it('should SAVE and return a new contentlet with FormData', (done) => {
+        const mockResult = {
+            name: 'test'
+        };
+
+        const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+        const requestBody = {
+            contentlet: {
+                contentType: 'dotAsset',
+                file: file.name
+            }
+        };
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        spectator.service
+            .newContentlet('dotAsset', { file: file.name }, formData)
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
+
+        req.flush({
+            entity: [mockResult]
+        });
+    });
+
     it('should EDIT and return the updated contentlet', (done) => {
         const mockResult = {
             inode: '123'
@@ -146,8 +182,7 @@ describe('DotWorkflowActionsFireService', () => {
         const requestBody = {
             contentlet: {
                 contentType: 'persona',
-                name: 'test',
-                indexPolicy: 'WAIT_FOR'
+                name: 'test'
             }
         };
 
@@ -159,7 +194,7 @@ describe('DotWorkflowActionsFireService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/PUBLISH',
+            '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
             HttpMethod.PUT
         );
 
@@ -179,8 +214,7 @@ describe('DotWorkflowActionsFireService', () => {
         const requestBody = {
             contentlet: {
                 contentType: 'persona',
-                name: 'test',
-                indexPolicy: 'WAIT_FOR'
+                name: 'test'
             },
             individualPermissions: { READ: ['123'], WRITE: ['456'] }
         };
@@ -197,7 +231,7 @@ describe('DotWorkflowActionsFireService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/PUBLISH',
+            '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
             HttpMethod.PUT
         );
 
@@ -222,7 +256,7 @@ describe('DotWorkflowActionsFireService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v1/workflow/actions/new/fire?inode=123&indexPolicy=WAIT_FOR',
+            '/api/v1/workflow/actions/new/fire?indexPolicy=WAIT_FOR&inode=123',
             HttpMethod.PUT
         );
 

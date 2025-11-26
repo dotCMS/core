@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -15,11 +15,11 @@ import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotTrimInputDirective
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    DotTrimInputDirective,
+    DotValidators
 } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { DotValidators } from '@shared/validators/dotValidators';
 
 import {
     DotExperimentsListStore,
@@ -34,7 +34,6 @@ interface CreateForm {
 
 @Component({
     selector: 'dot-experiments-create',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -57,12 +56,12 @@ interface CreateForm {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsCreateComponent implements OnInit {
+    private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
+
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
     form: FormGroup<CreateForm>;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
-
-    constructor(private readonly dotExperimentsListStore: DotExperimentsListStore) {}
 
     ngOnInit(): void {
         this.initForm();

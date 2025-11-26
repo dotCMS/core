@@ -19,6 +19,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
@@ -26,7 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.control.Try;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -64,6 +65,10 @@ public class BundleResourceTest {
         IntegrationTestInitService.getInstance().init();
         bundleResource = new BundleResource();
         adminUser = APILocator.systemUser();
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        if (!roleAPI.doesUserHaveRole(adminUser, roleAPI.loadBackEndUserRole())) {
+            roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), adminUser);
+        }
         response = new MockHttpResponse();
     }
 
@@ -152,7 +157,7 @@ public class BundleResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }

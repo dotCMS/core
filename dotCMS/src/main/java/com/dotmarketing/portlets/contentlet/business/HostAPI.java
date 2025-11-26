@@ -23,10 +23,11 @@ import java.util.concurrent.Future;
 public interface HostAPI {
 
 	/**
-	 * Will return a List of a host's aliases If no host aliases will return empty list
-	 * @param host Host
-	 * @return List
+	 * This class is used to define the options for the search of a host.
 	 */
+	enum SearchType {
+		LIVE_ONLY, RESPECT_FRONT_END_ROLES, INCLUDE_SYSTEM_HOST
+	}
 
     /**
      * Returns the aliases of a given Site in the form of a list. In the Site's properties, aliases can be separated by:
@@ -79,6 +80,25 @@ public interface HostAPI {
      *                              operation.
      */
     Host findByName(String siteName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Returns the Site that matches the specified Identifier or Site Key -- aka, Site Name.
+	 *
+	 * @param siteIdOrKey          The Identifier or Site Key of the Site.
+	 * @param user                 The {@link User} that is calling this method.
+	 * @param respectFrontendRoles If the User's front-end roles need to be taken into account in
+	 *                             order to perform this operation, set to {@code true}. Otherwise,
+	 *                             set to {@code false}.
+	 *
+	 * @return The {@link Host} object that matches the specified Identifier or Site Key.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the database.
+	 * @throws DotSecurityException The specified User does not have the required permissions to
+	 *                              perform this operation.
+	 */
+	Optional<Host> findByIdOrKey(final String siteIdOrKey, final User user,
+								 final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException;
 
     /**
      * Returns the Site that matches the specified alias. Depending on the existing data, the result may vary:
@@ -165,7 +185,7 @@ public interface HostAPI {
     /**
      * @deprecated This method is basically duplicated code. Use one of the following methods instead:
 	 * <ul>
-	 *     <li>{@link #findAllFromDB(User, boolean)}</li>
+	 *     <li>{@link #findAllFromDB(User, SearchType...)}</li>
 	 *     <li>{@link #findAllFromCache(User, boolean)}</li>
 	 *     <li>{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
 	 * </ul>
@@ -199,38 +219,19 @@ public interface HostAPI {
 	 */
 	List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-    /**
-     * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>,
-	 * including the System Host.
-     *
-     * @param user                 The {@link User} that is calling this method.
-     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-     *
-     * @return The list of {@link Host} objects.
-     *
-     * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws DotSecurityException The specified User does not have the required permissions to perform this
-     *                              operation.
-     */
-    List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
 	/**
 	 * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>. This
-	 * method allows you to <b>EXCLUDE</b> the System Host from the result list.
+	 * method allows you to <b>EXCLUDE</b> the System Host from the result list. Additionally, you can specify whether
+	 * you want to retrieve the live version of the Site over its working version if available.
 	 *
-	 * @param user                 The {@link User} that is calling this method.
-	 * @param includeSystemHost    If the System Host must be included in the results, set to {@code true}.
-	 * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-	 *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-	 *
+	 * @param user        The {@link User} that is calling this method.
+	 * @param searchTypes The search options to be used when retrieving the list of Sites.
 	 * @return The list of {@link Host} objects.
-	 *
 	 * @throws DotDataException     An error occurred when accessing the data source.
 	 * @throws DotSecurityException The specified User does not have the required permissions to perform this
 	 *                              operation.
 	 */
-	List<Host> findAllFromDB(final User user, final boolean includeSystemHost, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Host> findAllFromDB(final User user, final SearchType... searchTypes) throws DotDataException, DotSecurityException;
 
     /**
      * Returns the complete list of Sites in your dotCMS repository retrieved from the cache. If no data is currently
@@ -396,7 +397,7 @@ public interface HostAPI {
 	 *
 	 * @param host
 	 */
-	public void updateCache(Host host);
+	public void updateCache(Host host) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Updates the MenuLinks of the host with the new hostname

@@ -1,13 +1,18 @@
-import { CoreWebService } from './core-web.service';
-import { Injectable } from '@angular/core';
-import { LoginService } from './login.service';
 import { Observable } from 'rxjs';
-import { DotRouterService } from './dot-router.service';
 import { Subject } from 'rxjs';
+
+import { Injectable, inject } from '@angular/core';
+
+import { CoreWebService } from './core-web.service';
+import { DotRouterService } from './dot-router.service';
 import { DotcmsEventsService } from './dotcms-events.service';
+import { LoginService } from './login.service';
 
 @Injectable()
 export class RoutingService {
+    private router = inject(DotRouterService);
+    private coreWebService = inject(CoreWebService);
+
     private _menusChange$: Subject<Menu[]> = new Subject();
     private menus: Menu[];
     private urlMenus: string;
@@ -18,12 +23,10 @@ export class RoutingService {
     private _currentPortlet$ = new Subject<string>();
 
     // TODO: I think we should be able to remove the routing injection
-    constructor(
-        loginService: LoginService,
-        private router: DotRouterService,
-        private coreWebService: CoreWebService,
-        dotcmsEventsService: DotcmsEventsService
-    ) {
+    constructor() {
+        const loginService = inject(LoginService);
+        const dotcmsEventsService = inject(DotcmsEventsService);
+
         this.urlMenus = 'v1/CORE_WEB/menu';
         this.portlets = new Map();
 
@@ -51,6 +54,7 @@ export class RoutingService {
 
     get firstPortlet(): string {
         const porlets = this.portlets.entries().next().value;
+
         return porlets ? porlets[0] : null;
     }
 
@@ -81,6 +85,7 @@ export class RoutingService {
         if (id.indexOf('?') >= 0) {
             id = id.substr(0, id.indexOf('?'));
         }
+
         this._currentPortletId = id;
         this._currentPortlet$.next(id);
     }
@@ -108,6 +113,7 @@ export class RoutingService {
                     }
                 }
             }
+
             this._menusChange$.next(this.menus);
         }
     }
@@ -138,6 +144,7 @@ export class RoutingService {
 
     private getPortletId(url: string): string {
         const urlSplit = url.split('/');
+
         return urlSplit[urlSplit.length - 1];
     }
 }

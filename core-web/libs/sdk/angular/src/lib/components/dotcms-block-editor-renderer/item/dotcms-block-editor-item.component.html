@@ -1,0 +1,107 @@
+@for (node of content; track node) {
+    @if (customRenderers?.[node.type]) {
+        <ng-container
+            *ngTemplateOutlet="
+                customRender;
+                context: { customRender: customRenderers?.[node.type], node: node }
+            "></ng-container>
+    } @else {
+        @switch (node.type) {
+            @case (BLOCKS.PARAGRAPH) {
+                <dotcms-block-editor-renderer-paragraph [style]="node.attrs">
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-paragraph>
+            }
+
+            @case (BLOCKS.TEXT) {
+                <dotcms-block-editor-renderer-text [marks]="node.marks" [text]="node.text || ''" />
+            }
+
+            @case (BLOCKS.HEADING) {
+                <dotcms-block-editor-renderer-heading
+                    [style]="node.attrs || {}"
+                    [level]="node.attrs?.['level'] || '1'">
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-heading>
+            }
+
+            @case (BLOCKS.BULLET_LIST) {
+                <dotcms-block-editor-renderer-bullet-list>
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-bullet-list>
+            }
+
+            @case (BLOCKS.ORDERED_LIST) {
+                <dotcms-block-editor-renderer-ordered-list>
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-ordered-list>
+            }
+
+            @case (BLOCKS.LIST_ITEM) {
+                <dotcms-block-editor-renderer-list-item>
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-list-item>
+            }
+
+            @case (BLOCKS.BLOCK_QUOTE) {
+                <dotcms-block-editor-renderer-block-quote>
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-block-quote>
+            }
+
+            @case (BLOCKS.CODE_BLOCK) {
+                <dotcms-block-editor-renderer-code-block>
+                    <dotcms-block-editor-renderer-block
+                        [content]="node.content"
+                        [customRenderers]="customRenderers" />
+                </dotcms-block-editor-renderer-code-block>
+            }
+
+            @case (BLOCKS.HARDBREAK) {
+                <br />
+            }
+
+            @case (BLOCKS.HORIZONTAL_RULE) {
+                <hr />
+            }
+
+            @case (BLOCKS.DOT_IMAGE) {
+                <dotcms-block-editor-renderer-image [attrs]="node.attrs || {}" />
+            }
+
+            @case (BLOCKS.DOT_VIDEO) {
+                <dotcms-block-editor-renderer-video [attrs]="node.attrs || {}" />
+            }
+
+            @case (BLOCKS.TABLE) {
+                <dotcms-block-editor-renderer-table [content]="node.content" />
+            }
+
+            @case (BLOCKS.DOT_CONTENT) {
+                <dotcms-block-editor-renderer-contentlet
+                    [node]="node"
+                    [customRenderers]="customRenderers" />
+            }
+
+            @default {
+                <dotcms-block-editor-renderer-unknown [node]="node" />
+            }
+        }
+    }
+}
+
+<ng-template #customRender let-customRender="customRender" let-node="node">
+    <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }"></ng-container>
+</ng-template>

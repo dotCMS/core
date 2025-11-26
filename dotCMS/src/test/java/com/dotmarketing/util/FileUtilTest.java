@@ -42,5 +42,41 @@ public class FileUtilTest {
 
     }
 
+    /**
+     * Test to verify that the isFileEditableAsText method correctly identifies
+     * various MIME types as editable text files.
+     */
+    @Test
+    public void test_isFileEditableAsText() throws Exception {
+        //List of possible mime types that should be editable as text
+        String[] editableMimeTypes = {
+                // Scripts and source code
+                "application/javascript",
+                "application/ecmascript",
+                "application/x-typescript",
+                "application/x-sh",              // Shell script
+                "application/x-httpd-php",       // PHP scripts
+                "application/x-latex",           // LaTeX documents
+
+                // Structured data formats
+                "application/json",
+                "application/xml",
+                "application/x-yaml",
+                "application/toml",
+                "application/x-toml",
+                "application/x-www-form-urlencoded",
+                "application/x-sql",
+
+                // React/TSX extensions
+                "application/jsx",
+                "application/tsx"
+        };
+
+        for (final String mimeType : editableMimeTypes) {
+            final boolean isEditable = FileUtil.isFileEditableAsText(mimeType);
+            assertTrue("MIME type " + mimeType + " should be editable as text", isEditable);
+        }
+    }
+
 
 }

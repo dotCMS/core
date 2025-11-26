@@ -1,25 +1,30 @@
 import { fromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
     ElementRef,
     forwardRef,
+    inject,
     OnDestroy,
     OnInit,
     ViewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -30,12 +35,27 @@ import { DotTheme } from '@dotcms/dotcms-models';
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownComponent)
-        }
+        },
+        PaginatorService,
+        DotThemesService
+    ],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SearchableDropdownComponent,
+        DotMessagePipe,
+        DotSiteSelectorComponent,
+        InputTextModule,
+        DotIconComponent
     ]
 })
 export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit
 {
+    readonly paginatorService = inject(PaginatorService);
+    private readonly siteService = inject(SiteService);
+    private readonly themesService = inject(DotThemesService);
+
     themes: DotTheme[] = [];
     value: DotTheme = null;
     totalRecords = 0;
@@ -68,33 +88,18 @@ export class DotThemeSelectorDropdownComponent
     private initialLoad = true;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        public readonly paginatorService: PaginatorService,
-        private readonly siteService: SiteService,
-        private readonly themesService: DotThemesService
-    ) {}
-
     ngOnInit(): void {
         const interval = setInterval(() => {
             try {
                 this.currentSiteIdentifier = this.siteService.currentSite.identifier;
                 clearInterval(interval);
-            } catch (e) {
+            } catch {
                 /* */
             }
         }, 0);
 
-        // Here we set the initial value of the dropdown as System Theme
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.paginationPerPage = 5;
-        this.paginatorService.setExtraParams('hostId', 'SYSTEM_HOST');
-        this.paginatorService
-            .get()
-            .pipe(take(1))
-            .subscribe((themes: DotTheme[]) => {
-                this.value = themes[0];
-                this.propagateChange(themes[0].identifier);
-            });
     }
 
     ngAfterViewInit(): void {
@@ -173,6 +178,18 @@ export class DotThemeSelectorDropdownComponent
                         .subscribe((site) => {
                             this.siteSelector?.updateCurrentSite(site);
                         });
+                });
+        } else {
+            // No identifier provided, load default system theme
+            this.paginatorService.setExtraParams('hostId', 'SYSTEM_HOST');
+            this.paginatorService
+                .get()
+                .pipe(take(1))
+                .subscribe((themes: DotTheme[]) => {
+                    if (themes.length > 0) {
+                        this.value = themes[0];
+                        this.propagateChange(themes[0].identifier);
+                    }
                 });
         }
     }
@@ -260,7 +277,7 @@ export class DotThemeSelectorDropdownComponent
         this.setHostThemes(this.currentSiteIdentifier, this.currentOffset || offset);
     }
 
-    private setHostThemes(hostId: string, offset: number = 0) {
+    private setHostThemes(hostId: string, offset = 0) {
         this.siteService
             .getSiteById(hostId)
             .pipe(take(1))

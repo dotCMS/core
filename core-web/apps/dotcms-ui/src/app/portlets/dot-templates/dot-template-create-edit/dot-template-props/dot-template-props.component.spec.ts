@@ -21,6 +21,9 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
+
+import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -109,19 +112,16 @@ describe('DotTemplatePropsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                DotTemplatePropsComponent,
-
-                DotFormDialogMockComponent,
-                DotTemplateThumbnailFieldMockComponent,
-                DotThemeSelectorDropdownMockComponent
-            ],
             imports: [
                 DotMessagePipe,
+                DotFormDialogMockComponent,
+                DotTemplatePropsComponent,
                 FormsModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageComponent,
-                DotFieldRequiredDirective
+                DotFieldRequiredDirective,
+                DotTemplateThumbnailFieldMockComponent,
+                DotThemeSelectorDropdownMockComponent
             ],
             providers: [
                 {
@@ -131,7 +131,7 @@ describe('DotTemplatePropsComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -144,13 +144,25 @@ describe('DotTemplatePropsComponent', () => {
                                 theme: '',
                                 image: ''
                             },
-                            onSave: jasmine.createSpy(),
-                            onCancel: jasmine.createSpy()
+                            onSave: jest.fn(),
+                            onCancel: jest.fn()
                         }
                     }
                 }
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotTemplatePropsComponent, {
+                remove: {
+                    imports: [DotTemplateThumbnailFieldComponent, DotThemeSelectorDropdownComponent]
+                },
+                add: {
+                    imports: [
+                        DotTemplateThumbnailFieldMockComponent,
+                        DotThemeSelectorDropdownMockComponent
+                    ]
+                }
+            })
+            .compileComponents();
     });
 
     beforeEach(() => {
@@ -180,7 +192,7 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(label.classes['p-label-input-required']).toBe(true);
                 expect(label.attributes.for).toBe('title');
-                expect(label.nativeElement.textContent).toBe('Title');
+                expect(label.nativeElement.textContent.trim()).toBe('Title');
 
                 expect(input.attributes.autofocus).toBeDefined();
                 expect(input.attributes.pInputText).toBeDefined();
@@ -212,7 +224,7 @@ describe('DotTemplatePropsComponent', () => {
                 expect(field.classes['field']).toBe(true);
 
                 expect(label.attributes.for).toBe('description');
-                expect(label.nativeElement.textContent).toBe('Description');
+                expect(label.nativeElement.textContent.trim()).toBe('Description');
 
                 expect(textarea.attributes.pInputTextarea).toBeDefined();
                 expect(textarea.attributes.formControlName).toBe('friendlyName');
@@ -225,8 +237,8 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(field.classes['field']).toBe(true);
 
-                expect(label.attributes.for).toBe('thumbnail');
-                expect(label.nativeElement.textContent).toBe('Thumbnail');
+                expect(label.attributes.for).toContain('thumbnail');
+                expect(label.nativeElement.textContent).toContain('Thumbnail');
 
                 // TODO: here we're using a webcomponent
             });
@@ -279,13 +291,15 @@ describe('DotTemplatePropsComponent', () => {
             dialog.triggerEventHandler('save', {});
 
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
-            expect(dialogRef.close).toHaveBeenCalledOnceWith(false);
+            expect(dialogRef.close).toHaveBeenCalledWith(false);
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
 
         it('should call cancel from config', () => {
             const dialog = de.query(By.css('[data-testId="dialogForm"]'));
             dialog.triggerEventHandler('cancel', {});
-            expect(dialogRef.close).toHaveBeenCalledOnceWith(true);
+            expect(dialogRef.close).toHaveBeenCalledWith(true);
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
     });
 });

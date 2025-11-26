@@ -19,7 +19,6 @@ import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -54,10 +53,13 @@ import { DotAddVariableComponent } from './dot-add-variable.component';
 import { FilteredFieldTypes } from './dot-add-variable.models';
 import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service';
 
+import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotFormDialogMockComponent {
     @Output() save = new EventEmitter();
@@ -192,12 +194,12 @@ describe('DotAddVariableComponent', () => {
     let de: DebugElement;
     let dialogConfig: DynamicDialogConfig;
     let dialogRef: DynamicDialogRef;
-    let coreWebService: CoreWebService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotAddVariableComponent, DotFormDialogMockComponent],
+            declarations: [DotFormDialogMockComponent],
             imports: [
+                DotAddVariableComponent,
                 ButtonModule,
                 DataViewModule,
                 HttpClientTestingModule,
@@ -214,7 +216,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -222,7 +224,7 @@ describe('DotAddVariableComponent', () => {
                     useValue: {
                         data: {
                             contentTypeVariable: 'contentType',
-                            onSave: jasmine.createSpy()
+                            onSave: jest.fn()
                         }
                     }
                 },
@@ -240,7 +242,12 @@ describe('DotAddVariableComponent', () => {
                 },
                 DialogService,
                 DotSiteBrowserService,
-                DotContentTypeService,
+                {
+                    provide: DotContentTypeService,
+                    useValue: {
+                        getContentType: jest.fn().mockReturnValue(of(mockContentTypes))
+                    }
+                },
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotGlobalMessageService,
@@ -259,16 +266,10 @@ describe('DotAddVariableComponent', () => {
         fixture = TestBed.createComponent(DotAddVariableComponent);
         de = fixture.debugElement;
         dialogConfig = TestBed.inject(DynamicDialogConfig);
-        coreWebService = TestBed.inject(CoreWebService);
     });
 
     describe('dot-add-variable-dialog', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-                of({
-                    entity: mockContentTypes
-                })
-            );
             fixture.detectChanges();
             tick();
             fixture.detectChanges();

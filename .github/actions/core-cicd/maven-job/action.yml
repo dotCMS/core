@@ -1,0 +1,325 @@
+# Maven Job Action
+#
+# This composite action sets up and runs a Maven job with extensive configuration options.
+# It handles runner preparation, caching, artifact management, and Maven execution.
+#
+# Features:
+# - Flexible runner preparation including Java and GraalVM setup
+# - Caching for Maven repository, Node.js, Yarn, and SonarQube
+# - Artifact restoration and persistence
+# - Configurable Maven execution with support for native builds
+# - Docker image handling and artifact generation
+# - Test result and build report generation
+# - Support for dotCMS license setup
+#
+# This action is designed to be highly customizable to fit various Maven-based workflow needs,
+# particularly for projects involving dotCMS, Docker, and potentially native image builds.
+
+name: 'Maven Job'
+description: 'Setup and run a Maven job'
+inputs:
+  needs-docker-image:
+    description: 'The runner needs the built dotCMS docker image'
+    required: true
+    default: 'false'
+  cleanup-runner:
+    description: 'The runner requires extra disk space'
+    required: true
+    default: 'false'
+  generate-artifacts:
+    description: 'Generate artifacts for the job'
+    required: true
+    default: 'false'
+  generate-docker:
+    description: 'Generate docker artifact'
+    required: true
+    default: 'false'
+  needs-history:
+    description: 'The runner needs the full git history'
+    required: true
+    default: 'false'
+  requires-node:
+    description: 'The job requires Node.js'
+    required: true
+    default: 'true'
+  cache-sonar:
+    description: 'Cache the SonarQube files'
+    required: false
+    default: 'false'
+  require-main:
+    description: 'Require the main tag to run this action'
+    required: true
+    default: 'false'
+  dotcms-license:
+    description: 'The license key for dotCMS'
+    required: false
+    default: ''
+  artifacts-from:
+    description: 'Download artifacts from a previous job'
+    required: false
+    default: ''
+  github-token:
+    description: 'GitHub token for authentication'
+    required: true
+  restore-classes:
+    description: 'Restore build classes'
+    required: false
+    default: 'false'
+  stage-name:
+    description: 'Stage name for the build'
+    required: true
+  maven-args:
+    description: 'Arguments for Maven build'
+    required: true
+  generates-test-results:
+    description: 'Generate test results artifacts'
+    required: false
+    default: 'false'
+  native:
+    description: 'Build native image.  Ensures that GraalVM is installed and adds correct parameters'
+    required: true
+    default: 'false'
+  version:
+    description: 'The version of the build'
+    required: false
+    default: '1.0.0-SNAPSHOT'
+  java-version:
+    description: 'The version of Java to install'
+    required: false
+  graalvm-version:
+    description: 'Override the sdkman version of GraalVM to install'
+    required: false
+  require-graalvm:
+    description: 'Require GraalVM to be installed'
+    required: true
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - name: Prepare Runner
+      uses: ./.github/actions/core-cicd/prepare-runner
+      with:
+        cleanup-runner: ${{ inputs.cleanup-runner }}
+        require-main: ${{ inputs.require-main }}
+        java-version: ${{ inputs.java-version }}
+        require-graalvm: ${{ inputs.native || inputs.require-graalvm }}
+        graalvm-version: ${{ inputs.graalvm-version }}
+    - id: setup-license
+      if: ${{ inputs.dotcms-license != '' }}
+      name: Setup License
+      shell: bash
+      env:
+        DOTCMS_LICENSE_KEY: ${{ inputs.dotcms-license }}
+      run: |
+        DOTCMS_LICENSE_PATH=~/.dotcms/license
+        mkdir -p ${DOTCMS_LICENSE_PATH}
+        echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+        echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
+
+    - id: restore-cache-maven
+      name: Restore Maven Repository Cache
+      if: ${{ inputs.artifacts-from == '' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-mavencore-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-mavencore-
+
+    - id: restore-cache-node
+      name: Restore Node Binary Cache
+      if: ${{ inputs.requires-node == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: installs
+        key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+
+    - name: Get yarn cache directory path
+      id: yarn-info
+      if: ${{ inputs.requires-node == 'true' }}
+      shell: bash
+      run: |
+        echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+        echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
+      
+
+    - id: restore-cache-yarn
+      name: Restore Yarn Cache
+      if: ${{ inputs.requires-node == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.yarn-info.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
+          ${{ runner.os }}-yarn-
+          
+
+    - id: cache-sonar
+      name: Cache SonarQube Packages
+      if: ${{ inputs.cache-sonar == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - id: restore-artifact-maven-repo
+      name: Restore Maven Build Repo
+      if: ${{ inputs.artifacts-from != '' }}
+      uses: actions/download-artifact@v4
+      with:
+        run-id: ${{ inputs.artifacts-from }}
+        github-token: ${{ inputs.github-token }}
+        name: maven-repo
+        path: ~/.m2/repository
+
+    - id: restore-artifact-docker-image
+      name: Restore Docker Image
+      if: ${{ inputs.needs-docker-image == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image
+        path: /tmp/docker-image
+
+    - name: Load Docker image from tar file
+      shell: bash
+      if: ${{ inputs.needs-docker-image == 'true' }}
+      run: docker load < /tmp/docker-image/image.tar
+
+    - id: restore-artifact-classes
+      name: Restore Classes
+      if: ${{ inputs.restore-classes == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        run-id: ${{ inputs.artifacts-from }}
+        github-token: ${{ inputs.github-token }}
+        name: "build-classes"
+
+    - id: run-maven-build
+      name: Run Maven Build
+      shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
+      run: |
+        set -e  # Exit on any command failure
+        DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dprod=true"
+        MAVEN_ARGS="${{ inputs.maven-args }}"
+        if [[ "${{ inputs.generate-docker }}" == "true" ]]; then
+          DEFAULT_ARGS="$DEFAULT_ARGS -Ddocker.buildArchiveOnly=dotCMS/target"
+        fi
+        if [[ "${{ inputs.native }}" == "true" ]]; then
+          DEFAULT_ARGS="$DEFAULT_ARGS -Pnative"
+        fi
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+
+        if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
+          echo "Building Maven with args $FINAL_ARGS"
+          cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && .\mvnw.cmd $FINAL_ARGS --file pom.xml'
+        elif [[ "${{ runner.os }}" == "Windows" ]]; then
+          echo "Building Maven with args $FINAL_ARGS"
+          .\mvnw.cmd $FINAL_ARGS --file pom.xml
+        else
+          echo "Building Maven with args $FINAL_ARGS"
+          ./mvnw $FINAL_ARGS --file pom.xml
+        fi
+
+    - id: persist-maven-repo
+      name: Persist Maven Repo
+      if: ${{ inputs.generate-artifacts == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: maven-repo
+        path: ~/.m2/repository
+
+    - id: persist-docker-build-context
+      name: Persist Docker Build Context
+      if: ${{ inputs.generate-docker == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-build-context
+        path: dotCMS/target/docker-build.tar
+
+    - id: save-docker-image
+      name: Save Docker Image to Tar File
+      if: ${{ inputs.generate-docker == 'true' }}
+      shell: bash
+      run: docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
+
+    - id: upload-docker-image
+      name: Upload Docker Image as Artifact
+      uses: actions/upload-artifact@v4
+      if: ${{ inputs.generate-docker == 'true' }}
+      with:
+        name: docker-image
+        path: /tmp/image.tar
+
+    - id: persist-build-classes
+      name: Persist Build Classes
+      if: ${{ inputs.generate-artifacts == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: "build-classes"
+        path: |
+          **/target/classes/**/*.class
+          **/target/generated-sources/**/*.java
+          **/target/test-classes/**/*.class
+          LICENSE
+
+    - id: delete-built-artifacts-from-cache
+      name: Delete Built Artifacts From Cache
+      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
+
+    - id: save-cache-maven
+      name: Save Maven Repository Cache
+      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
+
+    - id: save-cache-node
+      name: Save Node Binary Cache
+      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-node.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: installs
+        key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
+
+    - id: save-cache-yarn
+      name: Save Yarn Cache
+      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-yarn.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.yarn-info.outputs.dir }}
+        key: ${{ steps.restore-cache-yarn.outputs.cache-primary-key }}
+
+    - id: save-cache-sonar
+      name: Save SonarQube Cache
+      if: ${{ inputs.cache-sonar == 'true' && steps.cache-sonar.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ steps.cache-sonar.outputs.cache-primary-key }}
+
+    # ---------------------------- Generate Reports Artifacts ----------------------------
+    - id: generate-build-reports-artifact
+      name: Generate Build Reports Artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: "build-reports-${{ inputs.stage-name }}"
+        path: |
+          target/build-report.json
+          LICENSE
+        retention-days: 2
+
+    - id: create-test-reports-artifact
+      name: Create Test Reports Artifact
+      uses: actions/upload-artifact@v4
+      if: always() && inputs.generates-test-results == 'true'
+      with:
+        name: "build-reports-test-${{ inputs.stage-name }}"
+        path: |
+          **/target/jacoco-report/*.exec
+          **/target/*-reports/*.xml

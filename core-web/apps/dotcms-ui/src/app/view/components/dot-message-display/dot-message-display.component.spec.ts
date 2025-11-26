@@ -9,7 +9,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 import { DotMessageDisplayServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayComponent } from './dot-message-display.component';
@@ -22,15 +22,26 @@ describe('DotMessageDisplayComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [ToastModule, DotIconModule, BrowserAnimationsModule],
-            declarations: [DotMessageDisplayComponent],
-            providers: [
-                {
-                    provide: DotMessageDisplayService,
-                    useValue: dotMessageDisplayServiceMock
+            imports: [
+                DotMessageDisplayComponent,
+                ToastModule,
+                DotIconComponent,
+                BrowserAnimationsModule
+            ],
+            providers: [MessageService]
+        })
+            .overrideComponent(DotMessageDisplayComponent, {
+                set: {
+                    providers: [
+                        MessageService,
+                        {
+                            provide: DotMessageDisplayService,
+                            useValue: dotMessageDisplayServiceMock
+                        }
+                    ]
                 }
-            ]
-        }).compileComponents();
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {
@@ -82,7 +93,7 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should add a new message', () => {
         const messageService = fixture.componentRef.injector.get(MessageService);
-        spyOn(messageService, 'add');
+        jest.spyOn(messageService, 'add');
 
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
@@ -100,7 +111,7 @@ describe('DotMessageDisplayComponent', () => {
     });
 
     it('should unsubscribe', () => {
-        spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
+        jest.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
         component.ngOnDestroy();
         expect(dotMessageDisplayServiceMock.unsubscribe).toHaveBeenCalled();
     });

@@ -1,19 +1,32 @@
-import { NgFor } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
+
 @Component({
     selector: 'dot-edit-content-checkbox-field',
-    standalone: true,
-    imports: [NgFor, CheckboxModule, ReactiveFormsModule, FormsModule],
-    templateUrl: './dot-edit-content-checkbox-field.component.html',
-    styleUrls: ['./dot-edit-content-checkbox-field.component.scss'],
+    imports: [
+        CheckboxModule,
+        ReactiveFormsModule,
+        FormsModule,
+        DotCardFieldComponent,
+        DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
+        DotMessagePipe
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './dot-edit-content-checkbox-field.component.html',
     viewProviders: [
         {
             provide: ControlContainer,
@@ -21,23 +34,20 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         }
     ]
 })
-export class DotEditContentCheckboxFieldComponent implements OnInit {
-    @Input() field!: DotCMSContentTypeField;
-    private readonly controlContainer = inject(ControlContainer);
-    options = [];
-
-    ngOnInit() {
-        this.options = getSingleSelectableFieldOptions(
-            this.field.values || '',
-            this.field.dataType
-        );
-    }
-
+export class DotEditContentCheckboxFieldComponent extends BaseWrapperField {
     /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
+     * Input field DotCMSContentTypeField
      */
-    get formControl() {
-        return this.controlContainer.control.get(this.field.variable) as FormControl;
-    }
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    /**
+     * Input contentlet DotCMSContentlet
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    /**
+     * Computed signal that holds the options for the checkbox field.
+     * It is used to display the options for the checkbox field.
+     */
+    $options = computed(() =>
+        getSingleSelectableFieldOptions(this.$field().values || '', this.$field().dataType)
+    );
 }

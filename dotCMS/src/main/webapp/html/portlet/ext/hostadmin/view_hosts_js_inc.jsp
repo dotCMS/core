@@ -104,7 +104,7 @@
 
 		viewHostsReferer: '<%= referer %>',
 
-		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
+		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_content_types:{copyContentTypes};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
 
 		newHostURL: '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">\
 							<portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />\
@@ -131,7 +131,7 @@
             		<td width="25%">\
             			<div class="host-list__item" id="hostName{identifier}">\
             				<span class="{imgSrc}"></span>\
-            				<a href="javascript: editContentletEvent(\'{inode}\')">{hostName}</a>\
+            				<a href="javascript: editContentletEvent(\'{workingInode}\')">{hostName}</a>\
                             <div class="host-list__item-loader">\
                                 <div dojoType="dijit.ProgressBar" style="width:100px; display:none;" jsId="{identifier}SetupProgress" id="{identifier}SetupProgress">\
                                 </div>\
@@ -148,40 +148,40 @@
                 </div>',
 
 		tableEditRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="editIcon" onClick="editContentletEvent(\'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="editIcon" onClick="editContentletEvent(\'{workingInode}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>\
                      </div>\
-                     <div dojoType="dijit.MenuItem" iconClass="editScriptIcon" onClick="hostAdmin.editHostVariables(\'{identifier}\', \'{inode}\')">\
+                     <div dojoType="dijit.MenuItem" iconClass="editScriptIcon" onClick="hostAdmin.editHostVariables(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Host-Variables")) %>\
                   	 </div>',
 
 		tablePublishRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="hostIcon" onClick="hostAdmin.publishHost(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="hostIcon" onClick="hostAdmin.publishHost(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Start-Host")) %>\
                     </div>',
 
 		tableUnpublishRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="hostAdmin.unpublishHost(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="hostAdmin.unpublishHost(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Stop-Host")) %>\
                     </div>',
 
 		tableMakeDefaultRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="hostDefaultIcon" onClick="hostAdmin.makeDefault(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="hostDefaultIcon" onClick="hostAdmin.makeDefault(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Make-Default")) %>\
                     </div>',
 
 		tableArchiveRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="hostAdmin.archiveHost(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="hostAdmin.archiveHost(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive-Host")) %>\
                     </div>',
 
 		tableUnarchiveRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="hostAdmin.unarchiveHost(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="hostAdmin.unarchiveHost(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive-Host")) %>\
                     </div>',
 
 		tableDeleteRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="hostAdmin.deleteHost(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="hostAdmin.deleteHost(\'{identifier}\')">\
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Host")) %>\
                     </div>',
 
@@ -196,12 +196,12 @@
 	              </div>',
 
          tablePushPublishRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="hostAdmin.remotePublish(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="hostAdmin.remotePublish(\'{identifier}\')">\
 	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>\
 	               </div>',
 
          tableAddToBundleRowMenuTemplate:
-					'<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="hostAdmin.addToBundle(\'{identifier}\', \'{inode}\')">\
+					'<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="hostAdmin.addToBundle(\'{identifier}\')">\
 	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>\
 	               </div>',
 
@@ -324,6 +324,7 @@
 						copyContentOnPages: dijit.byId('copyContentOnPages').attr('value'),
 						copyFolders: dijit.byId('copyFolders').attr('value'),
 						copyContentOnHost: dijit.byId('copyContentOnHost').attr('value'),
+						copyContentTypes: dijit.byId('copyContentTypes').attr('value'),
 						copyLinks: dijit.byId('copyLinks').attr('value'),
 						copyHostVariables: dijit.byId('copyHostVariables').attr('value'),
 						copyTagStorage: document.getElementById('copyTagStorage').value
@@ -577,7 +578,7 @@
 			var href = dojo.replace(this.editHostURL, { hostInode: inode});
 			window.location=href;
 		},
-		editHostVariables: function (id, inode) {
+		editHostVariables: function (id) {
 			hostVariablesAdmin.showHostVariables(id);
 		},
 		publishHost: function (id) {
@@ -648,7 +649,7 @@
             	setTimeout(dojo.hitch(this, this.refreshAfterDelete, identifier), 2000);
             }
         },
-		makeDefault: function (id, inode) {
+		makeDefault: function (id) {
 			if(confirm(makeDefaultConfirmMessage)) {
 				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));

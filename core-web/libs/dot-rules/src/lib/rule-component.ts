@@ -1,11 +1,13 @@
-import { debounceTime } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
     ElementRef,
     Input,
     Output,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    inject
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -13,8 +15,22 @@ import {
     UntypedFormGroup,
     UntypedFormBuilder
 } from '@angular/forms';
-import { Observable } from 'rxjs';
 
+import { MenuItem } from 'primeng/api';
+
+import { debounceTime } from 'rxjs/operators';
+
+import { UserModel } from '@dotcms/dotcms-js';
+import { ApiRoot } from '@dotcms/dotcms-js';
+import { LoggerService } from '@dotcms/dotcms-js';
+
+import {
+    ConditionActionEvent,
+    RuleActionActionEvent,
+    RuleActionEvent,
+    ConditionGroupActionEvent
+} from './rule-engine.container';
+import { IPublishEnvironment } from './services/bundle-service';
 import {
     RuleModel,
     RULE_UPDATE_ENABLED_STATE,
@@ -33,193 +49,198 @@ import {
     RULE_CONDITION_GROUP_CREATE,
     RuleService
 } from './services/Rule';
-
-import { I18nService } from './services/system/locale/I18n';
-import { UserModel } from '@dotcms/dotcms-js';
-import { ApiRoot } from '@dotcms/dotcms-js';
-import {
-    ConditionActionEvent,
-    RuleActionActionEvent,
-    RuleActionEvent,
-    ConditionGroupActionEvent
-} from './rule-engine.container';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
-import { IPublishEnvironment } from './services/bundle-service';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { MenuItem } from 'primeng/api';
+import { I18nService } from './services/system/locale/I18n';
 
 const I8N_BASE = 'api.sites.ruleengine';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.Default,
     selector: 'rule',
-    template: `<form [formGroup]="formModel" let rf="ngForm">
-        <cw-add-to-bundle-dialog-container
-            [assetId]="rule.key"
-            [hidden]="!showAddToBundleDialog"
-            (close)="showAddToBundleDialog = false"
-        ></cw-add-to-bundle-dialog-container>
-        <div
-            class="cw-rule"
-            [class.cw-hidden]="hidden"
-            [class.cw-disabled]="!rule.enabled"
-            [class.cw-saving]="saving"
-            [class.cw-saved]="saved"
-            [class.cw-out-of-sync]="!saved && !saving"
-        >
+    template: `
+        <form [formGroup]="formModel" let rf="ngForm">
+            <cw-add-to-bundle-dialog-container
+                (close)="showAddToBundleDialog = false"
+                [assetId]="rule.key"
+                [hidden]="!showAddToBundleDialog"></cw-add-to-bundle-dialog-container>
             <div
-                class="cw-header"
-                *ngIf="!hidden"
-                (click)="setRuleExpandedState(!rule._expanded)"
-                flex
-                layout="row"
-            >
-                <div class="cw-header-info" flex="70" layout="row" layout-align="start center">
-                    <i
-                        class="cw-header-info-arrow pi"
-                        [class.pi-angle-right]="!rule._expanded"
-                        [class.pi-angle-down]="rule._expanded"
-                        aria-hidden="true"
-                    ></i>
-                    <div flex="70" layout="column">
-                        <input
-                            class="cw-rule-name-input"
-                            (click)="$event.stopPropagation()"
-                            pInputText
-                            placeholder="{{ rsrc('inputs.name.placeholder') | async }}"
-                            formControlName="name"
-                            dotAutofocus
-                        />
+                [class.cw-hidden]="hidden"
+                [class.cw-disabled]="!rule.enabled"
+                [class.cw-saving]="saving"
+                [class.cw-saved]="saved"
+                [class.cw-out-of-sync]="!saved && !saving"
+                class="cw-rule">
+                @if (!hidden) {
+                    <div
+                        (click)="setRuleExpandedState(!rule._expanded)"
+                        class="cw-header"
+                        flex
+                        layout="row">
                         <div
-                            class="name cw-warn basic label"
-                            [hidden]="
-                                !formModel.controls['name'].touched ||
-                                formModel.controls['name'].valid
-                            "
-                            flex="50"
-                        >
-                            Name is required
-                        </div>
-                    </div>
-                    <span class="cw-fire-on-label" *ngIf="!hideFireOn">{{
-                        rsrc('inputs.fireOn.label') | async
-                    }}</span>
-                    <cw-input-dropdown
-                        class="cw-fire-on-dropdown"
-                        *ngIf="!hideFireOn"
-                        [value]="fireOn.value"
-                        [options]="fireOn.options"
-                        (onDropDownChange)="
-                            updateFireOn.emit({
-                                type: 'RULE_UPDATE_FIRE_ON',
-                                payload: { rule: rule, value: $event }
-                            })
-                        "
-                        (click)="$event.stopPropagation()"
-                        flex="none"
-                        placeholder="{{ fireOn.placeholder | async }}"
-                    >
-                    </cw-input-dropdown>
-                </div>
-                <div class="cw-header-actions" flex="30" layout="row" layout-align="end center">
-                    <span class="cw-rule-status-text" title="{{ statusText() }}">{{
-                        statusText(30)
-                    }}</span>
-                    <p-inputSwitch
-                        [(ngModel)]="rule.enabled"
-                        [ngModelOptions]="{ standalone: true }"
-                        [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
-                        (onChange)="setRuleEnabledState($event)"
-                        tooltipPosition="bottom"
-                    ></p-inputSwitch>
-                    <div class="cw-btn-group">
-                        <button
-                            class="p-button-secondary"
-                            (click)="ruleOptions.toggle($event); $event.stopPropagation()"
-                            pButton
-                            icon="pi pi-ellipsis-v"
-                        ></button>
-                        <button
-                            class="p-button-secondary"
-                            [disabled]="!rule.isPersisted()"
-                            (click)="
-                                onCreateConditionGroupClicked();
-                                setRuleExpandedState(true);
-                                $event.stopPropagation()
-                            "
-                            style="margin-left:0.5rem"
-                            pButton
-                            icon="pi pi-plus"
-                            arial-label="Add Group"
-                        ></button>
-                        <p-menu
-                            #ruleOptions
-                            [model]="ruleActionOptions"
-                            appendTo="body"
-                            popup="true"
-                        ></p-menu>
-                    </div>
-                </div>
-            </div>
-            <div class="cw-accordion-body" *ngIf="rule._expanded">
-                <condition-group
-                    *ngFor="let group of rule._conditionGroups; let i = index"
-                    [group]="group"
-                    [conditionTypes]="conditionTypes"
-                    [groupIndex]="i"
-                    [conditionTypePlaceholder]="conditionTypePlaceholder"
-                    (createCondition)="onCreateCondition($event)"
-                    (deleteCondition)="onDeleteCondition($event, group)"
-                    (updateConditionGroupOperator)="onUpdateConditionGroupOperator($event, group)"
-                    (updateConditionType)="onUpdateConditionType($event, group)"
-                    (updateConditionParameter)="onUpdateConditionParameter($event, group)"
-                    (updateConditionOperator)="onUpdateConditionOperator($event, group)"
-                ></condition-group>
-                <div class="cw-action-group">
-                    <div class="cw-action-separator">
-                        {{ rsrc('inputs.action.firesActions') | async }}
-                    </div>
-                    <div class="cw-rule-actions" flex layout="column">
-                        <div
-                            class="cw-action-row"
-                            *ngFor="let ruleAction of ruleActions; let i = index"
+                            class="cw-header-info"
+                            flex="70"
                             layout="row"
-                        >
-                            <rule-action
-                                [action]="ruleAction"
-                                [index]="i"
-                                [actionTypePlaceholder]="actionTypePlaceholder"
-                                [ruleActionTypes]="ruleActionTypes"
-                                (updateRuleActionType)="onUpdateRuleActionType($event)"
-                                (updateRuleActionParameter)="onUpdateRuleActionParameter($event)"
-                                (deleteRuleAction)="onDeleteRuleAction($event)"
-                                flex
-                                layout="row"
-                            ></rule-action>
-                            <div class="cw-btn-group cw-add-btn">
+                            layout-align="start center">
+                            <i
+                                [class.pi-angle-right]="!rule._expanded"
+                                [class.pi-angle-down]="rule._expanded"
+                                class="cw-header-info-arrow pi"
+                                aria-hidden="true"></i>
+                            <div flex="70" layout="column">
+                                <input
+                                    (click)="$event.stopPropagation()"
+                                    class="cw-rule-name-input"
+                                    pInputText
+                                    placeholder="{{ rsrc('inputs.name.placeholder') | async }}"
+                                    formControlName="name"
+                                    dotAutofocus />
                                 <div
-                                    class="ui basic icon buttons"
-                                    *ngIf="i === ruleActions.length - 1"
-                                >
-                                    <button
-                                        class="p-button-rounded p-button-success p-button-text"
-                                        [disabled]="!ruleAction.isPersisted()"
-                                        (click)="onCreateRuleAction()"
-                                        pButton
-                                        type="button"
-                                        icon="pi pi-plus"
-                                        arial-label="Add Action"
-                                    ></button>
+                                    [hidden]="
+                                        !formModel.controls['name'].touched ||
+                                        formModel.controls['name'].valid
+                                    "
+                                    class="name cw-warn basic label"
+                                    flex="50">
+                                    Name is required
                                 </div>
+                            </div>
+                            @if (!hideFireOn) {
+                                <span class="cw-fire-on-label">
+                                    {{ rsrc('inputs.fireOn.label') | async }}
+                                </span>
+                            }
+                            @if (!hideFireOn) {
+                                <cw-input-dropdown
+                                    (onDropDownChange)="
+                                        updateFireOn.emit({
+                                            type: 'RULE_UPDATE_FIRE_ON',
+                                            payload: { rule: rule, value: $event }
+                                        })
+                                    "
+                                    (click)="$event.stopPropagation()"
+                                    [value]="fireOn.value"
+                                    [options]="fireOn.options"
+                                    class="cw-fire-on-dropdown"
+                                    flex="none"
+                                    placeholder="{{
+                                        fireOn.placeholder | async
+                                    }}"></cw-input-dropdown>
+                            }
+                        </div>
+                        <div
+                            class="cw-header-actions"
+                            flex="30"
+                            layout="row"
+                            layout-align="end center">
+                            <span class="cw-rule-status-text" title="{{ statusText() }}">
+                                {{ statusText(30) }}
+                            </span>
+                            <p-inputSwitch
+                                (onChange)="setRuleEnabledState($event)"
+                                [(ngModel)]="rule.enabled"
+                                [ngModelOptions]="{ standalone: true }"
+                                [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
+                                tooltipPosition="bottom"></p-inputSwitch>
+                            <div class="cw-btn-group">
+                                <button
+                                    (click)="ruleOptions.toggle($event); $event.stopPropagation()"
+                                    class="p-button-secondary"
+                                    pButton
+                                    icon="pi pi-ellipsis-v"></button>
+                                <button
+                                    (click)="
+                                        onCreateConditionGroupClicked();
+                                        setRuleExpandedState(true);
+                                        $event.stopPropagation()
+                                    "
+                                    [disabled]="!rule.isPersisted()"
+                                    class="p-button-secondary"
+                                    style="margin-left:0.5rem"
+                                    pButton
+                                    icon="pi pi-plus"
+                                    arial-label="Add Group"></button>
+                                <p-menu
+                                    [model]="ruleActionOptions"
+                                    #ruleOptions
+                                    appendTo="body"
+                                    popup="true"></p-menu>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
+                @if (rule._expanded) {
+                    <div class="cw-accordion-body">
+                        @for (group of rule._conditionGroups; track group; let i = $index) {
+                            <condition-group
+                                (createCondition)="onCreateCondition($event)"
+                                (deleteCondition)="onDeleteCondition($event, group)"
+                                (updateConditionGroupOperator)="
+                                    onUpdateConditionGroupOperator($event, group)
+                                "
+                                (updateConditionType)="onUpdateConditionType($event, group)"
+                                (updateConditionParameter)="
+                                    onUpdateConditionParameter($event, group)
+                                "
+                                (updateConditionOperator)="onUpdateConditionOperator($event, group)"
+                                [group]="group"
+                                [conditionTypes]="conditionTypes"
+                                [groupIndex]="i"
+                                [conditionTypePlaceholder]="
+                                    conditionTypePlaceholder
+                                "></condition-group>
+                        }
+                        <div class="cw-action-group">
+                            <div class="cw-action-separator">
+                                {{ rsrc('inputs.action.firesActions') | async }}
+                            </div>
+                            <div class="cw-rule-actions" flex layout="column">
+                                @for (ruleAction of ruleActions; track ruleAction; let i = $index) {
+                                    <div class="cw-action-row" layout="row">
+                                        <rule-action
+                                            (updateRuleActionType)="onUpdateRuleActionType($event)"
+                                            (updateRuleActionParameter)="
+                                                onUpdateRuleActionParameter($event)
+                                            "
+                                            (deleteRuleAction)="onDeleteRuleAction($event)"
+                                            [action]="ruleAction"
+                                            [index]="i"
+                                            [actionTypePlaceholder]="actionTypePlaceholder"
+                                            [ruleActionTypes]="ruleActionTypes"
+                                            flex
+                                            layout="row"></rule-action>
+                                        <div class="cw-btn-group cw-add-btn">
+                                            @if (i === ruleActions.length - 1) {
+                                                <div class="ui basic icon buttons">
+                                                    <button
+                                                        (click)="onCreateRuleAction()"
+                                                        [disabled]="!ruleAction.isPersisted()"
+                                                        class="p-button-rounded p-button-success p-button-text"
+                                                        pButton
+                                                        type="button"
+                                                        icon="pi pi-plus"
+                                                        arial-label="Add Action"></button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
-        </div>
-    </form> `
+        </form>
+    `,
+    standalone: false
 })
 class RuleComponent {
+    private _user = inject(UserModel);
+    elementRef = inject(ElementRef);
+    resources = inject(I18nService);
+    ruleService = inject(RuleService);
+    apiRoot = inject(ApiRoot);
+    private loggerService = inject(LoggerService);
+
     @Input() rule: RuleModel;
     @Input() saved: boolean;
     @Input() saving: boolean;
@@ -274,15 +295,10 @@ class RuleComponent {
 
     private _rsrcCache: { [key: string]: Observable<string> };
 
-    constructor(
-        private _user: UserModel,
-        public elementRef: ElementRef,
-        public resources: I18nService,
-        public ruleService: RuleService,
-        public apiRoot: ApiRoot,
-        fb: UntypedFormBuilder,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = this.apiRoot;
+        const fb = inject(UntypedFormBuilder);
+
         this._rsrcCache = {};
         this.hideFireOn = document.location.hash.includes('edit-page') || apiRoot.hideFireOn;
 
@@ -374,6 +390,7 @@ class RuleComponent {
             msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);
             this._rsrcCache[subkey] = msgObserver;
         }
+
         return msgObserver;
     }
 
@@ -406,9 +423,11 @@ class RuleComponent {
         } else if (this.errors) {
             t = this.errors['invalid'] || this.errors['serverError'] || 'Unsaved changes...';
         }
+
         if (length) {
             t = t.substring(0, length) + '...';
         }
+
         return t;
     }
 

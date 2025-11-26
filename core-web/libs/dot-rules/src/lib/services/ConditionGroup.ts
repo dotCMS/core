@@ -1,16 +1,22 @@
 import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
+
+import { HttpResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map, tap } from 'rxjs/operators';
-import { Observable } from 'rxjs';
-import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+
 import { ApiRoot } from '@dotcms/dotcms-js';
-import { ConditionGroupModel, IConditionGroup } from './Rule';
 import { HttpCode } from '@dotcms/dotcms-js';
 import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
 
+import { ConditionGroupModel, IConditionGroup } from './Rule';
+
 @Injectable()
 export class ConditionGroupService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     public get error(): Observable<string> {
         return this._error.asObservable();
     }
@@ -20,11 +26,9 @@ export class ConditionGroupService {
 
     private _error: Subject<string> = new Subject<string>();
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._baseUrl = '/api/v1/sites/' + apiRoot.siteId + '/ruleengine/rules';
     }
 
@@ -34,6 +38,7 @@ export class ConditionGroupService {
         json.operator = conditionGroup.operator;
         json.priority = conditionGroup.priority;
         json.conditions = conditionGroup.conditions;
+
         return json;
     }
 
@@ -42,6 +47,7 @@ export class ConditionGroupService {
         Object.keys(models).forEach((key) => {
             list[key] = ConditionGroupService.toJson(models[key]);
         });
+
         return list;
     }
 
@@ -54,6 +60,7 @@ export class ConditionGroupService {
                 map((res: HttpResponse<any>) => {
                     const json = res;
                     this.loggerService.info('ConditionGroupService', 'makeRequest-Response', json);
+
                     return json;
                 }),
                 catchError((err: any, _source: Observable<any>) => {
@@ -71,6 +78,7 @@ export class ConditionGroupService {
                             path
                         );
                     }
+
                     return observableEmpty();
                 })
             );
@@ -88,6 +96,7 @@ export class ConditionGroupService {
         return this.all(ruleKey, keys).pipe(
             reduce((acc: ConditionGroupModel[], group: ConditionGroupModel) => {
                 acc.push(group);
+
                 return acc;
             }, [])
         );
@@ -102,6 +111,7 @@ export class ConditionGroupService {
                     'ConditionGroupService',
                     'creatingConditionGroupFromJson≠≠'
                 );
+
                 return new ConditionGroupModel(json);
             })
         );
@@ -115,6 +125,7 @@ export class ConditionGroupService {
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix`);
         }
+
         const json = ConditionGroupService.toJson(model);
         const path = this._getPath(ruleId);
 
@@ -128,9 +139,11 @@ export class ConditionGroupService {
                 map((res: HttpResponse<any>) => {
                     const json: any = res;
                     model.key = json.id;
+
                     return model;
                 })
             );
+
         return add.pipe(catchError(this._catchRequestError('add')));
     }
 
@@ -143,6 +156,7 @@ export class ConditionGroupService {
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
         }
+
         if (!model.isPersisted()) {
             this.createConditionGroup(ruleId, model);
         } else {
@@ -158,6 +172,7 @@ export class ConditionGroupService {
                         return model;
                     })
                 );
+
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
@@ -173,6 +188,7 @@ export class ConditionGroupService {
                     return model;
                 })
             );
+
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 
@@ -181,6 +197,7 @@ export class ConditionGroupService {
         if (key) {
             p = p + key;
         }
+
         return p;
     }
 
@@ -199,6 +216,7 @@ export class ConditionGroupService {
             }
 
             this._error.next(err.json().error.replace('dotcms.api.error.forbidden: ', ''));
+
             return observableEmpty();
         };
     }

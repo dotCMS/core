@@ -1,22 +1,19 @@
-// How to write stories? https://storybook.js.org/docs/6.5/angular/writing-stories/introduction
-// Controls https://storybook.js.org/docs/6.5/angular/essentials/controls
-// Annotations: https://storybook.js.org/docs/6.5/angular/essentials/controls#annotation
-
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from 'primeng/button';
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Button',
     component: Button,
     args: {
         label: 'Button',
         disabled: false,
-        icon: false,
         size: 'p-button-md',
         iconPos: 'left',
         severity: '-',
-        type: '-'
+        type: '-',
+        rounded: '-',
+        icon: 'pi pi-home'
     },
     argTypes: {
         size: {
@@ -24,43 +21,53 @@ export default {
             control: { type: 'radio' }
         },
         severity: {
-            options: ['-', 'p-button-secondary', 'p-button-danger'],
-            control: { type: 'select' }
+            options: ['-', 'p-button-secondary', 'p-button-tertiary', 'p-button-danger'],
+            control: { type: 'radio' }
+        },
+        rounded: {
+            options: ['-', 'p-button-rounded'],
+            control: { type: 'radio' }
         },
         type: {
             options: ['-', 'p-button-text', 'p-button-outlined', 'p-button-link'],
-            control: { type: 'select' }
+            control: { type: 'radio' }
         },
         iconPos: {
             control: 'inline-radio',
             options: ['left', 'right']
         }
     }
-} as Meta;
+};
+export default meta;
 
-export const Main: Story = (args) => {
-    const parts = [];
-    for (const key of Object.keys(args)) {
-        if (
-            typeof args[key] === 'string' &&
-            args[key].trim() !== '-' &&
-            args[key].trim().length > 0
-        ) {
-            parts.push(args[key].trim());
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: (args) => {
+        const argsWithClasses = ['size', 'severity', 'type', 'rounded'];
+        const parts = [];
+
+        for (const key of argsWithClasses) {
+            if (
+                typeof args[key] === 'string' &&
+                args[key].trim() !== '-' &&
+                args[key].trim().length > 0
+            ) {
+                parts.push(args[key].trim());
+            }
         }
-    }
 
-    const joined = parts.join(' ');
+        const joined = parts.join(' ');
 
-    return {
-        props: {
-            label: args.label,
-            classes: joined,
-            disabled: args.disabled,
-            icon: args.icon ? 'pi pi-home' : '',
-            iconPos: args.iconPos
-        },
-        template: `
+        return {
+            props: {
+                label: args.label,
+                classes: joined,
+                disabled: args.disabled,
+                icon: args.icon ?? '',
+                iconPos: args.iconPos
+            },
+            template: `
             <p-button
                 [icon]="icon"
                 [iconPos]="iconPos"
@@ -68,5 +75,6 @@ export const Main: Story = (args) => {
                 [label]="label"
                 [styleClass]="classes">
             </p-button>`
-    };
+        };
+    }
 };

@@ -1,0 +1,77 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    .p-card {
+        border: none;
+        box-shadow: $shadow-xs;
+        cursor: pointer;
+        display: flex;
+        gap: $spacing-3;
+        height: 94px;
+
+        .p-card-header {
+            padding: 0;
+            height: 94px;
+            width: 94px;
+            min-height: 94px;
+            min-width: 94px;
+            border-radius: $border-radius-sm 0 0 $border-radius-sm;
+
+            .thumbnail-container {
+                padding: 10px;
+                width: 100%;
+                height: 100%;
+                background: $color-palette-gray-200;
+
+                dot-contentlet-thumbnail {
+                    width: 100%;
+                    height: 100%;
+
+                    img {
+                        object-fit: contain;
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+            }
+        }
+
+        .p-card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: $spacing-2 0;
+            padding-right: $spacing-2;
+
+            .p-card-title {
+                flex-grow: 1;
+                h2 {
+                    font-size: $font-size-md;
+                    line-height: 140%;
+                    margin: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
+        }
+    }
+
+    .state {
+        align-items: center;
+        display: flex;
+        gap: $spacing-1;
+    }
+
+    .badge {
+        background: $color-palette-primary-100;
+        border-radius: $border-radius-xs;
+        color: $black;
+        font-size: 0.75 * $dot-editor-size;
+        line-height: 140%;
+        padding: 0.2rem $spacing-1;
+        display: flex;
+        align-items: center;
+    }
+}

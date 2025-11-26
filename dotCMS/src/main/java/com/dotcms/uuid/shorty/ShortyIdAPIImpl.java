@@ -1,9 +1,5 @@
 package com.dotcms.uuid.shorty;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +10,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implementation class for the {@link ShortyIdAPI}.
@@ -28,7 +28,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   private final Map<ShortyInputType, DBEqualsStrategy> dbEqualsStrategyMap =
-          map(
+          Map.of(
                   ShortyInputType.CONTENT,         (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
                   ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
                   ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
@@ -36,7 +36,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
              );
 
   private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
-          map(
+          Map.of(
                   ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> {
                     final String sqlUnion = "(" + ShortyIdSql.SELECT_SHORTY_SQL_LIKE + " UNION ALL " + ShortyIdSql.SELECT_SHORTY_SQL_LIKE + ")" + " limit 1";
                     final String deterministicId = uuidIfy.replaceAll("-","");
@@ -71,7 +71,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
       if (opt.isPresent()) {
         shortyId = opt.get();
-      } else if (shortStr.length() == 36) {
+      } else if (shortStr.length() == 32 || shortStr.length() == 36 ) {
         shortyId = viaDbEquals(shortStr, shortyType);
         new ShortyIdCache().add(shortyId);
       } else {

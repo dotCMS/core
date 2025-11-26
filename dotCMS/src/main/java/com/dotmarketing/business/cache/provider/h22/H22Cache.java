@@ -1,5 +1,19 @@
 package com.dotmarketing.business.cache.provider.h22;
 
+import com.dotcms.cache.CacheValue;
+import com.dotcms.shutdown.ShutdownCoordinator;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
+import io.vavr.control.Try;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -25,19 +39,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
-import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class H22Cache extends CacheProvider {
 
@@ -51,12 +55,12 @@ public class H22Cache extends CacheProvider {
 
     final ThreadFactory namedThreadFactory =  new ThreadFactoryBuilder().setDaemon(true).setNameFormat("H22-ASYNC-COMMIT-%d").build();
     final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
-    final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, asyncTaskQueue ,namedThreadFactory);
+    private ExecutorService executorService;
 
-    
-	private Boolean isInitialized = false;
 
-	final static String TABLE_PREFIX = "cach_table_";
+    private final AtomicBoolean isInitialized = new AtomicBoolean(false);
+
+    final static String TABLE_PREFIX = "cache_table_";
 
 
 	private final static Cache<String, String> DONT_CACHE_ME = Caffeine.newBuilder()
@@ -80,7 +84,7 @@ public class H22Cache extends CacheProvider {
 	// try to recover with h2 if within this time (30m default)
 	private final long recoverOnRestart = Config.getIntProperty("cache.h22.recover.if.restarted.in.milliseconds", 0);
 	private long lastLog = System.currentTimeMillis();
-	private long[] errorCounter = new long[numberOfDbs];
+    private final long[] errorCounter = new long[numberOfDbs];
 	private final H22HikariPool[] pools = new H22HikariPool[numberOfDbs];
 	private int failedFlushAlls=0;
 
@@ -109,24 +113,53 @@ public class H22Cache extends CacheProvider {
     	return false;
     }
 
-	@Override
-	public void init() throws Exception {
 
-		// init the databases
-		for (int i = 0; i < numberOfDbs; i++) {
-			getPool(i, true);
-		}
-		isInitialized = true;
+    private ExecutorService spawnNewThreadPool() {
 
-	}
+        if (Config.getBooleanProperty("cache.h22.async.caller.runs.policy", true)) {
+            return new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10,
+                    TimeUnit.SECONDS, asyncTaskQueue, namedThreadFactory, new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+        }
+
+        return new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10,
+                TimeUnit.SECONDS, asyncTaskQueue, namedThreadFactory
+        );
+    }
+
+
+    @Override
+    public void init() throws Exception {
+
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            return;
+        }
+        if (isInitialized.compareAndSet(false, true)) {
+
+            Logger.info(this, "Starting H22 Cache Async Executor Service");
+            Try.run(() -> executorService.shutdownNow());
+            executorService = spawnNewThreadPool();
+
+            // init the databases
+            for (int i = 0; i < numberOfDbs; i++) {
+                getPool(i, true);
+            }
+
+        }
+
+    }
 
 	@Override
 	public boolean isInitialized() throws Exception {
-		return isInitialized;
+        return isInitialized.get();
 	}
 
 	@Override
 	public void put(final String group, final String key, final Object content) {
+		// Don't accept new cache operations during shutdown
+        if (!isInitialized.get() || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return;
+		}
 		// Building the key
 		final Fqn fqn = new Fqn(group, key);
         if(exclude(fqn)) {
@@ -166,6 +199,10 @@ public class H22Cache extends CacheProvider {
 	
 	@Override
 	public Object get(String group, String key) {
+		// Don't accept new cache operations during shutdown
+        if (!isInitialized.get() || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return null;
+		}
 
 
 		Object foundObject = null;
@@ -175,6 +212,12 @@ public class H22Cache extends CacheProvider {
 		try {
 			// Get the content from the group and for a given key;
 			foundObject = doSelect(fqn);
+
+            if (foundObject instanceof CacheValue && ((CacheValue) foundObject).isExpired()) {
+                removeAsync(fqn);
+                foundObject = null;
+            }
+
 			stats.group(fqn.group).hitOrMiss(foundObject);
 			stats.group(fqn.group).readTime(System.nanoTime() - start);
 		} catch (Exception e) {
@@ -395,9 +438,38 @@ public class H22Cache extends CacheProvider {
 
 	@Override
 	public void shutdown() {
-		isInitialized = false;
-		// don't trash on shutdown
-		dispose(false);
+        if (isInitialized.compareAndSet(true, false)) {
+            // don't trash on shutdown - just close existing pools without creating new ones
+            shutdownPools();
+        }
+    }
+
+	/**
+	 * Shutdown existing pools without creating new ones (for clean shutdown)
+	 */
+	private void shutdownPools() {
+		for (int db = 0; db < numberOfDbs; db++) {
+			try {
+				final H22HikariPool pool = pools[db];
+				if (pool != null) {
+					pool.close();
+					pools[db] = null;
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Error closing H22 cache pool " + db + ": " + e.getMessage(), e);
+			}
+		}
+
+        // Shutdown the async executor service
+		try {
+			executorService.shutdown();
+			if (!executorService.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+				executorService.shutdownNow();
+			}
+		} catch (InterruptedException e) {
+			executorService.shutdownNow();
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	protected void dispose(boolean trashMe) {
@@ -429,6 +501,10 @@ public class H22Cache extends CacheProvider {
 	private final Semaphore building = new Semaphore(1, true);
 
 	private Optional<H22HikariPool> getPool(final int dbNum, final boolean startup) throws SQLException {
+		// Don't create new pools during shutdown
+        if (!isInitialized.get() && com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return Optional.empty();
+		}
 
 		H22HikariPool source = pools[dbNum];
 		if (source == null) {
@@ -672,6 +748,10 @@ public class H22Cache extends CacheProvider {
 	}
 
 	private void handleError(final Exception ex, final Fqn fqn) {
+        if (ex.getCause() != null && ex.getCause() instanceof java.lang.InterruptedException) {
+            Logger.debug(this.getClass(), ex.getMessage() + ": cache shutting down, ignoring", ex);
+            return;
+        }
 	    DONT_CACHE_ME.put(fqn.id, fqn.toString());
 		// debug all errors
 		Logger.debug(this.getClass(), ex.getMessage() + " on " + fqn, ex);

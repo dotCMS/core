@@ -1,0 +1,26 @@
+{
+    "name": "portlets-dot-locales-data-access",
+    "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-locales/data-access/src",
+    "prefix": "lib",
+    "tags": ["type:data-access", "scope:dotcms-ui", "portlet:languages"],
+    "projectType": "library",
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/portlets/dot-locales/data-access/jest.config.ts"
+            },
+            "configurations": {
+                "ci": {
+                    "verbose": false
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        }
+    }
+}

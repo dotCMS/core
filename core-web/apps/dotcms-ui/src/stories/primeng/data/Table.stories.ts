@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -8,9 +7,21 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { Table, TableModule } from 'primeng/table';
-export default {
+
+const meta: Meta<Table> = {
     title: 'PrimeNG/Data/Table',
     component: Table,
+    decorators: [
+        moduleMetadata({
+            imports: [
+                TableModule,
+                BrowserAnimationsModule,
+                ButtonModule,
+                MenuModule,
+                InputTextModule
+            ]
+        })
+    ],
     parameters: {
         docs: {
             description: {
@@ -18,7 +29,10 @@ export default {
             }
         }
     }
-} as Meta;
+};
+export default meta;
+
+type Story = StoryObj<Table>;
 
 const cars = [
     {
@@ -119,7 +133,8 @@ const PrimaryTemplate = `
         <input
           pInputText
           type="text"
-          (input)="dt.filterGlobal($event.target.value, 'contains')"
+          #inputElement
+          (input)="dt.filterGlobal(inputElement.value, 'contains')"
           placeholder="Global Search"
         />
       </span>
@@ -152,65 +167,57 @@ const PrimaryTemplate = `
   </ng-template>
 </p-table>
 `;
-export const Primary = (_args: Table) => {
-    return {
-        props: {
-            cars,
-            selectedCars: [],
-            car: {},
-            handleClick: (e) => {
-                console.log(e);
+export const Primary: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: PrimaryTemplate
             },
-            items: [
-                {
-                    label: 'Update',
-                    icon: 'pi pi-refresh',
-                    command: () => {
-                        console.log('update');
-                    }
+            iframeHeight: 500
+        }
+    },
+    render: () => {
+        return {
+            props: {
+                cars,
+                selectedCars: [],
+                car: {},
+                handleClick: (e) => {
+                    console.log(e);
                 },
-                {
-                    label: 'Delete',
-                    icon: 'pi pi-times',
-                    command: () => {
-                        console.log('delete');
+                items: [
+                    {
+                        label: 'Update',
+                        icon: 'pi pi-refresh',
+                        command: () => {
+                            console.log('update');
+                        }
+                    },
+                    {
+                        label: 'Delete',
+                        icon: 'pi pi-times',
+                        command: () => {
+                            console.log('delete');
+                        }
+                    },
+                    {
+                        label: 'Angular.io',
+                        icon: 'pi pi-info',
+                        command: () => {
+                            console.log('angular');
+                        }
+                    },
+                    { separator: true },
+                    {
+                        label: 'Setup',
+                        icon: 'pi pi-cog',
+                        command: () => {
+                            console.log('setup');
+                        }
                     }
-                },
-                {
-                    label: 'Angular.io',
-                    icon: 'pi pi-info',
-                    command: () => {
-                        console.log('angular');
-                    }
-                },
-                { separator: true },
-                {
-                    label: 'Setup',
-                    icon: 'pi pi-cog',
-                    command: () => {
-                        console.log('setup');
-                    }
-                }
-            ]
-        },
-        moduleMetadata: {
-            imports: [
-                TableModule,
-                BrowserAnimationsModule,
-                ButtonModule,
-                MenuModule,
-                InputTextModule
-            ]
-        },
-        template: PrimaryTemplate
-    };
-};
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: PrimaryTemplate
-        },
-        iframeHeight: 500
+                ]
+            },
+            template: PrimaryTemplate
+        };
     }
 };

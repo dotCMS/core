@@ -1,54 +1,80 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockComponent, MockProviders } from 'ng-mocks';
 import { of as observableOf } from 'rxjs';
 
-import { Component, Input } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
+import { DotcmsEventsService, LoggerService } from '@dotcms/dotcms-js';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-template-additional-actions-iframe.component';
 
-@Component({
-    selector: 'dot-iframe',
-    template: ''
-})
-class MockDotIframeComponent {
-    @Input()
-    src: string;
-}
+import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
+import { IframeComponent } from '../../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { IframeOverlayService } from '../../../../../../view/components/_common/iframe/service/iframe-overlay.service';
 
 describe('DotLegacyAdditionalActionsComponent', () => {
-    let component: DotLegacyTemplateAdditionalActionsComponent;
-    let fixture: ComponentFixture<DotLegacyTemplateAdditionalActionsComponent>;
+    let spectator: Spectator<DotLegacyTemplateAdditionalActionsComponent>;
+    let dotMenuService: DotMenuService;
+    let getDotMenuIdSpy: jest.SpyInstance;
 
-    beforeEach(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotLegacyTemplateAdditionalActionsComponent, MockDotIframeComponent],
-            providers: [
-                DotMenuService,
+    const createComponent = createComponentFactory({
+        component: DotLegacyTemplateAdditionalActionsComponent,
+        imports: [HttpClientTestingModule],
+        overrideComponents: [
+            [
+                DotLegacyTemplateAdditionalActionsComponent,
                 {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        params: observableOf({ id: '1', tabName: 'properties' })
-                    }
+                    remove: { imports: [IframeComponent] },
+                    add: { imports: [MockComponent(IframeComponent)] }
                 }
             ]
-        });
+        ],
+        providers: [
+            MockProviders(
+                IframeOverlayService,
+                DotIframeService,
+                DotRouterService,
+                DotUiColorsService,
+                DotcmsEventsService,
+                LoggerService,
+                DotLoadingIndicatorService
+            ),
+            {
+                provide: DotMenuService,
+                useValue: {
+                    getDotMenuId: jest.fn().mockReturnValue(observableOf('2'))
+                }
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    params: observableOf({ id: '1', tabName: 'properties' })
+                }
+            }
+        ]
+    });
 
-        fixture = DOTTestBed.createComponent(DotLegacyTemplateAdditionalActionsComponent);
-        component = fixture.componentInstance;
+    beforeEach(() => {
+        spectator = createComponent();
+        dotMenuService = spectator.inject(DotMenuService);
+        getDotMenuIdSpy = dotMenuService.getDotMenuId as unknown as jest.SpyInstance;
+        spectator.detectChanges();
     });
 
     it('should set additionalPropertiesURL right', () => {
         let urlResult;
-        const dotMenuService: DotMenuService = fixture.debugElement.injector.get(DotMenuService);
-        spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('2'));
 
-        fixture.detectChanges();
+        // Subscribe to the observable to trigger the combineLatest
+        spectator.component.url.subscribe((url) => (urlResult = url));
 
-        component.url.subscribe((url) => (urlResult = url));
-        expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('templates');
+        // Verify the service was called with correct parameters
+        expect(getDotMenuIdSpy).toHaveBeenCalledWith('templates');
+        expect(getDotMenuIdSpy).toHaveBeenCalledTimes(1);
+
+        // Verify the URL is constructed correctly
         expect(urlResult).toEqual(
             // tslint:disable-next-line:max-line-length
             `c/portal/layout?p_l_id=2&p_p_id=templates&p_p_action=1&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&inode=1&drawed=false&selectedTab=properties`

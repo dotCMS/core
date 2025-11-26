@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, map } from 'rxjs/operators';
 
@@ -17,10 +17,8 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  */
 @Injectable()
 export class DotPageLayoutService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private readonly dotSessionStorageService: DotSessionStorageService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private readonly dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
      * Save the layout of a page

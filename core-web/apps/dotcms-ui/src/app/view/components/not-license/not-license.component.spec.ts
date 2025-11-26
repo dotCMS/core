@@ -1,5 +1,6 @@
 import { of } from 'rxjs';
 
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -16,7 +17,11 @@ describe('NotLicenseComponent', () => {
             providers: [
                 {
                     provide: DotMessageService,
-                    useValue: { get: () => {} }
+                    useValue: {
+                        get: () => {
+                            //
+                        }
+                    }
                 },
                 {
                     provide: DotLicenseService,
@@ -24,7 +29,8 @@ describe('NotLicenseComponent', () => {
                         unlicenseData: of({})
                     }
                 }
-            ]
+            ],
+            schemas: [NO_ERRORS_SCHEMA]
         }).compileComponents();
 
         fixture = TestBed.createComponent(NotLicenseComponent);

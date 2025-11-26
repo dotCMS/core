@@ -18,6 +18,7 @@ public class HostCopyOptions implements Serializable {
 	private boolean copyContentOnPages = true;
 	private boolean copyContentOnHost = true;
 	private boolean copyHostVariables = true;
+	private final boolean copyContentTypes;
 	
 	public HostCopyOptions(boolean copyAll) {
 		this.copyAll = copyAll;
@@ -27,11 +28,12 @@ public class HostCopyOptions implements Serializable {
 		this.copyContentOnPages = true;
 		this.copyContentOnHost = true;
 		this.copyHostVariables = true;
+		this.copyContentTypes = true;
 	}
 
 	public HostCopyOptions(boolean copyTemplatesAndContainers, boolean copyFolders,
 						   boolean copyLinks, boolean copyContentOnPages, boolean copyContentOnHost, 
-						   boolean copyHostVariables) {
+						   boolean copyHostVariables, final boolean copyContentTypes) {
 		super();
 		this.copyTemplatesAndContainers = copyTemplatesAndContainers;
 		this.copyFolders = copyFolders;
@@ -41,6 +43,7 @@ public class HostCopyOptions implements Serializable {
 		this.copyContentOnPages = copyContentOnPages;
 		this.copyContentOnHost = copyContentOnHost;
 		this.copyHostVariables = copyHostVariables;
+		this.copyContentTypes = copyContentTypes;
 		this.copyAll = false;
 	}
 
@@ -71,4 +74,15 @@ public class HostCopyOptions implements Serializable {
 	public boolean isCopyHostVariables() {
 		return copyHostVariables;
 	}
+
+	/**
+	 * Indicates whether Content Types from the source Site must be copied over to the new Site or
+	 * not.
+	 *
+	 * @return If Content Types must be copied, returns {@code true}.
+	 */
+	public boolean isCopyContentTypes() {
+		return this.copyContentTypes;
+	}
+
 }	

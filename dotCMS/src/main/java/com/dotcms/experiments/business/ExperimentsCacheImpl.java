@@ -66,10 +66,10 @@ public class ExperimentsCacheImpl implements ExperimentsCache {
      * {@inheritDoc}
      */
     @Override
-    public void removeList() {
+    public void removeList(final String key) {
 
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.remove(CACHED_EXPERIMENTS_KEY, getPrimaryGroup());
+        cache.remove(key, getPrimaryGroup());
     }
 
     /**

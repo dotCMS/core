@@ -10,6 +10,7 @@ import {
     Host,
     h
 } from '@stencil/core';
+
 import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     getClassNames,
@@ -117,8 +118,7 @@ export class DotCheckboxComponent {
                     <div
                         aria-describedby={getHintId(this.hint)}
                         tabIndex={this.hint ? 0 : null}
-                        class="dot-checkbox__items"
-                    >
+                        class="dot-checkbox__items">
                         {this._options.map((item: DotOption) => {
                             const trimmedValue = item.value.trim();
                             return (

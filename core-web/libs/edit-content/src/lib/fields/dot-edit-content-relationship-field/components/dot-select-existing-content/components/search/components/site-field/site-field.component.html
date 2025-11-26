@@ -1,0 +1,46 @@
+<label for="language-field" class="mb-2 inline-block">
+    {{ 'dot.file.relationship.dialog.search.site.label' | dm }}
+</label>
+
+<p-treeSelect
+    (onNodeSelect)="store.chooseNode($event)"
+    (onNodeUnselect)="store.clearSelection()"
+    (onNodeExpand)="store.loadChildren($event)"
+    [formControl]="siteControl"
+    data-testid="site-field-search"
+    containerStyleClass="w-full h-2rem"
+    [filter]="true"
+    [options]="store.tree()"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="50"
+    [scrollHeight]="'450px'"
+    [placeholder]="'dot.file.relationship.dialog.search.site.placeholder' | dm"
+    [virtualScrollOptions]="{
+        autoSize: true,
+        style: {
+            width: '100%',
+            height: '450px',
+            minHeight: '200px'
+        }
+    }"
+    filterBy="label"
+    filterMode="lenient"
+    selectionMode="single">
+    <ng-template let-node pTemplate="default">
+        <span>{{ node?.label | truncatePath }}</span>
+    </ng-template>
+    <ng-template let-item pTemplate="value">
+        @if (item?.label) {
+            <span>//{{ item?.label }}</span>
+        } @else {
+            <span>{{ 'dot.file.relationship.dialog.search.site.placeholder' | dm }}</span>
+        }
+    </ng-template>
+</p-treeSelect>
+
+@let error = store.error();
+@if (error) {
+    <div class="text-red-500 text-sm mt-2">
+        {{ error | dm }}
+    </div>
+}

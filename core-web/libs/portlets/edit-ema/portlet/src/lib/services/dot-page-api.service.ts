@@ -1,45 +1,43 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { Site } from '@dotcms/dotcms-js';
-import {
-    DotLanguage,
-    DotLayout,
-    DotPageContainerStructure,
-    DotPersona,
-    DotTemplate
-} from '@dotcms/dotcms-models';
+import { graphqlToPageEntity } from '@dotcms/client/internal';
+import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
+import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
-import { SavePagePayload } from '../shared/models';
-
-export interface DotPageApiResponse {
-    page: {
-        title: string;
-        identifier: string;
-        inode: string;
-        canEdit: boolean;
-        canRead: boolean;
-        pageURI: string;
-        rendered?: string;
-    };
-    site: Site;
-    viewAs: {
-        language: DotLanguage;
-        persona?: DotPersona;
-    };
-    layout: DotLayout;
-    template: DotTemplate;
-    containers: DotPageContainerStructure;
-}
+import { PERSONA_KEY } from '../shared/consts';
+import { DotPageAssetParams, SavePagePayload } from '../shared/models';
+import { getFullPageURL } from '../utils';
 
 export interface DotPageApiParams {
     url: string;
+    depth?: string;
+    mode?: UVE_MODE;
     language_id: string;
-    'com.dotmarketing.persona.id': string;
+    [PERSONA_KEY]: string;
+    variantName?: string;
+    experimentId?: string;
+    clientHost?: string;
+    publishDate?: string;
+    // We need this to allow any other query param to be passed by the user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [x: string]: any;
+}
+
+export enum DotPageAssetKeys {
+    URL = 'url',
+    MODE = 'mode',
+    DEPTH = 'depth',
+    CLIENT_HOST = 'clientHost',
+    VARIANT_NAME = 'variantName',
+    LANGUAGE_ID = 'language_id',
+    EXPERIMENT_ID = 'experimentId',
+    PERSONA_ID = 'com.dotmarketing.persona.id',
+    PUBLISH_DATE = 'publishDate'
 }
 
 export interface GetPersonasParams {
@@ -51,37 +49,29 @@ export interface GetPersonasParams {
 
 export interface GetPersonasResponse {
     data: DotPersona[];
-    pagination: PaginationData;
-}
-
-export interface PaginationData {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
+    pagination: DotPagination;
 }
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    private http = inject(HttpClient);
 
     /**
      * Get a page from the Page API
      *
      * @param {DotPageApiParams} { url, language_id }
-     * @return {*}  {Observable<DotPageApiResponse>}
+     * @return {*}  {Observable<DotCMSPageAsset>}
      * @memberof DotPageApiService
      */
-    get(params: DotPageApiParams & { clientHost?: string }): Observable<DotPageApiResponse> {
-        // Remove trailing and leading slashes
-        const url = params.url.replace(/^\/+|\/+$/g, '');
-
-        const pageType = params.clientHost ? 'json' : 'render';
-        const apiUrl = `/api/v1/page/${pageType}/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+    get(queryParams: DotPageAssetParams): Observable<DotCMSPageAsset> {
+        const { clientHost, ...params } = queryParams;
+        const pageType = clientHost ? 'json' : 'render';
+        const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http
             .get<{
-                entity: DotPageApiResponse;
-            }>(apiUrl)
+                entity: DotCMSPageAsset;
+            }>(`/api/v1/page/${pageType}/${pageURL}`)
             .pipe(pluck('entity'));
     }
 
@@ -92,9 +82,11 @@ export class DotPageApiService {
      * @return {*}  {Observable<unknown>}
      * @memberof DotPageApiService
      */
-    save({ pageContainers, pageId }: SavePagePayload): Observable<unknown> {
+    save({ pageContainers, pageId, params }: SavePagePayload): Observable<unknown> {
+        const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
+
         return this.http
-            .post(`/api/v1/page/${pageId}/content`, pageContainers)
+            .post(`/api/v1/page/${pageId}/content?variantName=${variantName}`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 
@@ -113,8 +105,8 @@ export class DotPageApiService {
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
-            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+        return this.http.get<{ entity: DotPersona[]; pagination: DotPagination }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: DotPagination }) => ({
                 data: res.entity,
                 pagination: res.pagination
             }))
@@ -131,10 +123,66 @@ export class DotPageApiService {
      */
     getFormIndetifier(containerId: string, formId: string): Observable<string> {
         return this.http
-            .get<{ entity: { content: { idenfitier: string } } }>(
-                `/api/v1/containers/form/${formId}?containerId=${containerId}`
-            )
+            .get<{
+                entity: { content: { idenfitier: string } };
+            }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
             .pipe(pluck('entity', 'content', 'identifier'));
+    }
+
+    /**
+     *
+     * @description Save a contentlet in a page
+     * @param {{ contentlet: { [fieldName: string]: string; inode: string } }} { contentlet }
+     * @return {*}
+     * @memberof DotPageApiService
+     */
+    saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        // indexPolicy=WAIT_FOR ensures the contentlet is indexed before returning, preventing stale data.
+        // Note: We'll replace this with optimistic updates for better UX.
+        return this.http.put(
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}&indexPolicy=WAIT_FOR`,
+            { contentlet }
+        );
+    }
+
+    /**
+     *
+     * @description Get a page from GraphQL
+     * @template T
+     * @param {string} query
+     * @return {*}  {Observable<T>}
+     * @memberof DotPageApiService
+     */
+    getGraphQLPage({
+        query,
+        variables
+    }: {
+        query: string;
+        variables: Record<string, string>;
+    }): Observable<{
+        pageAsset: DotCMSPageAsset;
+        content: Record<string, unknown>;
+    }> {
+        const headers = {
+            'Content-Type': 'application/json',
+            dotcachettl: '0'
+        };
+
+        return this.http
+            .post<{
+                data: { page: DotCMSGraphQLPage };
+            }>('/api/v1/graphql', { query, variables }, { headers })
+            .pipe(
+                pluck('data'),
+                map(({ page, ...content }) => {
+                    const pageEntity = graphqlToPageEntity(page);
+
+                    return {
+                        pageAsset: pageEntity,
+                        content
+                    };
+                })
+            );
     }
 
     private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {

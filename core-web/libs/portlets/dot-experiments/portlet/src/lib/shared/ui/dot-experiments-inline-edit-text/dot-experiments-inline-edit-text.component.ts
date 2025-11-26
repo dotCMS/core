@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,9 +25,9 @@ import {
     DotAutofocusDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotTrimInputDirective
+    DotTrimInputDirective,
+    DotValidators
 } from '@dotcms/ui';
-import { DotValidators } from '@shared/validators/dotValidators';
 
 type InplaceInputSize = 'small' | 'large';
 const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
@@ -45,9 +44,7 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
  */
 @Component({
     selector: 'dot-experiments-inplace-edit-text',
-    standalone: true,
     imports: [
-        NgIf,
         ReactiveFormsModule,
         DotMessagePipe,
         DotAutofocusDirective,

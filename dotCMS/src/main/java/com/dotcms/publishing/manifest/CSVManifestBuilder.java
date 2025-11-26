@@ -1,14 +1,12 @@
 package com.dotcms.publishing.manifest;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * CSV Manifest file builder, creae a manifest file with the headers:
@@ -36,7 +36,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
     public final static String FILTER_METADATA_NAME = "Filter";
 
     public final static String HEADERS_LINE =
-            "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
+            "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, reason to be evaluated";
     private FileWriter csvWriter;
 
     private File manifestFile;
@@ -70,9 +70,14 @@ public class CSVManifestBuilder implements ManifestBuilder {
         csvWriter.append("\n");
     }
 
-    public <T> void include(final ManifestItem manifestItem, final String reason){
+    /**
+     * Include an asset in the manifest file
+     * @param manifestItem Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     */
+    public <T> void include(final ManifestItem manifestItem, final String evaluateReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
-        final String line = getManifestFileIncludeLine(manifestInfo, reason);
+        final String line = getManifestFileIncludeLine(manifestInfo, evaluateReason);
 
         try {
             writeLine(line);
@@ -83,35 +88,68 @@ public class CSVManifestBuilder implements ManifestBuilder {
         }
     }
 
+    /**
+     * Get the line to include an asset in the manifest file
+     * @param manifestInfo Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @return Line to include the asset in the manifest file
+     */
     private String getManifestFileIncludeLine(final ManifestInfo manifestInfo,
-            final String includeReason) {
-        return getManifestFileLine("INCLUDED", manifestInfo, includeReason, StringPool.BLANK);
+            final String evaluateReason) {
+        return getManifestFileLine("INCLUDED", manifestInfo, evaluateReason, StringPool.BLANK);
     }
 
+    /**
+     * Get the line to exclude an asset in the manifest file
+     * @param manifestInfo Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @param excludeReason Reason why the asset was excluded
+     * @return Line to exclude the asset in the manifest file
+     */
     private String getManifestFileExcludeLine(final ManifestInfo manifestInfo,
-            final String excludeReason) {
-        return getManifestFileLine("EXCLUDED", manifestInfo, StringPool.BLANK, excludeReason);
+                                              final String evaluateReason, final String excludeReason) {
+        return getManifestFileLine("EXCLUDED", manifestInfo, evaluateReason, excludeReason);
     }
 
+    /**
+     * Get the line to include or exclude an asset in the manifest file
+     * @param includeExclude Include or Exclude
+     * @param manifestInfo Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @param excludeReason Reason why the asset was excluded
+     * @return Line to include or exclude the asset in the manifest file
+     */
     private String getManifestFileLine(
             final String includeExclude, final ManifestInfo manifestInfo,
-            final String includeReason, final String excludeReason) {
+            final String evaluateReason, final String excludeReason) {
+
+
+        String title = manifestInfo.title().contains("\"") ? manifestInfo.title().replace("\"", "\"\"") : manifestInfo.title();
+
+        // If the title contains a comma or double quote, it should be enclosed in quotes
+        title = title.contains(",") || title.contains("\"") ? "\"" + title + "\"" : title;
 
         return list(
                 includeExclude,
                 manifestInfo.objectType(),
                 manifestInfo.id(),
                 manifestInfo.inode(),
-                manifestInfo.title(),
+                title,
                 manifestInfo.site(),
                 manifestInfo.folder(),
                 excludeReason,
-                includeReason).stream().collect(Collectors.joining(","));
+                evaluateReason).stream().collect(Collectors.joining(","));
     }
 
-    public <T> void exclude(final ManifestItem manifestItem, final String reason){
+    /**
+     * Exclude an asset in the manifest file
+     * @param manifestItem Asset information
+     * @param evaluateReason Reason why the asset was evaluated to be included
+     * @param excludeReason Reason why the asset was excluded
+     */
+    public <T> void exclude(final ManifestItem manifestItem, final String evaluateReason, final String excludeReason){
         final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
-        final String line = getManifestFileExcludeLine(manifestInfo, reason);
+        final String line = getManifestFileExcludeLine(manifestInfo, evaluateReason, excludeReason);
 
         try {
             writeLine(line);
@@ -152,7 +190,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
      * #first_header:This is the first header
      * #second_header:This is the second header
      *
-     * INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by
+     * INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, reason to be evaluated
      * ...
      * </pre>
      * @param name

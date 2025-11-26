@@ -6,12 +6,6 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import {
-    DotAlertConfirmService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotRouterService
-} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotMessageDisplayServiceMock,
@@ -21,6 +15,11 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
+
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
@@ -68,7 +67,7 @@ describe('DotHttpErrorManagerService', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: DotRouterService, useClass: MockDotRouterJestService },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotHttpErrorManagerService
@@ -101,7 +100,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 401 error when user is logout and redirect to login', () => {
-        loginService.auth.user = null;
+        loginService.auth.user = undefined as any;
         jest.spyOn(dotDialogService, 'alert');
         jest.spyOn(dotRouterService, 'goToLogin');
 
@@ -166,7 +165,7 @@ describe('DotHttpErrorManagerService', () => {
             'error-key': 'dotcms.api.error.license.required'
         });
 
-        const responseView: HttpErrorResponse = mockResponseView(403, null, headers);
+        const responseView: HttpErrorResponse = mockResponseView(403, undefined, headers);
 
         service.handle(responseView).subscribe((res) => {
             result = res;
@@ -186,7 +185,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on message', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             message: 'Error'
         });
 
@@ -210,7 +209,7 @@ describe('DotHttpErrorManagerService', () => {
         const CUSTOM_HEADER = 'Custom Header';
         const SERVER_MESSAGE = 'Server Error';
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             message: SERVER_MESSAGE,
             header: CUSTOM_HEADER
         });
@@ -233,7 +232,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on errors[0]', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, [
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, [
             { message: 'Server Error' }
         ]);
 
@@ -255,7 +254,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on error.errors[0]', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             errors: [{ message: 'Server Error' }]
         });
 
@@ -277,7 +276,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on error.error', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             error: 'Server Error'
         });
 

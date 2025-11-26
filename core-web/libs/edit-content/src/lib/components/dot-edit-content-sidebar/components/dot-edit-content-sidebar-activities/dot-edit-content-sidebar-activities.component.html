@@ -1,0 +1,115 @@
+<!-- Activities List -->
+<section class="activities" role="log" aria-label="Content Activities">
+    @if ($isLoading()) {
+        <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
+    } @else {
+        <div class="activities__content">
+            <p-dataView
+                #dv
+                [value]="$activities()"
+                [rows]="10"
+                [layout]="'list'"
+                [paginator]="false"
+                data-testid="activities-list">
+                <ng-template pTemplate="list" let-activities>
+                    @for (
+                        activity of activities;
+                        track activity.taskId + '_' + activity.createdDate
+                    ) {
+                        <div class="activities__item-wrapper" #activityItem>
+                            <div class="activities__item" data-testid="activity-item">
+                                <div class="activities__header">
+                                    <p-avatar
+                                        shape="circle"
+                                        dotGravatar
+                                        [email]="activity?.email"
+                                        styleClass="activities__avatar" />
+                                    <span class="activities__user" data-testid="activity-user">
+                                        {{ activity.postedBy }}
+                                    </span>
+                                    <span class="activities__date" data-testid="activity-date">
+                                        {{ activity.createdDate | dotRelativeDate }}
+                                    </span>
+                                </div>
+                                <div
+                                    class="activities__description"
+                                    data-testid="activity-description">
+                                    {{ activity.commentDescription }}
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </ng-template>
+                <ng-template pTemplate="empty">
+                    <span class="activities__empty" data-testid="empty-state">
+                        {{ 'edit.content.sidebar.activities.empty' | dm }}
+                    </span>
+                </ng-template>
+            </p-dataView>
+        </div>
+        @if (!$hideForm()) {
+            <div class="activities__footer" data-testid="activities-footer">
+                <form
+                    [formGroup]="form"
+                    (ngSubmit)="onSubmit()"
+                    class="activities__form"
+                    data-testid="activities-form">
+                    <div class="activities__control">
+                        <textarea
+                            pInputTextarea
+                            [rows]="5"
+                            autoResize="false"
+                            formControlName="comment"
+                            data-testid="activities-input"
+                            class="activities__input"></textarea>
+
+                        <dot-field-validation-message [field]="form.get('comment')" />
+
+                        <!-- Character Counter -->
+                        <div
+                            class="activities__char-counter"
+                            [class.activities__char-counter--limit]="isAtMaxLength()"
+                            data-testid="activities-char-counter">
+                            @if (!isAtMaxLength()) {
+                                {{ commentLength() }}/{{ commentMaxLength }}
+                                {{ 'edit.content.sidebar.activities.characters' | dm }}
+                            } @else {
+                                <span>
+                                    {{
+                                        'edit.content.sidebar.activities.char.counter'
+                                            | dm
+                                                : [
+                                                      commentLength().toString(),
+                                                      commentMaxLength.toString()
+                                                  ]
+                                    }}
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="activities__actions">
+                        <button
+                            pButton
+                            type="button"
+                            [disabled]="!form.dirty || !commentControl.value?.trim() || $isSaving()"
+                            class="p-button-sm p-button-secondary activities__clear"
+                            data-testid="activities-clear"
+                            (click)="clearComment()">
+                            {{ 'edit.content.sidebar.activities.clear' | dm }}
+                        </button>
+                        <button
+                            pButton
+                            type="submit"
+                            [loading]="$isSaving()"
+                            [disabled]="$isSaving() || !commentControl.value?.trim()"
+                            class="p-button-sm p-button-primary activities__submit"
+                            data-testid="activities-submit">
+                            {{ 'edit.content.sidebar.activities.send' | dm }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        }
+    }
+</section>

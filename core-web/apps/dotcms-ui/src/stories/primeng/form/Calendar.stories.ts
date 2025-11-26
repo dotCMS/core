@@ -1,9 +1,16 @@
-import { Meta, Story } from '@storybook/angular';
+import {
+    Meta,
+    moduleMetadata,
+    StoryObj,
+    argsToTemplate,
+    componentWrapperDecorator
+} from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Calendar } from 'primeng/calendar';
+import { Calendar, CalendarModule } from 'primeng/calendar';
+import { ChevronLeftIcon } from 'primeng/icons/chevronleft';
 
 const TODAY = new Date();
 const DAYS_TO_DISABLE = 5;
@@ -14,10 +21,16 @@ const DISABLED_DAYS: Date[] = [...Array(DAYS_TO_DISABLE)].map(
 const meta: Meta<Calendar> = {
     title: 'PrimeNG/Form/Calendar',
     component: Calendar,
+    decorators: [
+        moduleMetadata({
+            imports: [BrowserAnimationsModule, ButtonModule, CalendarModule, ChevronLeftIcon]
+        }),
+        componentWrapperDecorator((story) => `<div class="h-30rem">${story}</div>`)
+    ],
     args: {
         disabled: false,
         readonlyInput: true,
-        showIcon: true,
+        showIcon: false,
         showTime: true,
         showClear: true,
         inline: false,
@@ -58,7 +71,7 @@ const meta: Meta<Calendar> = {
             description: 'Placeholder text for the input.'
         },
         disabledDates: {
-            control: 'array',
+            control: 'object',
             description: 'Array with dates that should be disabled (not selectable). Date[]'
         },
         selectionMode: {
@@ -67,16 +80,21 @@ const meta: Meta<Calendar> = {
             description:
                 'Defines the quantity of the selection, valid values are "single", "multiple" and "range".'
         }
-    }
+    },
+    render: (args) => ({
+        props: args,
+        template: `<p-calendar ${argsToTemplate(args)} />`
+    })
 };
 
 export default meta;
 
-export const Primary: Story = (args) => ({
-    moduleMetadata: {
-        imports: [BrowserAnimationsModule, ButtonModule]
-    },
-    props: {
-        ...args
+type Story = StoryObj<Calendar>;
+
+export const Default: Story = {};
+
+export const WithIcon: Story = {
+    args: {
+        showIcon: true
     }
-});
+};

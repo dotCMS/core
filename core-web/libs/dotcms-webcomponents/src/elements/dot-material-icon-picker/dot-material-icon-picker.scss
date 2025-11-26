@@ -1,5 +1,6 @@
 @import "../../../../dotcms-scss/shared/common";
 @import "../../../../dotcms-scss/shared/colors";
+@import "../../../../dotcms-scss/shared/fonts";
 
 dot-material-icon-picker {
     display: flex;
@@ -27,7 +28,7 @@ dot-material-icon-picker {
     border: 1px solid #000;
     border-right: 0;
     display: flex;
-    font-size: 1em;
+    font-size: $font-size-md;
     padding-right: 0.2em;
     width: 1em;
 }
@@ -38,7 +39,7 @@ dot-material-icon-picker {
     border-right: 0;
     border-bottom: 1px solid;
     box-sizing: border-box;
-    font-size: 1em;
+    font-size: $font-size-md;
     width: 100%;
 }
 

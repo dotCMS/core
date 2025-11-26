@@ -1,38 +1,44 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, UrlSegment } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
-import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
+import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
-import { LoggerService, SiteService } from '@dotcms/dotcms-js';
+import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
+import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
+import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
+
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { IframeComponent } from '../iframe-component/iframe.component';
 
 @Component({
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
-    templateUrl: 'iframe-porlet-legacy.component.html'
+    templateUrl: 'iframe-porlet-legacy.component.html',
+    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
+    private contentletService = inject(DotContentTypeService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dotMenuService = inject(DotMenuService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    loggerService = inject(LoggerService);
+    siteService = inject(SiteService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dotIframeService = inject(DotIframeService);
+
     canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentletService: DotContentTypeService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotMenuService: DotMenuService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        public loggerService: LoggerService,
-        public siteService: SiteService
-    ) {}
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {
@@ -42,9 +48,9 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         });
         /**
          *  skip first - to avoid subscription when page loads due login user subscription:
-         *  https://github.com/dotCMS/core-web/blob/master/projects/dotcms-js/src/lib/core/site.service.ts#L58
+         *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
          */
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             if (this.url.getValue() !== '') {
                 this.reloadIframePortlet();
             }
@@ -59,6 +65,14 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
                 this.canAccessPortlet = canAccessPortlet;
             });
+
+        this.subscribeToAIGeneration();
+
+        // Workaroud to remove edit-content ui state
+        this.#initContentEditSessionStorage();
+    }
+    #initContentEditSessionStorage() {
+        sessionStorage.removeItem(UI_STORAGE_KEY);
     }
 
     ngOnDestroy(): void {
@@ -143,5 +157,19 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         setTimeout(() => {
             this.isLoading = false;
         }, 0);
+    }
+
+    /**
+       This function subscribes to the AI_CONTENT_PROMPT, that indicate that the
+        backend has generated a new AI content, and the resutls need to be reloaded
+        with the function refreshFakeJax defined in view_contentlets_js_inc.jsp.
+     */
+    private subscribeToAIGeneration(): void {
+        this.dotcmsEventsService
+            .subscribeTo('AI_CONTENT_PROMPT')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.dotIframeService.run({ name: 'refreshFakeJax' });
+            });
     }
 }

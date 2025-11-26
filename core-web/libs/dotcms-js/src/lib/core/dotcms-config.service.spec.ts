@@ -1,3 +1,7 @@
+import { ReflectiveInjector } from '@angular/core';
+
+import { NoHttpCoreWebServiceMock } from './no-http-core-web.service.mock';
+
 import {
     ConfigParams,
     CoreWebService,
@@ -6,8 +10,6 @@ import {
     LoggerService,
     StringUtils
 } from '../../public_api';
-import { NoHttpCoreWebServiceMock } from './no-http-core-web.service.mock';
-import { ReflectiveInjector } from '@angular/core';
 
 export const mockDotTimeZones: DotTimeZone[] = [
     {
@@ -129,9 +131,11 @@ describe('DotcmsConfigService', () => {
                 if (a.label < b.label) {
                     return -1;
                 }
+
                 if (a.label > b.label) {
                     return 1;
                 }
+
                 return 0;
             });
             expect(result).toEqual(expectedResult);

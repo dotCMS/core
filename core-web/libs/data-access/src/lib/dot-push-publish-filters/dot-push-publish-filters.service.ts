@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -11,10 +11,11 @@ export interface DotPushPublishFilter {
     key: string;
     title: string;
 }
-
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotPushPublishFiltersService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     get(): Observable<DotPushPublishFilter[]> {
         return this.coreWebService

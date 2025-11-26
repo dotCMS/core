@@ -1,0 +1,38 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,,,,,,,,,,,,,,,,,
+Select a Single Category,Categories,Categories,10,Functional,"1. Open the category selector.
+2. Select a category (e.g., Deck Stains & Sealers).
+3. Click Apply.",The selected category is successfully applied and displayed in the overview.,The user is logged in and has access to the category selection dialog.,,,,,,,,,,,,,,,,,,
+Select Multiple Categories from Different Hierarchies,Categories,Categories,10,Functional,"1. Open the category selector.
+2. Select categories from different parent groups (e.g., Cleaning Supplies and Deck Stains & Sealers).
+3. Click Apply.",All selected categories are applied and displayed in the summary.,The user is logged in and has access to multiple category hierarchies.,,,,,,,,,,,,,,,,,,
+Remove a Selected Category,Categories,Categories,10,Functional,"1. Select multiple categories.
+2. Remove one category from the overview using the ÒXÓ icon.
+3. Click Apply.","The removed category is no longer applied, and the other selections are preserved.",The user has already selected multiple categories.,,,,,,,,,,,,,,,,,,
+Search for a Category,Categories,Categories,10,Functional,"1. Type a keyword (e.g., ""Deck"") in the search bar.
+2. Select the matching category.
+3. Click Apply.",The category related to the search keyword is found and can be applied.,"Categories exist in the system, and the user has access to the search bar.",,,,,,,,,,,,,,,,,,
+Navigate Through the Category Tree,Categories,Categories,10,Functional,"1. Open a category.
+2. Drill down through different levels of the hierarchy (e.g., Home Improvement > Painting & Supplies).
+3. Select a category.",The user is able to navigate through nested categories and make a selection.,The user has access to a multi-level category hierarchy.,,,,,,,,,,,,,,,,,,
+Verify Category Summary Panel,Categories,Categories,10,Functional,"1. Select categories.
+2. Add and remove categories",The summary panel updates dynamically with each selection or removal.,The user has access to categories and can select/deselect categories.,,,,,,,,,,,,,,,,,,
+Clear All Categories,Categories,Categories,10,Functional,"1. Select multiple categories.
+2. Click Clear All.
+3. Click Apply.","All selected categories are cleared, and no categories are applied.",Multiple categories have already been selected.,,,,,,,,,,,,,,,,,,
+Apply Without Selecting a Category,Categories,Categories,10,Functional,"1. Open the category selector.
+2. Do not select any categories.
+3. Click Apply.","The system should apply no categories, and no errors should occur.","The category selection dialog is open, but no categories have been selected.",,,,,,,,,,,,,,,,,,
+Invalid Search Input,Categories,Categories,10,Functional,"1. Enter an invalid search string (e.g., %%%$$$).", The system returns no results but does not display errors or crash.,"The category selection dialog is open, and the user can access the search bar.",,,,,,,,,,,,,,,,,,
+Deselect a Category and Apply,Categories,Categories,10,Functional,"1. Select a category.
+2. Deselect the category.
+3. Click Apply.",The deselected category should not be applied.,The user has previously selected at least one category.,,,,,,,,,,,,,,,,,,
+Cancel Button Functionality,Categories,Categories,10,Functional,"1. Select categories.
+2. Click Cancel instead of Apply.
+3. Reopen the category selection dialog.","The selections are discarded, and no categories are applied.",Categories have been selected but not applied.,,,,,,,,,,,,,,,,,,
+Maximum Category Selection,Categories,Categories,10,Functional,"1. Select every available category.
+2. Click Apply.","The system should apply all selected categories without performance issues, or handle any maximum selection limit gracefully.","The system allows multiple categories, and no hard limit is defined for selection.",,,,,,,,,,,,,,,,,,
+Long Category Names,Categories,Categories,10,Functional,"1. Select categories with long names.
+2. Apply the categories.", Long category names are properly displayed without truncation or overlap.,The user has access to the category selector and can select/deselect quickly.,,,,,,,,,,,,,,,,,,
+Rapid Selection and Deselection of Categories,Categories,Categories,10,Functional,"1. Rapidly select and deselect various categories.
+2. Click Apply.",The system should handle rapid inputs without freezing or crashing.,"The category selection dialog is open, and the user can access the search bar.",,,,,,,,,,,,,,,,,,
+Test Search With Special Characters,Categories,Categories,10,Functional,"1. Enter special characters (e.g., @#$%^&*) in the search bar.","The system should not crash, and it should return no results if no categories match the input.",The user has previously selected at least one category.,,,,,,,,,,,,,,,,,,

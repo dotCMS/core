@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import * as _ from 'lodash';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -11,16 +9,16 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
-import { InputSwitchModule } from 'primeng/inputswitch';
+import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { MenuModule } from 'primeng/menu';
-import { SelectButtonModule } from 'primeng/selectbutton';
-import { TooltipModule } from 'primeng/tooltip';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -33,9 +31,10 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeEvent,
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
@@ -45,12 +44,11 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
 
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
@@ -80,10 +78,8 @@ const dotVariantDataMock: DotVariantData = {
     mode: DotPageMode.PREVIEW
 };
 
-const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
-    mockUser(),
-    new DotPageRender(mockDotRenderedPage())
-);
+const getPageRenderStateMock = () =>
+    new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
 
 @Component({
     selector: 'dot-test-host-component',
@@ -91,10 +87,11 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
         <dot-edit-page-state-controller
             [pageState]="pageState"
             [variant]="variant"></dot-edit-page-state-controller>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
-    pageState: DotPageRenderState = _.cloneDeep(pageRenderStateMock);
+    pageState: DotPageRenderState = getPageRenderStateMock();
     variant: DotVariantData;
 }
 
@@ -109,15 +106,11 @@ describe('DotEditPageStateControllerComponent', () => {
     let personalizeService: DotPersonalizeService;
     let propertiesService: DotPropertiesService;
     let editContentletService: DotContentletEditorService;
-    let featFlagMock: jasmine.Spy;
+    let featFlagMock: jest.SpyInstance;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotEditPageStateControllerComponent,
-                DotEditPageLockInfoComponent
-            ],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -145,10 +138,12 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotPropertiesService
             ],
             imports: [
+                DotEditPageStateControllerComponent,
+                DotEditPageLockInfoComponent,
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 CommonModule,
                 FormsModule,
@@ -171,10 +166,10 @@ describe('DotEditPageStateControllerComponent', () => {
         propertiesService = de.injector.get(DotPropertiesService);
         editContentletService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.modeChange, 'emit');
-        spyOn(dotPageStateService, 'setLock');
-        spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
+        jest.spyOn(component.modeChange, 'emit');
+        jest.spyOn(dotPageStateService, 'setLock');
+        jest.spyOn(personalizeService, 'personalized').mockReturnValue(of(null));
+        featFlagMock = jest.spyOn(propertiesService, 'getFeatureFlag').mockReturnValue(of(false));
     });
 
     describe('elements', () => {
@@ -225,26 +220,27 @@ describe('DotEditPageStateControllerComponent', () => {
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
                 );
-                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const lockerDe = de.query(By.css('p-inputSwitch'));
+                const lockerDe = de.query(By.directive(InputSwitch));
                 const locker = lockerDe.componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
-                expect(lockerDe.classes.warn).toBe(true, 'warn class');
+                expect(lockerDe.classes.warn).toBe(true);
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerDe.attributes['ng-reflect-text']).toBe('Page locked by Some One');
-                expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
-                expect(locker.modelValue).toBe(false, 'checked');
-                expect(locker.disabled).toBe(false, 'disabled');
+                const tooltipDirective = lockerDe.injector.get(Tooltip);
+                expect(tooltipDirective.content).toBe('Page locked by Some One');
+                expect(tooltipDirective.tooltipPosition).toBe('top');
+                expect(locker.modelValue).toBe(false);
+                expect(locker.disabled).toBe(false);
             });
 
             it('should have lock info', () => {
                 fixtureHost.detectChanges();
                 const message = de.query(By.css('[data-testId="lockInfo"]')).componentInstance;
-                expect(message.pageState).toEqual(pageRenderStateMock);
+                expect(message.pageState).toEqual(getPageRenderStateMock());
             });
         });
 
@@ -411,13 +407,14 @@ describe('DotEditPageStateControllerComponent', () => {
         it('should without confirmation dialog emit modeChange and update pageState service', async () => {
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
                 { mode: DotPageMode.EDIT },
                 true
@@ -432,17 +429,17 @@ describe('DotEditPageStateControllerComponent', () => {
                 new DotPageRender(mockDotRenderedPage())
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
@@ -450,6 +447,7 @@ describe('DotEditPageStateControllerComponent', () => {
             await fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).not.toHaveBeenCalled();
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -459,13 +457,13 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            spyOn<any>(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.cancel();
             });
 
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
@@ -473,6 +471,7 @@ describe('DotEditPageStateControllerComponent', () => {
             fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(component.lock).toBe(true);
             expect(component.mode).toBe(DotPageMode.PREVIEW);
@@ -497,20 +496,21 @@ describe('DotEditPageStateControllerComponent', () => {
                 })
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
             fixtureHost.detectChanges();
 
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
             expect(personalizeService.personalized).toHaveBeenCalledWith(
                 mockDotRenderedPage().page.identifier,
@@ -532,20 +532,21 @@ describe('DotEditPageStateControllerComponent', () => {
                 EXPERIMENT_MOCK
             );
 
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             fixtureHost.detectChanges();
-            const selectButton = de.query(By.css('p-selectButton'));
+            const selectButton = de.query(By.directive(SelectButton));
             selectButton.triggerEventHandler('onChange', {
                 value: DotPageMode.EDIT
             });
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
 
             expect(dotPageStateService.setLock).toHaveBeenCalledWith(
@@ -557,7 +558,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of(true));
+            featFlagMock.mockReturnValue(of(true));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },
@@ -570,7 +571,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     }
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
         });
 
@@ -584,14 +585,19 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it("should change the mode when the user clicks on the 'Edit' option", () => {
-            component.menuItems[0].command();
+            component.menuItems[0].command({
+                originalEvent: createFakeEvent('click')
+            });
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(component.modeChange.emit).toHaveBeenCalledTimes(1);
         });
 
         it("should call editContentlet when clicking on the 'ContentType Content' option", () => {
-            spyOn(editContentletService, 'edit');
-            component.menuItems[1].command();
+            jest.spyOn(editContentletService, 'edit');
+            component.menuItems[1].command({
+                originalEvent: createFakeEvent('click')
+            });
             expect(editContentletService.edit).toHaveBeenCalledWith({
                 data: {
                     inode: '123'
@@ -604,10 +610,11 @@ describe('DotEditPageStateControllerComponent', () => {
                 By.css('[data-testId="dot-tabs-buttons"]')
             ).componentInstance;
 
-            const resetMock = spyOn(dotTabButtons, 'resetDropdownById');
+            const resetMock = jest.spyOn(dotTabButtons, 'resetDropdownById');
 
             component.menu.onHide.emit();
             expect(resetMock).toHaveBeenCalledWith(DotPageMode.EDIT);
+            expect(resetMock).toHaveBeenCalledTimes(1);
         });
 
         it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {
@@ -617,7 +624,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     ...mockDotRenderedPage()
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();
@@ -634,7 +641,7 @@ describe('DotEditPageStateControllerComponent', () => {
                     }
                 }
             );
-            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.componentInstance.pageState = pageRenderStateMocked;
             fixtureHost.detectChanges();
 
             await fixtureHost.whenStable();

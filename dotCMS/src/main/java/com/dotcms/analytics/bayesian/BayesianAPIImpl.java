@@ -2,17 +2,28 @@ package com.dotcms.analytics.bayesian;
 
 import com.dotcms.analytics.bayesian.beta.BetaDistributionWrapper;
 import com.dotcms.analytics.bayesian.model.*;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.metrics.timing.TimeMetric;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.vavr.Lazy;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -25,10 +36,24 @@ import java.util.stream.Stream;
  *
  * @author vico
  */
-public class BayesianAPIImpl implements BayesianAPI {
+public class BayesianAPIImpl implements BayesianAPI, EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private final Lazy<Integer> betaDistSamples =
-            Lazy.of(() -> Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000));
+    private final AtomicInteger betaDistSampleSize;
+    private final AtomicBoolean includeBetaDistSamples;
+
+    private static int resolveBetaDistSampleSize() {
+        return Config.getIntProperty(BayesianAPI.BETA_DISTRIBUTION_SAMPLE_SIZE_KEY, 1000);
+    }
+
+    private static boolean resolveIncludeBetaDistSamples() {
+        return Config.getBooleanProperty(BayesianAPI.INCLUDE_BETA_DISTRIBUTION_SAMPLES_KEY, false);
+    }
+
+    public BayesianAPIImpl() {
+        betaDistSampleSize = new AtomicInteger(resolveBetaDistSampleSize());
+        includeBetaDistSamples = new AtomicBoolean(resolveIncludeBetaDistSamples());
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
+    }
 
     /**
      * {@inheritDoc}
@@ -46,6 +71,15 @@ public class BayesianAPIImpl implements BayesianAPI {
         timeMetric.stop();
 
         return bayesianResult;
+    }
+
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        if (event.getKey().contains(BETA_DISTRIBUTION_SAMPLE_SIZE_KEY)) {
+            betaDistSampleSize.set(resolveBetaDistSampleSize());
+        } else if (event.getKey().contains(INCLUDE_BETA_DISTRIBUTION_SAMPLES_KEY)) {
+            includeBetaDistSamples.set(resolveIncludeBetaDistSamples());
+        }
     }
 
     /**
@@ -101,6 +135,16 @@ public class BayesianAPIImpl implements BayesianAPI {
                 priors.alpha(),
                 priors.beta())))
             .build();
+    }
+
+    @VisibleForTesting
+    void setBetaDistSampleSize(final int betaDistSampleSize) {
+        this.betaDistSampleSize.set(betaDistSampleSize);
+    }
+
+    @VisibleForTesting
+    void setIncludeBetaDistSamples(final boolean includeBetaDistSamples) {
+        this.includeBetaDistSamples.set(includeBetaDistSamples);
     }
 
     /**
@@ -696,7 +740,7 @@ public class BayesianAPIImpl implements BayesianAPI {
     }
 
     private boolean includeBetaSamples() {
-        return Config.getBooleanProperty("INCLUDE_BETA_DISTRIBUTION_SAMPLES", false);
+        return includeBetaDistSamples.get();
     }
 
     /**
@@ -705,7 +749,7 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @return sample size
      */
     private int resolveSampleSize() {
-        return betaDistSamples.get();
+        return betaDistSampleSize.get();
     }
 
     /**

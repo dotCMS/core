@@ -1,27 +1,34 @@
+import { BehaviorSubject } from 'rxjs';
+
 import {
     Component,
     ChangeDetectionStrategy,
     Input,
     Output,
     EventEmitter,
-    OnChanges
+    OnChanges,
+    inject
 } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+
 import { BundleService, IBundle } from '../services/bundle-service';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-add-to-bundle-dialog-container',
-    template: `<cw-add-to-bundle-dialog-component
-        [bundleStores]="bundleService.bundles$ | async"
-        [hidden]="hidden"
-        [errorMessage]="errorMessage | async"
-        (cancel)="onClose()"
-        (addToBundle)="addToBundle($event)"
-    ></cw-add-to-bundle-dialog-component>`
+    template: `
+        <cw-add-to-bundle-dialog-component
+            (cancel)="onClose()"
+            (addToBundle)="addToBundle($event)"
+            [bundleStores]="bundleService.bundles$ | async"
+            [hidden]="hidden"
+            [errorMessage]="errorMessage | async"></cw-add-to-bundle-dialog-component>
+    `,
+    standalone: false
 })
 // tslint:disable-next-line:component-class-suffix
 export class AddToBundleDialogContainer implements OnChanges {
+    bundleService = inject(BundleService);
+
     @Input() assetId: string;
     @Input() hidden = false;
 
@@ -29,8 +36,6 @@ export class AddToBundleDialogContainer implements OnChanges {
     @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
 
     errorMessage: BehaviorSubject<string> = new BehaviorSubject(null);
-
-    constructor(public bundleService: BundleService) {}
 
     ngOnChanges(change): void {
         if (change.hidden && !this.hidden) {

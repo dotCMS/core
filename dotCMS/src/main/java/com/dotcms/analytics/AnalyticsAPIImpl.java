@@ -7,12 +7,15 @@ import com.dotcms.analytics.model.AccessTokenFetchMode;
 import com.dotcms.analytics.model.AccessTokenStatus;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.TokenStatus;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.validation.Preconditions;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -27,6 +30,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Analytics API class which provides convenience methods to fetch analytics access tokens and analytics keys based on
@@ -38,18 +44,40 @@ import java.util.Optional;
  *
  * @author vico
  */
-public class AnalyticsAPIImpl implements AnalyticsAPI {
+public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private final String analyticsIdpUrl;
+    private final AtomicReference<String> analyticsIdpUrl;
+    private final AtomicLong accessTokenRenewTimeout;
+    private final AtomicInteger accessTokenRenewAttempts;
+    private final AtomicLong analyticsKeyRenewTimeout;
+    private final AtomicInteger analyticsKeyRenewAttempts;
+
     private final boolean useDummyToken;
 
-    public AnalyticsAPIImpl(final String analyticsIdpUrl) {
-        this.analyticsIdpUrl = analyticsIdpUrl;
+    public AnalyticsAPIImpl() {
+        analyticsIdpUrl = new AtomicReference<>(resolveAnalyticsIdpUrl());
+        accessTokenRenewTimeout = new AtomicLong(resolveAccessTokenRenewTimeout());
+        accessTokenRenewAttempts = new AtomicInteger(resolveAccessTokenRenewAttempts());
+        analyticsKeyRenewTimeout = new AtomicLong(resolveAnalyticsKeyRenewTimeout());
+        analyticsKeyRenewAttempts = new AtomicInteger(resolveAnalyticsKeyRenewAttempts());
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
         useDummyToken = Config.getBooleanProperty(ANALYTICS_USE_DUMMY_TOKEN_KEY, false);
     }
 
-    public AnalyticsAPIImpl() {
-        this(Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null));
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        Logger.info(this, String.format("Received event with key [%s]", event.getKey()));
+        if (event.getKey().contains(ANALYTICS_IDP_URL_KEY)) {
+            analyticsIdpUrl.set(resolveAnalyticsIdpUrl());
+        } else if (event.getKey().contains(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY)) {
+            accessTokenRenewTimeout.set(resolveAccessTokenRenewTimeout());
+        } else if (event.getKey().contains(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY)) {
+            accessTokenRenewAttempts.set(resolveAccessTokenRenewAttempts());
+        }  else if (event.getKey().contains(ANALYTICS_KEY_RENEW_TIMEOUT_KEY)) {
+            analyticsKeyRenewTimeout.set(resolveAnalyticsKeyRenewTimeout());
+        } else if (event.getKey().contains(ANALYTICS_KEY_RENEW_ATTEMPTS_KEY)) {
+            analyticsKeyRenewAttempts.set(resolveAnalyticsKeyRenewAttempts());
+        }
     }
 
     /**
@@ -130,7 +158,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
 
             AnalyticsHelper.get().throwFromResponse(
                 response,
-                String.format("Could not extract ACCESS_TOKEN from response at %s", analyticsIdpUrl));
+                String.format("Could not extract ACCESS_TOKEN from response at %s", analyticsIdpUrl.get()));
 
             return AnalyticsHelper.get()
                 .extractToken(response)
@@ -152,7 +180,9 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                     analyticsApp.getAnalyticsProperties().clientId()),
                     e);
             // Meaning this is probably due to an error at the other end
-            throw new AnalyticsException(String.format("Could not request ACCESS_TOKEN from %s", analyticsIdpUrl), e);
+            throw new AnalyticsException(
+                    String.format("Could not request ACCESS_TOKEN from %s", analyticsIdpUrl.get()),
+                    e);
         }
     }
 
@@ -202,11 +232,13 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             Logger.info(
                 this,
                 String.format(
-                    "For clientId %s found this ANALYTICS_KEY response:\n%s",
+                    "For clientId %s found this ANALYTICS_KEY response:%s%s",
                     analyticsApp.getAnalyticsProperties().clientId(),
+                    System.lineSeparator(),
                     DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(response)));
 
-            AnalyticsHelper.get().extractAnalyticsKey(response)
+            final AnalyticsKey analyticsKey = AnalyticsHelper.get()
+                .extractAnalyticsKey(response)
                 .map(key -> Try
                     .of(() -> {
                         analyticsApp.saveAnalyticsKey(key);
@@ -217,9 +249,30 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                             return null;
                     }))
                 .orElseThrow(() -> new AnalyticsException("Could not fetch ANALYTICS_KEY"));
+            Logger.debug(this, String.format("Analytics key reset [%s]", analyticsKey.jsKey()));
         } catch (ProcessingException | JsonProcessingException e) {
             throw new AnalyticsException("Could not request ANALYTICS_KEY", e);
         }
+    }
+
+    private String resolveAnalyticsIdpUrl() {
+        return Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null);
+    }
+
+    private long resolveAccessTokenRenewTimeout() {
+        return Config.getLongProperty(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY, 4000L);
+    }
+
+    private int resolveAccessTokenRenewAttempts() {
+        return Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY, 3);
+    }
+
+    private long resolveAnalyticsKeyRenewTimeout() {
+        return Config.getLongProperty(ANALYTICS_KEY_RENEW_TIMEOUT_KEY, 4000L);
+    }
+
+    private int resolveAnalyticsKeyRenewAttempts() {
+        return Config.getIntProperty(ANALYTICS_KEY_RENEW_ATTEMPTS_KEY, 3);
     }
 
     /**
@@ -240,7 +293,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             throw new AnalyticsException(String.format(
                 "ACCESS_TOKEN could not be fetched for clientId %s from %s",
                 analyticsApp.getAnalyticsProperties().clientId(),
-                analyticsIdpUrl));
+                    analyticsIdpUrl.get()));
         }
 
         final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
@@ -255,7 +308,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * Validates by evaluating that analytics IDP url is not empty, otherwise throw an exception.
      */
     private void validateAnalytics() {
-        Preconditions.checkNotEmpty(analyticsIdpUrl, DotStateException.class, "Analytics IDP url is missing");
+        Preconditions.checkNotEmpty(analyticsIdpUrl.get(), DotStateException.class, "Analytics IDP url is missing");
     }
 
     /**
@@ -278,7 +331,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @param analyticsApp analytics app
      */
     private void logTokenResponse(final CircuitBreakerUrl.Response<AccessToken> response, AnalyticsApp analyticsApp) {
-        if (AnalyticsHelper.get().isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 
@@ -287,7 +340,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             String.format(
                 "Error requesting ACCESS_TOKEN with clientId %s from IDP server %s (response: %s)",
                 analyticsApp.getAnalyticsProperties().clientId(),
-                analyticsIdpUrl,
+                analyticsIdpUrl.get(),
                 response.getStatusCode()));
     }
 
@@ -311,12 +364,12 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private CircuitBreakerUrl.Response<AccessToken> requestAccessToken(final AnalyticsApp analyticsApp) {
         final CircuitBreakerUrl.Response<AccessToken> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.POST)
-            .setUrl(analyticsIdpUrl)
-            .setTimeout(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT)
-            .setTryAgainAttempts(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS)
+            .setUrl(analyticsIdpUrl.get())
+            .setTimeout(accessTokenRenewTimeout.get())
+            .setTryAgainAttempts(accessTokenRenewAttempts.get())
             .setHeaders(accessTokenHeaders())
             .setRawData(prepareRequestData(analyticsApp))
-            .setThrowWhenNot2xx(false)
+            .setThrowWhenError(false)
             .build()
             .doResponse(AccessToken.class);
         logTokenResponse(response, analyticsApp);
@@ -340,7 +393,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private void logKeyResponse(final CircuitBreakerUrl.Response<AnalyticsKey> response,
                                 final AnalyticsApp analyticsApp) {
 
-        if (AnalyticsHelper.get().isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 
@@ -361,13 +414,14 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp,
                                                                          final AccessToken accessToken)
             throws AnalyticsException {
+        AnalyticsHelper.get().checkAccessToken(accessToken);
         final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.GET)
             .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
-            .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
-            .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
+            .setTimeout(analyticsKeyRenewTimeout.get())
+            .setTryAgainAttempts(analyticsKeyRenewAttempts.get())
             .setHeaders(analyticsKeyHeaders(accessToken))
-            .setThrowWhenNot2xx(false)
+            .setThrowWhenError(false)
             .build()
             .doResponse(AnalyticsKey.class);
         logKeyResponse(response, analyticsApp);
@@ -382,10 +436,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @return map representation of http headers
      */
     private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
-        return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
-            .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .build();
+        return CircuitBreakerUrl.authHeaders(AnalyticsHelper.get().formatBearer(accessToken));
     }
 
 }

@@ -1,4 +1,5 @@
 import { Component, Element, Event, EventEmitter, Prop, Host, h } from '@stencil/core';
+
 import { DotBinaryFileEvent, DotBinaryMessageError } from '../../../models';
 import { getId, isFileAllowed } from '../../../utils';
 
@@ -59,8 +60,7 @@ export class DotBinaryUploadButtonComponent {
                     disabled={this.disabled}
                     onClick={() => {
                         this.fileInput.click();
-                    }}
-                >
+                    }}>
                     {this.buttonLabel}
                 </button>
             </Host>

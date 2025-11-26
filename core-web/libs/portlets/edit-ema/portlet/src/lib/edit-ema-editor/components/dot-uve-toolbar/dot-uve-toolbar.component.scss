@@ -1,0 +1,107 @@
+@use "variables" as *;
+
+::ng-deep {
+    .uve-toolbar {
+        padding: 0 $spacing-4;
+        transition: padding 0.2s ease;
+    }
+
+    .p-button.uve-toolbar-chips,
+    .p-button.uve-toolbar-chips:hover,
+    .p-button.uve-toolbar-chips:focus {
+        height: $field-height-sm;
+        background-color: $color-palette-primary-op-10;
+        border-color: $color-palette-primary-op-10;
+        color: var(--color-palette-primary-500);
+        cursor: pointer;
+    }
+
+    .p-button.unlock-button:disabled {
+        pointer-events: auto;
+        color: $color-palette-primary-500;
+    }
+
+    .p-overlaypanel .p-overlaypanel-content {
+        padding: $spacing-2;
+    }
+}
+
+.p-toolbar-group-start,
+.p-toolbar-group-end,
+.p-toolbar-group-center {
+    padding: $spacing-1 0;
+    align-items: center;
+    gap: $spacing-1;
+    align-self: stretch;
+}
+
+.vertical-divider {
+    align-self: stretch;
+    position: relative;
+    &::before {
+        border-left: 1px solid $color-palette-gray-200;
+        position: absolute;
+        display: block;
+        top: 0;
+        left: 50%;
+        height: 100%;
+        content: "";
+    }
+}
+
+.url-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+    max-width: 25rem;
+}
+
+.url-item {
+    display: flex;
+    padding: $spacing-0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: $spacing-0;
+
+    &:not(:last-child)::after {
+        content: "";
+        display: block;
+        width: 100%;
+        height: 1px;
+        background: $color-palette-gray-200;
+        margin: $spacing-0 0;
+    }
+}
+
+.url-label {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.url-value {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+    min-height: 28px;
+    width: 100%;
+
+    a {
+        color: $black;
+        text-decoration: none;
+        flex: 1 0 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.875rem;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    p-button {
+        flex-shrink: 0;
+    }
+}

@@ -1,0 +1,69 @@
+@if ($showMainSkeleton()) {
+    <dot-category-field-list-skeleton />
+} @else {
+    @if ($categories().length) {
+        <div class="w-full category-list__header flex align-items-center h-3rem">
+            <dot-collapse-breadcrumb data-testId="breadcrumb-menu" [model]="$breadcrumbsMenu()" />
+        </div>
+        <div
+            [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
+            class="flex-1 category-list__category-list">
+            @for (column of $categories(); let index = $index; track index) {
+                <!--dynamic columns-->
+                <div
+                    #categoryColumn
+                    class="category-list__category-column"
+                    data-testId="category-column">
+                    @for (item of column; track item.key) {
+                        <div
+                            data-testId="category-item"
+                            class="flex align-content-center align-items-center category-list__item"
+                            [ngClass]="{ 'category-list__item--selected': item.clicked }">
+                            <p-checkbox
+                                [(ngModel)]="$selected"
+                                [value]="item.key"
+                                class="category-list__item-checkbox"
+                                (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
+
+                            <div
+                                data-testId="category-item-wrapper"
+                                class="flex w-full h-full align-items-stretch align-content-center category-list__item-wrapper"
+                                (click)="rowClicked.emit({ index, item })"
+                                [class.cursor-pointer]="item.hasChildren">
+                                <div
+                                    class="flex w-full gap-1 align-content-center align-items-center justify-content-between">
+                                    <label
+                                        data-testId="category-item-label"
+                                        class="category-list__item-label"
+                                        [class.cursor-pointer]="item.hasChildren"
+                                        [for]="item.key">
+                                        {{ item.value }}
+                                    </label>
+
+                                    @if (item.hasChildren) {
+                                        <i
+                                            data-testId="category-item-with-child"
+                                            class="pi pi-chevron-right category-list__item-icon"></i>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!--Fake empty columns-->
+            @for (_ of $emptyColumns(); track $index) {
+                <div
+                    class="flex-grow-1 category-list__category-column"
+                    data-testId="category-column-empty">
+                    @if ($state() === stateList.LOADING && 0 === $index) {
+                        <dot-category-field-list-skeleton />
+                    }
+                </div>
+            }
+        </div>
+    } @else {
+        <dot-empty-container [configuration]="$emptyState()" [hideContactUsLink]="true" />
+    }
+}

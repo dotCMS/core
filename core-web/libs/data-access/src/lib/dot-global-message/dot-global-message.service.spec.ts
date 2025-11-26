@@ -2,11 +2,13 @@ import { Observable } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGlobalMessageService } from './dot-global-message.service';
+
+import { DotMessageService } from '../dot-alert-confirm/dot-alert-confirm.service';
+import { DotEventsService } from '../dot-events/dot-events.service';
 
 xdescribe('DotGlobalMessageService', () => {
     let dotGlobalMessageService: DotGlobalMessageService;
@@ -29,8 +31,8 @@ xdescribe('DotGlobalMessageService', () => {
             ]
         });
 
-        dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
-        dotEventsService = TestBed.get(DotEventsService);
+        dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+        dotEventsService = TestBed.inject(DotEventsService);
 
         listenerDotGlobalMessage = dotEventsService.listen('dot-global-message');
     });

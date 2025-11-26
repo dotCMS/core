@@ -1,7 +1,8 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
@@ -21,9 +22,10 @@ import { DotCDNService } from './dotcdn.service';
 
 @Injectable()
 export class DotCDNStore extends ComponentStore<DotCDNState> {
+    private readonly dotCdnService = inject(DotCDNService);
     selectedPeriod: SelectItem<string> = { value: ChartPeriod.Last15Days };
 
-    constructor(private readonly dotCdnService: DotCDNService) {
+    constructor() {
         super({
             chartBandwidthData: {
                 labels: [],

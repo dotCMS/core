@@ -1,5 +1,6 @@
 package com.dotmarketing.startup;
 
+import com.dotmarketing.exception.DotHibernateException;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.util.Date;
@@ -116,7 +117,7 @@ public class StartupTasksExecutor {
     private int currentDbVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             DotConnect db =  new DotConnect().setSQL(SELECT);
-            return  db.loadInt("test");
+            return  db.loadInt("test",conn);
 
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -130,7 +131,7 @@ public class StartupTasksExecutor {
     int currentDataVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             DotConnect db = new DotConnect().setSQL(SELECT_DATA_VERSION);
-            return db.loadInt("test");
+            return db.loadInt("test",conn);
 
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -188,23 +189,22 @@ public class StartupTasksExecutor {
                 if (StartupTask.class.isAssignableFrom(c)) {
                     StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Startup Tasks : " + name);
                         task.executeUpgrade();
                     } else {
                         Logger.info(this, "Not Running Startup Tasks: " + name);
                     }
                 }
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
             Logger.info(this, "Finishing startup tasks.");
         } catch (Throwable e) {
-            HibernateUtil.rollbackTransaction();
-            Logger.error(this, "FATAL: Unable to execute the upgrade task : " + name, e);
-            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-              e.printStackTrace();
-              System.exit(1);
-            }
+            taskFailure(e);
         } finally {
             // This will commit the changes and close the connection
             HibernateUtil.closeAndCommitTransaction();
@@ -254,7 +254,9 @@ public class StartupTasksExecutor {
                     }
 
                     if (!firstTimeStart && task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Upgrade Tasks: " + name);
                         task.executeUpgrade();
 
@@ -266,17 +268,17 @@ public class StartupTasksExecutor {
                         .addParam(new Date())
                         .loadResult();
                     Logger.info(this, "Database upgraded to version: " + taskId);
-                    HibernateUtil.closeAndCommitTransaction();
+                    if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                        HibernateUtil.closeAndCommitTransaction();
+                    }
                     Config.DB_VERSION = taskId;
                 }
             } catch (Exception e) {
-                HibernateUtil.rollbackTransaction();
-                if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
-                    Logger.error(this, "FATAL: " +e.getMessage(),e);
-                    System.exit(1);
-                }
+                taskFailure(e);
             } finally {
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
 
         }
@@ -323,7 +325,9 @@ public class StartupTasksExecutor {
                     }
 
                     if (!firstTimeStart && task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Data Upgrade Tasks: " + name);
                         task.executeUpgrade();
                     }
@@ -334,17 +338,17 @@ public class StartupTasksExecutor {
                             .addParam(new Date())
                             .loadResult();
                     Logger.info(this, "Data upgraded to version: " + taskId);
-                    HibernateUtil.closeAndCommitTransaction();
+                    if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                        HibernateUtil.closeAndCommitTransaction();
+                    }
                     Config.DATA_VERSION = taskId;
                 }
             } catch (Exception e) {
-                HibernateUtil.rollbackTransaction();
-                if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
-                    Logger.error(this, "FATAL: " + e.getMessage(), e);
-                    System.exit(1);
-                }
+                taskFailure(e);
             } finally {
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
 
         }
@@ -367,7 +371,9 @@ public class StartupTasksExecutor {
 
 
             for (Class<?> c : TaskLocatorUtil.getBackportedUpgradeTaskClasses()) {
-                HibernateUtil.startTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.startTransaction();
+                }
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
 		String id = getTaskId(name);
@@ -375,23 +381,22 @@ public class StartupTasksExecutor {
 		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Backported Tasks : " + name);
                         task.executeUpgrade();
                     } else {
                         Logger.info(this, "Not Running Backported Tasks: " + name);
                     }
                 }
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
             Logger.info(this, "Finishing Backported tasks.");
         } catch (Throwable e) {
-            HibernateUtil.rollbackTransaction();
-            Logger.error(this, "FATAL: Unable to execute the upgrade task : " + name, e);
-            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                e.printStackTrace();
-                System.exit(1);
-            }
+            taskFailure(e);
         } finally {
             // This will commit the changes and close the connection
             HibernateUtil.closeAndCommitTransaction();
@@ -400,6 +405,25 @@ public class StartupTasksExecutor {
 
     }
 
+    private void taskFailure(Throwable e) throws DotHibernateException {
+        HibernateUtil.rollbackTransaction();
+        for(int i = 0; i < 3; i++){
+            System.err.println("FATAL ERROR RUNNING TASK: " + e.getMessage());
+            Logger.error(this, "FATAL ERROR RUNNING TASK: " + e.getMessage(), e);
+        }
+
+        e.printStackTrace();
+
+        if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                Logger.debug(this,"Thread was interrupted", ex);
+            }
+            com.dotcms.shutdown.SystemExitManager.startupFailureExit("Startup task execution failed: " + e.getMessage());
+        }
+    }
 
 
 }

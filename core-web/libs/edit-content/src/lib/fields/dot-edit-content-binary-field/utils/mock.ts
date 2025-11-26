@@ -84,7 +84,7 @@ const TEMP_FILE_MOCK = {
     image: false,
     length: 10000,
     mimeType: 'text/html',
-    referenceUrl: 'https://raw.githubusercontent.com/angular/angular/master/README.md',
+    referenceUrl: 'https://raw.githubusercontent.com/angular/angular/main/README.md',
     thumbnailUrl: '',
     content: 'HOLA'
 };
@@ -150,43 +150,4 @@ export const fileMetaData = {
     width: 100,
     editableAsText: false,
     isImage: true
-};
-
-export const FIELD = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-    contentTypeId: 'd1901a41d38b6686dd5ed8f910346d7a',
-    dataType: 'SYSTEM',
-    fieldType: 'Binary',
-    fieldTypeLabel: 'Binary',
-    fieldVariables: [
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
-            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
-            key: 'accept',
-            value: 'image/*,.html,.ts'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
-            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
-            key: 'maxFileSize',
-            value: '50000'
-        }
-    ],
-    hint: 'Helper label to be displayed below the field',
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1698153564000,
-    id: '5df3f8fc49177c195740bcdc02ec2db7',
-    indexed: false,
-    listed: false,
-    modDate: 1698153564000,
-    name: 'Binary Field',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 2,
-    unique: false,
-    variable: 'binaryField'
 };

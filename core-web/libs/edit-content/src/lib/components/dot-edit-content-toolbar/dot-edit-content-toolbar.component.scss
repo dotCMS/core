@@ -1,7 +1,0 @@
-@use "variables" as *;
-
-.p-toolbar-group-right {
-    gap: $spacing-1;
-    justify-content: flex-start;
-    flex-direction: row-reverse; // Make the order of the buttons to be from right to left
-}

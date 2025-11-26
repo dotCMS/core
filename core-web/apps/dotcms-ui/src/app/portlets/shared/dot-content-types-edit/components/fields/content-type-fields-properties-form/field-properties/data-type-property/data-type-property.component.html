@@ -1,17 +1,18 @@
-<div class="field" *ngIf="radioInputs" [formGroup]="group">
-    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
-        'contenttypes.field.properties.data_type.label' | dm
-    }}</label>
-
-    <div class="formgroup-inline">
-        <div class="field-checkbox" *ngFor="let radio of radioInputs">
-            <p-radioButton
-                [label]="radio.text | dm"
-                [name]="property.name"
-                [value]="radio.value"
-                [formControlName]="property.name"
-            >
-            </p-radioButton>
+@if (radioInputs) {
+    <div [formGroup]="group" class="field">
+        <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
+            {{ 'contenttypes.field.properties.data_type.label' | dm }}
+        </label>
+        <div class="formgroup-inline">
+            @for (radio of radioInputs; track radio) {
+                <div class="field-checkbox">
+                    <p-radioButton
+                        [label]="radio.text | dm"
+                        [name]="property.name"
+                        [value]="radio.value"
+                        [formControlName]="property.name"></p-radioButton>
+                </div>
+            }
         </div>
     </div>
-</div>
+}

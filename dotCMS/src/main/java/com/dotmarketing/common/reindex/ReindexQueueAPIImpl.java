@@ -11,7 +11,6 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -21,11 +20,9 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
-import io.vavr.control.Try;
 
 /**
  * @author Jason Tesser
@@ -35,16 +32,14 @@ import io.vavr.control.Try;
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
-    private final ElasticReadOnlyCommand esReadOnlyMonitor;
 
     public ReindexQueueAPIImpl() {
-        this(FactoryLocator.getReindexQueueFactory(), ElasticReadOnlyCommand.getInstance());
+        this(FactoryLocator.getReindexQueueFactory());
     }
 
     @VisibleForTesting
-    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ElasticReadOnlyCommand esReadOnlyMonitor) {
+    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory) {
         this.reindexQueueFactory = reindexQueueFactory;
-        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
     @Override

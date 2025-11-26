@@ -1,9 +1,8 @@
 package com.dotcms.api.client.files.traversal;
 
-import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.api.client.files.traversal.task.TraverseTaskResult;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Service for traversing a dotCMS remote location and building a hierarchical tree representation of
@@ -27,7 +26,7 @@ public interface RemoteTraversalService {
      * @return A Pair object containing a list of exceptions encountered during traversal and the resulting
      * TreeNode representing the directory tree rooted at the specified path.
      */
-    Pair<List<Exception>, TreeNode> traverseRemoteFolder(
+    TraverseTaskResult traverseRemoteFolder(
             final String path,
             final Integer depth,
             final boolean failFast,

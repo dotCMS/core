@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * Handle {@link com.dotmarketing.portlets.containers.model.Container} pagination
  */
@@ -64,7 +62,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
             contentTypeIdOrVar = String.valueOf(extraParams.get(CONTENT_TYPE));
         }
 
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = Map.of("title", filter);
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {
@@ -142,13 +140,13 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         }
 
         if (direction == OrderDirection.ASC) {
-            systemContainers.stream().sorted(Comparator.comparing(this::hostname));
-            dbContainers.stream().sorted(Comparator.comparing(this::hostname));
-            fileContainers.stream().sorted(Comparator.comparing(this::hostname));
+            systemContainers.sort(Comparator.comparing(this::hostname));
+            dbContainers.sort(Comparator.comparing(this::hostname));
+            fileContainers.sort(Comparator.comparing(this::hostname));
         } else {
-            systemContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
-            dbContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
-            fileContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
+            systemContainers.sort(Comparator.comparing(this::hostname).reversed());
+            dbContainers.sort(Comparator.comparing(this::hostname).reversed());
+            fileContainers.sort(Comparator.comparing(this::hostname).reversed());
         }
 
         final PaginatedArrayList<Container> sortedByHostContainers = new PaginatedArrayList<>();

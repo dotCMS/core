@@ -1,16 +1,17 @@
 /*
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
+/* eslint-disable @stylistic/padding-line-between-statements */
 
 import { Subject } from 'rxjs';
 
-import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
     Input,
-    OnDestroy
+    OnDestroy,
+    inject
 } from '@angular/core';
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
 
@@ -20,10 +21,11 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
-type DefaultsNGValidatorsTypes = 'maxlength' | 'required' | 'pattern';
+type DefaultsNGValidatorsTypes = 'maxlength' | 'minlength' | 'required' | 'pattern';
 
 const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string> = {
     maxlength: 'error.form.validator.maxlength',
+    minlength: 'error.form.validator.minlength',
     required: 'error.form.validator.required',
     pattern: 'error.form.validator.pattern'
 };
@@ -31,22 +33,19 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
-    standalone: true,
-    imports: [NgIf, DotMessagePipe],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotMessagePipe]
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly dotMessageService = inject(DotMessageService);
+
     @Input()
     patternErrorMessage: string;
 
     defaultMessage: string;
     errorMsg = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private readonly cd: ChangeDetectorRef,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Manual message when the input has an error.
@@ -107,6 +106,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                 const { requiredLength, requiredPattern } = value;
                 switch (key) {
                     case 'maxlength':
+                    case 'minlength':
                         errorTranslated = this.dotMessageService.get(
                             NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
                             requiredLength
@@ -117,6 +117,12 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                         errorTranslated = this.dotMessageService.get(
                             this.patternErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
                             requiredPattern
+                        );
+                        break;
+
+                    case 'required':
+                        errorTranslated = this.dotMessageService.get(
+                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
                         );
                         break;
 

@@ -1,8 +1,8 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    HostBinding,
     HostListener,
     Input,
     Output
@@ -29,8 +29,7 @@ export interface DropZoneFileValidity {
 
 @Component({
     selector: 'dot-drop-zone',
-    standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './dot-drop-zone.component.html',
     styleUrls: ['./dot-drop-zone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -45,7 +44,14 @@ export class DotDropZoneComponent {
      * Max file size in bytes.
      * See Docs: https://www.dotcms.com/docs/latest/binary-field#FieldVariables
      */
-    @Input() maxFileSize: number;
+    @Input() maxFileSize: number | null = null;
+
+    /*
+     * Whether the drop zone is disabled
+     */
+    @Input()
+    @HostBinding('class.disabled')
+    disabled = false;
 
     @Input() set accept(types: string[]) {
         this._accept = types
@@ -72,6 +78,10 @@ export class DotDropZoneComponent {
 
     @HostListener('drop', ['$event'])
     onDrop(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         event.stopPropagation();
         event.preventDefault();
 
@@ -82,9 +92,6 @@ export class DotDropZoneComponent {
         if (files.length === 0) return;
 
         this.setValidity(files);
-
-        dataTransfer.items?.clear();
-        dataTransfer.clearData();
         this.fileDropped.emit({
             file, // Only one file is allowed
             validity: this._validity
@@ -93,6 +100,10 @@ export class DotDropZoneComponent {
 
     @HostListener('dragenter', ['$event'])
     onDragEnter(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         event.stopPropagation();
         event.preventDefault();
         this.fileDragEnter.emit(true);
@@ -100,6 +111,10 @@ export class DotDropZoneComponent {
 
     @HostListener('dragover', ['$event'])
     onDragOver(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         // Prevent the default behavior to allow drop
         event.stopPropagation();
         event.preventDefault();
@@ -108,6 +123,10 @@ export class DotDropZoneComponent {
 
     @HostListener('dragleave', ['$event'])
     onDragLeave(event: DragEvent) {
+        if (this.disabled) {
+            return;
+        }
+
         event.stopPropagation();
         event.preventDefault();
         this.fileDragLeave.emit(true);

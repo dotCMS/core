@@ -1,92 +1,169 @@
-<div class="preview-container" [ngClass]="{ 'preview-container--fade': content }">
-    <div
-        class="preview-code_container"
-        *ngIf="content; else contentThumnail"
-        (click)="this.editFile.emit()"
-        data-testId="code-preview">
-        <code>{{ content }}</code>
-    </div>
-
-    <ng-template #contentThumnail>
+<div
+    [ngClass]="{ 'preview-container--fade': this.metadata?.editableAsText }"
+    class="preview-container">
+    @if (this.metadata?.editableAsText) {
+        <div
+            (click)="this.editFile.emit()"
+            class="preview-code_container"
+            data-testId="code-preview">
+            <code>{{ content() }}</code>
+        </div>
+    } @else {
         <div class="preview-image__container">
-            <dot-temp-file-thumbnail
-                *ngIf="tempFile; else contentletThumbnail"
-                [tempFile]="tempFile"
-                [iconSize]="'48px'"
-                data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
-
-            <ng-template #contentletThumbnail>
+            @if (tempFile) {
+                <dot-temp-file-thumbnail
+                    [tempFile]="tempFile"
+                    [iconSize]="'48px'"
+                    data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
+            } @else {
                 <dot-contentlet-thumbnail
                     [fieldVariable]="contentlet.fieldVariable"
                     [iconSize]="'48px'"
-                    [cover]="false"
                     [contentlet]="contentlet"
                     [playableVideo]="true"
-                    data-testId="contentlet-thumbnail">
-                </dot-contentlet-thumbnail>
-            </ng-template>
+                    data-testId="contentlet-thumbnail"></dot-contentlet-thumbnail>
+            }
         </div>
-
         <div class="preview-metadata__container">
             <span class="preview-metadata_header">{{ title }}</span>
-            <div class="preview-metadata" *ngIf="metadata.width && metadata.height">
-                <i class="pi pi-arrows-alt"></i>
-                <span>{{ metadata.width }} x {{ metadata.height }}</span>
-            </div>
-            <div class="preview-metadata" *ngIf="metadata.fileSize">
-                <i class="pi pi-file"></i>
-                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
-            </div>
+            @if (metadata.width && metadata.height) {
+                <div class="preview-metadata">
+                    <i class="pi pi-arrows-alt"></i>
+                    <span>{{ metadata.width }} x {{ metadata.height }}</span>
+                </div>
+            }
+            @if (metadata.fileSize) {
+                <div class="preview-metadata">
+                    <i class="pi pi-file"></i>
+                    <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                </div>
+            }
         </div>
-    </ng-template>
+    }
+
+    <div class="preview-resource-links__actions">
+        <p-button
+            (click)="visibility = !visibility"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
+            data-testId="info-btn"
+            icon="pi pi-info" />
+
+        @if (contentlet) {
+            <p-button
+                (click)="downloadAsset()"
+                [disabled]="disabled"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="download-btn"
+                icon="pi pi-download" />
+        }
+    </div>
 
     <div class="preview-metadata__actions">
         <p-button
-            [label]="'dot.common.remove' | dm"
             (click)="removeFile.emit()"
-            styleClass="p-button-link p-button-sm p-button-secondary"
+            [disabled]="disabled"
+            [label]="'dot.common.remove' | dm"
+            styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
             icon="pi pi-trash"></p-button>
-        <p-button
-            *ngIf="isEditable"
-            [label]="'dot.common.edit' | dm"
-            (click)="onEdit()"
-            severity="secondary"
-            styleClass="p-button-outlined p-button-sm p-button-secondary"
-            data-testId="edit-button"
-            icon="pi pi-pencil"></p-button>
+        @if (isEditable) {
+            <p-button
+                (click)="onEdit()"
+                [disabled]="disabled"
+                [label]="'dot.common.edit' | dm"
+                styleClass="p-button-outlined p-button-sm p-button-secondary"
+                data-testId="edit-button"
+                icon="pi pi-pencil"></p-button>
+        }
     </div>
 
     <div class="preview-metadata__action--responsive">
+        @if (isEditable) {
+            <p-button
+                (click)="onEdit()"
+                [disabled]="disabled"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
+                data-testId="edit-button-responsive"
+                icon="pi pi-pencil"></p-button>
+        }
         <p-button
-            *ngIf="isEditable"
-            (click)="onEdit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
-            data-testId="edit-button-responsive"
-            icon="pi pi-pencil"></p-button>
-        <p-button
-            (click)="op.toggle($event)"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            (click)="visibility = !visibility"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="infor-button-responsive"
             icon="pi pi-info"></p-button>
         <p-button
+            (click)="downloadAsset()"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
+            data-testId="download-btn-responsive"
+            icon="pi pi-download" />
+        <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            [disabled]="disabled"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
             icon="pi pi-trash"></p-button>
     </div>
 </div>
 
-<p-overlayPanel #op>
-    <div class="preview-metadata__responsive">
-        <span class="preview-metadata_header">{{ metadata.name }}</span>
-        <div *ngIf="metadata.width && metadata.height">
-            {{ 'dot.binary.field.file.dimension' | dm }}:
-            <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
-        </div>
-        <div *ngIf="metadata.fileSize">
-            {{ 'dot.binary.field.file.size' | dm }}:
-            <span>{{ metadata.fileSize }} Bytes</span>
+<p-dialog
+    [(visible)]="visibility"
+    [closeOnEscape]="true"
+    [dismissableMask]="true"
+    [modal]="true"
+    [header]="title"
+    [appendTo]="'body'"
+    [style]="{ maxWidth: '582px', width: '100%' }">
+    <div class="file-info__item">
+        <span class="file-info__title">{{ 'Size' | dm }}:</span>
+        <div class="file-info__link">
+            @if (metadata.width && metadata.height) {
+                <div class="file-info__size" data-testId="file-resolution">
+                    <i class="pi pi-arrows-alt"></i>
+                    <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+                </div>
+            }
+            <div class="file-info__size">
+                <i class="pi pi-file"></i>
+                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+            </div>
         </div>
     </div>
-</p-overlayPanel>
+
+    @if (contentlet) {
+        @for (sourceLink of this.resourceLinks(); track $index) {
+            @if (sourceLink.show) {
+                <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
+                    <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
+                    <div class="file-info__link">
+                        <a [href]="sourceLink.value" target="_blank">
+                            {{ sourceLink.value || ('dot.binary.field.no.link.found' | dm) }}
+                        </a>
+                        <dot-copy-button [copy]="sourceLink.value" />
+                    </div>
+                </div>
+            }
+        } @empty {
+            @for (item of [1, 2, 3, 4]; track $index) {
+                <div class="file-info__item file-info__loading">
+                    <p-skeleton height="1.5rem" width="4rem" />
+                    <div class="file-info__link">
+                        <p-skeleton class="file-info__link" height="20px" width="100%" />
+                        <p-skeleton size="20px" />
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    <ng-template pTemplate="footer">
+        <p-button
+            (click)="visibility = false"
+            [disabled]="disabled"
+            [label]="'Cancel' | dm"
+            styleClass="p-button-outlined"
+            data-testId="dialog-cancel" />
+    </ng-template>
+</p-dialog>

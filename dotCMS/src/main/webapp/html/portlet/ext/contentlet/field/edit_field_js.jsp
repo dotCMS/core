@@ -241,12 +241,12 @@ var cmsfile=null;
 		else if(toggleValue=="CODE"){
 			toCodeArea(id, isFullscreen);
 			updateDisabledWysiwyg(id,"CODE");
-			dojo.query(".wysiwyg-container").style({display:'none'});
+			dojo.query(`#wysiwyg-container-${id}`).style({display:'none'});
 			}
 		else if(toggleValue=="PLAIN"){
 			toPlainView(id);
 			updateDisabledWysiwyg(id,"PLAIN");
-			dojo.query(".wysiwyg-container").style({display:'block'});
+			dojo.query(`#wysiwyg-container-${id}`).style({display:'block'});
 			}
 	}
 
@@ -751,7 +751,7 @@ var cmsfile=null;
 	}
 
 	function addFileImageCallback(file) {
-		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
+		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{path}{name}?language_id={languageId}")%>";
         var assetURI = replaceUrlPattern(pattern, file);
         insertAssetInEditor([file])
 	}

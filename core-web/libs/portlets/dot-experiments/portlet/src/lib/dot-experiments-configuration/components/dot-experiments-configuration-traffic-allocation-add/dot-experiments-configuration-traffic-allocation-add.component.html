@@ -1,44 +1,40 @@
-<ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+@if (vm$ | async; as vm) {
+    <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}"
-        ></dot-sidebar-header>
+            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}"></dot-sidebar-header>
         <div class="experiment-traffic-allocation-add__form-wrapper flex flex-column">
             <h5>{{ 'experiments.configure.traffic.allocation' | dm }}</h5>
             <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
-            <form class="p-fluid" [formGroup]="form" novalidate>
+            <form [formGroup]="form" class="p-fluid" novalidate>
                 <div class="field">
                     <p-slider [max]="100" [min]="1" formControlName="trafficAllocation"></p-slider>
                     <div class="flex justify-content-end align-items-baseline gap-2">
                         <input
-                            id="trafficAllocation"
+                            (keyup)="checkAllocationRange()"
                             [max]="100"
                             [min]="1"
                             [value]="form.value.trafficAllocation"
-                            (keyup)="checkAllocationRange()"
+                            id="trafficAllocation"
                             data-testId="traffic-allocation-input"
                             formControlName="trafficAllocation"
                             maxlength="3"
                             pInputText
-                            type="number"
-                        />
+                            type="number" />
                         <label class="p-label-input" for="trafficAllocation">%</label>
                     </div>
                 </div>
             </form>
         </div>
     </p-sidebar>
-
     <ng-template #actionHeaderBtnTpl>
         <button
+            (click)="save(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
-            (click)="save(vm.experimentId)"
             data-testId="add-trafficAllocation-button"
             label="{{ 'Done' | dm }}"
             pButton
-            type="submit"
-        ></button>
+            type="submit"></button>
     </ng-template>
-</ng-container>
+}

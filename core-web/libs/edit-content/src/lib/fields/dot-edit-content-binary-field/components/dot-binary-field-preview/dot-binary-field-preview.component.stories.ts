@@ -1,13 +1,22 @@
 import { action } from '@storybook/addon-actions';
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotTempFileThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
+import { DotResourceLinksService } from '@dotcms/data-access';
+import {
+    DotTempFileThumbnailComponent,
+    DotSpinnerModule,
+    DotCopyButtonComponent,
+    DotFileSizeFormatPipe,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
@@ -59,7 +68,14 @@ const previewFile = {
     </html>`
 };
 
-export default {
+type Args = DotBinaryFieldPreviewComponent & {
+    file: DotFilePreview;
+    variableName: string;
+    fieldVariable: string;
+    styles: string[];
+};
+
+const meta: Meta<Args> = {
     title: 'Library / Edit Content / Binary Field / Components / Preview',
     component: DotBinaryFieldPreviewComponent,
     decorators: [
@@ -68,11 +84,16 @@ export default {
                 BrowserAnimationsModule,
                 CommonModule,
                 ButtonModule,
+                SkeletonModule,
                 DotTempFileThumbnailComponent,
                 DotSpinnerModule,
+                DialogModule,
+                DotMessagePipe,
+                DotFileSizeFormatPipe,
+                DotCopyButtonComponent,
                 HttpClientModule
             ],
-            providers: []
+            providers: [DotResourceLinksService]
         })
     ],
     parameters: {
@@ -82,7 +103,19 @@ export default {
     },
     args: {
         file: previewImage,
-        variableName: 'binaryField'
+        variableName: 'binaryField',
+        styles: [
+            `
+            .container {
+                width: 100%;
+                max-width: 36rem;
+                height: 12.5rem;
+                border: 1px solid #f2f2f2;
+                border-radius: 4px;
+                padding: 0.5rem;
+            }
+    `
+        ]
     },
     argTypes: {
         file: {
@@ -94,53 +127,48 @@ export default {
             defaultValue: 'binaryField',
             control: 'text',
             description: 'Field variable name'
+        },
+        fieldVariable: {
+            defaultValue: 'Blog',
+            control: 'text',
+            description: 'Field variable name'
         }
-    }
-} as Meta<DotBinaryFieldPreviewComponent>;
-
-const Template: Story<DotBinaryFieldPreviewComponent> = (args: DotBinaryFieldPreviewComponent) => ({
-    props: {
-        ...args,
-        // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-args
-        editFile: action('editFile'),
-        removeFile: action('removeFile')
     },
-    styles: [
-        `
-        .container {
-            width: 100%;
-            max-width: 36rem;
-            height: 12.5rem;
-            border: 1px solid #f2f2f2;
-            border-radius: 4px;
-            padding: 0.5rem;
-        }
-`
-    ],
-    template: `
+    render: (args) => ({
+        props: {
+            ...args,
+            editFile: action('editFile'),
+            removeFile: action('removeFile')
+        },
+        template: `
         <div class="container">
             <dot-binary-field-preview
                 [file]="file"
                 [variableName]="variableName"
                 (editFile)="editFile($event)"
                 (removeFile)="removeFile($event)"
-            ></dot-binary-field-preview>
-        </div> 
-    `
-});
+            />
+        </div> `
+    })
+};
+export default meta;
 
-export const Image = Template.bind({});
+type Story = StoryObj<Args>;
 
-export const Video = Template.bind({});
+export const Image: Story = {};
 
-Video.args = {
-    file: previewVideo,
-    variableName: 'binaryField'
+export const Video = {
+    args: {
+        file: previewVideo,
+        variableName: 'binaryField',
+        fieldVariable: 'Blog'
+    }
 };
 
-export const File = Template.bind({});
-
-File.args = {
-    file: previewFile,
-    variableName: 'binaryField'
+export const File = {
+    args: {
+        file: previewFile,
+        variableName: 'binaryField',
+        fieldVariable: 'Blog'
+    }
 };

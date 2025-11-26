@@ -1,8 +1,9 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { from, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { switchMap, tap, map, catchError, distinctUntilChanged } from 'rxjs/operators';
 
@@ -15,7 +16,7 @@ import {
     UI_MESSAGE_KEYS,
     UiMessageI
 } from '../interfaces/index';
-import { getUiMessage } from '../utils/binary-field-utils';
+import { getFieldVersion, getFileMetadata, getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
     contentlet: DotCMSContentlet;
@@ -41,6 +42,10 @@ const initialState: BinaryFieldState = {
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
+    private readonly dotUploadService = inject(DotUploadService);
+    private readonly dotLicenseService = inject(DotLicenseService);
+    private readonly http = inject(HttpClient);
+
     private _maxFileSizeInMB = 0;
 
     get maxFile() {
@@ -58,11 +63,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         fileName: tempFile?.fileName
     })).pipe(distinctUntilChanged((previous, current) => previous.value === current.value));
 
-    constructor(
-        private readonly dotUploadService: DotUploadService,
-        private readonly dotLicenseService: DotLicenseService,
-        private readonly http: HttpClient
-    ) {
+    constructor() {
         super(initialState);
         this.dotLicenseService.isEnterprise().subscribe((isEnterprise) => {
             this.setIsEnterprise(isEnterprise);
@@ -84,6 +85,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
         tempFile,
+        contentlet: null,
         status: BinaryFieldStatus.PREVIEW,
         value: tempFile?.id
     }));
@@ -180,10 +182,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             return contentlet$.pipe(
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
-                    const { fileAssetVersion, metaData, fieldVariable } = contentlet;
-                    const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
-                    const { contentType: mimeType, editableAsText, name } = metadata || {};
-                    const contentURL = fileAssetVersion || contentlet[`${fieldVariable}Version`];
+                    const { contentType, editableAsText, name } = getFileMetadata(contentlet);
+                    const contentURL = getFieldVersion(contentlet);
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(
@@ -191,7 +191,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                             (content = '') => {
                                 this.setContentlet({
                                     ...contentlet,
-                                    mimeType,
+                                    mimeType: contentType,
                                     name,
                                     content
                                 });
@@ -199,8 +199,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                             () => {
                                 this.setContentlet({
                                     ...contentlet,
-                                    name,
-                                    mimeType
+                                    mimeType: contentType,
+                                    name
                                 });
                             }
                         )

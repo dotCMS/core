@@ -2,7 +2,6 @@ package com.dotmarketing.business.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -16,6 +15,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -123,7 +124,11 @@ public class HostAjax {
     public Map<String, Object> findHostsPaginated(final String filter, final boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		final User user = this.getLoggedInUser();
 		final boolean respectFrontend = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
-		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user, false, respectFrontend);
+		final List<HostAPI.SearchType> searchTypes = respectFrontend ?
+				List.of(HostAPI.SearchType.RESPECT_FRONT_END_ROLES, HostAPI.SearchType.LIVE_ONLY) :
+				List.of(HostAPI.SearchType.LIVE_ONLY);
+		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user,
+				searchTypes.toArray(new HostAPI.SearchType[0]));
 		final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(Host.HOST_VELOCITY_VAR_NAME);
         final List<Field> searchableFields = fields.stream().filter(field -> field.isListed() && field
                 .getFieldType().startsWith("text")).collect(Collectors.toList());
@@ -153,12 +158,21 @@ public class HostAjax {
                     Logger.warn(HostAjax.class, String.format("An error occurred when reviewing the creation status for " +
                             "Site '%s': %s", site.getIdentifier(), e.getMessage()), e);
                 }
+				String workingInode = site.getInode();
+				if (site.isLive() && !site.isWorking()) {
+					 final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
+							.getContentletVersionInfo(site.getIdentifier(), site.getLanguageId());
+					 if (versionInfo.isPresent()) {
+						 workingInode = versionInfo.get().getWorkingInode();
+					 }
+				}
                 final Map<String, Object> siteInfoMap = site.getMap();
-				siteInfoMap.putAll(CollectionsUtils.map(
+				siteInfoMap.putAll(Map.of(
                         "userPermissions", this.permissionAPI.getPermissionIdsFromUser(site, user),
                         "hostInSetup", siteInSetup,
                         "archived", site.isArchived(),
-                        "live", site.isLive()));
+                        "live", site.isLive(),
+						"workingInode", workingInode));
 				siteList.add(siteInfoMap);
 			}
 		}
@@ -175,7 +189,7 @@ public class HostAjax {
 
         final List<Map<String, Object>> fieldMapList = fields.stream().map(Field::getMap).collect(Collectors.toList());
         final Structure siteContentType = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
-        return CollectionsUtils.map(
+        return Map.of(
                 "total", totalResults,
                 "list", siteList,
                 "structure", siteContentType.getMap(),

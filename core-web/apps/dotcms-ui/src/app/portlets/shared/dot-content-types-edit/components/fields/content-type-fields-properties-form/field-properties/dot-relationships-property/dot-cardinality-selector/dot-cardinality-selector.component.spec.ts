@@ -9,10 +9,11 @@ import { DropdownModule } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
 import { DotCardinalitySelectorComponent } from './dot-cardinality-selector.component';
+
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
+import { DotRelationshipService } from '../services/dot-relationship.service';
 
 const cardinalities: DotRelationshipCardinality[] = [
     {
@@ -29,8 +30,12 @@ const cardinalities: DotRelationshipCardinality[] = [
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-cardinality-selector [value]="cardinalityIndex" [disabled]="disabled">
-    </dot-cardinality-selector>`
+    template: `
+        <dot-cardinality-selector
+            [value]="cardinalityIndex"
+            [disabled]="disabled"></dot-cardinality-selector>
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input()
@@ -62,8 +67,8 @@ describe('DotCardinalitySelectorComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotCardinalitySelectorComponent, HostTestComponent],
-            imports: [DropdownModule, FormsModule],
+            declarations: [HostTestComponent],
+            imports: [DropdownModule, FormsModule, DotCardinalitySelectorComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotRelationshipService, useClass: MockRelationshipService }

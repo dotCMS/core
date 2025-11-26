@@ -11,22 +11,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.dotcms.datagen.ContainerAsFileDataGen;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.MultiTreeDataGen;
-import com.dotcms.datagen.PersonaDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateAsFileDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TemplateLayoutDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.ThemeDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -477,6 +462,7 @@ public class HTMLPageAssetRenderedTest {
                         .build(),
                 mockRequest, mockResponse);
         assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
+
     }
 
     ///////
@@ -2170,6 +2156,8 @@ public class HTMLPageAssetRenderedTest {
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+
+
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -2362,5 +2350,82 @@ public class HTMLPageAssetRenderedTest {
             }
             return hostMap.get(testType);
         }
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: The page includes more than one script block regardless of the casing (lowercase, uppercase)
+     * Should: Escape de close script like this <code></>\</script/></code>
+     * @throws Exception
+     */
+    @Test
+    public void renderPageWithScriptAndInnerNavigateMode() throws Exception {
+
+        final String widgetCode = "<html>\n" +
+                "This is a test\n" +
+                "</html>\n" +
+                "<script>console.log(\"AAAA\");</SCRIPT>\n" +
+                "<script>console.log(\"BBB\");</script>\n";
+
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType widgetContentType = new ContentTypeDataGen()
+                .createWidgetContentType(widgetCode)
+                .nextPersisted();
+
+        final Contentlet widget = new ContentletDataGen(widgetContentType)
+                .host(host)
+                .languageId(1)
+                .setProperty("widgetTitle", "Testing NavigateEditModeWithScriptTag")
+                .nextPersistedAndPublish();
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier()).nextPersisted();
+
+        ContainerDataGen.publish(container);
+        TemplateDataGen.publish(template);
+        
+        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(host, template)
+                .languageId(1).pageURL("testPageWidget" + System.currentTimeMillis())
+                .title("testPageWidget")
+                .nextPersisted();
+
+        contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
+
+        final MultiTree multiTree = new MultiTreeDataGen()
+                .setPage(pageEnglishVersion)
+                .setContainer(container)
+                .setContentlet(widget)
+                .nextPersisted();
+
+
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request())
+                        .request())
+                .request();
+
+        when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
+        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+        mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final String html = APILocator.getHTMLPageAssetRenderedAPI()
+                .getPageHtml(
+                        PageContextBuilder.builder()
+                                .setUser(systemUser)
+                                .setPageUri(pageEnglishVersion.getURI())
+                                .setPageMode(PageMode.NAVIGATE_EDIT_MODE)
+                                .build(),
+                        mockRequest, mockResponse);
+        final String expected = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>\"";
+        assertTrue(html.contains(expected));
+
+
+
     }
 }

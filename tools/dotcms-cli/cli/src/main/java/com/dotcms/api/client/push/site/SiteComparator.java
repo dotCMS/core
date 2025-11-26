@@ -5,12 +5,13 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
+import java.io.File;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 
 @Dependent
 public class SiteComparator implements ContentComparator<SiteView> {
@@ -25,7 +26,7 @@ public class SiteComparator implements ContentComparator<SiteView> {
 
     @ActivateRequestContext
     @Override
-    public Optional<SiteView> findMatchingServerContent(SiteView localSite,
+    public Optional<SiteView> findMatchingServerContent(File localFile, SiteView localSite,
             List<SiteView> serverContents) {
 
         // Compare by identifier first.
@@ -42,7 +43,8 @@ public class SiteComparator implements ContentComparator<SiteView> {
 
     @ActivateRequestContext
     @Override
-    public Optional<SiteView> localContains(SiteView serverContent, List<SiteView> localSites) {
+    public boolean existMatchingLocalContent(SiteView serverContent, List<File> localFiles,
+            List<SiteView> localSites) {
 
         // Compare by identifier first.
         var result = findByIdentifier(serverContent.identifier(), localSites);
@@ -53,7 +55,7 @@ public class SiteComparator implements ContentComparator<SiteView> {
             result = findBySiteName(serverContent.siteName(), localSites);
         }
 
-        return result;
+        return result.isPresent();
     }
 
     @ActivateRequestContext

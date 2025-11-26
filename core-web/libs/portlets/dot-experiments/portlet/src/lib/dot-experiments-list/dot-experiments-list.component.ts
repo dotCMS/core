@@ -1,8 +1,8 @@
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +10,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { tap } from 'rxjs/operators';
 
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -20,8 +19,13 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import {
+    DotAddToBundleComponent,
+    DotDynamicDirective,
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsListSkeletonComponent } from './components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
@@ -32,11 +36,10 @@ import { DotExperimentsListStore, VmListExperiments } from './store/dot-experime
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list',
     imports: [
         AsyncPipe,
-        NgIf,
+        NgTemplateOutlet,
         DotExperimentsListSkeletonComponent,
         DotExperimentsStatusFilterComponent,
         DotExperimentsListTableComponent,
@@ -45,7 +48,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule,
-        DotAddToBundleModule,
+        DotAddToBundleComponent,
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-experiments-list.component.html',
@@ -54,6 +57,10 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent {
+    private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
+    private readonly router = inject(Router);
+    private readonly dotMessageService = inject(DotMessageService);
+
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$.pipe(
         tap(({ sidebar }) => this.handleSidebar(sidebar))
@@ -66,12 +73,6 @@ export class DotExperimentsListComponent {
         icon: 'pi-filter-fill rotate-180'
     };
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
-
-    constructor(
-        private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly router: Router,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     /**
      * Update the list of selected statuses

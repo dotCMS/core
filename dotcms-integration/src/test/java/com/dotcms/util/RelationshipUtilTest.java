@@ -142,7 +142,6 @@ public class RelationshipUtilTest {
      * Method to test: {@link RelationshipUtil#filterContentlet(long, String, User, boolean)
      * Given Scenario: ordering is consistently incorrect, in that it's not in the order received but always orders them the same way on every call.
      * ExpectedResult: The order of the contentlets should be the same as the order they are received in the filter.
-     *
      */
     @Test
     public void test_filterContentlet_shouldFollowTheFilterOrder(){

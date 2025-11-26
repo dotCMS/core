@@ -32,6 +32,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -72,9 +73,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -613,17 +614,16 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();// Uses the System Workflow by default
-        final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
-        List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());
+        final ResponseEntityDefaultWorkflowActionsView response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
+        assertNotNull(response);
+        List<WorkflowDefaultActionView> actions = response.getEntity();
         for(WorkflowDefaultActionView av:actions){
           assertTrue(av.getScheme().isSystem());
         }
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = DotWorkflowException.class)
     public void Find_Available_Default_Actions_No_Read_Permission_Invalid_License()
             throws Exception {
 
@@ -636,10 +636,8 @@ public class WorkflowResourceLicenseIntegrationTest {
                     BaseContentType.CONTENT, editPermission, role.getId());
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
-            final Response findResponse = nonLicenseWorkflowResource
+            final ResponseEntityDefaultWorkflowActionsView findResponse = nonLicenseWorkflowResource
                     .findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
-            assertEquals(Status.FORBIDDEN.getStatusCode(), findResponse.getStatus());
-            assertEquals(ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION, findResponse.getHeaderString("access-control"));
         } finally {
             if(contentType != null){
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);

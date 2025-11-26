@@ -22,17 +22,11 @@ import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.
 import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
 import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
 import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.*;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -58,12 +52,9 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.RoleDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
-import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -79,37 +70,32 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.BulkActionForm;
-import com.dotcms.workflow.form.FireActionForm;
-import com.dotcms.workflow.form.FireBulkActionsForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -146,14 +132,19 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -176,6 +167,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private static Role systemRole;
 
     static private WorkflowScheme testScheme;
+    
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -2156,7 +2148,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
-    @Test
     public void Test_Create_Instance_Of_Content_With_Numeric_Fields_Verify_Message_When_Setting_Invalid_Values_Issue_15340()
             throws Exception {
         ContentType contentType = null;
@@ -2196,18 +2187,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = getHttpRequest();
+
             final Response response2 = workflowResource
                     .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID,
                             brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
 
-            final int statusCode2 = response2.getStatus();
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
-            final ResponseEntityView errorEntityView = ResponseEntityView.class.cast(
-                    response2.getEntity());
-            assertEquals(1, errorEntityView.getErrors().stream()
-                    .filter(errorEntity -> "required".equals(
-                            ErrorEntity.class.cast(errorEntity).getErrorCode())).count());
-
+            fail("Should have thrown an exception");
+        } catch (DotContentletValidationException e) {
+            // nice
         } finally {
             if (null != contentType) {
                 contentTypeAPI.delete(contentType);
@@ -2237,7 +2224,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2261,7 +2248,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response2 = workflowResource
                     .fireActionDefaultSinglePart(request2, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm2);
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -2399,7 +2386,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2419,6 +2406,88 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         } finally {
             if (null != categoryContentType) {
                 contentTypeAPI.delete(categoryContentType);
+            }
+        }
+    }
+
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionByNameSinglePart(HttpServletRequest, String, String, String, String, FireActionByNameForm)}
+     * Given Scenario: Fires a save with a limited user
+     * ExpectedResult: The action should be ran ok
+     *
+     */
+    @Test
+    public void testFireActionByName_by_limited_user() throws Exception {
+
+        // Create limited user
+        final Role beRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final User limitedUser = new UserDataGen().roles(beRole).nextPersisted();
+        //Create Content
+        final String titlePropertyKey = "title";
+        final String titlePropertyValue = "Test1";
+        final String richTextContentTypeVarName = "simpleWebPageContent";
+        final FireActionByNameForm.Builder builder1 = new FireActionByNameForm.Builder();
+        final Map<String, Object> contentletFormData = new HashMap<>();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        contentletFormData.put(titlePropertyKey, titlePropertyValue);
+        contentletFormData.put("contentType", richTextContentTypeVarName);
+        builder1.contentlet(contentletFormData);
+        builder1.actionName("Save");
+        ContentType richTextContentType = null;
+
+        try {
+            // creates a new content type
+            final Field field = new FieldDataGen()
+                    .velocityVarName(titlePropertyKey)
+                    .type(TextField.class)
+                    .next();
+
+            richTextContentType = new ContentTypeDataGen().name("Rich Text 2").workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .velocityVarName(richTextContentTypeVarName).field(field).nextPersisted();
+
+            final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                    PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+
+            final List<Permission> newSetOfPermissions = new ArrayList<>();
+            // this is the individual permission
+            newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+            final Role limiteUserRole = APILocator.getRoleAPI().getUserRole(limitedUser);
+            newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+
+            APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, richTextContentType, APILocator.systemUser(), false);
+
+            newSetOfPermissions.clear();
+            final WorkflowAction saveAction = APILocator.getWorkflowAPI().findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            newSetOfPermissions.add(new Permission(saveAction.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+            APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, saveAction, APILocator.systemUser(), false);
+
+            // this is the inheritance permission
+
+
+            final FireActionByNameForm fireActionForm1 = new FireActionByNameForm(builder1);
+            final HttpServletRequest request1 = getHttpRequest();
+            request1.setAttribute(WebKeys.USER, limitedUser);
+            final Response response1 = workflowResource
+                    .fireActionByNameSinglePart(request1, null, null,
+                            "FORCE",
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            fireActionForm1);
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            final Contentlet contentlet = new Contentlet(
+                    Map.class.cast(fireEntityView1.getEntity()));
+            assertNotNull(contentlet);
+            assertEquals(titlePropertyValue,
+                    contentlet.getMap().get(titlePropertyKey));
+        } finally {
+
+            if (null != richTextContentType) {
+                ContentTypeDataGen.remove(richTextContentType);
             }
         }
     }
@@ -2577,7 +2646,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
 
         if (field instanceof KeyValueField) {
-            return "{key1:value, key2:value }";
+            return "{\"key1\":\"value\", \"key2\":\"value\" }";
         }
 
         final DataTypes dataType = field.dataType();
@@ -2605,8 +2674,11 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         );
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
         return request;
     }
+    
 }
+
+

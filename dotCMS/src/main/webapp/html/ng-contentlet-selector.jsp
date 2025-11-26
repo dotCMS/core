@@ -27,6 +27,8 @@
 <%
     String containerIdentifier = request.getParameter("container_id");
     String language_id = request.getParameter("language_id");
+    String variantName = request.getParameter("variantName") != null ? request.getParameter("variantName") : "DEFAULT";
+
     User user = PortalUtil.getUser(request);
     Container container = null;
     if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
@@ -139,7 +141,7 @@
         function addNewContentlet(iNode, contentType) {
             var href = "/c/portal/layout?p_l_id=<%=contentLayout.getId()%>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view";
             href += "&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new";
-            href += "&selectedStructure=" + (iNode || _dotSelectedStructure) + "&lang=" + getCurrentUrlLanguageId();
+            href += "&selectedStructure=" + (iNode || _dotSelectedStructure) + "&lang=" + getCurrentUrlLanguageId() + "&variantName=" + '<%=variantName%>';
             createContentlet(href, contentType ||  _dotSelectedStructureVariable);
         }
 
@@ -209,6 +211,12 @@
             dojo.parser.parse(addContentTypePrimaryMenu);
         }
 
+        function removeA11yClasses() {
+            ["dj_a11y","dijit_a11y"].forEach(function (className) {
+                 document.body.classList.remove(className);
+            });
+        }
+
 
         djConfig = {
             parseOnLoad: true,
@@ -240,6 +248,7 @@
         dojo.addOnLoad(function () {
             contentSelector.show();
             loadAddContentTypePrimaryMenu();
+            removeA11yClasses();
         });
     </script>
 </head>
@@ -249,6 +258,7 @@
      languageId="<%=language_id%>"
      onContentSelected="contentSelected"
      selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'
+     variantName='<%=variantName%>'
      dojoType="dotcms.dijit.form.ContentSelector">
 
 </div>

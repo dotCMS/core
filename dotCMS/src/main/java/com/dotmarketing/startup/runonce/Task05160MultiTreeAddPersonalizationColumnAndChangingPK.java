@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 /**
  * This upgrade task will adds the personalization column to the multitree and will remove the pk and adds a new one include the personalization as part of it.
  *
@@ -30,7 +28,7 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends AbstractJDBCStartupTask {
 
-    private static final Map<DbType, String> addPersonalizationColumnSQLMap = map(
+    private static final Map<DbType, String> addPersonalizationColumnSQLMap = Map.of(
             DbType.POSTGRESQL,   "ALTER TABLE multi_tree ADD personalization varchar(255)   not null default 'dot:default'",
             DbType.MYSQL,        "ALTER TABLE multi_tree ADD personalization varchar(255)   not null default 'dot:default'",
             DbType.ORACLE,       "ALTER TABLE multi_tree ADD personalization varchar2(255)  default 'dot:default' not null",

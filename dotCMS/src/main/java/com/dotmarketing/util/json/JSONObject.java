@@ -1,14 +1,17 @@
 package com.dotmarketing.util.json;
 
+import com.dotcms.util.jackson.JSONObjectNullSerializer;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -74,6 +77,9 @@ public class JSONObject implements Serializable, Map {
      * whilst Java's null is equivalent to the value that JavaScript calls
      * undefined.
      */
+
+     // Jackson does not know anything about this Null Marker So...
+     @JsonSerialize(using = JSONObjectNullSerializer.class)
      private static final class Null implements Serializable{
          private static final long serialVersionUID = 1L;
         /**
@@ -106,19 +112,11 @@ public class JSONObject implements Serializable, Map {
         }
     }
 
-
-     
-     
-     
-
-
     /**
      * The map where the JSONObject's properties are kept.
      */
 
     private final Map map;
-
-
 
     /**
      * It is sometimes more convenient and less ambiguous to have a
@@ -897,49 +895,80 @@ public class JSONObject implements Serializable, Map {
     }
 
 
+    /**
+     * Populate the internal map of the JSONObject using reflection from the object.
+     * @param bean the incoming object
+     */
     private void populateMap(Object bean) {
-        Class klass = bean.getClass();
+        if (bean == null) {
+            return;
+        }
+        final Class <?> clazz = bean.getClass();
+        // If clazz is a System class then set includeSuperClass to false.
+        final boolean includeSuperClass = clazz.getClassLoader() != null;
 
-// If klass is a System class then set includeSuperClass to false. 
-
-        boolean includeSuperClass = klass.getClassLoader() != null;
-
-        Method[] methods = (includeSuperClass) ?
-                klass.getMethods() : klass.getDeclaredMethods();
-        for (int i = 0; i < methods.length; i += 1) {
+        final Method[] methods = (includeSuperClass) ?
+                clazz.getMethods() : clazz.getDeclaredMethods();
+        for (final Method method : methods) {
             try {
-                Method method = methods[i];
-                if (Modifier.isPublic(method.getModifiers()) && !method.isAnnotationPresent(JSONIgnore.class)) {
-                    String name = method.getName();
-                    String key = "";
-                    if (name.startsWith("get")) {
-                    	if (name.equals("getClass") || 
-                    			name.equals("getDeclaringClass")) {
-                    		key = "";
-                    	} else {
-                    		key = name.substring(3);
-                    	}
-                    } else if (name.startsWith("is")) {
-                        key = name.substring(2);
-                    }
-                    if (key.length() > 0 &&
-                            Character.isUpperCase(key.charAt(0)) &&
-                            method.getParameterTypes().length == 0) {
-                        if (key.length() == 1) {
-                            key = key.toLowerCase();
-                        } else if (!Character.isUpperCase(key.charAt(1))) {
-                            key = key.substring(0, 1).toLowerCase() +
-                                key.substring(1);
-                        }
-
-                        Object result = method.invoke(bean, (Object[])null);
-
-                        map.put(key, wrap(result));
-                    }
-                }
+                populateWithMethod(bean, method);
             } catch (Exception ignore) {
+                // ignore exception
             }
         }
+    }
+
+    /**
+     * Populate the JSONObject with the fields of an object.
+     * @param bean the object
+     * @param method the method
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     */
+    private void populateWithMethod(Object bean, Method method)
+            throws IllegalAccessException, InvocationTargetException {
+        if (bean == null || method == null) {
+            return;
+        }
+        if (Modifier.isPublic(method.getModifiers()) && !isIgnorable(method)) {
+            String key = key(method.getName());
+            if (!key.isEmpty() && Character.isUpperCase(key.charAt(0)) && method.getParameterTypes().length == 0) {
+                if (key.length() == 1) {
+                    key = key.toLowerCase();
+                } else if (!Character.isUpperCase(key.charAt(1))) {
+                    key = key.substring(0, 1).toLowerCase() + key.substring(1);
+                }
+                final Object result = method.invoke(bean, (Object[]) null);
+                map.put(key, wrap(result));
+            }
+        }
+    }
+
+    /**
+     * @param methodName the method name
+     * @return the key
+     */
+    private String key(final String methodName){
+        String key = "";
+        if (methodName.startsWith("get")) {
+            if (methodName.equals("getClass") || methodName.equals("getDeclaringClass")) {
+                key = "";
+            } else {
+                key = methodName.substring(3);
+            }
+        } else if (methodName.startsWith("is")) {
+            key = methodName.substring(2);
+        }
+        return key;
+    }
+
+    /**
+     * Apparently we have two annotations to ignore fields in the JSON serialization, and we have been mixing them up
+     * @param method the method to check
+     * @return true if the method should be ignored
+     */
+    private static boolean isIgnorable(final Method method) {
+        return method.isAnnotationPresent(JSONIgnore.class) || method.isAnnotationPresent(JsonIgnore.class);
     }
 
 

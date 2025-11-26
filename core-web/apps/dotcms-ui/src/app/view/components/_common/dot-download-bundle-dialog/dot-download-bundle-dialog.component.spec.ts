@@ -9,20 +9,20 @@ import { By } from '@angular/platform-browser';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+// eslint-disable-next-line import/order
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
+
+import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 // INFO: needs to import this way so we can spy on.
 
@@ -93,8 +93,13 @@ describe('DotDownloadBundleDialogComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotDownloadBundleDialogComponent],
-            imports: [DotDialogModule, SelectButtonModule, DropdownModule, DotMessagePipe],
+            imports: [
+                DotDownloadBundleDialogComponent,
+                DotDialogComponent,
+                SelectButtonModule,
+                DropdownModule,
+                DotMessagePipe
+            ],
             providers: [
                 DotDownloadBundleDialogService,
                 DotPushPublishFiltersService,
@@ -114,6 +119,10 @@ describe('DotDownloadBundleDialogComponent', () => {
         fixture.detectChanges();
     });
 
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should hide by default', () => {
         expect(dotDialogComponent.visible).toEqual(false);
     });
@@ -130,12 +139,14 @@ describe('DotDownloadBundleDialogComponent', () => {
     describe('on showDialog', () => {
         let selectButton: SelectButton;
 
-        beforeEach(() => {
-            spyOn(dotPushPublishFiltersService, 'get').and.returnValue(of(mockFilters));
+        beforeEach(fakeAsync(() => {
+            jest.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
             dotDownloadBundleDialogService.open(BUNDLE_ID);
+            tick(); // Wait for async operations
             fixture.detectChanges();
-            selectButton = fixture.debugElement.query(By.css('p-selectButton')).componentInstance;
-        });
+
+            selectButton = fixture.debugElement.query(By.css('p-selectbutton')).componentInstance;
+        }));
 
         it('should set download options', () => {
             expect(selectButton.options).toEqual(DOWNLOAD_OPTIONS);
@@ -220,23 +231,29 @@ describe('DotDownloadBundleDialogComponent', () => {
                 let anchor: HTMLAnchorElement;
 
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').and.returnValue(Promise.resolve(mockResponse));
+                    (window as any).fetch = jest
+                        .fn()
+                        .mockReturnValue(Promise.resolve(mockResponse));
                     anchor = document.createElement('a');
-                    spyOn(anchor, 'click');
-                    spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
+                    jest.spyOn(anchor, 'click');
+                    jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
                 });
                 it('should disable buttons and change to label to downloading...', () => {
                     downloadButton.click();
                     fixture.detectChanges();
-                    expect(downloadButton.disabled).toEqual(true);
-                    expect(cancelButton.disabled).toEqual(true);
+                    expect(component.dialogActions.accept.disabled).toEqual(true);
+                    expect(component.dialogActions.cancel.disabled).toEqual(true);
+                    expect(component.dialogActions.accept.label).toEqual('Downloading...');
                 });
 
                 it('should fetch to the correct url when publish', fakeAsync(() => {
+                    // Clear any previous calls to the spy
+                    (dotUtils.getDownloadLink as jest.Mock).mockClear();
+
                     downloadButton.click();
                     tick(1);
                     fixture.detectChanges();
-                    expect(window.fetch).toHaveBeenCalledWith(`/api/bundle/_generate`, {
+                    expect((window as any).fetch).toHaveBeenCalledWith(`/api/bundle/_generate`, {
                         method: 'POST',
                         mode: 'cors',
                         cache: 'no-cache',
@@ -247,6 +264,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                     });
 
                     expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
+                    expect(dotUtils.getDownloadLink).toHaveBeenCalledTimes(1);
                     expect(anchor.click).toHaveBeenCalledTimes(1);
                     expect(dotDialogComponent.visible).toEqual(false);
                 }));
@@ -254,7 +272,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                     unPublishButton.click();
                     fixture.detectChanges();
                     downloadButton.click();
-                    expect(window.fetch).toHaveBeenCalledWith(`/api/bundle/_generate`, {
+                    expect((window as any).fetch).toHaveBeenCalledWith(`/api/bundle/_generate`, {
                         method: 'POST',
                         mode: 'cors',
                         cache: 'no-cache',
@@ -266,9 +284,9 @@ describe('DotDownloadBundleDialogComponent', () => {
 
             describe('on error', () => {
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').and.returnValue(
-                        Promise.resolve(throwError('error'))
-                    );
+                    (window as any).fetch = jest
+                        .fn()
+                        .mockReturnValue(Promise.resolve(throwError('error')));
                 });
 
                 it('should enable buttons and display error message', fakeAsync(() => {
@@ -280,7 +298,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                     const errorElement = fixture.debugElement.query(
                         By.css('.download-bundle__error')
                     );
-                    expect(errorElement.nativeElement.innerText).toEqual('Error Building Bundle');
+                    expect(errorElement.nativeElement.textContent).toEqual('Error Building Bundle');
                 }));
             });
         });

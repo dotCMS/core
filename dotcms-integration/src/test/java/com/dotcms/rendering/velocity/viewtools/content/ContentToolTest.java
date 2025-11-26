@@ -36,10 +36,10 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
@@ -881,4 +882,78 @@ public class ContentToolTest extends IntegrationTestBase {
 
 
     }
+
+    /**
+     * Method to Test: {@link ContentTool#pull(String, int, int, String)}}
+     * When: pulling content and having more than one content
+     * Should: Return the total under the key "totalResults"
+     *
+     */
+    @Test
+    public void testPull_includeTotal() {
+        final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(blogLikeType.inode()).host(defaultHost);
+        IntStream.range(0, 10).forEach(i -> contentletDataGen.nextPersisted());
+
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+        final PaginatedArrayList<ContentMap> results = contentTool.pull(
+                "+contentType:" + blogLikeType.variable(), 0, 0,
+                "modDate desc"
+        );
+
+        Assert.assertEquals(10, results.getTotalResults());
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#findHydrated(String)}
+     * When: Creates a Blog type and retrieves it as raw and hydrated
+     * Should: The hydrated should contain more properties
+     *
+     */
+    @Test
+    public void test_find_hydrated() {
+        final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(blogLikeType.inode()).host(defaultHost);
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final ContentMap rawContentlet = contentTool.find(contentlet.getIdentifier());
+        final ContentMap hydratedContentlet = contentTool.findHydrated(contentlet.getIdentifier());
+
+        Assert.assertNotNull(rawContentlet);
+        Assert.assertNotNull(hydratedContentlet);
+        Assert.assertEquals(rawContentlet.getContentObject().getIdentifier(), hydratedContentlet.getContentObject().getIdentifier());
+        Assert.assertEquals(rawContentlet.getContentObject().getLanguageId(), hydratedContentlet.getContentObject().getLanguageId());
+        Assert.assertEquals(rawContentlet.getContentObject().getTitle(), hydratedContentlet.getContentObject().getTitle());
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().size() > rawContentlet.getContentObject().getMap().size());
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#pullHydrated(String, int, int, String)}
+     * When: Creates a Blog type and generates a few of them, the pull
+     * Should: The hydrated should contain at least the url as an extra
+     *
+     */
+    @Test
+    public void test_pull_hydrated() {
+        final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
+
+        for (int i=1;i<10;++i) {
+            new ContentletDataGen(blogLikeType.inode()).host(defaultHost).nextPersisted();
+        }
+
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final  PaginatedArrayList<ContentMap> contentMaps = contentTool.pullHydrated("+contentType: " + blogLikeType.variable(),  0, 20, "modDate desc");
+
+        Assert.assertNotNull(contentMaps);
+        Assert.assertFalse(contentMaps.isEmpty());
+        final ContentMap hydratedContentlet = contentMaps.get(0);
+
+        Assert.assertNotNull(hydratedContentlet);
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
+    }
+
 }

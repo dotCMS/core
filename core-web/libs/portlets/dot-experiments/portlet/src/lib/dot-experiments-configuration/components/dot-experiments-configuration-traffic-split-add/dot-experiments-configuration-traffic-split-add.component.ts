@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import {
     AbstractControl,
     FormArray,
@@ -23,9 +23,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus, TrafficProportionTypes, Variant } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,
@@ -34,7 +32,6 @@ import {
 
 @Component({
     selector: 'dot-experiments-configuration-traffic-split-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -53,6 +50,9 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnInit {
+    private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private fb = inject(FormBuilder);
+
     form: FormGroup;
     stepStatus = ComponentStatus;
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
@@ -60,11 +60,6 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
 
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$;
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private fb: FormBuilder
-    ) {}
 
     get variants(): FormArray {
         return this.form.get('variants') as FormArray;

@@ -1,7 +1,7 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-sidebar
-        [(visible)]="vm.status.isOpen"
         (onHide)="closeSidebar()"
+        [(visible)]="vm.status.isOpen"
         dotSidebar
         dotSize="{{ sidebarSizes.LG }}">
         <dot-sidebar-header
@@ -9,9 +9,9 @@
             dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}" />
         <div class="experiment-goal-select__form-wrapper flex flex-column">
             <form
+                [formGroup]="form"
                 class="p-fluid"
                 id="select-goal-form"
-                [formGroup]="form"
                 data-testId="select-goal-form"
                 novalidate>
                 <div formGroupName="primary">
@@ -22,13 +22,11 @@
                                 [value]="goalsTypes.BOUNCE_RATE"
                                 detail="{{ goals.BOUNCE_RATE.description | dm }}"
                                 title="{{ goals.BOUNCE_RATE.label | dm }}" />
-
                             <dot-experiment-options-item
                                 [icon]="goals.EXIT_RATE.icon"
                                 [value]="goalsTypes.EXIT_RATE"
                                 detail="{{ goals.EXIT_RATE.description | dm }}"
                                 title="{{ goals.EXIT_RATE.label | dm }}" />
-
                             <dot-experiment-options-item
                                 [icon]="goals.REACH_PAGE.icon"
                                 [value]="goalsTypes.REACH_PAGE"
@@ -38,7 +36,6 @@
                                     <dot-experiments-goal-configuration-reach-page />
                                 </ng-template>
                             </dot-experiment-options-item>
-
                             <dot-experiment-options-item
                                 [icon]="goals.URL_PARAMETER.icon"
                                 [value]="goalsTypes.URL_PARAMETER"
@@ -51,13 +48,13 @@
                         </dot-experiment-options>
                     </div>
                     <div class="field flex-auto flex flex-column">
-                        <label class="p-label-input-required">{{
-                            'experiments.goal.reach_page.form.name.label' | dm
-                        }}</label>
+                        <label class="p-label-input-required">
+                            {{ 'experiments.goal.reach_page.form.name.label' | dm }}
+                        </label>
                         <input
-                            id="name"
                             [maxlength]="this.maxNameLength + 1"
                             [placeholder]="'experiments.goal.reach_page.form.name.placeholder' | dm"
+                            id="name"
                             data-testId="goal-name-input"
                             dotTrimInput
                             formControlName="name"
@@ -65,25 +62,22 @@
                             pInputText
                             required
                             type="text" />
-
                         <dot-field-validation-message
                             [field]="goalNameControl"></dot-field-validation-message>
                     </div>
                 </div>
             </form>
         </div>
-
         <dot-experiments-goals-coming-soon />
     </p-sidebar>
-
     <ng-template #actionHeaderBtnTpl>
         <button
+            (click)="save(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === statusList.SAVING"
-            (click)="save(vm.experimentId)"
             data-testId="add-goal-button"
             label="{{ 'experiments.configure.goals.sidebar.header.button.apply.label' | dm }}"
             pButton
             type="submit"></button>
     </ng-template>
-</ng-container>
+}

@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    display: block;
+    width: 32rem;
+
+    .p-button {
+        width: 100%;
+    }
+
+    .error-messsage__container {
+        min-height: $spacing-4;
+    }
+}
+
+.url-mode__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.url-mode__input-container {
+    width: 100%;
+    display: flex;
+    gap: $spacing-1;
+    flex-direction: column;
+}
+
+.url-mode__actions {
+    width: 100%;
+    display: flex;
+    gap: $spacing-1;
+    align-items: center;
+    justify-content: flex-end;
+}

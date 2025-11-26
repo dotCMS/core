@@ -54,6 +54,7 @@ public final class ESMappingConstants {
     public static final String SYSTEM_TYPE = "systemType";
 
     public static final String MOD_DATE = "modDate";
+    public static final String CREATION_DATE = "creationDate";
     public static final String OWNER = "owner";
     public static final String MOD_USER = "modUser";
     public static final String LIVE = "live";
@@ -65,7 +66,7 @@ public final class ESMappingConstants {
     public static final String IDENTIFIER = "identifier";
     public static final String CONTENTLET_HOST = "conHost";
     public static final String CONTENTLET_HOSTNAME = "conHostName";
-    public static final String CONTENTLET_FOLER = "conFolder";
+    public static final String CONTENTLET_FOLDER = "conFolder";
     public static final String PARENT_PATH = "parentPath";
     public static final String PATH = "path";
     public static final String SHORT_ID = "shortId";
@@ -81,6 +82,7 @@ public final class ESMappingConstants {
     public static final String EXPIRE_DATE = "expdate";
     public static final String VERSION_TS = "versionTs";
     public static final String SYS_PUBLISH_DATE = "sysPublishDate";
+    public static final String SYS_PUBLISH_USER = "sysPublishUser";
     public static final String URL_MAP = "urlMap";
     public static final String VANITY_URL = "vanityUrl";
     public static final String CATEGORIES = "categories";
@@ -90,6 +92,7 @@ public final class ESMappingConstants {
 
     public static final String DOT_INDEX_PATTERN = "dotIndexPattern";
     public static final String PERMISSIONS = "permissions";
+    public static final String CATEGORY_PERMISSIONS = "categoryperms";
     public static final String OWNER_CAN_READ = "ownerCanRead";
     public static final String OWNER_CAN_WRITE = "ownerCanWrite";
     public static final String OWNER_CAN_PUBLISH = "ownerCanPublish";
@@ -108,5 +111,9 @@ public final class ESMappingConstants {
     @Deprecated
     public static final String SUFFIX_ORDER = "-order";
 
-
+    public enum MAPPED_PERMISSIONS {
+        cms_anon_role,
+        none,
+        cms_admin_role,
+    }
 }

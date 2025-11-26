@@ -1,86 +1,93 @@
-<ng-template #defaultItemListTemplate let-item="item" pTemplate="listItem">
-    <span
-        class="searchable-dropdown__data-list-item"
-        [class.selected]="item[labelPropertyName] === valueString"
-        (click)="handleClick(item)"
-        data-testid="searchable-dropdown-data-list-item"
-        ><i class="pi pi-check" *ngIf="item[labelPropertyName] === valueString"></i
-        >{{ item.label }}</span
-    >
+<ng-template #defaultListTemplate let-data="data" pTemplate="list">
+    @for (item of data; track $index) {
+        <span
+            (click)="handleClick(item)"
+            [class.selected]="item[getValueLabelPropertyName()] === valueString"
+            class="searchable-dropdown__data-list-item"
+            data-testid="searchable-dropdown-data-list-item">
+            @if (item[getValueLabelPropertyName()] === valueString) {
+                <i class="pi pi-check"></i>
+            }
+            {{ item.label }}
+        </span>
+    }
 </ng-template>
 
 <ng-template #defaultFilterTemplate>
     <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
     <input
-        class="searchable-dropdown__search-inputfield"
         #searchInput
-        [placeholder]="'search' | dm"
         (click)="$event.stopPropagation()"
+        [placeholder]="'search' | dm"
         autofocus
+        class="searchable-dropdown__search-inputfield"
+        data-testid="searchInput"
         pInputText
-        type="text"
-        data-testid="searchInput" />
+        type="text" />
 </ng-template>
 
 <ng-template #defaultSelectTemplate let-item="item">
-    <button
-        class="p-button-outlined"
-        #button
-        *ngIf="label"
-        [label]="label"
-        [ngStyle]="{ width: width }"
-        [disabled]="disabled"
-        (click)="searchPanel.toggle($event)"
-        pButton
-        icon="pi pi-chevron-down"
-        iconPos="right"
-        type="button"></button>
+    @if (label) {
+        <button
+            #button
+            (click)="searchPanel.toggle($event)"
+            [disabled]="disabled"
+            [label]="label"
+            [ngStyle]="{ width: width }"
+            class="p-button-outlined"
+            icon="pi pi-chevron-down"
+            iconPos="right"
+            pButton
+            type="button"></button>
+    }
 </ng-template>
 
 <p-overlayPanel
     #searchPanel
+    (onHide)="hideOverlayHandler()"
+    (onShow)="showOverlayHandler()"
     [dismissable]="true"
     [styleClass]="cssClass"
     [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: overlayWidth }"
-    (onHide)="hideOverlayHandler()"
-    (onShow)="showOverlayHandler()"
     appendTo="body">
     <header class="searchable-dropdown__search">
         <div class="searchable-dropdown__search-section">
             <ng-container
                 [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate"></ng-container>
         </div>
-        <div class="searchable-dropdown__search-action" *ngIf="action">
-            <p-button
-                (click)="action()"
-                icon="pi pi-plus"
-                styleClass="p-button-text p-button-rounded"></p-button>
-        </div>
+        @if (action) {
+            <div class="searchable-dropdown__search-action">
+                <p-button
+                    (click)="action($event)"
+                    icon="pi pi-plus"
+                    styleClass="p-button-text p-button-rounded"></p-button>
+            </div>
+        }
     </header>
 
     <p-dataView
-        class="searchable-dropdown__data-list"
         #dataView
-        [styleClass]="cssClassDataList"
+        (click)="$event.stopPropagation()"
+        (onLazyLoad)="paginate($event)"
         [lazy]="true"
         [pageLinks]="pageLinkSize"
         [paginator]="totalRecords > rows"
         [rows]="rows"
+        [styleClass]="cssClassDataList"
         [totalRecords]="totalRecords"
         [value]="options"
-        (click)="$event.stopPropagation()"
-        (onLazyLoad)="paginate($event)">
-        <ng-template let-item pTemplate="listItem">
+        class="searchable-dropdown__data-list">
+        <ng-template let-data pTemplate="list">
             <ng-container
-                [ngTemplateOutlet]="externalItemListTemplate || defaultItemListTemplate"
                 [ngTemplateOutletContext]="{
-                    item: item,
+                    data: data,
                     selectedOptionValue: selectedOptionValue
-                }"></ng-container>
+                }"
+                [ngTemplateOutlet]="externalItemListTemplate || defaultListTemplate"></ng-container>
         </ng-template>
     </p-dataView>
 </p-overlayPanel>
 
 <ng-container
-    [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate"
-    [ngTemplateOutletContext]="{ item: value }"></ng-container>
+    [ngTemplateOutletContext]="{ item: value }"
+    [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate"></ng-container>

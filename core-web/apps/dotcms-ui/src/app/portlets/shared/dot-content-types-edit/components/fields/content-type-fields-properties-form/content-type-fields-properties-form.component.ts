@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 
 import {
@@ -10,22 +9,28 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     styleUrls: ['./content-type-fields-properties-form.component.scss'],
-    templateUrl: './content-type-fields-properties-form.component.html'
+    templateUrl: './content-type-fields-properties-form.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private fieldPropertyService = inject(FieldPropertyService);
+
     @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
@@ -43,11 +48,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private originalValue: DotCMSContentTypeField;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private fb: UntypedFormBuilder,
-        private fieldPropertyService: FieldPropertyService
-    ) {}
-
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData?.currentValue && this.formFieldData) {
             this.destroy();
@@ -57,6 +57,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     }
 
     ngOnInit(): void {
+        // TODO: Migrate to Signal Forms
         this.initFormGroup();
     }
 
@@ -72,12 +73,28 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.form.value);
+            this.saveField.emit(this.transformFormValue(this.form.value));
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
 
-        this.valid.next(false);
+        this.valid.emit(false);
+    }
+
+    transformFormValue(value) {
+        if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
+            return {
+                ...value,
+                fieldVariables: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        key: 'newRenderMode',
+                        value: value.newRenderMode === 'true'
+                    }
+                ]
+            };
+        }
+        return value;
     }
 
     destroy(): void {
@@ -114,7 +131,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                     formFields[property] = [
                         {
                             value:
-                                this.formFieldData[property] ||
+                                this.fieldPropertyService.getValue(this.formFieldData, property) ||
                                 this.fieldPropertyService.getDefaultValue(
                                     property,
                                     this.formFieldData.clazz
@@ -137,12 +154,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private notifyFormChanges() {
         this.originalValue = this.form.value;
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.next(this.isFormValueUpdated() && this.form.valid);
+            this.valid.emit(this.isFormValueUpdated() && this.form.valid);
         });
     }
 
     private isFormValueUpdated(): boolean {
-        return !_.isEqual(this.form.value, this.originalValue);
+        return !isEqual(this.form.value, this.originalValue);
     }
 
     private isPropertyDisabled(property: string): boolean {
@@ -153,9 +170,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.fieldProperties = properties
             .filter((property) => this.fieldPropertyService.existsComponent(property))
             .sort(
-                (property1, proeprty2) =>
+                (property1, property2) =>
                     this.fieldPropertyService.getOrder(property1) -
-                    this.fieldPropertyService.getOrder(proeprty2)
+                    this.fieldPropertyService.getOrder(property2)
             );
     }
 

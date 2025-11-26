@@ -1,33 +1,26 @@
 {
-  "extends": ["../../../.eslintrc.json"],
-  "ignorePatterns": ["!**/*"],
-  "overrides": [
-    {
-      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
-      "rules": {
-        "@typescript-eslint/naming-convention": [
-          "error",
-          {
-            "selector": "class",
-            "format": ["PascalCase"],
-            "leadingUnderscore": "allow",
-            "trailingUnderscore": "allow"
-          }
-        ]
-      }
-    },
-
-    {
-      "files": ["*.json"],
-      "parser": "jsonc-eslint-parser",
-      "rules": {
-        "@nx/dependency-checks": [
-          "error",
-          {
-            "ignoredFiles": ["{projectRoot}/rollup.config.{js,ts,mjs,mts}"]
-          }
-        ]
-      }
-    }
-  ]
+    "extends": ["plugin:@nx/react", "../../../.eslintrc.base.json"],
+    "ignorePatterns": ["!**/*"],
+    "overrides": [
+        {
+            "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+            "rules": {
+                "@stylistic/padding-line-between-statements": [
+                    "error",
+                    { "blankLine": "always", "prev": "const", "next": "*" },
+                    { "blankLine": "always", "prev": "*", "next": "if" },
+                    { "blankLine": "always", "prev": "if", "next": "*" },
+                    { "blankLine": "always", "prev": "*", "next": "const" }
+                ]
+            }
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "rules": {}
+        },
+        {
+            "files": ["*.js", "*.jsx"],
+            "rules": {}
+        }
+    ]
 }

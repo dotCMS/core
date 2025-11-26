@@ -1,22 +1,21 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateChild, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotContentTypeService } from '@dotcms/data-access';
+
+import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 
 /**
  * Route Guard that checks if a User have access to the specified Content Type.
  */
 @Injectable()
 export class ContentletGuardService implements CanActivateChild {
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotNavigationService: DotNavigationService
-    ) {}
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotNavigationService = inject(DotNavigationService);
 
     canActivateChild(
         route: ActivatedRouteSnapshot,

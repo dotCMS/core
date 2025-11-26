@@ -11,10 +11,19 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link TagFactory} interface.
@@ -24,6 +33,7 @@ import java.util.*;
  */
 public class TagFactoryImpl implements TagFactory {
 
+    private static final Lazy<Integer> MAX_TOP_TAGS = Lazy.of(() -> Config.getIntProperty("MAX_TOP_TAGS", 1000));
     private static final String TAG_COLUMN_TAG_ID = "tag_id";
     private static final String TAG_COLUMN_TAGNAME = "tagname";
     private static final String TAG_COLUMN_HOST_ID = "host_id";
@@ -218,7 +228,10 @@ public class TagFactoryImpl implements TagFactory {
             if ( UtilMethods.isSet(host) ) {
 
                 String sortStr = "";
-                if ( UtilMethods.isSet(sort) ) {
+                if ( UtilMethods.isSet(tagName) ) {
+                    // When filtering by tag name, order by length first (shortest matches first), then alphabetically
+                    sortStr = "ORDER BY LENGTH(tagname), tagname ASC";
+                } else if ( UtilMethods.isSet(sort) ) {
                     String sortDirection = sort.startsWith("-") ? "desc" : "asc";
                     sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
 
@@ -232,6 +245,8 @@ public class TagFactoryImpl implements TagFactory {
                 //Filter by tagname, hosts and persona
                 if ( UtilMethods.isSet(tagName) ) {
 
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+
                     String personaFragment = "";
                     if ( excludePersonas ) {
                         personaFragment = " AND persona = ? ";
@@ -243,15 +258,15 @@ public class TagFactoryImpl implements TagFactory {
                         globalTagsFragment = " AND host_id = ? ";
                     }
 
-                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment + sortStr;
+                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? ESCAPE '\\' " + globalTagsFragment + personaFragment + sortStr;
 
                     dc.setSQL(SQLUtil.addLimits(sql, start, count));
-                    dc.addParam("%" + tagName.toLowerCase() + "%");
-                    try {
-                        dc.addParam(host.getMap().get("tagStorage").toString());
-                    } catch ( NullPointerException e ) {
-                        dc.addParam(Host.SYSTEM_HOST);
-                    }
+                    String escapedTagName = tagName.replace("\\", "\\\\")
+                                                   .replace("_", "\\_")
+                                                   .replace("%", "\\%")
+                                                   .toLowerCase();
+                    dc.addParam("%" + escapedTagName + "%");
+                    dc.addParam(effectiveTagStorage);
                     if ( globalTagsFilter ) {
                         dc.addParam(Host.SYSTEM_HOST);
                     }
@@ -262,6 +277,8 @@ public class TagFactoryImpl implements TagFactory {
                     //check if tag name is not set and if should display global tags
                     //it will check all global tags and current host tags.
 
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+
                     String personaFragment = "";
                     if ( excludePersonas ) {
                         personaFragment = " AND persona = ? ";
@@ -270,11 +287,7 @@ public class TagFactoryImpl implements TagFactory {
                     String sql = "SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + personaFragment + sortStr;
                     dc.setSQL(SQLUtil.addLimits(sql, start, count));
 
-                    try {
-                        dc.addParam(host.getMap().get("tagStorage").toString());
-                    } catch ( NullPointerException e ) {
-                        dc.addParam(Host.SYSTEM_HOST);
-                    }
+                    dc.addParam(effectiveTagStorage);
                     dc.addParam(Host.SYSTEM_HOST);
                     if ( excludePersonas ) {
                         dc.addParam(false);
@@ -283,29 +296,18 @@ public class TagFactoryImpl implements TagFactory {
                     //check all current host tags.
                     String sql = "SELECT * FROM tag ";
 
-                    Object tagStorage = host.getMap().get("tagStorage");
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
 
-                    if ( UtilMethods.isSet(tagStorage) ) {
+                    String personaFragment = "";
+                    if ( excludePersonas ) {
+                        personaFragment = " AND persona = ? ";
+                    }
 
-                        String personaFragment = "";
-                        if ( excludePersonas ) {
-                            personaFragment = " AND persona = ? ";
-                        }
-
-                        sql = sql + "WHERE host_id = ? " + personaFragment + sortStr;
-                        dc.setSQL(SQLUtil.addLimits(sql,start,count));
-                        dc.addParam(tagStorage.toString());
-                        if ( excludePersonas ) {
-                            dc.addParam(false);
-                        }
-                    } else {
-                        if ( excludePersonas ) {
-                            sql = sql + "WHERE persona = ? " + sortStr;
-                        }
-                        dc.setSQL(sql);
-                        if ( excludePersonas ) {
-                            dc.addParam(false);
-                        }
+                    sql = sql + "WHERE host_id = ? " + personaFragment + sortStr;
+                    dc.setSQL(SQLUtil.addLimits(sql,start,count));
+                    dc.addParam(effectiveTagStorage);
+                    if ( excludePersonas ) {
+                        dc.addParam(false);
                     }
                 }
 
@@ -315,7 +317,101 @@ public class TagFactoryImpl implements TagFactory {
         } catch ( Exception e ) {
             Logger.warn(Tag.class, "getFilteredTags failed: " + e, e);
         }
-        return new java.util.ArrayList<>();
+        return List.of();
+    }
+
+    @Override
+    public long getFilteredTagsCount(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas) throws DotDataException {
+        try {
+            final DotConnect dc = new DotConnect();
+            
+            Host host = null;
+            try {
+                host = APILocator.getHostAPI().find(hostFilter, APILocator.getUserAPI().getSystemUser(), true);
+            } catch (Exception e) {
+                Logger.warn(Tag.class, "Unable to get host according to search criteria - hostId = " + hostFilter);
+            }
+            
+            if (UtilMethods.isSet(host)) {
+                
+                // Filter by tagname, hosts and persona
+                if (UtilMethods.isSet(tagName)) {
+                    
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+                    
+                    String personaFragment = "";
+                    if (excludePersonas) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    String globalTagsFragment = "";
+                    if (globalTagsFilter) {
+                        globalTagsFragment = " AND (host_id = ? OR host_id = ?) ";
+                    } else {
+                        globalTagsFragment = " AND host_id = ? ";
+                    }
+                    
+                    String sql = "SELECT COUNT(*) as count FROM tag WHERE tagname LIKE ? ESCAPE '\\' " + globalTagsFragment + personaFragment;
+                    
+                    dc.setSQL(sql);
+                    String escapedTagName = tagName.replace("\\", "\\\\")
+                                                   .replace("_", "\\_")
+                                                   .replace("%", "\\%")
+                                                   .toLowerCase();
+                    dc.addParam("%" + escapedTagName + "%");
+                    dc.addParam(effectiveTagStorage);
+                    if (globalTagsFilter) {
+                        dc.addParam(Host.SYSTEM_HOST);
+                    }
+                    if (excludePersonas) {
+                        dc.addParam(false);
+                    }
+                } else if (!UtilMethods.isSet(tagName) && globalTagsFilter) {
+                    // Check if tag name is not set and if should display global tags
+                    
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+                    
+                    String personaFragment = "";
+                    if (excludePersonas) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    
+                    String sql = "SELECT COUNT(*) as count FROM tag WHERE (host_id = ? OR host_id = ? ) " + personaFragment;
+                    dc.setSQL(sql);
+                    
+                    dc.addParam(effectiveTagStorage);
+                    dc.addParam(Host.SYSTEM_HOST);
+                    if (excludePersonas) {
+                        dc.addParam(false);
+                    }
+                } else {
+                    // Check all current host tags.
+                    String sql = "SELECT COUNT(*) as count FROM tag ";
+                    
+                    String effectiveTagStorage = getEffectiveTagStorage(host);
+                    
+                    String personaFragment = "";
+                    if (excludePersonas) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    
+                    sql = sql + "WHERE host_id = ? " + personaFragment;
+                    dc.setSQL(sql);
+                    dc.addParam(effectiveTagStorage);
+                    if (excludePersonas) {
+                        dc.addParam(false);
+                    }
+                }
+                
+                // Execute and return the count
+                List<Map<String, Object>> results = dc.loadObjectResults();
+                if (!results.isEmpty()) {
+                    return Long.parseLong(results.get(0).get("count").toString());
+                }
+            }
+        } catch (Exception e) {
+            Logger.warn(Tag.class, "getFilteredTagsCount failed: " + e, e);
+        }
+        return 0L;
     }
 
     @Override
@@ -483,7 +579,7 @@ public class TagFactoryImpl implements TagFactory {
             tagInodeCache.putForTagId(tagId, tagInodes);
         }
 
-        return tagInodes;
+        return List.copyOf(tagInodes);
     }
 
     @Override
@@ -626,7 +722,7 @@ public class TagFactoryImpl implements TagFactory {
             tagCache.putForInode(inode, tags);
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     @Override
@@ -648,7 +744,57 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tags;
+        return List.copyOf(tags);
+    }
+
+    @Override
+    public Set<String> getTopTagsBySiteId(final String siteId) throws DotDataException {
+
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(siteId));
+
+        final String selectTopTagsQuery =
+                "select distinct(tagname), count(tinode) from " +
+                        "( " +
+                        "   select lower(tagname) as tagname, tag_inode.inode as tinode " +
+                        "   from  " +
+                        "   tag, tag_inode  " +
+                        "   where  " +
+                        "   tag.tag_id=tag_inode.tag_id  " +
+                        "   and tag.host_id=? " +
+                        "UNION ALL " +
+                        "   select lower(tagname) as tagname, tag_inode.inode as tinode " +
+                        "   from  " +
+                        "   tag, tag_inode  " +
+                        "   where  " +
+                        "   tag.tag_id=tag_inode.tag_id  " +
+                        ") as foo  " +
+                        "group by tagname  " +
+                        "order by count(tinode) desc " +
+                        "limit " + MAX_TOP_TAGS.get();
+
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(selectTopTagsQuery)
+                .addParam(siteId)
+                .loadObjectResults();
+
+        return results.stream().map(row -> row.get(TAG_COLUMN_TAGNAME).toString()).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Resolves the effective tag storage for a host, respecting the global parameter.
+     * 
+     * @param host The host to resolve tag storage for
+     * @return The effective tag storage ID
+     */
+    private String getEffectiveTagStorage(Host host) {
+        Object tagStorage = host.getMap().get("tagStorage");
+        
+        // If no tagStorage set, use site's own identifier (consistent with TagAPIImpl)
+        if (!UtilMethods.isSet(tagStorage)) {
+            return host.getIdentifier();
+        }
+        
+        return tagStorage.toString();
     }
 
     /**
@@ -681,7 +827,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return new ArrayList<>(tagsMap.values());
+        return List.copyOf(tagsMap.values());
     }
 
     /**
@@ -701,7 +847,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tags;
+        return List.copyOf(tags);
     }
 
     /**
@@ -721,7 +867,7 @@ public class TagFactoryImpl implements TagFactory {
             }
         }
 
-        return tagInodes;
+        return List.copyOf(tagInodes);
     }
 
 	/**

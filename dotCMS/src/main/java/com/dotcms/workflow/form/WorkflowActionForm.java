@@ -1,6 +1,6 @@
 package com.dotcms.workflow.form;
 
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.vavr.control.Try;
 
 import java.util.Arrays;
@@ -45,11 +46,13 @@ public class WorkflowActionForm extends Validated {
     @NotNull
     private final boolean       actionCommentable;
     @NotNull
+    @Hidden
     private final boolean       requiresCheckout;
     @NotNull
     private final Set<WorkflowState> showOn;
     @NotNull
     private final boolean       actionRoleHierarchyForAssign;
+    @Hidden
     private final boolean       roleHierarchyForAssign;
     @NotNull
     private final String        actionNextStep;

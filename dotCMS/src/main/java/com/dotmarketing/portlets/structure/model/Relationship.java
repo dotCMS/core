@@ -325,6 +325,23 @@ public class Relationship extends LegacyInode implements Serializable, ManifestI
 	}
 
 	@Override
+	public String toString() {
+		return "Relationship{" +
+				"inode='" + inode + '\'' +
+				", parentStructureInode='" + parentStructureInode + '\'' +
+				", childStructureInode='" + childStructureInode + '\'' +
+				", parentRelationName='" + parentRelationName + '\'' +
+				", childRelationName='" + childRelationName + '\'' +
+				", relationTypeValue='" + relationTypeValue + '\'' +
+				", cardinality=" + cardinality +
+				", parentRequired=" + parentRequired +
+				", childRequired=" + childRequired +
+				", fixed=" + fixed +
+				", modDate=" + modDate +
+				'}';
+	}
+
+	@Override
 	public ManifestInfo getManifestInfo(){
 		return new ManifestInfoBuilder()
 			.objectType(PusheableAsset.RELATIONSHIP.getType())

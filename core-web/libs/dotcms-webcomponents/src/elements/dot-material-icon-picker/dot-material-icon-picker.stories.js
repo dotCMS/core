@@ -6,16 +6,15 @@ export default {
         docs: {
             title: 'Material Icon Picker',
             description: {
-                component:
-                    'A component to display the thumbnail of a contentlet'
+                component: 'A component to display the thumbnail of a contentlet'
             },
             page: readme
-        },
+        }
     },
     args: {
         value: 'account_balance',
         size: '16px',
-        showColor: ['true', 'false'],
+        showColor: ['true', 'false']
     }
 };
 

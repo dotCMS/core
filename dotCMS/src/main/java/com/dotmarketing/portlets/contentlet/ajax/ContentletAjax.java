@@ -9,7 +9,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
@@ -111,10 +114,10 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -142,6 +145,8 @@ public class ContentletAjax {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+
+	private LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
 
 	//Number of children related IDs to be added to a lucene query to get children related to a selected parent
 	private static final int RELATIONSHIPS_FILTER_CRITERIA_SIZE = Config
@@ -1650,36 +1655,30 @@ public class ContentletAjax {
 	}
 
 	@CloseDB
-	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
-		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
-		ArrayList<String[]> list = new ArrayList<>(limit);
+	public List<String[]> doSearchGlossaryTerm(String valueToComplete, String language)
+			throws DotDataException, DotSecurityException {
+		final int limit = Config.getIntProperty("glossary.term.max.limit", 15);
+		List<String[]> list = new ArrayList<>(limit);
 		final User systemUser = APILocator.systemUser();
 		final long languageId = Long.parseLong(language);
-		List<String> listAddedKeys = new ArrayList<>();
-		String[] term;
 
-		List<LanguageKey> props = retrieveProperties(languageId);
 		valueToComplete = valueToComplete.toLowerCase();
-		for (LanguageKey prop : props) {
-			if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
-				term = new String[]{prop.getKey(),
-						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69)
-								: prop.getValue())};
-				list.add(term);
-				listAddedKeys.add(prop.getKey());
-			}
-		}
 
-		if(list.size() < limit){
-			List<KeyValue> languageVariables = APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
+		final List<String> listAddedKeys =
+				isLocalizationEnhancementsEnabled() ? collectLanguageVariables(valueToComplete,
+						list, languageId) : collectLanguageKeys(valueToComplete, list, languageId);
+
+		if (list.size() < limit) {
+			List<KeyValue> languageVariables = languageVariableAPI.getAllLanguageVariablesKeyStartsWith(
+					valueToComplete, languageId, systemUser, limit);
 			for (KeyValue languageVariable : languageVariables) {
-				if(!listAddedKeys.contains(languageVariable.getKey())) {
-					term = new String[]{languageVariable.getKey(),
+				if (!listAddedKeys.contains(languageVariable.getKey())) {
+					final String[] term = new String[]{languageVariable.getKey(),
 							(70 < languageVariable.getValue().length() ? languageVariable.getValue()
 									.substring(0, 69) : languageVariable.getValue())};
 					list.add(term);
 				}
-				if(list.size() == limit){
+				if (list.size() == limit) {
 					break;
 				}
 			}
@@ -1688,10 +1687,53 @@ public class ContentletAjax {
 		return list;
 	}
 
-	private List<LanguageKey> retrieveProperties(long langId) throws Exception {
-		Language lang = langAPI.getLanguage(langId);
-		return langAPI.getLanguageKeys(lang);
+	/**
+	 * Collects the language keys that start with the valueToComplete from the properties file
+	 * @param valueToComplete the value to complete
+	 * @param list the list to add the terms
+	 * @param languageId the language id
+	 * @return the list of added keys
+	 */
+	private List<String> collectLanguageKeys(final String valueToComplete, final List<String[]> list, final long languageId) {
+		final Language lang = langAPI.getLanguage(languageId);
+		final List<String> listAddedKeys = new ArrayList<>();
+		List<LanguageKey> props = langAPI.getLanguageKeys(lang);
+		for (LanguageKey prop : props) {
+			if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
+				final String[] term = new String[]{prop.getKey(),
+						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69)
+								: prop.getValue())};
+				list.add(term);
+				listAddedKeys.add(prop.getKey());
+			}
+		}
+		return listAddedKeys;
 	}
+
+	/**
+	 * Collects the language variables that start with the valueToComplete from the properties file
+	 * @param valueToComplete the value to complete
+	 * @param list the list to add the terms
+	 * @param languageId the language id
+	 * @return the list of added keys
+	 * @throws DotDataException if an error occurs
+	 */
+	private List<String> collectLanguageVariables(final String valueToComplete, final List<String[]> list, final long languageId)
+			throws DotDataException {
+		final List<String> listAddedKeys = new ArrayList<>();
+		final List<LanguageVariable> variables = languageVariableAPI.findVariables(languageId);
+		for (LanguageVariable variable : variables) {
+			if (variable.key().toLowerCase().startsWith(valueToComplete)) {
+				final String[] term = new String[]{variable.key(),
+						(70 < variable.value().length() ? variable.value().substring(0, 69)
+								: variable.value())};
+				list.add(term);
+				listAddedKeys.add(variable.key());
+			}
+		}
+		return listAddedKeys;
+	}
+
 
 	/**
 	 * Publishes or unpublishes contentlets from a given list of identifiers.  You can have to publish within
@@ -2116,9 +2158,11 @@ public class ContentletAjax {
 	  }
 	  catch(final Exception e){
 
-		  if (e instanceof DotContentletValidationException) {
-			  final DotContentletValidationException ve = DotContentletValidationException.class
-					  .cast(e);
+		  final
+		  Optional<Throwable> optionalThrowable = ExceptionUtil.get(e, DotContentletValidationException.class);
+
+		  if (optionalThrowable.isPresent()) {
+			  final DotContentletValidationException ve = (DotContentletValidationException) optionalThrowable.get();
 			  clearBinary = handleValidationException(user, ve, saveContentErrors);
 		  } else {
 			  final Throwable rootCause = getRootCause(e);
@@ -2333,7 +2377,13 @@ public class ContentletAjax {
 					saveContentErrors.add(errorString);
 				}
 				clearBinary = false;
-			}
+
+                try {
+                    HibernateUtil.rollbackTransaction();
+                } catch (DotHibernateException e) {
+                    Logger.error(ContentletAjax.class, e.getMessage());
+                }
+            }
 
 			if (ve.getMessage().contains(
 					"The content form submission data id different from the content which is trying to be edited")) {
@@ -2699,15 +2749,15 @@ public class ContentletAjax {
 				final Contentlet contentlet = conAPI.findContentletForLanguage(language.getId(), identifier);
 				if (null != contentlet) {
 					builder.add(
-							map("inode", contentlet.getInode(),
+							new HashMap<>(Map.of("inode", contentlet.getInode(),
 									"identifier", contentletIdentifier,
-									"languageId", language.getId() + "")
+									"languageId", language.getId() + ""))
 					);
 				} else {
 					builder.add(
-							map("inode", "",
+							new HashMap<>(Map.of("inode", "",
 									"identifier", contentletIdentifier,
-									"languageId", language.getId() + "")
+									"languageId", language.getId() + ""))
 					);
 				}
 			} catch (DotDataException | DotSecurityException e) {

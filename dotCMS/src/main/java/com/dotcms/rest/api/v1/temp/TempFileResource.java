@@ -31,12 +31,14 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -58,6 +60,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 
+@Tag(name = "Temporary Files")
 @Path("/v1/temp")
 public class TempFileResource {
 
@@ -168,7 +171,9 @@ public class TempFileResource {
                                 String.valueOf(futureIndex));
                     }
 
-                    return this.tempApi.createTempFile(fileName, statelessRequest, in);
+                    final String sanitize = sanitizeFileName(meta);
+
+                    return this.tempApi.createTempFile(sanitize, statelessRequest, in);
                 } catch (Exception e) {
 
                     Logger.error(this, e.getMessage(), e);
@@ -183,6 +188,11 @@ public class TempFileResource {
         }
 
         printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
+
+    private static @NotNull String sanitizeFileName(ContentDisposition meta) {
+        final String sanitize = meta.getFileName().replaceAll("[^\\x00-\\x7F]", StringPool.BLANK);
+        return sanitize;
     }
 
     private void printResponseEntityViewResult(final OutputStream outputStream,
@@ -256,7 +266,7 @@ public class TempFileResource {
             final List<DotTempFile> tempFiles = new ArrayList<>();
             tempFiles.add(tempApi
                     .createTempFileFromUrl(form.fileName, request, new URL(form.remoteUrl),
-                            form.urlTimeoutSeconds, form.maxFileLength));
+                            form.urlTimeoutSeconds));
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
 

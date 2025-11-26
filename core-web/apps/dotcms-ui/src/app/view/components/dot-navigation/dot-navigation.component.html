@@ -1,17 +1,16 @@
-<nav [class.collapsed]="dotNavigationService.collapsed$ | async" role="navigation">
+@let isCollapsed = $isCollapsed();
+
+<nav [class.collapsed]="isCollapsed" role="navigation">
+    <dot-nav-header [isCollapsed]="isCollapsed" (toggle)="handleCollapseButtonClick()" />
     <ul class="dot-nav">
-        <li
-            *ngFor="let item of menu$ | async"
-            class="dot-nav__list-item"
-            [class.dot-nav__list-item--active]="item.isOpen"
-        >
-            <dot-nav-item
-                [data]="item"
-                [collapsed]="dotNavigationService.collapsed$ | async"
-                (menuClick)="onMenuClick($event)"
-                (itemClick)="onItemClick($event)"
-            >
-            </dot-nav-item>
-        </li>
+        @for (item of $menu(); track item.id) {
+            <li [class.dot-nav__list-item--active]="item.isOpen" class="dot-nav__list-item">
+                <dot-nav-item
+                    (menuClick)="onMenuClick($event)"
+                    (itemClick)="onItemClick($event)"
+                    [data]="item"
+                    [collapsed]="isCollapsed" />
+            </li>
+        }
     </ul>
 </nav>

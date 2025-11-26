@@ -81,7 +81,7 @@ div.calendar {
     padding: 2px 4px 2px 2px;
 }
 .calendar tbody .day.othermonth {
-    font-size: 80%;
+    font-size: $font-size-sm;
     color: #bbb;
 }
 .calendar tbody .day.othermonth.oweekend {
@@ -192,7 +192,7 @@ div.calendar {
     border: 1px solid #655;
     background: #def;
     color: #000;
-    font-size: 90%;
+    font-size: $font-size-sm;
 }
 
 .calendar .combo .label,

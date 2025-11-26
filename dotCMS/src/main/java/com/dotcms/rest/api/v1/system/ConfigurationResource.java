@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
@@ -35,6 +36,7 @@ import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.liferay.util.LocaleUtil;
@@ -55,6 +57,7 @@ import com.liferay.util.LocaleUtil;
  *
  */
 @Path("/v1/configuration")
+@Tag(name = "System Configuration", description = "System configuration and company settings")
 @SuppressWarnings("serial")
 public class ConfigurationResource implements Serializable {
 
@@ -62,10 +65,12 @@ public class ConfigurationResource implements Serializable {
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
-					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES",
-					"FEATURE_FLAG_EXPERIMENTS", "DOTFAVORITEPAGE_FEATURE_ENABLE", "FEATURE_FLAG_TEMPLATE_BUILDER_2",
-					"SHOW_VIDEO_THUMBNAIL", "EXPERIMENTS_MIN_DURATION", "EXPERIMENTS_MAX_DURATION", "EXPERIMENTS_DEFAULT_DURATION", "FEATURE_FLAG_SEO_IMPROVEMENTS",
-					"FEATURE_FLAG_SEO_PAGE_TOOLS", "FEATURE_FLAG_EDIT_URL_CONTENT_MAP", "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE", "FEATURE_FLAG_NEW_BINARY_FIELD", "FEATURE_FLAG_ANNOUNCEMENTS", "FEATURE_FLAG_NEW_EDIT_PAGE"  }));
+					new String[] {"EMAIL_SYSTEM_ADDRESS", "WYSIWYG_IMAGE_URL_PATTERN", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES", "DEFAULT_CONTAINER",
+							FeatureFlagName.FEATURE_FLAG_EXPERIMENTS, FeatureFlagName.DOTFAVORITEPAGE_FEATURE_ENABLE, FeatureFlagName.FEATURE_FLAG_TEMPLATE_BUILDER_2,
+					"SHOW_VIDEO_THUMBNAIL", "EXPERIMENTS_MIN_DURATION", "EXPERIMENTS_MAX_DURATION", "EXPERIMENTS_DEFAULT_DURATION", FeatureFlagName.FEATURE_FLAG_SEO_IMPROVEMENTS,
+							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",
+							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
+							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR  }));
 
 
 	private boolean isOnBlackList(final String key) {

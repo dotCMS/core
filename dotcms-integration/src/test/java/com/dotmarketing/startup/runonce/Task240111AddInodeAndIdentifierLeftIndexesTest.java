@@ -38,28 +38,11 @@ public class Task240111AddInodeAndIdentifierLeftIndexesTest {
         final Task240111AddInodeAndIdentifierLeftIndexes task = new Task240111AddInodeAndIdentifierLeftIndexes();
         task.executeUpgrade();
 
+        final DotDatabaseMetaData dmd = new DotDatabaseMetaData();
+
         assertTrue("inode_inode_leading_idx index should exist in the inode table",
-                validateIndex("inode", "inode_inode_leading_idx"));
+                dmd.checkIndex("inode", "inode_inode_leading_idx"));
         assertTrue("identifier_id_leading_idx index should exist in the identifier table",
-                validateIndex("identifier", "identifier_id_leading_idx"));
-    }
-
-    private boolean validateIndex(final String tableName, final String indexName) {
-        final DotDatabaseMetaData dbMetadata = new DotDatabaseMetaData();
-
-        try {
-            final ResultSet indicesInfo = dbMetadata.getIndices(DbConnectionFactory.getConnection(),
-                    null, tableName, false);
-            while (indicesInfo.next()) {
-                final String currentIndex = indicesInfo.getString("INDEX_NAME");
-
-                if (currentIndex.equals(indexName)) {
-                    return true;
-                }
-            }
-        } catch (final SQLException e) {
-            Logger.error(this, e);
-        }
-        return false;
+                dmd.checkIndex("identifier", "identifier_id_leading_idx"));
     }
 }

@@ -59,7 +59,8 @@
     color: $color-palette-gray-700;
     display: block;
     font-size: $font-size-sm;
-    margin-top: 0.25rem;
+    margin-top: $spacing-0;
+    word-break: break-word;
 }
 
 .form__label {
@@ -104,5 +105,17 @@
         align-items: center;
         display: flex;
         justify-content: space-between;
+    }
+}
+
+.error-message {
+    small {
+        color: $color-alert-red;
+    }
+}
+
+.hint-message {
+    small {
+        color: var(--gray-700);
     }
 }

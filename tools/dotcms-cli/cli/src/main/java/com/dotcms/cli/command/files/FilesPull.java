@@ -24,8 +24,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -52,8 +52,7 @@ import picocli.CommandLine;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotCommand,
-        DotPull {
+public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotPull {
 
     static final String NAME = "pull";
 

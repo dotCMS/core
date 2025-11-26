@@ -69,10 +69,10 @@ export class DotAssetDropZone {
 
     /* custom function to upload files */
     @Prop() customUploadFiles: (props: {
-        files: File[],
-        onSuccess: () => void,
-        updateProgress: (progress: number) => void,
-        onError: (header: string, message: string) => void
+        files: File[];
+        onSuccess: () => void;
+        updateProgress: (progress: number) => void;
+        onError: (header: string, message: string) => void;
     }) => Promise<any>;
 
     /** Emit an array of Contentlets just created or array of errors */
@@ -92,13 +92,11 @@ export class DotAssetDropZone {
                 ondrop={(event: DragEvent) => this.dropHandler(event)}
                 ondragenter={(event: DragEvent) => this.dragEnterHandler(event)}
                 ondragleave={(event: DragEvent) => this.dragOutHandler(event)}
-                ondragover={(event: DragEvent) => this.dragOverHandler(event)}
-            >
+                ondragover={(event: DragEvent) => this.dragOverHandler(event)}>
                 <div
                     class={`${this.dropState} dot-asset-drop-zone__indicators ${
                         this.displayIndicator ? 'active' : ''
-                    }`}
-                >
+                    }`}>
                     <div class="dot-asset-drop-zone__icon">
                         <mwc-icon>get_app</mwc-icon>
                         <span>{this.dropFilesText}</span>
@@ -110,8 +108,7 @@ export class DotAssetDropZone {
                     <mwc-dialog
                         heading={this.dialogHeader}
                         open={!!this.errorMessage}
-                        onClosing={() => this.hideOverlay()}
-                    >
+                        onClosing={() => this.hideOverlay()}>
                         {this.errorMessage}
                         <mwc-button dense unelevated slot="primaryAction" dialogAction="close">
                             {this.dialogLabels.closeButton}
@@ -299,6 +296,6 @@ export class DotAssetDropZone {
                   const extension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
                   return this.acceptTypes.includes(extension);
               })
-            : true; 
+            : true;
     }
 }

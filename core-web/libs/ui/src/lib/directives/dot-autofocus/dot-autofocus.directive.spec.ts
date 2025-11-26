@@ -4,15 +4,17 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotAutofocusDirective } from '@dotcms/ui';
+import { DotAutofocusDirective } from './dot-autofocus.directive';
 
 @Component({
     template: `
-        <input *ngIf="disabled; else not" type="text" dotAutofocus disabled />
-        <ng-template #not>
+        @if (disabled) {
+            <input type="text" dotAutofocus disabled />
+        } @else {
             <input type="text" dotAutofocus />
-        </ng-template>
-    `
+        }
+    `,
+    standalone: false
 })
 class TestHostComponent {
     disabled = false;
@@ -39,7 +41,7 @@ describe('Directive: DotAutofocus', () => {
     it('should call focus', async () => {
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
-        spyOn(inputEl.nativeElement, 'focus');
+        jest.spyOn(inputEl.nativeElement, 'focus');
 
         await fixture.whenStable();
 
@@ -50,7 +52,7 @@ describe('Directive: DotAutofocus', () => {
         component.setDisabled(true);
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
-        spyOn(inputEl.nativeElement, 'focus');
+        jest.spyOn(inputEl.nativeElement, 'focus');
 
         await fixture.whenStable();
         expect(inputEl.nativeElement.focus).not.toHaveBeenCalled();

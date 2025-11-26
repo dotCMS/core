@@ -1,8 +1,43 @@
-<!-- TODO: Investigate how to control a repeated option value -->
-<p-radioButton
-    *ngFor="let option of options; let i = index"
-    [inputId]="field.variable + i"
-    [name]="field.variable"
-    [value]="option.value"
-    [label]="option.label"
-    [formControlName]="field.variable" />
+@let options = $options();
+@let field = $field();
+@let showLabel = $showLabel();
+@let fieldHasError = $hasError();
+
+<dot-card-field [hasError]="fieldHasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        <div class="flex flex-column gap-2">
+            @for (option of options; track $index) {
+                <p-radioButton
+                    [inputId]="field.variable + '_' + option.value"
+                    [name]="field.variable"
+                    [class.ng-invalid]="fieldHasError"
+                    [class.ng-dirty]="fieldHasError"
+                    [value]="option.value"
+                    [label]="option.label"
+                    [formControlName]="field.variable" />
+            }
+        </div>
+    </dot-card-field-content>
+    <dot-card-field-footer>
+        @if (fieldHasError) {
+            <div class="error-message">
+                @if (isRequired) {
+                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+                }
+            </div>
+        }
+
+        @if (!fieldHasError && field.hint) {
+            <div class="hint-message">
+                <small [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            </div>
+        }
+    </dot-card-field-footer>
+</dot-card-field>

@@ -1,0 +1,143 @@
+# Default values for jmeter-performance
+# This is a YAML-formatted file.
+
+# Namespace configuration
+namespace:
+  name: "analytics-dev"
+  create: false
+
+# Pod configuration
+pod:
+  name: "jmeter-test-pod"
+  restartPolicy: "Never"
+  
+  image:
+    repository: "alpine/jmeter"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
+  
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "8Gi"
+    limits:
+      cpu: "4000m"
+      memory: "16Gi"
+  
+  # JMeter JVM configuration (standard Java options)
+  jvm:
+    # Memory settings using standard Java flags
+    heap: "-Xms6g -Xmx12g"
+    args: "-Xms6g -Xmx12g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:G1ReservePercent=20 -Dnashorn.args=--no-deprecation-warning"
+
+# JMeter is pre-installed in the alpine/jmeter image - no download needed
+
+# Authentication configuration
+auth:
+  # Use Kubernetes secret for secure token storage (recommended)
+  useSecret: false
+  
+  # DEPRECATED: Direct token values (insecure - only for testing)
+  # These values are ignored when useSecret=true
+  # Use environment variables DOTCMS_JWT_TOKEN and DOTCMS_ANALYTICS_KEY instead
+  # 
+  # JWT Token: DotCMS API token for authenticated requests
+  # - Create in DotCMS: Admin → User Tools → API Tokens
+  # - Or generate via /api/v1/authentication endpoint
+  # - Format: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+  jwtToken: ""
+
+# Endpoint configurations
+endpoints:
+  dotcms:
+    # REQUIRED: DotCMS API hostname - must be provided via --set or values file
+    # Example: demo.dotcms.com, your-instance.dotcms.cloud
+    host: ""
+    port: 443
+    scheme: "https"
+    path: "/api/v1/analytics/content/event"
+  
+  analytics:
+    host: "jitsu-api.analytics-dev.svc.cluster.local"
+    port: 8001
+    scheme: "http"
+    path: "/api/v1/event"
+    # Analytics Key from DotCMS Analytics App (ignored when auth.useSecret=true)
+    # Use environment variable DOTCMS_ANALYTICS_KEY instead
+    #
+    # Analytics Key: From DotCMS Analytics App Configuration
+    # - Location: DotCMS → Apps → Analytics → Configuration → Analytics Key
+    # - Format: js.cluster1.customer1.vgwy3nli4co84u531c
+    # - Purpose: Identifies your analytics tracking in the analytics platform
+    key: ""
+
+# Environment configuration
+environment:
+  name: "auth"
+  cluster: "example-cluster"
+  customer: "example-customer"
+  docHost: "your-dotcms-instance.dotcms.cloud"
+
+# Test configuration defaults
+testing:
+  # Default test parameters
+  defaults:
+    threads: 500
+    eventsPerSecond: 1000
+    duration: 600
+    rampup: 60
+    maxResponseTime: 30000  # Increased to 30 seconds to catch extreme delays
+    connectTimeout: 10000
+    responseTimeout: 30000
+  
+  # Performance limits test configuration
+  limits:
+    dotcms:
+      # MEMORY EXHAUSTION TEST - Sustained load to fill buffers over time
+      levels: [1000]  # Re-test the 1000 eps level with reduced logging
+      maxThreads: 500  # High thread count to maximize memory pressure
+      minThreads: 5
+      threadsPerEps: 2  # threads = eps / 2
+    
+    analytics:
+      # Test levels for Direct Analytics - Disabled for memory exhaustion test
+      levels: []
+      maxThreads: 150
+      minThreads: 10
+      threadsPerEps: 5  # threads = eps / 5
+    
+    # Test execution parameters - EXTENDED DURATION for memory accumulation
+    testDuration: 600     # 10 MINUTES per test to allow buffer accumulation
+    rampupTime: 60       # 1 minute ramp up
+    errorThreshold: 90   # Continue until 90% error rate (very high threshold)
+
+# ConfigMap configuration
+configMaps:
+  scripts:
+    name: "jmeter-scripts"
+    mountPath: "/opt/jmeter-scripts"
+    defaultMode: 0755
+  
+  jmx:
+    name: "jmeter-jmx-tests"
+    mountPath: "/opt/jmx-tests"
+    
+  config:
+    name: "jmeter-config"
+    mountPath: "/opt/config"
+
+# Volume configuration
+volumes:
+  results:
+    name: "test-results"
+    mountPath: "/opt/test-results"
+
+# Labels and annotations
+labels:
+  app: "jmeter-load-test"
+  component: "performance-testing"
+  version: "1.0.0"
+
+annotations:
+  description: "JMeter Performance Testing for DotCMS Analytics APIs - MEMORY EXHAUSTION TEST"
+  contact: "teamplatform@dotcms.com"

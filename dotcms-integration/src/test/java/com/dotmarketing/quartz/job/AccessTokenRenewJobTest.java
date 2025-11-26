@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,9 +30,10 @@ import org.quartz.JobExecutionContext;
 import org.quartz.SchedulerException;
 
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
-import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB;
+import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_DEFAULT;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP;
@@ -50,6 +52,7 @@ import static org.junit.Assert.assertTrue;
 public class AccessTokenRenewJobTest extends IntegrationTestBase {
 
     private static AnalyticsAPI analyticsAPI;
+    private static int accessTokenTtl;
     private AccessTokenRenewJob accessTokenRenewJob;
     private Host host;
     private AnalyticsApp analyticsApp;
@@ -65,6 +68,16 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
 
         deleteJob();
         DotInitScheduler.start();
+
+        accessTokenTtl = Config.getIntProperty(
+                AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY,
+                (int) TimeUnit.HOURS.toSeconds(1));
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Config.setProperty(ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY, ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_DEFAULT);
+        Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
     }
 
     @Before
@@ -111,7 +124,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     public void test_accessTokenRenew_expired() throws Exception {
         analyticsAPI.resetAccessToken(analyticsApp);
 
-        final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL);
+        final Instant issueDate = Instant.now().minusSeconds(accessTokenTtl);
         AccessToken accessToken = analyticsAPI
             .getAccessToken(
                 analyticsApp,
@@ -136,7 +149,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     public void test_accessTokenRenew_inWindow() throws Exception {
         analyticsAPI.resetAccessToken(analyticsApp);
 
-        final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL).plusSeconds(30);
+        final Instant issueDate = Instant.now().minusSeconds(accessTokenTtl).plusSeconds(30);
         AccessToken accessToken = analyticsAPI
             .getAccessToken(
                 analyticsApp,

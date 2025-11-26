@@ -1,0 +1,3431 @@
+{
+	"info": {
+		"_postman_id": "140d143a-c58a-471c-9e22-2754cf252c22",
+		"name": "AI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
+	},
+	"item": [
+		{
+			"name": "pre",
+			"item": [
+				{
+					"name": "dotAI App",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"apiKey\": {\n    \"value\": \"some-api-key-1a2bc3\"\n  },\n  \"textModelNames\": {\n    \"value\": \"gpt-4o-mini\"\n  },\n  \"textModelMaxTokens\": {\n    \"value\":\"16384\"\n  },\n  \"imageModelNames\": {\n    \"value\": \"dall-e-3\"\n  },\n  \"imageSize\": {\n    \"value\": \"1024x1024\"\n  },\n  \"imageModelMaxTokens\": {\n    \"value\":\"0\"\n  },\n  \"embeddingsModelNames\": {\n    \"value\": \"text-embedding-ada-002\"\n  },\n  \"embeddingsModelMaxTokens\": {\n    \"value\":\"8191\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotAI",
+								"SYSTEM_HOST"
+							]
+						},
+						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Generative",
+			"item": [
+				{
+					"name": "Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Type is returned', function () {",
+									"    pm.expect(jsonData.type, 'Type is \"image\"').equals('image');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/image/test",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"image",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Text",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Text is generated', function () {",
+									"    pm.expect(jsonData.choices, 'Choices are included in dotAI response').not.undefined;",
+									"    pm.expect(jsonData.choices, 'Choices are included in dotAI respons are not empty').not.empty;",
+									"    pm.expect(jsonData.choices[0].text).contains('The FIFA World Cup in 2018 was won by the French national football team')",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"Who won the FIFA World Cup in 2018?\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/text/generate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"text",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Text",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Text is generated', function () {",
+									"    pm.expect(jsonData.choices, 'Choices are included in dotAI response').not.undefined;",
+									"    pm.expect(jsonData.choices, 'Choices are included in dotAI respons are not empty').not.empty;",
+									"    pm.expect(jsonData.choices[0].text).contains('The theory of relativity, developed by Albert Einstein, consists of')",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/text/generate?prompt=What%20is%20the%20theory%20of%20relativity%3F",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"text",
+								"generate"
+							],
+							"query": [
+								{
+									"key": "prompt",
+									"value": "What%20is%20the%20theory%20of%20relativity%3F"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Text without prompt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message, 'Error message is included in response').equals('query/prompt cannot be null');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/text/generate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"text",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Image is generated', function () {",
+									"    pm.expect(jsonData.revised_prompt, 'Field revised_prompt is included in dotAI response').not.null;",
+									"    pm.expect(jsonData.url, 'Field url is included in dotAI response').not.null;",
+									"    pm.expect(jsonData.tempFileName, 'Field tempFileName is included in dotAI response').not.null;",
+									"    pm.expect(jsonData.tempFile, 'Field tempFile is included in dotAI response').not.null;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"Generate image of a turtle training for a marathon\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/image/generate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"image",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Image is generated', function () {",
+									"    pm.expect(jsonData.revised_prompt, 'Field revised_prompt is included in dotAI response').not.null;",
+									"    pm.expect(jsonData.url, 'Field url is included in dotAI response').not.null;",
+									"    pm.expect(jsonData.tempFileName, 'Field tempFileName is included in dotAI response').not.null;",
+									"    pm.expect(jsonData.tempFile, 'Field tempFile is included in dotAI response').not.null;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/image/generate?prompt=Image%20of%20a%20robot%20painting%20the%20sixteen%20chapel",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"image",
+								"generate"
+							],
+							"query": [
+								{
+									"key": "prompt",
+									"value": "Image%20of%20a%20robot%20painting%20the%20sixteen%20chapel"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Image without prompt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.error, 'Error message is included in response').equals('`prompt` is required');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/image/generate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"image",
+								"generate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Embeddings",
+			"item": [
+				{
+					"name": "Delete DB",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('DB is reset', function () {",
+									"    pm.expect(jsonData.created, 'DB is deleted and created').equals(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings/db",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings",
+								"db"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Type is returned', function () {",
+									"    pm.expect(jsonData.type, 'Type is \"embeddings\"').equals('embeddings');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings/test",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const seoContentTypeId = jsonData.entity[0].id;",
+									"pm.collectionVariables.set('seoContentTypeId', seoContentTypeId);",
+									"const seoContentTypeVar = jsonData.entity[0].variable;",
+									"pm.collectionVariables.set('seoContentTypeVar', seoContentTypeVar);",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    currentSeo.seoContentTypeId = seoContentTypeId;",
+									"    currentSeo.seoContentTypeVar = seoContentTypeVar;",
+									"    pm.collectionVariables.set('seoText', currentSeo.text);",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									"",
+									"console.log('seoIndex', seoIndex);",
+									"console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"",
+									"pm.execution.setNextRequest('Add Field to Content Type');",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"",
+									" if (seoIndex === 0) {",
+									"    pm.collectionVariables.clear();",
+									" }",
+									" pm.collectionVariables.set('seoIndex', seoIndex);",
+									"",
+									"const initialSeos = [",
+									"    {",
+									"        id: 'stock-market',",
+									"        text: 'The stock market has shown significant volatility over the past few months. Analysts attribute this to geopolitical tensions and economic uncertainty. Investors are advised to diversify their portfolios to mitigate risks.'",
+									"    },",
+									"    {",
+									"        id: 'popular-novel',",
+									"        text: 'J.K. Rowling\\'s \\'Harry Potter and the Sorcerer\\'s Stone\\' follows the journey of a young boy, Harry Potter, who discovers he is a wizard on his eleventh birthday. He attends Hogwarts School of Witchcraft and Wizardry, where he makes friends, learns about his past, and uncovers the truth about his parents\\' mysterious deaths.'",
+									"    },",
+									"    {",
+									"        id: 'historical-event',",
+									"        text: 'The signing of the Declaration of Independence on July 4, 1776, marked the Thirteen Colonies\\' formal separation from Great Britain. This historic document, primarily authored by Thomas Jefferson, outlined the colonies\\' grievances against the British crown and asserted their right to self-governance.'",
+									"    },",
+									"    {",
+									"        id: 'mental-health',",
+									"        text: 'Mental health awareness has become increasingly important in recent years. Experts emphasize the need for regular mental health check-ups and advocate for reducing the stigma associated with mental illnesses.'",
+									"    }",
+									"];",
+									"",
+									"const collectionSeos = pm.collectionVariables.get('seos');",
+									"const seos = collectionSeos ? JSON.parse(collectionSeos) : initialSeos;",
+									"pm.collectionVariables.set('seoId', seos[seoIndex].id);",
+									"const seosJson = JSON.stringify(seos, null, 2);",
+									"pm.collectionVariables.set('seos', seosJson);",
+									"console.log('seos', seosJson);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"{{seoId}}-ContentType\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Field to Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.execution.setNextRequest('Create Contentlet');"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{seoContentTypeId}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{seoContentTypeId}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"seo\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v3/contenttype/{{seoContentTypeId}}/fields/move",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v3",
+								"contenttype",
+								"{{seoContentTypeId}}",
+								"fields",
+								"move"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"",
+									"let seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"console.log('seoIndex', seoIndex);",
+									"",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    if (!currentSeo.contentlets) {",
+									"        currentSeo.contentlets = [];",
+									"    }",
+									"",
+									"    const contentlet = {};",
+									"    contentlet.identifier = jsonData.entity.identifier;",
+									"    contentlet.inode = jsonData.entity.inode;",
+									"    currentSeo.contentlets.push(contentlet);",
+									"    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									"",
+									"seoIndex++;",
+									"pm.collectionVariables.set('seoIndex', seoIndex);",
+									"console.log('New seoIndex', seoIndex);",
+									"let nextRequest = null;",
+									"if (seoIndex < seos.length) {",
+									"    console.log('Continuing with next SEO');",
+									"    nextRequest = 'Create Content Type'",
+									"} else {",
+									"    console.log('SEO loading done');",
+									"    pm.collectionVariables.set('seoIndex', null);",
+									"    pm.collectionVariables.set('seoId', null);",
+									"    pm.collectionVariables.set('seoContentTypeId', null);",
+									"    pm.collectionVariables.set('seoContentTypeVar', null);",
+									"    pm.collectionVariables.set('seoText', null);",
+									"    nextRequest = 'Create Embeddings without query';",
+									"}",
+									"pm.execution.setNextRequest(nextRequest);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_{{seoId}}\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{seoContentTypeId}}\",\n        \"seo\": \"{{seoText}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Embeddings without query",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message, 'Error message is included in response').equals('query cannot be null');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Embeddings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"let seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    if (!currentSeo.embedded) {",
+									"        currentSeo.embedded = jsonData.totalToEmbed > 0;",
+									"    }",
+									"    ",
+									"    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									"",
+									"pm.test('Emebeddings are created', function () {",
+									"    pm.expect(jsonData.indexName, 'Index name should be \"default\"').equals('default');",
+									"    pm.expect(parseInt(jsonData.timeToEmbeddings.split('ms')[0]), 'Time to embeddings must be greater than zero').greaterThan(0);",
+									"});",
+									"",
+									"if (currentSeo.embedded) {",
+									"    pm.expect(jsonData.totalToEmbed, 'Total to embed is greater than zero').greaterThan(0);",
+									"} else {",
+									"    pm.expect(jsonData.totalToEmbed, 'Total to embed is zero').equals(0);",
+									"}",
+									"",
+									"seoIndex++;",
+									"pm.collectionVariables.set('seoIndex', seoIndex);",
+									"console.log('New seoIndex', seoIndex);",
+									"let nextRequest = null;",
+									"if (seoIndex < seos.length) {",
+									"    console.log('Continuing with next SEO');",
+									"    nextRequest = 'Create Embeddings';",
+									"} else {",
+									"    console.log('Embeddings creation done');",
+									"    pm.collectionVariables.set('seoIndex', null);",
+									"    pm.collectionVariables.set('seoId', null);",
+									"    pm.collectionVariables.set('seoContentTypeVar', null);",
+									"    pm.collectionVariables.set('seoContentTypeId', null);",
+									"    pm.collectionVariables.set('seoText', null);",
+									"    nextRequest = 'Count Embeddings without prompt';",
+									"}",
+									"pm.execution.setNextRequest(nextRequest);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]') || 0;",
+									"const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"fields\": \"seo\",\n    \"model\": \"text-embedding-ada-002\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Count Embeddings without prompt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message).equals('query/prompt cannot be null');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings/count",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Count Embeddings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Embeddings are counted', function () {",
+									"    pm.expect(jsonData.embeddingsCount, 'Embeddings count should be 2').equals(2);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoContentTypeVar', seos[0].seoContentTypeVar);",
+									"pm.collectionVariables.set('seoText', seos[0].text);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"model\": \"text-embedding-ada-002\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings/count",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings",
+								"count"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Index Count",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"",
+									"pm.test('Embeddings are counted by index', function () {",
+									"    const defaultIndexCount = jsonData.indexCount['default'];",
+									"    pm.expect(defaultIndexCount, 'Embeddings by index count should exist').not.undefined;",
+									"    pm.expect(defaultIndexCount.contentTypes.split(',').length, 'Embeddings by index content types splitted by comma should be 4').equals(4);",
+									"    pm.expect(defaultIndexCount.contents, 'Embeddings by index contents count should be 4').equals(4);",
+									"    seos.forEach(seo => pm.expect(defaultIndexCount.contentTypes.includes(seo.seoContentTypeVar), 'Each seo content type should exist in response `contentTypes`').is.true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings/indexCount",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings",
+								"indexCount"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Embeddings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Embeddings are deleted', function () {",
+									"    pm.expect(jsonData.deleted, 'Number of embeddings deleted must be greater than zero').greaterThan(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoContentTypeVar', seos[0].seoContentTypeVar);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"deleteQuery\": \"+contentType:{{seoContentTypeVar}}\",\n    \"indexName\": \"default\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Embeddings without delete query",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Embeddings are deleted', function () {",
+									"    pm.expect(jsonData.deleted, 'Number of embeddings deleted must be greater than zero').greaterThan(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoContentTypeVar', seos[3].seoContentTypeVar);",
+									"pm.collectionVariables.set('identifier', seos[3].contentlets[0].identifier);",
+									"pm.collectionVariables.set('inode', seos[3].contentlets[0].inode);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"indexName\": \"default\",\n    \"identifier\": \"{{identifier}}\",\n    \"inode\": \"{{inode}}\",\n    \"contentType\": \"{{seoContentTypeVar}}\",\n    \"language\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Type is returned', function () {",
+									"    pm.expect(jsonData.type, 'Type is \"search\"').equals('search');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search/test",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search without query",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message, 'Error message is included in response').equals('query/prompt cannot be null');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Search return results', function () {",
+									"    const seoText = pm.collectionVariables.get('seoText');",
+									"    const seoContentTypeId = pm.collectionVariables.get('seoContentTypeId');",
+									"    const seoContentTypeVar = pm.collectionVariables.get('seoContentTypeVar');",
+									"    pm.expect(parseInt(jsonData.timeToEmbeddings.split('ms')[0]), 'Time to embeddings must be greater than zero').greaterThan(0);",
+									"    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
+									"    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
+									"    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
+									"    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
+									"    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
+									"    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
+									"    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
+									"    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
+									"    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
+									"    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
+									"    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('seoIndex', null);",
+									"pm.collectionVariables.set('seoContentTypeVar', null);",
+									"pm.collectionVariables.set('seoContentTypeId', null);",
+									"pm.collectionVariables.set('seoText', null);",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const currentSeo = seos[1];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+									"    pm.collectionVariables.set('seoContentTypeId', currentSeo.seoContentTypeId);",
+									"    pm.collectionVariables.set('seoText', currentSeo.text);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Search return results', function () {",
+									"    const seoText = decodeURI(pm.collectionVariables.get('seoText'));",
+									"    const seoContentTypeId = pm.collectionVariables.get('seoContentTypeId');",
+									"    const seoContentTypeVar = pm.collectionVariables.get('seoContentTypeVar');",
+									"    pm.expect(parseInt(jsonData.timeToEmbeddings.split('ms')[0]), 'Time to embeddings must be greater than zero').greaterThan(0);",
+									"    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
+									"    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
+									"    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
+									"    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.5);",
+									"    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
+									"    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
+									"    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
+									"    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
+									"    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
+									"    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
+									"    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const currentSeo = seos[2];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+									"    pm.collectionVariables.set('seoContentTypeId', currentSeo.seoContentTypeId);",
+									"    pm.collectionVariables.set('seoText', encodeURI(currentSeo.text));",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search?query={{seoText}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{seoText}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Related not found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message).equals('contentlet not found');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"inode\": \"UNKNOWN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search/related",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search",
+								"related"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Related by inode without fieldVar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message).equals('content not found');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('seoIndex', null);",
+									"pm.collectionVariables.set('seoContentTypeVar', null);",
+									"pm.collectionVariables.set('seoContentTypeId', null);",
+									"pm.collectionVariables.set('seoText', null);",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const currentSeo = seos[1];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('inode', currentSeo.contentlets[0].inode);",
+									"    pm.collectionVariables.set('identifier', currentSeo.contentlets[0].identifier);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"inode\": \"{{inode}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search/related",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search",
+								"related"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contentlet - Popular Novel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"",
+									"let seoIndex = 1;",
+									"console.log('seoIndex', seoIndex);",
+									"",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    if (!currentSeo.contentlets) {",
+									"        currentSeo.contentlets = [];",
+									"    }",
+									"",
+									"    const contentlet = {};",
+									"    contentlet.identifier = jsonData.entity.identifier;",
+									"    contentlet.inode = jsonData.entity.inode;",
+									"    currentSeo.contentlets.push(contentlet);",
+									"    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"title\": \"content_popular-novel\",\n        \"languageId\": 1,\n        \"stInode\": \"8c12f1be13fb43db771731910991e759\",\n        \"seo\": \"J.K. Rowling's 'Harry Potter and the Sorcerer's Stone' follows the journey of a young boy, Harry Potter, who discovers he is a wizard on his eleventh birthday. He attends Hogwarts School of Witchcraft and Wizardry, where he makes friends, learns about his past, and uncovers the truth about his parents' mysterious deaths.\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Related by inode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Search return results', function () {",
+									"    const seoText = pm.collectionVariables.get('seoText');",
+									"    const seoContentTypeId = pm.collectionVariables.get('seoContentTypeId');",
+									"    const seoContentTypeVar = pm.collectionVariables.get('seoContentTypeVar');",
+									"    pm.expect(parseInt(jsonData.timeToEmbeddings.split('ms')[0]), 'Time to embeddings must be greater than zero').greaterThan(0);",
+									"    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
+									"    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
+									"    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
+									"    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
+									"    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
+									"    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
+									"    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
+									"    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
+									"    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
+									"    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
+									"    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('seoIndex', null);",
+									"pm.collectionVariables.set('seoContentTypeVar', null);",
+									"pm.collectionVariables.set('seoContentTypeId', null);",
+									"pm.collectionVariables.set('seoText', null);",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const currentSeo = seos[1];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+									"    pm.collectionVariables.set('seoContentTypeId', currentSeo.seoContentTypeId);",
+									"    pm.collectionVariables.set('seoText', currentSeo.text);",
+									"    const contentlet = currentSeo.contentlets[1];",
+									"    pm.collectionVariables.set('inode', contentlet.inode);",
+									"    pm.collectionVariables.set('identifier', contentlet.identifier);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"inode\": \"{{inode}}\",\n    \"fieldVar\": \"seo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search/related",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search",
+								"related"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Related by identifier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Search return results', function () {",
+									"    const seoText = pm.collectionVariables.get('seoText');",
+									"    const seoContentTypeId = pm.collectionVariables.get('seoContentTypeId');",
+									"    const seoContentTypeVar = pm.collectionVariables.get('seoContentTypeVar');",
+									"    pm.expect(parseInt(jsonData.timeToEmbeddings.split('ms')[0]), 'Time to embeddings must be greater than zero').greaterThan(0);",
+									"    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
+									"    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
+									"    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
+									"    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
+									"    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
+									"    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
+									"    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
+									"    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
+									"    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
+									"    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
+									"    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
+									"});",
+									"",
+									"pm.collectionVariables.clear();"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('seoIndex', null);",
+									"pm.collectionVariables.set('seoContentTypeVar', null);",
+									"pm.collectionVariables.set('seoContentTypeId', null);",
+									"pm.collectionVariables.set('seoText', null);",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const currentSeo = seos[1];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+									"    pm.collectionVariables.set('seoContentTypeId', currentSeo.seoContentTypeId);",
+									"    pm.collectionVariables.set('seoText', currentSeo.text);",
+									"    const contentlet = currentSeo.contentlets[1];",
+									"    pm.collectionVariables.set('inode', contentlet.inode);",
+									"    pm.collectionVariables.set('identifier', contentlet.identifier);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search/related",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search",
+								"related"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Completions",
+			"item": [
+				{
+					"name": "Create Content Type - Completions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const seoContentTypeId = jsonData.entity[0].id;",
+									"pm.collectionVariables.set('seoContentTypeId', seoContentTypeId);",
+									"const seoContentTypeVar = jsonData.entity[0].variable;",
+									"pm.collectionVariables.set('seoContentTypeVar', seoContentTypeVar);",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    currentSeo.seoContentTypeId = seoContentTypeId;",
+									"    currentSeo.seoContentTypeVar = seoContentTypeVar;",
+									"    pm.collectionVariables.set('seoText', currentSeo.text);",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									"",
+									"console.log('seoIndex', seoIndex);",
+									"console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"",
+									"pm.execution.setNextRequest('Add Field to Content Type - Completions');",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"",
+									" if (seoIndex === 0) {",
+									"    pm.collectionVariables.clear();",
+									" }",
+									" pm.collectionVariables.set('seoIndex', seoIndex);",
+									"",
+									"const initialSeos = [",
+									"    {",
+									"        id: 'streamming-music',",
+									"        text: 'How has streaming changed the music industry and affected the way artists release and promote their music?'",
+									"    },",
+									"    {",
+									"        id: 'emerging-technologies',",
+									"        text: 'How are emerging technologies like blockchain and the Internet of Things (IoT) shaping the future of smart cities?'",
+									"    },",
+									"    {",
+									"        id: 'sports-data-analytics',",
+									"        text: 'How has data analytics transformed the strategies and performance of professional sports teams?'",
+									"    },",
+									"    {",
+									"        id: 'medical-research',",
+									"        text: 'What recent breakthroughs in medical research have the potential to significantly impact public health?'",
+									"    }",
+									"];",
+									"",
+									"const collectionSeos = pm.collectionVariables.get('seos');",
+									"const seos = collectionSeos ? JSON.parse(collectionSeos) : initialSeos;",
+									"pm.collectionVariables.set('seoId', seos[seoIndex].id);",
+									"const seosJson = JSON.stringify(seos, null, 2);",
+									"pm.collectionVariables.set('seos', seosJson);",
+									"console.log('seos', seosJson);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"{{seoId}}-ContentType\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Field to Content Type - Completions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.execution.setNextRequest('Create Contentlet - Completions');"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{seoContentTypeId}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{seoContentTypeId}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"seo\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v3/contenttype/{{seoContentTypeId}}/fields/move",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v3",
+								"contenttype",
+								"{{seoContentTypeId}}",
+								"fields",
+								"move"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contentlet - Completions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"",
+									"let seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"console.log('seoIndex', seoIndex);",
+									"",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    if (!currentSeo.contentlets) {",
+									"        currentSeo.contentlets = [];",
+									"    }",
+									"",
+									"    const contentlet = {};",
+									"    contentlet.identifier = jsonData.entity.identifier;",
+									"    contentlet.inode = jsonData.entity.inode;",
+									"    currentSeo.contentlets.push(contentlet);",
+									"    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									"",
+									"seoIndex++;",
+									"pm.collectionVariables.set('seoIndex', seoIndex);",
+									"console.log('New seoIndex', seoIndex);",
+									"let nextRequest = null;",
+									"if (seoIndex < seos.length) {",
+									"    console.log('Continuing with next SEO');",
+									"    nextRequest = 'Create Content Type - Completions'",
+									"} else {",
+									"    console.log('SEO loading done');",
+									"    pm.collectionVariables.set('seoIndex', null);",
+									"    pm.collectionVariables.set('seoId', null);",
+									"    pm.collectionVariables.set('seoContentTypeId', null);",
+									"    pm.collectionVariables.set('seoContentTypeVar', null);",
+									"    pm.collectionVariables.set('seoText', null);",
+									"    nextRequest = 'Create Embeddings - Completions';",
+									"}",
+									"pm.execution.setNextRequest(nextRequest);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_{{seoId}}\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{seoContentTypeId}}\",\n        \"seo\": \"{{seoText}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Embeddings - Completions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]');",
+									"let seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    if (!currentSeo.embedded) {",
+									"        currentSeo.embedded = jsonData.totalToEmbed > 0;",
+									"    }",
+									"    ",
+									"    console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
+									"    pm.collectionVariables.set('seos', JSON.stringify(seos, null, 2));",
+									"}",
+									"",
+									"seoIndex++;",
+									"pm.collectionVariables.set('seoIndex', seoIndex);",
+									"console.log('New seoIndex', seoIndex);",
+									"let nextRequest = null;",
+									"if (seoIndex < seos.length) {",
+									"    console.log('Continuing with next SEO');",
+									"    nextRequest = 'Create Embeddings - Completions';",
+									"} else {",
+									"    console.log('Embeddings creation done');",
+									"    pm.collectionVariables.set('seoIndex', null);",
+									"    pm.collectionVariables.set('seoId', null);",
+									"    pm.collectionVariables.set('seoContentTypeVar', null);",
+									"    pm.collectionVariables.set('seoContentTypeId', null);",
+									"    pm.collectionVariables.set('seoText', null);",
+									"    nextRequest = 'Summarize from Content without prompt';",
+									"}",
+									"pm.execution.setNextRequest(nextRequest);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos') || '[]') || 0;",
+									"const seoIndex = parseInt(pm.collectionVariables.get('seoIndex')) || 0;",
+									"const currentSeo = seos[seoIndex];",
+									"if (currentSeo) {",
+									"    pm.collectionVariables.set('seoContentTypeVar', currentSeo.seoContentTypeVar);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"model\": \"text-embedding-ada-002\",\n    \"fields\": \"seo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/embeddings",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"embeddings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Summarize from Content without prompt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message).equals('query/prompt cannot be null');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/completions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"completions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Summarize from Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 20', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Response contains expected data', function () {",
+									"    pm.expect(jsonData).to.have.property('timeToEmbeddings');",
+									"    pm.expect(jsonData).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('query');",
+									"    pm.expect(jsonData).to.have.property('threshold');",
+									"    pm.expect(jsonData).to.have.property('dotCMSResults');",
+									"    pm.expect(jsonData).to.have.property('operator');",
+									"    pm.expect(jsonData).to.have.property('offset');",
+									"    pm.expect(jsonData).to.have.property('limit');",
+									"    pm.expect(jsonData).to.have.property('count');",
+									"    pm.expect(jsonData).to.have.property('openAiResponse');",
+									"    pm.expect(jsonData).to.have.property('totalTime');",
+									"});",
+									"",
+									"pm.test('dotCMSResults has results', function () {",
+									"    pm.expect(jsonData.dotCMSResults).to.be.an('array');",
+									"    pm.expect(jsonData.dotCMSResults.length).greaterThan(0);",
+									"    ",
+									"    const result = jsonData.dotCMSResults.find(res => !!res.matches.find(match => match.distance === 0));",
+									"    pm.expect(result).not.undefined;",
+									"    pm.expect(result).to.have.property('hostName');",
+									"    pm.expect(result).to.have.property('modDate');",
+									"    pm.expect(result).to.have.property('publishDate');",
+									"    pm.expect(result).to.have.property('title');",
+									"    pm.expect(result).to.have.property('baseType');",
+									"    pm.expect(result).to.have.property('inode');",
+									"    pm.expect(result).to.have.property('archived');",
+									"    pm.expect(result).to.have.property('ownerUserName');",
+									"    pm.expect(result).to.have.property('host');",
+									"    pm.expect(result).to.have.property('working');",
+									"    pm.expect(result).to.have.property('seo');",
+									"    pm.expect(result.seo).equals('How has streaming changed the music industry and affected the way artists release and promote their music?');",
+									"    pm.expect(result).to.have.property('locked');",
+									"    pm.expect(result).to.have.property('stInode');",
+									"    pm.expect(result).to.have.property('contentType');",
+									"    pm.expect(result).to.have.property('live');",
+									"    pm.expect(result).to.have.property('owner');",
+									"    pm.expect(result).to.have.property('identifier');",
+									"    pm.expect(result).to.have.property('publishUserName');",
+									"    pm.expect(result).to.have.property('publishUser');",
+									"    pm.expect(result).to.have.property('languageId');",
+									"    pm.expect(result).to.have.property('creationDate');",
+									"    pm.expect(result).to.have.property('url');",
+									"    pm.expect(result).to.have.property('titleImage');",
+									"    pm.expect(result).to.have.property('modUserName');",
+									"    pm.expect(result).to.have.property('hasLiveVersion');",
+									"    pm.expect(result).to.have.property('folder');",
+									"    pm.expect(result).to.have.property('hasTitleImage');",
+									"    pm.expect(result).to.have.property('sortOrder');",
+									"    pm.expect(result).to.have.property('modUser');",
+									"    pm.expect(result).to.have.property('__icon__');",
+									"    pm.expect(result).to.have.property('contentTypeIcon');",
+									"    pm.expect(result).to.have.property('variant');",
+									"    pm.expect(result).to.have.property('matches');",
+									"});",
+									"",
+									"// Check if openAiResponse contains specific keys",
+									"pm.test('openAiResponse contains specific keys', function () {",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('id');",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('object');",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('created');",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('model');",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('choices');",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('usage');",
+									"    pm.expect(jsonData.openAiResponse).to.have.property('system_fingerprint');",
+									"});",
+									"",
+									"pm.test('Each item in openAiResponse.choices contains specific keys', function () {",
+									"    pm.expect(jsonData.openAiResponse.choices).to.be.an('array');",
+									"    jsonData.openAiResponse.choices.forEach(function(choice) {",
+									"        pm.expect(choice).to.have.property('index');",
+									"        pm.expect(choice).to.have.property('message');",
+									"        pm.expect(choice).to.have.property('logprobs');",
+									"        pm.expect(choice).to.have.property('finish_reason');",
+									"    });",
+									"});",
+									"",
+									"pm.test('usage contains specific keys', function () {",
+									"    pm.expect(jsonData.openAiResponse.usage).to.have.property('prompt_tokens');",
+									"    pm.expect(jsonData.openAiResponse.usage).to.have.property('completion_tokens');",
+									"    pm.expect(jsonData.openAiResponse.usage).to.have.property('total_tokens');",
+									"});",
+									"",
+									"pm.test('query matches expected value', function () {",
+									"    pm.expect(jsonData.query).to.equal('How has streaming changed the music industry and affected the way artists release and promote their music?');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoText', seos[0].text);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/completions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"completions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Summarize from Content Stream",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 20', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoText', seos[1].text);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"stream\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/completions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"completions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Raw Prompt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 20', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Response contains expected data\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"id\");",
+									"    pm.expect(jsonData).to.have.property(\"object\");",
+									"    pm.expect(jsonData).to.have.property(\"created\");",
+									"    pm.expect(jsonData).to.have.property(\"model\");",
+									"    pm.expect(jsonData).to.have.property(\"choices\");",
+									"    pm.expect(jsonData).to.have.property(\"usage\");",
+									"    pm.expect(jsonData).to.have.property(\"system_fingerprint\");",
+									"    pm.expect(jsonData).to.have.property(\"totalTime\");",
+									"    pm.expect(parseInt(jsonData.totalTime.replace(\"ms\", \"\"))).to.be.below(400000);",
+									"    pm.expect(jsonData.model).to.equal(\"gpt-3.5-turbo-16k-0613\");",
+									"    pm.expect(jsonData.choices[0].message.content).to.equal(\"Data\");",
+									"});",
+									"",
+									"pm.test(\"Each item in choices contains specific keys\", function () {",
+									"    pm.expect(jsonData.choices).to.be.an(\"array\");",
+									"    jsonData.choices.forEach(function(choice) {",
+									"        pm.expect(choice).to.have.property(\"index\");",
+									"        pm.expect(choice).to.have.property(\"message\");",
+									"        pm.expect(choice).to.have.property(\"logprobs\");",
+									"        pm.expect(choice).to.have.property(\"finish_reason\");",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"message contains role and content\", function () {",
+									"    jsonData.choices.forEach(function(choice) {",
+									"        pm.expect(choice.message).to.have.property(\"role\");",
+									"        pm.expect(choice.message).to.have.property(\"content\");",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"usage contains specific keys\", function () {",
+									"    pm.expect(jsonData.usage).to.have.property(\"prompt_tokens\");",
+									"    pm.expect(jsonData.usage).to.have.property(\"completion_tokens\");",
+									"    pm.expect(jsonData.usage).to.have.property(\"total_tokens\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoText', seos[2].text);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/completions/rawPrompt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"completions",
+								"rawPrompt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Raw Prompt Stream",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 20', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains expected data\", function () {",
+									"    pm.expect(pm.response.body).not.equals('')",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const seos = JSON.parse(pm.collectionVariables.get('seos'));",
+									"pm.collectionVariables.set('seoText', seos[3].text);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"stream\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/completions/rawPrompt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"completions",
+								"rawPrompt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Config",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Response contains properties\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"apiImageUrl\");",
+									"    pm.expect(jsonData).to.have.property(\"apiKey\");",
+									"    pm.expect(jsonData).to.have.property(\"apiUrl\");",
+									"    pm.expect(jsonData).to.have.property(\"availableModels\");",
+									"    pm.expect(jsonData.availableModels).to.be.an(\"array\");",
+									"    pm.expect(jsonData.availableModels.length).greaterThan(1);",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'TEXT')).is.not.undefined",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'IMAGE')).is.not.undefined",
+									"    pm.expect(jsonData[\"com.dotcms.ai.completion.default.temperature\"]).to.equal(\"1\");",
+									"    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
+									"    pm.expect(jsonData.embeddingsModelNames).to.equal(\"text-embedding-ada-002\");",
+									"    pm.expect(jsonData.imageModelNames).to.equal(\"dall-e-3\");",
+									"    pm.expect(jsonData.textPrompt).to.include(\"Descriptive writing style\");",
+									"    pm.expect(jsonData.rolePrompt).to.include(\"dotCMSbot\");",
+									"    pm.expect(jsonData.apiImageUrl).to.match(/^https?:\\/\\/.+/);",
+									"    pm.expect(jsonData.apiUrl).to.match(/^https?:\\/\\/.+/);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/completions/config",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"completions",
+								"config"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

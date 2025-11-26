@@ -7,7 +7,6 @@
     border-width: 0;
     padding: 0.375rem $spacing-2;
     border-radius: $border-radius-xs;
-    justify-content: flex-end;
 }
 
 .p-paginator .p-paginator-first,
@@ -41,15 +40,6 @@
 .p-paginator .p-paginator-last {
     border-top-right-radius: $border-radius-xs;
     border-bottom-right-radius: $border-radius-xs;
-}
-
-.p-paginator .p-dropdown {
-    margin-left: $spacing-1;
-    height: $spacing-7;
-}
-
-.p-paginator .p-dropdown .p-dropdown-label {
-    padding-right: 0;
 }
 
 .p-paginator .p-paginator-current {

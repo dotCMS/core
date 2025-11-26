@@ -1,7 +1,5 @@
 package com.dotcms.security.apps;
 
-import static com.dotcms.security.apps.ParamDescriptor.newParam;
-import static com.dotcms.security.apps.Secret.newSecret;
 import static com.google.common.collect.ImmutableMap.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -70,6 +68,34 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class AppsAPIImplTest {
+
+    private static final Map<String, ParamDescriptor> PARAMS = of(
+            "requiredNoDefault",
+            ParamDescriptor.builder()
+                    .withHidden(false)
+                    .withType(Type.STRING)
+                    .withLabel("any")
+                    .withHint("hint")
+                    .withRequired(true)
+                    .build(),
+            "requiredDefault",
+            ParamDescriptor.builder()
+                    .withValue("default")
+                    .withHidden(false)
+                    .withType(Type.STRING)
+                    .withLabel("any")
+                    .withHint("hint")
+                    .withRequired(true)
+                    .build(),
+            "nonRequiredNoDefault",
+            ParamDescriptor.builder()
+                    .withHidden(false)
+                    .withType(Type.STRING)
+                    .withLabel("any")
+                    .withHint("hint")
+                    .withRequired(false)
+                    .build()
+    );
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -300,7 +326,7 @@ public class AppsAPIImplTest {
 
         //Now we want to update one of the values within the secret.
         //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
-        final Secret secret = newSecret("secret-3".toCharArray(), Type.STRING, false);
+        final Secret secret = Secret.builder().withValue("secret-3").withHidden(false).withType(Type.STRING).build();
         //Update the individual secret
         api.saveSecret("appKey-1-Host-1", Tuple.of("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
@@ -367,7 +393,7 @@ public class AppsAPIImplTest {
         assertEquals("secret-4", recoveredBean1.getSecrets().get("test:secret4").getString());
 
         //Now lets re-introduce again the property we just deleted
-        final Secret secret = newSecret("lol".toCharArray(), Type.STRING, false);
+        final Secret secret = Secret.builder().withValue("lol").withHidden(false).withType(Type.STRING).build();
 
         //This should create again the entry we just removed.
         api.saveSecret("appKeyHost-1", Tuple.of("test:secret3",secret), host, admin);
@@ -470,12 +496,7 @@ public class AppsAPIImplTest {
 
         final AppDescriptor descriptor = mock(AppDescriptor.class);
         when(descriptor.isAllowExtraParameters()).thenReturn(false);
-        final Map<String, ParamDescriptor> params = of(
-        "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true), // This is the rule we intend to break
-        "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
-        "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
-         );
-        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getParams()).thenReturn(PARAMS);
         when(descriptor.getName()).thenReturn("any-name");
         when(descriptor.getKey()).thenReturn(appKey);
 
@@ -512,12 +533,7 @@ public class AppsAPIImplTest {
 
         final AppDescriptor descriptor = mock(AppDescriptor.class);
         when(descriptor.isAllowExtraParameters()).thenReturn(false);
-        final Map<String, ParamDescriptor> params = of(
-                "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true),
-                "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
-                "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
-        );
-        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getParams()).thenReturn(PARAMS);
         when(descriptor.getName()).thenReturn("any-name");
         when(descriptor.getKey()).thenReturn(appKey);
 
@@ -574,7 +590,7 @@ public class AppsAPIImplTest {
     }
 
     @DataProvider
-    public static Object[] getExpectedExceptionTestCases() throws Exception {
+    public static Object[] getExpectedExceptionTestCases() {
         final Map<String, ParamDescriptor> emptyParams = ImmutableMap.of();
         return new Object[]{
                 //The following test that the general required fields are mandatory.
@@ -595,38 +611,100 @@ public class AppsAPIImplTest {
                 //The following test paramDefinition.
                 //Null type  is not allowed.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
-                       ImmutableSortedMap.of("p1", newParam("", true, null, "", "", true)
-                )),
+                        ImmutableSortedMap.of(
+                               "p1",
+                               ParamDescriptor.builder()
+                                       .withValue("")
+                                       .withHidden(true)
+                                       .withType(null)
+                                       .withLabel("")
+                                       .withHint("")
+                                       .withRequired(true)
+                                       .build())),
                 //Hidden bool param is not allowed.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
-                       ImmutableSortedMap.of("p1", newParam("", true, Type.BOOL, "label", "hint", true)
-                )),
+                       ImmutableSortedMap.of(
+                               "p2",
+                               ParamDescriptor.builder()
+                                       .withValue("")
+                                       .withHidden(true)
+                                       .withType(Type.BOOL)
+                                       .withLabel("label")
+                                       .withHint("hint")
+                                       .withRequired(true)
+                                       .build())),
                 //emptyLabel.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
-                       ImmutableSortedMap.of("p1", newParam("v1", true, Type.STRING, "", "", true)
-                )),
+                       ImmutableSortedMap.of(
+                               "p3",
+                               ParamDescriptor.builder()
+                                       .withValue("v1")
+                                       .withHidden(true)
+                                       .withType(Type.STRING)
+                                       .withLabel("")
+                                       .withHint("")
+                                       .withRequired(true)
+                                       .build())),
                 //emptyHint.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
-                       ImmutableSortedMap.of("p1", newParam("v1", true, Type.STRING, "label", "", true)
-                )),
+                       ImmutableSortedMap.of(
+                               "p4",
+                               ParamDescriptor.builder()
+                                       .withValue("v1")
+                                       .withHidden(true)
+                                       .withType(Type.STRING)
+                                       .withLabel("label")
+                                       .withHint("")
+                                       .withRequired(true)
+                                       .build())),
                 //Required param with null default.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
-                       ImmutableSortedMap.of("p1", newParam("null", false, Type.STRING, "label", "hint", true)
-                )),
+                       ImmutableSortedMap.of(
+                               "p5",
+                               ParamDescriptor.builder()
+                                       .withValue(null)
+                                       .withHidden(false)
+                                       .withType(Type.STRING)
+                                       .withLabel("label")
+                                       .withHint("hint")
+                                       .withRequired(true)
+                                       .build())),
                 //non parsable to bool string.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
-                        ImmutableSortedMap.of("p1", newParam("lol", false, Type.BOOL, "label", "hint", true)
-                )),
+                        ImmutableSortedMap.of(
+                                "p6",
+                                ParamDescriptor.builder()
+                                        .withValue("lol")
+                                        .withHidden(false)
+                                        .withType(Type.BOOL)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(true)
+                                        .build())),
                 //Null hidden to emulate missing hidden field.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
                         ImmutableSortedMap.of(
-                                "p1", newParam("false", null, Type.BOOL, "label", "hint", true)
-                        )),
+                                "p7",
+                                ParamDescriptor.builder()
+                                        .withValue("false")
+                                        .withHidden(null)
+                                        .withType(Type.BOOL)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(true)
+                                        .build())),
                 //Null required to emulate missing hidden field.
                 new AppTestCase("any-key", "any-name", "desc", "icon", false,
                         ImmutableSortedMap.of(
-                                "p1", newParam("false", false, Type.BOOL, "label", "hint", null)
-                        ))
+                                "p8",
+                                ParamDescriptor.builder()
+                                        .withValue("false")
+                                        .withHidden(false)
+                                        .withType(Type.BOOL)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(null)
+                                        .build()))
         };
     }
 
@@ -649,20 +727,48 @@ public class AppsAPIImplTest {
         return new Object[]{
                 new AppTestCase("key1_" + postfix, "any-name", "desc", "icon", true,
                         ImmutableSortedMap.of(
-                                "p1", newParam("", true, Type.STRING, "label", "hint", true)
-                        )),
+                                "p1",
+                                ParamDescriptor.builder()
+                                        .withValue("")
+                                        .withHidden(true)
+                                        .withType(Type.STRING)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(true)
+                                        .build())),
                 new AppTestCase("key2_" + postfix, "any-name", "desc", "icon", true,
                         ImmutableSortedMap.of(
-                                "p1", newParam("", true, Type.STRING, "label", "hint", false)
-                        )),
+                                "p1",
+                                ParamDescriptor.builder()
+                                        .withValue("")
+                                        .withHidden(true)
+                                        .withType(Type.STRING)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(false)
+                                        .build())),
                 new AppTestCase("key3_" + postfix, "any-name", "desc", "icon", false,
                         ImmutableSortedMap.of(
-                                "p1", newParam("true", false, Type.BOOL, "label", "hint", true)
-                        )),
+                                "p1",
+                                ParamDescriptor.builder()
+                                        .withValue("true")
+                                        .withHidden(false)
+                                        .withType(Type.BOOL)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(true)
+                                        .build())),
                 new AppTestCase("key4_" + postfix, "any-name", "desc", "icon", false,
                         ImmutableSortedMap.of(
-                                "p1", newParam("false", false, Type.BOOL, "label", "hint", true)
-                        ))
+                                "p1",
+                                ParamDescriptor.builder()
+                                        .withValue("false")
+                                        .withHidden(false)
+                                        .withType(Type.BOOL)
+                                        .withLabel("label")
+                                        .withHint("hint")
+                                        .withRequired(true)
+                                        .build()))
         };
     }
 
@@ -740,7 +846,7 @@ public class AppsAPIImplTest {
 
     private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
             APILocator.getLayoutAPI(),
-            APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
+            APILocator.getHostAPI(), SecretsStore.INSTANCE.get(),
             CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(), new AppDescriptorHelper(),
             new LicenseValiditySupplier() {
                 public boolean hasValidLicense() {
@@ -867,12 +973,7 @@ public class AppsAPIImplTest {
 
         final AppDescriptor descriptor = mock(AppDescriptor.class);
         when(descriptor.isAllowExtraParameters()).thenReturn(false);
-        final Map<String, ParamDescriptor> params = of(
-                "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true),
-                "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
-                "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
-        );
-        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getParams()).thenReturn(PARAMS);
         when(descriptor.getName()).thenReturn("any-name");
         when(descriptor.getKey()).thenReturn(appKey);
 

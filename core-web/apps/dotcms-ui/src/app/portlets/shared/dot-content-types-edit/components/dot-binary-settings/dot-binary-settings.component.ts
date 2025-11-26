@@ -1,18 +1,17 @@
 import { forkJoin, of } from 'rxjs';
 
-import { NgFor } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
     EventEmitter,
+    inject,
     Input,
     OnChanges,
     OnInit,
     Output,
-    SimpleChanges,
-    inject
+    SimpleChanges
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -23,18 +22,15 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { catchError, take, tap } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotDialogActions, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 @Component({
     selector: 'dot-binary-settings',
-    standalone: true,
     imports: [
-        NgFor,
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,
@@ -48,22 +44,13 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
 })
 export class DotBinarySettingsComponent implements OnInit, OnChanges {
     @Input() field: DotCMSContentTypeField;
-    @Input() isVisible: boolean = false;
+    @Input() isVisible = false;
 
     @Output() changeControls = new EventEmitter<DotDialogActions>();
     @Output() valid = new EventEmitter<boolean>();
     @Output() save = new EventEmitter<DotFieldVariable[]>();
 
     form: FormGroup;
-
-    private readonly fb: FormBuilder = inject(FormBuilder);
-    private readonly fieldVariablesService = inject(DotFieldVariablesService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private readonly destroyRef = inject(DestroyRef);
-
-    private FIELD_VARIABLES: Record<string, DotFieldVariable> = {};
-
     protected readonly systemOptions = [
         {
             key: 'allowURLImport',
@@ -72,8 +59,18 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
         {
             key: 'allowCodeWrite',
             message: 'binary-field.settings.system.options.allow.code.write'
+        },
+        {
+            key: 'allowGenerateImg',
+            message: 'binary-field.settings.system.options.allow.generate.img'
         }
     ];
+    private readonly fb: FormBuilder = inject(FormBuilder);
+    private readonly fieldVariablesService = inject(DotFieldVariablesService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly destroyRef = inject(DestroyRef);
+    private FIELD_VARIABLES: Record<string, DotFieldVariable> = {};
 
     ngOnChanges(changes: SimpleChanges) {
         const { isVisible } = changes;
@@ -87,7 +84,8 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
             accept: '',
             systemOptions: this.fb.group({
                 allowURLImport: true,
-                allowCodeWrite: true
+                allowCodeWrite: true,
+                allowGenerateImg: true
             })
         });
 
@@ -119,6 +117,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     saveSettings(): void {
         const updateActions = Object.keys(this.form.controls).map((key) => {
             const control = this.form.get(key);
+
             const value =
                 control instanceof FormGroup ? JSON.stringify(control.value) : control.value;
             const fieldVariable: DotFieldVariable = {
@@ -127,7 +126,9 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                 value
             };
 
-            if (!value) {
+            const controlIsEmpty = !value && !this.FIELD_VARIABLES[key]?.value;
+
+            if (controlIsEmpty) {
                 return of({});
             }
 

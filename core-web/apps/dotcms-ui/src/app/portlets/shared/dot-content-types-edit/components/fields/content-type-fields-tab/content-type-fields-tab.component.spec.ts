@@ -5,17 +5,22 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsTabComponent } from '.';
 
+import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'tab',
+    clazz: DotCMSClazzes.TAB_DIVIDER,
     name: 'fieldTab-1'
 };
 const mockFieldTab: DotCMSContentTypeLayoutRow = {
@@ -24,7 +29,8 @@ const mockFieldTab: DotCMSContentTypeLayoutRow = {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>'
+    template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;
@@ -85,9 +91,9 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit change evt with onBlur & keyUp.enter', () => {
-        spyOn(comp.editTab, 'emit');
-        const preventDefaultSpy = jasmine.createSpy('spy');
-        const stopPropagationSpy = jasmine.createSpy('spy');
+        jest.spyOn(comp.editTab, 'emit');
+        const preventDefaultSpy = jest.fn();
+        const stopPropagationSpy = jest.fn();
         const labelInput = de.query(By.css('.tab__label'));
 
         labelInput.triggerEventHandler('keydown.enter', {
@@ -121,12 +127,13 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit delete evt', () => {
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        spyOn(comp.removeTab, 'emit');
+        jest.spyOn(comp.removeTab, 'emit');
         const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);
+        expect(comp.removeTab.emit).toHaveBeenCalledTimes(1);
     });
 });

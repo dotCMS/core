@@ -1,52 +1,27 @@
 package com.dotmarketing.quartz.job;
 
-import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL;
-import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB;
-import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY;
-import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER;
-import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.LicenseTestUtil;
-import com.dotcms.analytics.AnalyticsTestUtils;
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.helper.AnalyticsHelper;
-import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.datagen.ExperimentDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.experiments.business.ExperimentsAPI;
-import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.init.DotInitScheduler;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.util.Config;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 
 /**
@@ -126,27 +101,5 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
     }
 
 
-    /**
-     * Method to test: StartEndScheduledExperimentsJobTest.run
-     * Given scenario: No license
-     * Expected result: Should not call the api methods
-     */
-    @Test
-    public void testJob_noLicense() throws Exception {
 
-        runNoLicense(()-> {
-            final ExperimentsAPI experimentsAPI1 = mock(ExperimentsAPI.class);
-
-            try {
-                new StartEndScheduledExperimentsJob(experimentsAPI1).run(null);
-            } catch (JobExecutionException e) {
-                throw new RuntimeException(e);
-            }
-
-            verify(experimentsAPI1, never()).startScheduledToStartExperiments(
-                    APILocator.systemUser());
-
-            verify(experimentsAPI1, never()).endFinalizedExperiments(APILocator.systemUser());
-        });
-    }
 }

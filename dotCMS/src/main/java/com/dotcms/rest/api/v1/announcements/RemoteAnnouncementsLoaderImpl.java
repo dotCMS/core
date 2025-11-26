@@ -70,7 +70,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
     JsonNode loadRemoteAnnouncements() {
         final String url = buildURL();
         //Let's log the url to retrieve the announcements for debugging purposes on postman
-        Logger.debug(AnnouncementsHelperImpl.class, String.format("loading announcements from [%s]", url));
+        Logger.info(AnnouncementsHelperImpl.class, String.format("loading announcements from [%s]", url));
         try {
             final Client client = restClient();
             final WebTarget webTarget = client.target(url);

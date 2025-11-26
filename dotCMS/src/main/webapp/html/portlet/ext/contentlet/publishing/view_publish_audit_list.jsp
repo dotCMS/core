@@ -1,30 +1,25 @@
 <%@page import="org.apache.commons.lang.StringEscapeUtils"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>
-<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
-<%@page import="com.dotmarketing.util.URLEncoder"%>
-<%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.liferay.portal.model.User"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>
-<%@page import="com.dotmarketing.business.DotStateException"%>
 <%@page import="java.util.Map"%>
 <%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
+<%@ page import="com.dotcms.publisher.bundle.bean.Bundle" %>
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.liferay.util.StringPool" %>
+<%@ page import="com.dotcms.publishing.FilterDescriptor" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 	final int MAX_ASSETS_TO_SHOW = 3;
@@ -65,14 +60,15 @@
     try{limit = Integer.parseInt(request.getParameter("limit"));}catch(Exception e){}
     if(limit <0 || limit > 500) limit=50;
 
-
+	final String auditFilterQuery = request.getParameter("q");
 
     List<PublishAuditStatus> iresults =  null;
     int counter =  0;
 
     try{
-   		iresults =  publishAuditAPI.getAllPublishAuditStatus(limit, offset, MAX_ASSETS_TO_SHOW);
-   		counter =   publishAuditAPI.countAllPublishAuditStatus().intValue();
+   		iresults =  publishAuditAPI.getPublishAuditStatus(
+				   limit, offset, MAX_ASSETS_TO_SHOW, auditFilterQuery);
+   		counter =   publishAuditAPI.countPublishAuditStatus(auditFilterQuery).intValue();
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
     	nastyError = e.toString();
@@ -297,11 +293,11 @@
 
 
 			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
-			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_dialog_bundle_name") %></strong></th>
-			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
+			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Filter") %></strong></th>
+			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Contents") %></strong></th>
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
-			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
+			<th style="width:150px" nowrap="nowrap" align="center" ><strong><%= LanguageUtil.get(pageContext, "publisher_Last_Update") %></strong></th>
 		</tr>
 		<% for(PublishAuditStatus c : iresults) {
 			String errorclass="";
@@ -324,6 +320,26 @@
 			}
 
 			if(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user) || bundleAssets.keySet().size()==0) {
+				final String [] bundleIdParts = c.getBundleId().split("-");
+				final StringBuilder shortBundleId = new StringBuilder(bundleIdParts[0]);
+				for (int i = 1; i < bundleIdParts.length; i++) {
+					if (shortBundleId.length() + bundleIdParts[i].length() >= 24) {
+						break;
+					}
+					shortBundleId.append("-").append(bundleIdParts[i]);
+				}
+
+				String filterName = "";
+				try {
+					final Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId());
+					if ( UtilMethods.isSet(bundle) && UtilMethods.isSet(bundle.getFilterKey()) ) {
+						final FilterDescriptor filterDescriptor =
+								APILocator.getPublisherAPI().getFilterDescriptorByKey(bundle.getFilterKey());
+						filterName = filterDescriptor != null ? filterDescriptor.getTitle() : "";
+					}
+				} catch (DotDataException e) {
+					Logger.error(this, "Error getting bundle id: " + c.getBundleId(), e);
+				}
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;" valign="top">
@@ -336,16 +352,13 @@
 				</td>
 
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-					<%=c.getBundleId().split("-")[0]%>...
+					<%=shortBundleId.toString()%>
 				</td>
-				<%--BundleName--%>
+				<%--BundleFilter--%>
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-					<% Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId()); %>
-                    <%if ( bundle != null && bundle.getName() != null && (!bundle.getName().equals( bundle.getId() ))) { %>
-                        <%=bundle.getName()%>
-                    <%}%>
+					<%= filterName %>
 				</td>
-				<%--BundleTitle--%>
+				<%--BundleContents--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
 						<td valign="top" style="cursor: pointer" onclick="showDetail('<%=c.getBundleId()%>', event)">
@@ -400,7 +413,7 @@
 			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
 			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
+			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Last_Update") %></strong></th>
 		</tr>
 		<tr>
 			<td colspan="4" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>

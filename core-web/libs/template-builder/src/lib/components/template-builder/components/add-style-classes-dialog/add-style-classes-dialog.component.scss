@@ -7,12 +7,16 @@
 
 .dialog__actions-container {
     display: flex;
-    justify-content: end;
+    justify-content: flex-end;
 }
 
-p-autoComplete {
+:host ::ng-deep p-autocomplete {
     margin-bottom: $spacing-3;
     display: block;
+    .p-autocomplete-dropdown.p-element.p-button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
 }
 
 ul {

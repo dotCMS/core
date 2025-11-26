@@ -1,31 +1,47 @@
 import { of } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotApp } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotAvatarDirective, DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
-    MockDotNotLicensedComponent,
     MockDotRouterService
 } from '@dotcms/utils-testing';
 
+import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 import { DotAppsListComponent } from './dot-apps-list.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 export class AppsServicesMock {
     get() {
         return of({});
     }
 }
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'markdown',
+    template: `
+        <ng-content></ng-content>
+    `
+})
+class MockMarkdownComponent {}
 
 export const appsResponse = [
     {
@@ -47,15 +63,6 @@ export const appsResponse = [
 ];
 
 @Component({
-    selector: 'dot-apps-card',
-    template: ''
-})
-class MockDotAppsCardComponent {
-    @Input() app: DotApp;
-    @Output() actionFired = new EventEmitter<string>();
-}
-
-@Component({
     selector: 'dot-icon',
     template: ''
 })
@@ -73,6 +80,12 @@ class MockDotAppsImportExportDialogComponent {
     @Output() resolved = new EventEmitter<boolean>();
     @Output() shutdown = new EventEmitter();
 }
+
+@Component({
+    selector: 'dot-not-license',
+    template: ''
+})
+class MockDotNotLicenseComponent {}
 
 let canAccessPortletResponse = {
     dotAppsListResolverData: {
@@ -102,15 +115,13 @@ describe('DotAppsListComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
+            imports: [
                 DotAppsListComponent,
-                MockDotAppsCardComponent,
-                MockDotNotLicensedComponent,
-
                 MockDotAppsImportExportDialogComponent,
-                MockDotIconComponent
+                MockDotIconComponent,
+                MockDotNotLicenseComponent
             ],
-            imports: [ButtonModule, DotMessagePipe],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -127,7 +138,39 @@ describe('DotAppsListComponent', () => {
                     useValue: messageServiceMock
                 }
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotAppsListComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        InputTextModule,
+                        ButtonModule,
+                        DotAppsCardComponent,
+                        DotSafeHtmlPipe,
+                        MockDotAppsImportExportDialogComponent,
+                        MockDotNotLicenseComponent,
+                        MockDotIconComponent,
+                        DotPortletBaseComponent,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .overrideComponent(DotAppsCardComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        CardModule,
+                        AvatarModule,
+                        BadgeModule,
+                        DotIconComponent,
+                        MockMarkdownComponent,
+                        TooltipModule,
+                        DotAvatarDirective,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .compileComponents();
 
         fixture = TestBed.createComponent(DotAppsListComponent);
         component = fixture.debugElement.componentInstance;
@@ -138,9 +181,12 @@ describe('DotAppsListComponent', () => {
 
     describe('With access to portlet', () => {
         beforeEach(() => {
-            spyOnProperty(route, 'data').and.returnValue(
-                of({ dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true } })
-            );
+            Object.defineProperty(route, 'data', {
+                value: of({
+                    dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true }
+                }),
+                writable: true
+            });
             fixture.detectChanges();
         });
 
@@ -201,7 +247,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should reload apps data when resolve action from Import/Export dialog', () => {
-            spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+            jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
             const importExportDialog = fixture.debugElement.query(
                 By.css('dot-apps-import-export-dialog')
             );
@@ -218,11 +264,11 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should redirect to detail configuration list page when app Card clicked', () => {
-            const card: MockDotAppsCardComponent = fixture.debugElement.queryAll(
-                By.css('dot-apps-card')
-            )[0].componentInstance;
+            const card = fixture.debugElement.queryAll(By.css('dot-apps-card'))[0]
+                .componentInstance;
             card.actionFired.emit(component.apps[0].key);
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps[0].key);
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
         });
     });
 

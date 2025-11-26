@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -66,11 +67,12 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         final List<Field> rederableFields = contentType.fields().stream()
                 .filter(RenderFieldStrategy::isFieldRenderable).collect(Collectors.toList());
 
+        final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
 
         if (UtilMethods.isSet(rederableFields)) {
             rederableFields.forEach(field ->
                     map.put(field.variable(),
-                            renderFieldValue(HttpServletRequestThreadLocal.INSTANCE.getRequest(),
+                            renderFieldValue(impersonator.request(),
                                     HttpServletResponseThreadLocal.INSTANCE.getResponse(),
                                     RenderFieldStrategy.getFieldValue(contentlet, field), contentlet,
                                     field.variable())));
@@ -136,14 +138,9 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
             Logger.warn(ContainerRenderedBuilder.class, e.getMessage());
         }
 
-        final String code = (String) context.get(fieldVar);
-
         final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
-        return UtilMethods.isSet(code)
-                ? dotJSON.size() > 0
-                    ? dotJSON.getMap() : Collections.emptyMap()
-                : Collections.emptyMap();
+        return UtilMethods.isSet(dotJSON) ? dotJSON.getMap() : Collections.emptyMap();
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,

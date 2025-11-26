@@ -11,12 +11,10 @@ import { TableModule } from 'primeng/table';
 
 import { delay } from 'rxjs/operators';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -38,7 +36,10 @@ const mockContentType: DotCMSContentType = {
 };
 
 @Component({
-    template: ` <dot-form-selector [show]="show"></dot-form-selector> `
+    template: `
+        <dot-form-selector [show]="show"></dot-form-selector>
+    `,
+    standalone: false
 })
 class TestHostComponent {
     show = false;
@@ -62,7 +63,7 @@ describe('DotFormSelectorComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotFormSelectorComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 PaginatorService,
                 {
@@ -72,11 +73,12 @@ describe('DotFormSelectorComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock }
             ],
             imports: [
-                DotDialogModule,
+                DotFormSelectorComponent,
+                DotDialogComponent,
                 BrowserAnimationsModule,
                 HttpClientTestingModule,
                 TableModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 ButtonModule
             ]
@@ -104,7 +106,7 @@ describe('DotFormSelectorComponent', () => {
 
     describe('show dialog', () => {
         beforeEach(() => {
-            spyOn(paginatorService, 'getWithOffset').and.callFake(getWithOffsetMock);
+            jest.spyOn(paginatorService, 'getWithOffset').mockImplementation(getWithOffsetMock);
 
             fixture.detectChanges();
             fixture.componentInstance.show = true;
@@ -139,6 +141,7 @@ describe('DotFormSelectorComponent', () => {
                     paginatorService.paginationPerPage = 5;
                     fixture.detectChanges();
                     expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+                    expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
                     expect(component.items).toEqual([mockContentType]);
                     expect(component.dotDialog.dialog.nativeElement.classList).toContain(
                         'paginator'
@@ -148,8 +151,8 @@ describe('DotFormSelectorComponent', () => {
 
             describe('events', () => {
                 beforeEach(async () => {
-                    spyOn(component.pick, 'emit');
-                    spyOn(component.shutdown, 'emit');
+                    jest.spyOn(component.pick, 'emit');
+                    jest.spyOn(component.shutdown, 'emit');
 
                     fixture.componentInstance.show = true;
                     paginatorService.totalRecords = 1;
@@ -163,6 +166,7 @@ describe('DotFormSelectorComponent', () => {
                     dialog.triggerEventHandler('hide', true);
 
                     expect(component.shutdown.emit).toHaveBeenCalledWith(true);
+                    expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                 });
 
                 it('trigger event when click select button', () => {
@@ -170,6 +174,7 @@ describe('DotFormSelectorComponent', () => {
                     const button = de.query(By.css('.form-selector__button'));
                     button.triggerEventHandler('click', null);
                     expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
+                    expect(component.pick.emit).toHaveBeenCalledTimes(1);
                 });
             });
         });

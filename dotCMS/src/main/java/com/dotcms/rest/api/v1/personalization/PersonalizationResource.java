@@ -2,8 +2,10 @@ package com.dotcms.rest.api.v1.personalization;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.MultiTree;
@@ -23,8 +25,16 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -40,6 +50,8 @@ import org.glassfish.jersey.server.JSONP;
  * Resource to provide personalization stuff on dotCMS
  */
 @Path("/v1/personalization")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Personalization")
 public class PersonalizationResource {
 
     private final PersonaAPI    personaAPI;
@@ -71,24 +83,44 @@ public class PersonalizationResource {
     }
 
 
-    /**
-     * Copies the current content associated to the page containers with the personalization personas as {@link com.dotmarketing.beans.MultiTree#DOT_PERSONALIZATION_DEFAULT}
-     * and will set the a new same set of them, but with the personalization on the personalizationPersonaPageForm.personaTag
-     * @param request  {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @param  personalizationPersonaPageForm {@link PersonalizationPersonaPageForm} (pageId, personaTag)
-     * @return Response, list of MultiTrees with the new personalization
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Personalize page containers",
+        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. Requires edit permission on the page."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Page containers personalized successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPersonalizationView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid page ID, persona tag, or missing parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient edit permissions on page",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Page or persona not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/pagepersonas")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public Response personalizePageContainers (@Context final HttpServletRequest  request,
                                                @Context final HttpServletResponse response,
-                                               final PersonalizationPersonaPageForm personalizationPersonaPageForm) throws DotDataException, DotSecurityException {
+                                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                                   description = "Personalization form data with page ID and persona tag", 
+                                                   required = true,
+                                                   content = @Content(schema = @Schema(implementation = PersonalizationPersonaPageForm.class))
+                                               ) final PersonalizationPersonaPageForm personalizationPersonaPageForm) throws DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(true, request, true).getUser();
         final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
@@ -123,23 +155,40 @@ public class PersonalizationResource {
                         )).build();
     } // personalizePageContainers
 
-    /**
-     * Deletes a personalization persona for a page, can remove any persona personalization for a page container except {@link com.dotmarketing.beans.MultiTree#DOT_PERSONALIZATION_DEFAULT}
-     * @param request  {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Delete page personalization",
+        description = "Deletes a personalization persona for a page. Can remove any persona personalization for page containers except the default personalization. Requires edit permission on the page."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Page personalization deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters, trying to delete default personalization, or persona doesn't exist",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient edit permissions on page",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Page not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/pagepersonas/page/{pageId}/personalization/{personalization}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response personalizePageContainers (@Context final HttpServletRequest  request,
                                                @Context final HttpServletResponse response,
-                                               @PathParam("pageId") final String  pageId,
-                                               @PathParam("personalization") final String personalization) throws DotDataException, DotSecurityException {
+                                               @Parameter(description = "Page identifier", required = true) @PathParam("pageId") final String  pageId,
+                                               @Parameter(description = "Personalization/persona tag to delete", required = true) @PathParam("personalization") final String personalization) throws DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(true, request, true).getUser();
         final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
@@ -170,6 +219,6 @@ public class PersonalizationResource {
                 Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalization,
                 currentVariantId);
 
-        return Response.ok(new ResponseEntityView("OK")).build();
+        return Response.ok(new ResponseEntityView<>("OK")).build();
     } // personalizePageContainers
 }

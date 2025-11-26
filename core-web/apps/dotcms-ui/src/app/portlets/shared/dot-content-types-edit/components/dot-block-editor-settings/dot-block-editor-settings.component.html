@@ -1,20 +1,20 @@
 <!-- Block Editor Settings -->
-<form class="wrapper" [formGroup]="form">
-    <div class="field" *ngFor="let setting of settings">
-        <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>{{
-            setting.label
-        }}</label>
-        <p-multiSelect
-            [id]="setting.key"
-            [placeholder]="setting.placeholder"
-            [formControlName]="setting.key"
-            [options]="setting.options"
-            [style]="{ width: '100%' }"
-            appendTo="body"
-            display="chip"
-            optionLabel="label"
-            optionValue="code"
-        >
-        </p-multiSelect>
-    </div>
+<form [formGroup]="form" class="wrapper">
+    @for (setting of settings; track setting) {
+        <div class="field">
+            <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>
+                {{ setting.label }}
+            </label>
+            <p-multiSelect
+                [id]="setting.key"
+                [placeholder]="setting.placeholder"
+                [formControlName]="setting.key"
+                [options]="setting.options"
+                [style]="{ width: '100%' }"
+                appendTo="body"
+                display="chip"
+                optionLabel="label"
+                optionValue="code"></p-multiSelect>
+        </div>
+    }
 </form>

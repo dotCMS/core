@@ -3,16 +3,15 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
@@ -21,6 +20,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -100,7 +103,7 @@ public class FolderHelper {
      */
     public Folder loadFolderByURI(String siteName, User user, String uri) throws DotDataException, DotSecurityException {
         Host host = hostAPI.findByName(siteName,user,true);
-        Folder ret = null;
+        Folder ret;
         if(uri.equals("/")){
             ret = folderAPI.findSystemFolder();
         }else{
@@ -120,7 +123,7 @@ public class FolderHelper {
      */
     public FolderView loadFolderAndSubFoldersByPath(final String hostId, final String folder, final User user)
             throws DotSecurityException, DotDataException {
-        final String uriParam = !folder.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folder) : folder;
+        final String uriParam = !folder.startsWith(FORWARD_SLASH) ? FORWARD_SLASH.concat(folder) : folder;
         final Host host = APILocator.getHostAPI().find(hostId,user,false);
         final Folder folderByPath = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
         if(!UtilMethods.isSet(host)) {
@@ -174,7 +177,7 @@ public class FolderHelper {
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
 
-        if(pathToSearch.lastIndexOf(StringPool.FORWARD_SLASH) == 0){ //If there is only one / we need to search the subfolders under the host(s)
+        if(pathToSearch.lastIndexOf(FORWARD_SLASH) == 0){ //If there is only one / we need to search the subfolders under the host(s)
             if(UtilMethods.isSet(siteId)) {
                 subFolders.addAll(findSubfoldersUnderHost(siteId,pathToSearch,user));
             } else{
@@ -206,68 +209,76 @@ public class FolderHelper {
 
     /**
      * Will find the subfolders living directly under the host passed.
-     * If pathToSearch is sent is  gonna filter the path of the subfolder by it.
+     * If pathToSearch is sent is going to filter the path of the subfolder by it.
      */
     private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId,
             final String pathToSearch, final User user)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
+        final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
 
-        final Host host = APILocator.getHostAPI().find(siteId, user, false);
-
-        if(pathToSearch.equals(StringPool.FORWARD_SLASH)) {
+        if (pathToSearch.equals(FORWARD_SLASH)) {
             final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-            subFolders.add(new FolderSearchResultView(systemFolder.getPath(), host.getHostname(),
+            subFolders.add(new FolderSearchResultView(systemFolder.getIdentifier(), systemFolder.getInode(), systemFolder.getPath(), site.getHostname(),
                     Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(systemFolder,
-                            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)).getOrElse(false)));
+                            PERMISSION_CAN_ADD_CHILDREN, user)).getOrElse(false)));
         }
 
-        final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
-                .findSubFolders(host, user, false);
-        subFoldersOfRootPath.stream().filter(folder -> folder.getPath().toLowerCase().startsWith(pathToSearch))
-                .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(
-                folder -> subFolders.add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
-                        Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
-                                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
+        final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI().findSubFolders(site, user, DONT_RESPECT_FRONT_END_ROLES);
+        subFoldersOfRootPath.stream()
+                .filter(folder -> folder.getPath().toLowerCase().startsWith(pathToSearch))
+                .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT)
+                .forEach(folder -> subFolders
+                        .add(new FolderSearchResultView(folder.getIdentifier(), folder.getInode(), folder.getPath(), site.getHostname(),
+                                Try.of(() -> APILocator.getPermissionAPI()
+                                        .doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user))
+                                        .getOrElse(false))));
 
         return subFolders;
     }
 
     /**
-     * Will find the subfolders living directly under the host passed and the last valid folder (spliting the pathToSearch by the last '/').
+     * Will find the subfolders living directly under the host passed and the last valid folder (splitting the pathToSearch by the last '/').
      * And filter the results by what is left after the last '/'.
      */
     private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId,
             final String pathToSearch, final User user)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
-        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+        final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
 
-        final int lastIndexOf = pathToSearch.lastIndexOf(StringPool.FORWARD_SLASH);
+        final int lastIndexOf = pathToSearch.lastIndexOf(FORWARD_SLASH);
         final String lastValidPath = pathToSearch.substring(0, lastIndexOf);
         final Folder lastValidFolder = APILocator.getFolderAPI()
-                .findFolderByPath(lastValidPath, host, user, false);
+                .findFolderByPath(lastValidPath, site, user, DONT_RESPECT_FRONT_END_ROLES);
         if (UtilMethods.isSet(lastValidFolder) && UtilMethods
                 .isSet(lastValidFolder.getInode())) {
-            if(pathToSearch.equals(lastValidPath) || pathToSearch.equals(lastValidPath+"/")) {
-                subFolders.add(new FolderSearchResultView(lastValidFolder.getPath(),
-                        host.getHostname(),
+            if (pathToSearch.equals(lastValidPath) || pathToSearch.equals(lastValidPath + FORWARD_SLASH)) {
+                subFolders.add(new FolderSearchResultView(lastValidFolder.getIdentifier(), lastValidFolder.getInode(), lastValidFolder.getPath(),
+                        site.getHostname(),
                         Try.of(() -> APILocator.getPermissionAPI()
-                                .doesUserHavePermission(lastValidFolder,
-                                        PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user))
+                                .doesUserHavePermission(lastValidFolder, PERMISSION_CAN_ADD_CHILDREN, user))
                                 .getOrElse(false)));
             }
-            final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
-                    .findSubFolders(lastValidFolder, user, false);
+            final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI().findSubFolders(lastValidFolder, user, DONT_RESPECT_FRONT_END_ROLES);
             subFoldersOfLastValidPath.stream()
-                    .filter(folder -> folder.getPath().toLowerCase()
-                            .startsWith(pathToSearch))
-                    .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(folder -> subFolders
-                    .add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
-                            Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
-                                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
+                    .filter(folder -> folder.getPath().toLowerCase().startsWith(pathToSearch))
+                    .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT)
+                    .forEach(folder -> subFolders
+                            .add(new FolderSearchResultView(folder.getIdentifier(), folder.getInode(), folder.getPath(), site.getHostname(),
+                                    Try.of(() -> APILocator.getPermissionAPI()
+                                            .doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user))
+                                            .getOrElse(false))));
         }
         return subFolders;
     }
 
+    /**
+     * Check if the folder is valid and has an inode.
+     * @param folder folder to check
+     * @return true if the folder exists in the database or if the folder is not null
+     */
+    public boolean isValidFolder(final Folder folder) {
+        return UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode());
+    }
 }

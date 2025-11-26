@@ -1,27 +1,28 @@
 <dot-palette-input-filter
-    #filterInput
     (filter)="filterContentTypes($event)"
-></dot-palette-input-filter>
-<div class="dot-content-palette__items" *ngIf="items?.length && !loading">
-    <div
-        *ngFor="let item of items"
-        draggable="true"
-        data-testId="paletteItem"
-        (dragstart)="dragStart(item)"
-        (click)="showContentTypesList(item.variable)"
-    >
-        <dot-icon size="30" [name]="item.icon"></dot-icon>
-        <p>{{ item.name }}</p>
-        <dot-icon name="keyboard_arrow_right" class="arrow"></dot-icon>
+    #filterInput></dot-palette-input-filter>
+@if (items?.length && !loading) {
+    <div class="dot-content-palette__items">
+        @for (item of items; track item) {
+            <div
+                (dragstart)="dragStart(item)"
+                (click)="showContentTypesList(item.variable)"
+                draggable="true"
+                data-testId="paletteItem">
+                <dot-icon [name]="item.icon" size="30"></dot-icon>
+                <p>{{ item.name }}</p>
+                <dot-icon name="keyboard_arrow_right" class="arrow"></dot-icon>
+            </div>
+        }
     </div>
-</div>
+}
 
-<dot-spinner *ngIf="loading && viewContentlet === 'contentlet:out'" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+@if (loading && viewContentlet === 'contentlet:out') {
+    <dot-spinner [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+}
 
-<span
-    *ngIf="!items?.length && !loading"
-    data-testId="emptyState"
-    class="dot-content-palette__empty"
->
-    {{ 'No-Results' | dm }}
-</span>
+@if (!items?.length && !loading) {
+    <span data-testId="emptyState" class="dot-content-palette__empty">
+        {{ 'No-Results' | dm }}
+    </span>
+}

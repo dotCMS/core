@@ -1,31 +1,28 @@
 <p-card (click)="goTo.emit(true)" data-testid="pageCard">
     <ng-template pTemplate="header">
-        <dot-pages-favorite-page-empty-skeleton *ngIf="!imageUri; else FavoritePageThumbnail" />
-
-        <ng-template #FavoritePageThumbnail>
+        @if (!imageUri) {
+            <dot-pages-favorite-page-empty-skeleton />
+        } @else {
             <div
-                class="dot-pages-favorite-card-content__image"
                 [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
-                data-testId="favoriteCardImageContainer"
-            >
+                class="dot-pages-favorite-card-content__image"
+                data-testId="favoriteCardImageContainer">
                 <img [alt]="title" [src]="imageUri" />
             </div>
-        </ng-template>
+        }
     </ng-template>
 
     <div class="dot-pages-favorite-card-content__container">
         <div class="dot-pages-favorite-card-content__title">{{ title }}</div>
         <div
-            class="dot-pages-favorite-card-content__subtitle"
             [pTooltip]="url"
             [innerHTML]="url"
-            tooltipPosition="bottom"
-        ></div>
+            class="dot-pages-favorite-card-content__subtitle"
+            tooltipPosition="bottom"></div>
     </div>
     <p-button
-        id="{{ actionButtonId }}"
         (click)="showActionMenu.emit($event)"
+        id="{{ actionButtonId }}"
         icon="pi pi-ellipsis-v"
-        styleClass="p-button-rounded p-button-text p-button-sm"
-    ></p-button>
+        styleClass="p-button-rounded p-button-text p-button-sm"></p-button>
 </p-card>

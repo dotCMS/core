@@ -1,0 +1,98 @@
+# Functionality needs to be moved into cicd_post-workflow-reporting.yml
+name: 'PR Notifier'
+on:
+  workflow_call:
+    inputs:
+      pr_status:
+        description: 'PR status'
+        type: string
+        required: true
+    secrets:
+      CI_MACHINE_USER:
+        description: 'CI machine user'
+        required: true
+      CI_MACHINE_TOKEN:
+        description: 'CI machine token'
+        required: true
+      SLACK_BOT_TOKEN:
+        description: 'Slack bot token'
+        required: true
+
+jobs:
+  message-resolver:
+    name: Resolve Message
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      message: ${{ steps.message-resolver.outputs.message }}
+    steps:
+      - name: Resolve Message
+        id: message-resolver
+        shell: bash
+        run: |
+          pr_status=${{ inputs.pr_status }}
+          run_id=${{ github.run_id }}
+          run_url=https://github.com/${{ github.repository }}/actions/runs/${run_id}
+          details_message="Please check ${run_url} for more details."
+          
+          case "${pr_status}" in
+          "SUCCESS")
+              message=":white_check_mark: PR passed all checks"
+              ;;
+          "FAILURE")
+              message=":x: PR failed checks"
+              ;;
+          "CANCELLED")
+              message=":warning: PR was cancelled"
+              ;;
+          *)
+              message=":question: PR status is unknown"
+              ;;
+          esac
+          
+          message="${message}. ${details_message}"
+          
+          echo "message: [${message}]"
+          echo "message=${message}" >> $GITHUB_OUTPUT
+
+  slack-channel-resolver:
+    name: Resolve Slack Channel
+    uses: ./.github/workflows/utility_slack-channel-resolver.yml
+    with:
+      github_users: "${{ github.actor }}"
+      default_channel: eng
+      default_channel_id: C028Z3R2D
+      continue_on_error: true
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  pr-notifier:
+    needs: [message-resolver, slack-channel-resolver]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        member: ${{ fromJSON(needs.slack-channel-resolver.outputs.channel_ids) }}
+    continue-on-error: true
+    steps:
+      - name: Notify PR Status
+        continue-on-error: true
+        shell: bash
+        run: |
+          channel=${{ matrix.member }}
+          message="${{ needs.message-resolver.outputs.message }}"
+          
+          curl -X POST \
+            -H "Content-type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+            -d "{ \"channel\":\"${channel}\",\"text\":\"${message}\"}" \
+            -s \
+            https://slack.com/api/chat.postMessage
+      # Check can be removed if we have resolved root cause
+      # We cannot use a local github action for this as it is run before we checkout the repo
+      # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
+      - name: Check API Rate Limit
+        shell: bash
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit || true

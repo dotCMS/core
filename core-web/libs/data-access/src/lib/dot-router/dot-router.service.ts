@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
@@ -15,16 +15,21 @@ import { filter } from 'rxjs/operators';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRouterService {
+    private router = inject(Router);
+    private route = inject(ActivatedRoute);
+
     portletReload$ = new Subject();
-    private _storedRedirectUrl: string;
+    private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
     private _pageLeaveRequest = new Subject<void>();
 
-    constructor(private router: Router, private route: ActivatedRoute) {
+    constructor() {
         this._routeHistory.url = this.router.url;
         this.router.events
             .pipe(filter((event: Event) => event instanceof NavigationEnd))
@@ -68,7 +73,7 @@ export class DotRouterService {
     }
 
     get queryParams(): Params {
-        const nav = this.router.getCurrentNavigation();
+        const nav = this.router.currentNavigation();
 
         return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
     }
@@ -112,9 +117,9 @@ export class DotRouterService {
         const menuId = 'edit-page';
 
         return this.router.navigate([`/${menuId}/content`], {
-            queryParams,
-            state: {
-                menuId
+            queryParams: {
+                ...queryParams,
+                mId: menuId.substring(0, 4)
             }
         });
     }
@@ -201,6 +206,13 @@ export class DotRouterService {
         this.router.navigate([`/c/content/new/${variableName}`]);
     }
 
+    /**
+     * Redirect to edit the content type
+     *
+     * @param {string} id
+     * @param {string} portlet
+     * @memberof DotRouterService
+     */
     goToEditContentType(id: string, portlet: string): void {
         this.router.navigate([`/${portlet}/edit/${id}`]);
     }
@@ -327,9 +339,21 @@ export class DotRouterService {
      * @return {*}  {Promise<boolean>}
      * @memberof DotRouterService
      */
-    gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
-        const { replaceUrl = false, queryParamsHandling = '' } = navigateToPorletOptions || {};
-        const url = this.router.createUrlTree([link], { queryParamsHandling });
+    gotoPortlet(
+        link: string,
+        navigateToPorletOptions?: DotNavigateToOptions,
+        parentMenuId?: string
+    ): Promise<boolean> {
+        const {
+            replaceUrl = false,
+            queryParamsHandling = '',
+            queryParams = {}
+        } = navigateToPorletOptions || {};
+
+        const url = this.router.createUrlTree([link], {
+            queryParamsHandling,
+            queryParams: { ...queryParams, ...(parentMenuId ? { mId: parentMenuId } : {}) }
+        });
 
         return this.router.navigateByUrl(url, { replaceUrl });
     }

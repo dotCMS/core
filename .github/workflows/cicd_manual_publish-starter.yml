@@ -1,0 +1,250 @@
+name: Publish Starter
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Select a Starter type'
+        required: true
+        type: choice
+        options:
+          - 'full'
+          - 'empty'
+      old-assets:
+        description: 'Include old assets'
+        required: true
+        type: boolean
+      changelog:
+        description: 'Changes description'
+        required: true
+        type: string
+      issue-number:
+        description: 'Related issue number. Required to create Empty Starter PR.'
+        required: true
+        type: string
+      dry-run:
+        description: 'Enable dry-run mode'
+        required: true
+        type: boolean
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  STARTER_TYPE: ${{ github.event.inputs.type }}
+  EMPTY_STARTER_URL: ${{ vars.DOT_EMPTY_STARTER_URL }}
+  EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
+  FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
+  FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
+  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=${{ github.event.inputs.old-assets }}
+
+jobs:
+  get-starter:
+    runs-on: macos-13
+    if: github.repository == 'dotcms/core'
+    environment: starter
+    steps:
+      - name: 'Github context'
+        run: |
+          echo "::group::Github context"
+          echo "${{ toJSON(github.event.inputs) }}"
+          echo "::endgroup::"
+       
+      - name: 'Get zip file'
+        id: get-zip-file
+        run: |
+          echo "::group::Getting zip file"
+          echo "::notice::Starter type: $STARTER_TYPE"
+          function download_starter {
+            URL=$1/${{ env.DOWNLOAD_ENDPOINT }}
+            ACCESS_TOKEN=$2
+            OUTPUT_FILENAME=$3
+            curl -s -w "%{http_code}" --output ${OUTPUT_FILENAME} $URL \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/octet-stream" \
+              -H "Authorization: Bearer $ACCESS_TOKEN"
+          }
+          mkdir -p starter && cd starter
+          DATE=$(date +'%Y%m%d')
+          if [[ "$STARTER_TYPE" == "empty" ]]; then
+            echo "::debug::Empty Starter: downloading from [${{ env.EMPTY_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            FILENAME="empty_${DATE}.zip"
+            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)            
+          else
+            echo "::debut::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            FILENAME="${DATE}.zip"
+            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)             
+          fi                    
+          echo "::notice::Status Code: $RESPONSE" 
+          if [[ "$RESPONSE" != "200" ]]; then
+            echo "::error::Failed with status code: $RESPONSE"
+            exit 1
+          fi
+          ls -ltrh
+          echo "::endgroup::"
+
+      - name: 'Upload artifacts'
+        id: upload-artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.STARTER_TYPE }}-starter
+          path: |
+            ${{ github.workspace }}/starter/*.zip
+          retention-days: 2
+          if-no-files-found: ignore   
+          
+  deploy-artifacts:
+    needs: [ get-starter ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: starter
+    outputs:
+      filename: ${{ steps.deploy-artifacts.outputs.filename }}
+      url: ${{ steps.deploy-artifacts.outputs.url }}
+      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
+    steps:
+      - name: 'Checkout repository'
+        if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
+        uses: actions/checkout@v4
+
+      - uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ vars.ARTIFACTORY_URL }}
+          JF_USER: ${{ secrets.EE_REPO_USERNAME }}
+          JF_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}          
+                    
+      - name: 'JFrog CLI context'
+        run: |
+          echo "::group::JFrog CLI context"
+          jf rt ping
+          echo "::endgroup::"
+          
+      - name: 'Download artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          name: ${{ env.STARTER_TYPE }}-starter
+          path: ${{ github.workspace }}/starter
+
+      - name: 'Listing artifacts'
+        run: ls -R
+  
+      - name: 'Deploy artifacts'
+        id: deploy-artifacts
+        working-directory: ${{ github.workspace }}/starter
+        env:
+          ARTIFACTORY_URL: ${{ vars.ARTIFACTORY_URL }}
+          ARTIFACTORY_REPO: ${{ vars.ARTIFACTORY_REPO }}
+          GROUP_ID: com.dotcms
+          ARTIFACT_ID: starter
+          PACKAGING: zip
+          DRY_RUN_MODE: ${{ github.event.inputs.dry-run }}
+        run: |
+          echo "::group::Deploy Artifacts"
+          
+          if [[ $DRY_RUN_MODE == true ]]; then
+            DRY_RUN='--dry-run'
+          fi
+          
+          FILENAME=$(ls -ltr | awk 'END {print $NF}')
+          VERSION="${FILENAME%.*}"
+          SOURCE="./${FILENAME}"
+          TARGET="${ARTIFACTORY_REPO}/com/dotcms/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${FILENAME}"
+          PROPS="groupId=${GROUP_ID};artifactId=${ARTIFACT_ID};version=${VERSION};packaging=${PACKAGING}"
+          URL="${ARTIFACTORY_URL}/artifactory/${TARGET}"
+          
+          echo "FILENAME=${FILENAME}"
+          echo "VERSION=${VERSION}"
+          echo "::notice::Uploading ${SOURCE} to ${TARGET} with props ${PROPS}"
+          jfrog rt u "${SOURCE}" ${TARGET} \
+            --target-props="${PROPS}" \
+            --flat=false \
+            $DRY_RUN
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+          echo "url=${URL}" >> $GITHUB_OUTPUT  
+          echo "::notice::Artifact URL ${URL}"
+          echo "::notice::Changelog: ${{ github.event.inputs.changelog }}"
+          echo "::endgroup::"
+
+      - name: 'Update pom.xml'
+        if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
+        id: update-pom
+        working-directory: ${{ github.workspace }}/parent
+        env:
+          FILENAME: ${{ steps.deploy-artifacts.outputs.filename }}
+        run: |
+          echo "::group::Update pom.xml"
+          echo "Updating pom.xml"
+          VERSION="${FILENAME%.*}"
+          AUXILIARY_BRANCH=${{ inputs.issue-number }}-update-starter-version-${VERSION}-${{ github.run_id }}
+          sed -i "s/<starter.deploy.version>.*<\/starter.deploy.version>/<starter.deploy.version>${VERSION}<\/starter.deploy.version>/" pom.xml
+          POM=$(cat pom.xml)
+          echo "POM file: ${POM}"
+          echo auxiliary-branch=${AUXILIARY_BRANCH} >> $GITHUB_OUTPUT
+          echo starter-version=${VERSION} >> $GITHUB_OUTPUT
+          echo "::notice::Auxiliary Branch: ${AUXILIARY_BRANCH}"
+          echo "::endgroup::"
+
+      - name: 'Create Pull Request'
+        if: ${{ steps.update-pom.outcome == 'success' }}
+        id: create-pull-request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          branch: ${{ steps.update-pom.outputs.auxiliary-branch }}
+          commit-message: "📦 Publishing an Empty Starter version [${{ steps.update-pom.outputs.starter-version }}]"
+          title: 'Update starter.deploy.version to [${{ steps.update-pom.outputs.starter-version }}]'
+          body: >
+            This PR was created automatically to update the **starter.deploy.version** in pom.xml to [**${{ steps.update-pom.outputs.starter-version }}**].
+          labels: |
+            empty-starter
+            automated pr            
+       
+  send-notification:
+    needs: [ deploy-artifacts ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    if: always() && github.event.inputs.dry-run == 'false'
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Compose Message
+        id: compose-message
+        run: |
+          echo "::group::Compose Message"
+          ARTIFACT_FILENAME="${{ needs.deploy-artifacts.outputs.filename }}"
+          ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
+          OLD_ASSETS="${{ github.event.inputs.old-assets }}"
+          CHANGELOG="${{ github.event.inputs.changelog }}"
+          PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
+          if [ "$STARTER_TYPE" == "empty" ]; then
+            PR_ALERT="> :exclamation:*Approvals required*:exclamation: *PR* ${PULL_REQUEST_URL}"
+          fi          
+          
+          BASE_MESSAGE=$(cat <<-EOF
+          > :large_green_circle: *Attention dotters:* a new Starter published!
+          > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on \`ARTIFACTORY\` :frog:!
+          >
+          > :link: ${ARTIFACT_URL}
+          > _Old assets included_: ${OLD_ASSETS}
+          > *Changelog*
+          > \`\`\`${CHANGELOG}\`\`\`
+          >
+          ${PR_ALERT}
+          EOF
+          )
+          
+          MESSAGE="${BASE_MESSAGE}"
+          
+          echo "Message: ${MESSAGE}"
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          
+      - name: Slack Notification
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-starter"
+          payload: ${{ steps.compose-message.outputs.message }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}       
+

@@ -1,0 +1,42 @@
+@use "variables" as *;
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dot-section {
+    display: flex;
+    background-color: $color-palette-gray-100;
+    flex-direction: column;
+    padding: 0 $spacing-3 $spacing-3 $spacing-3;
+    border-bottom: 1px solid $color-palette-gray-300;
+}
+
+.dot-section__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $spacing-1 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: $color-palette-gray-100;
+    min-height: 48px;
+}
+
+.dot-section__header--sticky::after {
+    opacity: 1;
+}
+
+.dot-section__title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-bold;
+    color: $color-palette-gray-900;
+    margin: 0;
+}
+
+.dot-section__action {
+    color: $color-palette-primary-500;
+    font-size: $font-size-sm;
+}

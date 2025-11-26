@@ -1,12 +1,10 @@
 package com.dotmarketing.business.ajax;
 
-import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
-import static com.dotmarketing.business.ajax.DwrUtil.validateRolesPortletPermissions;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -54,6 +52,7 @@ import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -66,6 +65,9 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,22 +79,40 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
 
+import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
+import static com.dotmarketing.business.ajax.DwrUtil.validateRolesPortletPermissions;
+import static com.dotmarketing.util.PortletID.LANGUAGES;
+
+/**
+ * This class exposes Role and Portlet-related information to the DWR framework. This class is used
+ * by several Dojo-based portlets in the dotCMS backend, and will be progressively migrated to the
+ * respective REST Endpoint classes in the near future.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class RoleAjax {
 
 	private final SystemEventsAPI systemEventsAPI;
+	private final PortletAPI portletAPI;
+	private final UserWebAPI userWebAPI;
+
+	private static final Lazy<Boolean> HIDE_OLD_LANGUAGES_PORTLET =
+			Lazy.of(() -> Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET, true));
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
     	
 	public RoleAjax(){
-		this(APILocator.getSystemEventsAPI());
+		this(APILocator.getSystemEventsAPI(), APILocator.getPortletAPI(), WebAPILocator.getUserWebAPI());
 	}
-	
+
 	@VisibleForTesting
-	protected RoleAjax(SystemEventsAPI systemEventsAPI) {
+	protected RoleAjax(final SystemEventsAPI systemEventsAPI, final PortletAPI portletAPI, final UserWebAPI userWebAPI) {
 		this.systemEventsAPI = systemEventsAPI;
+		this.portletAPI = portletAPI;
+		this.userWebAPI = userWebAPI;
     }
 	
 	public List<Map<String, Object>> getRolesTreeFiltered(boolean onlyUserAssignableRoles, String excludeRoles) throws DotDataException{
@@ -592,38 +612,37 @@ public class RoleAjax {
 	}
 
 	/**
-	 * Retrieves the info { title, id } of all portlets that can be added to layouts
-	 * @return
-	 * @throws SystemException
-	 * @throws LanguageException
-	 * @throws DotRuntimeException
-	 * @throws PortalException
+	 * Retrieves the title and ID of all portlets that can be added to the main menu -- i.e.,
+	 * layouts --  in the dotCMS backend
+	 *
+	 * @return A list of maps, each containing the title and ID of a portlet that can be added to
+	 * the main menu.
+	 *
+	 * @throws SystemException   An error occurred when retrieving all Portlets from the database.
+	 * @throws LanguageException An error occurred when retrieving the localized title of a
+	 *                           Portlet.
 	 */
-	public List<Map<String, Object>> getAllAvailablePortletInfoList() throws SystemException, LanguageException, DotRuntimeException, PortalException {
-
-		PortletAPI portletAPI = APILocator.getPortletAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		List<Map<String, Object>> listOfPortletsInfo = new ArrayList<>();
-
-		final Collection<Portlet> portlets = portletAPI.findAllPortlets();
-		for(final Portlet portlet: portlets) {
-			if(portletAPI.canAddPortletToLayout(portlet)) {
-				Map<String, Object> portletMap = new HashMap<>();
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + portlet.getPortletId());
-				portletMap.put("title", portletTitle);
-				portletMap.put("id", portlet.getPortletId());
-				listOfPortletsInfo.add(portletMap);
+	@SuppressWarnings("unused")
+	public List<Map<String, Object>> getAllAvailablePortletInfoList() throws SystemException,
+			LanguageException {
+		final HttpServletRequest request = DwrUtil.getHttpServletRequest();
+		final List<Map<String, Object>> listOfPortletsInfo = new ArrayList<>();
+		final Collection<Portlet> portlets = this.portletAPI.findAllPortlets();
+		for (final Portlet portlet : portlets) {
+			if (LANGUAGES.name().equalsIgnoreCase(portlet.getPortletId())
+					&& Boolean.TRUE.equals(HIDE_OLD_LANGUAGES_PORTLET.get())) {
+				continue;
+			}
+			if (this.portletAPI.canAddPortletToLayout(portlet)) {
+				final String portletTitle = LanguageUtil.get(this.userWebAPI.getLoggedInUser(request),
+								"com.dotcms.repackage.javax.portlet.title." + portlet.getPortletId());
+				listOfPortletsInfo.add(Map.of(
+						"title", portletTitle,
+						"id", portlet.getPortletId()
+				));
 			}
 		}
-		Collections.sort(listOfPortletsInfo, new Comparator<Map<String, Object>>() {
-			public int compare(Map<String, Object> o1, Map<String, Object> o2) {
-				return ((String)o1.get("title")).compareTo(((String)o2.get("title")));
-			}
-		});
-
+		listOfPortletsInfo.sort(Comparator.comparing(o -> ((String) o.get("title")).toLowerCase()));
 		return listOfPortletsInfo;
 	}
 
@@ -693,6 +712,8 @@ public class RoleAjax {
 	 * @throws DotRuntimeException
 	 */
 	public List<Map<String, Object>> getRolePermissions(String roleId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -780,6 +801,9 @@ public class RoleAjax {
 	}
 
 	public void saveRolePermission(String roleId, String folderHostId, Map<String, String> permissions, boolean cascade) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		Logger.info(this, "Applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 
 		UserAPI userAPI = APILocator.getUserAPI();
@@ -882,7 +906,10 @@ public class RoleAjax {
 		Logger.info(this, "Done applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 	}
 
-	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException {
+	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException, PortalException, SystemException {
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		HostAPI hostAPI = APILocator.getHostAPI();
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -916,6 +943,8 @@ public class RoleAjax {
 	}
 
 	public Map<String, Object> getRole(String roleId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		return roleAPI.loadRoleById(roleId).toMap();
@@ -923,6 +952,8 @@ public class RoleAjax {
 	}
 
 	public Map<String, Object> getUserRole(String userId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		Map<String, Object> toReturn = new HashMap<>();
 
@@ -956,6 +987,8 @@ public class RoleAjax {
 
 	@CloseDBIfOpened
 	public Map<String, Object>  isPermissionableInheriting(String assetId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException{
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();

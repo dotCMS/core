@@ -27,7 +27,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
 
     beforeEach(async () => {
         spectator = createHost(
-            `<dot-binary-field-ui-message [uiMessage]="uiMessage">
+            `<dot-binary-field-ui-message [uiMessage]="uiMessage" [disabled]="disabled">
                 <button data-testId="choose-file-btn">Choose File</button>
             </dot-binary-field-ui-message>`,
             {
@@ -36,7 +36,8 @@ describe('DotBinaryFieldUiMessageComponent', () => {
                         message: 'Drag and Drop File',
                         icon: 'pi pi-upload',
                         severity: 'info'
-                    }
+                    },
+                    disabled: false
                 }
             }
         );
@@ -52,12 +53,43 @@ describe('DotBinaryFieldUiMessageComponent', () => {
         ).className;
 
         expect(messageText).toBe('Drag and Drop File');
-        expect(messageIconClass).toBe('pi pi-upload');
+        expect(messageIconClass).toBe('icon pi pi-upload');
         expect(messageIconContainer).toBe('icon-container info');
     });
 
     it('should have a button', () => {
         const button = spectator.query(byTestId('choose-file-btn'));
         expect(button).toBeTruthy();
+    });
+
+    describe('when disabled', () => {
+        beforeEach(() => {
+            spectator.setHostInput({ disabled: true });
+            spectator.detectChanges();
+        });
+
+        it('should add disabled class to host element', () => {
+            expect(spectator.element).toHaveClass('disabled');
+        });
+
+        it('should add disabled class to icon container', () => {
+            const iconContainer = spectator.query(byTestId('ui-message-icon-container'));
+            expect(iconContainer).toHaveClass('disabled');
+        });
+
+        it('should add disabled class to text element', () => {
+            const textElement = spectator.query('.text');
+            expect(textElement).toHaveClass('disabled');
+        });
+
+        it('should still display message content when disabled', () => {
+            const messageText = spectator.query(byTestId('ui-message-span')).innerHTML;
+            const messageIconClass = spectator.query(byTestId('ui-message-icon')).className;
+            const button = spectator.query(byTestId('choose-file-btn'));
+
+            expect(messageText).toBe('Drag and Drop File');
+            expect(messageIconClass).toBe('icon pi pi-upload');
+            expect(button).toBeTruthy();
+        });
     });
 });

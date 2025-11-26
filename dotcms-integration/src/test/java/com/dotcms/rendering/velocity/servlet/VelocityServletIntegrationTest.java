@@ -44,6 +44,7 @@ import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -64,9 +65,11 @@ import java.util.Map;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -104,7 +107,7 @@ public class VelocityServletIntegrationTest {
                 attributes.put(key, value);
                 return null;
             }
-        }).when(request).setAttribute(anyString(), anyObject());
+        }).when(request).setAttribute(anyString(), any());
 
         // Mock getAttribute
         doAnswer(new Answer<Object>() {
@@ -444,8 +447,8 @@ public class VelocityServletIntegrationTest {
                 .build();
 
         when(pageAssetRenderedAPI.getPageHtml(eq(pageContext),
-                Mockito.any(HttpServletRequest.class),
-                Mockito.any(HttpServletResponse.class)))
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
                 .thenReturn(htmlContent);
 
         return pageAssetRenderedAPI;
@@ -591,6 +594,49 @@ public class VelocityServletIntegrationTest {
         verifyPageServed(pageContent, outputStream);
     }
 
+    /**
+     * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: A backend user is logged in and request a page in preview mode
+     * Expected result: The page should be served in preview mode and the attribute should be set at request level never at session level
+     * @throws Exception
+     */
+    @Test
+    public void Test_Page_Mode_Scope() throws Exception {
+
+        final User loginUser = mock(User.class);
+        when(loginUser.hasConsoleAccess()).thenReturn(true);
+        when(loginUser.isAnonymousUser()).thenReturn(false);
+        when(loginUser.isBackendUser()).thenReturn(true);
+        when(loginUser.isFrontendUser()).thenReturn(false);
+        when(loginUser.isActive()).thenReturn(true);
+
+        final HttpServletRequest mockRequest = createMockRequest("/dotAdmin/blog/index",
+                loginUser, LoginMode.BE, true);
+
+        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
+
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
+                pageAssetRenderedAPI);
+        velocityServlet.service(mockRequest, response);
+
+        verifyPageServed("<html>lol</html>", outputStream);
+
+        //Page Mode can be recovered from the PageMode utility class
+        assertEquals("Page Mode should be returned accurately by PageMode.get", PageMode.PREVIEW_MODE, PageMode.get(mockRequest));
+        //The attribute can be recovered at request level consistently
+        assertEquals("Test the attribute only exists at request level", PageMode.PREVIEW_MODE, mockRequest.getAttribute(WebKeys.PAGE_MODE_PARAMETER));
+
+        //The attribute should not be set at session level
+        final HttpSession session = mockRequest.getSession(false);
+        assertNotNull(session);
+        assertNull(session.getAttribute(WebKeys.PAGE_MODE_SESSION));
+
+    }
+
     private static void verifyPageServed(final String pageContent, final ServletOutputStream outputStream)
             throws IOException {
         verify(outputStream, times(1)).write(pageContent.getBytes());
@@ -599,19 +645,66 @@ public class VelocityServletIntegrationTest {
     public HttpServletRequest createMockRequest(final String referer, final User user, final LoginMode loginMode) {
         return createMockRequest(referer, user, loginMode, false);
     }
+
     public HttpServletRequest createMockRequest(final String referer, final User user,
             final LoginMode loginMode, final boolean disabledNavigateMode) {
 
+        // Create the mock of HttpServletRequest (VelocityRequestWrapper simulated)
         VelocityRequestWrapper velocityRequest = mock(VelocityRequestWrapper.class);
+
+        // Map to store request attributes
+        final Map<String, Object> requestAttributes = new HashMap<>();
+
+        // Preload basic request attributes
+        requestAttributes.put("requestURI", "/lol");
+        requestAttributes.put(com.liferay.portal.util.WebKeys.USER, user);
+        requestAttributes.put("disabledNavigateMode", String.valueOf(disabledNavigateMode));
+
+        // Configure dynamic behavior of setAttribute and getAttribute for the request
+        doAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            Object value = invocation.getArgument(1);
+            requestAttributes.put(key, value);
+            return null;
+        }).when(velocityRequest).setAttribute(anyString(), any());
+
+        when(velocityRequest.getAttribute(anyString())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            return requestAttributes.get(key);
+        });
+
+        // Simulate getRequestURI with a direct response
         when(velocityRequest.getRequestURI()).thenReturn("/lol");
-        when(velocityRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
+        // Simulate getParameter directly
+        when(velocityRequest.getParameter("disabledNavigateMode"))
+                .thenReturn(String.valueOf(disabledNavigateMode));
+
+        // Map to store session attributes
+        final Map<String, Object> sessionAttributes = new HashMap<>();
+
+        // Create the mock for HttpSession
         final HttpSession session = mock(HttpSession.class);
-        when(session.getAttribute(LOGIN_MODE_PARAMETER)).thenReturn(loginMode);
         when(velocityRequest.getSession(Mockito.anyBoolean())).thenReturn(session);
         when(velocityRequest.getSession()).thenReturn(session);
 
-        when(velocityRequest.getParameter("disabledNavigateMode")).thenReturn(String.valueOf(disabledNavigateMode));
+        // Preload the loginMode attribute in the session
+        sessionAttributes.put(LOGIN_MODE_PARAMETER, loginMode);
 
+        // Configure dynamic behavior of setAttribute and getAttribute for the session
+        doAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            Object value = invocation.getArgument(1);
+            sessionAttributes.put(key, value);
+            return null;
+        }).when(session).setAttribute(anyString(), any());
+
+        when(session.getAttribute(anyString())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            return sessionAttributes.get(key);
+        });
+
+        // Set the referer header if provided
         if (referer != null) {
             when(velocityRequest.getHeader("referer")).thenReturn(referer);
         }

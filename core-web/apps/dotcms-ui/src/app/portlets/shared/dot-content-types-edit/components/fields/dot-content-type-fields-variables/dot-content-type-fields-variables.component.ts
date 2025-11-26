@@ -1,24 +1,31 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
 
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
+
+import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
     selector: 'dot-content-type-fields-variables',
     styleUrls: ['./dot-content-type-fields-variables.component.scss'],
-    templateUrl: './dot-content-type-fields-variables.component.html'
+    templateUrl: './dot-content-type-fields-variables.component.html',
+    imports: [DotKeyValueComponent],
+    providers: [DotFieldVariablesService]
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private fieldVariablesService = inject(DotFieldVariablesService);
+
     @Input() field: DotCMSContentTypeField;
-    @Input() showTable: boolean = true;
+    @Input() showTable = true;
 
     fieldVariables: DotFieldVariable[] = [];
     blackList = {
@@ -33,11 +40,6 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     };
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private fieldVariablesService: DotFieldVariablesService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.field?.currentValue) {

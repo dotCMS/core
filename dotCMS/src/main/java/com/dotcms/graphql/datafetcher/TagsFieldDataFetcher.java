@@ -14,13 +14,13 @@ public class TagsFieldDataFetcher implements DataFetcher<List<String>> {
     
     private final static List<String> EMPTY_LIST=ImmutableList.of();
     
-    
-    
     @Override
     public List<String> get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
+
+            Logger.debug(this, ()-> "Fetching tags field for contentlet: " + contentlet.getIdentifier() + " field: " + var);
             String values = (String) contentlet.get(var);
 
             if (!UtilMethods.isSet(values)) {

@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import {
     Component,
     EventEmitter,
+    inject,
     Input,
     OnDestroy,
     OnInit,
@@ -10,12 +11,19 @@ import {
     ViewChild
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+import { TabViewModule } from 'primeng/tabview';
+
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotPropertiesService, DotRouterService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@dotcms/data-access';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
+import { DotTemplateAdvancedComponent } from '../dot-template-advanced/dot-template-advanced.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
 export const AUTOSAVE_DEBOUNCE_TIME = 5000;
@@ -23,9 +31,21 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
-    styleUrls: ['./dot-template-builder.component.scss']
+    styleUrls: ['./dot-template-builder.component.scss'],
+    imports: [
+        DotMessagePipe,
+        DotTemplateAdvancedComponent,
+        TabViewModule,
+        IframeComponent,
+        DotPortletBoxComponent,
+        TemplateBuilderComponent,
+        ButtonModule,
+        DotGlobalMessageComponent
+    ]
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
+    readonly #dotRouterService = inject(DotRouterService);
+
     @Input() item: DotTemplateItem;
     @Input() didTemplateChanged: boolean;
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
@@ -36,17 +56,10 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
-    readonly featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
-    featureFlagIsOn$ = this.propertiesService.getFeatureFlag(this.featureFlag);
 
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();
     lastTemplate: DotTemplateItem;
-
-    constructor(
-        private propertiesService: DotPropertiesService,
-        private dotRouterService: DotRouterService
-    ) {}
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
@@ -67,12 +80,11 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onTemplateItemChange(item: DotTemplateItem) {
-        this.updateTemplate.emit(item);
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }
 
-        this.dotRouterService.forbidRouteDeactivation();
+        this.#dotRouterService.forbidRouteDeactivation();
         this.lastTemplate = item;
 
         this.templateUpdate$.next(item);
@@ -88,7 +100,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     }
 
     private subscribeOnChangeBeforeLeaveHandler(): void {
-        this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.#dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.save.emit(this.lastTemplate);
         });
     }

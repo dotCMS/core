@@ -14,6 +14,77 @@
     border-left: 1px solid $color-palette-primary-300;
 }
 
+.edit-ema-nav-bar__item-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 5.5rem;
+    width: 100%;
+    gap: $spacing-0;
+    padding: 0 $spacing-0;
+    text-decoration: none;
+    color: $black;
+    position: relative;
+
+    &:not(:has(.edit-ema-nav-bar__item--active)) {
+        .p-button.p-button-outlined.toggle-palette {
+            display: none; // Hide when we are not on content edit portlet
+        }
+    }
+}
+
+.p-button.p-button-outlined.toggle-palette {
+    display: none;
+    align-self: flex-start;
+    border: 1px solid $color-palette-primary-300;
+    background-color: $white;
+    border-radius: 0;
+    height: 5.5rem;
+    z-index: 10;
+    position: absolute;
+    transition: all $basic-speed ease-in-out;
+
+    &:active,
+    &:focus {
+        outline: none;
+    }
+
+    &:hover {
+        background-color: $color-palette-primary-200;
+    }
+
+    ::ng-deep {
+        .p-button-icon {
+            transition: all $basic-speed ease-in-out;
+        }
+    }
+
+    &.closed {
+        left: -2rem;
+        border-right: none; // To make the blending illusion with the nav bar
+        ::ng-deep {
+            .p-button-icon,
+            .pi {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    &.open {
+        left: -23.875rem;
+        border: 1px solid $color-palette-gray-200; // Same as the border of the palette to create a blending illusion
+        border-right: 1px solid $white;
+        ::ng-deep {
+            .p-button-icon,
+            .pi {
+                transform: rotate(0deg);
+            }
+        }
+    }
+}
+
 .edit-ema-nav-bar__item {
     display: flex;
     flex-direction: column;
@@ -26,10 +97,18 @@
     padding: 0 $spacing-0;
     text-decoration: none;
     color: $black;
+    position: relative;
 
     .pi {
-        font-size: $font-size-xl;
-        color: $color-palette-gray-800;
+        font-size: $font-size-lg;
+        color: $color-palette-primary-800;
+    }
+
+    &::before {
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 0;
     }
 }
 
@@ -42,7 +121,7 @@
 use {
     user-select: none;
     -webkit-user-drag: none;
-    color: $color-palette-gray-800;
+    color: $color-palette-primary-800;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -54,7 +133,7 @@ use {
     font-size: $font-size-sm;
 }
 
-.edit-ema-nav-bar__item--active {
+.edit-ema-nav-bar__item-container:has(.edit-ema-nav-bar__item--active) {
     background-color: $white;
     border: 1px solid $color-palette-primary-300;
     border-left: none;
@@ -77,7 +156,41 @@ use {
     }
 }
 
+.edit-ema-nav-bar__item:hover:not(
+        .edit-ema-nav-bar__item--active,
+        .edit-ema-nav-bar__item--disabled
+    ) {
+    position: relative;
+
+    &::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: $color-palette-primary-200;
+        z-index: 1;
+        border-radius: $border-radius-sm;
+        height: 64px;
+        width: 64px;
+        transition-property: height, width;
+        transition-duration: $basic-speed;
+        transition-timing-function: ease-in-out;
+    }
+
+    .pi,
+    .item__label,
+    svg.item__image {
+        z-index: 2;
+    }
+}
+
 .edit-ema-nav-bar__item--disabled {
     cursor: not-allowed;
     opacity: 0.5;
+
+    .pi,
+    .item__label,
+    .item__image use {
+        color: $color-palette-primary-400;
+    }
 }

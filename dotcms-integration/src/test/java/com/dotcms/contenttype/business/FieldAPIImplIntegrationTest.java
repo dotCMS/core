@@ -1,31 +1,56 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.liferay.portal.model.User;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runner.RunWith;
+import org.quartz.SchedulerException;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class FieldAPIImplIntegrationTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        //TODO: Remove this when the whole change is done
+        try {
+            new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
+                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
+                    "supporting_values JSONB" +
+                    " )").loadObjectResults();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -58,7 +83,7 @@ public class FieldAPIImplIntegrationTest {
 
         final Field column = new FieldDataGen()
                 .name("fields-1").
-                        type(ColumnField.class)
+                type(ColumnField.class)
                 .sortOrder(1)
                 .contentTypeId(contentType.id())
                 .velocityVarName("fields1" + current)
@@ -167,5 +192,124 @@ public class FieldAPIImplIntegrationTest {
             assertEquals(i, fields.get(i).sortOrder());
         }
 
+    }
+
+
+    /**
+     * Method to test: {@link FieldAPIImpl#delete(Field, User)}
+     * When: Create a COntentType with a unique fields and later remove the unique Field
+     * Should: Clean the unique_fields extra table
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void cleanUpUniqueFieldTableAfterDeleteField() throws DotDataException {
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Language language = new LanguageDataGen().nextPersisted();
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .name("unique")
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            checkExtraTableCount(contentType, 0);
+
+            new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty(uniqueTextField.variable(), "unique-value")
+                    .nextPersistedAndPublish();
+
+            checkExtraTableCount(contentType, 1);
+
+            APILocator.getContentTypeFieldAPI().delete(uniqueTextField);
+
+            checkExtraTableCount(contentType, 0);
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    /**
+     * Method to test: {@link FieldAPIImpl#delete(Field, User)}
+     * Given Scenario: Big amount of contents, delete a field of the contents type to trigger CleanUpFieldReferencesJob, and while it is running try to create a new field with the same name
+     * ExpectedResult: Throw an exception indicating that the field cannot be created while the job is still running
+     *
+     */
+    @Test
+    public void createSameFieldNameWhileCleaningUpField(){
+        try {
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+            final Language language = new LanguageDataGen().nextPersisted();
+
+            final Field field = new FieldDataGen()
+                    .name("creationDate")
+                    .velocityVarName("creationDate")
+                    .contentTypeId(contentType.id())
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final long langId = language.getId();
+
+            for (int i = 0; i < 1000; i++) {
+            new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(langId)
+                    .nextPersisted();
+            }
+
+
+            Thread deleteThread = new Thread(() -> {
+                try {
+                    APILocator.getContentTypeFieldAPI().delete(field);
+                    QuartzUtils.startSchedulers();
+                } catch (SchedulerException | DotDataException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            deleteThread.start();
+
+            Thread.sleep(500);
+
+
+            Exception e = Assertions.assertThrows(Exception.class, () -> {
+                Field newField = new FieldDataGen()
+                        .name("creationDate")
+                        .velocityVarName("creationDate")
+                        .contentTypeId(contentType.id())
+                        .type(TextField.class)
+                        .next();
+                APILocator.getContentTypeFieldAPI().save(newField, APILocator.systemUser(), false);
+            });
+
+            Assert.assertEquals("Field variable 'creationDate' cannot be recreated while the CleanUpFieldReferencesJob is running. Please wait until finish", e.getMessage());
+
+            deleteThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void checkExtraTableCount(final ContentType contentType, final int countExpected)
+            throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults();
+
+        assertEquals(countExpected, results.size());
     }
 }

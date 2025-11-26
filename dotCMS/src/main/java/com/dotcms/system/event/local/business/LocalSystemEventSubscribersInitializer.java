@@ -1,5 +1,6 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.ai.listener.AIAppListener;
 import com.dotcms.analytics.listener.AnalyticsAppListener;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
@@ -16,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolver;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -68,6 +70,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getContainerAPI());
 
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
+        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AIAppListener.Instance.get());
 
         this.initDotVelocityMacrosVtlFiles();
     }
@@ -83,7 +86,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         try {
 
             final User user  = APILocator.systemUser();
-            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
+            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user,
+                    HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
             final ApplicationContainerFolderListener listener = new ApplicationContainerFolderListener();
             for (final Host host : hosts) {
 
@@ -105,7 +109,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         try {
 
             final User user  = APILocator.systemUser();
-            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
+            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user,
+                    HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
             final ApplicationTemplateFolderListener listener = new ApplicationTemplateFolderListener();
             for (final Host host : hosts) {
 

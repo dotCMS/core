@@ -67,6 +67,7 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -118,7 +119,7 @@ public class ExportStarterUtil {
     private static final Lazy<Integer> QUEUE_CAPACITY =
             Lazy.of(() -> Config.getIntProperty(STARTER_GENERATION_QUEUE_CAPACITY_PROP, 1000));
     private static final Lazy<String> ZIP_FILE_ASSETS_FOLDER =
-            Lazy.of(() -> Config.getStringProperty(STARTER_GENERATION_ASSETS_FOLDER_PROP, "/assets/"));
+            Lazy.of(() -> Config.getStringProperty(STARTER_GENERATION_ASSETS_FOLDER_PROP, "assets"));
 
     private static final String JSON_FILE_EXT = ".json";
 
@@ -484,16 +485,32 @@ public class ExportStarterUtil {
             return;
         }
         FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
-            final String filePath = file.getPath().replace(ConfigUtils.getAssetPath(), ZIP_FILE_ASSETS_FOLDER.get());
-            Logger.debug(this, String.format("-> File path: %s", filePath));
-            final FileEntry entry = new FileEntry(filePath, file);
-            this.addFileToZip(entry, zip);
+            try {
+                Path sourcePath = Paths.get(ConfigUtils.getAssetPath()).normalize();
+                Path currentFilePath = file.toPath().normalize();
+                Path targetFolderPath = Paths.get(ZIP_FILE_ASSETS_FOLDER.get()).normalize();
+
+                // Get relative path from source to current file
+                Path relativePath = sourcePath.relativize(currentFilePath);
+
+                // Construct the final path by combining target folder with relative path
+                Path finalPath = targetFolderPath.resolve(relativePath);
+
+                // Convert to string with forward slashes for ZIP compatibility
+                String filePath = finalPath.toString().replace('\\', '/');
+
+                Logger.debug(this, String.format("-> File path: %s", filePath));
+                final FileEntry entry = new FileEntry(filePath, file);
+                this.addFileToZip(entry, zip);
+
+            } catch (Exception e) {
+                Logger.error(this, String.format("Error processing file path for %s: %s",
+                        file.getPath(), e.getMessage()));
+            }
         });
 
 
     }
-
-
 
 
     /**
@@ -512,8 +529,8 @@ public class ExportStarterUtil {
      * @param includeOldAssets If absolutely all versions of the assets must be included in the
      *                         compressed file, set this to {@code true}.
      */
-    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets) {
-        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets);
+    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets, long maxFileSize) {
+        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets,  maxFileSize);
     }
 
     /**
@@ -526,8 +543,8 @@ public class ExportStarterUtil {
      * @param includeOldAssets If absolutely all versions of the assets must be included in the compressed file, set
      *                         this to {@code true}.
      */
-    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets) {
-        this.streamCompressedData(output, false, false, true, includeOldAssets);
+    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets, long maxFileSize) {
+        this.streamCompressedData(output, false, false, true, includeOldAssets,  maxFileSize);
     }
 
     /**
@@ -544,7 +561,7 @@ public class ExportStarterUtil {
      *                                    file, set this to {@code true}.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
-                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets, long maxFileSize) {
 
 
 
@@ -554,7 +571,9 @@ public class ExportStarterUtil {
                 Logger.debug(this, "Including Starter Data");
                 this.getStarterDataAsJSON(zip);
             }
-            final AssetFileNameFilter fileFilter = includeOldAssets ? new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
+            final AssetFileNameFilter fileFilter = includeOldAssets
+                    ? new AssetFileNameFilter(maxFileSize)
+                    : new AssetFileNameFilter(getLiveWorkingBloomFilter(),maxFileSize);
             if (includeStarterDataAndAssets) {
                 Logger.debug(this, "Including Starter Data and Assets");
                 this.getAssets(zip, fileFilter);

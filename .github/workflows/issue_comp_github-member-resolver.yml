@@ -1,0 +1,52 @@
+# action.yml
+name: 'Github Member Resolver'
+on:
+  workflow_call:
+    inputs:
+      team:
+        description: 'Team'
+        type: string
+        required: true
+      branch:
+        description: 'Branch'
+        type: string
+        required: false
+        default: main
+      continue_on_error:
+        description: 'Continue on error'
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      members:
+        value: ${{ jobs.github-member-resolver.outputs.members }}
+
+jobs:
+  github-member-resolver:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      members: ${{ steps.resolve-members.outputs.members }}
+    steps:
+      - name: Resolve Members
+        id: resolve-members
+        continue-on-error: ${{ inputs.continue_on_error }}
+        shell: bash
+        run: |
+          githack_host=raw.githack.com
+          githack_core_repo_url=https://${githack_host}/${{ github.repository }}
+          github_teams_url=${githack_core_repo_url}/${{ inputs.branch }}/.github/data/github-teams.json
+          
+          json=$(curl -s ${github_teams_url})
+          members=$(jq -r ".[] | select(.team == \"${{ inputs.team }}\") | .members[]" <<< "${json}" | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          echo "Found members: [${members}]"
+          
+          declare -A deduped_array
+          for element in "${members[@]}"; do
+            deduped_array["$element"]=1
+          done
+          
+          deduped_members=("${!deduped_array[@]}")
+          members=$(echo "${deduped_members[@]}")
+          
+          echo "members=[${members}]"
+          echo "members=${members}" >> $GITHUB_OUTPUT

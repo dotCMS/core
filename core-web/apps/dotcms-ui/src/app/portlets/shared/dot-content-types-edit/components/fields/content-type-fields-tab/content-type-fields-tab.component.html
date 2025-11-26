@@ -1,18 +1,15 @@
 <div
-    class="tab__label no-drag"
-    [textContent]="label"
     (blur)="changeLabel($event)"
     (keydown.enter)="changeLabel($event)"
+    [textContent]="label"
+    class="tab__label no-drag"
     dotMaxlength="255"
-    contenteditable="true"
-></div>
+    contenteditable="true"></div>
 
 <p-button
-    class="field__actions-delete"
-    [pTooltip]="'contenttypes.action.delete' | dm"
     (click)="removeItem($event)"
+    [pTooltip]="'contenttypes.action.delete' | dm"
+    class="field__actions-delete"
     icon="pi pi-trash"
-    styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
->
-</p-button>
+    styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"></p-button>
 <hr />

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ContentChild,
@@ -9,19 +10,36 @@ import {
     Output,
     QueryList,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenuModule } from 'primeng/contextmenu';
+import { InputTextModule } from 'primeng/inputtext';
+import { Table, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
-import { OrderDirection, PaginatorService } from '@dotcms/data-access';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { DataTableColumn } from '@models/data-table/data-table-column';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotCrudService, OrderDirection, PaginatorService } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
+import { DotActionMenuItem } from '@dotcms/dotcms-models';
+import {
+    DotActionMenuButtonComponent,
+    DotIconComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
+
+import { ActionHeaderComponent } from './action-header/action-header.component';
+
+import { ActionHeaderOptions } from '../../../shared/models/action-header/action-header-options.model';
+import { ButtonAction } from '../../../shared/models/action-header/button-action.model';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
@@ -29,6 +47,9 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
 
 @Component({
     providers: [
+        DotCrudService,
+        DotcmsConfigService,
+        LoggerService,
         PaginatorService,
         {
             provide: Table,
@@ -38,9 +59,27 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     ],
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
-    templateUrl: 'dot-listing-data-table.component.html'
+    templateUrl: 'dot-listing-data-table.component.html',
+    imports: [
+        ActionHeaderComponent,
+        CommonModule,
+        FormsModule,
+        RouterModule,
+        TableModule,
+        InputTextModule,
+        CheckboxModule,
+        ContextMenuModule,
+        DotActionMenuButtonComponent,
+        DotIconComponent,
+        DotMessagePipe,
+        DotRelativeDatePipe,
+        DotStringFormatPipe
+    ]
 })
 export class DotListingDataTableComponent implements OnInit {
+    loggerService = inject(LoggerService);
+    paginatorService = inject(PaginatorService);
+
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;
@@ -81,7 +120,7 @@ export class DotListingDataTableComponent implements OnInit {
     maxLinksPage: number;
     totalRecords: number;
 
-    constructor(public loggerService: LoggerService, public paginatorService: PaginatorService) {
+    constructor() {
         this.paginatorService.url = this.url;
     }
 

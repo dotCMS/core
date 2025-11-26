@@ -1,6 +1,6 @@
 import { of, throwError } from 'rxjs';
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     FormsModule,
@@ -16,7 +16,6 @@ import {
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
@@ -34,12 +33,15 @@ const messageServiceMock = new MockDotMessageService({
         <form [formGroup]="form">
             <dot-template-thumbnail-field formControlName="id"></dot-template-thumbnail-field>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
+    private fb = inject_1(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             id: '123'
         });
@@ -54,7 +56,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotTempFileUploadService,
@@ -79,7 +81,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     useValue: messageServiceMock
                 }
             ],
-            imports: [FormsModule, ReactiveFormsModule, DotMessagePipe],
+            imports: [FormsModule, ReactiveFormsModule, DotTemplateThumbnailFieldComponent],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
     });
@@ -94,7 +96,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             component = fixture.componentInstance;
             dotTempFileUploadService = TestBed.inject(DotTempFileUploadService);
             dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
-            spyOn(component, 'propagateChange').and.callThrough();
+            jest.spyOn(component, 'propagateChange');
         });
 
         it('should have basic attr', () => {
@@ -102,7 +104,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             const field = de.query(By.css('dot-binary-file'));
 
             expect(field.attributes).toEqual(
-                jasmine.objectContaining({
+                expect.objectContaining({
                     accept: 'image/*',
                     style: 'height: 3.35rem;'
                 })
@@ -125,7 +127,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             const field = de.query(By.css('dot-binary-file'));
 
             expect(field.attributes).toEqual(
-                jasmine.objectContaining({
+                expect.objectContaining({
                     accept: 'image/*',
                     style: 'height: 7.14rem;'
                 })
@@ -151,7 +153,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 fixture.detectChanges();
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('Invalid image');
+                expect(error.nativeElement.textContent).toBe('Invalid image');
             });
 
             it('should set asset to null and propagate', () => {
@@ -174,11 +176,12 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 fixture.detectChanges();
                 expect(component.asset).toBeNull();
                 expect(component.propagateChange).toHaveBeenCalledWith('');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
             });
 
             it('should show error for invalid image url', () => {
-                spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
-                spyOn(dotTempFileUploadService, 'upload').and.returnValue(
+                jest.spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
+                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -211,15 +214,15 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 ).toHaveBeenCalledTimes(0);
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('Invalid url');
+                expect(error.nativeElement.textContent).toBe('Invalid url');
             });
 
             it('should show default error', () => {
-                spyOn(
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(throwError({}));
-                spyOn(dotTempFileUploadService, 'upload').and.returnValue(
+                ).mockReturnValue(throwError({}));
+                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -251,12 +254,12 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     dotWorkflowActionsFireService.publishContentletAndWaitForIndex
                 ).toHaveBeenCalledWith('dotAsset', { asset: '123' });
 
-                expect(dotTempFileUploadService.upload).toHaveBeenCalledOnceWith(
+                expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(
                     'path/to/filename.pdf'
                 );
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('Error');
+                expect(error.nativeElement.textContent).toBe('Error');
             });
 
             it('should show set asset and propagate', () => {
@@ -266,11 +269,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     name: 'Something',
                     identifier: '456'
                 };
-                spyOn(
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(of(mock));
-                spyOn(dotTempFileUploadService, 'upload').and.returnValue(
+                ).mockReturnValue(of(mock));
+                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -299,10 +302,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 fixture.detectChanges();
 
                 expect(component.propagateChange).toHaveBeenCalledWith('456');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
                 expect(component.asset).toEqual(mock);
 
                 const error = de.query(By.css('[data-testId="error"]'));
-                expect(error.nativeElement.innerText).toBe('');
+                expect(error.nativeElement.textContent).toBe('');
             });
         });
     });
@@ -320,7 +324,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
         });
 
         it('should set asset', () => {
-            spyOn(dotCrudService, 'getDataById').and.returnValue(
+            jest.spyOn(dotCrudService, 'getDataById').mockReturnValue(
                 of([
                     {
                         ...dotcmsContentletMock,

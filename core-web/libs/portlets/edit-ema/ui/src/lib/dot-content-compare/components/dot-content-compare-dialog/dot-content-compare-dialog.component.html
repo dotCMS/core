@@ -1,0 +1,3 @@
+<dot-dialog (hide)="close()" [visible]="show" [header]="'compare' | dm" width="90vw" height="90vh">
+    <dot-content-compare (shutdown)="close()" [data]="data$ | async" />
+</dot-dialog>

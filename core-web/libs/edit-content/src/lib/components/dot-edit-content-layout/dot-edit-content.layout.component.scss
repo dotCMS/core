@@ -1,0 +1,68 @@
+@use "variables" as *;
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:host {
+    display: grid;
+    grid-template-areas:
+        "topBar topBar"
+        "header sidebar"
+        "body sidebar";
+    grid-template-columns: 1fr 0;
+    grid-template-rows: auto auto 1fr;
+    padding-bottom: 0;
+    height: 100%;
+    width: 100%;
+    transition: grid-template-columns $basic-speed ease-in-out;
+
+    &.edit-content--with-sidebar {
+        grid-template-columns: 1fr 21.875rem;
+    }
+}
+
+.edit-content-layout__topBar {
+    grid-area: topBar;
+
+    display: flex;
+    flex-direction: column;
+
+    &--beta-message-visible {
+        border-bottom: solid 1px $color-palette-gray-300;
+    }
+
+    .pi {
+        font-size: $icon-sm-box;
+        margin-right: $spacing-1;
+    }
+
+    :host ::ng-deep .p-messages {
+        animation: slideIn $basic-speed ease-out;
+        margin-bottom: $spacing-2;
+    }
+
+    .edit-content-layout__beta-message,
+    .edit-content-layout__select-workflow-warning {
+        animation: slideIn $basic-speed ease-out;
+    }
+}
+
+.edit-content-layout__header {
+    grid-area: header;
+}
+
+.edit-content-layout__body {
+    grid-area: body;
+}
+
+.edit-content-layout__sidebar {
+    grid-area: sidebar;
+}

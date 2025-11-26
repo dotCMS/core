@@ -16,6 +16,7 @@ const ICON_MAP = {
 export enum CONTENT_THUMBNAIL_TYPE {
     image = 'image',
     video = 'video',
+    pdf = 'pdf',
     icon = 'icon'
 }
 
@@ -30,7 +31,6 @@ export interface DotThumbnailOptions {
 
 @Component({
     selector: 'dot-temp-file-thumbnail',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './dot-temp-file-thumbnail.component.html',
     styleUrls: ['./dot-temp-file-thumbnail.component.scss'],
@@ -82,6 +82,10 @@ export class DotTempFileThumbnailComponent implements OnInit {
     private getThumbnailType() {
         if (this.metadata.isImage) {
             return CONTENT_THUMBNAIL_TYPE.image;
+        }
+
+        if (this.extension == 'pdf') {
+            return CONTENT_THUMBNAIL_TYPE.pdf;
         }
 
         return CONTENT_THUMBNAIL_TYPE[this.fileType] || CONTENT_THUMBNAIL_TYPE.icon;

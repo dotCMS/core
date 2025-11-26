@@ -1,9 +1,21 @@
 @use "variables" as *;
 
+p-skeleton {
+    // Responsive skeleton that adapts to content and container
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+}
+
 .p-skeleton {
-    background-color: $color-palette-gray-100;
+    background-color: $color-palette-gray-200;
     border-radius: 3px;
 }
 .p-skeleton:after {
-    background: linear-gradient(90deg, $white, $color-palette-white-op-40, $white);
+    background: linear-gradient(
+        90deg,
+        $color-palette-gray-200,
+        $color-palette-white-op-60,
+        $color-palette-gray-200
+    );
 }

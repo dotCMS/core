@@ -10,7 +10,7 @@
         <ac:if>
             <isset property="cleanup"/>
             <then>
-                <antcall target="cleanup-test=folders"/>
+                <antcall target="cleanup-test-folders"/>
             </then>
         </ac:if>
 
@@ -72,7 +72,7 @@
 
     </target>
 
-    <target name="cleanup-test=folders">
+    <target name="cleanup-test-folders">
         <delete dir="${testdata.dir}" includeemptydirs="true"/>
     </target>
 

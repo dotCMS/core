@@ -1,48 +1,48 @@
 <dot-device-selector-seo
-    #deviceSelector
-    [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
     (changeSeoMedia)="changeSeoMedia($event)"
     (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
+    [apiLink]="apiLink"
+    #deviceSelector
     appendTo="body"
     data-testId="dot-device-selector"></dot-device-selector-seo>
-<p-menu
-    #menu
-    *ngIf="this.featureFlagEditURLContentMapIsOn"
-    [model]="menuItems"
-    [popup]="true"
-    (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
-    appendTo="body">
-</p-menu>
+@if (this.featureFlagEditURLContentMapIsOn) {
+    <p-menu
+        (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
+        [model]="menuItems"
+        [popup]="true"
+        #menu
+        appendTo="body"></p-menu>
+}
 <dot-tab-buttons
-    #tabButtons
-    [activeId]="mode"
-    [options]="options"
     (openMenu)="handleMenuOpen($event)"
     (clickOption)="stateSelectorHandler($event)"
+    [activeId]="mode"
+    [options]="options"
+    #tabButtons
     data-testId="dot-tabs-buttons"></dot-tab-buttons>
-<ng-container *ngIf="!variant">
+@if (!variant) {
     <span
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                ? ('editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName])
                 : ('lock.clipboard' | dm)
         "
         tooltipPosition="bottom"
         data-testId="lock-container">
         <p-inputSwitch
-            #locker
+            (click)="onLockerClick()"
+            (onChange)="lockPageHandler()"
             [(ngModel)]="lock"
             [class.warn]="lockWarn"
             [disabled]="!pageState.page.canLock"
-            (click)="onLockerClick()"
-            (onChange)="lockPageHandler()"
+            #locker
             data-testId="lock-switch"
             appendTo="target"></p-inputSwitch>
     </span>
-</ng-container>
+}
 
 <dot-edit-page-lock-info-seo
-    #pageLockInfo
     [pageState]="pageState"
+    #pageLockInfo
     data-testId="lockInfo"></dot-edit-page-lock-info-seo>

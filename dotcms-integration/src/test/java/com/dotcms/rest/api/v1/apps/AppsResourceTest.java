@@ -9,7 +9,7 @@ import static junit.framework.TestCase.fail;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +67,8 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+
+import com.liferay.util.StringPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -112,7 +114,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 appsHelper);
 
         final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getLayoutAPI(),
-                APILocator.getHostAPI(), APILocator.getContentletAPI(),
+                APILocator.getHostAPI(),
                 SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(),
                 APILocator.getLocalSystemEventsAPI(),
                 new AppDescriptorHelper(),
@@ -124,7 +126,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 }
         );
 
-        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getPermissionAPI());
+        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getPermissionAPI(), APILocator.getSecurityLogger());
         appsResourceNonLicense = new AppsResource(webResource,
                 appsHelperNonLicense);
 
@@ -182,6 +184,16 @@ public class AppsResourceTest extends IntegrationTestBase {
             throws IOException {
 
         final Host host = new SiteDataGen().nextPersisted();
+
+        // Ensure the host cache is properly warmed with the newly created host
+        // This prevents race conditions where the cache might not have the host yet
+        try {
+            CacheLocator.getHostCache().clearCache();
+            APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), com.dotmarketing.portlets.contentlet.business.HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, "Failed to warm host cache", e);
+        }
+
         final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
                 .stringParam("p1", false,  true)
                 .stringParam("p2", false,  true)
@@ -291,6 +303,113 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * In this method we create a yml file that exist physically on disc.
+     * Then we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we verify for app input parameters overriding through the use of environment variables (check dotcms-integration/pom.xml file for used env-vars definitions).
+     * Given scenario: Test we can create an app with overridden app parameters through environment variables.
+     * Expected Result: app params values para overridden with what is present in the env-vars
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_app_descriptor_overriding_with_envvars_Then_Create_App_Integration_Then_Delete_The_Whole_App()
+            throws IOException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .param(
+                        "p1",
+                        ParamDescriptor.builder()
+                                .withValue(StringPool.BLANK)
+                                .withHidden(false)
+                                .withType(Type.STRING)
+                                .withRequired(true)
+                                .withLabel("label")
+                                .withHint("hint")
+                                .withEnvVar("ENV_VAR_1")
+                                .withEnvShow(true)
+                                .build())
+                .param(
+                        "p2",
+                        ParamDescriptor.builder()
+                                .withValue(StringPool.BLANK)
+                                .withHidden(false)
+                                .withType(Type.STRING)
+                                .withRequired(true)
+                                .withLabel("label")
+                                .withHint("hint")
+                                .withEnvVar("ENV_VAR_2")
+                                .withEnvShow(false)
+                                .build())
+                .stringParam("p3", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(false);
+
+        final Map<String, Input> inputParamMap = ImmutableMap.of(
+                "p1", newInputParam("v1".toCharArray(),false),
+                "p2", newInputParam("v1".toCharArray(),false),
+                "p3", newInputParam("v1".toCharArray(),false)
+        );
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
+        final String appKey =  dataGen.getKey();
+        final String fileName =  dataGen.getFileName();
+        final File file = dataGen.nextPersistedDescriptor();
+        try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+            final Response appIntegrationResponse = appsResource
+                    .createApp(request, response,
+                            createFormDataMultiPart(fileName, inputStream));
+
+            Assert.assertNotNull(appIntegrationResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appIntegrationResponse.getStatus());
+
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
+
+            final Response detailedIntegrationResponse = appsResource
+                    .getAppDetail(
+                            request,
+                            response,
+                            appKey,
+                            host.getIdentifier());
+            final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityView3.getEntity();
+
+            final SiteView siteView = appDetailedView.getSites().get(0);
+            int i = 0;
+            SecretView secretView = siteView.getSecrets().get(i);
+            Assert.assertTrue(secretView.getParamDescriptor().hasEnvVar());
+            Assert.assertTrue(secretView.getSecret().hasEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getParamDescriptor().getEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getSecret().getEnvVar());
+            Assert.assertTrue(secretView.getParamDescriptor().isEnvShow());
+            Assert.assertTrue(secretView.getSecret().isEnvShow());
+
+            secretView = siteView.getSecrets().get(++i);
+            Assert.assertTrue(secretView.getParamDescriptor().hasEnvVar());
+            Assert.assertTrue(secretView.getSecret().hasEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getParamDescriptor().getEnvVar());
+            Assert.assertEquals("ENV_VAR_" + (i + 1), secretView.getSecret().getEnvVar());
+            Assert.assertFalse(secretView.getParamDescriptor().isEnvShow());
+            Assert.assertFalse(secretView.getSecret().isEnvShow());
+
+            secretView = siteView.getSecrets().get(++i);
+            Assert.assertFalse(secretView.getParamDescriptor().hasEnvVar());
+            Assert.assertFalse(secretView.getSecret().hasEnvVar());
+            Assert.assertNull(secretView.getParamDescriptor().getEnvVar());
+            Assert.assertNull(secretView.getSecret().getEnvVar());
+            Assert.assertTrue(secretView.getParamDescriptor().isEnvShow());
+            Assert.assertTrue(secretView.getSecret().isEnvShow());
+
+            appsResource.deleteAllAppSecrets(request, response, appKey, host.getIdentifier());
+        }
+    }
 
     /**
      * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
@@ -313,6 +432,16 @@ public class AppsResourceTest extends IntegrationTestBase {
                 .withExtraParameters(true);
 
         final Host host = new SiteDataGen().nextPersisted();
+
+        // Ensure the host cache is properly warmed with the newly created host
+        // This prevents race conditions where the cache might not have the host yet
+        try {
+            CacheLocator.getHostCache().clearCache();
+            APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), com.dotmarketing.portlets.contentlet.business.HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, "Failed to warm host cache", e);
+        }
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         when(request.getRequestURI()).thenReturn("/baseURL");
@@ -1189,6 +1318,16 @@ public class AppsResourceTest extends IntegrationTestBase {
         for(final char chr :alphabet) {
            hosts.add(new SiteDataGen().name( String.format("%s-%d",chr, timeMark )).nextPersisted());
         }
+
+        // Ensure the host cache is properly warmed with all newly created hosts
+        // This prevents race conditions where the cache might not have all hosts yet
+        try {
+            CacheLocator.getHostCache().clearCache();
+            APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), com.dotmarketing.portlets.contentlet.business.HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, "Failed to warm host cache", e);
+        }
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         when(request.getRequestURI()).thenReturn("/baseURL");

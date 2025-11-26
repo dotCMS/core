@@ -1,20 +1,27 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil } from '@dotcms/ui';
-
-import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
+import { DotDialogActions } from '@dotcms/dotcms-models';
+import { DotClipboardUtil, DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-generate-secure-password',
     templateUrl: './dot-generate-secure-password.component.html',
-    styleUrls: ['./dot-generate-secure-password.component.scss']
+    styleUrls: ['./dot-generate-secure-password.component.scss'],
+    imports: [ButtonModule, DotDialogComponent, DotMessagePipe],
+    providers: [DotClipboardUtil]
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
+    private dotClipboardUtil = inject(DotClipboardUtil);
+    private dotMessageService = inject(DotMessageService);
+    private dotGenerateSecurePassword = inject(DotGenerateSecurePasswordService);
+
     copyBtnLabel: string;
     dialogActions: DotDialogActions;
     dialogShow = false;
@@ -23,12 +30,6 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     value: string;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotClipboardUtil: DotClipboardUtil,
-        private dotMessageService: DotMessageService,
-        private dotGenerateSecurePassword: DotGenerateSecurePasswordService
-    ) {}
 
     ngOnInit() {
         this.setUILabels();

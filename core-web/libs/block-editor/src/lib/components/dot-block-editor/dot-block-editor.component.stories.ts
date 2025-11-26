@@ -10,7 +10,15 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotContentSearchService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUploadFileService,
+    FileStatus
+} from '@dotcms/data-access';
+import { DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
@@ -25,16 +33,11 @@ import { ContentletBlockComponent } from '../../nodes';
 import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
-    DotAiService,
-    DotLanguageService,
-    DotUploadFileService,
-    FileStatus,
-    SearchService,
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
+import { DotAiServiceMock } from '../../shared/mocks/dot-ai-service.mock';
 import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
-import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
     title: 'Library/Block Editor'
@@ -51,7 +54,8 @@ export const Primary = () => ({
                 FormsModule,
                 BlockEditorModule,
                 OrderListModule,
-                ListboxModule
+                ListboxModule,
+                DotSpinnerModule
             ],
             providers: [
                 {
@@ -145,32 +149,7 @@ export const Primary = () => ({
                     }
                 },
                 {
-                    provide: DotLanguageService,
-                    useValue: {
-                        getLanguages() {
-                            return of({
-                                1: {
-                                    country: 'United States',
-                                    countryCode: 'US',
-                                    defaultLanguage: true,
-                                    id: 1,
-                                    language: 'English',
-                                    languageCode: 'en'
-                                },
-                                2: {
-                                    country: 'Espana',
-                                    countryCode: 'ES',
-                                    defaultLanguage: false,
-                                    id: 2,
-                                    language: 'Espanol',
-                                    languageCode: 'es'
-                                }
-                            });
-                        }
-                    }
-                },
-                {
-                    provide: SearchService,
+                    provide: DotContentSearchService,
                     useValue: {
                         get(params) {
                             const query = params.query.match(new RegExp(/(?<=:)(.*?)(?=\*)/))[0];

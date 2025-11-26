@@ -28,6 +28,11 @@
         padding: 0 $spacing-3;
         text-transform: capitalize;
 
+        &.p-confirm-dialog-accept,
+        &.p-confirm-dialog-reject {
+            gap: 0;
+        }
+
         &.p-button-lg,
         .p-button-lg & {
             @extend #large;
@@ -48,22 +53,9 @@
     }
 }
 
-// Shared disabled styles
-.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
-    @extend #button-disabled;
-
-    &.p-button-outlined {
-        @extend #button-disabled-outlined;
-    }
-
-    &.p-button-text {
-        @extend #button-disabled-text;
-    }
-}
-
 // Severity for basic button
-.p-button:enabled,
-// Used for file upload button
+.p-button:not(:disabled),
+    // Used for file upload button
 .p-button.p-fileupload-choose {
     @extend #main-primary-severity;
 
@@ -78,10 +70,19 @@
         @extend #outlined-secondary-severity;
         border: transparent;
     }
+
+    &.p-button-tertiary {
+        color: $color-palette-primary;
+        @extend #main-tertiary-severity;
+    }
+
+    &.p-button-success {
+        @extend #main-success-severity;
+    }
 }
 
 // Severity for outlined button
-.p-button.p-button-outlined:enabled,
+.p-button.p-button-outlined:not(:disabled),
 .p-button.p-button-outlined:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     @extend #outlined-primary-severity;
 
@@ -96,10 +97,26 @@
             @extend #outlined-secondary-severity-sm;
         }
     }
+
+    &.p-button-tertiary {
+        @extend #outlined-tertiary-severity;
+
+        &.p-button-sm {
+            @extend #outlined-tertiary-severity-sm;
+        }
+    }
+
+    &.p-button-success {
+        @extend #outlined-success-severity;
+
+        &.p-button-sm {
+            @extend #outlined-success-severity-sm;
+        }
+    }
 }
 
 // Severity for text button
-.p-button-text:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button-text:not(:disabled):not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
 a.p-button.p-button-text {
     @extend #text-primary-severity;
 
@@ -107,8 +124,47 @@ a.p-button.p-button-text {
         @extend #text-secondary-severity;
     }
 
+    &.p-button-tertiary {
+        @extend #text-tertiary-severity;
+    }
+
     &.p-button-danger {
         @extend #text-danger-severity;
+    }
+
+    &.p-button-success {
+        @extend #text-success-severity;
+    }
+
+    &.p-button-warning {
+        @extend #text-warning-severity;
+    }
+}
+
+// Shared disabled styles
+.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button.p-button-secondary:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button.p-button-tertiary:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
+    // Default
+    @extend #button-disabled;
+
+    &.p-button-outlined {
+        @extend #button-disabled-outlined;
+    }
+
+    &.p-button-text {
+        @extend #button-disabled-text;
+    }
+}
+
+// Disabled button child element styles
+.p-button:disabled.p-button-outlined:not(
+        .p-splitbutton-defaultbutton,
+        .p-splitbutton-menubutton
+    ).p-button-secondary {
+    .pi,
+    .p-button-label {
+        color: inherit;
     }
 }
 
@@ -126,6 +182,10 @@ a.p-button.p-button-text {
     }
 }
 
+.p-button-icon-only.p-button-icon-outline {
+    border: 1.5px solid $color-palette-primary;
+}
+
 // Misc
 .p-button.p-button-vertical {
     height: 100%;
@@ -136,4 +196,33 @@ a.p-button.p-button-text {
 
 .p-button-rounded {
     border-radius: 50%;
+}
+
+.p-buttonset {
+    .p-button {
+        margin: 0;
+
+        &:not(:last-child) {
+            border-right: 0 none;
+        }
+
+        &:not(:first-of-type):not(:last-of-type) {
+            border-radius: 0;
+        }
+
+        &:first-of-type {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        &:last-of-type {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        &:focus {
+            position: relative;
+            z-index: 1;
+        }
+    }
 }

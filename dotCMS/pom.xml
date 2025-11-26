@@ -4,53 +4,43 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dotcms-core</artifactId>
     <packaging>jar</packaging>
     <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
-        <version.spotless.plugin>2.36.0</version.spotless.plugin>
-        <jackson.version>2.13.4</jackson.version>
-        <batik.version>1.16</batik.version>
-        <glowroot.version>0.13.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
-        <skipDockerBuild>false</skipDockerBuild>
-        <skipITs>true</skipITs>
-        <buildDocker>true</buildDocker>
-        <starter.filename>starter.zip</starter.filename>
-        <starter.path>${project.build.directory}/starter</starter.path>
-        <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
-
-        <clean.docker.volumes>false</clean.docker.volumes>
+        <docker.skip.build>${docker.skip}</docker.skip.build>
         <!-- Tomcat -->
-        <enableDebug>true</enableDebug>
-        <debugPort>8000</debugPort>
-        <debugHost>localhost</debugHost>
-        <debugWait>false</debugWait>
+        <debug.host>*</debug.host>
+        <!-- debug.args is set when remote-debug profile is activated with debug.enable flag-->
         <buildDocker>true</buildDocker>
         <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
         <tomcat-lib-folder>${assembly-directory}/${tomcat-dist-folder}/lib</tomcat-lib-folder>
+        <tomcat-log4j-lib-folder>${assembly-directory}/${tomcat-dist-folder}/log4j2/lib</tomcat-log4j-lib-folder>
+        <tomcat-glowroot-parent-folder>${assembly-directory}/${tomcat-dist-folder}</tomcat-glowroot-parent-folder>
+        <session-manager-lib-folder>${tomcat-lib-folder}</session-manager-lib-folder>
         <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
-        <exploded-webapp-dir>${project.build.directory}/${project.build.finalName}</exploded-webapp-dir>
+        <exploded-webapp-dir>${assembly-directory}/${tomcat-dist-folder}/webapps/ROOT</exploded-webapp-dir>
         <war.output.file>${project.build.directory}/${project.build.finalName}-war.war</war.output.file>
         <docker.base.image>tomcat:${tomcat.version}-jdk11</docker.base.image>
-        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
-        <docker.version.tag>${project.version}</docker.version.tag>
-        <docker.push.skip>true</docker.push.skip>
+        <docker.skip.push>true</docker.skip.push>
+        <!-- By default the dev instance started here we want to persist the data -->
+        <docker.skip.clean.before>true</docker.skip.clean.before>
+        <docker.skip.clean.after>true</docker.skip.clean.after>
         <core.unit.test.fork.count>1C</core.unit.test.fork.count>
         <legacy.webapp.dir>${project.basedir}/src/main/webapp</legacy.webapp.dir>
         <fabric8.dynamic-port>true</fabric8.dynamic-port>
-        <db.port>5432</db.port>
-        <!-- <es.port>9200</es.port> -->
-        <db.it.port>5437</db.it.port>
-        <es.it.port>9207</es.it.port>
-
+        <!--<db.port></db.port>
+        <es.port></es.port>
+        -->
         <test.webapp.root>${project.build.directory}/${project.build.finalName}</test.webapp.root>
 
         <felix.base.dir>${project.build.directory}/core-war/WEB-INF/felix</felix.base.dir>
@@ -72,21 +62,36 @@
         <test.felix.system.load.folder>felix/system/load</test.felix.system.load.folder>
         <test.felix.undeployed.folder>felix/core/undeployed</test.felix.undeployed.folder>
         <test.felix.system.undeployed.folder>felix/system/undeployed</test.felix.system.undeployed.folder>
-        <cleanup.before.tests>true</cleanup.before.tests>
-       <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
-        <docker.platforms></docker.platforms>
-
-        <tomcat.redis-session-manager.version>1.1</tomcat.redis-session-manager.version>
-        <commons-pool2.version>2.11.1</commons-pool2.version>
-        <org.slfj4.version>1.7.36</org.slfj4.version>
-        <jedis.version>4.4.6</jedis.version>
+        <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
+        <tomcat.run.data.folder>${project.build.directory}/tomcat-run-data/${context.name}</tomcat.run.data.folder>
+        <cleanup.data.folder>false</cleanup.data.folder>
     </properties>
     <dependencies>
+        <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core-web</artifactId>
             <version>${project.version}</version>
             <type>war</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.plugins</groupId>
+            <artifactId>dotcms-core-bundles</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>tomcat-redis-session-manager</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.plugins</groupId>
+            <artifactId>dotcms-system-bundles</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -99,10 +104,6 @@
           *****************************
         -->
 
-        <dependency>
-            <groupId>com.dotcms</groupId>
-            <artifactId>ant-tooling</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.aopalliance-repackaged</artifactId>
@@ -150,8 +151,11 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-fileupload</artifactId>
-            <version>1.3.3_1</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.commons-io</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -220,10 +224,6 @@
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate-validator</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -374,10 +374,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.struts</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.stxx</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -762,6 +758,10 @@
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -822,6 +822,15 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
@@ -1189,12 +1198,11 @@
             <artifactId>jersey-common</artifactId>
         </dependency>
 
-        <!--
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-cdi2-se</artifactId>
+            <artifactId>jersey-hk2</artifactId>
         </dependency>
-        -->
+
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
@@ -1259,19 +1267,35 @@
             <scope>test</scope>
         </dependency>
 
-
-        <!--
-                <dependency>
-                    <groupId>org.glowroot</groupId>
-                    <artifactId>glowroot-agent</artifactId>
-                </dependency>
-        -->
-
-
         <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -1281,32 +1305,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility-proxy</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Deprecated need to remove replace with core mockito-->
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Deprecated need to remove replace with core mockito-->
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <artifactId>hamcrest</artifactId>
             <!-- often just used for testing we have in production code -->
             <scope>compile</scope>
         </dependency>
@@ -1315,6 +1322,19 @@
             <groupId>com.tngtech.junit.dataprovider</groupId>
             <artifactId>junit4-dataprovider</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Jandex for test annotation scanning -->
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>compile</scope>
         </dependency>
 
         <!-- explicitly add all the declared logging dependencies -->
@@ -1334,21 +1354,24 @@
             <!-- Support Java Commons Logging API in Log4j2 -->
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-jcl</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
-            <!-- Support SLF4j2 API in Log4j2 -->
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
-            <!-- Servlet container initialization of Log4j2 -->
+            <!-- Added to tomcat classpath -->
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-web</artifactId>
+            <artifactId>log4j-appserver</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <!-- Async support for Log4J 2.x -->
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Graalvm Js Engine -->
@@ -1363,6 +1386,85 @@
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
+        </dependency>
+
+        <!-- AI -->
+        <dependency>
+            <groupId>com.knuddels</groupId>
+            <artifactId>jtokkit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.pgvector</groupId>
+            <artifactId>pgvector</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Metrics and Monitoring -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-jmx</artifactId>
+        </dependency>
+
+        <!-- Weld CDI -->
+
+        <dependency>
+            <groupId>org.jboss.weld.servlet</groupId>
+            <artifactId>weld-servlet-shaded</artifactId>
+            <version>3.1.9.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-cdi1x</artifactId>
+        </dependency>
+
+        <!-- This is required keep one single instance of the InjectionManager across all ServletContexts -->
+        <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-cdi1x-servlet</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.hk2.external</groupId>
+            <artifactId>bean-validator</artifactId>
+            <version>2.5.0-b06</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.hk2</groupId>
+            <artifactId>hk2-locator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-shaded</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Weld CDI -->
+
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-catalina</artifactId>
+            <version>${tomcat.version}</version>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>
@@ -1386,7 +1488,22 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>GeoLite2-City.mmdb</exclude>
+                    <exclude>dotmarketing-config.properties</exclude>
                 </excludes>
+            </resource>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>dotmarketing-config.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <filtering>false</filtering>
+                <directory>${starter.folder}</directory>
+                <includes>
+                    <include>${starter.deploy.filename}</include>
+                </includes>
             </resource>
             <!--
             <resource>
@@ -1415,6 +1532,17 @@
                         </goals>
                         <configuration>
                             <artifactItems>
+                              <artifactItem>
+                                    <groupId>org.glowroot</groupId>
+                                    <artifactId>glowroot-agent</artifactId>
+                                    <classifier>dist</classifier>
+                                    <type>zip</type>
+                                    <version>${glowroot.version}</version>
+                                    <overWrite>true</overWrite>
+                                    <!-- the inner "glowroot" folder gets created under this -->
+                                    <outputDirectory>${tomcat-glowroot-parent-folder}</outputDirectory>
+                                </artifactItem>
+
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>dotcms-core-web</artifactId>
@@ -1455,12 +1583,20 @@
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>starter</artifactId>
-                                    <!--   <version>empty_20210903</version>-->
-                                    <version>${starter.version}</version>
+                                    <version>${starter.deploy.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${starter.download.folder}</outputDirectory>
+                                    <destFileName>${starter.deploy.filename}</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>starter</artifactId>
+                                    <version>${starter.run.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${starter.path}</outputDirectory>
-                                    <destFileName>${starter.filename}</destFileName>
+                                    <outputDirectory>${starter.download.folder}</outputDirectory>
+                                    <destFileName>${starter.run.filename}</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -1474,60 +1610,71 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>com.dotcms</groupId>
-                                    <artifactId>tomcat-redis-session-manager</artifactId>
-                                    <version>${tomcat.redis-session-manager.version}</version>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-api</artifactId>
                                     <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>org.apache.commons</groupId>
-                                    <artifactId>commons-pool2</artifactId>
-                                    <version>${commons-pool2.version}</version>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-core</artifactId>
                                     <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-appserver</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.logging.log4j</groupId>
+                                    <artifactId>log4j-slf4j2-impl</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.slf4j</groupId>
                                     <artifactId>slf4j-api</artifactId>
-                                    <version>${org.slfj4.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>tomcat-redis-session-manager</artifactId>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                    <outputDirectory>${session-manager-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.commons</groupId>
+                                    <artifactId>commons-pool2</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${session-manager-lib-folder}</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>redis.clients</groupId>
                                     <artifactId>jedis</artifactId>
-                                    <version>${jedis.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                    <outputDirectory>${session-manager-lib-folder}</outputDirectory>
                                 </artifactItem>
+
+                                <dependency>
+                                    <!-- Async support for Log4J 2.x -->
+                                    <groupId>com.lmax</groupId>
+                                    <artifactId>disruptor</artifactId>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${tomcat-log4j-lib-folder}</outputDirectory>
+                                </dependency>
                             </artifactItems>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                            <target>
-                                <mkdir dir="${project.build.directory}/felix/" />
-                                <copy todir="${project.build.directory}/felix">
-                                    <fileset dir="${legacy.webapp.dir}/WEB-INF/felix" includes="osgi-extra-generated.conf" />
-                                </copy>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -1600,11 +1747,6 @@
                             </directory>
                             <targetPath>WEB-INF/felix-system</targetPath>
                         </resource>
-                        <resource>
-                            <directory>
-                                ${starter.path}
-                            </directory>
-                        </resource>
                     </webResources>
                 </configuration>
                 <executions>
@@ -1638,15 +1780,35 @@
                         <systemProperties>
                             <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
                             <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
+                            <!--suppress UnresolvedMavenProperty -->
                             <DOT_DB_BASE_URL>jdbc:postgresql://localhost:${db.port}/dotcms?autosave=conservative</DOT_DB_BASE_URL>
                             <DOT_DB_USERNAME>postgres</DOT_DB_USERNAME>
                             <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
                             <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
                             <DOT_FEATURE_FLAG_EXPERIMENTS>true</DOT_FEATURE_FLAG_EXPERIMENTS>
-                            <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
+                            <DOT_STARTER_DATA_LOAD>${starter.run.path}</DOT_STARTER_DATA_LOAD>
                             <file.encoding>UTF-8</file.encoding>
+                            <!--suppress UnresolvedMavenProperty -->
                             <DOT_ES_ENDPOINTS>http://localhost:${es.port}</DOT_ES_ENDPOINTS>
                             <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                            <DOT_ORG_OSGI_FRAMEWORK_STORAGE>${tomcat.run.data.folder}/${test.felix.cache.folder}</DOT_ORG_OSGI_FRAMEWORK_STORAGE>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_SYSTEM_ORG_OSGI_FRAMEWORK_STORAGE>${tomcat.run.data.folder}/${test.felix.system.cache.folder}</DOT_SYSTEM_ORG_OSGI_FRAMEWORK_STORAGE>
+                            <DOT_FELIX_BASE_DIR>${felix.base.dir}</DOT_FELIX_BASE_DIR>
+                            <DOT_SYSTEM_FELIX_BASE_DIR>${felix.system.base.dir}</DOT_SYSTEM_FELIX_BASE_DIR>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_FELIX_FILEINSTALL_DIR>${tomcat.run.data.folder}/${test.felix.load.folder}</DOT_FELIX_FILEINSTALL_DIR>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_FELIX_UNDEPLOYED_DIR>${tomcat.run.data.folder}/${test.felix.undeployed.folder}</DOT_FELIX_UNDEPLOYED_DIR>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_SYSTEM_FELIX_FILEINSTALL_DIR>${tomcat.run.data.folder}/${test.felix.system.load.folder}</DOT_SYSTEM_FELIX_FILEINSTALL_DIR>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_SYSTEM_FELIX_UNDEPLOYED_DIR>${tomcat.run.data.folder}/${test.felix.system.undeployed.folder}</DOT_SYSTEM_FELIX_UNDEPLOYED_DIR>
+                            <DOT_TEST_WEBAPP_ROOT>${test.webapp.root}</DOT_TEST_WEBAPP_ROOT>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_ASSET_REAL_PATH>${tomcat.run.data.folder}/${test.assets.folder}</DOT_ASSET_REAL_PATH>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <DOT_DYNAMIC_CONTENT_PATH>${tomcat.run.data.folder}/${test.dynamic.folder}</DOT_DYNAMIC_CONTENT_PATH>
                         </systemProperties>
                         <dependencies>
                             <dependency>
@@ -1658,9 +1820,9 @@
                     <configuration>
                         <properties>
                             <cargo.servlet.port>${servlet.port}</cargo.servlet.port>
-                            <cargo.tomcat.debug.mode>${enableDebug}</cargo.tomcat.debug.mode>
-                            <cargo.tomcat.debug.address>${debugHost}</cargo.tomcat.debug.address>
-                            <cargo.tomcat.debug.suspend>${debugWait}</cargo.tomcat.debug.suspend>
+                            <cargo.tomcat.debug.mode>${debug.enable}</cargo.tomcat.debug.mode>
+                            <cargo.tomcat.debug.address>${debug.host}</cargo.tomcat.debug.address>
+                            <cargo.tomcat.debug.suspend>${debug.suspend.flag}</cargo.tomcat.debug.suspend>
                         </properties>
                     </configuration>
                     <deployables>
@@ -1673,7 +1835,7 @@
                               -->
                             <location>${exploded-webapp-dir}</location>
                             <properties>
-                                <context>/</context>
+                                <context/>
                             </properties>
                         </deployable>
                     </deployables>
@@ -1696,32 +1858,6 @@
                             <goal>package</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>start</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <container>
-                                <timeout>3000000</timeout>
-                            </container>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>stop</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>stop</goal>
-                        </goals>
-                        <configuration>
-                            <container>
-                                <timeout>3000000</timeout>
-                            </container>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
 
                 </executions>
             </plugin>
@@ -1731,14 +1867,7 @@
                 <configuration>
                     <imagesMap>
                         <dotcms>
-                            <name>${docker.output.image.name}:${docker.version.tag}</name>
-                            <external>
-                                <type>properties</type>
-                                <prefix>dockerCore</prefix>
-                                <mode>override</mode>
-                            </external>
                             <build>
-                                <cleanup>false</cleanup>
                                 <dockerFileDir>${project.basedir}/src/main/docker/original</dockerFileDir>
                                 <buildx>
                                     <platforms>
@@ -1749,121 +1878,19 @@
                                     <descriptor>original/docker-descriptor.xml</descriptor>
                                     <targetDir>/maven</targetDir>
                                 </assembly>
+                                <args>
+                                    <SDKMAN_JAVA_VERSION>${runtime.docker.sdkman.java.version}</SDKMAN_JAVA_VERSION>
+                                </args>
                             </build>
                             <run>
-                                <ports>
-                                    <port>tomcat.port:8080</port>
-                                </ports>
-                                <env>
-                                    <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
-                                    <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
-                                    <DOT_DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DOT_DB_BASE_URL>
-                                    <!-- Why is this without DOT_ -->
-                                    <DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DB_BASE_URL>
-                                    <DB_USERNAME>postgres</DB_USERNAME>
-                                    <DB_PASSWORD>postgres</DB_PASSWORD>
-
-                                    <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-                                    <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
-                                    <file.encoding>UTF-8</file.encoding>
-                                    <DOT_ES_ENDPOINTS>http://es:9200</DOT_ES_ENDPOINTS>
-                                    <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                                <env combine.children="append">
+                                    <DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>false</DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>
                                 </env>
-                                <wait>
-                                    <http>
-                                        <url>http://localhost:${tomcat.port}/dotAdmin</url>
-                                    </http>
-                                    <time>200000</time>
-                                </wait>
-                                <links>
-                                    <link>database:db</link>
-                                    <link>elasticsearch:es</link>
-                                </links>
-                                <log>
-                                    <prefix>DOTCMS:</prefix>
-                                    <color>cyan</color>
-                                </log>
                             </run>
                         </dotcms>
-                        <database>
-                            <name>postgres:11</name>
-                            <run>
-                                <cmd>postgres -c max_connections=400 -c shared_buffers=128MB</cmd>
-                                <ports>
-                                    <port>db.port:5432</port>
-                                </ports>
-                                <volumes>
-                                    <bind>
-                                        <volume>${project.build.directory}/docker-volumes/db/data:/var/lib/postgresql/data</volume>
-                                        <volume>${project.basedir}/src/docker-compose/it-test/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh</volume>
-                                    </bind>
-                                </volumes>
-                                <env>
-                                    <POSTGRES_USER>postgres</POSTGRES_USER>
-                                    <POSTGRES_PASSWORD>postgres</POSTGRES_PASSWORD>
-                                    <POSTGRES_DB>dotcms</POSTGRES_DB>
-                                </env>
-                                <wait>
-                                    <log>database system is ready to accept connections</log>
-                                    <time>20000</time>
-                                </wait>
-                                <log>
-                                    <prefix>DB:</prefix>
-                                    <color>magenta</color>
-                                </log>
-                            </run>
-                        </database>
-                        <elasticsearch>
-                            <name>docker.elastic.co/elasticsearch/elasticsearch:7.11.2</name>
-                            <run>
-                                <env>
-                                    <cluster.name>elastic-cluster</cluster.name>
-                                    <discovery.type>single-node</discovery.type>
-                                    <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
-                                    <bootstrap.memory_lock>true</bootstrap.memory_lock>
-                                </env>
-                                <ports>
-                                    <port>es.port:9200</port>
-                                </ports>
-                                <volumes>
-                                    <bind>
-                                        <volume>${project.build.directory}/docker-volumes/es/data:/usr/share/elasticsearch/data</volume>
-                                    </bind>
-                                </volumes>
-                                <ulimits>
-                                    <ulimit>
-                                        <name>memlock</name>
-                                        <hard>-1</hard>
-                                        <soft>-1</soft>
-                                    </ulimit>
-                                </ulimits>
-                                <wait>
-                                    <http>
-                                        <url>http://${docker.host.address}:${es.port}</url>
-                                    </http>
-                                    <time>100000</time>
-                                </wait>
-
-                                <log>
-                                    <prefix>ES:</prefix>
-                                    <color>cyan</color>
-                                </log>
-                            </run>
-                        </elasticsearch>
                     </imagesMap>
                 </configuration>
                 <executions>
-                    <execution>
-                        <id>remove-containers</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>stop</goal>
-                            <goal>remove</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipDockerBuild}</skip>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>docker-build</id>
                         <phase>package</phase>
@@ -1871,7 +1898,7 @@
                             <goal>build</goal>
                         </goals>
                         <configuration>
-                            <skip>${skipDockerBuild}</skip>
+                            <skip>${docker.skip.build}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -1881,158 +1908,7 @@
                             <goal>push</goal>
                         </goals>
                         <configuration>
-                            <skip>${docker.push.skip}</skip>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>it-up</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>it-down</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>stop</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!--
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <configuration>
-                    <skip>${skipOwasp}</skip>
-                    <suppressionFiles>
-                        <suppressionFile>${maven.multiModuleProjectDirectory}/owasp-suppressions.xml</suppressionFile>
-                    </suppressionFiles>
-
-                    <failBuildOnCVSS>11</failBuildOnCVSS>
-                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-                    <failOnError>false</failOnError>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            -->
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>format-core</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipFormat}</skip>
-                            <!-- These are the defaults, you can override if you want -->
-                            <!-- optional: limit format enforcement to just the files changed by this feature branch -->
-                            <!-- <ratchetFrom>origin/main</ratchetFrom>-->
-                            <formats>
-                                <!-- you can define as many formats as you want, each is independent -->
-                                <format>
-                                    <!-- define the files to apply to -->
-                                    <includes>
-                                        <include>*.md</include>
-                                        <include>.gitignore</include>
-                                    </includes>
-                                    <!-- define the steps to apply to those files -->
-                                    <trimTrailingWhitespace/>
-                                    <endWithNewline/>
-                                    <toggleOffOn/>
-                                    <indent>
-                                        <tabs>true</tabs>
-                                        <spacesPerTab>4</spacesPerTab>
-                                    </indent>
-                                </format>
-                            </formats>
-                            <!-- define a language-specific format -->
-                            <java>
-                                <includes>
-                                    <include>src/main/java/**/*.java</include>
-                                    <include>src/test/java/**/*.java</include>
-                                    <include>src/enterprise/java/**/*.java</include>
-                                </includes>
-                                <palantirJavaFormat>
-                                    <version>${palantirJavaFormat.version}</version>
-                                </palantirJavaFormat>
-                                <!--
-                                <googleJavaFormat>
-                                    <version>1.8</version>
-                                    <style>AOSP</style>
-                                    <reflowLongStrings>true</reflowLongStrings>
-                                </googleJavaFormat>
-                                -->
-                                <!--
-                                <eclipse>
-                                    <file>../docs/styleguide/eclipse-java-google-style.xml</file>
-                                    <version>4.10</version>
-                                </eclipse>
-                                -->
-                                <removeUnusedImports/>
-                                <trimTrailingWhitespace/>
-                                <endWithNewline/>
-                                <importOrder/>
-                                <!--<importOrder>
-                                    <order>java,javax,org,com,net,com.dotcms,com.dotmarketing</order>
-                                </importOrder>-->
-                            </java>
-                            <pom>
-                                <!-- These are the defaults, you can override if you want -->
-                                <includes>
-                                    <include>pom.xml</include>
-                                </includes>
-                                <sortPom>
-                                    <encoding>UTF-8</encoding>
-                                    <!-- The encoding of the pom files -->
-                                    <lineSeparator>${line.separator}</lineSeparator>
-                                    <!-- line separator to use -->
-                                    <expandEmptyElements>false</expandEmptyElements>
-                                    <!-- Should empty elements be expanded-->
-                                    <spaceBeforeCloseEmptyElement>false</spaceBeforeCloseEmptyElement>
-                                    <!-- Should a space be added inside self-closing elements-->
-                                    <keepBlankLines>false</keepBlankLines>
-                                    <!-- Keep empty lines -->
-                                    <nrOfIndentSpace>4</nrOfIndentSpace>
-                                    <!-- Indentation -->
-                                    <indentBlankLines>false</indentBlankLines>
-                                    <!-- Should empty lines be indented -->
-                                    <indentSchemaLocation>false</indentSchemaLocation>
-                                    <!-- Should schema locations be indented -->
-                                    <predefinedSortOrder>custom_1</predefinedSortOrder>
-                                    <!-- Sort order of elements: https://github.com/Ekryd/sortpom/wiki/PredefinedSortOrderProfiles-->
-                                    <sortOrderFile/>
-                                    <!-- Custom sort order of elements: https://raw.githubusercontent.com/Ekryd/sortpom/master/sorter/src/main/resources/custom_1.xml -->
-                                    <sortDependencies>scope,groupId,artifactId</sortDependencies>
-                                    <!-- Sort dependencies: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
-                                    <sortDependencyExclusions/>
-                                    <!-- Sort dependency exclusions: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
-                                    <sortPlugins></sortPlugins>
-                                    <!-- Sort plugins: https://github.com/Ekryd/sortpom/wiki/SortPlugins -->
-                                    <sortProperties>true</sortProperties>
-                                    <!-- Sort properties -->
-                                    <sortModules>false</sortModules>
-                                    <!-- Sort modules -->
-                                    <sortExecutions>false</sortExecutions>
-                                    <!-- Sort plugin executions -->
-                                </sortPom>
-                            </pom>
+                            <skip>${docker.skip.push}</skip>
                         </configuration>
                     </execution>
                 </executions>
@@ -2066,7 +1942,10 @@
                         <configuration>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/src/enterprise/resources</directory>
+                                    <directory>${starter.download.folder}</directory>
+                                    <includes>
+                                        <include>${starter.deploy.filename}</include>
+                                    </includes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -2109,6 +1988,39 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            <!-- OpenAPI/Swagger documentation generation -->
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <configuration>
+                    <outputFileName>openapi</outputFileName>
+                    <!--<outputPath>${project.build.directory}/generated-resources/openapi</outputPath>-->
+                    <outputPath>${project.basedir}/src/main/webapp/WEB-INF/openapi</outputPath>
+                    <outputFormat>YAML</outputFormat>
+                    <prettyPrint>true</prettyPrint>
+                    <!-- Enable sorting for consistent output -->
+                    <sortOutput>true</sortOutput>
+                    <!-- Scan all dotCMS packages to extract @OpenAPIDefinition -->
+                    <resourcePackages>
+                        <package>com.dotcms.rest.config</package>
+                        <package>com.dotcms.rest</package>
+                        <package>com.dotcms.contenttype.model.field</package>
+                        <package>com.dotcms.rendering.js</package>
+                        <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.health</package>
+                    </resourcePackages>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-openapi</id>
+                        <goals>
+                            <goal>resolve</goal>
+                        </goals>
+                        <phase>compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -2135,33 +2047,27 @@
                                     <type>standalone</type>
                                     <configfiles>
                                         <configfile>
-                                            <file>${tomcat9-overrides}/bin/build.conf</file>
-                                            <todir>bin</todir>
+                                            <file>${tomcat9-overrides}/glowroot/local-web/admin.json</file>
+                                            <todir>glowroot/local-web</todir>
                                         </configfile>
                                         <configfile>
-                                            <file>${tomcat9-overrides}/bin/setenv.bat</file>
+                                            <file>${tomcat9-overrides}/glowroot/glowroot.logback.xml</file>
+                                            <todir>glowroot</todir>
+                                        </configfile>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/bin/build.conf</file>
                                             <todir>bin</todir>
                                         </configfile>
                                         <configfile>
                                             <file>${tomcat9-overrides}/bin/setenv.sh</file>
                                             <todir>bin</todir>
                                         </configfile>
-                                        <!--
-                                        <configfile>
-                                            <file>${tomcat9-overrides}/conf/catalina.properties</file>
-                                            <todir>conf</todir>
-                                        </configfile>
-                                        -->
                                         <configfile>
                                             <file>${tomcat9-overrides}/conf/server.xml</file>
                                             <todir>conf</todir>
                                         </configfile>
                                         <configfile>
                                             <file>${tomcat9-overrides}/conf/context.xml</file>
-                                            <todir>conf</todir>
-                                        </configfile>
-                                        <configfile>
-                                            <file>${tomcat9-overrides}/conf/local.dotcms.site.pem</file>
                                             <todir>conf</todir>
                                         </configfile>
                                     </configfiles>
@@ -2185,38 +2091,121 @@
 
 
         <profile>
-            <id>run-tomcat</id>
+            <id>tomcat-run</id>
             <activation>
-                <property>
-                    <name>run-tomcat</name>
-                </property>
+                <activeByDefault>false</activeByDefault>
             </activation>
+            <properties>
+                <!-- override default name to create service containers that don't conflict with docker run -->
+                <context.name>local-tomcat</context.name>
+            </properties>
             <build>
+                <defaultGoal>generate-sources</defaultGoal>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <configuration/>
+                        <executions>
+                            <execution>
+                                <id>cleanup-it-test-data</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="${basedir}/ant-tasks.xml">
+                                            <target name="pre-integration"/>
+                                            <property name="cleanup" value="${cleanup.data.folder}"/>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <filter>database,opensearch</filter>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>local-up</id>
-                                <phase>package</phase>
+                                <id>docker-pre-stop</id>
                                 <goals>
                                     <goal>stop</goal>
-                                    <goal>start</goal>
                                 </goals>
-                                <configuration>
-                                    <removeVolumes>${clean.docker.volumes}</removeVolumes>
-                                </configuration>
+                                <phase>validate</phase>
+                                <configuration/>
                             </execution>
                             <execution>
-                                <id>local-down</id>
-                                <phase>verify</phase>
+                                <id>docker-start</id>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration/>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven3-plugin</artifactId>
+                        <configuration/>
+                        <executions>
+                            <execution>
+                                <id>run-tomcat</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>generate-sources</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>tomcat-stop</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <!-- override default name to create service containers that don't conflict with docker run -->
+                <context.name>local-tomcat</context.name>
+            </properties>
+            <build>
+                <defaultGoal>generate-sources</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven3-plugin</artifactId>
+                        <configuration/>
+                        <executions>
+                            <execution>
+                                <id>stop-tomcat</id>
                                 <goals>
                                     <goal>stop</goal>
                                 </goals>
-                                <configuration>
-                                    <skip>${skipITs}</skip>
-                                </configuration>
+                                <phase>validate</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <filter>database,opensearch</filter>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-stop</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration/>
                             </execution>
                         </executions>
                     </plugin>
@@ -2225,30 +2214,72 @@
         </profile>
 
         <profile>
-        <id>run-external-docker</id>
-        <activation>
-            <property>
-                <name>run-external-docker</name>
-            </property>
-        </activation>
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <configuration>
-                        <imagesMap>
-                            <dotcms>
-                            <name>dotcms/dotcms:latest</name>
-                                <build>
-                                    <skip>true</skip>
-                                </build>
-                            </dotcms>
-                        </imagesMap>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </build>
+            <id>map-dev-paths</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${version.docker-maven.plugin}</version>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>${maven.multiModuleProjectDirectory}/core-web/dist/apps/dotcms-block-editor:/srv/${tomcat-dist-folder}/webapps/ROOT/dotcms-block-editor</volume>
+                                                <volume>${maven.multiModuleProjectDirectory}/core-web/dist/apps/dotcms-binary-field-builder:/srv/${tomcat-dist-folder}/webapps/ROOT/dotcms-binary-field-builder</volume>
+                                                <volume>${maven.multiModuleProjectDirectory}/core-web/dist/apps/dotcms-webcomponents:/srv/${tomcat-dist-folder}/webapps/ROOT/dotcms-webcomponents</volume>
+                                                <volume>${maven.multiModuleProjectDirectory}/core-web/dist/apps/dotcms-ui:/srv/${tomcat-dist-folder}/webapps/ROOT/dotAdmin</volume>
+                                                <volume>${project.build.directory}/classes:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/classes</volume>
+                                                <volume>${project.basedir}/src/main/webapp/WEB-INF/velocity:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/velocity</volume>
+                                                <volume>${project.basedir}/src/main/webapp/WEB-INF/messages:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/messages</volume>
+                                                <volume>${project.basedir}/src/main/webapp/WEB-INF/publishing-filters:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/publishing-filters</volume>
+                                                <volume>${project.basedir}/src/main/webapp/WEB-INF/javascript:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/javascript</volume>
+                                                <volume>${project.basedir}/src/main/webapp/html:/srv/${tomcat-dist-folder}/webapps/ROOT/html</volume>
+                                                <volume>${project.basedir}/src/main/webapp/ext:/srv/${tomcat-dist-folder}/webapps/ROOT/ext</volume>
+                                            </bind>
+                                        </volumes>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>docker-stop-no-remove</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <removeVolumes>false</removeVolumes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-stop-no-remove</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <keepContainer>true</keepContainer>
+                                    <removeVolumes>false</removeVolumes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
     <reporting>

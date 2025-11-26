@@ -1,4 +1,5 @@
 server:
+  max_columns: 200
   name: jitsu
   port: '${env.SERVER_PORT|8001}'
   disable_welcome_page: true
@@ -32,6 +33,9 @@ server:
 
 geo:
   maxmind_path: '${env.MAX_MIND_PATH|}'
+
+log:
+  rotation_min: 1
 
 configurator:
   base_url: '${env.JITSU_CONFIGURATOR_URL|}'

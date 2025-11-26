@@ -1,0 +1,9 @@
+{
+  "web": {
+    "port": 4000,
+    "bindAddress": "0.0.0.0",
+    "contextPath": "/",
+    "sessionTimeoutMinutes": 30,
+    "sessionCookieName": "GLOWROOT_SESSION_ID"
+  }
+}

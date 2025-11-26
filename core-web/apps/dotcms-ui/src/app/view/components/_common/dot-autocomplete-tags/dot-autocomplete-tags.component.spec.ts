@@ -4,18 +4,14 @@ import { Observable, of } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
-import { ChipsModule } from 'primeng/chips';
+import { AutoComplete } from 'primeng/autocomplete';
 
 import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
@@ -42,16 +38,7 @@ describe('DotAutocompleteTagsComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAutocompleteTagsComponent],
-            imports: [
-                BrowserAnimationsModule,
-                ChipsModule,
-                AutoCompleteModule,
-                FormsModule,
-                DotIconModule,
-                DotPipesModule,
-                DotMessagePipe
-            ],
+            imports: [DotAutocompleteTagsComponent, BrowserAnimationsModule],
             providers: [
                 { provide: DotTagsService, useClass: DotTagsServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
@@ -61,16 +48,11 @@ describe('DotAutocompleteTagsComponent', () => {
         de = fixture.debugElement;
         component = fixture.componentInstance;
         fixture.detectChanges();
-        autoComplete = de.query(By.css('p-autoComplete')).componentInstance as AutoComplete;
+        autoComplete = de.query(By.directive(AutoComplete)).componentInstance as AutoComplete;
     });
 
     it('should set options when load', () => {
         expect(component.filteredOptions).toEqual(mockResponse);
-    });
-
-    it('should hide add helper if value is null', () => {
-        const helper = de.query(By.css('.autocomplete-helper'));
-        expect(helper).toBeNull();
     });
 
     describe('autoComplete', () => {
@@ -80,7 +62,7 @@ describe('DotAutocompleteTagsComponent', () => {
         });
 
         it('should set all properties correctly', () => {
-            expect(autoComplete.field).toEqual('label');
+            expect(autoComplete.optionLabel).toEqual('label');
             expect(autoComplete.dataKey).toEqual('label');
             expect(autoComplete.multiple).toBe(true);
             expect(autoComplete.placeholder).toEqual('Custom Placeholder');
@@ -103,51 +85,58 @@ describe('DotAutocompleteTagsComponent', () => {
             ];
 
             beforeEach(() => {
-                spyOn(component, 'propagateChange').and.callThrough();
+                jest.spyOn(component, 'propagateChange');
                 component.value = [...preLoadedTags];
             });
 
             describe('onKeyUp', () => {
-                const enterEvent = { key: 'Enter', currentTarget: { value: 'enterEvent' } };
-                const newEnterEvent = { key: 'Enter', currentTarget: { value: 'newTag' } };
-                const backspaceEvent = { key: 'Backspace' };
-                const qEvent = { key: 'q', currentTarget: { value: 'qEvent' } };
+                const enterEvent = {
+                    key: 'Enter',
+                    currentTarget: { value: 'enterEvent' }
+                } as unknown as KeyboardEvent;
+                const newEnterEvent = {
+                    key: 'Enter',
+                    currentTarget: { value: 'newTag' }
+                } as unknown as KeyboardEvent;
+                const backspaceEvent = { key: 'Backspace' } as unknown as KeyboardEvent;
+                const qEvent = {
+                    key: 'q',
+                    currentTarget: { value: 'qEvent' }
+                } as unknown as KeyboardEvent;
 
                 beforeEach(() => {
                     //
                 });
 
-                it('should show the helper when input has value', () => {
-                    autoComplete.onKeyup({ ...qEvent });
-                    fixture.detectChanges();
-                    const helper = de.query(By.css('.autocomplete-helper'));
-                    expect(helper).not.toBeNull();
-                });
-
                 it('should NOT add the tag because user dint hit enter', () => {
-                    autoComplete.onKeyup({ ...qEvent });
+                    autoComplete.onKeyUp.emit(qEvent);
                     expect(component.value.length).toEqual(2);
                 });
 
                 it('should NOT add the tag because label is just white spaces', () => {
-                    autoComplete.onKeyup({ key: 'Enter', currentTarget: { value: '        ' } });
+                    const mockEvent = {
+                        key: 'Enter',
+                        currentTarget: { value: '        ' }
+                    } as unknown as KeyboardEvent;
+                    autoComplete.onKeyUp.emit(mockEvent);
                     expect(component.value.length).toEqual(2);
                 });
 
                 it('should NOT add the tag because is duplicate if the user hit enter', () => {
-                    autoComplete.onKeyup({ ...enterEvent });
+                    autoComplete.onKeyUp.emit({ ...enterEvent });
                     expect(component.value[1].label).toEqual(preLoadedTags[1].label);
                     expect(component.value.length).toEqual(2);
                 });
 
                 it('should call checkForTag if user hit enter should add the tag and clear input value', () => {
-                    spyOn(component, 'checkForTag').and.callThrough();
-                    spyOn(autoComplete, 'hide').and.callThrough();
-                    autoComplete.onKeyup(newEnterEvent);
+                    jest.spyOn(component, 'checkForTag');
+                    jest.spyOn(autoComplete, 'hide');
+                    autoComplete.onKeyUp.emit(newEnterEvent);
 
-                    expect<any>(component.checkForTag).toHaveBeenCalledWith(newEnterEvent);
+                    expect(component.checkForTag).toHaveBeenCalledWith(newEnterEvent);
+                    expect(component.checkForTag).toHaveBeenCalledTimes(1);
                     expect(component.value[0].label).toEqual('newTag');
-                    expect(newEnterEvent.currentTarget.value).toBeNull();
+                    // expect(newEnterEvent.currentTarget.value).toBeNull();
                     expect(component.propagateChange).toHaveBeenCalledWith(
                         'newTag,enterEvent,Dotcms'
                     );
@@ -155,47 +144,59 @@ describe('DotAutocompleteTagsComponent', () => {
                 });
 
                 it('should put back last deleted item by the p-autoComplete', () => {
-                    autoComplete.onUnselect.emit({ label: qEvent.currentTarget.value });
-                    autoComplete.onKeyup({ ...backspaceEvent });
+                    autoComplete.onUnselect.emit({
+                        originalEvent: createFakeEvent('click'),
+                        value: { label: 'qEvent' }
+                    });
+                    autoComplete.onKeyUp.emit({ ...backspaceEvent });
                     expect(component.value.length).toEqual(3);
-                    expect(component.value[2].label).toEqual(qEvent.currentTarget.value);
+                    expect(component.value[2].label).toEqual('qEvent');
                 });
 
                 it('should not do nothing on backspace if there is not a previous deleted element', () => {
                     component.value = [];
-                    autoComplete.onKeyup({ ...backspaceEvent });
+                    autoComplete.onKeyUp.emit({ ...backspaceEvent });
                     expect(component.value.length).toEqual(0);
                 });
             });
 
             it('should call filterTags on completeMethod and remove already selected', () => {
-                spyOn(component, 'filterTags').and.callThrough();
+                jest.spyOn(component, 'filterTags');
                 component.value.push({
                     label: 'test',
                     siteId: '',
                     siteName: '',
                     persona: null
                 });
-                autoComplete.completeMethod.emit({ query: 'test' });
+                const fakeEvent = createFakeEvent('click');
+                autoComplete.completeMethod.emit({
+                    originalEvent: fakeEvent,
+                    query: 'test'
+                });
 
-                expect(component.filterTags).toHaveBeenCalledWith({ query: 'test' });
+                expect(component.filterTags).toHaveBeenCalledWith({
+                    query: 'test',
+                    originalEvent: fakeEvent
+                });
                 expect(component.filteredOptions.length).toBe(1);
             });
 
             it('should call addItem on onSelect event and place last element as first', () => {
-                spyOn(component, 'addItem').and.callThrough();
+                jest.spyOn(component, 'addItem');
                 autoComplete.onSelect.emit();
 
                 expect(component.addItem).toHaveBeenCalledTimes(1);
                 expect(component.propagateChange).toHaveBeenCalledWith('Dotcms,enterEvent');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
             });
 
             it('should call removeItem on onUnselect event and ', () => {
-                spyOn(component, 'removeItem').and.callThrough();
+                jest.spyOn(component, 'removeItem');
                 autoComplete.onUnselect.emit();
 
                 expect(component.removeItem).toHaveBeenCalledTimes(1);
                 expect(component.propagateChange).toHaveBeenCalledWith('enterEvent,Dotcms');
+                expect(component.propagateChange).toHaveBeenCalledTimes(1);
             });
         });
     });

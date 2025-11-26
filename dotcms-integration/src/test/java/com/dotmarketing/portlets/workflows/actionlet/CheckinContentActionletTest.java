@@ -1,8 +1,11 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -23,14 +26,15 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Optional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -119,7 +123,7 @@ public class CheckinContentActionletTest {
     public void tryToUnlockContentlet (final TestCase testCase) throws DotSecurityException, DotDataException {
 
         final WorkflowProcessor workflowProcessor = mock(WorkflowProcessor.class);
-        final Map<String, WorkflowActionClassParameter> params = map();
+        final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
 
         final ContentletDependencies contentletDependencies = mock(ContentletDependencies.class);
 

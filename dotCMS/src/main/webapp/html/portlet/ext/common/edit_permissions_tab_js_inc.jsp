@@ -204,6 +204,8 @@
 					}
 				});
 				var mySize = this._contentBox;
+
+
 				if (isHost && !inheritingPermissions) {
 					this._verticalSpace = 280;
 				}else if (isFolder && !inheritingPermissions) {
@@ -216,7 +218,7 @@
 
 				// Memo size to make displayed child
 				this._containerContentBox = {
-					h: this._verticalSpace,
+					h: 'auto',
 					w: mySize.w
 				};
 
@@ -332,7 +334,6 @@
 	function adjustAccordionHeigth() {
 		var container = dijit.byId('permissionsAccordionContainer');
 		container.resize();
-
 	}
 
 	function addPermissionsAccordionPane(role) {
@@ -363,7 +364,11 @@
 	        else
 	            break;
 	    }
+
+
 	    accordionContainer.addChild(contentPane, insertIndex);
+
+
 	}
 
 	function initPermissionsAccordionPane(role) {

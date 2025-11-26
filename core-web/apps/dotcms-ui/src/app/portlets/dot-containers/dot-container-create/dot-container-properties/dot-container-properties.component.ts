@@ -1,18 +1,46 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
+import {
+    FormArray,
+    FormBuilder,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
+
+import { SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { TabViewModule } from 'primeng/tabview';
 
 import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
-import { MonacoEditor } from '@models/monaco-editor';
+import {
+    DotApiLinkComponent,
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
+
 import {
     DotContainerPropertiesState,
     DotContainerPropertiesStore
-} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+} from './store/dot-container-properties.store';
+
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
+import { DotContentEditorComponent } from '../dot-container-code/dot-container-code.component';
+import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.component';
 
 @Component({
     animations: [
@@ -23,26 +51,41 @@ import {
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     styleUrls: ['./dot-container-properties.component.scss'],
-    providers: [DotContainerPropertiesStore]
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        InplaceModule,
+        SharedModule,
+        InputTextModule,
+        CardModule,
+        DotTextareaContentComponent,
+        TabViewModule,
+        MenuModule,
+        DotMessagePipe,
+        DotLoopEditorComponent,
+        DotContentEditorComponent,
+        DotApiLinkComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        ButtonModule
+    ],
+    providers: [DotContainerPropertiesStore, DotContainersService]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
-    vm$ = this.store.vm$;
+    private dotMessageService = inject(DotMessageService);
+    private fb = inject(FormBuilder);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+
+    readonly #store = inject(DotContainerPropertiesStore);
+    readonly #dotRouterService = inject(DotRouterService);
+
+    vm$ = this.#store.vm$;
     editor: MonacoEditor;
     form: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private store: DotContainerPropertiesStore,
-        private dotMessageService: DotMessageService,
-        private fb: FormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotRouterService: DotRouterService
-    ) {
-        //
-    }
-
     ngOnInit(): void {
-        this.store.containerAndStructure$
+        this.#store.containerAndStructure$
             .pipe(take(1))
             .subscribe((state: DotContainerPropertiesState) => {
                 const { container, containerStructures } = state;
@@ -69,14 +112,14 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
 
                 this.addContainerFormControl(containerStructures);
                 if (this.form.value.identifier) {
-                    this.store.updateOriginalFormState(this.form.value);
+                    this.#store.updateOriginalFormState(this.form.value);
                 }
             });
 
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
             .subscribe(([prevValue, currValue]) => {
-                this.store.updateFormStatus({
+                this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,
                     container: currValue
                 });
@@ -89,7 +132,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        this.store.loadContentTypesAndUpdateVisibility();
+        this.#store.loadContentTypesAndUpdateVisibility();
     }
 
     /**
@@ -150,7 +193,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
      * @memberof DotContainerPropertiesComponent
      */
     showLoopInput(): void {
-        this.store.updatePrePostLoopInputVisibility(true);
+        this.#store.updatePrePostLoopInputVisibility(true);
     }
 
     /**
@@ -167,7 +210,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             ]);
             this.form.get('code').clearValidators();
             this.form.get('code').reset('');
-            this.store.updateContentTypeVisibility(true);
+            this.#store.updateContentTypeVisibility(true);
         } else {
             this.form.get('code').setValidators(Validators.required);
             this.form.get('containerStructures').clearValidators();
@@ -184,12 +227,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     save(): void {
         const formValues = this.form.value;
         if (formValues.identifier) {
-            this.store.editContainer(formValues);
-            this.store.updateOriginalFormState(formValues);
+            this.#store.editContainer(formValues);
+            this.#store.updateOriginalFormState(formValues);
             this.form.updateValueAndValidity();
         } else {
             delete formValues.identifier;
-            this.store.saveContainer(formValues);
+            this.#store.saveContainer(formValues);
         }
     }
 
@@ -199,7 +242,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
      * @memberof DotContainerPropertiesComponent
      */
     cancel(): void {
-        this.dotRouterService.goToURL('/containers');
+        this.#dotRouterService.goToURL('/containers');
     }
 
     /**
@@ -242,7 +285,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
         this.form.get('maxContentlets').setValue(0);
         this.form.updateValueAndValidity();
 
-        this.store.updateContentTypeAndPrePostLoopVisibility({
+        this.#store.updateContentTypeAndPrePostLoopVisibility({
             isContentTypeVisible: false,
             showPrePostLoopInput: false
         });

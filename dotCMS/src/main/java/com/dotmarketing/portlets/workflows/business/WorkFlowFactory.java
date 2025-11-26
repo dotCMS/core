@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 public interface WorkFlowFactory {
 
 	String SYSTEM_WORKFLOW_ID           = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID;
+	String SYSTEM_WORKFLOW_VARIABLE_NAME = SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
 
@@ -123,7 +124,14 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException;
 
-	public WorkflowScheme findScheme(String id) throws DotDataException;
+	/**
+	 * Finds a WorkflowScheme based on the given ID or variable name.
+	 *
+	 * @param idOrVar the ID or variable name used to search for the WorkflowScheme
+	 * @return the WorkflowScheme found
+	 * @throws DotDataException if an error occurs during the search process
+	 */
+	public WorkflowScheme findScheme(String idOrVar) throws DotDataException;
 
 	public List<WorkflowScheme> findSchemesForStruct(final String structId) throws DotDataException;
 

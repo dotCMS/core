@@ -1,15 +1,12 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
+import com.dotcms.datagen.*;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -17,19 +14,30 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.List;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.Dependent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.function.Supplier;
 
-import static org.junit.Assert.*;
+import static com.dotmarketing.util.Constants.CONTAINER_FOLDER_PATH;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class will test operations related with interacting with Containers.
@@ -37,6 +45,8 @@ import static org.junit.Assert.*;
  * @author Jorge Urdaneta
  * @since Aug 31st, 2012
  */
+@Dependent
+@RunWith(JUnit4WeldRunner.class)
 public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
@@ -425,4 +435,60 @@ public class ContainerAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
+     * Given Scenario: Searching for Containers with a given name.
+     * Expected Result: At least one Container must be returned.
+     */
+    @Test
+    public void findFileContainerByName() throws DotDataException, DotSecurityException {
+        Host testSite = null;
+        try {
+            // Test data generation
+            testSite = new SiteDataGen().nextPersisted();
+            final String containerName = generateRandomName(10);
+            final String metadataCode = "$dotJSON.put(\"title\", \"Test "
+                    + containerName + " File Container\")\n"
+                    + "$dotJSON.put(\"max_contentlets\", 25)";
+            new ContainerAsFileDataGen()
+                    .host(testSite)
+                    .folderName("Test" + containerName + " File Container")
+                    .metadataCode(metadataCode)
+                    .nextPersisted();
+
+            // Find by name
+            final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                    .includeArchived(false)
+                    .includeSystemContainer(false)
+                    .siteId(testSite.getIdentifier())
+                    .filteringCriterion(Map.of("title", containerName.toLowerCase())).build();
+            final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
+
+            // Assertions
+            assertFalse("There must be at least one Container with the name 'File Container'", allContainers.isEmpty());
+        } finally {
+            // Clean up
+            if (null != testSite) {
+                APILocator.getHostAPI().archive(testSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(testSite, APILocator.systemUser(), false);
+            }
+        }
+    }
+
+    private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final Random RANDOM = new Random();
+
+    /**
+     * Generates a random name with the given length.
+     *
+     * @param length the length of the name to generate
+     * @return the generated name
+     */
+    private static String generateRandomName(int length) {
+        StringBuilder name = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            name.append(ALPHABET.charAt(RANDOM.nextInt(ALPHABET.length())));
+        }
+        return name.toString();
+    }
 }

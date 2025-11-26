@@ -4,16 +4,12 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { addImageLanguageId, getImageAttr, imageElement, imageLinkElement } from './helpers';
 
+import { contentletToJSON } from '../../shared';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         ImageBlock: {
-            /**
-             * Set Image Link mark
-             */
             setImageLink: (attributes: { href: string; target?: string }) => ReturnType;
-            /**
-             * Unset Image Link mark
-             */
             unsetImageLink: () => ReturnType;
             insertImage: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
         };
@@ -26,6 +22,7 @@ export const ImageNode = Image.extend({
     addOptions() {
         return {
             inline: false,
+            selectable: true,
             allowBase64: true,
             HTMLAttributes: {}
         };
@@ -109,15 +106,63 @@ export const ImageNode = Image.extend({
         };
     },
 
+    /**
+     * Return the node for the renderHTML method
+     *
+     * @param {*} { HTMLAttributes }
+     * @return {*}
+     */
     renderHTML({ HTMLAttributes }) {
         const { href = null, style } = HTMLAttributes || {};
 
         return [
             'div',
-            { class: 'image-container', style },
+            { style },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)
         ];
+    },
+
+    /**
+     * Return the node view for Block Editor in Development mode
+     *
+     * @return {*}
+     */
+    addNodeView() {
+        return ({ node, HTMLAttributes }) => {
+            const hasImageLink = !!HTMLAttributes.href;
+            const img = document.createElement('img');
+            img.classList.add(`dot-image`);
+            Object.entries(HTMLAttributes).forEach(([key, value]) => {
+                if (typeof value === 'object' && value !== null) {
+                    value = JSON.stringify(value);
+                }
+
+                img.setAttribute(key, value);
+            });
+
+            let dom;
+            if (hasImageLink) {
+                const a = document.createElement('a');
+                a.setAttribute('href', HTMLAttributes.href);
+                a.setAttribute('target', HTMLAttributes.target);
+                a.appendChild(img);
+                dom = a;
+            } else {
+                dom = img;
+            }
+
+            const align = img.style.textAlign || 'left';
+            dom.classList.add(`dot-node-${align}`);
+
+            // Override toJSON method to include the contentlet data
+            node.toJSON = contentletToJSON.bind({ node });
+
+            return {
+                dom,
+                node
+            };
+        };
     }
 });

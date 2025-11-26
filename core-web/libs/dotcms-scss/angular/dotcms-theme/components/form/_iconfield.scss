@@ -1,0 +1,51 @@
+@use "variables" as *;
+
+.p-icon-field {
+    .p-input-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    &-left {
+        .p-input-icon:first-of-type {
+            left: $spacing-2;
+            color: $color-palette-gray-600;
+        }
+
+        > .p-inputtext {
+            padding-left: $spacing-6;
+        }
+
+        &.p-float-label > label {
+            left: $spacing-6;
+        }
+    }
+
+    &-left:has(:nth-child(3)) {
+        > .p-inputtext {
+            padding-right: $spacing-6;
+        }
+
+        .p-input-icon-right {
+            color: $color-palette-primary;
+            cursor: pointer;
+            left: auto;
+            right: $spacing-1;
+            margin-top: 0;
+            transform: translateY(-50%);
+            -moz-transform: translateY(-50%);
+        }
+    }
+
+    &-right {
+        .p-input-icon:last-of-type {
+            right: $spacing-2;
+            color: $color-palette-gray-600;
+        }
+
+        > .p-inputtext {
+            padding-right: $spacing-6;
+        }
+    }
+}

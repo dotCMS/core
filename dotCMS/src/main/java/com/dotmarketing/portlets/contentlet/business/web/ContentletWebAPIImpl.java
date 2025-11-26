@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -909,12 +910,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return contentlet;
 	}
 
-	private void handleException(final Exception ae) {
-		
-		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
-			Logger.warnAndDebug(this.getClass(), ae.toString(), ae);
+	/**
+	 * Prints more or less details of the specified Exception depending on its original cause. For
+	 * more verbose exceptions such as {@link DotContentletValidationException} or
+	 * {@link DotLanguageException}, all details have already made it to the log, so those are not
+	 * required.
+	 *
+	 * @param exception The exception to handle.
+	 */
+	private void handleException(final Exception exception) {
+		if (ExceptionUtil.causedBy(exception, DotContentletValidationException.class) || ExceptionUtil.causedBy(exception, DotLanguageException.class)) {
+			Logger.debug(this, exception.toString(), exception);
 		} else {
-			Logger.debug(this, ae.toString(), ae);
+			Logger.warnAndDebug(this.getClass(), exception.toString(), exception);
 		}
 	}
 

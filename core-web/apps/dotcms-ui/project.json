@@ -14,10 +14,21 @@
                 "main": "apps/dotcms-ui/src/main.ts",
                 "polyfills": "apps/dotcms-ui/src/polyfills.ts",
                 "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
-                "allowedCommonJsDependencies": ["lodash", "dragula", "md5", "dom-autoscroller"],
+                "allowedCommonJsDependencies": [
+                    "lodash",
+                    "dragula",
+                    "md5",
+                    "dom-autoscroller",
+                    "date-fns"
+                ],
                 "assets": [
                     "apps/dotcms-ui/src/favicon.ico",
                     "apps/dotcms-ui/src/assets",
+                    {
+                        "glob": "**/*",
+                        "input": "node_modules/tinymce",
+                        "output": "/tinymce/"
+                    },
                     {
                         "glob": "**/*",
                         "input": "node_modules/monaco-editor",
@@ -37,6 +48,16 @@
                         "glob": "**/*",
                         "input": "./libs/portlets/edit-ema/portlet/src/lib/assets",
                         "output": "./assets/edit-ema"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/dot-content-drive/portlet/src/lib/assets",
+                        "output": "./assets/dot-content-drive"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-toolbar/assets",
+                        "output": "./assets/edit-uve-toolbar"
                     }
                 ],
                 "styles": [
@@ -100,6 +121,7 @@
             "dependsOn": ["^build"]
         },
         "serve": {
+            "dependsOn": ["dotcms-webcomponents:build"],
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
@@ -117,23 +139,11 @@
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "main": "apps/dotcms-ui/src/test.ts",
-                "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
-                "karmaConfig": "apps/dotcms-ui/karma.conf.js",
-                "polyfills": "apps/dotcms-ui/src/polyfills.ts",
-                "styles": ["libs/dotcms-scss/angular/styles.scss"],
-                "scripts": [],
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                }
-            },
-            "configurations": {
-                "development": {
-                    "watch": true,
-                    "browsers": "Chrome"
-                }
+                "jestConfig": "apps/dotcms-ui/jest.config.ts",
+                "passWithNoTests": false
             }
         },
         "storybook": {

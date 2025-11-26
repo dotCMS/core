@@ -1,20 +1,20 @@
 <div class="dot-apps-configuration-list__results">
-    <dot-apps-configuration-item
-        *ngFor="let site of siteConfigurations; let i = index"
-        [ngClass]="{
-            'dot-apps-configuration-item__not-configured': !site.configured
-        }"
-        [site]="site"
-        (edit)="edit.emit($event)"
-        (export)="export.emit($event)"
-        (delete)="delete.emit($event)"
-    ></dot-apps-configuration-item>
+    @for (site of siteConfigurations; track site; let i = $index) {
+        <dot-apps-configuration-item
+            (edit)="edit.emit($event)"
+            (export)="export.emit($event)"
+            (delete)="delete.emit($event)"
+            [ngClass]="{
+                'dot-apps-configuration-item__not-configured': !site.configured
+            }"
+            [site]="site"></dot-apps-configuration-item>
+    }
 </div>
 
-<button
-    class="dot-apps-configuration-list__show-more p-button-outlined"
-    *ngIf="!hideLoadDataButton"
-    [label]="'apps.configurations.show.more' | dm"
-    (click)="loadNext()"
-    pButton
-></button>
+@if (!hideLoadDataButton) {
+    <button
+        (click)="loadNext()"
+        [label]="'apps.configurations.show.more' | dm"
+        class="dot-apps-configuration-list__show-more p-button-outlined"
+        pButton></button>
+}

@@ -370,9 +370,10 @@
                     data: dataItems
                 });
 
-                if (null != aFilteringSelect) {
-
-                    aFilteringSelect.set('store', dojoSchemeStore);
+                // Update widget - either the provided one or find by ID
+                var widget = aFilteringSelect || dijit.byId('scheme_id');
+                if (null != widget) {
+                    widget.set('store', dojoSchemeStore);
                 }
             }
         }
@@ -384,8 +385,6 @@
 
         reloadSchemeStore(aFilteringSelect, dijit.byId("structure_inode")?dijit.byId("structure_inode").getValue():null);
     }
-
-    reloadSchemeStore(null, "<%=structureSelected%>");
 
     // Workflow Steps
     var dojoStepsStore = null;
@@ -489,7 +488,6 @@
                 id: "scheme_id",
                 name: "scheme_id_select",
                 value: "<%=schemeSelected%>",
-                store: dojoSchemeStore,
                 searchAttr: "textLabel",
                 labelAttr: "label",
                 labelType: "html",
@@ -503,6 +501,9 @@
                 }
             },
             dojo.byId("schemeSelectBox"));
+        
+        // Load the scheme data after widget is created
+        reloadSchemeStore(fsSchemes, "<%=structureSelected%>");
 
         // step select box
         var fsSteps = new dijit.form.FilteringSelect({
@@ -528,7 +529,7 @@
 
     function initialLoad() {
         var urlParams = new URLSearchParams(window.location.href);
-        var portletId = urlParams.get('angularCurrentPortlet');
+        portletId = urlParams.get('angularCurrentPortlet');
 
         var viewDisplayMode = '<%=dataViewMode%>';
         if (viewDisplayMode !== '') {
@@ -579,7 +580,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
             iconClass: "uploadIcon",
             onClick: function() {
-                window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
+                window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value + '&angularCurrentPortlet=' + portletId;
             }
         });
         menu.addChild(menuItem2);
@@ -775,7 +776,7 @@
                                     <span></span>
                                     <script type="text/javascript">
                                         function importContent() {
-                                            window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                            window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value + '&angularCurrentPortlet=' + portletId;
                                         }
                                     </script>
                                     <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">

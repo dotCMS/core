@@ -16,7 +16,7 @@
     }
 }
 
-.p-inputgroup {
+p-inputgroup > .p-inputgroup {
     border: $field-border-size solid $color-palette-gray-400;
     border-radius: $border-radius-md;
     overflow: hidden;
@@ -54,5 +54,10 @@
         border-bottom-right-radius: $border-radius-md;
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
+    }
+
+    .p-chip.p-component:last-child {
+        border-top-left-radius: $border-radius-sm;
+        border-bottom-left-radius: $border-radius-sm;
     }
 }

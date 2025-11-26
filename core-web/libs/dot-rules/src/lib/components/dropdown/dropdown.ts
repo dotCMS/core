@@ -1,19 +1,24 @@
+import { of, Observable, from } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
-    Optional,
     OnChanges,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    Output,
+    Input,
+    ChangeDetectionStrategy,
+    inject
 } from '@angular/core';
-import { Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
-import { of, Observable, from } from 'rxjs';
-import * as _ from 'lodash';
+
+import { SelectItem } from 'primeng/api';
+import { Dropdown as PDropdown } from 'primeng/dropdown';
+
 import { map, mergeMap, toArray } from 'rxjs/operators';
 
-import { Dropdown as PDropdown } from 'primeng/dropdown';
-import { SelectItem } from 'primeng/api';
+import { isEmpty } from '@dotcms/utils';
 
 /**
  * Angular wrapper around OLD Semantic UI Dropdown Module.
@@ -23,32 +28,31 @@ import { SelectItem } from 'primeng/api';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-input-dropdown',
     template: `
-        <p-dropdown
-            #inputDropdown
-            ng-valid
-            class="ui fluid ng-valid"
-            appendTo="body"
-            [style]="{ width: '100%' }"
-            [required]="minSelections > 0"
-            [placeholder]="placeholder"
-            [options]="dropdownOptions | async"
-            [editable]="allowAdditions"
-            [filter]="true"
-            [(ngModel)]="modelValue"
-            *ngIf="maxSelections <= 1"
-            (onChange)="fireChange($event.value)"
-        >
-        </p-dropdown>
-        <dot-autocomplete-tags
-            [inputId]="name"
-            *ngIf="maxSelections > 1"
-            [value]="modelValue"
-            [options]="dropdownOptions | async"
-            [placeholder]="placeholder"
-            (onChange)="fireChange($event)"
-        >
-        </dot-autocomplete-tags>
-    `
+        @if (maxSelections <= 1) {
+            <p-dropdown
+                (onChange)="fireChange($event.value)"
+                [(ngModel)]="modelValue"
+                [style]="{ width: '100%' }"
+                [required]="minSelections > 0"
+                [placeholder]="placeholder"
+                [options]="dropdownOptions | async"
+                [editable]="allowAdditions"
+                [filter]="true"
+                #inputDropdown
+                ng-valid
+                class="ui fluid ng-valid"
+                appendTo="body"></p-dropdown>
+        }
+        @if (maxSelections > 1) {
+            <dot-autocomplete-tags
+                (onChange)="fireChange($event)"
+                [inputId]="name"
+                [value]="modelValue"
+                [options]="dropdownOptions | async"
+                [placeholder]="placeholder"></dot-autocomplete-tags>
+        }
+    `,
+    standalone: false
 })
 export class Dropdown implements ControlValueAccessor, OnChanges {
     @Input()
@@ -72,10 +76,13 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     modelValue: string;
     dropdownOptions: Observable<SelectItem[]>;
 
-    constructor(@Optional() control: NgControl) {
+    constructor() {
+        const control = inject(NgControl, { optional: true });
+
         if (control && !control.valueAccessor) {
             control.valueAccessor = this;
         }
+
         this.placeholder = '';
         this.allowAdditions = false;
         this.minSelections = 0;
@@ -105,6 +112,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
                 toArray()
             );
         }
+
         this.isFocusSet(changes);
     }
 
@@ -120,7 +128,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     onTouched: Function = () => {};
 
     writeValue(value: any): void {
-        this.modelValue = _.isEmpty(value) ? '' : value;
+        this.modelValue = isEmpty(value) ? '' : value;
     }
 
     registerOnChange(fn): void {

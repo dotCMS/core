@@ -1,7 +1,7 @@
 import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { mergeMap, pluck } from 'rxjs/operators';
 
@@ -13,7 +13,8 @@ import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
     providedIn: 'root'
 })
 export class DotCDNService {
-    constructor(private coreWebService: CoreWebService, private siteService: SiteService) {}
+    private coreWebService = inject(CoreWebService);
+    private siteService = inject(SiteService);
 
     /**
      * Request stats via Core Web Service

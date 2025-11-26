@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -95,13 +96,27 @@ public interface ContentletAPIPreHook {
 	
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
-	 * @param identifier 
+	 * @param identifier
 	 * @param live Retrieves the live version if false retrieves the working version
 	 * @return
 	 */
 	public default boolean findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param user
+	 * @param timeMachineDate
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles){
+		return true;
+	}
 
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
@@ -212,7 +227,31 @@ public interface ContentletAPIPreHook {
 	 * @param currentContentlet
 	 * @return
 	 */
-	public default boolean copyContentlet(Contentlet currentContentlet, Host host, User user, boolean respectFrontendRoles){
+	default boolean copyContentlet(Contentlet currentContentlet, Host host, User user, boolean respectFrontendRoles){
+      return true;
+    }
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 */
+	default boolean copyContentlet(final Contentlet contentletToCopy,
+								   final ContentType contentType, final Host site, User user,
+								   final boolean respectFrontendRoles) {
       return true;
     }
 
@@ -221,7 +260,31 @@ public interface ContentletAPIPreHook {
 	 * @param currentContentlet
 	 * @return
 	 */
-	public default boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean respectFrontendRoles){
+	default boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean respectFrontendRoles){
+      return true;
+    }
+
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 */
+	default boolean copyContentlet(final Contentlet contentletToCopy,
+								   final ContentType contentType, final Folder folder,
+								   final User user, final boolean respectFrontendRoles) {
       return true;
     }
 
@@ -244,12 +307,81 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public default boolean copyContentlet(final Contentlet contentletToCopy,
+	default boolean copyContentlet(final Contentlet contentletToCopy,
 				   final Host host, final Folder folder, final User user, final String copySuffix,
 				   final boolean respectFrontendRoles) {
 		return true;
 	}
 
+	/**
+	 * Copies a contentlet including all its fields. Binary files, Image and File fields are
+	 * pointers, and they are preserved as they are. So, if source contentlet points to image A,
+	 * the resulting new contentlet will point to the same image A as well. Additionally, this
+	 * method copies source permissions and moves the new piece of content to the given folder. When
+	 * copying a File Asset, the value of the {@code opySuffix} parameter will be appended to the
+	 * file name.
+	 *
+	 * @param contentletToCopy     The {@link Contentlet} that will be copied.
+	 * @param contentType          Optional. The {@link ContentType} that will be used to save the
+	 *                             copied Contentlet. This is useful when copying Sites and you
+	 *                             choose to copy both Content Types and Contentets.
+	 * @param site                 The {@link Host} where the copied Contentlet will be saved.
+	 * @param folder               The {@link Folder} where the copied Contentlet will be saved.
+	 * @param user                 The {@link User} that is performing the action.
+	 * @param copySuffix           The suffix that will be appended to the file name, if
+	 *                             applicable.
+	 * @param respectFrontendRoles If the User executing this action has the front-end role, or if
+	 *                             front-end roles must be validated against this user, set to
+	 *                             {@code true}.
+	 *
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 */
+	default boolean copyContentlet(final Contentlet contentletToCopy,
+								   final ContentType contentType, final Host site,
+								   final Folder folder, final User user, final String copySuffix,
+								   final boolean respectFrontendRoles) {
+		return true;
+	}
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param contentsPerPage      The maximum number of items to return per page.
+	 * @param page                 The page number to retrieve.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	default boolean searchPaginatedByPage(String luceneQuery, int contentsPerPage,
+			int page, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		return true;
+	}
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param limit                The maximum number of items to return per page.
+	 * @param offset               The offset to start retrieving items from.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	default boolean searchPaginated(String luceneQuery, int limit,
+			int offset, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		return true;
+	}
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -1063,6 +1195,17 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+    /**
+     * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
+     * pagination attributes, as this method may pull too many versions.
+     *
+     * @param searchCriteria The {@link SearchCriteria} object that allows you to filter the data
+     *                       being pulled.
+     */
+    default boolean findAllVersions(final SearchCriteria searchCriteria) {
+        return true;
+    }
+
 	/**
 	 * Retrieves all versions for a contentlet identifier
 	 * @param identifiers
@@ -1182,7 +1325,17 @@ public interface ContentletAPIPreHook {
 	public default boolean setContentletProperty(Contentlet contentlet, Field field, Object value){
       return true;
     }
-	
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 */
+	public default boolean setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value){
+		return true;
+	}
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
@@ -1905,6 +2058,21 @@ public interface ContentletAPIPreHook {
     public default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,   boolean respectFrontendRoles) {
         return true;
     }
+
+	/**
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param timeMachine
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	default boolean findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user,
+			boolean respectFrontendRoles) {
+		return true;
+	}
+
     public default boolean findInDb(String inode) {
         return true;
     }
@@ -1970,6 +2138,10 @@ public interface ContentletAPIPreHook {
 	}
 
 	default boolean saveContentOnVariant(Contentlet contentlet, String variantName, User user){
+		return true;
+	}
+
+    default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles, String variantName) {
 		return true;
 	}
 }

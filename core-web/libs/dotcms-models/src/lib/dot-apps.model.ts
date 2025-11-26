@@ -34,7 +34,11 @@ export interface DotAppsSecret {
     required: boolean;
     type: string;
     value: string;
+    hasEnvVar: boolean;
+    hasEnvVarValue: boolean;
+    envShow: boolean;
     warnings?: string[];
+    enableButton?: boolean; // Nueva propiedad para habilitar botones independientemente de appConfigured
 }
 
 export interface DotAppsSaveData {

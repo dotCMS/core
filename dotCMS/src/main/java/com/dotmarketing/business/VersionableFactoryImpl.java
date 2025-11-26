@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -207,12 +208,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		}
 
 		if ("contentlet".equals(identifier.getAssetType())){
-            try {
-                return Collections.unmodifiableList(FactoryLocator.getContentletFactory()
-                        .findAllVersions(identifier, true, maxResults.isPresent()?maxResults.get():null));
-            } catch (DotSecurityException e) {
-                throw new DotDataException("Cannot get versions for contentlet with identifier:" + identifier);
-            }
+            return Collections.unmodifiableList(FactoryLocator.getContentletFactory()
+                    .findAllVersions(identifier, true, maxResults.isPresent()?maxResults.get():null));
         } else{
             final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
             if(clazz.equals(Inode.class)) {
@@ -237,6 +234,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
             Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
             return (List<Versionable>) dh.list();
         }
+	}
+
+	@Override
+	protected List<Map<String, Object>> getWorkingVersionsExcludingLanguage(final String identifier, final long lang) throws DotDataException {
+
+		return new DotConnect().setSQL("select working_inode, lang from contentlet_version_info where identifier = ? and lang != ?")
+				.addParam(identifier).addParam(lang).loadObjectResults();
 	}
 
     @Override
@@ -346,6 +350,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantName);
 		if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
+			Logger.debug(this, "404 ContentletVersionInfo found for id: " + identifier + " lang: " + lang + " variant: " + variantName);
 			return Optional.empty();
 		}else if(contentVersionInfo!=null ){
 			return Optional.of(contentVersionInfo);

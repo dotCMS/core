@@ -471,7 +471,7 @@ public class TempFileResourceTest {
         final DotTempFile dotTempFile1 = saveTempFile_usingTempResource(fileName1, request);
 
         final RemoteUrlForm form = new RemoteUrlForm(
-                "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif",
+                "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif",
                 fileName2, null);
 
         final Response jsonResponse = resource
@@ -539,7 +539,7 @@ public class TempFileResourceTest {
     public void test_TempResource_uploadFileByURL_success() {
         HttpServletRequest request = mockRequest();
         final String fileName = "test.png";
-        final String url = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg";
+        final String url = "https://dotcms-storage.b-cdn.net/Bocas2.jpg";
 
         final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url, fileName, null);
 

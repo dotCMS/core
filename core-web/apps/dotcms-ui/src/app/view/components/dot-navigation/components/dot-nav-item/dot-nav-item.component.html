@@ -1,31 +1,35 @@
+@let data = $data();
+@let collapsed = $collapsed();
 <div class="dot-nav__title">
     <div
-        class="dot-nav__item"
-        [class.dot-nav__item--active]="data.active"
-        (click)="clickHandler($event, data)"
         (mouseenter)="setSubMenuPosition()"
-        appendTo="target"
-    >
-        <dot-nav-icon
-            [icon]="
-                data.tabIcon === labelImportantIcon ? (data.tabName | dotRandomIcon) : data.tabIcon
-            "
-            aria-hidden="true"
-        ></dot-nav-icon>
-        <span class="dot-nav__item-label">{{ data.tabName }}</span>
-        <dot-icon
-            class="dot-nav__item-arrow"
-            aria-hidden="true"
-            name="{{ data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up' }}"
-        >
-        </dot-icon>
+        [class.dot-nav__item--active]="isGroupActive()"
+        class="dot-nav__item"
+        data-testid="nav-item"
+        appendTo="target">
+        <div
+            class="dot-nav__item-main"
+            data-testid="nav-item-main"
+            (click)="clickHandler($event, data)">
+            <dot-nav-icon
+                [icon]="data.icon === labelImportantIcon ? (data.label | dotRandomIcon) : data.icon"
+                aria-hidden="true"></dot-nav-icon>
+            <span class="dot-nav__item-label" data-testid="nav-item-label">{{ data.label }}</span>
+        </div>
+        <div
+            class="dot-nav__item-toggle"
+            data-testid="nav-item-toggle"
+            (click)="toggleHandler($event, data)">
+            <dot-icon
+                class="dot-nav__item-arrow"
+                aria-hidden="true"
+                name="{{ data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up' }}"></dot-icon>
+        </div>
     </div>
 </div>
 <dot-sub-nav
-    #subnav
+    (itemClick)="handleItemClick($event)"
     [ngStyle]="customStyles"
     [data]="data"
     [collapsed]="collapsed"
-    (itemClick)="handleItemClick($event)"
->
-</dot-sub-nav>
+    #subnav></dot-sub-nav>

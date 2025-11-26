@@ -1,21 +1,26 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { DOCUMENT } from '@angular/common';
-import { Component, Inject, Input, OnChanges, ViewChild } from '@angular/core';
-import { ActivatedRoute, Params } from '@angular/router';
+import { AsyncPipe, CommonModule } from '@angular/common';
+import { Component, Input, OnChanges, ViewChild, inject, DOCUMENT } from '@angular/core';
+import { ActivatedRoute, Params, RouterModule } from '@angular/router';
+
+import { TooltipModule } from 'primeng/tooltip';
 
 import { map } from 'rxjs/operators';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotPageRender,
     DotPageRenderState,
     DotPageToolUrlParams,
     DotTemplate,
+    FEATURE_FLAG_NOT_FOUND,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -37,9 +42,24 @@ interface DotEditPageNavItem {
 @Component({
     selector: 'dot-edit-page-nav',
     templateUrl: './dot-edit-page-nav.component.html',
-    styleUrls: ['./dot-edit-page-nav.component.scss']
+    styleUrls: ['./dot-edit-page-nav.component.scss'],
+    imports: [
+        AsyncPipe,
+        CommonModule,
+        RouterModule,
+        TooltipModule,
+        DotIconComponent,
+        DotMessagePipe,
+        DotPageToolsSeoComponent
+    ]
 })
 export class DotEditPageNavComponent implements OnChanges {
+    private dotLicenseService = inject(DotLicenseService);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly route = inject(ActivatedRoute);
+    private document = inject<Document>(DOCUMENT);
+
     @ViewChild('pageTools') pageTools: DotPageToolsSeoComponent;
     @Input() pageState: DotPageRenderState;
 
@@ -50,14 +70,6 @@ export class DotEditPageNavComponent implements OnChanges {
     queryParams: Params;
 
     isVariantMode = false;
-
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute,
-        @Inject(DOCUMENT) private document: Document
-    ) {}
 
     ngOnChanges(): void {
         this.model = !this.model
@@ -112,7 +124,13 @@ export class DotEditPageNavComponent implements OnChanges {
             }
         ];
 
-        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]) {
+        const loadFrontendExperiments =
+            this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS];
+        // By default, or if flag is 'NOT_FOUND', ExperimentsNavItem is added to navItems.
+        if (
+            loadFrontendExperiments === true ||
+            loadFrontendExperiments === FEATURE_FLAG_NOT_FOUND
+        ) {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 

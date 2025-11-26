@@ -1,18 +1,22 @@
 package com.dotcms.api.client.pull;
 
 import com.dotcms.api.client.pull.exception.PullException;
+import com.dotcms.api.client.util.ErrorHandlingUtil;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.model.pull.PullOptions;
 import io.quarkus.arc.DefaultBean;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
+import picocli.CommandLine.ExitCode;
 
 /**
  * PullServiceImpl is a class that implements the PullService interface. It provides methods for
@@ -24,6 +28,9 @@ public class PullServiceImpl implements PullService {
 
     @Inject
     Logger logger;
+
+    @Inject
+    ErrorHandlingUtil errorHandlerUtil;
 
     @Inject
     ManagedExecutor executor;
@@ -101,6 +108,7 @@ public class PullServiceImpl implements PullService {
 
                         var foundContent = provider.fetchByKey(
                                 pullOptions.contentKey().get(),
+                                pullOptions.failFast(),
                                 pullOptions.customOptions().orElse(null)
                         );
                         return List.of(foundContent);
@@ -108,7 +116,8 @@ public class PullServiceImpl implements PullService {
 
                     // Fetching all contents
                     logger.debug(String.format("Fetching all %s.", pullHandler.title()));
-                    return provider.fetch(pullOptions.customOptions().orElse(null));
+                    return provider.fetch(pullOptions.failFast(),
+                            pullOptions.customOptions().orElse(null));
                 });
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -129,12 +138,17 @@ public class PullServiceImpl implements PullService {
             // (fetcherServiceFuture and animationFuture) have completed.
             CompletableFuture.allOf(fetcherServiceFuture, animationFuture).join();
             contents = fetcherServiceFuture.get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
             var errorMessage = String.format(
                     "Error occurred while fetching [%s]: [%s].",
-                    pullHandler.title(), e.getMessage());
+                    pullHandler.title(), e.getMessage()
+            );
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
+        } catch (ExecutionException | CompletionException e) {
+            var cause = e.getCause();
+            throw errorHandlerUtil.mapPullException(cause);
         }
 
         return contents;
@@ -183,6 +197,7 @@ public class PullServiceImpl implements PullService {
         var maxRetryAttempts = pullOptions.maxRetryAttempts();
         var failed = false;
         var retryAttempts = 0;
+        var errorCode = ExitCode.OK;
 
         do {
 
@@ -196,7 +211,7 @@ public class PullServiceImpl implements PullService {
                 );
             }
 
-            var foundErrors = performPull(
+            var e = performPull(
                     contents,
                     pullOptions,
                     output,
@@ -204,11 +219,16 @@ public class PullServiceImpl implements PullService {
                     retryAttempts,
                     maxRetryAttempts
             );
-            if (foundErrors) {
+            errorCode = Math.max(errorCode, e);
+            if (errorCode > ExitCode.OK) {
                 failed = true;
             }
 
         } while (failed && retryAttempts++ < maxRetryAttempts);
+        if(errorCode > ExitCode.OK){
+            //All exceptions are already handled and logged, so we can just throw a generic exception to force exit
+            throw new ForceSilentExitException(errorCode);
+        }
     }
 
     /**
@@ -224,34 +244,35 @@ public class PullServiceImpl implements PullService {
      * @return True if errors were found during the pull process, false otherwise.
      * @throws PullException        If an error occurs while pulling the contents.
      */
-    private <T> boolean performPull(List<T> contents, final PullOptions pullOptions,
+    private <T> int performPull(List<T> contents, final PullOptions pullOptions,
             final OutputOptionMixin output, final PullHandler<T> pullHandler,
             int retryAttempts, int maxRetryAttempts) {
 
         try {
-
             return pullHandler.pull(
                     contents,
                     pullOptions,
                     output
             );
+        } catch (InterruptedException e) {
 
-        } catch (InterruptedException | ExecutionException e) {
-
-            var errorMessage = String.format("Error occurred while pulling contents: [%s].",
-                    e.getMessage());
+            var errorMessage = String.format(
+                    "Error occurred while pulling contents: [%s].", e.getMessage()
+            );
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
-        } catch (Exception e) { // Fail fast
+        } catch (ExecutionException | CompletionException e) {// Fail fast
 
-            if (retryAttempts + 1 <= maxRetryAttempts) {
-                output.info("\n\nFound errors during the pull process:");
-                output.error(e.getMessage());
-
-                return true;
-            } else {
-                throw e;
+            var cause = e.getCause();
+            var toThrow = errorHandlerUtil.handlePullFailFastException(
+                    retryAttempts, maxRetryAttempts, output, cause
+            );
+            if (toThrow.isPresent()) {
+                throw toThrow.get();
             }
+
+            return ExitCode.SOFTWARE;
         }
     }
 

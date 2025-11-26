@@ -10,6 +10,8 @@ import {
     Host,
     h
 } from '@stencil/core';
+import flatpickr from 'flatpickr';
+
 import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     checkProp,
@@ -22,7 +24,6 @@ import {
     updateStatus,
     getHintId
 } from '../../utils';
-import flatpickr from 'flatpickr';
 
 @Component({
     tag: 'dot-date-range',
@@ -167,8 +168,7 @@ export class DotDateRangeComponent {
                     <div
                         aria-describedby={getHintId(this.hint)}
                         tabIndex={this.hint ? 0 : null}
-                        class="dot-range__body"
-                    >
+                        class="dot-range__body">
                         <input
                             class={getErrorClass(this.status.dotValid)}
                             disabled={this.isDisabled()}
@@ -181,8 +181,7 @@ export class DotDateRangeComponent {
                             {this.presetLabel}
                             <select
                                 disabled={this.isDisabled()}
-                                onChange={this.setPreset.bind(this)}
-                            >
+                                onChange={this.setPreset.bind(this)}>
                                 {this.presets.map((item) => {
                                     return <option value={item.days}>{item.label}</option>;
                                 })}

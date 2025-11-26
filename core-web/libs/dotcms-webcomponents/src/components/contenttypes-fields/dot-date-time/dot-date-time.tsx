@@ -96,7 +96,7 @@ export class DotDateTimeComponent {
     @State()
     classNames: DotFieldStatusClasses;
     @State()
-    errorMessageElement: JSX.Element;
+    errorMessageElement: any;
 
     @Event()
     dotValueChange: EventEmitter<DotFieldValueEvent>;
@@ -193,8 +193,7 @@ export class DotDateTimeComponent {
                     <div
                         class="dot-date-time__body"
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
-                    >
+                        tabIndex={this.hint ? 0 : null}>
                         <label>
                             {this.dateLabel}
                             <dot-input-calendar

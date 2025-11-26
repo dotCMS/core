@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dotcms-parent</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>24.02.20</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -13,133 +13,57 @@
     <artifactId>dotcms-reports</artifactId>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
+        <coverage.report.phase>verify</coverage.report.phase>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core</artifactId>
-            <version>24.02.20</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.dotcms</groupId>
-            <artifactId>dotcms-core</artifactId>
             <version>${project.version}</version>
-            <type>war</type>
-            <classifier>war</classifier>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-integration</artifactId>
-            <version>24.02.20</version>
-            <scope>compile</scope>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-postman</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <!-- This is required by jacoco to make the check goal work. -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-class-files</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <overwrite>false</overwrite>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/../dotcms/target/classes</directory>
-                                </resource>
-                            </resources>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>report-aggregate</id>
+                                <phase>${coverage.report.phase}</phase>
+                                <goals>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <title>DotCMS</title>
+                                    <footer>Code Coverage Report for DotCMS ${project.version}</footer>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-
-                    <execution>
-                        <id>merge-results</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>merge</goal>
-                        </goals>
-                        <configuration>
-                            <fileSets>
-                                <fileSet>
-                                    <directory>${project.basedir}</directory>
-                                    <includes>
-                                        <include>**/target/*.exec</include>
-                                    </includes>
-                                </fileSet>
-                            </fileSets>
-                            <destFile>${project.build.directory}/merged.exec</destFile>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>report-aggregate</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report-aggregate</goal>
-                        </goals>
-                        <configuration>
-                            <title>DotCMS</title>
-                            <footer>Code Coverage Report for DotCMS ${project.version}</footer>
-                            <includes>
-                                <include>**/*.class</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>INSTRUCTION</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>100%</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                            <dataFile>${project.build.directory}/merged.exec</dataFile>
-                        </configuration>
-                    </execution>
-
-                </executions>
-
-            </plugin>
-
-
-
-
-        </plugins>
-    </build>
 
 </project>

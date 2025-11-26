@@ -1,49 +1,150 @@
 <script type="application/javascript">
+// Global Constants
+const hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+const defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")'; // try to preload the default template.
 
 dojo.require("dotcms.dojo.data.TemplateReadStore");
 
-function templateChanged() {
-    var templateSel=dijit.byId("templateSel");
-    var value=templateSel.get('value');
-    if(value == "0") {
-        var store=window.top._templateStore;
-        store.hostId="";
-        templateSel.set("value","");
-        templateSel.filter();
-    }
-    else if(value) {
-        dojo.byId("template").value=value;
-        TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
+// UTILS
+
+/**
+* Normalizes the key of a template
+*
+*/
+const normalizeKey = function (template) {
+    return template.fullTitle.replace(new RegExp("\\("+template.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
+}
+
+/**
+* Returns a map of templates by name and by id
+*
+*/
+const getTemplatesMaps = (templates) => {
+    const mapByName = templates.reduce(function(map, template) {
+        const key = normalizeKey(template);
+        if (!map[key]) {
+            map[key] = template;
+        }
+
+        return map;
+    }, {});
+
+    const mapById = templates.reduce(function(map, template) {
+        map[template.identifier] = template;
+        return map;
+    }, {});
+
+
+    return {
+        mapByName,
+        mapById
     }
 }
 
+// UTILS END
+/**
+* Fetches the template image from the server
+*
+*/
+function fetchTemplateImage(templateId) {
+    fetch("/api/v1/templates/image", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ templateId})
+    }).then(async (response) => {
+        // The ok value represents the result of the response status 200 codes
+        if (response.ok) {
+            const result = await response.json();
+
+            getTemplateCallBack(result); // here we pass the result of the json response to the callback function
+        } else {
+            throw new Error("Error fetching template image");
+        }
+    })
+    .catch((error) => {
+        const imageEl = dojo.byId("templateThumbnailHolder");
+        imageEl.src = "/html/images/shim.gif";
+        imageEl.style.border = "0px";
+    });
+};
+
+/**
+* Callback function to handle the template fetch
+*
+*/
+const onTemplateFetchComplete = function(templates, currentRequest) {
+    const templateId = dojo.byId("template").value;
+    const isTemplateValid  = templateId && templateId != "0";
+
+    if(!templates || templates.length === 0){
+        return;
+    }
+
+    const { mapById, mapByName } = getTemplatesMaps(templates);
+    const normalizedName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
+    const template = isTemplateValid ? mapById[templateId]:mapByName[normalizedName];
+
+    if(!template){
+        return;
+    }
+
+    const { identifier, fullTitle } = template;
+
+    // We set the values directly into the components because setting it directly into`templateSelect` fires another load operation.
+    dojo.byId("currentTemplateId").value = identifier;
+    dojo.byId("template").value = identifier;
+    dijit.byId('templateSel').set("displayedValue", fullTitle);
+    fetchTemplateImage(identifier);
+};
+
+function resetTemplateSelection() {
+    const templateSel = dijit.byId("templateSel");
+    templateSel.set("value","");
+    templateSel.filter();
+    dojo.byId("template").value= '';
+    dojo.byId("templateSel").value = "";
+    dojo.byId("currentTemplateId").value = "";
+    dojo.byId("templateThumbnailHolder").src = "/html/images/shim.gif";
+    dojo.byId("templateThumbnailHolder").style.border = '0px';
+}
+
+
+/**
+* Get the template callback
+*
+*/
 function getTemplateCallBack(data) {
-    var imageInode = data.identifier;
-    var imageExtension = data.extension;
-    
-    var imageEl=dojo.byId("templateThumbnailHolder");
+    const imageInode = data.identifier;
+    const imageExtension = data.extension;
+    const imageEl=dojo.byId("templateThumbnailHolder");
+
     if (isInodeSet(imageInode)) {
     	imageEl.src = "/dA/" + imageInode + "/250w";
         imageEl.style.border = '1px solid #B6CBEB';
         imageEl.style.marginTop = '1rem';
-    }
-    else {
+    } else {
         imageEl.src  = "/html/images/shim.gif";
         imageEl.style.border = '0px';
     }
-    
+
 }
 
 dojo.ready(function(){
-    var hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
-    var templateStore = new dotcms.dojo.data.TemplateReadStore({
-        hostId: hostId,
-        templateSelected: dojo.byId("template").value
+    const templateId = dojo.byId("template").value;
+    const isTemplateValid  = templateId && templateId != "0";
+
+    const currentTemplateIdElement = dojo.byId("currentTemplateId");
+    currentTemplateIdElement.value = templateId;
+
+    const templateStore = new dotcms.dojo.data.TemplateReadStore({
+        hostId: '',
+        templateSelected: templateId,
+        allSiteLabel: true,
     });
 
-    window.top._templateStore=templateStore;
-
-    var templateSelect=new dijit.form.FilteringSelect({
+    const templateSelect = new dijit.form.FilteringSelect({
         id:"templateSel",
         name:"templateSel",
         style:"width:350px;",
@@ -57,67 +158,56 @@ dojo.ready(function(){
         searchType:"html",
         labelAttr: "htmlTitle",
         searchAttr: "fullTitle",
-        value: dojo.byId("template").value,
-        invalidMessage: '$text.get("Invalid-option-selected")'
+        value: templateId,
+        invalidMessage: '$text.get("Invalid-option-selected")',
     },"templateHolder");
-    
-    var val  = dojo.byId("template").value;
-    if (val != undefined && val != "0"){
-    	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
+
+    if (isTemplateValid){
+       fetchTemplateImage(templateId);
+
+        const templateSel = dijit.byId("templateSel");
+        templateSel.set("value", templateId);
     }
 
-    var currentTemplateIdElement = dojo.byId("currentTemplateId");
-    currentTemplateIdElement.value = val;
-
-
-    // try to preload the default template.
-    var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "Default Template")';
-
-    var onTemplateFetchComplete = function(templates, currentRequest){
-
-        var normalizeKey = function (obj) {
-            return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
-        }
-
-        if((templates) && (templates.length > 0)){
-            var templatesMap = templates.reduce(function(map, obj) {
-                var key = normalizeKey(obj);
-                if (!(key in map)){
-                    map[key] = obj;
-                }
-                return map;
-            }, {});
-
-            var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
-            var obj = templatesMap[normalizedTemplateName];
-            if(obj){
-                var value = obj.identifier;
-                var fullTitle = obj.fullTitle;
-                // We set the values directly into the components because setting it direcrtly into`templateSel` fires another load operation.
-                dojo.byId("currentTemplateId").value = value;
-                dojo.byId("template").value = value;
-                dijit.byId('templateSel').set("displayedValue", fullTitle);
-                TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
-            }
-        }
+    const templateFetchParams = {
+        query: {
+            fullTitle: '*'
+        },
+        queryOptions: {},
+        start: 0,
+        count: 15,
+        onComplete: onTemplateFetchComplete
     };
 
-    //We fire the fetch action if there isn't a template already set.
-    if(defaultTemplateName && (val == undefined || val == "" || val == "0" )) {
-        var templateFetchParams = {
-            query: {
-                fullTitle: '*',
-                hostId: hostId
-            },
-            queryOptions: {},
-            start: 0,
-            count: 1000,
-            sort: [],
-            onComplete: onTemplateFetchComplete
-        };
-
-        window.top._templateStore.fetch(templateFetchParams);
+    function handleAllSiteClick() {
+        templateStore.hostId = "*";
+        templateStore.allSiteLabel=false;
+        resetTemplateSelection();
     }
+
+    /**
+    * Handles the template change event
+    *
+    */
+    function templateChanged() {
+        const templateSel = dijit.byId("templateSel");
+        const value = templateSel?.get('value');
+
+        if(!value) {
+            resetTemplateSelection();
+            return;
+        }
+
+        if(value == "0") {
+            handleAllSiteClick();
+            return;
+        }
+
+        dojo.byId("template").value=value;
+        fetchTemplateImage(value);
+    }
+
+    templateStore.fetch(templateFetchParams);
 });
 </script>
 

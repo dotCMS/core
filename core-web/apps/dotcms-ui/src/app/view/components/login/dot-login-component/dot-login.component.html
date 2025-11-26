@@ -1,118 +1,115 @@
-<div class="login__container p-fluid" *ngIf="loginInfo$ | async as loginInfo">
-    <form [formGroup]="loginForm">
-        <div class="login__header">
-            <div class="login__logo">
-                <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
+@if (loginInfo$ | async; as loginInfo) {
+    <div class="login__container p-fluid">
+        <form [formGroup]="loginForm">
+            <div class="login__header">
+                <div class="login__logo">
+                    <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
+                </div>
+                <p-dropdown
+                    (onChange)="onLanguageChange($event.value)"
+                    [options]="languages"
+                    [style]="{ width: '185px' }"
+                    class="p-dropdown-sm"
+                    #languageDropdown
+                    data-testId="language"
+                    formControlName="language"></p-dropdown>
             </div>
-            <p-dropdown
-                class="p-dropdown-sm"
-                #languageDropdown
-                [options]="languages"
-                [style]="{ width: '185px' }"
-                (onChange)="onLanguageChange($event.value)"
-                data-testId="language"
-                formControlName="language">
-            </p-dropdown>
-        </div>
-
-        <h3 class="login__title" data-testId="header">
-            {{ loginInfo.i18nMessagesMap['welcome-login'] }}
-        </h3>
-
-        <p
-            class="login__message"
-            [ngClass]="{ 'p-invalid': isError, success: !isError }"
-            [innerHTML]="message"
-            data-testId="message"></p>
-        <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="emailLabel" for="inputtext">{{
-                loginInfo.i18nMessagesMap['emailAddressLabel']
-            }}</label>
-
-            <input
-                id="inputtext"
-                type="text"
-                pInputText
-                dotAutofocus
-                formControlName="login"
-                autocomplete="username"
-                data-testId="userNameInput" />
-
-            <dot-field-validation-message
-                [message]="
-                    loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
-                        '{0}',
-                        loginInfo.i18nMessagesMap['emailAddressLabel']
-                    )
-                "
-                [field]="loginForm.get('login')">
-            </dot-field-validation-message>
-        </div>
-        <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="passwordLabel" for="password">{{
-                loginInfo.i18nMessagesMap['password']
-            }}</label>
-
-            <input
-                id="password"
-                pInputText
-                type="password"
-                formControlName="password"
-                autocomplete="current-password"
-                data-testId="password" />
-
-            <dot-field-validation-message
-                [message]="
-                    loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
-                        '{0}',
-                        loginInfo.i18nMessagesMap['password']
-                    )
-                "
-                [field]="loginForm.get('password')">
-            </dot-field-validation-message>
-        </div>
-        <div class="login__password-settings field">
-            <p-checkbox
-                [label]="loginInfo.i18nMessagesMap['remember-me']"
-                formControlName="rememberMe"
-                data-testId="rememberMe"
-                binary="true"></p-checkbox>
-            <a
-                class="password-settings__forgot-password"
-                *ngIf="!isLoginInProgress"
-                [routerLink]="['/public/forgotPassword']"
-                data-testId="actionLink"
-                >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
-            >
-        </div>
-        <div class="field">
-            <dot-loading-indicator></dot-loading-indicator>
-            <button
-                class="login__button"
-                *ngIf="loginForm.enabled"
-                [disabled]="!loginForm.valid"
-                [label]="loginInfo.i18nMessagesMap['sign-in']"
-                (click)="logInUser()"
-                pButton
-                data-testId="submitButton"></button>
-        </div>
-        <div class="login__footer">
-            <span data-testId="server"
-                >{{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}</span
-            >
-            |
-            <span data-testId="version"
-                >{{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
-                {{ loginInfo.entity.buildDateString }}</span
-            >
-            <span
-                *ngIf="loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1"
-                [innerHTML]="
-                    ' - ' +
-                    loginInfo.i18nMessagesMap['angular.login.component.community.licence.message']
-                "
-                data-testId="license">
-            </span>
-        </div>
-    </form>
-</div>
+            <h3 class="login__title" data-testId="header">
+                {{ loginInfo.i18nMessagesMap['welcome-login'] }}
+            </h3>
+            <p
+                [ngClass]="{ 'p-invalid': isError, success: !isError }"
+                [innerHTML]="message"
+                class="login__message"
+                data-testId="message"></p>
+            <div class="field form__group--validation">
+                <label dotFieldRequired data-testId="emailLabel" for="inputtext">
+                    {{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}
+                </label>
+                <input
+                    id="inputtext"
+                    type="text"
+                    pInputText
+                    dotAutofocus
+                    formControlName="login"
+                    autocomplete="username"
+                    data-testId="userNameInput" />
+                <dot-field-validation-message
+                    [message]="
+                        loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
+                            '{0}',
+                            loginInfo.i18nMessagesMap['emailAddressLabel']
+                        )
+                    "
+                    [field]="loginForm.get('login')"></dot-field-validation-message>
+            </div>
+            <div class="field form__group--validation">
+                <label dotFieldRequired data-testId="passwordLabel" for="password">
+                    {{ loginInfo.i18nMessagesMap['password'] }}
+                </label>
+                <input
+                    id="password"
+                    pInputText
+                    type="password"
+                    formControlName="password"
+                    autocomplete="current-password"
+                    data-testId="password" />
+                <dot-field-validation-message
+                    [message]="
+                        loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
+                            '{0}',
+                            loginInfo.i18nMessagesMap['password']
+                        )
+                    "
+                    [field]="loginForm.get('password')"></dot-field-validation-message>
+            </div>
+            <div class="login__password-settings field">
+                <p-checkbox
+                    [label]="loginInfo.i18nMessagesMap['remember-me']"
+                    formControlName="rememberMe"
+                    data-testId="rememberMe"
+                    binary="true"></p-checkbox>
+                @if (!isLoginInProgress) {
+                    <a
+                        [routerLink]="['/public/forgotPassword']"
+                        class="password-settings__forgot-password"
+                        data-testId="actionLink">
+                        {{ loginInfo.i18nMessagesMap['get-new-password'] }}
+                    </a>
+                }
+            </div>
+            <div class="field">
+                <dot-loading-indicator></dot-loading-indicator>
+                @if (loginForm.enabled) {
+                    <button
+                        (click)="logInUser()"
+                        [disabled]="!loginForm.valid"
+                        [label]="loginInfo.i18nMessagesMap['sign-in']"
+                        class="login__button"
+                        pButton
+                        data-testId="submitButton"></button>
+                }
+            </div>
+            <div class="login__footer">
+                <span data-testId="server">
+                    {{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}
+                </span>
+                |
+                <span data-testId="version">
+                    {{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
+                    {{ loginInfo.entity.buildDateString }}
+                </span>
+                @if (loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1) {
+                    <span
+                        [innerHTML]="
+                            ' - ' +
+                            loginInfo.i18nMessagesMap[
+                                'angular.login.component.community.licence.message'
+                            ]
+                        "
+                        data-testId="license"></span>
+                }
+            </div>
+        </form>
+    </div>
+}

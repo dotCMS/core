@@ -77,4 +77,6 @@ public interface SiteSearchAPI {
 	Map<String, Aggregation> getFacets(String indexName, String query) throws DotDataException;
 
     List<String> listClosedIndices();
+
+	public void deleteOldSiteSearchIndices();
 }

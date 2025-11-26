@@ -21,7 +21,10 @@ const dispatchKeydownEvent = (comp: HTMLBaseElement, key: string, meta = false, 
 };
 
 @Component({
-    template: `<dot-form-dialog><form>Hello World</form></dot-form-dialog>`
+    template: `
+        <dot-form-dialog><form>Hello World</form></dot-form-dialog>
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 
@@ -38,7 +41,7 @@ describe('DotFormDialogComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -54,7 +57,7 @@ describe('DotFormDialogComponent', () => {
     });
 
     beforeEach(() => {
-        spyOn(document, 'querySelector').and.returnValue(document.createElement('div'));
+        jest.spyOn(document, 'querySelector').mockReturnValue(document.createElement('div'));
         fixture = TestBed.createComponent(DotFormDialogComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
@@ -65,7 +68,6 @@ describe('DotFormDialogComponent', () => {
     });
 
     it('should bind event to dialog content', () => {
-        // this needs more work, but I can't find a way to fake the scroll
         expect(document.querySelector).toHaveBeenCalledWith('p-dynamicdialog .p-dialog-content');
     });
 
@@ -80,8 +82,8 @@ describe('DotFormDialogComponent', () => {
 
     describe('buttons', () => {
         beforeEach(() => {
-            spyOn(component.save, 'emit');
-            spyOn(component.cancel, 'emit');
+            jest.spyOn(component.save, 'emit');
+            jest.spyOn(component.cancel, 'emit');
         });
 
         it('should have save button', () => {

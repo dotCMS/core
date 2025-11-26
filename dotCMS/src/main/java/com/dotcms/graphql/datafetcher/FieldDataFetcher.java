@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
@@ -24,9 +25,15 @@ public class FieldDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
 
+            Logger.debug(this, ()-> "Fetching field for contentlet: " + contentlet.getIdentifier() + " field: " + var);
             Object fieldValue = contentlet.get(var);
 
-            final Field field = contentlet.getContentType().fieldMap().get(var);
+            final ContentType contentType = contentlet.getContentType();
+            if (contentType == null) {
+                Logger.debug(this, ()-> "No ContentType on contentlet " + contentlet.getIdentifier() + ", returning raw value");
+                return fieldValue;
+            }
+            final Field field = contentType.fieldMap().get(var);
 
             if(!UtilMethods.isSet(fieldValue)) {
                 // null value - maybe a constant field

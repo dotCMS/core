@@ -7,6 +7,9 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+
+import java.util.Arrays;
 
 public final class PermissionUtilTest {
 
@@ -20,5 +23,23 @@ public final class PermissionUtilTest {
                 anonymousRole.getId(),
                 PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(permission, permissionable, APILocator.systemUser(), false);
+    }
+
+    public static void addPermission(final Permissionable permissionable,
+                                     final User user, final String permissionType, final int... permissions) throws DotDataException {
+
+        final int permission = Arrays.stream(permissions).sum();
+
+        final Permission permissionObject = new Permission(permissionType,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId(),
+                permission, true);
+
+        try {
+            APILocator.getPermissionAPI().save(permissionObject, permissionable,
+                    APILocator.systemUser(), false);
+        } catch (DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

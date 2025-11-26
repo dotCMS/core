@@ -15,16 +15,17 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { ControlValueAccessor, FormGroupDirective, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
+
+import { DOTTestBed } from '../../../../../../../../../test/dot-test-bed';
+import { PaginationEvent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
+import { DotRelationshipService } from '../services/dot-relationship.service';
 
 const cardinalities = [
     {
@@ -41,7 +42,7 @@ const cardinalities = [
 
 const contentTypeMock: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
-    clazz: 'clazz',
+    clazz: DotCMSClazzes.TEXT,
     defaultType: false,
     fixed: false,
     folder: 'folder',
@@ -55,12 +56,13 @@ const contentTypeMock: DotCMSContentType = {
 
 @Component({
     selector: 'dot-host-component',
-    template: ` <dot-new-relationships
-        [cardinality]="cardinalityIndex"
-        [velocityVar]="velocityVar"
-        [editing]="editing"
-    >
-    </dot-new-relationships>`
+    template: `
+        <dot-new-relationships
+            [cardinality]="cardinalityIndex"
+            [velocityVar]="velocityVar"
+            [editing]="editing"></dot-new-relationships>
+    `,
+    standalone: false
 })
 class HostTestComponent {
     cardinalityIndex: number;
@@ -77,7 +79,8 @@ class HostTestComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MockSearchableDropdownComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Input() data: string[];
@@ -110,7 +113,8 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
 
 @Component({
     selector: 'dot-cardinality-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockCardinalitySelectorComponent {
     @Input() value: number;
@@ -166,11 +170,10 @@ describe('DotNewRelationshipsComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 HostTestComponent,
-                DotNewRelationshipsComponent,
                 MockSearchableDropdownComponent,
                 MockCardinalitySelectorComponent
             ],
-            imports: [DotFieldRequiredDirective, DotMessagePipe],
+            imports: [DotFieldRequiredDirective, DotMessagePipe, DotNewRelationshipsComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
@@ -185,7 +188,7 @@ describe('DotNewRelationshipsComponent', () => {
         comp = de.componentInstance;
 
         paginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([contentTypeMock]));
     }));
 
     describe('Content Types', () => {
@@ -210,9 +213,8 @@ describe('DotNewRelationshipsComponent', () => {
             expect(dotSearchableDropdown.componentInstance.rows).toBe(
                 paginatorService.paginationPerPage
             );
-            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(
-                paginatorService.totalRecords
-            );
+            // totalRecords is now set after initialization
+            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(1);
             expect(dotSearchableDropdown.componentInstance.labelPropertyName).toBe('name');
             expect(dotSearchableDropdown.componentInstance.placeholder).toBe('Select Content Type');
         });
@@ -221,12 +223,14 @@ describe('DotNewRelationshipsComponent', () => {
             const newFilter = 'new filter';
 
             fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
 
             expect(paginatorService.filter).toBe(newFilter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
@@ -240,16 +244,109 @@ describe('DotNewRelationshipsComponent', () => {
             };
 
             fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             dotSearchableDropdown.componentInstance.pageChange.emit(event);
 
             expect(paginatorService.filter).toBe(event.filter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
 
             fixtureHostComponent.detectChanges();
 
             expect(dotSearchableDropdown.componentInstance.data).toEqual([contentTypeMock]);
+        });
+
+        it('should clear paginator links and update lastSearch when getContentTypeList is called', () => {
+            const filter = 'test filter';
+            const offset = 10;
+
+            fixtureHostComponent.detectChanges();
+
+            // Set up initial links to verify they get cleared
+            paginatorService.links = { next: 'some-url', prev: 'some-other-url' };
+
+            comp.getContentTypeList(filter, offset);
+
+            expect(paginatorService.links).toEqual({});
+            expect(comp.lastSearch()).toEqual({ filter, offset });
+            expect(paginatorService.filter).toBe(filter);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(offset);
+        });
+
+        it('should skip search when editing is true and not update lastSearch', () => {
+            const filter = 'test filter';
+            const offset = 10;
+            const initialLastSearch = comp.lastSearch();
+
+            fixtureHostComponent.componentInstance.editing = true;
+            fixtureHostComponent.detectChanges();
+
+            jest.clearAllMocks();
+
+            comp.getContentTypeList(filter, offset);
+
+            expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
+            expect(comp.lastSearch()).toEqual(initialLastSearch);
+        });
+
+        it('should skip search when filter and offset match lastSearch values', () => {
+            const filter = 'same filter';
+            const offset = 5;
+
+            fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
+
+            // First call - should execute
+            comp.getContentTypeList(filter, offset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Second call with same parameters - should skip
+            comp.getContentTypeList(filter, offset);
+            expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
+        });
+
+        it('should not skip search when filter or offset are different from lastSearch', () => {
+            const initialFilter = 'initial filter';
+            const initialOffset = 0;
+            const newFilter = 'new filter';
+            const newOffset = 10;
+
+            fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
+
+            // First call
+            comp.getContentTypeList(initialFilter, initialOffset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Second call with different filter
+            comp.getContentTypeList(newFilter, initialOffset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Third call with different offset
+            comp.getContentTypeList(initialFilter, newOffset);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
+        });
+
+        it('should update lastSearch signal when getContentTypeList executes successfully', () => {
+            const filter = 'test filter';
+            const offset = 20;
+
+            fixtureHostComponent.detectChanges();
+
+            // After initialization, lastSearch is set to default values ('', 0) from the initial call
+            expect(comp.lastSearch()).toEqual({ filter: '', offset: 0 });
+
+            comp.getContentTypeList(filter, offset);
+
+            expect(comp.lastSearch()).toEqual({ filter, offset });
         });
 
         it('should tigger change event when content type changed', (done) => {
@@ -272,7 +369,7 @@ describe('DotNewRelationshipsComponent', () => {
             const labels = de.queryAll(By.css('label'));
             const contentTypeLabel = labels[0].nativeElement;
             const relationshipsLabel = labels[1].nativeElement.textContent;
-            expect(contentTypeLabel.textContent).toEqual('Content Type');
+            expect(contentTypeLabel.textContent.trim()).toEqual('Content Type');
             expect(contentTypeLabel.classList.contains('p-label-input-required')).toBeTruthy();
             expect(relationshipsLabel).toEqual('Relationship');
         });
@@ -283,10 +380,15 @@ describe('DotNewRelationshipsComponent', () => {
             });
 
             it('should load content type, and emit change event with the right variableValue', (done) => {
+                // Set up the spy BEFORE detectChanges so it tracks the ngOnChanges call
                 const contentTypeService = de.injector.get(DotContentTypeService);
-                spyOn(contentTypeService, 'getContentType').and.callThrough();
+                const contentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
 
                 fixtureHostComponent.detectChanges();
+
+                // Clear getWithOffset call count from initialization, but keep contentTypeSpy
+                const paginatorGetWithOffsetSpy = paginatorService.getWithOffset as jest.Mock;
+                paginatorGetWithOffsetSpy.mockClear();
 
                 comp.switch.subscribe((relationshipSelect: any) => {
                     expect(relationshipSelect).toEqual({
@@ -298,7 +400,9 @@ describe('DotNewRelationshipsComponent', () => {
 
                 comp.triggerChanged();
 
-                expect(contentTypeService.getContentType).toHaveBeenCalled();
+                // getContentType should have been called during ngOnChanges (not by triggerChanged)
+                expect(contentTypeSpy).toHaveBeenCalled();
+                // For inverse relationships, getWithOffset should NOT be called after initialization
                 expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
             });
         });

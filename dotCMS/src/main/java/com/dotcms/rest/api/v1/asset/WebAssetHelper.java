@@ -5,18 +5,25 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -28,7 +35,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +48,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -51,11 +64,14 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 /**
  * In typical dotCMS resource fashion this class is responsible for undertaking the heavy lifting
- * Our Resource classes are responsible for handling the request and response. and call out to helpers
+ * Our Resource classes are responsible for handling the request and response. And call out to helpers
  */
 public class WebAssetHelper {
 
+    public static final String PATH_SEPARATOR = StringPool.FORWARD_SLASH;
+
     public static final String SORT_BY = "modDate";
+
     LanguageAPI languageAPI;
 
     FileAssetAPI fileAssetAPI;
@@ -70,54 +86,48 @@ public class WebAssetHelper {
 
     FolderAPI folderAPI;
 
+    PermissionAPI permissionAPI;
+
     /**
-     * Constructor for testing
-     * @param languageAPI
-     * @param fileAssetAPI
-     * @param contentletAPI
-     * @param browserAPI
+     * Constructor
+     * @param params
      */
-    WebAssetHelper(
-            final LanguageAPI languageAPI,
-            final FileAssetAPI fileAssetAPI,
-            final ContentletAPI contentletAPI,
-            final BrowserAPI browserAPI,
-            final TempFileAPI tempFileAPI,
-            final ContentTypeAPI contentTypeAPI,
-            final FolderAPI folderAPI
-    ){
-        this.languageAPI = languageAPI;
-        this.fileAssetAPI = fileAssetAPI;
-        this.contentletAPI = contentletAPI;
-        this.browserAPI = browserAPI;
-        this.tempFileAPI = tempFileAPI;
-        this.contentTypeAPI = contentTypeAPI;
-        this.folderAPI = folderAPI;
+    WebAssetHelper(final WebAssetHelperParams params){
+        this.languageAPI = params.languageAPI();
+        this.fileAssetAPI = params.fileAssetAPI();
+        this.contentletAPI = params.contentletAPI();
+        this.browserAPI = params.browserAPI();
+        this.tempFileAPI = params.tempFileAPI();
+        this.contentTypeAPI = params.contentTypeAPI();
+        this.folderAPI = params.folderAPI();
+        this.permissionAPI = params.permissionAPI();
     }
 
     /**
      * Default constructor
      */
     WebAssetHelper() {
-        this(
-                APILocator.getLanguageAPI(),
-                APILocator.getFileAssetAPI(),
-                APILocator.getContentletAPI(),
-                APILocator.getBrowserAPI(),
-                APILocator.getTempFileAPI(),
-                APILocator.getContentTypeAPI(APILocator.systemUser()),
-                APILocator.getFolderAPI()
-                );
+        this(WebAssetHelperParams.builder()
+            .browserAPI(APILocator.getBrowserAPI())
+            .contentletAPI(APILocator.getContentletAPI())
+            .fileAssetAPI(APILocator.getFileAssetAPI())
+            .languageAPI(APILocator.getLanguageAPI())
+            .tempFileAPI(APILocator.getTempFileAPI())
+            .contentTypeAPI(APILocator.getContentTypeAPI(APILocator.systemUser()))
+            .folderAPI(APILocator.getFolderAPI())
+            .permissionAPI(APILocator.getPermissionAPI())
+            .build()
+        );
     }
 
     /**
      * Entry point here it is determined if the path is a folder or an asset.
      * If it is a folder it will return a FolderView, if it is an asset it will return an AssetView
-     * @param path
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param path the path to the asset
+     * @param user current user
+     * @return the asset view
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
      */
     public WebAssetView getAssetInfo(final String path, final User user)
             throws DotDataException, DotSecurityException {
@@ -158,7 +168,7 @@ public class WebAssetHelper {
                 .sortByDesc(true)
         ;
 
-        //We're not really looking at system but / is mapped as system folder therefore
+        //We're not really looking at system but / is mapped as system folder, therefore,
         //whenever system folder pops up we need to find the folders straight under host
         if (folder.isSystemFolder()) {
             builder.withHostOrFolderId(host.getIdentifier());
@@ -168,7 +178,7 @@ public class WebAssetHelper {
 
         if (null != assetName) {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
-            //We're requesting an asset specifically therefore we need to find it and  build the response
+            //We're requesting an asset specifically, therefore, we need to find it and  build the response
             builder.withFileName(assetName);
 
             final List<Contentlet> folderContent = sortByIdentifier(
@@ -187,11 +197,11 @@ public class WebAssetHelper {
                     .build();
         } else {
             Logger.debug(this, String.format("Retrieving a folder by name: [%s] " , folder.getName()));
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build(), false);
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
-            //Once we get the folder contents we need to include all other versions per identifier
+            //Once we get the folder contents, we need to include all other versions per identifier
             final Set<String> identifiers = folderContent.stream().filter(Contentlet.class::isInstance)
                     .map(f -> (Contentlet) f).map(Contentlet::getIdentifier)
                     .collect(Collectors.toSet());
@@ -362,6 +372,7 @@ public class WebAssetHelper {
                 .modDate(folder.getModDate().toInstant())
                 .identifier(folder.getIdentifier())
                 .inode(folder.getInode())
+                .sortOrder(folder.getSortOrder())
                 .build();
     }
 
@@ -373,6 +384,7 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @CloseDBIfOpened
     public FileAsset getAsset(final AssetsRequestForm form, final User user)
             throws DotDataException, DotSecurityException {
 
@@ -421,10 +433,9 @@ public class WebAssetHelper {
         final List<Contentlet> assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
                 Contentlet.class::cast).collect(Collectors.toList());
         if (assets.isEmpty()) {
+            final String status = BooleanUtils.toString(form.live(), "live", "working", "unspecified");
             throw new NotFoundInDbException(
-                    String.format(" Asset [%s] not found for lang [%s] and live status [%b] ",
-                            assetName, form.language(),
-                            BooleanUtils.toString(form.live(), "live", "working", "unspecified"))
+                    " Asset [" + assetName + "] not found for lang ["+form.language()+"] and live status ["+ status +"]"
             );
         }
         final Contentlet asset = assets.get(0);
@@ -434,14 +445,15 @@ public class WebAssetHelper {
 
     /**
      * Saves or updates an asset given the asset path lang and version that will be used to locate it
-     * @param request
-     * @param form
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * @param request the request
+     * @param form the form data
+     * @param user current user
+     * @return the asset view
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     * @throws IOException any IO exception
      */
+    @WrapInTransaction
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
             final User user) throws DotDataException, DotSecurityException, IOException {
 
@@ -467,14 +479,16 @@ public class WebAssetHelper {
         if (null == fileInputStream) {
             //if no FileInputStream  is present we return the folder info
             //because we support creating folders by just specifying the path
+            //At least we have to have read permissions to the folder
+            //if we fail to verify read permissions we need to throw an exception therefore the exception will roll back the folder creation
+            checkFolderReadPermissions(user, folder);
             return toAssetsFolder(folder);
         }
 
         final DotTempFile tempFile = tempFileAPI.createTempFile(assetName, request,
                 fileInputStream);
         try {
-            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, true, user))
-                    .getOrNull();
+            final WebAssetView assetView = Try.of(() -> getAssetInfo(assetAndPath, true, user)).getOrNull();
             Contentlet savedAsset = null;
 
             if (assetView instanceof AssetVersionsView) {
@@ -486,23 +500,51 @@ public class WebAssetHelper {
                 // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
                 final AssetView asset = versions.get(0);
 
+                checkFolderPublishPermissions(user, folder);
                 handleArchivedVersions(user, asset, lang.get());
-
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
                 updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
                 savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
+                checkFolderPublishPermissions(user, folder);
                 //asset does not exist. So create new one
-                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder,
-                        lang.get());
+                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, user, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
             }
             final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
             return toAsset(fileAsset);
         } finally {
             disposeTempFile(tempFile);
+        }
+    }
+
+    /**
+     * Checks if the user has read permissions for the given folder
+     * @param user the user performing the action
+     * @param folder the folder to check
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    private void checkFolderReadPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+        if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)){
+            throw new DotSecurityException(String.format("User [%s] does not have permission to read folder [%s]",
+                    user.getUserId(), folder.getInode()));
+        }
+    }
+
+    /**
+     * Checks if the user has write permissions for the given folder
+     * @param user the user performing the action
+     * @param folder the folder to check
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    private void checkFolderPublishPermissions(User user, Folder folder) throws DotDataException, DotSecurityException {
+        if(!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)){
+            throw new DotSecurityException(String.format("User [%s] does not have permission to write to folder [%s]",
+                    user.getUserId(), folder.getInode()));
         }
     }
 
@@ -541,11 +583,10 @@ public class WebAssetHelper {
 
     /**
      * Deletes an asset given the asset path that will be used to locate it
-     * @param tempFile
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * @param tempFile the temp file
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
+     * @throws IOException any IO exception
      */
     void disposeTempFile(final DotTempFile tempFile){
         final File file = tempFile.file;
@@ -559,61 +600,65 @@ public class WebAssetHelper {
 
     /**
      * checkin or publish the given contentlet
-     * @param checkout
-     * @param user
-     * @param live
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param checkout the contentlet to check in or publish
+     * @param user the user performing the action
+     * @param live if true the contentlet will be published
+     * @return the contentlet
+     * @throws DotDataException any data related exception
+     * @throws DotSecurityException any security violation exception
      */
-    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
-        if(live){
-            //if the desired state is live, and we need to publish the contentlet
-            //But checkout forces creation of a new version, so we need to check in first
-            if(isNotSet(checkout.getInode())){
-              Contentlet checkin = contentletAPI.checkin(checkout, user, false);
-              contentletAPI.publish(checkin, user, false);
-              return checkin;
-            }
+    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live)
+            throws DotDataException, DotSecurityException {
+
+        var contentletToProcess = checkout;
+        var checkedIn = false;
+
+        if (isNotSet(checkout.getInode())) {
+            contentletToProcess = contentletAPI.checkin(contentletToProcess, user, false);
+            checkedIn = true;
+        }
+
+        if (live) {
             //Live means publish, so we need to publish the contentlet
-            contentletAPI.publish(checkout, user, false);
-            return checkout;
+            contentletAPI.publish(contentletToProcess, user, false);
         } else {
-            //if the desired state is working we need to unpublish the contentlet
-            if(checkout.isLive()){
-                contentletAPI.unpublish(checkout, user, false);
+
+            if (checkout.isLive()) {
+                //if the desired state is working, we need to unpublish the contentlet
+                contentletAPI.unpublish(contentletToProcess, user, false);
+            } else if (!checkedIn) {
+                return contentletAPI.checkin(contentletToProcess, user, false);
             }
         }
-        //and finally checkin the contentlet to persist the changes
-        return contentletAPI.checkin(checkout, user, false);
+
+        return contentletToProcess;
     }
 
     /**
      * Creates a new file asset with the given file, folder and language
      * So it can be saved within dotCMS
-     * @param file
-     * @param folder
-     * @param lang
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param file the file to save
+     * @param folder the folder to save the file
+     * @param lang the language to save the file
+     * @return the contentlet
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
      */
-    Contentlet makeFileAsset(final File file, final Host host, final Folder folder, Language lang)
+    Contentlet makeFileAsset(final File file, final Host host, final Folder folder, final User user, final Language lang)
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        final Contentlet fileAsset = updateFileAsset(file, host, folder, lang, contentlet);
-        return contentletAPI.checkin(fileAsset, APILocator.systemUser(),false);
+        return updateFileAsset(file, host, folder, lang, contentlet);
     }
 
 
     /**
      * Updates a file asset with the given file, folder and language
-     * @param file
-     * @param folder
-     * @param lang
-     * @param contentlet
-     * @return
+     * @param file the file to update
+     * @param folder the folder to update the file
+     * @param lang the language to update the file
+     * @param contentlet the contentlet to update
+     * @return the contentlet
      */
     Contentlet updateFileAsset(final File file, final Host host, final Folder folder, final Language lang, final Contentlet contentlet){
         final String name = file.getName();
@@ -631,11 +676,10 @@ public class WebAssetHelper {
 
     /**
      * archive an asset
-     * @param assetPath
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param assetPath the asset path
+     * @param user current user
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
      */
     public void archiveAsset(final String assetPath, final User user)
             throws DotDataException, DotSecurityException {
@@ -654,12 +698,12 @@ public class WebAssetHelper {
 
     /**
      * Delete an asset
-     * @param assetPath
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param assetPath the asset path
+     * @param user current user
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
      */
+    @WrapInTransaction
     public void deleteAsset(final String assetPath, final User user)
             throws DotDataException, DotSecurityException {
         final WebAssetView assetInfo = getAssetInfo(assetPath, user);
@@ -676,6 +720,14 @@ public class WebAssetHelper {
         }
     }
 
+    /**
+     * Deletes a folder
+     * @param path the folder path
+     * @param user current user
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    @WrapInTransaction
     public void deleteFolder(final String path, final User user)
             throws DotDataException, DotSecurityException {
         final WebAssetView assetInfo = getAssetInfo(path, user);
@@ -689,6 +741,163 @@ public class WebAssetHelper {
     }
 
     /**
+     *
+     * @param path
+     * @param data
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @WrapInTransaction
+    public FolderView saveNewFolder(final String path, final AbstractFolderDetail data,
+            final User user)
+            throws DotDataException, DotSecurityException {
+        if(UUIDUtil.isUUID(path)){
+            throw new BadRequestException("The path [" + path + "] is a UUID");
+        }
+        final String normalized = normalize(path);
+        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
+                .resolve(normalized, user, true);
+        if(!assetAndPath.newFolder()){
+            throw new ConflictException(String.format("The path [%s] already exists. ", normalized));
+        }
+        final Host host = assetAndPath.resolvedHost();
+        final Folder resolvedFolder = assetAndPath.resolvedFolder();
+        final Folder withDetail = applyDetail(resolvedFolder, host, data);
+        folderAPI.save(withDetail, user, true);
+        return toAssetsFolder(withDetail);
+    }
+
+    /**
+     * Performs a folder update, the difference revolves around
+     * @param pathOrInode
+     * @param data
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @WrapInTransaction
+    public FolderView updateFolder(final String pathOrInode, final AbstractUpdateFolderDetail data,
+            final User user)
+            throws DotDataException, DotSecurityException {
+        if(UUIDUtil.isUUID(pathOrInode)){
+            final Folder folder = folderAPI.find(pathOrInode, user, false);
+            final Folder withDetail = applyDetail(folder, folder.getHost(), data, user);
+            return toAssetsFolder(withDetail);
+        }
+        final String path = normalize(pathOrInode);
+        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
+                .resolve(path, user, false);
+        final Host host = assetAndPath.resolvedHost();
+        final Folder resolvedFolder = assetAndPath.resolvedFolder();
+        if(resolvedFolder == null || !UUIDUtil.isUUID(resolvedFolder.getInode())){
+            // We can only update folders that have already been created by the user
+            throw new IllegalArgumentException(String.format("The path [%s] can not be resolved as a folder", path));
+        }
+        final Folder withDetail = applyDetail(resolvedFolder, host, data, user);
+        folderAPI.save(withDetail, user, true);
+        return toAssetsFolder(withDetail);
+    }
+
+    /**
+     * Normalizes a path string by:
+     * 1. Removing whitespace characters (spaces, tabs, newlines).
+     * 2. Replacing multiple slashes (/) with a single slash.
+     * 3. Ensuring the path starts with "//".
+     * 4. Ensuring the path ends with "/".
+     *
+     * @param pathOrInode input string to normalize
+     * @return normalized path string
+     */
+    static String normalize(String pathOrInode) {
+        // 1. Remove whitespace (spaces, tabs, newlines)
+        String cleaned = pathOrInode.replaceAll("\\.+$", "").replaceAll("\\s+", "");
+
+        // 2. Replace multiple slashes with a single one
+        cleaned = cleaned.replaceAll("/{2,}", "/");
+
+        // 3. Ensure it starts with //
+        if (!cleaned.startsWith("//")) {
+            cleaned = "//" + cleaned.replaceAll("^/+", "");
+        }
+
+        // 4. Ensure it ends with /
+        if (!cleaned.endsWith("/")) {
+            cleaned = cleaned + "/";
+        }
+
+        return cleaned;
+    }
+
+    private Folder applyDetail(final Folder folder, final Host host,
+            final AbstractFolderDetail meta)
+            throws DotDataException, DotSecurityException {
+        if (null != meta) {
+
+            final String title = meta.title();
+            if (UtilMethods.isSet(title)) {
+                folder.setTitle(title);
+            }
+
+            final Boolean showOnMenu = meta.showOnMenu();
+            if (null != showOnMenu) {
+                folder.setShowOnMenu(showOnMenu);
+            }
+
+            if (UtilMethods.isSet(meta.defaultAssetType())) {
+                final ContentType contentType = contentTypeAPI.find(meta.defaultAssetType());
+                if (null == contentType || contentType.baseType() != BaseContentType.FILEASSET) {
+                    throw new IllegalArgumentException(
+                            "The specified AssetType [" + meta.defaultAssetType()
+                                    + "] must be a valid content type of BaseType FILE-ASSET."
+                    );
+                }
+                folder.setDefaultFileType(contentType.id());
+            }
+
+            if (UtilMethods.isSet(meta.fileMasks())) {
+                folder.setFilesMasks(String.join(",", Objects.requireNonNull(meta.fileMasks())));
+            }
+
+            final Integer sortOrder = meta.sortOrder();
+            folder.setSortOrder(Objects.requireNonNullElse(sortOrder,  folder.getSortOrder()));
+        }
+        folder.setHostId(host.getIdentifier());
+        return folder;
+    }
+
+    /**
+     *
+     * @param folder
+     * @param host
+     * @param meta
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private Folder applyDetail(final Folder folder, final Host host,
+            final AbstractUpdateFolderDetail meta, final User user)
+            throws DotDataException, DotSecurityException {
+        if (null != meta) {
+            final String name = meta.name();
+            if (UtilMethods.isSet(name)) {
+                //If the field name is used to rename the folder to something else that already exists
+                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
+                final Folder byPath = folderAPI.findFolderByPath(PATH_SEPARATOR + folderName, host, user, false);
+                if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
+                    throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
+                }
+                folder.setName(folderName);
+            }
+        }
+        applyDetail(folder, host, meta);
+        return folder;
+    }
+
+    /**
      * Parses the language param and returns the respective Language object
      * @param language the language param
      * @param defaultLangFallback if true, it will return the default language if the language param is not found
@@ -696,7 +905,7 @@ public class WebAssetHelper {
      */
     Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
         Language resolvedLang = Try.of(() -> {
-                    //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method
+                    //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method,
                     //So here I'm preparing for both cases
                     final Optional<String> splitBy = splitBy(language);
                     if (splitBy.isEmpty()) {
@@ -717,8 +926,8 @@ public class WebAssetHelper {
 
     /**
      * Splits the language by either a dash or underscore
-     * @param language
-     * @return
+     * @param language the language to split
+     * @return the split character
      */
     Optional<String> splitBy(final String language){
         if(language.contains("-")){
@@ -729,6 +938,7 @@ public class WebAssetHelper {
         }
         return Optional.empty();
     }
+
 
     /**
      * Creates a new instance of {@link WebAssetHelper}

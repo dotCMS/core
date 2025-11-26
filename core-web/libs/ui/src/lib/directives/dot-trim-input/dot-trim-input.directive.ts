@@ -1,18 +1,15 @@
-import { AfterViewInit, Directive, ElementRef, HostListener, Optional, Self } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, HostListener, inject } from '@angular/core';
 import { NgControl } from '@angular/forms';
 
 /**
  * Directive for trimming the input value on blur.
  */
 @Directive({
-    selector: '[dotTrimInput]',
-    standalone: true
+    selector: '[dotTrimInput]'
 })
 export class DotTrimInputDirective implements AfterViewInit {
-    constructor(
-        @Optional() @Self() private readonly ngControl: NgControl,
-        private readonly el: ElementRef
-    ) {}
+    private readonly ngControl = inject(NgControl, { optional: true, self: true });
+    private readonly el = inject(ElementRef);
 
     @HostListener('blur')
     onBlur() {

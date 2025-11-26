@@ -16,6 +16,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -184,4 +185,13 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
         return this;
     }
 
+    public Experiment nextPersistedAndStart() {
+        final Experiment experiment = nextPersisted();
+
+        try {
+            return APILocator.getExperimentsAPI().start(experiment.id().get(), APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
 }

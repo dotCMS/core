@@ -19,7 +19,7 @@ site-archive - *Use this command to archive a site.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site archive* [*-h*] _idOrName_
+*site archive* [*-h*] [*--dotcms-url*=_<remoteURL>_] [*-tk*=_<token>_] _idOrName_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -37,8 +37,14 @@ site-archive - *Use this command to archive a site.*
 // tag::picocli-generated-man-section-options[]
 == Options
 
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

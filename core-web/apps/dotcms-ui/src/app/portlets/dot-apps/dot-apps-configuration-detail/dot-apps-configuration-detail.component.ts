@@ -1,31 +1,43 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
+
+import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form/dot-apps-configuration-detail-form.component';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 
 @Component({
     selector: 'dot-apps-configuration-detail',
     templateUrl: './dot-apps-configuration-detail.component.html',
-    styleUrls: ['./dot-apps-configuration-detail.component.scss']
+    styleUrls: ['./dot-apps-configuration-detail.component.scss'],
+    imports: [
+        ButtonModule,
+        DotKeyValueComponent,
+        DotAppsConfigurationHeaderComponent,
+        DotAppsConfigurationDetailFormComponent,
+        DotMessagePipe
+    ]
 })
 export class DotAppsConfigurationDetailComponent implements OnInit {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotAppsService = inject(DotAppsService);
+
     apps: DotApp;
 
     dynamicVariables: DotKeyValue[] = [];
     formData: { [key: string]: string };
     formFields: DotAppsSecret[];
     formValid = false;
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotAppsService: DotAppsService
-    ) {}
 
     ngOnInit() {
         this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
@@ -94,10 +106,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
         return params;
     }
 
-    private getSecrets(
-        secrets: DotAppsSecret[],
-        includeDinamicFields: boolean = false
-    ): DotAppsSecret[] {
+    private getSecrets(secrets: DotAppsSecret[], includeDinamicFields = false): DotAppsSecret[] {
         return secrets.filter((secret: DotAppsSecret) => secret.dynamic === includeDinamicFields);
     }
 

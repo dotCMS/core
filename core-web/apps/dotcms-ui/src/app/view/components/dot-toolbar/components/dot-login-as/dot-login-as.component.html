@@ -1,50 +1,88 @@
-<dot-dialog
-    [header]="'login-as' | dm"
+<p-dialog
     [(visible)]="visible"
-    [actions]="dialogActions"
-    (hide)="close()"
->
-    <div class="login-as">
-        <!--TODO: manage errors on required fields and errors messages -->
-        <p class="login-as__error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+    [header]="'login-as' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style.width]="'400px'"
+    appendTo="body"
+    styleClass="dot-login-as-dialog"
+    data-testid="dot-login-as-dialog"
+    (onHide)="close()">
+    <div class="login-as" data-testid="dot-login-as-container">
+        @if (errorMessage()) {
+            <p class="login-as__error-message" data-testid="dot-login-as-error-message">
+                {{ errorMessage() }}
+            </p>
+        }
         <form
-            [formGroup]="form"
             (ngSubmit)="doLoginAs()"
+            [formGroup]="form"
             id="login-as-form"
             #formEl="ngForm"
             novalidate
-            class="p-fluid"
-        >
+            data-testid="dot-login-as-form"
+            class="p-fluid">
             <div class="field">
-                <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
-                <dot-searchable-dropdown
-                    #searchableDropdown
-                    (switch)="userSelectedHandler($event)"
-                    (filterChange)="handleFilterChange($event)"
-                    (pageChange)="handlePageChange($event)"
-                    [data]="userCurrentPage"
-                    [pageLinkSize]="paginationService.maxLinksPage"
-                    [rows]="paginationService.paginationPerPage"
-                    [totalRecords]="paginationService.totalRecords"
-                    placeholder="{{ 'loginas.select.loginas.user' | dm }}"
+                <p-dropdown
+                    #dropdown
                     formControlName="loginAsUser"
-                    labelPropertyName="fullName"
-                    overlayWidth="300px"
-                >
-                </dot-searchable-dropdown>
+                    [options]="userCurrentPage()"
+                    [filter]="true"
+                    [filterBy]="'fullName'"
+                    [placeholder]="'loginas.select.loginas.user' | dm"
+                    optionLabel="fullName"
+                    (onChange)="userSelectedHandler($event.value)"
+                    (onFilter)="handleFilterChange($event)"
+                    (onClear)="clearSelection()"
+                    data-testid="dot-login-as-user-dropdown"
+                    appendTo="body">
+                    <ng-template pTemplate="selectedItem" let-user>
+                        @if (user) {
+                            <div
+                                class="user-item selected"
+                                data-testid="dot-login-as-selected-user">
+                                {{ user.fullName }}
+                            </div>
+                        }
+                    </ng-template>
+                    <ng-template let-user pTemplate="item">
+                        <div class="user-item" data-testid="dot-login-as-user-item">
+                            {{ user.fullName }}
+                        </div>
+                    </ng-template>
+                </p-dropdown>
             </div>
-            <div class="field" *ngIf="needPassword">
-                <input
-                    pPassword
-                    #password
-                    [feedback]="false"
-                    formControlName="password"
-                    id="dot-login-as-password"
-                    type="password"
-                    placeholder="{{ 'loginas.input.loginas.password' | dm }}"
-                    floatingPlaceholder="false"
-                />
-            </div>
+            @if (needPassword()) {
+                <div class="field">
+                    <input
+                        [feedback]="false"
+                        pPassword
+                        #password
+                        formControlName="password"
+                        id="dot-login-as-password"
+                        data-testid="dot-login-as-password-input"
+                        type="password"
+                        placeholder="{{ 'loginas.input.loginas.password' | dm }}"
+                        floatingPlaceholder="false" />
+                </div>
+            }
         </form>
     </div>
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        <button
+            pButton
+            class="p-button-outlined"
+            [label]="'cancel' | dm"
+            [disabled]="loading()"
+            data-testid="dot-login-as-cancel-button"
+            (click)="close()"></button>
+        <button
+            pButton
+            [label]="'Change' | dm"
+            [loading]="loading()"
+            [disabled]="!form.valid || loading()"
+            data-testid="dot-login-as-submit-button"
+            (click)="doLoginAs()"></button>
+    </ng-template>
+</p-dialog>

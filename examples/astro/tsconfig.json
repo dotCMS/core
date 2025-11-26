@@ -1,0 +1,31 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "module": "es2020",
+    "baseUrl": "./",
+    "plugins": [ { "name": "@astrojs/ts-plugin" } ],
+    "paths": {
+      "@/components/*": ["./src/components/*"],
+      "@/components/common/*": ["./src/components/common/*"],
+      "@/components/content-types": ["src/components/content-types/index.ts"],
+      "@/components/ui": ["src/components/ui/index.ts"],
+      "@/views/*": ["./src/views/*"],
+      "@/hooks": ["./src/hooks/index.ts"],
+      "@/dotcms-integration": ["./src/integration/dotcms/index.ts"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/styles/*": ["./src/styles/*"],
+      "@/types/*": ["./src/types/*"]
+    },
+    "types": ["astro/client"],
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["node_modules", "dist"]
+}

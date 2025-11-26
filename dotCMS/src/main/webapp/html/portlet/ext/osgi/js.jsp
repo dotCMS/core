@@ -80,22 +80,14 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 	undeploy : function (jarName, bundleId){
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=undeploy&jar=" + jarName + "&bundleId=" + bundleId,
+			url: "/api/v1/osgi/jar/" + jarName,
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
 
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
-		dojo.xhrPut(xhrArgs);
+		dojo.xhrDelete(xhrArgs);
 		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
@@ -107,17 +99,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 		var jarName = availBundles.value;
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=deploy&jar=" + jarName,
+            url: "/api/v1/osgi/jar/" + jarName + "/_deploy",
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
+
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -127,17 +112,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 	start : function(jarName, bundleId){
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=start&bundleId=" + bundleId+"&jar=" + jarName,
+            url: "/api/v1/osgi/jar/" + jarName + "/_start",
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
+				// do nothing
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -147,17 +125,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 	stop : function(jarName, bundleId){
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=stop&bundleId=" + bundleId+"&jar=" + jarName,
+            url: "/api/v1/osgi/jar/" + jarName + "/_stop",
+            handleAs: "json",
 			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-						// needs logging
-					} else {
-						// needs logging
-					}
-				} else {
-					//this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-				}
+				// do nothing
 			}
 		};
 		dijit.byId('savingOSGIDialog').show();
@@ -165,37 +136,65 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
-	add : function(){
-		var fm = dojo.byId("addBundle");
-		var bundleUpload = fm.elements["bundleUpload"].value;
-		var jarName = bundleUpload.split(/(\\|\/)/g).pop();
-		if(bundleUpload){
-        require(["dojo/io/iframe"], function(ioIframe){
-            ioIframe.send({
-                // The form node, which contains the
-                // data. We also pull the URL and METHOD from it:
-                form: fm,
-                url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add&jar=" + jarName,
-                method : "post",
-                // The used data format:
-                handleAs: "json",
+    add: () => {
+        const fm = dojo.byId("addBundle");
+        const files = fm.elements["bundleUpload"].files;
 
-                // Callback on successful call:
-                load: function(response, ioArgs) {
-                    // return the response for succeeding callbacks
-                    setTimeout(function() {mainAdmin.refresh();},7000);
-                    return response;
-                }
-            });
-		});
-		dijit.byId('uploadOSGIDialog').hide();
-		dijit.byId('savingOSGIDialog').show();
-		setTimeout(function() {mainAdmin.refresh();},7000);
-		}else{
-			showDotCMSSystemMessage("Please select a bundle to upload");
-			return false;
-		}
-		fm.elements["bundleUpload"].value='';
+        if(files.length === 0){
+            showDotCMSSystemMessage("Please select a bundle to upload");
+            return false;
+        }
+
+        bundles.handleUpload({ files: files[0] });
+    },
+
+	handleUpload : function({ files, updateProgress, onSuccess, onError }){
+        const formData = new FormData();
+        const plugins = Array.isArray(files) ? files : [files];
+        plugins.forEach((file) => formData.append("file", file));
+        formData.append("json", "{}");
+
+        return new Promise((res, rej) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/v1/osgi");
+            xhr.onload = () => res(xhr);
+            xhr.onerror = rej;
+        
+            // Get Upload Process
+            if (xhr.upload && updateProgress) {
+                xhr.upload.onprogress = (e) => {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    updateProgress(percentComplete);
+                };
+            }
+        
+            xhr.send(formData);
+        }).then(async (request) => {
+            if (request.status !== 200) {
+                throw request;
+            }
+
+            if(onSuccess) {
+                onSuccess();
+            }
+
+            dijit.byId("uploadOSGIDialog").hide();
+            dijit.byId("savingOSGIDialog").show();
+            setTimeout(() => mainAdmin.refresh(), 7000);
+
+            return JSON.parse(request.response);
+        })
+        .catch((request) => {
+            const response = typeof (request.response) === 'string' ? JSON.parse(request.response) : request.response;
+            const errorMesage = response.errors[0]?.message || "An error occurred while uploading the bundle";
+
+            if(onError) {
+                onError(response, errorMesage);
+            } else {
+                showDotCMSSystemMessage(errorMesage);
+            }
+            throw response;
+        });
 	},
 
     reboot : function(askForConfirmation){
@@ -207,18 +206,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
         if(canContinue) {
             var xhrArgs = {
-                url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=restart",
+                url: "/api/v1/osgi/_restart",
+                handleAs: "json",
                 handle : function(dataOrError, ioArgs) {
-                    if (dojo.isString(dataOrError)) {
-                        if (dataOrError.indexOf("FAILURE") == 0) {
-                            // needs logging
-                            console.error(dataOrError);
-                        } else {
-                            // needs logging
-                        }
-                    } else {
-                        // needs logging
-                    }
+                    // do nothing
                 }
             };
             dijit.byId('savingOSGIDialog').show();
@@ -229,19 +220,11 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
     extraPackages : function (){
         var xhrArgs = {
-            url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=getExtraPackages",
+            url: "/api/v1/osgi/extra-packages",
+            handleAs: "json",
             handle : function(dataOrError, ioArgs) {
-
-                if (dojo.isString(dataOrError)) {
-                    if (dataOrError.indexOf("FAILURE") == 0) {
-                        console.error(dataOrError);
-                    } else {
-                        var packages = dataOrError.replace("SUCCESS:", "");
-                        dijit.byId('packages').set("value", packages);
-                    }
-                } else {
-                    //this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>");
-                }
+                let packages = dataOrError.entity;
+                dijit.byId('packages').set("value", packages);
             }
         };
         dijit.byId('packagesOSGIDialog').show();
@@ -253,27 +236,23 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
         if(canContinue) {
 
-            var fm = dojo.byId("modifyPackagesForm");
+            var data = {
+                packages: "RESET"
+            };
+            var xhrArgs = {
+                 url: "/api/v1/osgi/extra-packages",
+                postData: dojo.toJson(data),
+                handleAs: "json",
+                headers : {
+                    'Accept' : 'application/json',
+                    'Content-Type' : 'application/json;charset=utf-8',
+                },
+                handle : function(dataOrError, ioArgs) {
+                    // do nothing
+                }
+            };
+            dojo.xhrPut(xhrArgs);
 
-            require(["dojo/io/iframe"], function(ioIframe){
-     
-                ioIframe.send({
-                    // The form node, which contains the
-                    // data. We also pull the URL and METHOD from it:
-                    form: fm,
-                    url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=modifyExtraPackages&packages=RESET",
-                    method : "get",
-                    // The used data format:
-                    handleAs: "json",
-
-                    // Callback on successful call:
-                    load: function(response, ioArgs) {
-                        // return the response for succeeding callbacks
-                        //setTimeout(function() {mainAdmin.refresh();},7000);
-                        return response;
-                    }
-                });
-            });
             dijit.byId('packagesOSGIDialog').hide();
             dijit.byId('savingOSGIDialog').show();
             setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
@@ -292,7 +271,7 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         require(["dojo/io/iframe"], function(ioIframe){
  
             ioIframe.send({
-                url : "/api/osgi/_processExports/" + bundleName,
+                url : "/api/v1/osgi/_processExports/" + bundleName,
                 method : "get",
                 // The used data format:
                 handleAs: "json",
@@ -316,30 +295,32 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
         if(canContinue) {
 
-            var fm = dojo.byId("modifyPackagesForm");
+            var packages = dojo.byId("packages");
+            var data = {
+                packages: packages.value
+            };
 
-            require(["dojo/io/iframe"], function(ioIframe){
-                ioIframe.send({
-                    // The form node, which contains the
-                    // data. We also pull the URL and METHOD from it:
-                    form: fm,
-                    url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=modifyExtraPackages",
-                    method : "post",
-                    // The used data format:
-                    handleAs: "json",
-
-                    // Callback on successful call:
-                    load: function(response, ioArgs) {
-                        // return the response for succeeding callbacks
-                        //setTimeout(function() {mainAdmin.refresh();},7000);
-                        return response;
+            var xhrArgs = {
+                url: "/api/v1/osgi/extra-packages",
+                postData: dojo.toJson(data),
+                handleAs: "json",
+                headers : {
+                    'Accept' : 'application/json',
+                    'Content-Type' : 'application/json;charset=utf-8',
+                },
+                handle : function(dataOrError, ioArgs) {
+                    if(dataOrError.message){
+                        showDotCMSSystemMessage(dataOrError.responseText, true);
                     }
-                });
-            });
+                }
+            };
+            dojo.xhrPut(xhrArgs);
+
             dijit.byId('packagesOSGIDialog').hide();
             dijit.byId('savingOSGIDialog').show();
             setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
         }
+
     },
 
     remotePublishBundle : function(jarFile){

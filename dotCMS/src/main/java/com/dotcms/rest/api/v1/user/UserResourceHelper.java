@@ -54,7 +54,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.ConversionUtils.toInt;
 
 /**
@@ -110,6 +109,33 @@ public class UserResourceHelper implements Serializable {
 		this.permissionAPI = APILocator.getPermissionAPI();
 		this.userProxyAPI = APILocator.getUserProxyAPI();
 		this.loginService = APILocator.getLoginServiceAPI();
+	}
+
+	/**
+	 * Loads user by ID or email, trying ID first.
+	 * 
+	 * @param userIdOrEmail The user ID or email address to search for
+	 * @param systemUser The system user for email lookup authentication
+	 * @param requestingUser The user making the request (for logging purposes)
+	 * @return The found user
+	 * @throws DotDataException if the user is not found by either ID or email
+	 * @throws DotSecurityException if there's a security error during lookup
+	 */
+	public User loadUserByIdOrEmail(final String userIdOrEmail, 
+	                               final User systemUser, 
+	                               final User requestingUser) 
+	        throws DotDataException, DotSecurityException {
+	    try {
+	        return this.userAPI.loadUserById(userIdOrEmail);
+	    } catch (NoSuchUserException e) {
+	        try {
+	            return this.userAPI.loadByUserByEmail(userIdOrEmail, systemUser, false);
+	        } catch (NoSuchUserException ex) {
+	            Logger.warn(this, String.format("User not found: %s (requested by %s)", 
+	                userIdOrEmail, requestingUser.getUserId()));
+	            throw new DotDataException("User not found: " + userIdOrEmail);
+	        }
+	    }
 	}
 
 	/**
@@ -206,7 +232,7 @@ public class UserResourceHelper implements Serializable {
 		} else {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		final Map<String, Object> sessionData = map(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
+		final Map<String, Object> sessionData = Map.of(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
 				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
@@ -295,7 +321,7 @@ public class UserResourceHelper implements Serializable {
 		} else {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		final Map<String, Object> sessionData = map(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+		final Map<String, Object> sessionData = Map.of(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
 
@@ -339,33 +365,33 @@ public class UserResourceHelper implements Serializable {
 			}
 		}
 
-		Map<String, Object> mapResponse = map("users", userList);
+		Map<String, Object> mapResponse = Map.of("users", userList);
 
 		if (includeUsersCount) {
 			long countUsersByNameOrEmail = userAPI.getCountUsersByNameOrEmail(StringPool.BLANK);
 			mapResponse.put("nUsers", countUsersByNameOrEmail);
 		}
 
-		return new ResponseEntityView(mapResponse );
+		return new ResponseEntityView<>(mapResponse );
 	}
 
 	/**
 	 * Update a user
 	 *
-	 * @param updateUserForm data to update the user, the {@link UpdateUserForm#getUserId()} is the if of the user to update,
-	 *                       {@link UpdateUserForm#getCurrentPassword()} is the current password
-	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateUserForm#getUserId()},
+	 * @param updateUserForm data to update the user, the {@link UpdateCurrentUserForm#getUserId()} is the if of the user to update,
+	 *                       {@link UpdateCurrentUserForm#getCurrentPassword()} is the current password
+	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateCurrentUserForm#getUserId()},
 	 *                then the current password is need
 	 * @param request
 	 * @param locale
 	 * @return User updated
 	 * @throws DotSecurityException if modUser doesn't has permission to update the user
 	 * @throws DotDataException
-	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateUserForm#getUserId()} and
-	 * 									  {@link UpdateUserForm#getCurrentPassword()} is incorrect
+	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateCurrentUserForm#getUserId()} and
+	 * 									  {@link UpdateCurrentUserForm#getCurrentPassword()} is incorrect
      */
-	public User updateUser(final UpdateUserForm updateUserForm, final User modUser,
-						   final HttpServletRequest request, Locale locale)
+	public User updateUser(final UpdateCurrentUserForm updateUserForm, final User modUser,
+                           final HttpServletRequest request, Locale locale)
 			throws DotSecurityException, DotDataException, IncorrectPasswordException {
 
 		final HttpSession session = request.getSession();
@@ -418,4 +444,14 @@ public class UserResourceHelper implements Serializable {
 
 		return userToSave;
 	}
+
+    /**
+     * Remove the roles associated to the user
+     * @param user User
+     */
+    public void removeRoles(User user) throws DotDataException {
+
+        Logger.debug(this, ()-> "removing the roles for the user:" + user.getUserId());
+        APILocator.getRoleAPI().removeAllRolesFromUser(user);
+    }
 }

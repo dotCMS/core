@@ -1,15 +1,15 @@
 <ul
+    [dragulaModel]="$fieldTypes()"
     class="content-types-fields-list"
-    [dragulaModel]="fieldTypes"
     dragula="fields-bag"
-    data-drag-type="source"
->
-    <li
-        *ngFor="let fieldType of fieldTypes"
-        [attr.data-clazz]="fieldType.clazz"
-        class="content-types-fields-list__item"
-    >
-        <dot-icon name="{{ fieldService.getIcon(fieldType.clazz) }}"></dot-icon>
-        <span role="listitem">{{ fieldType.name }}</span>
-    </li>
+    data-drag-type="source">
+    @for (fieldType of $fieldTypes(); track fieldType.clazz) {
+        <li
+            [attr.data-testid]="fieldType.clazz"
+            [attr.data-clazz]="fieldType.clazz"
+            class="content-types-fields-list__item">
+            <dot-icon name="{{ fieldIcons[fieldType.clazz] }}"></dot-icon>
+            <span role="listitem">{{ fieldType.name }}</span>
+        </li>
+    }
 </ul>

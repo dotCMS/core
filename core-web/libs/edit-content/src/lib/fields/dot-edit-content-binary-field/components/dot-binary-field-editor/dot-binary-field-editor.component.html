@@ -1,42 +1,44 @@
-<form class="editor-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="editor-mode__input-container" *ngIf="allowFileNameEdit">
-        <label class="p-label-input-required" data-testId="editor-label" for="file-name">{{
-            'dot.binary.field.action.create.new.file.label' | dm
-        }}</label>
-        <input
-            id="file-name"
-            autocomplete="off"
-            formControlName="name"
-            pInputText
-            placeholder="Ex. template.html"
-            type="text"
-            data-testId="editor-file-name" />
-        <div class="error-message">
-            <dot-field-validation-message
-                [field]="form.get('name')"
-                [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
-                data-testId="error-message"></dot-field-validation-message>
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
+    @if (allowFileNameEdit) {
+        <div class="editor-mode__input-container">
+            <label class="p-label-input-required" data-testId="editor-label" for="file-name">
+                {{ 'dot.binary.field.action.create.new.file.label' | dm }}
+            </label>
+            <input
+                id="file-name"
+                autocomplete="off"
+                formControlName="name"
+                pInputText
+                placeholder="Ex. template.html"
+                type="text"
+                data-testId="editor-file-name" />
+            <div class="error-message">
+                <dot-field-validation-message
+                    [field]="form.get('name')"
+                    [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
+                    data-testId="error-message"></dot-field-validation-message>
+            </div>
         </div>
-    </div>
+    }
     <div class="binary-field__editor-container">
         <ngx-monaco-editor
-            class="binary-field__code-editor"
-            #editorRef
+            (init)="onEditorInit()"
             [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
             [options]="monacoOptions()"
-            (init)="onEditorInit()"
+            class="binary-field__code-editor"
+            #editorRef
             data-testId="code-editor"
             formControlName="content"></ngx-monaco-editor>
 
-        <div class="editor-mode__helper" [ngClass]="{ 'editor-mode__helper--visible': mimeType }">
+        <div [ngClass]="{ 'editor-mode__helper--visible': mimeType }" class="editor-mode__helper">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ mimeType }}</small>
         </div>
     </div>
     <div class="editor-mode__actions">
         <p-button
-            [label]="'dot.common.cancel' | dm"
             (click)="cancel.emit()"
+            [label]="'dot.common.cancel' | dm"
             aria-label="Cancel button"
             data-testId="cancel-button"
             styleClass="p-button-outlined"

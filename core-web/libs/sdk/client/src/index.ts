@@ -1,2 +1,1 @@
-export * from './lib/sdk-js-client';
-export * from './lib/postMessageToEditor';
+export { createDotCMSClient } from './lib/client/client';

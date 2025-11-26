@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import org.quartz.CronTrigger;
@@ -25,26 +26,26 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 /**
- * 
+ *
  * This utility class let you schedule and check scheduled task through the two configured dotCMS schedulers: 
  * - The standard scheduler
  * 		That let you run multiple task in parallel 
  * - The sequential scheduler 
  * 		That let you run only one task at a time, the order of the execution of the tasks is managed by quartz priorities
- *  
+ *
  * @author David Torres
  *
  */
 public class QuartzUtils {
-	
 
-	
+
+
 	private static final Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<>();
-	
+
 
 
 	/**
-	 * 
+	 *
 	 * Lists all jobs scheduled through the standard scheduler, the standard scheduler
 	 * let you run multiple jobs in parallel
 	 *
@@ -70,13 +71,13 @@ public class QuartzUtils {
 	    }
 	}
 
-	
-	
-	
+
+
+
 	/**
-	 * 
+	 *
 	 * Lists all jobs scheduled through the standard scheduler that belong to the given group
-	 * 
+	 *
 	 * @return
 	 */
 	public static List<ScheduledTask> getScheduledTasks(final String group) throws SchedulerException {
@@ -96,7 +97,7 @@ public class QuartzUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	private static List<ScheduledTask> getScheduledTasks(final Scheduler scheduler, final boolean sequential, final String group) throws SchedulerException {
-		
+
 		final List<ScheduledTask> result = new ArrayList<>(100);
 
 		final String[] groupNames = scheduler.getJobGroupNames();
@@ -104,10 +105,10 @@ public class QuartzUtils {
 		JobDetail jobDetail;
 
 		for (final String groupName : groupNames) {
-			
+
 			if(group != null && !groupName.equals(group))
 				continue;
-			
+
 			jobNames = scheduler.getJobNames(groupName);
 
 			for (final String jobName : jobNames) {
@@ -134,6 +135,7 @@ public class QuartzUtils {
 					task.setStartDate(t.getStartTime());
 					task.setEndDate(t.getStartTime());
 					task.setSequentialScheduled(sequential);
+					task.setJavaClassName(jobDetail.getJobClass().getName());
 
 					result.add(task);
 				}
@@ -143,14 +145,14 @@ public class QuartzUtils {
 
 		return result;
 	}
-	
+
 	/**
 	 * This methods checks all jobs configured either in the standard or the sequential schedulers that match
 	 * the given jobName and jobGroup
-	 * 
+	 *
 	 * Even if the job is only configured in a single scheduler this method could return a list with multiple instances
 	 * because the same job could be configured with multiple triggers.
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -160,14 +162,14 @@ public class QuartzUtils {
 		final Scheduler scheduler = getScheduler();
 		return getScheduledTask(jobName, jobGroup, scheduler, false);
 	}
-	
+
 	/**
 	 * This methods checks all jobs configured either in the standard scheduler that match
 	 * the given jobName and jobGroup
-	 * 
+	 *
 	 * This method could return a list with multiple instances
 	 * because the same job could be configured with multiple triggers.
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -224,11 +226,11 @@ public class QuartzUtils {
 
 		return result;
 	}
-	
+
 	/**
 	 * Tells you whether the given jobName and jobGroup is set in the jobs DB to be executed or was executed and set with durability true
 	 * so still exists in the DB
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -237,13 +239,13 @@ public class QuartzUtils {
 	public static boolean isJobScheduled(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
 		return isJobScheduled(jobName, jobGroup, scheduler);
-	
+
 	}
 
 	/**
 	 * Tells you whether the given jobName and jobGroup is set in the jobs DB to be sequentially executed or was executed and set with durability true
 	 * so still exists in the DB
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -267,12 +269,12 @@ public class QuartzUtils {
 	 */
 	private static boolean isJobScheduled(final String jobName, final String jobGroup, final Scheduler scheduler) throws SchedulerException {
 		return scheduler.getJobDetail(jobName, jobGroup) != null;
-		
+
 	}
-	
+
 	/**
 	 * Returns the current task progress, it returns -1 if no task progress is found
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -298,7 +300,7 @@ public class QuartzUtils {
 
 	/**
 	 * Returns a task starting point of progress, by default 0 unless the task set it to something different
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -321,11 +323,11 @@ public class QuartzUtils {
 		if(runtimeValues == null) return;
 		runtimeValues.startProgress = startProgress;
 	}
-	
+
 
 	/**
 	 * Returns a task ending point to track progress, by default 100 unless the task set it to something different
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -345,7 +347,7 @@ public class QuartzUtils {
 	 */
 	public static  TaskRuntimeValues getTaskRuntimeValues(final String jobName, final String jobGroup) {
 
-			
+
 		return runtimeTaskValues.get(jobName + "-" + jobGroup);
 	}
 
@@ -370,26 +372,58 @@ public class QuartzUtils {
 		TaskRuntimeValues runtimeValues = runtimeTaskValues.get(jobName + "-" + jobGroup);
 		if(runtimeValues == null) return;
 		runtimeValues.endProgress = endProgress;
-		
+
 	}
 
 	/**
 	 * Shuts down all schedulers
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void stopSchedulers() throws SchedulerException {
 		Collection<Scheduler> list= DotSchedulerFactory.getInstance().getAllSchedulers();
-		for (Scheduler s:list) {
-			s.shutdown();
+		Logger.info(QuartzUtils.class, "Shutting down " + list.size() + " Quartz scheduler(s)");
+		
+		for (Scheduler s : list) {
+			try {
+				if (s != null && !s.isShutdown()) {
+					String schedulerName = s.getSchedulerName();
+					Logger.info(QuartzUtils.class, "Shutting down Quartz scheduler: " + schedulerName);
+					
+					// Use shutdown(true) to wait for jobs to complete during graceful shutdown
+					// This prevents jobs from reinitializing components after shutdown
+					Logger.info(QuartzUtils.class, "Waiting for running jobs to complete before shutdown: " + schedulerName);
+					s.shutdown(true);
+					
+					// Verify shutdown completed
+					int waitCount = 0;
+					while (!s.isShutdown() && waitCount < 50) { // Max 5 seconds
+						try {
+							Thread.sleep(100);
+							waitCount++;
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							break;
+						}
+					}
+					
+					if (!s.isShutdown()) {
+						Logger.warn(QuartzUtils.class, "Quartz scheduler did not shutdown cleanly within timeout: " + schedulerName);
+					}
+					
+					Logger.info(QuartzUtils.class, "Quartz scheduler shutdown completed: " + schedulerName);
+				}
+			} catch (Exception e) {
+				Logger.warn(QuartzUtils.class, "Failed to shutdown Quartz scheduler: " + e.getMessage(), e);
+				// Continue with other schedulers even if one fails
+			}
 		}
 		
-		
-		
+		Logger.info(QuartzUtils.class, "All Quartz schedulers shutdown process completed");
 	}
-	
+
 	/**
 	 * Returns the current task progress, it returns -1 if no task progress is found
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
@@ -420,7 +454,7 @@ public class QuartzUtils {
 	 */
 	public static void initializeTaskRuntimeValues(final String jobName, final String jobGroup) {
 		runtimeTaskValues.put(jobName + "-" + jobGroup, new TaskRuntimeValues());
-		
+
 	}
 
 	/**
@@ -430,18 +464,18 @@ public class QuartzUtils {
 	 */
 	public static void removeTaskRuntimeValues(final String jobName, final String jobGroup) {
 		runtimeTaskValues.remove(jobName + "-" + jobGroup);
-	}	
-	
+	}
+
 	/**
-	 * 
+	 *
 	 * This methods schedules the given job in the quartz system, and depending on the sequentialScheduled property
 	 * it will use the sequential of the standard scheduler
-	 * 
+	 *
 	 * @param job
 	 * @return
-	 * @throws SchedulerException 
-	 * @throws ParseException 
-	 * @throws ClassNotFoundException 
+	 * @throws SchedulerException
+	 * @throws ParseException
+	 * @throws ClassNotFoundException
 	 */
 	public static void scheduleTask(final ScheduledTask job) throws SchedulerException, ParseException, ClassNotFoundException {
 
@@ -468,13 +502,13 @@ public class QuartzUtils {
 		}
 
 		final JobDataMap dataMap = new JobDataMap(job.getProperties());
-		
+
 		jobDetail.setDescription(job.getJobDescription());
 		jobDetail.setJobDataMap(dataMap);
 		jobDetail.setDurability(job.getDurability());
-		
+
 		if (job instanceof CronScheduledTask) {
-			trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, startDate, endDate, ((CronScheduledTask) job).getCronExpression());			
+			trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, startDate, endDate, ((CronScheduledTask) job).getCronExpression());
 		} else {
 			trigger = new SimpleTrigger(triggerName, triggerGroup, jobName, jobGroup, startDate, endDate, ((SimpleScheduledTask) job).getRepeatCount(),
 					((SimpleScheduledTask) job).getRepeatInterval());
@@ -494,21 +528,21 @@ public class QuartzUtils {
 				scheduler.rescheduleJob(triggerName, triggerGroup, trigger);
 			}
 		}
-		
+
 		QuartzUtils.initializeTaskRuntimeValues(jobName, jobGroup);
 
 
 	}
 
 	/**
-	 * 
+	 *
 	 * Removes the job and all associated triggers from both schedulers the standard and the sequential
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return true if the job is found and removed in at least one of the schedulers, false otherwise 
-	 * @throws SchedulerException 
-	 * 
+	 * @throws SchedulerException
+	 *
 	 */
 	public static boolean removeJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -520,14 +554,14 @@ public class QuartzUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 * Removes the job and all associated triggers from the standard jobs scheduler
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return true if the job is found and removed in at least one of the schedulers, false otherwise 
-	 * @throws SchedulerException 
-	 * 
+	 * @throws SchedulerException
+	 *
 	 */
 	public static boolean removeStandardJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -595,14 +629,14 @@ public class QuartzUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 * Removes the job and all associated triggers from the sequential jobs scheduler
-	 * 
+	 *
 	 * @param jobName
 	 * @param jobGroup
 	 * @return true if the job is found and removed in at least one of the schedulers, false otherwise 
-	 * @throws SchedulerException 
-	 * 
+	 * @throws SchedulerException
+	 *
 	 */
 	public static boolean removeSequentialJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -620,13 +654,13 @@ public class QuartzUtils {
 	private static boolean removeJob(final String jobName, final String jobGroup, final Scheduler scheduler) throws SchedulerException {
 		return scheduler.deleteJob(jobName, jobGroup);
 	}
-	
+
 	/**
 	 * Pauses a job and all it associated triggers from all schedulers
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void pauseJob(final String jobName, final String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -634,27 +668,27 @@ public class QuartzUtils {
 
 
 	}
-	
+
 	/**
 	 * Pauses a job and all it associated triggers from the standard schedulers
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 
 	private static void pauseJob(final String jobName, final String jobGroup, final Scheduler scheduler) throws SchedulerException {
 		scheduler.pauseJob(jobName, jobGroup);
 	}
 
-	
-	
+
+
 	/**
 	 * Pauses a job and all it associated triggers from all schedulers
 	 * @param jobName
 	 * @param jobGroup
 	 * @return
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void resumeJob(String jobName, String jobGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -672,13 +706,13 @@ public class QuartzUtils {
 	private static void resumeJob(final String jobName, final String jobGroup, final Scheduler scheduler) throws SchedulerException {
 		scheduler.resumeJob(jobName, jobGroup);
 	}
-	
+
 	/**
 	 * Pauses a trigger from all schedulers
 	 * @param triggerName
 	 * @param triggerGroup
 	 * @return
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void pauseTrigger(final String triggerName, final String triggerGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -707,13 +741,13 @@ public class QuartzUtils {
 	public static Trigger getTrigger(final String triggerName, final String triggerGroup) throws SchedulerException {
 		return getScheduler() .getTrigger(triggerName, triggerGroup);
 	}
-	
+
 	/**
 	 * Resumes a trigger from all schedulers
 	 * @param triggerName
 	 * @param triggerGroup
 	 * @return
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void resumeTrigger(final String triggerName, final String triggerGroup) throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -732,20 +766,20 @@ public class QuartzUtils {
 	private static void resumeTrigger(final String triggerName, final String triggerGroup, final Scheduler scheduler) throws SchedulerException {
 		scheduler.resumeTrigger(triggerName, triggerGroup);
 	}
-	
+
 	/**
 	 * Temporarily pauses all schedulers from executing future triggers
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void pauseSchedulers () throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
 		scheduler.standby();
 
 	}
-	
+
 	/**
 	 * Temporarily pauses all schedulers from executing future triggers
-	 * @throws SchedulerException 
+	 * @throws SchedulerException
 	 */
 	public static void pauseStandardSchedulers () throws SchedulerException {
 		final Scheduler scheduler = getScheduler();
@@ -818,69 +852,71 @@ public class QuartzUtils {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * job comparision util
 	 * @param job1
 	 * @param job2
 	 * @return
 	 */
-	private static boolean isSameJob(JobDetail job1, JobDetail job2){
-		
-		
-		
-		
-		
-		
+	public static boolean isSameJob(JobDetail job1, JobDetail job2){
+
+
+
+
+
+
 		try{
 			Map<String, Object> m1 = job1.getJobDataMap();
 			Map<String, Object> m2 = job2.getJobDataMap();
-			
+
 			for(String key : m1.keySet()){
 				if(m2.get(key) == null ){
 					return false;
-					
+
 				}
 				else if (m1.get(key) instanceof String[] && m2.get(key) instanceof String[]){
-					
+
 					String[] x = (String[]) m1.get(key);
 					String[] y = (String[]) m2.get(key);
 					Arrays.sort(x);
 					Arrays.sort(y);
-					
-					
-					
+
+
+
 					for(int i=0;i<x.length;i++){
 						if(!x[i].equals(y[i])){
 							return false;
 						}
-						
+
 					}
-					
-					
+
+
 				}
 				else if(! m1.get(key).equals(m2.get(key))){
-					
+
 
 					return false;
 				}
-				
+
 			}
-			
+
 			if(!job1.getJobClass().equals(job2.getJobClass())){
 				return false;
 			}
-			
+
 			//if(job1.
-			
+
 			return true;
 		}
 		catch(Exception e){
 			return false;
 		}
-		
+
 	}
-	
-	
+
+
+
+
 
 }

@@ -1,0 +1,473 @@
+{
+	"info": {
+		"_postman_id": "2ab48990-e376-4d9d-bdf6-d4f562c7e848",
+		"name": "PPEndpointResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "CreateEnvironment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.name).to.be.eql(\"Test Environment for Endpoints\");",
+							"    pm.expect(entity.pushToAll).to.be.eql(true);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"console.log(\"environmentId\", jsonData.entity.id, \"environmentName\", jsonData.entity.name)",
+							"pm.collectionVariables.set(\"environmentId\", jsonData.entity.id);",
+							"pm.collectionVariables.set(\"environmentName\", jsonData.entity.name);",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment for Endpoints\",\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateEndpoint",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let environmentId = pm.collectionVariables.get(\"environmentId\")",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.serverName).to.be.eql(\"TestEndpoint\");",
+							"    pm.expect(entity.address).to.be.eql(\"demo.dotcms.com\");",
+							"    pm.expect(entity.enabled).to.be.eql(true);",
+							"    pm.expect(entity.groupId).to.be.eql(environmentId);",
+							"    pm.expect(entity.port).to.be.eql(\"8080\");",
+							"    pm.expect(entity.protocol).to.be.eql(\"http\");",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"console.log(\"endpointId\", jsonData.entity.id, \"serverName\", jsonData.entity.serverName)",
+							"pm.collectionVariables.set(\"endpointId\", jsonData.entity.id);",
+							"pm.collectionVariables.set(\"endpointServerName\", jsonData.entity.serverName);",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"TestEndpoint\",\n    \"protocol\":\"http\",\n    \"address\":\"demo.dotcms.com\",\n    \"port\":\"8080\",\n    \"authorizationToken\":\"xxx\",\n    \"enabled\":true,\n    \"sending\":false,\n    \"environmentId\":\"{{environmentId}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/environments/endpoints",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"environments",
+						"endpoints"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Endpoint By Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let environmentId = pm.collectionVariables.get(\"environmentId\")",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.serverName).to.be.eql(\"TestEndpoint\");",
+							"    pm.expect(entity.address).to.be.eql(\"demo.dotcms.com\");",
+							"    pm.expect(entity.enabled).to.be.eql(true);",
+							"    pm.expect(entity.groupId).to.be.eql(environmentId);",
+							"    pm.expect(entity.port).to.be.eql(\"8080\");",
+							"    pm.expect(entity.protocol).to.be.eql(\"http\");",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/environments/endpoints/{{endpointId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"environments",
+						"endpoints",
+						"{{endpointId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetEndpointsByEnvironmentId",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let environmentId = pm.collectionVariables.get(\"environmentId\")",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity[0];",
+							"    pm.expect(entity.serverName).to.be.eql(\"TestEndpoint\");",
+							"    pm.expect(entity.address).to.be.eql(\"demo.dotcms.com\");",
+							"    pm.expect(entity.enabled).to.be.eql(true);",
+							"    pm.expect(entity.groupId).to.be.eql(environmentId);",
+							"    pm.expect(entity.port).to.be.eql(\"8080\");",
+							"    pm.expect(entity.protocol).to.be.eql(\"http\");",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/environments/endpoints/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"environments",
+						"endpoints",
+						"environment",
+						"{{environmentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Endpoint",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let environmentId = pm.collectionVariables.get(\"environmentId\")",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.serverName).to.be.eql(\"TestEndpoint2\");",
+							"    pm.expect(entity.address).to.be.eql(\"demo.dotcms.com\");",
+							"    pm.expect(entity.enabled).to.be.eql(true);",
+							"    pm.expect(entity.groupId).to.be.eql(environmentId);",
+							"    pm.expect(entity.port).to.be.eql(\"8081\");",
+							"    pm.expect(entity.protocol).to.be.eql(\"http\");",
+							"});",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"TestEndpoint2\",\n    \"protocol\":\"http\",\n    \"address\":\"demo.dotcms.com\",\n    \"port\":\"8081\",\n    \"authorizationToken\":\"xxx\",\n    \"enabled\":true,\n    \"sending\":false,\n    \"environmentId\":\"{{environmentId}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/environments/endpoints/{{endpointId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"environments",
+						"endpoints",
+						"{{endpointId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteEndpoint",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/environments/endpoints/{{endpointId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"environments",
+						"endpoints",
+						"{{endpointId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Endpoint By Id 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/environments/endpoints/{{endpointId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"environments",
+						"endpoints",
+						"{{endpointId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteEnvironment",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "environmentId",
+			"value": ""
+		},
+		{
+			"key": "environmentName",
+			"value": ""
+		},
+		{
+			"key": "endpointId",
+			"value": ""
+		},
+		{
+			"key": "endpointServerName",
+			"value": ""
+		}
+	]
+}

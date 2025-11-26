@@ -1,20 +1,19 @@
 <p-multiSelect
     (onChange)="handleChange($event.value)"
     [(ngModel)]="value"
-    [defaultLabel]="'dot.common.select.workflows' | dm"
+    [placeholder]="'dot.common.select.workflows' | dm"
     [disabled]="disabled"
     [maxSelectedLabels]="3"
     [options]="options$ | async"
     appendTo="body"
     optionLabel="name"
-    dataKey="id"
->
+    dataKey="id">
     <ng-template let-workflow pTemplate="item">
-        <span class="workflow__label" [class.workflow__archive-label]="workflow.archived">{{
-            workflow.name
-        }}</span>
-        <span *ngIf="workflow.archived" class="workflow__archive-message"
-            >({{ 'dot.common.archived' | dm }})</span
-        >
+        <span [class.workflow__archive-label]="workflow.archived" class="workflow__label">
+            {{ workflow.name }}
+        </span>
+        @if (workflow.archived) {
+            <span class="workflow__archive-message">({{ 'dot.common.archived' | dm }})</span>
+        }
     </ng-template>
 </p-multiSelect>

@@ -1,0 +1,2217 @@
+{
+  "info": {
+    "_postman_id": "59f90b7d-1369-4926-9ddf-c0030fecd3a9",
+    "name": "Push Publish from sender",
+    "description": "Verifies that the behavior of Push Publishing using both the old \"tokenless\" and the new token approach are working as expected.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "5403727"
+  },
+  "item": [
+    {
+      "name": "Push Publish Old Way",
+      "item": [
+        {
+          "name": "Happy path",
+          "item": [
+            {
+              "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to false",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/configuration",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "v1", "configuration"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Sending Environment",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "environmentName = 'environment-' + new Date().getTime();",
+                      "pm.collectionVariables.set(\"environmentName\", environmentName);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "    var environmentId = pm.response.text();",
+                      "    pm.collectionVariables.set(\"environmentId\", environmentId);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+                    "cmd",
+                    "addEnvironment"
+                  ],
+                  "query": [
+                    {
+                      "key": "environmentName",
+                      "value": "{{environmentName}}"
+                    },
+                    {
+                      "key": "pushType",
+                      "value": "pushToOne"
+                    },
+                    {
+                      "key": "whoCanUseSelect",
+                      "value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+                    },
+                    {
+                      "key": "whoCanUse",
+                      "value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Sending Endpoint",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "endpointName = 'endpoint-' + new Date().getTime();",
+                      "pm.collectionVariables.set(\"endpointName\", endpointName);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+                    "cmd",
+                    "addEndpoint"
+                  ],
+                  "query": [
+                    {
+                      "key": "sending",
+                      "value": "false"
+                    },
+                    {
+                      "key": "serverName",
+                      "value": "{{endpointName}}"
+                    },
+                    {
+                      "key": "environmentId",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "protocol",
+                      "value": "http"
+                    },
+                    {
+                      "key": "address",
+                      "value": "localhost"
+                    },
+                    {
+                      "key": "port",
+                      "value": "8080"
+                    },
+                    {
+                      "key": "authKey",
+                      "value": "123"
+                    },
+                    {
+                      "key": "enabled",
+                      "value": "on"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Receiving Environment",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "receiverName = 'receiver-' + new Date().getTime();",
+                      "pm.collectionVariables.set(\"receiverName\", receiverName);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=true&serverName={{receiverName}}&enabled=on&address=localhost&authKey=123",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+                    "cmd",
+                    "addEndpoint"
+                  ],
+                  "query": [
+                    {
+                      "key": "sending",
+                      "value": "true"
+                    },
+                    {
+                      "key": "serverName",
+                      "value": "{{receiverName}}"
+                    },
+                    {
+                      "key": "enabled",
+                      "value": "on"
+                    },
+                    {
+                      "key": "address",
+                      "value": "localhost"
+                    },
+                    {
+                      "key": "authKey",
+                      "value": "123"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Test Content Type and Content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Bundle uploaded sucessfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/octet-stream",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Disposition",
+                    "value": "attachment",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "contentType": "application/tar+gzip ",
+                      "type": "file",
+                      "src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/sync",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "sync"]
+                },
+                "description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+              },
+              "response": []
+            },
+            {
+              "name": "Deleting Bundle History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Deleting Bundle History\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/all",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "all"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add bundle",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "bundleName = 'bundleName-' + new Date().getMilliseconds();",
+                      "pm.collectionVariables.set(\"bundleName\", bundleName);",
+                      "",
+                      "pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"bundlePublishingTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Bundle uploaded sucessfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ea533f67-4883-42bb-9701-83293e7313e5&bundleName={{bundleName}}",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+                    "cmd",
+                    "addToBundle"
+                  ],
+                  "query": [
+                    {
+                      "key": "assetIdentifier",
+                      "value": "ea533f67-4883-42bb-9701-83293e7313e5"
+                    },
+                    {
+                      "key": "bundleName",
+                      "value": "{{bundleName}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Push publish",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "//pm.execution.setNextRequest(\"Deleting Bundle History\")",
+                      "pm.test(\"Giving the Push Publishing process some time to finish before checking its status\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"statusCheckTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle?assetIdentifier={{bundleId}}&iWantTo=publish&whoToSend={{environmentId}}&remotePublishDate=2020-09-10&remotePublishTime=17-14",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+                    "cmd",
+                    "pushBundle"
+                  ],
+                  "query": [
+                    {
+                      "key": "assetIdentifier",
+                      "value": "{{bundleId}}"
+                    },
+                    {
+                      "key": "iWantTo",
+                      "value": "publish"
+                    },
+                    {
+                      "key": "whoToSend",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "remotePublishDate",
+                      "value": "2020-09-10"
+                    },
+                    {
+                      "key": "remotePublishTime",
+                      "value": "17-14"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PPOW - HP - check success status",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Waiting for added bundle to finish publishing\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"statusCheckTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Checking that PPOW - HP - status is successfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
+                      "    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"PPOW - HP - check success status\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle={{bundleId}}",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "html",
+                    "portlet",
+                    "ext",
+                    "contentlet",
+                    "publishing",
+                    "view_publish_audit_detail.jsp"
+                  ],
+                  "query": [
+                    {
+                      "key": "bundle",
+                      "value": "{{bundleId}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Deleting Bundle History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Deleting Bundle History\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/all",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "all"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Invalid token",
+          "item": [
+            {
+              "name": "create environment",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "",
+                      "environmentName = 'environment-' + new Date().getMilliseconds();",
+                      "pm.collectionVariables.set(\"environmentName\", environmentName);",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "    var environmentId = pm.response.text();",
+                      "    pm.collectionVariables.set(\"environmentId\", environmentId);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+                    "cmd",
+                    "addEnvironment"
+                  ],
+                  "query": [
+                    {
+                      "key": "environmentName",
+                      "value": "{{environmentName}}"
+                    },
+                    {
+                      "key": "pushType",
+                      "value": "pushToOne"
+                    },
+                    {
+                      "key": "whoCanUseSelect",
+                      "value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+                    },
+                    {
+                      "key": "whoCanUse",
+                      "value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create end point",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                      "pm.collectionVariables.set(\"endpointName\", endpointName);",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=invalid&enabled=on",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+                    "cmd",
+                    "addEndpoint"
+                  ],
+                  "query": [
+                    {
+                      "key": "sending",
+                      "value": "false"
+                    },
+                    {
+                      "key": "serverName",
+                      "value": "{{endpointName}}"
+                    },
+                    {
+                      "key": "environmentId",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "protocol",
+                      "value": "http"
+                    },
+                    {
+                      "key": "address",
+                      "value": "localhost"
+                    },
+                    {
+                      "key": "port",
+                      "value": "8080"
+                    },
+                    {
+                      "key": "authKey",
+                      "value": "invalid"
+                    },
+                    {
+                      "key": "enabled",
+                      "value": "on"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create content type and content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Bundle uploaded sucessfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/octet-stream",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Disposition",
+                    "value": "attachment",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "contentType": "application/tar+gzip ",
+                      "type": "file",
+                      "src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/sync",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "sync"]
+                },
+                "description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+              },
+              "response": []
+            },
+            {
+              "name": "Deleting Bundle History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Deleting Bundle History\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/all",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "all"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add bundle",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "bundleName = 'bundleName-' + new Date().getMilliseconds();",
+                      "pm.collectionVariables.set(\"bundleName\", bundleName);",
+                      "",
+                      "pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"bundlePublishingTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Bundle uploaded sucessfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ea533f67-4883-42bb-9701-83293e7313e5&bundleName={{bundleName}}",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+                    "cmd",
+                    "addToBundle"
+                  ],
+                  "query": [
+                    {
+                      "key": "assetIdentifier",
+                      "value": "ea533f67-4883-42bb-9701-83293e7313e5"
+                    },
+                    {
+                      "key": "bundleName",
+                      "value": "{{bundleName}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Push publish",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle?assetIdentifier={{bundleId}}&iWantTo=publish&whoToSend={{environmentId}}&remotePublishDate=2020-09-10&remotePublishTime=17-14",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+                    "cmd",
+                    "pushBundle"
+                  ],
+                  "query": [
+                    {
+                      "key": "assetIdentifier",
+                      "value": "{{bundleId}}"
+                    },
+                    {
+                      "key": "iWantTo",
+                      "value": "publish"
+                    },
+                    {
+                      "key": "whoToSend",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "remotePublishDate",
+                      "value": "2020-09-10"
+                    },
+                    {
+                      "key": "remotePublishTime",
+                      "value": "17-14"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PPOW - IT - check failed status",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Waiting for added bundle to finish publishing\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"statusCheckTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Checking that PPOW - IT - status fails as expected\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
+                      "    checkBundleStatus(pm.response.text(), [\"endpointInvalidToken\"], \"PPOW - IT - check failed status\");",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle={{bundleId}}",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "html",
+                    "portlet",
+                    "ext",
+                    "contentlet",
+                    "publishing",
+                    "view_publish_audit_detail.jsp"
+                  ],
+                  "query": [
+                    {
+                      "key": "bundle",
+                      "value": "{{bundleId}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Deleting Bundle History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Deleting Bundle History\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/all",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "all"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/configuration",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "v1", "configuration"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Push Publish JWT token",
+      "item": [
+        {
+          "name": "When JWT fail should use old way",
+          "item": [
+            {
+              "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"USE_JWT_TOKEN_IN_PUSH_PUBLISH\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/configuration",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "v1", "configuration"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create environment",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "environmentName = 'environment-' + new Date().getTime();",
+                      "pm.collectionVariables.set(\"environmentName\", environmentName);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "    var environmentId = pm.response.text();",
+                      "    pm.collectionVariables.set(\"environmentId\", environmentId);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction/cmd/addEnvironment?environmentName={{environmentName}}&pushType=pushToOne&whoCanUseSelect=e7d4e34e-5127-45fc-8123-d48b62d510e3&whoCanUse=e7d4e34e-5127-45fc-8123-d48b62d510e3",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction",
+                    "cmd",
+                    "addEnvironment"
+                  ],
+                  "query": [
+                    {
+                      "key": "environmentName",
+                      "value": "{{environmentName}}"
+                    },
+                    {
+                      "key": "pushType",
+                      "value": "pushToOne"
+                    },
+                    {
+                      "key": "whoCanUseSelect",
+                      "value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+                    },
+                    {
+                      "key": "whoCanUse",
+                      "value": "e7d4e34e-5127-45fc-8123-d48b62d510e3"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create end point",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "endpointName = 'endpoint-' + new Date().getTime();",
+                      "pm.collectionVariables.set(\"endpointName\", endpointName);",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=false&serverName={{endpointName}}&environmentId={{environmentId}}&protocol=http&address=localhost&port=8080&authKey=123&enabled=on",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+                    "cmd",
+                    "addEndpoint"
+                  ],
+                  "query": [
+                    {
+                      "key": "sending",
+                      "value": "false"
+                    },
+                    {
+                      "key": "serverName",
+                      "value": "{{endpointName}}"
+                    },
+                    {
+                      "key": "environmentId",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "protocol",
+                      "value": "http"
+                    },
+                    {
+                      "key": "address",
+                      "value": "localhost"
+                    },
+                    {
+                      "key": "port",
+                      "value": "8080"
+                    },
+                    {
+                      "key": "authKey",
+                      "value": "123"
+                    },
+                    {
+                      "key": "enabled",
+                      "value": "on"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create receiver",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "receiverName = 'receiverName-' + new Date().getTime();",
+                      "pm.collectionVariables.set(\"receiverName\", receiverName);",
+                      ""
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint?sending=true&serverName={{receiverName}}&environmentId={{environmentId}}&address=localhost&authKey=123&enabled=on",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction",
+                    "cmd",
+                    "addEndpoint"
+                  ],
+                  "query": [
+                    {
+                      "key": "sending",
+                      "value": "true"
+                    },
+                    {
+                      "key": "serverName",
+                      "value": "{{receiverName}}"
+                    },
+                    {
+                      "key": "environmentId",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "address",
+                      "value": "localhost"
+                    },
+                    {
+                      "key": "authKey",
+                      "value": "123"
+                    },
+                    {
+                      "key": "enabled",
+                      "value": "on"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "create content type and content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Bundle uploaded sucessfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Waiting for the JWT Token Enabled property to be set\", function () {",
+                      "    var start = new Date().getTime();",
+                      "    var end = start;",
+                      "    while(end < start + 2000) {",
+                      "        end = new Date().getTime();",
+                      "    }",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/octet-stream",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Disposition",
+                    "value": "attachment",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "contentType": "application/tar+gzip ",
+                      "type": "file",
+                      "src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/sync",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "sync"]
+                },
+                "description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+              },
+              "response": []
+            },
+            {
+              "name": "Deleting Bundle History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Deleting Bundle History\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/all",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "all"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add bundle",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "bundleName = 'bundleName-' + new Date().getMilliseconds();",
+                      "pm.collectionVariables.set(\"bundleName\", bundleName);",
+                      "",
+                      "pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"bundlePublishingTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Bundle uploaded sucessfully\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle?assetIdentifier=ea533f67-4883-42bb-9701-83293e7313e5&bundleName={{bundleName}}",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+                    "cmd",
+                    "addToBundle"
+                  ],
+                  "query": [
+                    {
+                      "key": "assetIdentifier",
+                      "value": "ea533f67-4883-42bb-9701-83293e7313e5"
+                    },
+                    {
+                      "key": "bundleName",
+                      "value": "{{bundleName}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Push publish",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle?assetIdentifier={{bundleId}}&iWantTo=publish&whoToSend={{environmentId}}&remotePublishDate=2020-09-10&remotePublishTime=17-14",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "DotAjaxDirector",
+                    "com.dotcms.publisher.ajax.RemotePublishAjaxAction",
+                    "cmd",
+                    "pushBundle"
+                  ],
+                  "query": [
+                    {
+                      "key": "assetIdentifier",
+                      "value": "{{bundleId}}"
+                    },
+                    {
+                      "key": "iWantTo",
+                      "value": "publish"
+                    },
+                    {
+                      "key": "whoToSend",
+                      "value": "{{environmentId}}"
+                    },
+                    {
+                      "key": "remotePublishDate",
+                      "value": "2020-09-10"
+                    },
+                    {
+                      "key": "remotePublishTime",
+                      "value": "17-14"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PPJWT - UOW - check success status",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Waiting for added bundle to finish publishing\", function () {",
+                      "    var timeout = pm.collectionVariables.get(\"statusCheckTimeout\");",
+                      "    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Checking that PPJWT - UOW - status is successfull\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
+                      "    checkBundleStatus(pm.response.text(), [\"endpointSuccess\"], \"PPJWT - UOW - check success status\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Origin",
+                    "value": "{{origin}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{serverURL}}/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle={{bundleId}}",
+                  "host": ["{{serverURL}}"],
+                  "path": [
+                    "html",
+                    "portlet",
+                    "ext",
+                    "contentlet",
+                    "publishing",
+                    "view_publish_audit_detail.jsp"
+                  ],
+                  "query": [
+                    {
+                      "key": "bundle",
+                      "value": "{{bundleId}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Deleting Bundle History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Deleting Bundle History\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "admin@dotcms.com",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "admin",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/bundle/all",
+                  "host": ["{{serverURL}}"],
+                  "path": ["api", "bundle", "all"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "checkBundleStatus = (responseBody, casesToTest, requestToRepeat) => {",
+          "    var retryMax = 6;",
+          "    var bundleRetry = pm.collectionVariables.get(\"bundleRetry\");",
+          "    pm.collectionVariables.set(\"bundleRetry\", bundleRetry + 1);",
+          "    bundleRetry = pm.collectionVariables.get(\"bundleRetry\");",
+          "    console.log(\"Bundle retry #\" + bundleRetry);",
+          "    if (bundleRetry >= retryMax) {",
+          "        console.log(\"Maximum number of retries (\" + retryMax + \") reached, aborting\");",
+          "        return;",
+          "    }",
+          "",
+          "    var html = responseBody.trim();",
+          "    console.log(\"Response HTML:\\n\" + html);",
+          "    console.log(\"Response length [\" + html.length + \"]\");",
+          "",
+          "    if (responseBody.trim().length === 0){",
+          "        console.log(\"Response is empty\");",
+          "        setTimeout(function() { console.log('Waiting has ended') }, 15000);",
+          "        pm.execution.setNextRequest(requestToRepeat);",
+          "    } else {",
+          "        const $ = cheerio.load(responseBody);",
+          "        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");",
+          "        pendingStatus = pm.collectionVariables.get(\"pendingStatus\");",
+          "        bundlingStatus = pm.collectionVariables.get(\"bundlingStatus\");",
+          "        noResultFound = pm.collectionVariables.get(\"noResultFound\");",
+          "        publishingBundle = pm.collectionVariables.get(\"publishingBundle\");",
+          "        bundleReceived = pm.collectionVariables.get(\"bundleReceived\");",
+          "        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
+          "",
+          "        var testcase = casesToTest.slice(-1);",
+          "        if (htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundleWaitingPublish)) {",
+          "            setTimeout(function() { console.log('Waiting for pending/waiting for publishing bundle status to finish...') }, 15000);",
+          "            pm.execution.setNextRequest(requestToRepeat);",
+          "        } else if ('endpointInvalidtoken' !== testcase",
+          "            && (htmlWithoutSpace.includes(bundlingStatus)",
+          "                || htmlWithoutSpace.includes(noResultFound)",
+          "                || htmlWithoutSpace.includes(publishingBundle)",
+          "                || htmlWithoutSpace.includes(bundleReceived)",
+          "                || htmlWithoutSpace.includes(sendingToAllEnvs)",
+          "                || htmlWithoutSpace.includes('No bundle found with the given ID.'))) {",
+          "            var failingBundleId = pm.collectionVariables.get(\"bundleId\");",
+          "            console.log('No bundle found with the given ID: ' + failingBundleId);",
+          "            pm.execution.setNextRequest(\"check success status\");",
+          "        } else {",
+          "            casesToTest.forEach((caseToTest) => {",
+          "                expectedInclude = pm.collectionVariables.get(caseToTest);",
+          "                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);",
+          "            });",
+          "        }",
+          "    }",
+          "};",
+          "",
+          "serverURL = pm.environment.get(\"serverURL\");",
+          "console.log('hostName', serverURL);",
+          "pm.collectionVariables.set(\"origin\", serverURL);",
+          "",
+          "pm.collectionVariables.set(\"checkBundleStatus\", checkBundleStatus.toString());",
+          "",
+          "pm.collectionVariables.set(\"bundleRetry\", 0);",
+          "",
+          "bundleSuccess = \"<th>Status:</th>        <td> Success</td>    </tr>\";",
+          "pm.collectionVariables.set(\"bundleSuccess\", bundleSuccess);",
+          "",
+          "endpointSuccess = 'Everything ok';",
+          "pm.collectionVariables.set(\"endpointSuccess\", endpointSuccess);",
+          "",
+          "bundleFailed = \" <th>Status:</th>        <td> Failed to send to all environments</td>\";",
+          "pm.collectionVariables.set(\"bundleFailed\", bundleFailed);",
+          "",
+          "endpointInvalidToken = '<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t';",
+          "pm.collectionVariables.set(\"endpointInvalidToken\", endpointInvalidToken);",
+          "",
+          "bundleWaitingPublish = \"<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>\";",
+          "pm.collectionVariables.set(\"bundleWaitingPublish\", bundleWaitingPublish);",
+          "",
+          "pendingStatus = \"th>Status:</th>        <td> Pending</td\";",
+          "pm.collectionVariables.set(\"pendingStatus\", pendingStatus);",
+          "",
+          "sendingToAllEnvs = \"th>Status:</th>        <td> Sending to all environments</td\";",
+          "pm.collectionVariables.set(\"sendingToAllEnvs\", sendingToAllEnvs);",
+          "",
+          "bundlingStatus = \"th>Status:</th>        <td> Bundling</td\";",
+          "pm.collectionVariables.set(\"bundlingStatus\", bundlingStatus);",
+          "",
+          "noResultFound = \"No results found\";",
+          "pm.collectionVariables.set(\"noResultFound\", noResultFound);",
+          "",
+          "publishingBundle = \"Publishing bundle\";",
+          "pm.collectionVariables.set(\"publishingBundle\", publishingBundle);",
+          "",
+          "bundleReceived = \"Bundle Received\";",
+          "pm.collectionVariables.set(\"bundleReceived\", bundleReceived);",
+          "",
+          "pm.collectionVariables.set(\"bundlePublishingTimeout\", 10000);",
+          "pm.collectionVariables.set(\"statusCheckTimeout\", 15000);",
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ]
+}

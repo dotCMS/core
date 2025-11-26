@@ -6,7 +6,6 @@ import com.dotcms.api.client.push.PushService;
 import com.dotcms.api.client.push.language.LanguageComparator;
 import com.dotcms.api.client.push.language.LanguageFetcher;
 import com.dotcms.api.client.push.language.LanguagePushHandler;
-import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPushOptionsMixin;
@@ -23,8 +22,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
@@ -45,8 +44,7 @@ import picocli.CommandLine;
                 "" // empty string to add a new line
         }
 )
-public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotCommand,
-        DotPush {
+public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
 
@@ -95,17 +93,20 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         }
 
         // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
+        final Optional<Workspace> workspace = workspace();
         if (workspace.isEmpty()) {
-            throw new IllegalArgumentException(
-                    String.format("No valid workspace found at path: [%s]",
-                            this.getPushMixin().path.toPath()));
+
+            var message = "No valid workspace found";
+            if (this.getPushMixin().pushPath != null) {
+                message = String.format("No valid workspace found at path: [%s]",
+                        this.getPushMixin().pushPath.toPath());
+            }
+
+            throw new IllegalArgumentException(message);
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile() ) {
             inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName())
                     .toFile();
         }
@@ -129,7 +130,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
                     PushOptions.builder().
                             failFast(pushMixin.failFast).
                             allowRemove(languagePushMixin.removeLanguages).
-                            disableAutoUpdate(pushMixin.disableAutoUpdate).
+                            disableAutoUpdate(pushMixin.isDisableAutoUpdate()).
                             maxRetryAttempts(pushMixin.retryAttempts).
                             dryRun(pushMixin.dryRun).
                             build(),
@@ -202,5 +203,19 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     public int getOrder() {
         return ApplyCommandOrder.LANGUAGE.getOrder();
     }
-    
+
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
+    }
+
+    @Override
+    public Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().languages();
+        }
+        throw new IllegalArgumentException("No valid workspace found.");
+    }
+
 }

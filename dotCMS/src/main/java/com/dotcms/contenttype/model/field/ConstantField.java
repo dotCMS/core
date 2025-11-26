@@ -44,7 +44,7 @@ public abstract class ConstantField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.HINT);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.VALUES);
 	}
 
 }

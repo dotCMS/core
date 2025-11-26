@@ -1179,11 +1179,19 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 				hostsToFound.put(currentHost.getInode(), currentHost);
 			}
 		} catch(DotSecurityException e) {
-
+			Logger.debug(ContainerAPIImpl.class,
+					() -> String.format("The User %s don't have read permission in the default Host, so it is going to be excluded to resolve the follow path %s",
+							user.getUserId(), inputPath));
 		}
 
-		final Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, respectFrontEndEndRoles);
-		hostsToFound.put(defaultHost.getInode(), defaultHost);
+		try {
+			final Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, respectFrontEndEndRoles);
+			hostsToFound.put(defaultHost.getInode(), defaultHost);
+		} catch(DotSecurityException e) {
+			Logger.debug(ContainerAPIImpl.class,
+					() -> String.format("The User %s don't have read permission in the default Host, so it is going to be excluded to resolve the follow path %s",
+					user.getUserId(), inputPath));
+		}
 
 		return find(relativePath, hostsToFound, user, live, respectFrontEndEndRoles);
 	}

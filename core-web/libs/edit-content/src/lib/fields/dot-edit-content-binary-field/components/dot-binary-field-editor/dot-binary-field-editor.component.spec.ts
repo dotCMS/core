@@ -8,11 +8,11 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
+import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '../../dot-edit-content-binary-field.component';
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
@@ -164,7 +164,46 @@ describe('DotBinaryFieldEditorComponent', () => {
             expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
             expect(component.mimeType).toBe('text/javascript');
         }));
+        it('should force html language on vtl files', fakeAsync(() => {
+            const expectedMonacoOptions = {
+                ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+                language: 'velocity'
+            };
 
+            spectator.detectChanges();
+
+            component.form.setValue({
+                name: 'banner.vtl',
+                content: 'test'
+            });
+
+            spectator.detectComponentChanges();
+
+            tick(355);
+
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
+            expect(component.mimeType).toBe('text/x-velocity');
+        }));
+        it('should fallback with plain text if language is not found', fakeAsync(() => {
+            const expectedMonacoOptions = {
+                ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+                language: 'text'
+            };
+
+            spectator.detectChanges();
+
+            component.form.setValue({
+                name: 'script.rb',
+                content: 'test'
+            });
+
+            spectator.detectComponentChanges();
+
+            tick(355);
+
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
+            expect(component.mimeType).toBe('plain/text');
+        }));
         it('should emit cancel event when cancel button is clicked', () => {
             const spy = jest.spyOn(component.cancel, 'emit');
             const cancelBtn = spectator.query(byTestId('cancel-button'));
@@ -249,6 +288,23 @@ describe('DotBinaryFieldEditorComponent', () => {
                     'This type of file is not supported. Please use a image/*, .ts file.'
             });
             expect(component.form.valid).toBe(false);
+        }));
+
+        it('should set form as valid when there is no extension', fakeAsync(() => {
+            dotBinaryFieldValidatorService.setAccept([]);
+            spectator.detectChanges();
+
+            const spy = jest.spyOn(component.name, 'setErrors');
+
+            component.form.setValue({
+                name: 'testNoExtension',
+                content: 'test'
+            });
+
+            tick(1000);
+
+            expect(spy).not.toHaveBeenCalled();
+            expect(component.form.valid).toBe(true);
         }));
 
         afterEach(() => {

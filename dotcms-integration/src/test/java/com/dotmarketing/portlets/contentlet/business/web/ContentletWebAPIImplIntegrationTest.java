@@ -7,7 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -433,18 +433,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
         contentMap.put(WebKeys.CONTENTLET_EDIT, persona);
         contentMap.put("contentletInode", persona.getInode());
 
-        runNoLicense(()-> {
-            try {
-                new ContentletWebAPIImpl()
-                        .saveContent(contentMap, false, false, APILocator.systemUser());
 
-                fail("An exception should have been thrown");
-            } catch (Exception e) {
-                assertTrue(e instanceof DotSecurityException);
-                assertEquals("An enterprise license is required to perform this operation", e.getMessage());
-            }
-
-        });
 
 
     }

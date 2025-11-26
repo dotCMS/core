@@ -22,9 +22,8 @@ public class SiteFieldDataFetcher implements DataFetcher<Contentlet> {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
             final Contentlet contentlet = environment.getSource();
 
+            Logger.debug(this, ()-> "Fetching site for contentlet: " + contentlet.getIdentifier());
             final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-
-
 
             final DotContentletTransformer transformer = new DotTransformerBuilder()
                     .graphQLDataFetchOptions().content(host).build();

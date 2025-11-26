@@ -38,12 +38,14 @@ p-inputSwitch {
             @include md-icon;
             color: $color-palette-primary;
             content: "lock_open";
-            font-size: 13px;
+            font-size: $font-size-sm;
             left: 4px;
             position: absolute;
             text-rendering: auto;
             top: 1px;
-            transition: transform $basic-speed ease-in, color $basic-speed ease-in;
+            transition:
+                transform $basic-speed ease-in,
+                color $basic-speed ease-in;
         }
 
         .p-inputswitch-checked .p-inputswitch-slider:after {

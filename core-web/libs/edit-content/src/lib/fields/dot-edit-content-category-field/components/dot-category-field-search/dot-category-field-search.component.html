@@ -1,0 +1,24 @@
+<p-inputGroup>
+    <input
+        [formControl]="searchControl"
+        [placeholder]="'edit.content.category-field.search.input.placeholder' | dm"
+        class="category-field__search-input"
+        data-testId="search-input"
+        pInputText
+        type="text" />
+
+    <p-inputGroupAddon>
+        @if ($isLoading()) {
+            <i class="pi pi-spin pi-spinner" data-testId="search-icon-loading"></i>
+        } @else {
+            @if (searchControl.value) {
+                <i
+                    class="pi pi-times cursor-pointer"
+                    data-testId="search-icon-clear"
+                    (click)="clearInput()"></i>
+            } @else {
+                <i class="pi pi-search" data-testId="search-icon-search"></i>
+            }
+        }
+    </p-inputGroupAddon>
+</p-inputGroup>

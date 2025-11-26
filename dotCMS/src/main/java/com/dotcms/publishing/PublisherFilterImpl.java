@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import com.liferay.util.StringPool;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,16 +13,27 @@ import java.util.Set;
  */
 public class PublisherFilterImpl implements PublisherFilter{
 
+    private final String key;
     private final Set<String> excludeClassesSet = new HashSet<>();
-    private final Set<String>excludeDependencyClassesSet = new HashSet<>();
-    private final Set<String>excludeQueryAssetIdSet = new HashSet<>();
-    private final Set<String>excludeDependencyQueryAssetIdSet = new HashSet<>();
+    private final Set<String> excludeDependencyClassesSet = new HashSet<>();
+    private final Set<String> excludeQueryAssetIdSet = new HashSet<>();
+    private final Set<String> excludeDependencyQueryAssetIdSet = new HashSet<>();
     private final boolean dependencies;
     private final boolean relationships;
 
     public PublisherFilterImpl(final boolean dependencies, final boolean relationships) {
+        this(StringPool.BLANK, dependencies, relationships);
+    }
+
+    public PublisherFilterImpl(final String key, final boolean dependencies, final boolean relationships) {
+        this.key = key;
         this.dependencies = dependencies;
         this.relationships = relationships;
+    }
+
+    @Override
+    public String key() {
+        return this.key;
     }
 
     @Override
@@ -70,16 +82,17 @@ public class PublisherFilterImpl implements PublisherFilter{
         return this.excludeDependencyClassesSet.contains(pusheableAssetType.toLowerCase());
     }
 
-    public String toString(){
-        return "PublisherFilter {" +
-                " excludeClassesSet = " + this.excludeClassesSet.toString() +
-                " , excludeDependencyClassesSet = " + this.excludeDependencyClassesSet.toString() +
-                " , excludeQueryIds = " + this.excludeQueryAssetIdSet.toString() +
-                " , excludeDependencyQueryIds = " + this.excludeDependencyQueryAssetIdSet.toString() +
-                " , relationships = " + this.relationships +
-                " , dependencies = " + this.dependencies +
-                "}";
-
-
+    @Override
+    public String toString() {
+        return "PublisherFilterImpl{" +
+                "key='" + key + '\'' +
+                ", excludeClassesSet=" + excludeClassesSet +
+                ", excludeDependencyClassesSet=" + excludeDependencyClassesSet +
+                ", excludeQueryAssetIdSet=" + excludeQueryAssetIdSet +
+                ", excludeDependencyQueryAssetIdSet=" + excludeDependencyQueryAssetIdSet +
+                ", dependencies=" + dependencies +
+                ", relationships=" + relationships +
+                '}';
     }
+
 }

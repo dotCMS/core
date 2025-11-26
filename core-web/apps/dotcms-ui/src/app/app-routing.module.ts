@@ -1,4 +1,6 @@
-import { NgModule, inject } from '@angular/core';
+/* eslint-disable @nx/enforce-module-boundaries */
+
+import { inject, NgModule } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     Route,
@@ -7,15 +9,8 @@ import {
     Routes
 } from '@angular/router';
 
-import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
-import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
-import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
-import { DotLogOutContainerComponent } from '@components/login/dot-logout-container-component/dot-log-out-container';
-import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
-import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
-import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
-import { EmaAppConfigurationService } from '@dotcms/data-access';
-import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
+import { DotExperimentsService, EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotEnterpriseLicenseResolver } from '@dotcms/ui';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
@@ -25,20 +20,28 @@ import { editPageGuard } from './api/services/guards/ema-app/edit-page.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DotCustomReuseStrategyService } from './shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
+import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/iframe-porlet-legacy.component';
+import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
+import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
+import { DotLogOutContainerComponent } from './view/components/login/dot-logout-container-component/dot-log-out-container';
+import { DotLoginPageComponent } from './view/components/login/main/dot-login-page.component';
+import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
+import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
 
 const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'containers',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
-                (m) => m.DotContainersModule
+            import('@dotcms/app/portlets/dot-containers/dot-containers.routes').then(
+                (m) => m.dotContainersRoutes
             )
     },
     {
         path: 'categories',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-categories/dot-categories.module').then(
-                (m) => m.DotCategoriesModule
+            import('@dotcms/app/portlets/dot-categories/dot-categories.routes').then(
+                (m) => m.dotCategoriesRoutes
             )
     },
     {
@@ -46,7 +49,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
+            import('@portlets/dot-templates/dot-templates.routes').then((m) => m.DotTemplatesRoutes)
     },
     {
         path: 'content-types-angular',
@@ -56,17 +59,48 @@ const PORTLETS_ANGULAR: Route[] = [
             reuseRoute: false
         },
         loadChildren: () =>
-            import('@portlets/dot-content-types/dot-content-types.module').then(
-                (m) => m.DotContentTypesModule
+            import('@portlets/dot-content-types/dot-content-types.routes').then(
+                (m) => m.dotContentTypesRoutes
             )
+    },
+    {
+        path: 'locales',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: {
+            reuseRoute: false
+        },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
+    },
+    // TODO: We need a fix from BE to remove those redirects
+    {
+        path: 'analytics-search',
+        redirectTo: 'analytics/search'
+    },
+    {
+        path: 'analytics-dashboard',
+        redirectTo: 'analytics/dashboard'
+    },
+    {
+        path: 'analytics',
+        providers: [DotEnterpriseLicenseResolver, DotExperimentsService],
+        resolve: {
+            isEnterprise: DotEnterpriseLicenseResolver
+        },
+        data: {
+            reuseRoute: false
+        },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-analytics/portlet').then((m) => m.DotAnalyticsRoutes)
     },
     {
         path: 'forms',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-form-builder/dot-form-builder.module').then(
-                (m) => m.DotFormBuilderModule
+            import('@portlets/dot-form-builder/dot-form-builder.routes').then(
+                (m) => m.dotFormBuilderRoutes
             ),
         data: {
             filterBy: 'FORM'
@@ -88,18 +122,21 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivateChild: [MenuGuardService],
         path: 'apps',
         loadChildren: () =>
-            import('@portlets/dot-apps/dot-apps.module').then((m) => m.DotAppsModule)
+            import('./portlets/dot-apps/dot-apps.routes').then((m) => m.dotAppsRoutes)
     },
     {
         path: 'edit-page',
-        canActivate: [editPageGuard],
+        canMatch: [editPageGuard],
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
-        path: 'edit-ema',
+        path: 'edit-page',
+        data: {
+            reuseRoute: false
+        },
         resolve: {
-            data: (route: ActivatedRouteSnapshot) => {
+            uveConfig: (route: ActivatedRouteSnapshot) => {
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);
             }
         },
@@ -108,13 +145,23 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         canActivate: [editContentGuard],
         path: 'content',
+        data: {
+            reuseRoute: false
+        },
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
     },
     {
         canActivate: [MenuGuardService, PagesGuardService],
         path: 'pages',
         loadChildren: () =>
-            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+            import('@portlets/dot-pages/dot-pages.routes').then((m) => m.dotPagesRoutes)
+    },
+    {
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        path: 'content-drive',
+        loadChildren: () =>
+            import('@dotcms/portlets/content-drive/portlet').then((m) => m.DotContentDriveRoutes)
     },
     {
         path: '',
@@ -134,14 +181,14 @@ const PORTLETS_IFRAME = [
                     {
                         loadChildren: () =>
                             import(
-                                '@components/dot-contentlet-editor/dot-contentlet-editor.routing.module'
-                            ).then((m) => m.DotContentletEditorRoutingModule),
+                                '@components/dot-contentlet-editor/dot-contentlet-editor.routes'
+                            ).then((m) => m.dotContentletEditorRoutes),
                         path: 'new'
                     },
                     {
-                        loadChildren: () =>
-                            import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(
-                                (m) => m.DotPortletDetailModule
+                        loadComponent: () =>
+                            import('@portlets/dot-porlet-detail/dot-portlet-detail.component').then(
+                                (m) => m.DotPortletDetailComponent
                             ),
                         path: ':asset',
                         data: {
@@ -184,7 +231,7 @@ const appRoutes: Routes = [
             loginFormInfo: DotLoginPageResolver
         },
         loadChildren: () =>
-            import('@components/login/dot-login-page.module').then((m) => m.DotLoginPageModule)
+            import('@components/login/dot-login-page.routes').then((m) => m.dotLoginPageRoutes)
     },
     {
         path: 'fromCore',
@@ -223,6 +270,9 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
+    providers: [
+        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
+        DotLoginPageResolver
+    ]
 })
 export class AppRoutingModule {}

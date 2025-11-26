@@ -1,9 +1,9 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import * as _ from 'lodash';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable, of, zip } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -18,9 +18,6 @@ import {
     withLatestFrom
 } from 'rxjs/operators';
 
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -28,10 +25,14 @@ import {
     DotGlobalMessageService
 } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
+
+import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 type DotTemplateType = 'design' | 'advanced';
 
-interface DotTemplateItemDesign {
+export interface DotTemplateItemDesign {
     containers?: DotContainerMap;
     drawed?: boolean;
     friendlyName: string;
@@ -61,6 +62,10 @@ export interface DotTemplateState {
     original: DotTemplateItem;
     working: DotTemplateItem;
     apiLink: string;
+}
+
+export interface VM extends DotTemplateState {
+    didTemplateChanged: boolean;
 }
 
 const EMPTY_TEMPLATE = {
@@ -97,16 +102,25 @@ export const EMPTY_TEMPLATE_ADVANCED: DotTemplateItemadvanced = {
 
 @Injectable()
 export class DotTemplateStore extends ComponentStore<DotTemplateState> {
-    readonly vm$ = this.select(({ working, original, apiLink }: DotTemplateState) => {
+    private dotTemplateService = inject(DotTemplatesService);
+    private dotRouterService = inject(DotRouterService);
+    private activatedRoute = inject(ActivatedRoute);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private templateContainersCacheService = inject(DotTemplateContainersCacheService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotMessageService = inject(DotMessageService);
+
+    readonly vm$ = this.select<VM>(({ working, original, apiLink }: DotTemplateState): VM => {
         return {
             working,
             original,
-            apiLink
+            apiLink,
+            didTemplateChanged: !isEqual(working, original)
         };
     });
 
     readonly didTemplateChanged$: Observable<boolean> = this.select(
-        ({ original, working }: DotTemplateState) => !_.isEqual(original, working)
+        ({ original, working }: DotTemplateState) => !isEqual(original, working)
     );
 
     readonly updateBody = this.updater<string>((state: DotTemplateState, body: string) => ({
@@ -260,16 +274,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
     );
 
-    constructor(
-        private dotTemplateService: DotTemplatesService,
-        private dotRouterService: DotRouterService,
-        private activatedRoute: ActivatedRoute,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotEditLayoutService: DotEditLayoutService,
-        private templateContainersCacheService: DotTemplateContainersCacheService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotMessageService: DotMessageService
-    ) {
+    constructor() {
         super(null);
 
         const template$ = this.activatedRoute.data.pipe(pluck('template'));
@@ -333,9 +338,12 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         this.dotGlobalMessageService.success(
             this.dotMessageService.get('dot.common.message.saved')
         );
+
         if (this.activatedRoute?.snapshot?.params['inode']) {
             this.dotRouterService.goToEditTemplate(template.identifier);
         }
+
+        this.dotRouterService.allowRouteDeactivation();
     }
 
     private onSaveTemplateError(err: HttpErrorResponse) {

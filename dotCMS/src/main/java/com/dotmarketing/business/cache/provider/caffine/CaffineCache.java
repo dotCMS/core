@@ -1,65 +1,62 @@
 package com.dotmarketing.business.cache.provider.caffine;
 
-import com.dotcms.cache.Expirable;
+
+import com.dotcms.cache.DynamicTTLCache;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
-import com.dotmarketing.business.cache.provider.CacheSizingUtil;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Expiry;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.common.collect.ImmutableSet;
-import io.vavr.control.Try;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
- * In-Memory Cache implementation using https://github.com/ben-manes/caffeine
+ * In-Memory Cache implementation using <a href="https://github.com/ben-manes/caffeine">...</a>
  * <p>
- * Supports key-specific time invalidations by providing an {@link Expirable} object in the
- * {@link #put(String, String, Object)} method with the desired TTL.
+ * Supports key-specific time invalidations by using the method
+ * {@link #put(String, String, Object, long)} method with the desired TTL.
  * <p>
  * A group-wide invalidation time can also be set by config properties.
  * <p>
  * i.e., for the "graphqlquerycache" group
  * <p>
  * cache.graphqlquerycache.chain=com.dotmarketing.business.cache.provider.caffine.CaffineCache
+ * cache.graphqlquerycache.size=10000
  * cache.graphqlquerycache.seconds=15
+ *
+ * An individual object's TTL will override the group's TTL.
+ *
+ *
  */
 public class CaffineCache extends CacheProvider {
 
-    private static final long serialVersionUID = 1348649382678659786L;
+    private static final String CACHE_PREFIX = "cache.";
+    private static final String SIZE_POSTFIX = ".size";
+    private static final String SECONDS_POSTFIX = ".seconds";
+    private static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
+    private static final long serialVersionUID = 1L;
 
-    private Boolean isInitialized = false;
-
-    static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
-
-    private final ConcurrentHashMap<String, Cache<String, Object>> groups =
-            new ConcurrentHashMap<>();
-    private Set<String> availableCaches;
-
+    // we use a cache for groups because concurrentHashMap has a recusion problem in its computeIfAbsent method
+    private static final Cache<String, DynamicTTLCache<String, Object>> groups = Caffeine.newBuilder().maximumSize(10000).build();
+    private static final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
     @Override
     public String getName() {
-        return "Caffine Memory Cache";
+        return "Caffeine Cache Provider";
     }
 
     @Override
     public String getKey() {
-        return "LocalCaffineMem";
+        return "CaffineCache";
     }
 
     @Override
@@ -69,109 +66,103 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public void init() {
-        HashSet<String> _availableCaches = new HashSet<>();
-        _availableCaches.add(DEFAULT_CACHE);
-
-        Iterator<String> it = Config.getKeys();
-        while (it.hasNext()) {
-
-            String key = it.next();
-            if (key == null) {
-                continue;
-            }
-
-            if (key.startsWith("cache.")) {
-
-                String cacheName = key.split("\\.")[1];
-                if (key.endsWith(".size")) {
-                    int inMemory = Config.getIntProperty(key, 0);
-                    _availableCaches.add(cacheName.toLowerCase());
-                    Logger.debug(this.getClass(),
-                            "***\t Cache Config Memory : " + cacheName + ": " + inMemory);
-                }
-
-            }
+        // Prevent reinitialization during shutdown
+        if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+            Logger.info(this.getClass(), "Shutdown in progress - skipping cache initialization");
+            return;
         }
-        this.availableCaches = ImmutableSet.copyOf(_availableCaches);
-        isInitialized = true;
+        
+        if(!isInitialized.getAndSet(true)){
+            groups.invalidateAll();
+            Logger.info(this.getClass(), "===== Initializing [" + getName() + "].");
+        }
     }
 
     @Override
     public boolean isInitialized() throws Exception {
-        return isInitialized;
+        return isInitialized.get();
+    }
+
+    @Override
+    public void put(String group, String key, Object content, long ttlMillis) {
+        if ( key == null || content == null) {
+            return;
+        }
+        DynamicTTLCache<String, Object> cache = getCache(group);
+        cache.put(key, content, ttlMillis);
+
     }
 
     @Override
     public void put(String group, String key, Object content) {
-        // Get the cache for the given group
-        Cache<String, Object> cache = getCache(group);
-        // Add the given content to the group and for a given key
-        cache.put(key, content);
+        put(group, key, content, Long.MAX_VALUE);
+
     }
 
     @Override
     public Object get(String group, String key) {
-        // Get the cache for the given group
-        Cache<String, Object> cache = getCache(group);
-        // Get the content from the group and for a given key
-        return cache.getIfPresent(key);
-    }
+        return getCache(group).getIfPresent(key);
 
-    @Override
-    public void remove(String group) {
 
-        // Get the cache for the given group
-        Cache<String, Object> cache = getCache(group);
-
-        // Invalidates the Cache for the given group
-        cache.invalidateAll();
-
-        // Remove this group from the global list of cache groups
-        groups.remove(group);
     }
 
     @Override
     public void remove(String group, String key) {
 
-        // Get the cache for the given group
-        Cache<String, Object> cache = getCache(group);
-
         // Invalidates from Cache a key from a given group
-        cache.invalidate(key);
+        getCache(group).invalidate(key);
+    }
+
+    @Override
+    public void remove(String group) {
+        Logger.debug(this.getClass(), "===== Calling remove for [" + getName()
+                + "] - " + group);
+        if (group == null) {
+            return;
+        }
+        groups.invalidate(group.toLowerCase());
     }
 
     @Override
     public void removeAll() {
-
-        Set<String> currentGroups = new HashSet<>();
-        currentGroups.addAll(getGroups());
-
-        for (String group : currentGroups) {
-            remove(group);
-        }
-
-        groups.clear();
-    }
-
-    @Override
-    public Set<String> getGroups() {
-        return groups.keySet();
+        groups.invalidateAll();
     }
 
     @Override
     public Set<String> getKeys(String group) {
+        return getCache(group).asMap().keySet();
+    }
 
-        Set<String> keys = new HashSet<>();
+    @Override
+    public Set<String> getGroups() {
+        return groups.asMap().keySet();
+    }
 
-        Cache<String, Object> cache = getCache(group);
-        Map<String, Object> m = cache.asMap();
-
-        if (m != null) {
-            keys = m.keySet();
+    private long getTTLMillis(String group) {
+        if("system_cache".equals(group)){
+            return UtilMethods.isSet(System.getenv("DOT_CACHE_SYSTEM_GROUP_SECONDS"))
+                    ? Long.parseLong(System.getenv("DOT_CACHE_SYSTEM_GROUP_SECONDS"))
+                    : Long.MAX_VALUE;
         }
 
-        return keys;
+        long seconds = Config.getLongProperty(CACHE_PREFIX + group + SECONDS_POSTFIX,
+                Config.getLongProperty(CACHE_PREFIX + DEFAULT_CACHE + SECONDS_POSTFIX, -1));
+
+        return seconds < 0 ? Long.MAX_VALUE : seconds * 1000;
     }
+
+    private int getMaxSize(String group) {
+        if("system_cache".equals(group)){
+            return UtilMethods.isSet(System.getenv("DOT_CACHE_SYSTEM_GROUP_SIZE"))
+                    ? Integer.parseInt(System.getenv("DOT_CACHE_SYSTEM_GROUP_SIZE"))
+                    : 5000;
+        }
+
+        return Config.getIntProperty(CACHE_PREFIX + group + SIZE_POSTFIX,
+                Config.getIntProperty(CACHE_PREFIX + DEFAULT_CACHE + SIZE_POSTFIX, 1000));
+
+    }
+
 
     @Override
     public CacheProviderStats getStats() {
@@ -179,53 +170,38 @@ public class CaffineCache extends CacheProvider {
         CacheStats providerStats = new CacheStats();
         CacheProviderStats ret = new CacheProviderStats(providerStats, getName());
 
-        Set<String> currentGroups = new HashSet<>();
-        currentGroups.addAll(getGroups());
+        Set<String> currentGroups = new TreeSet<>(getGroups());
+
         NumberFormat nf = DecimalFormat.getInstance();
         DecimalFormat pf = new DecimalFormat("##.##%");
-
-        CacheSizingUtil sizer = new CacheSizingUtil();
-
         for (String group : currentGroups) {
-            final CacheStats stats = new CacheStats();
+            CacheStats stats = new CacheStats();
 
-            final Cache<String, Object> foundCache = getCache(group);
+            DynamicTTLCache<String, Object> foundCache = getCache(group);
 
-            final boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
+            long size = getMaxSize(group);
 
-            final int size = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
-                    : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-                            ? Config.getIntProperty("cache." + group + ".size")
-                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
+            long millis = foundCache.defaultTTLInMillis;
 
-            final int seconds =
-                    isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
-                            : Config.getIntProperty("cache." + group + ".seconds", -1);
+            String duration = millis == Long.MAX_VALUE ? "" : " | ttl:" + nf.format(millis / 1000) + "s";
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
-            stats.addStat(CacheStats.REGION, group);
-            stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
-            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE,
-                    "size:" + nf.format(size) + " / " + (seconds == -1? "infinity": seconds + "s") );
-            stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
-            stats.addStat(CacheStats.REGION_LOAD,
-                    nf.format(cstats.missCount() + cstats.hitCount()));
-            stats.addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()));
-            stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()));
-            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME,
-                    nf.format(cstats.averageLoadPenalty() / 1000000) + " ms");
-            stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
+            stats.addStat(CacheStats.REGION, group)
+                .addStat(CacheStats.REGION_DEFAULT, "false")
+                .addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size)  + duration )
+                .addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()))
+                .addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount() + cstats.hitCount()))
+                .addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()))
+                .addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()))
+                .addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty() / 1000000) + " ms")
+                .addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
+            ret.addStatRecord(stats);
+        }
 
-            long averageObjectSize = Try.of(() -> sizer.averageSize(foundCache.asMap()))
-                    .getOrElse(-1L);
-            long totalObjectSize = averageObjectSize * foundCache.estimatedSize();
-
-            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT,
-                    "<div class='hideSizer'>" + String.format("%010d", averageObjectSize) + "</div>"
-                            + UtilMethods.prettyByteify(averageObjectSize));
-            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY,
-                    "<div class='hideSizer'>" + String.format("%010d", totalObjectSize) + "</div>"
-                            + UtilMethods.prettyByteify(totalObjectSize));
+        if (currentGroups.isEmpty()) {
+            CacheStats stats = new CacheStats();
+            stats.addStat(CacheStats.REGION, "n/a");
+            stats.addStat(CacheStats.REGION_SIZE, 0);
             ret.addStatRecord(stats);
         }
 
@@ -235,87 +211,36 @@ public class CaffineCache extends CacheProvider {
     @Override
     public void shutdown() {
         Logger.info(this.getClass(), "===== Calling shutdown [" + getName() + "].");
-        isInitialized = false;
+        isInitialized.set(false);
     }
 
-    private Cache<String, Object> getCache(String cacheName) {
 
+    private DynamicTTLCache<String, Object> getCache(String cacheName) {
         if (cacheName == null) {
             throw new DotStateException("Null cache region passed in");
         }
 
-        cacheName = cacheName.toLowerCase();
-        Cache<String, Object> cache = groups.get(cacheName);
-
-        // init cache if it does not exist
-        if (cache == null) {
-            synchronized (cacheName.intern()) {
-                cache = groups.get(cacheName);
-                if (cache == null) {
-
-                    boolean separateCache = (Config.getBooleanProperty(
-                            "cache.separate.caches.for.non.defined.regions", true)
-                            || availableCaches.contains(cacheName)
-                            || DEFAULT_CACHE.equals(cacheName));
-
-                    if (separateCache) {
-                        int size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-
-                        if (size == -1) {
-                            size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
-                        }
-
-                        final int defaultTTL = Config.getIntProperty(
-                                "cache." + cacheName + ".seconds", -1);
-
-                        Logger.debug(this.getClass(),
-                                "***\t Building Cache : " + cacheName + ", size:" + size
-                                        + ",Concurrency:"
-                                        + Config.getIntProperty("cache.concurrencylevel", 32));
-
-                        cache = Caffeine.newBuilder()
-                                .maximumSize(size)
-                                .recordStats()
-                                .expireAfter(new Expiry<String, Object>() {
-                                    public long expireAfterCreate(String key, Object value,
-                                            long currentTime) {
-                                        long ttlInSeconds;
-
-                                        if (value instanceof Expirable
-                                                && ((Expirable) value).getTtl() > 0) {
-                                            ttlInSeconds = ((Expirable) value).getTtl();
-                                        } else if (defaultTTL > 0) {
-                                            ttlInSeconds = defaultTTL;
-                                        } else {
-                                            ttlInSeconds = Long.MAX_VALUE;
-                                        }
-
-                                        return TimeUnit.SECONDS.toNanos(ttlInSeconds);
-                                    }
-
-                                    public long expireAfterUpdate(String key, Object value,
-                                            long currentTime, long currentDuration) {
-                                        return currentDuration;
-                                    }
-
-                                    public long expireAfterRead(String key, Object value,
-                                            long currentTime, long currentDuration) {
-                                        return currentDuration;
-                                    }
-                                })
-                                .build(key -> null);
-
-                        groups.put(cacheName, cache);
-
-                    } else {
-                        Logger.debug(this.getClass(),
-                                "***\t No Cache for   : " + cacheName + ", using " + DEFAULT_CACHE);
-                        cache = getCache(DEFAULT_CACHE);
-                        groups.put(cacheName, cache);
-                    }
-                }
-            }
+        // Prevent cache reinitialization during shutdown
+        if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+            Logger.debug(this.getClass(), "Shutdown in progress - returning null cache for: " + cacheName);
+            return new DynamicTTLCache<>(1, 1000); // Return minimal cache to prevent NPE
         }
-        return cache;
+
+        DynamicTTLCache<String, Object> cache = groups.getIfPresent(cacheName);
+        if(cache != null){
+            return cache;
+        }
+        final int maxSize = getMaxSize(cacheName);
+        final long ttlSeconds = getTTLMillis(cacheName);
+        synchronized (groups) {
+            return groups.get(cacheName, k ->
+
+                    new DynamicTTLCache<>(maxSize, ttlSeconds)
+            );
+        }
+
+
+
     }
+
 }

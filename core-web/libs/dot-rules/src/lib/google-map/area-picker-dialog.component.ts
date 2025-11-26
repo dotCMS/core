@@ -6,11 +6,14 @@ import {
     Input,
     Output,
     EventEmitter,
-    OnChanges
+    OnChanges,
+    inject
 } from '@angular/core';
-import { GoogleMapService } from '../services/GoogleMapService';
+
 import { LoggerService } from '@dotcms/dotcms-js';
+
 import { GCircle } from '../models/gcircle.model';
+import { GoogleMapService } from '../services/GoogleMapService';
 
 let mapIdCounter = 1;
 
@@ -25,19 +28,28 @@ let mapIdCounter = 1;
             }
         `
     ],
-    template: `<cw-modal-dialog
-        [headerText]="headerText"
-        [hidden]="hidden"
-        [okEnabled]="true"
-        (ok)="onOkAction($event)"
-        (cancel)="onCancelAction($event)"
-    >
-        <div *ngIf="!hidden" class="cw-dialog-body">
-            <div id="{{ mapId }}" class="g-map" *ngIf="!hidden"></div>
-        </div>
-    </cw-modal-dialog>`
+    template: `
+        <cw-modal-dialog
+            (ok)="onOkAction($event)"
+            (cancel)="onCancelAction($event)"
+            [headerText]="headerText"
+            [hidden]="hidden"
+            [okEnabled]="true">
+            @if (!hidden) {
+                <div class="cw-dialog-body">
+                    @if (!hidden) {
+                        <div class="g-map" id="{{ mapId }}"></div>
+                    }
+                </div>
+            }
+        </cw-modal-dialog>
+    `,
+    standalone: false
 })
 export class AreaPickerDialogComponent implements OnChanges {
+    mapsService = inject(GoogleMapService);
+    private loggerService = inject(LoggerService);
+
     @Input() apiKey = '';
     @Input() headerText = '';
     @Input() hidden = false;
@@ -54,7 +66,7 @@ export class AreaPickerDialogComponent implements OnChanges {
 
     private _prevCircle: GCircle;
 
-    constructor(public mapsService: GoogleMapService, private loggerService: LoggerService) {
+    constructor() {
         this.loggerService.debug('AreaPickerDialogComponent', 'constructor', this.mapId);
     }
 
@@ -64,13 +76,11 @@ export class AreaPickerDialogComponent implements OnChanges {
                 (_x) => {},
                 () => {},
                 () => {
-                    if (this.mapsService.apiReady) {
-                        this.readyMap();
-                    }
+                    this.readyMap();
                 }
             );
-            this.mapsService.loadApi();
         }
+
         if (change.hidden && this.hidden && this.map) {
             this.loggerService.debug(
                 'AreaPickerDialogComponent',
@@ -88,6 +98,7 @@ export class AreaPickerDialogComponent implements OnChanges {
              */
             this.map = null;
         }
+
         if (change.hidden && !this.hidden && this.map) {
             this.loggerService.debug(
                 'AreaPickerDialogComponent',

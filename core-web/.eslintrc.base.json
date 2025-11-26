@@ -1,0 +1,207 @@
+{
+    "root": true,
+    "ignorePatterns": ["**/*"],
+    "plugins": ["@nx", "eslint-plugin-import", "ban", "@stylistic"],
+    "overrides": [
+        {
+            "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+            "rules": {
+                "@nx/enforce-module-boundaries": [
+                    "error",
+                    {
+                        "allowCircularSelfDependency": false,
+                        "enforceBuildableLibDependency": true,
+                        "allow": [],
+                        "depConstraints": [
+                            {
+                                "sourceTag": "*",
+                                "onlyDependOnLibsWithTags": ["*"]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "extends": ["plugin:@nx/typescript"],
+            "rules": {
+                "@nx/dependency-checks": [
+                    "error",
+                    {
+                        "ignoredFiles": ["{projectRoot}/rollup.config.{js,ts,mjs,mts}"]
+                    }
+                ],
+                "@typescript-eslint/no-explicit-any": ["error"],
+                "@typescript-eslint/no-unused-vars": [
+                    "error",
+                    {
+                        "argsIgnorePattern": "^_"
+                    }
+                ],
+                "@typescript-eslint/no-unused-expressions": [
+                    "error",
+                    {
+                        "allowTernary": true
+                    }
+                ],
+                "one-var": [
+                    "error",
+                    {
+                        "var": "never",
+                        "let": "never",
+                        "const": "never"
+                    }
+                ],
+                "no-console": [
+                    "error",
+                    {
+                        "allow": ["warn", "error"]
+                    }
+                ],
+                "no-duplicate-imports": "error",
+                "import/no-cycle": [
+                    "error",
+                    {
+                        "maxDepth": 10,
+                        "ignoreExternal": true
+                    }
+                ],
+                "import/no-self-import": "error",
+                "ban/ban": [
+                    2,
+                    {
+                        "name": ["describe", "only"],
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": "fdescribe",
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": ["it", "only"],
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": "fit",
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": ["test", "only"],
+                        "message": "don't focus tests"
+                    },
+                    {
+                        "name": "ftest",
+                        "message": "don't focus tests"
+                    }
+                ],
+                "import/order": [
+                    "error",
+                    {
+                        "newlines-between": "always",
+                        "groups": [
+                            "external",
+                            "builtin",
+                            "internal",
+                            "object",
+                            "index",
+                            "sibling",
+                            "parent",
+                            "type"
+                        ],
+                        "pathGroups": [
+                            {
+                                "pattern": "@angular/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "primeng/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "rxjs/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "@tiptap/**",
+                                "group": "external",
+                                "position": "after"
+                            },
+                            {
+                                "pattern": "@components/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@directives/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@dotcms-ui/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@dotcms/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@portlets/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@models/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@pipes/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@services/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@shared/**",
+                                "group": "internal"
+                            },
+                            {
+                                "pattern": "@tests/**",
+                                "group": "internal"
+                            }
+                        ],
+                        "pathGroupsExcludedImportTypes": ["internal"],
+                        "alphabetize": {
+                            "order": "asc",
+                            "caseInsensitive": true
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "rules": {
+                "@stylistic/keyword-spacing": [
+                    "error",
+                    {
+                        "after": true
+                    }
+                ]
+            }
+        },
+        {
+            "files": ["*.js", "*.jsx"],
+            "extends": ["plugin:@nx/javascript"],
+            "rules": {}
+        },
+        {
+            "files": ["*.spec.ts", "*.spec.tsx", "*.spec.js", "*.spec.jsx"],
+            "env": {
+                "jest": true
+            },
+            "rules": {}
+        }
+    ]
+}

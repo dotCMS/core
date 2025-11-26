@@ -1,0 +1,85 @@
+name: 'Manual SDK Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        description: 'Version increment type'
+        required: true
+        type: choice
+        options:
+          - 'patch'
+          - 'minor'
+          - 'major'
+          - 'custom'
+        default: 'patch'
+      custom-version:
+        description: 'Custom version (e.g., 1.3.4, 2.1.0) - only used when version-type is "custom"'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Branch to build from'
+        required: false
+        type: string
+        default: 'main'
+
+jobs:
+  release-sdks:
+    name: 'Release SDK Packages'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Validate inputs'
+        run: |
+          echo "::group::Input validation"
+          echo "Version type: ${{ inputs.version-type }}"
+          echo "Custom version: ${{ inputs.custom-version }}"
+          echo "Branch: ${{ inputs.ref }}"
+          
+          # Validate that custom-version is provided when version-type is custom
+          if [ "${{ inputs.version-type }}" = "custom" ]; then
+            if [ -z "${{ inputs.custom-version }}" ]; then
+              echo "::error::Custom version must be provided when version-type is 'custom'"
+              echo "Please provide a valid semantic version (e.g., 1.3.4, 2.0.0, 1.2.1)"
+              exit 1
+            fi
+            
+            # Basic semver validation
+            if [[ ! "${{ inputs.custom-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid custom version format: '${{ inputs.custom-version }}'"
+              echo "Version must follow semantic versioning format: major.minor.patch (e.g., 1.3.4)"
+              exit 1
+            fi
+            
+            echo "✅ Custom version '${{ inputs.custom-version }}' is valid"
+          fi
+          echo "::endgroup::"
+
+      - name: 'Deploy JavaScript SDK'
+        id: deploy-javascript-sdk
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
+        with:
+          ref: ${{ inputs.ref }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          npm-package-tag: 'latest'
+          version-type: ${{ inputs.version-type }}
+          custom-version: ${{ inputs.custom-version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Display results'
+        if: always()
+        run: |
+          echo "::group::Release Summary"
+          echo "Version type used: ${{ steps.deploy-javascript-sdk.outputs.version-type-used || inputs.version-type }}"
+          echo "Published to latest: ${{ steps.deploy-javascript-sdk.outputs.published-latest || 'unknown' }}"
+          echo "Published to next: ${{ steps.deploy-javascript-sdk.outputs.published-next || 'unknown' }}"
+          echo "NPM package version: ${{ steps.deploy-javascript-sdk.outputs.npm-package-version || 'unknown' }}"
+          echo "Next version: ${{ steps.deploy-javascript-sdk.outputs.npm-package-version-next || 'unknown' }}"
+          echo "::endgroup::"

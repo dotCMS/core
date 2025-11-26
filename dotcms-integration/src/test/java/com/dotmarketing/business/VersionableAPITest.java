@@ -14,7 +14,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -23,7 +22,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
@@ -31,8 +29,11 @@ import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Random;
+
+import graphql.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 
 import java.util.Optional;
 
@@ -45,7 +46,6 @@ public class VersionableAPITest {
 	
 	private static User user;
 	private static Host host;
-	
 	@BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -487,5 +487,101 @@ public class VersionableAPITest {
 				.findAllByVariant(specificVariant);
 
 		assertTrue(allByVariant.isEmpty());
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#isWorking(Versionable)}
+	 * When: Create a  {@link Contentlet} but do not save it, call the isWorking
+	 * Should: should false
+	 */
+	@Test
+	public void test_is_working_with_non_persisted_contentlet() throws DotDataException, DotSecurityException {
+
+		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+		final Contentlet myContentlet = new ContentletDataGen(contentType).next();
+
+		Assert.assertFalse(myContentlet.isWorking());
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#isWorking(Versionable)}
+	 * When: Create a  {@link Contentlet} and save it, call the isWorking
+	 * Should: should true
+	 */
+	@Test
+	public void test_is_working_with_persisted_contentlet() throws DotDataException, DotSecurityException {
+
+		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+		final Contentlet myContentlet = new ContentletDataGen(contentType)
+				.setProperty("title","Test").setProperty("body","Test Body")
+				.nextPersisted();
+
+		Assert.assertTrue(myContentlet.isWorking());
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#isWorking(Versionable)}
+	 * When: Create a  {@link Contentlet} and save it, call the isWorking
+	 * Next, create another languages.
+	 * Next, create a version but in that new language, call the isWorking
+	 * Should: should false
+	 */
+	@Test
+	public void test_is_working_with_persisted_in_diff_lang_contentlet() throws DotDataException, DotSecurityException {
+
+		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+		final Contentlet myContentlet = new ContentletDataGen(contentType)
+				.setProperty("title","Test").setProperty("body","Test Body")
+				.nextPersisted();
+		final String countryCode = "it";
+		final String languageCode = "it";
+		final Language languageIt = APILocator.getLanguageAPI().getLanguage(languageCode, countryCode)==null?
+				new LanguageDataGen().countryCode(countryCode).languageCode(languageCode).nextPersisted():
+				APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
+
+		final Contentlet myContentletIt = new ContentletDataGen(contentType)
+				.setProperty("title","Test").setProperty("body","Test Body")
+				.languageId(languageIt.getId())
+				.next();
+
+		Assert.assertTrue(myContentlet.isWorking());
+
+		myContentletIt.setIdentifier(myContentlet.getIdentifier());
+
+		Assert.assertFalse(myContentletIt.isWorking());
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#isWorking(Versionable)}
+	 * When: Create a  {@link Contentlet} and save it, call the isWorking
+	 * Next, create another languages.
+	 * Next, create a version but in that new language, call the isWorking
+	 * Additionally calls the {@link VersionableAPI#hasWorkingVersionInAnyOtherLanguage(Versionable, long)} that may return true
+	 */
+	@Test
+	public void test_is_working_with_persisted_in_any_lang_contentlet() throws DotDataException, DotSecurityException {
+
+		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+		final Contentlet myContentlet = new ContentletDataGen(contentType)
+				.setProperty("title","Test").setProperty("body","Test Body")
+				.nextPersisted();
+		final String countryCode = "it";
+		final String languageCode = "it";
+		final Language languageIt = APILocator.getLanguageAPI().getLanguage(languageCode, countryCode)==null?
+				new LanguageDataGen().countryCode(countryCode).languageCode(languageCode).nextPersisted():
+				APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
+
+		final Contentlet myContentletIt = new ContentletDataGen(contentType)
+				.setProperty("title","Test").setProperty("body","Test Body")
+				.languageId(languageIt.getId())
+				.next();
+
+		Assert.assertTrue(myContentlet.isWorking());
+
+		myContentletIt.setIdentifier(myContentlet.getIdentifier());
+
+		Assert.assertFalse(myContentletIt.isWorking());
+
+		Assert.assertTrue(APILocator.getVersionableAPI().hasWorkingVersionInAnyOtherLanguage(myContentletIt, languageIt.getId()));
 	}
 }

@@ -72,27 +72,34 @@ public abstract class ContentTypeSql {
 			+ "metadata=? "
 			+ "where inode=?";
 
-	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE
-			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
-			+ " %s" //if we have a condition
-			+ " and host like ? "
-			+ " and structuretype>=? and structuretype<= ? "
-			+ " order by %s";
-
-	public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD
-			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
-			+ " %s" //if we have a condition
-			+ " and host like ? "
-			+ " and structuretype>=? and structuretype<= ? "
-			+  NON_MARKED_FOR_DELETION
-			+ " order by %s";
-
-
-
+	// SECURITY: Fully parameterized count query templates
 	public static final String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
 			+ "where inode.type='structure' and inode.inode=structure.inode and "
 			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
-			+ " %s" //if we have a condition
+			+ " and structuretype>=? and structuretype<= ?"
+			+  NON_MARKED_FOR_DELETION;
+	
+	// SECURITY: Community edition filter for content types
+	public static final String SELECT_COUNT_CONDITION_COMMUNITY = "select count(*) as test from structure, inode "
+			+ "where inode.type='structure' and inode.inode=structure.inode and "
+			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and structuretype <> ? and structuretype <> ? "
+			+ " and structuretype>=? and structuretype<= ?"
+			+  NON_MARKED_FOR_DELETION;
+
+	// SECURITY: Count templates with additional safe condition support
+	public static final String SELECT_COUNT_CONDITION_WITH_SAFE = "select count(*) as test from structure, inode "
+			+ "where inode.type='structure' and inode.inode=structure.inode and "
+			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and %s " // Safe condition placeholder
+			+ " and structuretype>=? and structuretype<= ?"
+			+  NON_MARKED_FOR_DELETION;
+	
+	public static final String SELECT_COUNT_CONDITION_COMMUNITY_WITH_SAFE = "select count(*) as test from structure, inode "
+			+ "where inode.type='structure' and inode.inode=structure.inode and "
+			+ " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
+			+ " and %s " // Safe condition placeholder  
+			+ " and structuretype <> ? and structuretype <> ? "
 			+ " and structuretype>=? and structuretype<= ?"
 			+  NON_MARKED_FOR_DELETION;
 
@@ -113,4 +120,5 @@ public abstract class ContentTypeSql {
 	public static String COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW = "select count(distinct structure_id) from workflow_scheme_x_structure " +
 			"INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_scheme_x_structure.scheme_id " +
 			"where name != 'System Workflow'";
+
 }

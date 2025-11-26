@@ -31,9 +31,8 @@ describe('dot-binary-file', () => {
                 name: '',
                 value: null
             });
-
-        })
-    })
+        });
+    });
 
     describe('empty', () => {
         beforeEach(async () => {
@@ -144,7 +143,7 @@ describe('dot-binary-file', () => {
                     expect(dotBinaryText.getAttribute('placeholder')).toBe('Test');
                 });
 
-                xit('should set placeholder correctly in windows', async () => { });
+                xit('should set placeholder correctly in windows', async () => {});
             });
 
             describe('hint', () => {
@@ -409,7 +408,7 @@ describe('dot-binary-file', () => {
                 });
 
                 // TODO: Need to find a way to Mock drop event correctly.
-                xit('should not emit when value is not supported on  drop', async () => { });
+                xit('should not emit when value is not supported on  drop', async () => {});
 
                 // TODO: Need to find a way to Mock drop event correctly.
                 xit('should add dot-dropped and remove dot-dragover class on drop', async () => {
@@ -521,9 +520,5 @@ describe('dot-binary-file', () => {
                 });
             });
         });
-
-    })
-
-
-
+    });
 });

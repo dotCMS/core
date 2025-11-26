@@ -1,5 +1,5 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSError } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 /**
  * DotCMS {@link https://dotcms.com/docs/latest/widgets | widgets handler}

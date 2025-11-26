@@ -1,0 +1,138 @@
+@if ($store.isLoaded() || $store.isSaving()) {
+    @let showSidebar = $store.isSidebarOpen();
+    @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
+    @let lockWarningMessage = $store.lockWarningMessage();
+    @let showBetaMessage = $store.isBetaMessageVisible();
+    @let view = $store.uiState().view;
+    @let showInvalidMessage = $store.formStatus() === 'invalid';
+    @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
+
+    @let topBarHasMessages =
+        (isEnabledNewContentEditor && showBetaMessage) ||
+        lockWarningMessage ||
+        showSelectWorkflowWarning;
+    <div
+        class="edit-content-layout__topBar"
+        data-testId="edit-content-layout__topBar"
+        [class.edit-content-layout__topBar--beta-message-visible]="topBarHasMessages">
+        <!-- TODO: Improve this to use all the messages as a service -->
+        @if (isEnabledNewContentEditor && showBetaMessage) {
+            <p-messages
+                styleClass="edit-content-layout__beta-message"
+                severity="info"
+                data-testId="edit-content-layout__beta-message">
+                <ng-template pTemplate>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-info-circle"></i>
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__beta-message-content">
+                            {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
+                            <a
+                                href="#"
+                                (click)="$event.preventDefault(); $store.disableNewContentEditor()"
+                                data-testId="edit-content-layout__beta-message-link">
+                                {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
+                            </a>
+                            {{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
+                        </div>
+
+                        <button
+                            type="button"
+                            pButton
+                            icon="pi pi-times"
+                            rounded="true"
+                            data-testId="edit-content-layout__beta-message-close-button"
+                            (click)="closeMessage('betaMessage')"
+                            severity="info"
+                            text="true"
+                            size="small"></button>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+
+        @if (lockWarningMessage) {
+            <p-messages severity="warning" data-testId="edit-content-layout__lock-warning">
+                <ng-template pTemplate>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-exclamation-triangle"></i>
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__lock-warning-content"
+                            [innerHTML]="lockWarningMessage"></div>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+
+        @if (showSelectWorkflowWarning) {
+            <p-messages
+                styleClass="edit-content-layout__select-workflow-warning"
+                severity="warning"
+                data-testId="edit-content-layout__select-workflow-warning">
+                <ng-template pTemplate>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-info-circle"></i>
+                        <div class="flex align-items-center mr-auto gap-1">
+                            <span
+                                [innerHTML]="
+                                    ('edit.content.layout.select.workflow.warning' | dm) + ' '
+                                "></span>
+                            <a
+                                href="#"
+                                data-testId="select-workflow-link"
+                                (click)="$event.preventDefault(); selectWorkflow()">
+                                {{ 'edit.content.layout.select.workflow.warning.switch' | dm }}
+                            </a>
+                            <span
+                                [innerHTML]="
+                                    ('edit.content.layout.select.workflow.warning.subtitle' | dm) +
+                                    ' '
+                                "></span>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+
+        @if (showInvalidMessage) {
+            <p-messages severity="error" data-testId="edit-content-layout__lock-warning">
+                <ng-template pTemplate>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-times-circle"></i>
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__lock-warning-content">
+                            {{ 'edit.content.layout.invalid.message' | dm }}
+                        </div>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+    </div>
+
+    @if (view === 'form') {
+        @defer (when view === 'form') {
+            <dot-edit-content-form
+                data-testId="edit-content-layout__body"
+                (changeValue)="onFormChange($event)"
+                class="edit-content-layout__body" />
+        }
+    } @else if (view === 'compare') {
+        @defer (when view === 'compare') {
+            <dot-edit-content-compare class="edit-content-layout__body" />
+        }
+    }
+
+    @if (showSidebar) {
+        @defer (when showSidebar) {
+            <dot-edit-content-sidebar
+                [(showDialog)]="$showDialog"
+                data-testId="edit-content-layout__sidebar"
+                class="edit-content-layout__sidebar" />
+        }
+    }
+}
+
+<p-confirmDialog />

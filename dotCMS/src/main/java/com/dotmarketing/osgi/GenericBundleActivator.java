@@ -9,6 +9,11 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveResources;
 import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
+
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotmarketing.business.portal.DotPortlet;
+import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.exception.DotRuntimeException;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -16,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -23,12 +30,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.felix.framework.OSGIUtil;
-import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -61,8 +67,6 @@ import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.util.Http;
@@ -78,29 +82,29 @@ import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
 public abstract class GenericBundleActivator implements BundleActivator {
 
     private static final String MANIFEST_HEADER_OVERRIDE_CLASSES = "Override-Classes";
-
     private static final String INIT_PARAM_VIEW_JSP = "view-jsp";
     private static final String INIT_PARAM_VIEW_TEMPLATE = "view-template";
+    public static final String BYTEBUDDY_CLASS_RELOADING_STRATEGY_NOT_SET_JAVA_AGENT_NOT_SET = "bytebuddy ClassReloadingStrategy not set [java agent not set?]";
+    public static final String COM_LIFERAY_PORTLET_JSPPORTLET = "com.liferay.portlet.JSPPortlet";
+    public static final String COM_LIFERAY_PORTLET_VELOCITY_PORTLET = "com.liferay.portlet.VelocityPortlet";
 
     private BundleContext context;
-
-
     private PrimitiveToolboxManager toolboxManager;
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
     private RuleActionletOSGIService actionletOSGIService;
-    final private Collection<ToolInfo> viewTools = new ArrayList<>();;
-    final private Collection<WorkFlowActionlet> actionlets = new ArrayList<>();
-    final private Collection<Conditionlet> conditionlets = new ArrayList<>();
-    final private Collection<RuleActionlet> ruleActionlets = new ArrayList<>();
-    final private Collection<Class<CacheProvider>> cacheProviders = new ArrayList<>();
-    final private Map<String, String> jobs = new HashMap<>();
-    final private Collection<ActionConfig> actions = new ArrayList<>();
-    final private Collection<Portlet> portlets = new ArrayList<>();
-    final private Collection<Rule> rules = new ArrayList<>();
-    final private Collection<String> preHooks = new ArrayList<>();;
-    final private Collection<String> postHooks = new ArrayList<>();
-    final private Collection<String> overriddenClasses = new HashSet<>();
+    private final Collection<ToolInfo> viewTools = new ArrayList<>();
+    private final Collection<WorkFlowActionlet> actionlets = new ArrayList<>();
+    private final Collection<Conditionlet<?>> conditionlets = new ArrayList<>();
+    private final Collection<RuleActionlet<?>> ruleActionlets = new ArrayList<>();
+    private final Collection<Class<CacheProvider>> cacheProviders = new ArrayList<>();
+    private final Map<String, String> jobs = new HashMap<>();
+    private final Collection<ActionConfig> actions = new ArrayList<>();
+    private final Map<String,Portlet> portlets = new ConcurrentHashMap<>();
+    private final Collection<Rule> rules = new ArrayList<>();
+    private final Collection<String> preHooks = new ArrayList<>();
+    private final Collection<String> postHooks = new ArrayList<>();
+    private final Collection<String> overriddenClasses = new HashSet<>();
 
     protected ClassLoader getBundleClassloader () {
         return this.getClass().getClassLoader();
@@ -109,7 +113,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected ClassLoader getWebAppClassloader () {
         return InitServlet.class.getClassLoader();
     }
-    
+
     protected ClassReloadingStrategy getClassReloadingStrategy () {
         try {
             return ClassReloadingStrategy.fromInstalledAgent();
@@ -126,7 +130,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @param context
      */
-    protected void initializeServices ( BundleContext context ) throws Exception {
+    protected void initializeServices ( BundleContext context ) throws ClassNotFoundException {
 
         this.context = context;
 
@@ -150,7 +154,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * <br/>
      * New classes will be injected, existing ones will be overridden
      */
-    protected void overrideClasses(final BundleContext context) throws Exception {
+    protected void overrideClasses(final BundleContext context) throws ClassNotFoundException {
 
         if (null == this.context) {
             this.context = context;
@@ -161,11 +165,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( overrideClasses != null && !overrideClasses.isEmpty() ) {
 
             String[] forceOverride = overrideClasses.split( "," );
-            if ( forceOverride.length > 0 ) {
-                for ( String classToOverride : forceOverride ) {
-                    //Injecting this bundle context code inside the dotCMS context
-                    overrideClass( classToOverride );
-                }
+            for ( String classToOverride : forceOverride ) {
+                //Injecting this bundle context code inside the dotCMS context
+                overrideClass( classToOverride );
             }
 
         }
@@ -176,7 +178,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @deprecated Use {@link #overrideClasses(BundleContext)} instead
      */
     @Deprecated
-    protected void publishBundleServices ( BundleContext context ) throws Exception {
+    protected void publishBundleServices ( BundleContext context ) throws ClassNotFoundException {
         overrideClasses(context);
     }
 
@@ -186,18 +188,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @param context
      */
-    private void forceToolBoxLoading ( BundleContext context ) {
-
-        ServiceReference serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
-        if ( serviceRefSelected == null ) {
-
-            //Forcing the loading of the ToolboxManager
-            ServletToolboxManager toolboxManager = (ServletToolboxManager) VelocityUtil.getToolboxManager();
-            if ( toolboxManager != null ) {
-
-                serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
-                if ( serviceRefSelected == null ) {
-                    toolboxManager.registerService();
+    private void forceToolBoxLoading (BundleContext context) {
+        ServiceReference<?> serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
+        if (serviceRefSelected == null) {
+            // Forcing the loading of the ToolboxManager
+            ServletToolboxManager toolboxManagerLocal = (ServletToolboxManager) VelocityUtil.getToolboxManager();
+            if (toolboxManagerLocal != null) {
+                serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
+                if (serviceRefSelected == null) {
+                    toolboxManagerLocal.registerService();
                 }
             }
         }
@@ -212,7 +211,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private void forceWorkflowServiceLoading ( BundleContext context ) {
 
         //Getting the service to register our Actionlet
-        ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+        ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the WorkflowService
@@ -237,7 +236,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private void forceRuleConditionletServiceLoading ( BundleContext context ) {
 
         //Getting the service to register our Actionlet.
-        ServiceReference serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+        ServiceReference<?> serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the Rule Conditionlet Service.
@@ -262,7 +261,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private void forceCacheProviderServiceLoading ( BundleContext context ) {
 
         //Getting the service to register our CacheProvider
-        ServiceReference serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
+        ServiceReference<?> serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the CacheOSGIService
@@ -281,50 +280,49 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
 
 
-    
-    
-    protected void overrideClass(String className) throws Exception {
+
+
+    protected void overrideClass(String className) throws ClassNotFoundException {
 
         if (null == getClassReloadingStrategy()) {
-            Logger.error(this, "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
+            Logger.error(this, BYTEBUDDY_CLASS_RELOADING_STRATEGY_NOT_SET_JAVA_AGENT_NOT_SET);
             return;
         }
 
         className = className.trim();
 
         // Search for the class we want to inject using the felix plugin class loader
-        Class clazz = Class.forName(className.trim(), false, getBundleClassloader());
+        Class<?> clazz = Class.forName(className.trim(), false, getBundleClassloader());
 
         overrideClass(clazz);
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     /**
      * Will inject this bundle context code inside the dotCMS context
      *
-     * @param className a reference class inside this bundle jar
-     * @throws Exception
+     * @param clazz a reference class inside this bundle jar
      */
-    protected void overrideClass ( Class  clazz) throws Exception {
+    protected void overrideClass ( Class<?>  clazz) {
 
         if (null == getClassReloadingStrategy()) {
-            Logger.error(this, "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
+            Logger.error(this, BYTEBUDDY_CLASS_RELOADING_STRATEGY_NOT_SET_JAVA_AGENT_NOT_SET);
             return;
         }
 
 
         if(!clazz.getClassLoader().equals(getBundleClassloader())) {
             Logger.error(this, "Class:" + clazz.getName() + " not loaded from bundle classloader, cannot override/inject into dotCMS");
-            
+
         }
 
         Logger.info(this.getClass().getName(), "Injecting: " + clazz.getName() + " into classloader: " + getWebAppClassloader());
         Logger.debug(this.getClass().getName(),"bundle classloader :" +getBundleClassloader() );
         Logger.debug(this.getClass().getName(),"context classloader:" +getWebAppClassloader() );
-        
+
         ByteBuddyAgent.install();
         new ByteBuddy()
                 .rebase(clazz, ClassFileLocator.ForClassLoader.of(getBundleClassloader()))
@@ -341,61 +339,76 @@ public abstract class GenericBundleActivator implements BundleActivator {
     //*******************************************************************
     //*******************************************************************
 
+
     /**
-     * Register the portlets on the given configuration files
+     * Registers portlets based on the provided XML configurations.
      *
-     * @param xmls
-     * @throws Exception
+     * @param context the BundleContext
+     * @param xmls an array of XML file paths
+     * @return a collection of registered portlets
+     * @throws Exception if an error occurs during portlet registration
      */
-    @SuppressWarnings ("unchecked")
-    protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
-
-
-        for(String xml :xmls) {
-          try(InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes("UTF-8"))){
-            portlets.addAll(PortletManagerUtil.addPortlets(new InputStream[]{input})); 
-          }
-        }
-        for ( Portlet portlet : portlets ) {
-
-            if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
-
-                Map initParams = portlet.getInitParams();
-                String jspPath = (String) initParams.get( INIT_PARAM_VIEW_JSP );
-
-                if ( !jspPath.startsWith( PATH_SEPARATOR ) ) {
-                    jspPath = PATH_SEPARATOR + jspPath;
-                }
-
-                //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
-                moveResources( context, jspPath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getBundleFolder( context, File.separator ) + jspPath );
-                APILocator.getPortletAPI().updatePortlet(portlet);
-            } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
-
-                Map initParams = portlet.getInitParams();
-                String templatePath = (String) initParams.get( INIT_PARAM_VIEW_TEMPLATE );
-
-                if ( !templatePath.startsWith( PATH_SEPARATOR ) ) {
-                    templatePath = PATH_SEPARATOR + templatePath;
-                }
-
-                //Copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
-                moveVelocityResources( context, templatePath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getBundleFolder( context, File.separator ) + templatePath );
-                APILocator.getPortletAPI().updatePortlet(portlet);
-            }
-
-            Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
-            if(OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
-                OSGIUtil.getInstance().portletIDsStopped.remove(portlet.getPortletId());
+    protected Collection<Portlet> registerPortlets(BundleContext context, String[] xmls) throws Exception {
+        for (String xml : xmls) {
+            try (InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes(StandardCharsets.UTF_8))) {
+                portlets.putAll(PortletManagerUtil.addPortlets(new InputStream[]{input}));
             }
         }
 
-        //Forcing a refresh of the portlets cache
+        for (Map.Entry<String, Portlet> entry : portlets.entrySet()) {
+            Portlet portlet = entry.getValue();
+            String portletClass = portlet.getPortletClass();
+
+            if (portletClass.equals(COM_LIFERAY_PORTLET_JSPPORTLET) || portletClass.equals(
+                    COM_LIFERAY_PORTLET_VELOCITY_PORTLET)) {
+                handlePortlet(context, portlet, portletClass);
+            }
+
+            Logger.info(this, "Added Portlet: " + portlet.getPortletId());
+            OSGIUtil.getInstance().getPortletIDsStopped().remove(portlet.getPortletId());
+        }
+
+        // Forcing a refresh of the portlets cache
         APILocator.getPortletAPI().findAllPortlets();
 
-        return portlets;
+        return portlets.values();
+    }
+
+    /**
+     * Handles the processing and updating of a specific portlet type.
+     *
+     * @param context the BundleContext
+     * @param portlet the Portlet object
+     * @param portletClass the class type of the portlet
+     * @throws Exception if an error occurs during portlet processing
+     */
+    private void handlePortlet(BundleContext context, Portlet portlet, String portletClass) throws Exception {
+        Map<String, String> initParams = portlet.getInitParams();
+        String pathParam = portletClass.equals(COM_LIFERAY_PORTLET_JSPPORTLET) ? INIT_PARAM_VIEW_JSP : INIT_PARAM_VIEW_TEMPLATE;
+        String path = initParams.get(pathParam);
+
+        if (!path.startsWith(PATH_SEPARATOR)) {
+            path = PATH_SEPARATOR + path;
+        }
+
+        if (portletClass.equals(COM_LIFERAY_PORTLET_JSPPORTLET)) {
+            moveResources(context, path);
+        } else if (portletClass.equals(COM_LIFERAY_PORTLET_VELOCITY_PORTLET)) {
+            moveVelocityResources(context, path);
+        }
+
+        Map<String, String> mutableInitParams = new HashMap<>(portlet.getInitParams());
+        mutableInitParams.put(pathParam, getBundleFolder(context, File.separator) + path);
+
+        DotPortlet updatedDotPortlet = DotPortlet.builder()
+                .from(portlet)
+                .initParams(mutableInitParams)
+                .build();
+
+        Portlet updatedPortlet = updatedDotPortlet.toPortlet();
+        PortletAPI api = APILocator.getPortletAPI();
+        api.updatePortlet(updatedPortlet);
+        portlets.put(updatedPortlet.getPortletId(), updatedPortlet);
     }
 
     /**
@@ -436,7 +449,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param actionMapping
      * @throws Exception
      */
-    protected void registerActionMapping ( ActionMapping actionMapping ) throws Exception {
+    protected void registerActionMapping ( ActionMapping actionMapping )
+            throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
 
         String actionClassType = actionMapping.getType();
 
@@ -449,7 +463,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         //Adding the ActionConfig to the ForwardConfig
         moduleConfig.addActionConfig( actionMapping );
-        //moduleConfig.freeze();
 
         actions.add( actionMapping );
         Logger.info( this, "Added Struts Action Mapping: " + actionClassType );
@@ -461,7 +474,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param scheduledTask
      * @throws Exception
      */
-    protected void scheduleQuartzJob ( ScheduledTask scheduledTask ) throws Exception {
+    protected void scheduleQuartzJob ( ScheduledTask scheduledTask ) throws ClassNotFoundException, SchedulerException, ParseException {
 
         String jobName = scheduledTask.getJobName();
         String jobGroup = scheduledTask.getJobGroup();
@@ -495,7 +508,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
             urlRewriteFilter.addRule( rule );
             rules.add( rule );
         } else {
-            throw new RuntimeException( "Non UrlRewriteFilter found!" );
+            throw new DotRuntimeException( "Non UrlRewriteFilter found!" );
         }
     }
 
@@ -546,34 +559,29 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param context
      * @param actionlet
      */
-    @SuppressWarnings ("unchecked")
-    protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
+    protected void registerActionlet (final BundleContext context, final WorkFlowActionlet actionlet) {
 
         //Getting the service to register our Actionlet
-        ServiceReference serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
-        if ( serviceRefSelected == null ) {
+        final ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
+        if (serviceRefSelected == null) {
             return;
         }
 
+        OSGIUtil.getInstance().setWorkflowOsgiService((WorkflowAPIOsgiService) context.getService(serviceRefSelected));
+        OSGIUtil.getInstance().getWorkflowOsgiService().addActionlet(actionlet.getClass());
+        actionlets.add(actionlet);
 
-        OSGIUtil.getInstance().workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
-        OSGIUtil.getInstance().workflowOsgiService.addActionlet( actionlet.getClass() );
-        actionlets.add( actionlet );
-
-        Logger.info( this, "Added actionlet: " + actionlet.getName() );
-        if(OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
-            OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
-        }
+        Logger.info(this, String.format("Added actionlet: [%s]", actionlet.getName()));
+        OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
     }
 
     /**
      * Register a Rules Engine RuleActionlet service
      */
-    @SuppressWarnings("unchecked")
-    protected void registerRuleActionlet(BundleContext context, RuleActionlet actionlet) {
+    protected void registerRuleActionlet(BundleContext context, RuleActionlet<?> actionlet) {
 
         //Getting the service to register our Actionlet
-        ServiceReference serviceRefSelected = context.getServiceReference(RuleActionletOSGIService.class.getName());
+        ServiceReference<?> serviceRefSelected = context.getServiceReference(RuleActionletOSGIService.class.getName());
         if(serviceRefSelected == null) {
             return;
         }
@@ -591,11 +599,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param context
      * @param conditionlet
      */
-    @SuppressWarnings ("unchecked")
-    protected void registerRuleConditionlet ( BundleContext context, Conditionlet conditionlet) {
+    protected void registerRuleConditionlet ( BundleContext context, Conditionlet<?> conditionlet) {
 
         //Getting the service to register our Conditionlet
-        ServiceReference serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+        ServiceReference<?> serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
         if ( serviceRefSelected == null ) {
             return;
         }
@@ -610,63 +617,71 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     private void registerBundleResourceMessages(BundleContext context) {
-        //Register Language under /resources/messages folder.
         Enumeration<String> langFiles = context.getBundle().getEntryPaths("messages");
-        while(langFiles != null && langFiles.hasMoreElements() ){
-
+        while (langFiles != null && langFiles.hasMoreElements()) {
             String langFile = langFiles.nextElement();
+            if (isValidLanguageFile(langFile)) {
+                processLanguageFile(context, langFile);
+            }
+        }
+    }
 
-            //We need to verify file is a language file.
-            String languageFilePrefix = "messages/Language_";
-            String languageFileSuffix = ".properties";
-            String languageFileDelimiter = "-";
+    private boolean isValidLanguageFile(String langFile) {
+        String languageFilePrefix = "messages/Language_";
+        String languageFileSuffix = ".properties";
+        String languageFileDelimiter = "-";
 
-            //Validating Language file name: For example: Language_en-US.properties
-            if(langFile.startsWith(languageFilePrefix)
+        return langFile.startsWith(languageFilePrefix)
                 && langFile.contains(languageFileDelimiter)
-                && langFile.endsWith(languageFileSuffix)){
+                && langFile.endsWith(languageFileSuffix);
+    }
 
-                //Get the Language and Country Codes.
-                String languageCountry = langFile.replace(languageFilePrefix,"").replace(languageFileSuffix, "");
-                String languageCode = languageCountry.split(languageFileDelimiter)[0];
-                String countryCode = languageCountry.split(languageFileDelimiter)[1];
+    private void processLanguageFile(BundleContext context, String langFile) {
+        String languageFilePrefix = "messages/Language_";
+        String languageFileSuffix = ".properties";
+        String languageFileDelimiter = "-";
 
-                URL file = context.getBundle().getEntry(langFile);
-                Map<String, String> generalKeysToAdd = new HashMap<>();
+        String languageCountry = langFile.replace(languageFilePrefix, "").replace(languageFileSuffix, "");
+        String[] languageCountryParts = languageCountry.split(languageFileDelimiter);
+        String languageCode = languageCountryParts[0];
+        String countryCode = languageCountryParts[1];
 
-                try(BufferedReader in = new BufferedReader(new InputStreamReader(file.openStream()))) {
+        URL file = context.getBundle().getEntry(langFile);
+        Map<String, String> generalKeysToAdd = readLanguageFile(file);
 
-                    String line;
-                    while ((line = in.readLine()) != null){
-                        //Make sure line contains = sign.
-                        String delimiter = "=";
-                        if(line.contains(delimiter)){
-                            String[] keyValue = line.split(delimiter);
-                            String key = keyValue[0];
-                            String value = keyValue[1];
+        if (generalKeysToAdd != null) {
+            saveLanguageKeys(languageCode, countryCode, generalKeysToAdd, languageCountry);
+        }
+    }
 
-                            generalKeysToAdd.put(key,value);
-                        }
-                    }
-                } catch (IOException e) {
-                    Logger.error(this.getClass(), "Error opening Language File: " + langFile, e);
-                }
-
-                try {
-                    Language languageObject = APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
-                    if (null != languageObject && UtilMethods
-                            .isSet(languageObject.getLanguageCode())) {
-
-                        APILocator.getLanguageAPI().saveLanguageKeys(languageObject,
-                                                                     generalKeysToAdd, new HashMap<>(), new HashSet<>());
-                    } else {
-                        Logger.warn(this.getClass(), "Country and Language do not exist: " + languageCountry);
-                    }
-
-                } catch (DotDataException e) {
-                    Logger.error(this.getClass(), "Error inserting language properties for: " + languageCountry, e);
+    private Map<String, String> readLanguageFile(URL file) {
+        Map<String, String> generalKeysToAdd = new HashMap<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(file.openStream()))) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.contains("=")) {
+                    String[] keyValue = line.split("=", 2);
+                    generalKeysToAdd.put(keyValue[0], keyValue[1]);
                 }
             }
+        } catch (IOException e) {
+            Logger.error(this.getClass(), "Error opening Language File: " + file, e);
+            return Map.of();
+        }
+        return generalKeysToAdd;
+    }
+
+    private void saveLanguageKeys(String languageCode, String countryCode, Map<String, String> generalKeysToAdd, String languageCountry) {
+        try {
+            Language languageObject = APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
+            if (languageObject != null && UtilMethods.isSet(languageObject.getLanguageCode())) {
+                //noinspection removal
+                APILocator.getLanguageAPI().saveLanguageKeys(languageObject, generalKeysToAdd, new HashMap<>(), new HashSet<>());
+            } else {
+                Logger.warn(this.getClass(), "Country and Language do not exist: " + languageCountry);
+            }
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error inserting language properties for: " + languageCountry, e);
         }
     }
 
@@ -680,11 +695,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    @SuppressWarnings ( "unchecked" )
     protected void registerCacheProvider ( BundleContext context, String cacheRegion, Class<CacheProvider> provider ) throws Exception {
 
         //Getting the service to register our Cache provider implementation
-        ServiceReference serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
+        ServiceReference<?> serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
         if ( serviceRefSelected == null ) {
             return;
         }
@@ -702,11 +716,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param context
      * @param info
      */
-    @SuppressWarnings ("unchecked")
     protected void registerViewToolService ( BundleContext context, ToolInfo info ) {
 
         //Getting the service to register our ViewTool
-        ServiceReference serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
+        ServiceReference<?> serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
         if ( serviceRefSelected == null ) {
             return;
         }
@@ -724,7 +737,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param preHook
      * @throws Exception
      */
-    protected void addPreHook ( Object preHook ) throws Exception {
+    protected void addPreHook ( Object preHook )
+            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
         //First we need to be sure we are not adding the same hook more than once
@@ -740,7 +754,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param postHook
      * @throws Exception
      */
-    protected void addPostHook ( Object postHook ) throws Exception {
+    protected void addPostHook ( Object postHook )
+            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
 
         Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
         //First we need to be sure we are not adding the same hook more than once
@@ -782,13 +797,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * Unpublish this bundle elements
      */
-    protected void unpublishBundleServices () throws Exception {
+    protected void unpublishBundleServices () {
 
-        if (null != this.overriddenClasses && !this.overriddenClasses.isEmpty()) {
+        if (!this.overriddenClasses.isEmpty()) {
 
             if (null == this.getClassReloadingStrategy()) {
                 Logger.error(this,
-                        "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
+                        BYTEBUDDY_CLASS_RELOADING_STRATEGY_NOT_SET_JAVA_AGENT_NOT_SET);
                 return;
             }
 
@@ -811,7 +826,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterActionlets () {
 
-        if ( OSGIUtil.getInstance().workflowOsgiService != null && actionlets != null ) {
+        if (OSGIUtil.getInstance().getWorkflowOsgiService() != null) {
             for ( WorkFlowActionlet actionlet : actionlets ) {
                 if(!OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
                     OSGIUtil.getInstance().actionletsStopped.add(actionlet.getClass().getCanonicalName());
@@ -825,8 +840,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterConditionlets() {
 
-        if (this.conditionletOSGIService != null && conditionlets != null) {
-            for ( Conditionlet conditionlet : conditionlets ) {
+        if (this.conditionletOSGIService != null) {
+            for ( Conditionlet<?> conditionlet : conditionlets ) {
 
                 this.conditionletOSGIService.removeConditionlet(conditionlet.getClass().getSimpleName());
                 Logger.info( this, "Removed Rules Conditionlet: " + conditionlet.getClass().getSimpleName());
@@ -839,8 +854,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterRuleActionlets() {
 
-        if (this.actionletOSGIService != null && ruleActionlets != null) {
-            for ( RuleActionlet actionlet : ruleActionlets ) {
+        if (this.actionletOSGIService != null) {
+            for ( RuleActionlet<?> actionlet : ruleActionlets ) {
 
                 this.actionletOSGIService.removeRuleActionlet(actionlet.getClass().getSimpleName());
                 Logger.info( this, "Removed Rules Actionlet: " + actionlet.getClass().getSimpleName());
@@ -853,7 +868,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterCacheProviders () {
 
-        if ( this.cacheOSGIService != null && cacheProviders != null ) {
+        if (this.cacheOSGIService != null) {
             for ( Class<CacheProvider> provider : cacheProviders ) {
 
                 this.cacheOSGIService.removeCacheProvider(provider);
@@ -867,7 +882,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterViewToolServices () {
 
-        if ( this.toolboxManager != null && viewTools != null ) {
+        if (this.toolboxManager != null) {
 
             Iterator<ToolInfo> toolInfoIterator = viewTools.iterator();
             while ( toolInfoIterator.hasNext() ) {
@@ -887,13 +902,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception
      */
     protected void unregisterPostHooks () {
-
-        if ( postHooks != null ) {
-
-            Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
-            for ( String postHook : postHooks ) {
-                interceptor.delPostHookByClassName( postHook );
-            }
+        Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+        for ( String postHook : postHooks ) {
+            interceptor.delPostHookByClassName( postHook );
         }
     }
 
@@ -904,12 +915,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterPreHooks () {
 
-        if ( preHooks != null ) {
-
-            Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
-            for ( String preHook : preHooks ) {
-                interceptor.delPreHookByClassName( preHook );
-            }
+        Interceptor interceptor = (Interceptor) APILocator.getContentletAPIntercepter();
+        for ( String preHook : preHooks ) {
+            interceptor.delPreHookByClassName( preHook );
         }
     }
 
@@ -918,19 +926,16 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @throws Exception
      */
-    protected void unregisterActionMappings () throws Exception {
+    protected void unregisterActionMappings () throws NoSuchFieldException, IllegalAccessException {
 
-        if ( actions != null ) {
+        ModuleConfig moduleConfig = getModuleConfig();
+        //We need to unfreeze this module in order to add new action mappings
+        unfreeze( moduleConfig );
 
-            ModuleConfig moduleConfig = getModuleConfig();
-            //We need to unfreeze this module in order to add new action mappings
-            unfreeze( moduleConfig );
-
-            for ( ActionConfig actionConfig : actions ) {
-                moduleConfig.removeActionConfig( actionConfig );
-            }
-            moduleConfig.freeze();
+        for ( ActionConfig actionConfig : actions ) {
+            moduleConfig.removeActionConfig( actionConfig );
         }
+        moduleConfig.freeze();
 
     }
 
@@ -939,12 +944,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @throws SchedulerException
      */
-    protected void unregisterQuartzJobs () throws Exception {
+    protected void unregisterQuartzJobs () throws SchedulerException {
 
-        if ( jobs != null ) {
-            for ( String jobName : jobs.keySet() ) {
-                QuartzUtils.removeJob( jobName, jobs.get( jobName ) );
-            }
+        for ( Map.Entry<String,String> entry : jobs.entrySet() ) {
+            QuartzUtils.removeJob( entry.getKey(), entry.getValue() );
         }
     }
 
@@ -953,13 +956,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @throws SchedulerException
      */
-    protected void unregisterPortlets () throws Exception {
-        if ( portlets != null ) {
-            
-            for ( Portlet portlet : portlets ) {
-                if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
-                    OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
-                }
+    protected void unregisterPortlets () {
+        for ( Portlet portlet : portlets.values() ) {
+            if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
+                OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
             }
         }
     }
@@ -980,18 +980,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterRewriteRule () throws Exception {
 
-        if ( rules != null ) {
-
-            //Get a reference of our url rewrite filter
-            DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
-            if ( urlRewriteFilter != null ) {
-                for ( Rule rule : rules ) {
-                    //Remove from the filter this rule
-                    urlRewriteFilter.removeRule( rule );
-                }
-            } else {
-                throw new RuntimeException( "Non UrlRewriteFilter found!" );
+        //Get a reference of our url rewrite filter
+        DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
+        if ( urlRewriteFilter != null ) {
+            for ( Rule rule : rules ) {
+                //Remove from the filter this rule
+                urlRewriteFilter.removeRule( rule );
             }
+        } else {
+            throw new DotRuntimeException( "Non UrlRewriteFilter found!" );
         }
     }
 

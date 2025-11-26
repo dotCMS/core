@@ -1,64 +1,38 @@
-/* 
-* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
-* Copyright (c) 2023 dotCMS Inc.
-* 
-* With regard to the dotCMS Software and this code:
-* 
-* This software, source code and associated documentation files (the
-* "Software")  may only be modified and used if you (and any entity that
-* you represent) have:
-* 
-* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
-* of Service, available at https://www.dotcms.com/terms (the “Enterprise
-* Terms”) or have another agreement governing the licensing and use of the
-* Software between you and dotCMS. 2. Each dotCMS instance that uses
-* enterprise features enabled by the code in this directory is licensed
-* under these agreements and has a separate and valid dotCMS Enterprise
-* server key issued by dotCMS.
-* 
-* Subject to these terms, you are free to modify this Software and publish
-* patches to the Software if you agree that dotCMS and/or its licensors
-* (as applicable) retain all right, title and interest in and to all such
-* modifications and/or patches, and all such modifications and/or patches
-* may only be used, copied, modified, displayed, distributed, or otherwise
-* exploited with a valid dotCMS Enterprise license for the correct number
-* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
-* applicable) retain all right, title and interest in and to all such
-* modifications.  You are not granted any other rights beyond what is
-* expressly stated herein.  Subject to the foregoing, it is forbidden to
-* copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
-* For all third party components incorporated into the dotCMS Software,
-* those components are licensed under the original license provided by the
-* owner of the applicable component.
+/*
+*
+* Copyright (c) 2025 dotCMS LLC
+* Use of this software is governed by the Business Source License included
+* in the LICENSE file found at in the root directory of software.
+* SPDX-License-Identifier: BUSL-1.1
+*
 */
 
 package com.dotcms.enterprise.publishing.remote.handler;
+
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
@@ -81,6 +55,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -114,26 +89,26 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
 import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
-import org.apache.commons.lang3.tuple.Pair;
-
+import io.vavr.Tuple3;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * This handler deals with Contentlet-related information inside a bundle and
@@ -162,8 +137,10 @@ public class ContentHandler implements IHandler {
 	private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 	private final Lazy<MultiTreeAPI> multiTreeAPI = Lazy.of(APILocator::getMultiTreeAPI);
+	private final Lazy<BundleAPI> bundleAPI = Lazy.of(APILocator::getBundleAPI);
 
-	private final Map<String,Long> infoToRemove = new HashMap<>();
+    // tuple3(identifier, lang, shouldReindex)
+    private final HashSet<Tuple3<String, Long, Boolean>> contentToRefresh = new HashSet<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
 
 	private static final boolean RESPECT_FRONTEND_ROLES = true;
@@ -210,40 +187,61 @@ public class ContentHandler implements IHandler {
 	 */
 	public void handle(final File bundleFolder, final Boolean isHost) throws Exception {
 
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-			throw new RuntimeException("need an enterprise pro license to run this");
-		}
-		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
+        List<File> contents = isHost ? FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()) :
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
-
+		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);
 
 		String identToRemove = null;
 		Contentlet contentlet = null;
 		try{
-            for (final String ident : infoToRemove.keySet()) {
-				identToRemove = ident;
-                APILocator.getVersionableAPI().removeContentletVersionInfoFromCache(ident, infoToRemove.get(ident));
-				contentlet = contentletAPI.findContentletByIdentifier(ident, false, infoToRemove.get(ident), APILocator.getUserAPI().getSystemUser(), true);
-				APILocator.getContentletAPI().refresh(contentlet);
+            // tuple3(identifier, lang, shouldReindex)
+            for (final Tuple3<String, Long, Boolean> cvinfo : contentToRefresh) {
+
+                APILocator.getVersionableAPI()
+                        .removeContentletVersionInfoFromCache(cvinfo._1, cvinfo._2);
+                contentlet = contentletAPI.findContentletByIdentifier(cvinfo._1, false, cvinfo._2,
+                        APILocator.getUserAPI().getSystemUser(), true);
 				invalidateRelationshipsCache(contentlet);
+
+                if (cvinfo._3) {
+                    // reindex background value, after new content but before any full reindexing
+                    APILocator.getReindexQueueAPI().addIdentifierReindex(cvinfo._1, Priority.STRUCTURE.dbValue());
+                } else {
+
+                    Logger.info(this,
+                            "Skipping reindex on related child content {title:" + (contentlet != null
+                                    ? contentlet.getTitle() : "ukn content")
+                                    + "},{id:"
+                                    + cvinfo._1 + "}");
+                }
             }
+
+
         }catch (Exception e) {
 			HandlerUtil.cleanupExistingContentByBundleId(config.getId());
 			throw new DotPublishingException("Unable to update Cache or Reindex Content: identToRemove=[" +
 					identToRemove + "], contentId=[" + (null != contentlet ? contentlet.getIdentifier() : "null id") +
 					"], contentInode=[" + (null != contentlet ? contentlet.getInode() : "null inode") + "], lang=[" +
-					(null != contentlet ? contentlet.getLanguageId() : "null lang") + "]", e);
+                    (null != contentlet ? contentlet.getLanguageId() : "null lang") + "]:" + e.getMessage(), e);
 		}
+	}
+
+	private boolean ignoreContent(Contentlet contentlet){
+
+		// if a host does not exist on target, skip content
+		Host localHost = Try.of(()->APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), false)).getOrNull();
+		return UtilMethods.isEmpty(localHost::getIdentifier);
+
 	}
 
 	/**
 	 * Reads the information of the contentlets contained in the bundle and
 	 * saves them in the destination server.
 	 * 
-	 * @param contents
+	 * @param contentsIn
 	 *            The list of data files containing the contentlet information.
 	 * @param folderOut
 	 *            - The location of the bundle in the file system.
@@ -255,28 +253,28 @@ public class ContentHandler implements IHandler {
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
 	 */
-	private void handleContents(final Collection<File> contents, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
+	private void handleContents(final Collection<File> contentsIn, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			throw new RuntimeException("need an enterprise pro license to run this");
 		}
 	    final User systemUser = userAPI.getSystemUser();
         File workingOn=null;
-        Contentlet content = null;
+        Contentlet content;
 		ContentWrapper wrapper = null;
+		final Collection<File> contents = contentsIn.stream().filter(File::isFile).collect(Collectors.toList());
+		final Collection<String> alreadyDeleted = new HashSet<>();
+
     	try{
 	        final XStream xstream = XStreamHandler.newXStreamInstance();
 			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
             for (final File contentFile : contents) {
                 workingOn=contentFile;
-                content = null;
-                if ( contentFile.isDirectory() ) {
-                    continue;
-                }
+
                 try(final InputStream input = Files.newInputStream(contentFile.toPath())){
                     wrapper = (ContentWrapper) xstream.fromXML(input);
                 }
                 //This is to check if the contentType exists in the receiver, to improve logs
-				//If the ContentType does not exists will throw a NotFoundInDBException
+				//If the ContentType does not exist, this method will throw a NotFoundInDBException
 				APILocator.getContentTypeAPI(systemUser).find(wrapper.getContent().getContentTypeId());
 
 				if (Host.SYSTEM_HOST.equalsIgnoreCase(wrapper.getContent().getIdentifier())) {
@@ -309,6 +307,13 @@ public class ContentHandler implements IHandler {
                     content.getMap().remove(PAGE_FRIENDLY_NAME_FIELD_VAR.toLowerCase());
                 }
 
+				// if a Site does not exist on target, skip content
+				if(ignoreContent(content)){
+                    Logger.warn(this.getClass(), "Ignoring contentlet: " + content.getIdentifier() + " | " + Try.of(
+                            content::getTitle).getOrElse("unknown")  + " . Unable to find referenced Site: " + content.getHost());
+					continue;
+				}
+
 				content.setVariantId(wrapper.getContent().getVariantId());
 
                 // get the local language and assign it to the version info, and content, since the id's might be different
@@ -328,6 +333,12 @@ public class ContentHandler implements IHandler {
 						}
 					}
 				}
+
+				content.setIdentifier(this.findLocalIdentifier(content));
+
+
+
+
                 try{
 					final boolean isPushedContentArchived = wrapper.getInfo().isDeleted();
 					final String contentId = content.getIdentifier();
@@ -357,12 +368,17 @@ public class ContentHandler implements IHandler {
 						pushedIdsToIgnore.add(idAndLanguageKey);
 					} else {
 						// Finally, this operation (UNPUBLISH) deletes a Content altogether
-						archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
-						Logger.debug(this, () -> "Content deleted: " + contentId
+
+						if (!alreadyDeleted.contains(contentId)) {
+							archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
+						}
+
+						alreadyDeleted.add(contentId);
+						Logger.info(this, () -> "Content deleted: " + contentId
 								+ " , inode: " + contentInode + " , language: " + languageId);
 					}
 				} catch (final FileAssetValidationException e1){
-                    Logger.error(ContentHandler.class, "Content id ["+content.getIdentifier()+"] could not be processed because of missing binary file. Error: "+e1.getMessage(),e1);
+                    Logger.error(ContentHandler.class, "Content id ["+content.getIdentifier()+"] could not be processed because of missing binary file. Error: "+ ExceptionUtil.getErrorMessage(e1), e1);
 				}
             }
 			workingOn = null;
@@ -384,6 +400,16 @@ public class ContentHandler implements IHandler {
 					// get the local language and assign it to the version info, and the content, since the id's might be different
 					final Language remoteLang = wrapper.getLanguage();
 					final Pair<Long,Long> remoteLocalLanguages = this.existingContentMap.getRemoteLocalLanguages(wrapper);
+
+
+					// if a host does not exist on target, skip content
+					if(ignoreContent(content)){
+						Contentlet finalContent = content;
+						Logger.warn(this.getClass(), "Ignoring contentlet: " + content.getIdentifier() + " | " + Try.of(
+                                finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced Site: " + content.getHost());
+						continue;
+					}
+
 
 					if(UtilMethods.isSet(remoteLang) && remoteLang.getId() > 0) {
 						// This should take care of solving any existing conflicts. Previously solved by the Language Handler.
@@ -461,11 +487,11 @@ public class ContentHandler implements IHandler {
                         }
                     }
 
-					infoToRemove.put(info.getIdentifier(), info.getLang());
+                    contentToRefresh.add(new Tuple3(info.getIdentifier(), info.getLang(), true));
 					addRelatedContentsToInfoToRemove(content, wrapper.getInfo());
 
                     // saving a contentletVersionInfo might do an implicit publish. Need to know in order to clean up properly
-                    boolean implicitPublish = false;
+                    boolean implicitPublish;
                     if (updateExisting) {
                         // Updating an existing content. Just read the local content version info to
                         // publish or not publish the content
@@ -505,7 +531,7 @@ public class ContentHandler implements IHandler {
                         Logger.debug(this, ()-> "*********************** live inode is null");
                     } else {
 						if(Logger.isDebugEnabled(getClass())){
-                          //This might generate a DotStateException if we're copying a brand new instance that doesnt have a version on the receiver
+                          //This might generate a DotStateException if we're copying a brand-new instance that doesn't have a version on the receiver
 						  Logger.debug(this,
 								  () -> "*********************** content " + contentId
 										+ " is live? " + isLiveContentlet);
@@ -536,6 +562,11 @@ public class ContentHandler implements IHandler {
 					final ContentletVersionInfo versionInfoToSave = info;
 					Logger.debug(this, () -> "*********************** Saving content info: " + versionInfoToSave
 							+ ", language: " + versionInfoToSave.getLang());
+
+					String localIdentifier = findLocalIdentifier(content);
+
+
+					info.setIdentifier(localIdentifier);
                     APILocator.getVersionableAPI().saveContentletVersionInfo(info);
 
 	                if(isHost) {
@@ -570,20 +601,54 @@ public class ContentHandler implements IHandler {
 			final String errorMsg = String.format("An error occurred when processing Contentlet in '%s' with ID '%s': '%s'",
 					workingOn,
 					(UtilMethods.isSet(wrapper) && UtilMethods.isSet(wrapper.getContent()) ? wrapper.getContent().getIdentifier() : "(empty)"),
-					e.getMessage());
+					ExceptionUtil.getErrorMessage(e));
 			Logger.error(this.getClass(), errorMsg, e);
 			throw new DotPublishingException(errorMsg, e);
 		}
     }
+
+	private String findLocalIdentifier(final Contentlet content) throws DotDataException {
+
+		String localIdentifier = Try.of(()->APILocator.getIdentifierAPI().find(content.getIdentifier()).getId()).getOrNull();
+
+		if(UtilMethods.isSet(localIdentifier)){
+			return localIdentifier;
+		}
+
+
+		if(content.isHTMLPage() || content.isFileAsset()){
+			Host host = Try.of(()->APILocator.getHostAPI().find(content.getHost(), APILocator.systemUser(), false)).getOrNull();
+
+			String uri = Try.of(()->content.isHTMLPage() ? APILocator.getHTMLPageAssetAPI().fromContentlet(content).getURI() : APILocator.getFileAssetAPI().fromContentlet(content).getURI()).getOrNull();
+
+			if(!UtilMethods.isSet(uri) || !UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())){
+				return content.getIdentifier();
+			}
+
+			Identifier identifier = identifierAPI.find(host,uri);
+			if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getId())){
+				return identifier.getId();
+			}
+
+		}
+		return content.getIdentifier();
+
+	}
+
+
+
+
 	
 	private void addRelatedContentsToInfoToRemove(Contentlet content, ContentletVersionInfo info) {
 		try {
 			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 			final ContentType contentType = content.getContentType();
 			final List<Relationship> relationships = relationshipAPI.byContentType(contentType);
-
+            final boolean onlyParents = Config.getBooleanProperty("PUSH_PUBLISHING_REINDEX_RELATIONSHIP_PARENTS_ONLY",
+                    false);
 			if (!relationships.isEmpty()) {
-				for (final Relationship relationship : relationships) {
+
+                for (final Relationship relationship : relationships) {
 					final List<Contentlet> relatedContents = new ArrayList<>();
 
 					if (relationshipAPI.sameParentAndChild(relationship)) {
@@ -603,7 +668,15 @@ public class ContentHandler implements IHandler {
 					}
 
 					for (final Contentlet relatedContent : relatedContents) {
-						infoToRemove.put(relatedContent.getIdentifier(), info.getLang());
+                        boolean shouldReindex = onlyParents
+                                ? relationship.getChildStructureInode().equals(content.getContentTypeId())
+                                : true;   // always reindex if config is not set
+
+
+                        contentToRefresh.add(
+                                new Tuple3<>(relatedContent.getIdentifier(), info.getLang(), shouldReindex));
+
+
 					}
 				}
 			}
@@ -612,9 +685,9 @@ public class ContentHandler implements IHandler {
 					String.format("Error trying to push content with ID '%s' / version info '%s': %s",
 							content.getIdentifier(),
 							info,
-							e.getMessage())
+							ExceptionUtil.getErrorMessage(e))
 			);
-			Logger.debug(ContentHandler.class, e, () -> e.getMessage());
+			Logger.debug(ContentHandler.class, e, () -> ExceptionUtil.getErrorMessage(e));
 		}
 	}
 
@@ -663,7 +736,7 @@ public class ContentHandler implements IHandler {
 					// Check for folders with same path
 					List<Identifier> folders = identifierAPI.findByURIPattern(
 							"folder", fullPageUrl, true, h);
-					if (folders.size() > 0) {
+					if (!folders.isEmpty()) {
 						throw new DotDataException(
 								"Conflict between HTML page and Folder. Page with identifier : '"
 										+ contentPage.getIdentifier() + "' "
@@ -761,34 +834,38 @@ public class ContentHandler implements IHandler {
 			holdDefaultHostConfiguration(content, userToUse);
 		}
 
-		//Verify if this contentlet is a FileAsset
-        if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())) {
-            // Wiping out the thumbnails and resized versions
-            APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
-        }
+      // Wiping out the thumbnails and resized versions (if a fileAsset)
+      APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
 
-        //Verify if this contentlet is a HTMLPage
-        if (BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())) {
-            //Adding to the page a listener in order to invalidate the page after being save
-            final IHTMLPage hp = HandlerUtil.fromContentlet( content, false );
-            HibernateUtil.addCommitListener( new FlushCacheRunnable() {
-                public void run () {
+      //Verify if this contentlet is a HTMLPage
+      if (BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())) {
+        //Adding to the page a listener in order to invalidate the page after being save
+        final IHTMLPage hp = HandlerUtil.fromContentlet(content, false);
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+          public void run() {
+            new PageLoader().invalidate(hp);
+          }
+        });
+      }
 
-                        new PageLoader().invalidate(hp);
-
-                }
-            } );
-        }
         //Saving the content
         if (content.isArchived()){
             this.contentletAPI.unarchive(content, userToUse, !RESPECT_FRONTEND_ROLES);
         }
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
-        //First we need to remove the "old" trees in order to add this new ones
-        cleanTrees( content );
-		regenerateTree(wrapper,remoteLocalLanguages.getLeft());
-
+		final String filterKey = this.getFilterKeyFromBundle();
+		Logger.debug(this, () -> "Filter Key: " + filterKey);
+		final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
+		boolean isRelationshipsFilter = filterDescriptor.getFilters().containsKey(RELATIONSHIPS_KEY) ? Boolean.class.cast(filterDescriptor.getFilters()
+				.get(FilterDescriptor.RELATIONSHIPS_KEY)) : true;
+		Logger.debug(this, () -> "Relationships Filter: " + isRelationshipsFilter);
+        if (isRelationshipsFilter) {
+			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
+			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
+			this.cleanTrees(content);
+			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
+		}
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
             handleContentCategories(content.getInode(), wrapper.getCategories());
@@ -832,7 +909,7 @@ public class ContentHandler implements IHandler {
 					invalidateMultiTreeCache(contentId);
 				} catch (final DotDataException e) {
 					Logger.debug(this, () -> String.format("Failed to flush cache for Contentlet '%s': %s", contentId,
-							e.getMessage()));
+							ExceptionUtil.getErrorMessage(e)));
 				}
 			}
 		} );
@@ -843,6 +920,20 @@ public class ContentHandler implements IHandler {
 				isHost ? PushPublishHandler.HOST : PushPublishHandler.CONTENT,
 				PushPublishAction.PUBLISH, content.getIdentifier(), content.getInode(), content.getName(), config.getId());
     }
+
+	/**
+	 * Retrieves the Push Publishing Filter that was selected to generate the current Bundle.
+	 *
+	 * @return The Push Publishing Filter key. But, if the bundle doesn't exist, returns an empty
+	 * String.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
+	 */
+	private String getFilterKeyFromBundle() throws DotDataException {
+		final Bundle bundle =
+				this.bundleAPI.get().getBundleById(com.dotmarketing.util.FileUtil.removeExtension(this.config.getId()));
+		return null != bundle ? bundle.getFilterKey() : BLANK;
+	}
 
 	/**
 	 * Invalidates the respective MultiTree cache entry when the pushed Contentlet is the child of an existing record
@@ -985,6 +1076,9 @@ public class ContentHandler implements IHandler {
 				luceneQuery.append(" +languageId:").append(remoteLocalLanguages.getRight());
 				luceneQuery.append(" +(");
 				for (final Field uniqueField : uniqueFields) {
+					if (getUniquePerSiteConfig(uniqueField)){
+						luceneQuery.append(" +conHost:" + content.getHost());
+					}
 					final String fieldValue = content.get(uniqueField.getVelocityVarName()).toString();
 					luceneQuery.append(content.getContentType().variable()).append(".")
 							.append(uniqueField.getVelocityVarName()).append(ESUtils.SHA_256)
@@ -1001,12 +1095,14 @@ public class ContentHandler implements IHandler {
 				final List<ContentletSearch> contentlets = this.contentletAPI
 						.searchIndex(luceneQuery.toString(), limit, offset, sortBy,
 								systemUser, !RESPECT_FRONTEND_ROLES);
-				if (null != contentlets && contentlets.size() > 0) {
+
+				if (null != contentlets && !contentlets.isEmpty()) {
 					// A contentlet with different Identifier but same unique value has been found. Update the local
                     // one WITHOUT CHANGING the local Identifier and Inode
 					final Contentlet matchingContent =
 							this.contentletAPI.find(contentlets.get(0).getInode(), systemUser,
 									!RESPECT_FRONTEND_ROLES);
+
                     if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
                         // It might be that the matching content doesn't exist in the DB anymore, or is archived
                         throw new DotDataException(getUniqueMatchErrorMsg(uniqueFields, luceneQuery.toString(),
@@ -1046,35 +1142,51 @@ public class ContentHandler implements IHandler {
 		}
         return String.format("Lucene query [ %s ] matched existing content with ID '%s' / inode '%s' in ES Index, but" +
                 " it was not found via API. Unique fields: %s", luceneQuery, matchedContent.getIdentifier(),
-                matchedContent.getInode(), fieldsInfo.toString());
+                matchedContent.getInode(), fieldsInfo);
     }
 
-    /**
-     * Associates a list of tags coming from the bundle to the specified local content.
-     * 
-     * @param content - The {@link Contentlet} that will have the updated tags from the bundle.
-     * @param tagsFromSender - The list of {@link Tag} objects coming from the sender,
-     * @throws DotDataException Tags could not be read or saved to the data source.
-     */
-	private void relateTagsToContent(Contentlet content, Map<String, List<Tag>> tagsFromSender) throws DotDataException {
-		if(tagsFromSender!=null) {
-			for (Map.Entry<String, List<Tag>> fieldTags : tagsFromSender.entrySet()) {
-				String fieldVarName = fieldTags.getKey();
+	/**
+	 * Associates a list of tags coming from the bundle to the specified local content.
+	 *
+	 * @param content - The {@link Contentlet} that will have the updated tags from the bundle.
+	 * @param tagsFromSender - The list of {@link Tag} objects coming from the sender,
+	 * @throws DotDataException Tags could not be read or saved to the data source.
+	 */
+	@VisibleForTesting
+	void relateTagsToContent(Contentlet content, Map<String, List<Tag>> tagsFromSender) throws DotDataException {
+		if(tagsFromSender==null || tagsFromSender.isEmpty()) {
+			return;
+		}
 
-				for (Tag remoteTag : fieldTags.getValue()) {
-					Tag localTag = tagAPI.getTagByNameAndHost(remoteTag.getTagName(), remoteTag.getHostId());
+		for (Map.Entry<String, List<Tag>> fieldTags : tagsFromSender.entrySet()) {
+			String fieldVarName = fieldTags.getKey();
 
-					// if there is NO local tag, save the one coming from remote, otherwise use local
-					if (localTag == null || Strings.isNullOrEmpty(localTag.getTagId())) {
-						localTag = tagAPI.saveTag(remoteTag.getTagName(), remoteTag.getUserId(), remoteTag.getHostId());
-					}
+			for (Tag remoteTag : fieldTags.getValue()) {
+				Tag localTag = tagAPI.getTagByNameAndHost(remoteTag.getTagName(), remoteTag.getHostId());
 
-					TagInode localTagInode = tagAPI.getTagInode(localTag.getTagId(), content.getInode(), fieldVarName);
+				String localUserId = Try.of(()->APILocator.getUserAPI().loadUserById(remoteTag.getUserId()).getUserId()).getOrElse(APILocator.systemUser().getUserId());
 
-					// avoid relating tags twice
-					if(localTagInode==null || !Strings.isNullOrEmpty(localTagInode.getTagId())) {
-						tagAPI.addContentletTagInode(localTag, content.getInode(), fieldVarName);
-					}
+				Host tagSite = Try.of(()->APILocator.getHostAPI().find(remoteTag.getHostId(), APILocator.systemUser(), false)).getOrNull();
+				Host contentSite = Try.of(()->APILocator.getHostAPI().find(content.getIdentifier(), APILocator.systemUser(), false)).getOrNull();
+
+				final String localSiteId = UtilMethods.isSet(()->tagSite.getTagStorage())
+						? tagSite.getTagStorage()
+						: UtilMethods.isSet(()->contentSite.getTagStorage())
+								? contentSite.getTagStorage()
+								: Host.SYSTEM_HOST;
+
+
+
+				// if there is NO local tag, save the one coming from remote, otherwise use local
+				if (localTag == null || Strings.isNullOrEmpty(localTag.getTagId())) {
+					localTag = tagAPI.saveTag(remoteTag.getTagName(), localUserId, localSiteId);
+				}
+
+				TagInode localTagInode = tagAPI.getTagInode(localTag.getTagId(), content.getInode(), fieldVarName);
+
+				// avoid relating tags twice
+				if(UtilMethods.isEmpty(()->localTagInode.getTagId())) {
+					tagAPI.addContentletTagInode(localTag, content.getInode(), fieldVarName);
 				}
 			}
 		}
@@ -1155,7 +1267,8 @@ public class ContentHandler implements IHandler {
 	 * @throws Exception
 	 *             An error occurred when deleting the specified asset.
 	 */
-	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost, final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
+	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost,
+										final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
             throws Exception
     {
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
@@ -1171,9 +1284,11 @@ public class ContentHandler implements IHandler {
 			// if the content is not live, then we don't need to unpublish it
 			Optional<ContentletVersionInfo> existingInfoOptional = Optional.empty();
             final List<Contentlet> contents = findContents(content.getIdentifier(), user);
+
             if (UtilMethods.isSet(contents)) {
 				final Optional<Contentlet> contentletOptional = contents.stream()
 						.filter(c -> c.getLanguageId() == remoteLocalLanguages.getRight()).findFirst();
+
 				if (contentletOptional.isPresent()) {
 					final Contentlet existingContent = contentletOptional.get();
 					existingInfoOptional = this.versionableAPI.getContentletVersionInfo(
@@ -1218,7 +1333,7 @@ public class ContentHandler implements IHandler {
 			if (isPushedContentArchived) {
 				this.contentletAPI.archive(content, user, !RESPECT_FRONTEND_ROLES);
 			} else {
-				this.contentletAPI.delete(content, user, !RESPECT_FRONTEND_ROLES, true);
+				this.contentletAPI.destroy(content, user, !RESPECT_FRONTEND_ROLES);
 			}
 
 			PushPublishLogger.log(getClass(),
@@ -1250,6 +1365,7 @@ public class ContentHandler implements IHandler {
         final String sortBy = null;
         String luceneQuery = "+identifier:" + identifier + " +live:true";
         List<Contentlet> contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);
+
         if (contents.isEmpty()) {
             luceneQuery = "+identifier:" + identifier + " +working:true";
             contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);
@@ -1261,10 +1377,9 @@ public class ContentHandler implements IHandler {
      * Delete the Trees related to this given contentlet, this is in order to add the new published Trees (Relationships and categories)
      *
      * @param contentlet whose tree will be deleted
-     * @throws DotPublishingException
      */
 	@WrapInTransaction
-	private void cleanTrees ( Contentlet contentlet ) throws DotPublishingException {
+	private void cleanTrees ( Contentlet contentlet ) {
 		if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level)
 			throw new RuntimeException("need an enterprise pro license to run this");
 		try{
@@ -1274,8 +1389,8 @@ public class ContentHandler implements IHandler {
 			TreeFactory.deleteTreesByParentById(contentlet.getIdentifier());
 			HibernateUtil.flush();
 		}catch (Exception e) {
-			Logger.error(this, "Cleaning trees for Contentlet '" + contentlet.getIdentifier() + "' has failed: " + e
-					.getMessage(), e);
+			Logger.error(this, "Cleaning trees for Contentlet '" + contentlet.getIdentifier() + "' has failed: " +
+					ExceptionUtil.getErrorMessage(e), e);
 		}
 	}
 
@@ -1308,7 +1423,7 @@ public class ContentHandler implements IHandler {
 			} catch (final Exception e) {
 				Logger.debug(this,
 						"Unable to use received user from sender. Using 'system' User instead. "
-							+ "UserId [" + modUserId + "]. Error message: " + e.getMessage());
+							+ "UserId [" + modUserId + "]. Error message: " + ExceptionUtil.getErrorMessage(e));
 				//On errors also lets use the System User and allow the process to continue
 				modUserId = APILocator.getUserAPI().getSystemUser().getUserId();
 			}
@@ -1329,5 +1444,14 @@ public class ContentHandler implements IHandler {
            fileMetadataAPI.setMetadata(contentlet, binariesMetadata);
         }
     }
+
+	private boolean getUniquePerSiteConfig(final Field field) {
+		return getUniquePerSiteConfig(LegacyFieldTransformer.from(field));
+	}
+
+	private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
+		return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+				.map(value -> Boolean.valueOf(value)).orElse(false);
+	}
 
 }

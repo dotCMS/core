@@ -1,7 +1,9 @@
 package com.dotmarketing.common.util;
 
+import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -9,13 +11,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.SecurityThreatLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -27,14 +27,34 @@ import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenize
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import static com.liferay.util.StringPool.SPACE;
+
+
+
 /**
- * Util class for sanitize, tokenize, etc
+ * Utility class for sanitizing, tokenizing, and providing several common-use methods to create,
+ * verify and transform SQL queries.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
  */
 public class SQLUtil {
 
-	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
+	private static final SecurityLoggerServiceAPI securityLoggerServiceAPI =
 			APILocator.getSecurityLogger();
 
+	// When you need to send a sort but do not want to actually sort by anything
+	public static final String DOT_NOT_SORT  = "dotnosort";
 	public static final String ASC  = "asc";
 	public static final String DESC  = "desc";
 	public static final String _ASC  = " " + ASC ;
@@ -56,6 +76,59 @@ public class SQLUtil {
                                                                         .addAll( EVIL_SQL_PARAMETER_WORDS )
                                                                         .build();
 
+    // SECURITY: Pre-compiled patterns cache to prevent repeated Pattern.compile() calls
+    private static final Map<String, Pattern> EVIL_WORD_PATTERNS = new HashMap<>();
+    
+    static {
+        // Pre-compile patterns for all evil words to improve performance and prevent DoS
+        for (String evilWord : EVIL_SQL_CONDITION_WORDS) {
+            EVIL_WORD_PATTERNS.put(evilWord, createEvilWordPattern(evilWord));
+        }
+        for (String evilWord : EVIL_SQL_PARAMETER_WORDS) {
+            EVIL_WORD_PATTERNS.put(evilWord, createEvilWordPattern(evilWord));
+        }
+    }
+
+            /**
+         * Creates appropriate regex pattern for evil word detection that matches the original boundary logic.
+         * Must consider '-' and '_' as valid SQL characters (not boundaries) to maintain compatibility.
+         */
+        private static Pattern createEvilWordPattern(String evilWord) {
+            if (evilWord.equals("--")) {
+                // Special case for SQL comments - only match when not surrounded by valid SQL characters
+                // This matches the original boundary logic for "--" 
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(evilWord) + "(?![a-zA-Z0-9_-])");
+            } else if (evilWord.equals(";")) {
+                // Special case for semicolon - only match when not surrounded by valid SQL characters
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(evilWord) + "(?![a-zA-Z0-9_-])");
+            } else if (evilWord.endsWith(" ")) {
+                // Words with trailing spaces - check for non-SQL-character before and space after
+                String wordPart = evilWord.substring(0, evilWord.length() - 1);
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(wordPart) + "\\s");
+            } else {
+                // Regular words - use negative lookbehind/lookahead for valid SQL characters
+                // This matches the original isValidSQLCharacter logic (alphanumeric, -, _)
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(evilWord) + "(?![a-zA-Z0-9_-])");
+            }
+        }
+
+    // SECURITY: Rate limiting for security logging to prevent log flooding
+
+
+    /**
+     * SECURITY: Logs malicious SQL injection attempts securely for threat intelligence
+     * while preventing information disclosure and log injection attacks.
+     * 
+     * @param suspiciousInput The potentially malicious input to log
+     * @param detectedWord The specific evil word that was detected
+     * @param sourceContext Additional context about the source (API endpoint, etc.)
+     */
+    private static void logSecurityThreat(final String suspiciousInput, final String detectedWord, final String sourceContext) {
+        SecurityThreatLogger.logSQLInjectionAttempt(suspiciousInput, detectedWord, sourceContext);
+    }
+
+
+
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
 			"title","upper(title)","filename", "moddate", "tagname","pageUrl",
 			"category_name","category_velocity_var_name","status","workflow_step.name","assigned_to",
@@ -64,6 +137,22 @@ public class SQLUtil {
 			"description","category_","sort_order","hostName", "keywords",
 			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
 			"parent_relation_name","inode");
+
+	/**
+	 * SECURITY: Whitelist of allowed conditional column names for WHERE clauses
+	 * Based on structure table columns and other legitimate database columns
+	 * This prevents SQL injection in conditional statements
+	 */
+	private final static Set<String> CONDITIONAL_COLUMNS_WHITELIST = ImmutableSet.of(
+			// Structure table columns
+			"inode", "name", "description", "default_structure", "page_detail", "structuretype", 
+			"system", "fixed", "velocity_var_name", "url_map_pattern", "host", "folder", 
+			"expire_date_var", "publish_date_var", "mod_date", "icon", "sort_order", "marked_for_deletion",
+			// Common additional columns
+			"title", "upper(title)", "filename", "moddate", "tagname", "pageurl",
+			"category_name", "category_velocity_var_name", "status", "assigned_to",
+			"category_key", "page_url", "keywords", "upper(name)"
+	);
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<>();
@@ -319,6 +408,21 @@ public class SQLUtil {
 
         for(String evilWord : evilWords){
 
+            // SECURITY: Use case-insensitive pattern matching to prevent bypass
+            // Check for evil word patterns regardless of case variations
+            Pattern patternToFind = EVIL_WORD_PATTERNS.get(evilWord);
+            if (patternToFind != null && patternToFind.matcher(query).find()) {
+                // SECURITY: Log attack details for threat intelligence (securely)
+                logSecurityThreat(query, evilWord, "SQLUtil.sanitizeSQL:pattern-match");
+                
+                // SECURITY: Do not log user input to prevent information disclosure in standard logs
+                final String message = "Invalid or pernicious sql parameter detected";
+                Logger.error(SQLUtil.class, message, new DotStateException(message));
+                securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
+                return StringPool.BLANK;
+            }
+
+            // Legacy boundary checking as backup (keep existing logic)
             final int index = parameterLowercase.indexOf(evilWord);
 
             //check if the order by requested have any other command
@@ -332,7 +436,11 @@ public class SQLUtil {
                                     )
                     )) {
 
-				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				// SECURITY: Log attack details for threat intelligence (securely)
+				logSecurityThreat(query, evilWord, "SQLUtil.sanitizeSQL:boundary-check");
+				
+				// SECURITY: Do not log user input to prevent information disclosure in standard logs
+				final String message = "Invalid or pernicious sql parameter detected";
 				Logger.error(SQLUtil.class, message, new DotStateException(message));
 				securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
 
@@ -379,6 +487,16 @@ public class SQLUtil {
 	}
 
 	/**
+	 * Returns the whitelist of allowed conditional column names for WHERE clauses.
+	 * This prevents SQL injection in conditional statements by restricting columns to a safe set.
+	 *
+	 * @return The set of allowed conditional column names.
+	 */
+	public static Set<String> getConditionalColumnsWhitelist() {
+		return CONDITIONAL_COLUMNS_WHITELIST;
+	}
+
+	/**
 	 * Scans the SQL query passed down by the user/developer looking for evil SQL words, as only {@code SELECT} queries
 	 * (data reading operations) are allowed.
 	 *
@@ -392,4 +510,30 @@ public class SQLUtil {
 		return UtilMethods.isSet(evilWord) ? Boolean.TRUE : Boolean.FALSE;
 	}
 
-} // E:O:F:SQLUtil.
+	/**
+	 * Takes the 'orderBy' and 'direction' parameters and returns a valid SQL order-by clause. If
+	 * the 'orderBy' parameter is not set, the method will default to the 'mod_date' column in
+	 * descending order instead.
+	 *
+	 * @param orderBy   The column name used to order the results by.
+	 * @param direction The sort direction of the results.
+	 *
+	 * @return A valid SQL order-by clause.
+	 */
+	public static String getOrderByAndDirectionSql(final String orderBy, final OrderDirection direction) {
+		final String ascOrder = OrderDirection.ASC.name().toLowerCase();
+		final String descOrder = OrderDirection.DESC.name().toLowerCase();
+		String orderByParam = UtilMethods.isSet(orderBy)
+				? orderBy.trim().toLowerCase()
+				: ContentTypeFactory.MOD_DATE_COLUMN + SPACE + descOrder;
+
+		if (!orderByParam.endsWith(SPACE + ascOrder) && !orderByParam.endsWith(SPACE + descOrder)) {
+			orderByParam = orderByParam + SPACE + (UtilMethods.isSet(direction)
+					? direction.toString().toLowerCase()
+					: ascOrder);
+		}
+		return orderByParam;
+	}
+
+
+}

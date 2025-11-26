@@ -13,7 +13,7 @@ then
 fi
 
 pushd  $gitdir >/dev/null
-git checkout -q master
+git checkout -q main
 git pull -q
 for version in $(git tag -l v* | sed 's/^v//' | sort -n | uniq | grep -v MM.YY)
 do
@@ -27,6 +27,6 @@ do
       CUSTOM_STARTER_URL: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/${starter_date}/starter-${starter_date}.zip
 EOF
 done
-git checkout -q master
+git checkout -q main
 echo
 pushd >/dev/null

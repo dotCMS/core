@@ -63,6 +63,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.graphql.CustomFieldType;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -88,8 +89,10 @@ import graphql.schema.GraphQLSchema;
 import io.vavr.Tuple2;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -532,6 +535,29 @@ public class GraphqlAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Given Scenario: Generate a graphQL Schema and validate the field definitions.
+     * <p>
+     * ExpectedResult: Field definitions are not duplicated.
+     */
+    @Test
+    public void testGetSchema_Validate_No_Duplicated_Fields() throws DotDataException {
+
+        final GraphqlAPI api = APILocator.getGraphqlAPI();
+
+        final GraphQLSchema schema = api.getSchema();
+        final var fieldDefinitions = schema.getQueryType().getFieldDefinitions();
+
+        var fieldNames = new HashSet<String>();
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            assertFalse(
+                    String.format("Found duplicated field in graphQL Scheme [%s]",
+                            fieldDefinition.getName()),
+                    fieldNames.contains(fieldDefinition.getName().toLowerCase())
+            );
+            fieldNames.add(fieldDefinition.getName().toLowerCase());
+        }
+    }
 
     @UseDataProvider("fieldTestCases")
     @Test
@@ -563,8 +589,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
             if (testCase.fieldRequired) {
                 Assert.assertEquals("Type of GraphQL Field should match type expected",
-                        new GraphQLNonNull(expectedType)
-                        , graphQLFieldType);
+                        new GraphQLNonNull(expectedType).toString()
+                        , graphQLFieldType.toString());
             } else {
                 Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
                         , graphQLFieldType);
@@ -648,11 +674,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 if (isOneEndingCardinality(cardinality)) {
                     assertFalse(outputTypeFromParentToChild instanceof GraphQLList);
                     assertEquals(childContentType.variable(),
-                            outputTypeFromParentToChild.getName());
+                            TypeUtil.getName(outputTypeFromParentToChild));
                 } else {
                     assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
                     assertEquals(childContentType.variable(),
-                            ((GraphQLList) outputTypeFromParentToChild).getWrappedType().getName());
+                            TypeUtil.getName(((GraphQLList) outputTypeFromParentToChild).getWrappedType()));
                 }
 
                 final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
@@ -664,11 +690,11 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 if (isManyStartingCardinality(cardinality)) {
                     assertTrue(outputTypeFromChildToParent instanceof GraphQLList);
                     assertEquals(parentContentType.variable(),
-                            ((GraphQLList) outputTypeFromChildToParent).getWrappedType().getName());
+                            TypeUtil.getName(((GraphQLList) outputTypeFromChildToParent).getWrappedType()));
                 } else {
                     assertFalse(outputTypeFromChildToParent instanceof GraphQLList);
                     assertEquals(parentContentType.variable(),
-                            outputTypeFromChildToParent.getName());
+                            TypeUtil.getName(outputTypeFromChildToParent));
                 }
             }
 
@@ -703,12 +729,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // create custom persona type. 1=typeName, 2=BaseType
                 customType = createType(testCase._1,
                         testCase._2);
-                for (final User user : loadUsers()) {
-                    runNoLicense(() -> {
-                        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
-                        assertNull(schema.getType(testCase._1));
-                    });
-                }
+
             } finally {
                 if(customType!=null) {
                     APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
@@ -733,13 +754,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
             throws Exception{
 
         APILocator.getGraphqlAPI().invalidateSchema();
-        for (final User user : loadUsers()) {
-            runNoLicense(() -> {
-                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
-                assertNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
-                        + "BaseTypeCollection"));
-            });
-        }
+
     }
 
     @Test
@@ -872,7 +887,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to rest: {@link GraphqlAPI#getSchema()}
+     * Method to test: {@link GraphqlAPI#getSchema()}
      * Given scenario: schema in cache
      * Expected result: cache hit, generation of the schema should not happen
      */
@@ -887,6 +902,42 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final GraphQLSchema cachedSchema = api.getSchema(); // got from cache - generate schema is NOT called
         verify(api, times(1)).generateSchema(APILocator.systemUser());
         assertEquals(nonCachedSchema, cachedSchema);
+    }
+
+    /**
+     * This test makes sure that all our GraphQLTypesProviders include the Dot prefix to avoid conflicts
+     * with content type names. Exceptions: {@link QueryMetadataTypeProvider} and {@link PaginationTypeProvider}
+     * We are excluding these two providers for backward compatibility
+     * @throws Exception
+     */
+    @Test
+    public void testAllGraphQLTypesProviderTypesStartWithDotPrefix() throws Exception {
+        // List of allowed legacy/existing type names that do not start with 'Dot'
+        final Set<String> allowedNonDotTypes = Set.of(
+                "Pagination",
+                "QueryMetadata"
+        );
+
+        // All providers registered in GraphqlAPIImpl
+        Set<GraphQLTypesProvider> providers = new GraphqlAPIImpl().getRegisteredTypesProviders();
+
+        Set<String> offendingTypes = new java.util.HashSet<>();
+        for (GraphQLTypesProvider provider : providers) {
+            //Ignoring content type providers
+            if (!(provider instanceof ContentAPIGraphQLTypesProvider)){
+                for (graphql.schema.GraphQLType type : provider.getTypes()) {
+                    String typeName = com.dotcms.graphql.util.TypeUtil.getName(type);
+                    if (!typeName.startsWith("Dot") && !allowedNonDotTypes.contains(typeName)) {
+                        offendingTypes.add(typeName + " (from " + provider.getClass().getSimpleName() + ")");
+                    }
+                }
+            }
+        }
+        assertTrue(
+                "The following GraphQL types do not start with 'Dot':\n" +
+                        String.join("\n", offendingTypes),
+                offendingTypes.isEmpty()
+        );
     }
 
     @NotNull

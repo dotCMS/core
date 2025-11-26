@@ -1,6 +1,8 @@
 package com.dotcms.workflow.form;
 
 import com.dotcms.rest.api.Validated;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -177,10 +179,22 @@ public class FireMultipleActionForm extends Validated {
         }
 
         @JsonProperty("contentlet")
-        public Builder contentlets(final List<Map<String, Object>> contentlets) {
-            this.contentlets = contentlets;
-            return this;
+        public Builder contentlets(Object contentlets) {
+            if(contentlets instanceof List) {
+                this.contentlets = (List<Map<String, Object>>) contentlets;
+                return this;
+            }
+            else if(contentlets instanceof Map) {
+                this.contentlets = List.of((Map<String, Object>) contentlets);
+                return this;
+            }
+
+
+            throw new DotRuntimeException("For the contentlets property pass in a single map, e.g. contentlets:{} or an array of maps, e.g. contentlets:[{},{}] ");
+
+
         }
+
 
         public FireMultipleActionForm build() {
             return new FireMultipleActionForm(this);

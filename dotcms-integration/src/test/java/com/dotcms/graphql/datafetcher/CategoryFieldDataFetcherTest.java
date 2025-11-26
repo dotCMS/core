@@ -1,7 +1,7 @@
 package com.dotcms.graphql.datafetcher;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,6 +23,7 @@ import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -48,7 +49,7 @@ public class CategoryFieldDataFetcherTest {
     /**
      * MethodToTest {@link CategoryFieldDataFetcher#get(DataFetchingEnvironment)}
      * Given Scenario: Using the {@link CategoryFieldDataFetcher} on a content that does not contain categories
-     * ExpectedResult: Should return null
+     * ExpectedResult: Should return an empty list
      * @throws Exception
      */
     @Test
@@ -63,7 +64,8 @@ public class CategoryFieldDataFetcherTest {
         Mockito.when(environment.getField()).thenReturn(field);
 
         final List result = fetcher.get(environment);
-        assertNull(result);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     /**
@@ -106,8 +108,7 @@ public class CategoryFieldDataFetcherTest {
         contentletDataGen.setProperty("story", "BicycleBicycleBicycle");
         contentletDataGen.setProperty("sysPublishDate", new Date());
         contentletDataGen.setProperty("urlTitle", "/news/bicycle");
-        contentletDataGen.setProperty("categories", CollectionsUtils
-                .map("categories", CollectionsUtils.list(categoryChild1, categoryChild2)));
+        contentletDataGen.setProperty("categories", Map.of("categories", CollectionsUtils.list(categoryChild1, categoryChild2)));
 
         Mockito.when(environment.getContext())
                 .thenReturn(DotGraphQLContext.createServletContext().with(

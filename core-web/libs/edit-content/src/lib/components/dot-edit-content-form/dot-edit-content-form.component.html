@@ -1,28 +1,171 @@
-<form class="p-fluid" *ngIf="form" [formGroup]="form">
-    <ng-container *ngIf="areMultipleTabs; else singleForm">
-        <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
-            <p-tabPanel *ngFor="let tab of tabs" [header]="tab.title">
-                <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
-            </p-tabPanel>
+@let contentType = $store.contentType();
+@let contentlet = $store.contentlet();
+@let showSidebar = $store.isSidebarOpen();
+@let actions = $store.getActions();
+@let showWorkflowActions = $store.showWorkflowActions();
+@let activeIndex = $store.activeTab();
+
+<!--Locales-->
+@let currentLocale = $store.currentLocale();
+@let currentLocaleId = currentLocale ? currentLocale.id.toString() : '';
+@let currentIdentifier = $store.currentIdentifier();
+
+<!--Lock-->
+@let isContentLocked = $store.isContentLocked();
+@let canLock = $store.canLock();
+@let lockSwitchLabel = $store.lockSwitchLabel();
+@let tabs = $tabs();
+
+<!-- TODO: Handle the error, no form -->
+@if (form) {
+    <form
+        [formGroup]="form"
+        data-testId="edit-content-form"
+        class="p-fluid dot-edit-content-form h-100">
+        <p-tabView
+            [scrollable]="true"
+            data-testId="edit-content-multiple-tabs"
+            [class.dot-edit-content-tabview--single-tab]="$hasSingleTab()"
+            (onChange)="onActiveIndexChange($event)"
+            [activeIndex]="activeIndex"
+            scrollable="false"
+            class="dot-edit-content-tabview">
+            <!-- Add prepend and append areas to the tabs -->
+            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
+
+            <!-- Tabs are lazy -->
+            @for (tab of tabs; track tab) {
+                <p-tabPanel [header]="tab.title" [@fadeIn]>
+                    <ng-template pTemplate="content">
+                        <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
+                    </ng-template>
+                </p-tabPanel>
+            }
         </p-tabView>
-    </ng-container>
 
-    <ng-template #singleForm>
-        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tabs[0] }" />
-    </ng-template>
+        <!-- Template for the tab tabPanel -->
+        <ng-template #tabPanelTemplate let-tab="tab">
+            <div class="dot-edit-content-form__layout">
+                @for (row of tab.layout; track row) {
+                    <div class="dot-edit-content-form__layout-row" data-testId="row">
+                        @for (column of row.columns; track column) {
+                            <div class="dot-edit-content-form__layout-column" data-testId="column">
+                                @for (field of column.fields; track field) {
+                                    <dot-edit-content-field
+                                        [contentType]="contentType"
+                                        [contentlet]="contentlet"
+                                        [field]="field"
+                                        (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
+                                        data-testId="field" />
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </ng-template>
+    </form>
+}
 
-    <ng-template #tabTemplate let-tab="tab">
-        <div class="form__layout">
-            <div class="row" *ngFor="let row of tab.layout" data-testId="row">
-                <div class="column" *ngFor="let column of row.columns" data-testId="column">
-                    <dot-edit-content-field
-                        *ngFor="let field of column.fields"
-                        [field]="field"
-                        [contentlet]="formData.contentlet"
-                        [contentType]="formData.contentType.variable"
-                        data-testId="field" />
-                </div>
+<!-- Append template to add to the tabs -->
+<ng-template #appendContent>
+    <div
+        class="dot-edit-content-actions flex align-items-center w-full"
+        data-testId="edit-content-actions"
+        [class.dot-edit-content-actions--sidebar-open]="showSidebar">
+        <!-- Left group for lock controls -->
+        <div class="dot-edit-content-actions__left flex align-items-center">
+            @if (!$store.isViewingHistoricalVersion()) {
+                @if (canLock) {
+                    <div
+                        class="dot-edit-content-actions__lock flex align-items-center gap-2"
+                        [class.locked]="isContentLocked">
+                        <p-inputSwitch
+                            [ngModel]="isContentLocked"
+                            [disabled]="!canLock"
+                            (onChange)="onContentLockChange($event)"
+                            inputId="lockSwitch"
+                            data-testId="content-lock-switch"></p-inputSwitch>
+                        <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Right group for all other actions -->
+        <div class="dot-edit-content-actions__right flex align-items-center">
+            @if ($store.isViewingHistoricalVersion()) {
+                <!-- Historical version actions - only Restore -->
+                <button
+                    pButton
+                    (click)="$store.restoreCurrentHistoricalVersion()"
+                    data-testId="restore-historical-version-button">
+                    {{ 'edit.content.sidebar.history.restore' | dm }}
+                </button>
+                <!-- Compare button hidden as requested -->
+            } @else {
+                <!-- Normal actions -->
+                @if ($showPreviewLink()) {
+                    <button
+                        pButton
+                        class="p-button-link p-button-md"
+                        text="true"
+                        data-testId="preview-button"
+                        (click)="showPreview()">
+                        {{ 'edit.content.preview-link' | dm }}
+                    </button>
+                }
+
+                @if (showWorkflowActions) {
+                    <dot-workflow-actions
+                        data-testId="workflow-actions"
+                        (actionFired)="
+                            fireWorkflowAction({
+                                workflow: $event,
+                                inode: contentlet?.inode,
+                                contentType: contentType.variable,
+                                languageId: currentLocaleId,
+                                identifier: currentIdentifier
+                            })
+                        "
+                        [actions]="actions"
+                        [groupActions]="true" />
+                }
+            }
+
+            <!-- Sidebar toggle always visible -->
+            <div
+                class="dot-edit-content-actions__sidebar-toggle flex align-items-center"
+                data-testId="sidebar-toggle"
+                [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
+                <button
+                    class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+                    (click)="$store.toggleSidebar()"
+                    data-testId="sidebar-toggle-button">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect
+                            x="2.70588"
+                            y="3.17659"
+                            width="14.5882"
+                            height="13.6471"
+                            rx="1.17647"
+                            stroke="#426BF0"
+                            stroke-width="1.41176" />
+                        <line
+                            x1="12.3528"
+                            y1="16.1223"
+                            x2="12.3528"
+                            y2="3.87797"
+                            stroke="#426BF0"
+                            stroke-width="1.88235" />
+                    </svg>
+                </button>
             </div>
         </div>
-    </ng-template>
-</form>
+    </div>
+</ng-template>

@@ -415,11 +415,6 @@
 	<!--  DOTMARKETING add content.cms_language -->
 	<message-resources parameter="messages.Language,messages.Language-ext,messages.cms_language" factory="com.liferay.portal.struts.MultiMessageResourcesFactory" />
 	<!--  DOTMARKETING add content.cms_language -->
-	<!-- Stxx Plugin -->
-
-	<plug-in className="com.liferay.portal.struts.StxxPlugin">
-		<set-property property="pipeline-config" value="/WEB-INF/stxx-pipelines.xml" />
-	</plug-in>
 
 	<!-- Tiles Plugin -->
 

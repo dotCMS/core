@@ -1,18 +1,20 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.liferay.portal.model.User;
 
 /**
  * Provides access to information related to the different languages that can be added to the
@@ -29,6 +31,19 @@ import com.liferay.portal.model.User;
  *
  */
 public interface LanguageAPI {
+
+	String LOCALIZATION_ENHANCEMENTS_ENABLED = "LOCALIZATION_ENHANCEMENTS_ENABLED";
+	Lazy<Boolean> localizationEnhancementsEnabled = Lazy.of(
+			() -> Config.getBooleanProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, true));
+
+	static boolean isLocalizationEnhancementsEnabled() {
+		//this system property is used to enable/disable the localization enhancements from any integration context
+		// since the Config class is wrapped within a Lazy object and once it is loaded it is not possible to change the value
+		final String enabled = System.getProperty(
+				LOCALIZATION_ENHANCEMENTS_ENABLED);
+
+		return enabled != null ? Boolean.parseBoolean(enabled) : localizationEnhancementsEnabled.get();
+	}
 
     /**
      * 
@@ -82,6 +97,16 @@ public interface LanguageAPI {
 	 */
 	public Language getLanguage(long id);
 
+    /**
+     * Returns a Language by its ID or ISO code.
+     *
+     * @param id The Language ID or ISO code.
+     *
+     * @return An Optional containing the requested {@link Language}, or an empty Optional if no
+     * Language matches the specific ID/ISO code.
+     */
+    Optional<Language> getLanguageByIdOrIsoCode(final Object id);
+
 	/**
 	 * 
 	 * @return
@@ -123,6 +148,7 @@ public interface LanguageAPI {
 	 * @param lang
 	 * @return
 	 */
+	@Deprecated(since = "24.05", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(Language lang);
 
 	/**
@@ -130,6 +156,7 @@ public interface LanguageAPI {
 	 * @param langCode
 	 * @return
 	 */
+	@Deprecated(since = "24.05", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(String langCode);
 
 	/**
@@ -138,12 +165,14 @@ public interface LanguageAPI {
 	 * @param countryCode
 	 * @return
 	 */
+	@Deprecated(since = "24.05", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(String langCode, String countryCode);
 
 	/**
 	 * 
 	 * @param lang
 	 */
+	@Deprecated(since = "24.05", forRemoval = true)
 	public void createLanguageFiles(Language lang);
 
 	/**
@@ -154,6 +183,7 @@ public interface LanguageAPI {
 	 * @param toDeleteKeys
 	 * @throws DotDataException
 	 */
+	@Deprecated(since = "24.05", forRemoval = true)
 	public void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException;
 
     /**

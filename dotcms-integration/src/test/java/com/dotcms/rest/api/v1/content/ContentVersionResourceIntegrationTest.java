@@ -1,5 +1,14 @@
 package com.dotcms.rest.api.v1.content;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
@@ -27,27 +36,17 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -164,6 +163,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         spanishPageAsset =
                 APILocator.getContentletAPI()
                         .checkin(spanishPageAsset, APILocator.systemUser(), false);
+        HTMLPageDataGen.publish(spanishPageAsset);
         assertNotNull(spanishPageAsset);
         assertNotNull(spanishPageAsset.getInode());
         assertEquals(englishPageAsset.getIdentifier(), spanishPageAsset.getIdentifier());

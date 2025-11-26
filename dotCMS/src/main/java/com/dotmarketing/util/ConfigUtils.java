@@ -5,6 +5,7 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactor
 
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -12,6 +13,8 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -23,13 +26,8 @@ import java.nio.file.Paths;
  */
 public class ConfigUtils {
 
-
-    /*
-     * This property determine if the app is running on dev mode.
-     */
-    public static final String DEV_MODE_KEY = "dotcms.dev.mode";
-
-    private final static String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
+    private static final String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
+    private static final Lazy<Boolean> IS_DEV_MODE = Lazy.of(() -> Config.getBooleanProperty("dotcms.dev.mode", false));
 
 	/**
 	 * Returns true if app is running on dev mode.
@@ -39,7 +37,7 @@ public class ConfigUtils {
 
         // by default if the vars does not exists, we assume is not
         // running on dev mode, so it is false.
-        return Config.getBooleanProperty(DEV_MODE_KEY, false);
+        return IS_DEV_MODE.get();
 	}
 
 	public static String getDynamicContentPath() {
@@ -73,9 +71,16 @@ public class ConfigUtils {
 		return getDynamicContentPath() + File.separator + "dotlucene";
 	}
 
+	/**
+	 * Retrieves the configurable path for the backup directory.
+	 * Defaults to DYNAMIC_CONTENT_PATH/dotsecure/backup if not overridden.
+	 *
+	 * @return the backup directory path
+	 */
 	public static String getBackupPath() {
-		return getDynamicContentPath() + File.separator + "backup";
+		return Config.getStringProperty("BACKUP_DIRECTORY_PATH", getDynamicContentPath() + File.separator + "backup");
 	}
+
 
 	public static String getBundlePath() {
 		final Path path = Paths.get(String.format("%s%sbundles",getAbsoluteAssetsRootPath(),File.separator)).normalize();
@@ -183,12 +188,11 @@ public class ConfigUtils {
     public static String getDotGeneratedPath() {
         return dotGeneratedPath.get() + File.separator + "dotGenerated";
     }
-    
-    private static Lazy<String> dotGeneratedPath =Lazy.of(()->{
-        return LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
+
+    private static Lazy<String> dotGeneratedPath =Lazy.of(() ->
+			LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
                     ? ConfigUtils.getDynamicContentPath()
-                    : ConfigUtils.getAbsoluteAssetsRootPath();
-            });
+                    : ConfigUtils.getAbsoluteAssetsRootPath());
 
 
 	public static Tuple2<String,String> getDeclaredDefaultLanguage(){
@@ -201,4 +205,37 @@ public class ConfigUtils {
 
 	}
 
+	/**
+	 * Checks the status of a feature flag.
+	 * @param featureFlagName
+	 * @return Boolean with the feature flag value. If not set, true is returned by default
+	 */
+	public static boolean isFeatureFlagOn(final String featureFlagName) {
+		return Config.getBooleanProperty(featureFlagName, true);
+	}
+
+	/**
+	 * Returns the current system-wide default email headers.
+	 * <p>
+	 * This method dynamically reads and parses the "DEFAULT_EMAIL_HEADERS" configuration property every time it is called.
+	 * The expected format is a comma-separated list of header key/value pairs, where each pair is separated by a colon.
+	 * For example: "X-Custom-1:Value1, X-Custom-2:Value2".
+	 * </p>
+	 *
+	 * @return a Map containing the default email headers; if the configuration is not set or empty, an empty map is returned.
+	 */
+	public static Map<String, String> getDefaultEmailHeaders() {
+		Map<String, String> headers = new HashMap<>();
+		String headerConfig = Config.getStringProperty("DEFAULT_EMAIL_HEADERS", null);
+		if (headerConfig != null && !headerConfig.trim().isEmpty()) {
+			String[] headerPairs = headerConfig.split(StringPool.COMMA);
+			for (String pair : headerPairs) {
+				String[] keyValue = pair.split(StringPool.COLON, 2);
+				if (keyValue.length == 2) {
+					headers.put(keyValue[0].trim(), keyValue[1].trim());
+				}
+			}
+		}
+		return headers;
+	}
 }

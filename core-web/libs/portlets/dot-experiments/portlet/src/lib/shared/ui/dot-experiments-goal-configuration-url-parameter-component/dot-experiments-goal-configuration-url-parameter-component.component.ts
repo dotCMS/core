@@ -1,4 +1,3 @@
-import { NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
     AbstractControl,
@@ -16,24 +15,22 @@ import { takeUntil } from 'rxjs/operators';
 import { GOAL_OPERATORS, GoalsConditionsOperatorsListByType } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
+    DotDropdownDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
-import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 
 const PARAMETER_QUERY_PARAMETER = 'queryParameter';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-goal-configuration-url-parameter-component',
     templateUrl: './dot-experiments-goal-configuration-url-parameter-component.component.html',
     styleUrls: ['./dot-experiments-goal-configuration-url-parameter-component.component.scss'],
     imports: [
         ReactiveFormsModule,
-        NgForOf,
         DotDropdownDirective,
         DotFieldValidationMessageComponent,
         DotMessagePipe,

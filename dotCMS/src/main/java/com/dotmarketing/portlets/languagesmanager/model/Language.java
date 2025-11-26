@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.languagesmanager.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.StringUtils;
@@ -11,6 +12,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
+
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This class represents a language in the system.
@@ -43,31 +46,37 @@ public class Language implements Serializable, ManifestItem {
      * @param language
      * @param country
      */
-    public Language(long id, String languageCode, String countryCode, String language, String country) {
+    public Language(final long id, final String languageCode, final String countryCode, final String language, final String country) {
+        this(id, languageCode, countryCode, language, country, null);
+    }
+
+    public Language() {
+        this(0L);
+    }
+
+    public Language(long id) {
+        this(id, BLANK, BLANK, BLANK, BLANK);
+    }
+
+    /**
+     * Creates a new Language object with the specified properties.
+     *
+     * @param id           The unique identifier of the language.
+     * @param languageCode The language code of the language.
+     * @param countryCode  The country code of the language.
+     * @param language     The name of the language.
+     * @param country      The name of the country.
+     * @param isoCode      The ISO code of the language.
+     */
+    public Language(final long id, final String languageCode, final String countryCode,
+                    final String language, final String country, final String isoCode) {
         super();
         this.id = id;
         this.languageCode = languageCode;
         this.countryCode = countryCode;
         this.language = language;
         this.country = country;
-    }
-
-    public Language() {
-        super();
-        this.id = 0;
-        this.languageCode = "";
-        this.countryCode = "";
-        this.language = "";
-        this.country = "";
-    }
-
-    public Language(long id) {
-        super();
-        this.id = id;
-        this.languageCode = "";
-        this.countryCode = "";
-        this.language = "";
-        this.country = "";
+        this.isoCode = isoCode;
     }
 
     /**
@@ -203,12 +212,12 @@ public class Language implements Serializable, ManifestItem {
      */
     public Map<String, Object> toMap() {
         return Map.of(
-                "id", this.id,
-                "languageCode", this.languageCode,
-                "countryCode", this.countryCode,
-                "language", this.language,
-                "country", this.country,
-                "isoCode", this.isoCode);
+                "id", CollectionsUtils.orElseGet(this.id, 0L),
+                "languageCode", CollectionsUtils.orElseGet(this.languageCode, BLANK),
+                "countryCode", CollectionsUtils.orElseGet(this.countryCode, BLANK),
+                "language", CollectionsUtils.orElseGet(this.language, BLANK),
+                "country", CollectionsUtils.orElseGet(this.country, BLANK),
+                "isoCode", CollectionsUtils.orElseGet(this.isoCode, BLANK));
     }
 
 }

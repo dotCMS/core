@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, componentWrapperDecorator } from '@storybook/angular';
 
 import { NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +21,7 @@ const cities = [
     { name: 'Indianapolis', code: 'IND' }
 ];
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Form/Checkbox',
     parameters: {
         docs: {
@@ -34,7 +34,8 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [CheckboxModule, BrowserAnimationsModule, FormsModule, NgFor]
-        })
+        }),
+        componentWrapperDecorator((story) => `<div class="flex flex-column gap-2">${story}</div>`)
     ],
     args: {
         cities: [...cities],
@@ -43,7 +44,7 @@ export default {
     },
     argTypes: {
         cities: {
-            control: 'array',
+            control: 'object',
             description: 'List of cities to display as radio buttons'
         },
         disabled: {
@@ -54,20 +55,37 @@ export default {
             control: 'boolean',
             description: 'Whether the radio buttons are invalid'
         }
+    },
+    render: (args) => ({
+        props: args,
+        template: `
+        @for(city of cities; track $index){
+            <p-checkbox
+                name="city"
+                [value]="city"
+                [(ngModel)]="selectedCity"
+                [inputId]="city.code"
+                [label]="city.name"
+                [disabled]="disabled"
+                [class]="invalid ? 'ng-dirty ng-invalid' : ''"
+                />
+        }`
+    })
+};
+export default meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {};
+
+export const Invalid: Story = {
+    args: {
+        invalid: true
     }
-} as Meta;
+};
 
-const checkboxTemplate = `
-<div class="flex flex-column gap-2">
-<p-checkbox  *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''"></p-checkbox>
-</div>
-`;
-
-export const Main: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
-    const template = checkboxTemplate;
-
-    return {
-        props,
-        template
-    };
+export const Disabled: Story = {
+    args: {
+        disabled: true
+    }
 };

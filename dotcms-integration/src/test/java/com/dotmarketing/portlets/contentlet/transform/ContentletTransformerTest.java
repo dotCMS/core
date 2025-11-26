@@ -1,17 +1,23 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
@@ -52,6 +58,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -93,12 +100,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(DataProviderRunner.class)
-public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
+public class ContentletTransformerTest extends IntegrationTestBase {
 
     static String serializePath;
     static long langId;
@@ -235,6 +243,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
         assertEquals(newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY), identifier);
         assertEquals(newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD), urlExpected);
+        assertTrue(newContentlet.getMap().containsKey(DefaultTransformStrategy.SHORTY_ID));
     }
 
     @Test
@@ -309,6 +318,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertTrue(newContentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
         assertEquals(urlExpected, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
         assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
+        assertTrue(newContentlet.getMap().containsKey(DefaultTransformStrategy.SHORTY_ID));
     }
 
 
@@ -398,6 +408,83 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Assert.assertNotEquals(map2.get("mimeType"),"unknown");
         Assert.assertTrue((long)map2.get("size") > 0);
 
+    }
+
+    /**
+     * Given scenario: We create a dotAsset-like contentlet, set a "title" property,
+     * and then call getContentPrintableMap, which should return a map of the contentlet's properties.
+     * Expected result: The "title" property in the resulting map should match the custom title set
+     * in the original contentlet.
+     * @throws Exception in case of errors during the mapping process
+     */
+    @Test
+    public void Test_DotAsset_With_Title_Property_Pushed_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        dotAssetLikeContentlet.setProperty("title", "my custom title");
+
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, dotAssetLikeContentlet, true);
+        Assert.assertEquals("my custom title", map1.get("title"));
+    }
+
+    /**
+     * Given scenario: We create a dotAsset-like contentlet without setting a "title" property
+     * and call getContentPrintableMap, which should return a map of the contentlet's properties.
+     * Expected result: The "title" property in the resulting map should match the asset title.
+     * @throws Exception in case of errors during the mapping process
+     */
+    @Test
+    public void Test_DotAsset_Without_Title_Property_Pushed_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, dotAssetLikeContentlet, true);
+        Assert.assertEquals("test.jpg", map1.get("title"));
+    }
+
+    /**
+     * Given Scenario: We have a contentlet with a dotAsset field, and we push it into the transformer prepared with the FILEASSET_VIEW strategy.
+     * Expected Result: We should get the dotAsset field with the expected properties.
+     * @throws Exception
+     */
+    @Test
+    public void Test_DotAsset_Field_Pushed_Into_Transformer() throws Exception {
+
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        ContentletDataGen.publish(dotAssetLikeContentlet);
+
+        final List<Field> fields = List.of(
+                new FieldDataGen()
+                        .name("title")
+                        .velocityVarName("title")
+                        .next(),
+                new FieldDataGen()
+                        .type(FileField.class)
+                        .name("dotAsset")
+                        .velocityVarName("dotAsset")
+                        .next()
+        );
+
+        final String contentTypeName =  "withDotAssetType"+System.currentTimeMillis();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeName)
+                .fields(fields)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "Test")
+                .setProperty("dotAsset", dotAssetLikeContentlet.getIdentifier())
+                .nextPersistedAndPublish();
+
+        final Contentlet transformed = new DotTransformerBuilder().hydratedContentMapTransformer().content(contentlet).build().hydrate().get(0);
+        Map<?,?> asset = (Map)transformed.getMap().get("dotAsset");
+        Assert.assertNotNull(asset);
+        Assert.assertFalse(asset.isEmpty());
+        Assert.assertEquals("dot_asset", asset.get("type"));
     }
 
 
@@ -697,6 +784,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(fileAsset.getUnderlyingFileName()).thenReturn(underlyingFileName);
         when(fileAsset.getWidth()).thenReturn(width);
         when(fileAsset.getHeight()).thenReturn(height);
+        when(fileAsset.isImage()).thenReturn(true);
 
         when(fileAssetAPI.fromContentlet(any(Contentlet.class))).thenReturn(fileAsset);
 
@@ -909,6 +997,32 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Assert.assertTrue(isValidStringDateISO8601(object.get("timeField").toString()));
         Assert.assertTrue(isValidStringDateISO8601(object.get("dateField").toString()));
         Assert.assertTrue(isValidStringDateISO8601(object.get("dateTimeField").toString()));
+
+    }
+
+    /**
+     * Given Scenario: This tests that the transformer used to transform content from the DB decode colons and commas
+     * Expected Result: Colons and commas shouldn't be HTML encoded when transform them from the DB.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Transformer_content_Decode_JSON()
+            throws Exception {
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
+                .setProperty("title", "test_KeyValueFieldDecode" + System.currentTimeMillis())
+                .setProperty("keyValueField", "{\"origin\":\"https&#58;//test.com &#44; http&#58;//test2.com\"}");
+
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        final Contentlet findContentlet = APILocator.getContentletAPI().find(contentlet.getInode(),APILocator.systemUser(),false);
+
+        final Map<String, Object> keyValueField = findContentlet.getKeyValueProperty("keyValueField");
+
+        Assert.assertFalse(keyValueField.get("origin").toString().contains("&#58;"));
+        Assert.assertFalse(keyValueField.get("origin").toString().contains("&#44;"));
 
     }
 

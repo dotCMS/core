@@ -6,6 +6,10 @@ package com.dotcms.saml;
  */
 public enum SamlName {
 
+	/**
+	 * Tell the system to merge the additional attributes from the IDP or override (default behavior)
+	 */
+	DOTCMS_MERGE_ADDITIONAL_ATTRIBUTES("merge.additional.attributes"),
 
 	/**
 	 * To set enable or disable an idp configuration
@@ -356,7 +360,20 @@ public enum SamlName {
 	 * role.key.substitution=/_sepsep_/ /
 	 * That substitution expression will replace the string _sepsep_ with white space before matching role name from IdP against role key from dotCMS.
 	 */
-	DOT_SAML_ROLE_KEY_SUBSTITUTION("role.key.substitution");
+	DOT_SAML_ROLE_KEY_SUBSTITUTION("role.key.substitution"),
+
+	/**
+	 * In case you want to use a different strategy to map the group roles from the IdP to the role keys in dotCMS.
+	 */
+	DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY("role.group.mapping.strategy"),
+
+	/**
+	 * This contains the mapping by content type configuration based on contenttype-varname,contenttype-key,contenttype-value
+	 * Where contenttype-varname is the var name of the content type which encapsulates the role mapping group
+	 * contenttype-key: is the content type property var name that index the group key
+	 * contenttype-value: is the collection of 1 to N role keys that maps this group key
+	 */
+	DOT_SAML_ROLES_GROUP_MAPPING_BY_CONTENT_TYPE("saml.roles.group.mapping.bycontenttype");
 
 	private final String propertyName;
 

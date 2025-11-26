@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.cmsmaintenance.util;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.google.common.hash.BloomFilter;
@@ -32,11 +33,17 @@ import java.util.Set;
 public class AssetFileNameFilter implements FileFilter {
 
 	public AssetFileNameFilter(final BloomFilter<String> inodeFilter) {
+		this(inodeFilter, -1);
+	}
+	public AssetFileNameFilter(final BloomFilter<String> inodeFilter,  long maxFileSize) {
 		this.bloomFilter = inodeFilter;
+		this.maxFileSize = maxFileSize;
 	}
 
-	public AssetFileNameFilter(){
-		this(null);
+	public final long maxFileSize;
+
+	public AssetFileNameFilter(long maxFileSize){
+		this(null,maxFileSize);
 	}
 
 	private final BloomFilter<String> bloomFilter;
@@ -50,10 +57,10 @@ public class AssetFileNameFilter implements FileFilter {
 
 	private final Lazy<String[]> excludeFiles = Lazy.of(()-> Config.getStringArrayProperty("ASSET_DOWNLOAD_EXCLUDE_FILES", EXCLUDE_FILE_LIST));
 
-	private final String root = ConfigUtils.getAbsoluteAssetsRootPath().endsWith(StringPool.FORWARD_SLASH) ?
-			ConfigUtils.getAbsoluteAssetsRootPath().substring(0,
-					ConfigUtils.getAbsoluteAssetsRootPath().lastIndexOf(StringPool.FORWARD_SLASH)) :
-			ConfigUtils.getAbsoluteAssetsRootPath();
+	private final String root = ConfigUtils.getAssetPath().endsWith(StringPool.FORWARD_SLASH) ?
+			ConfigUtils.getAssetPath().substring(0,
+					ConfigUtils.getAssetPath().lastIndexOf(StringPool.FORWARD_SLASH)) :
+			ConfigUtils.getAssetPath();
 
 	@Override
 	public boolean accept(final File dir) {
@@ -65,6 +72,10 @@ public class AssetFileNameFilter implements FileFilter {
 			return false;
 		}
 		if (dir.isFile() && Set.of(this.excludeFiles.get()).stream().anyMatch(pathName::contains)) {
+			return false;
+		}
+		if (maxFileSize > 0 && dir.length() > maxFileSize) {
+			Logger.warn(AssetFileNameFilter.class,"Skipping  " + dir.getAbsolutePath() + ", size: " + dir.length() + ",  Max allowed:" + maxFileSize);
 			return false;
 		}
 		// if no bloomFilter, everything else is a go

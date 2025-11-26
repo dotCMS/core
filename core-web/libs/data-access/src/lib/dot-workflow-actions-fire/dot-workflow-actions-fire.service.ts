@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
@@ -11,17 +11,24 @@ import {
     DotActionBulkResult
 } from '@dotcms/dotcms-models';
 
-interface DotActionRequestOptions {
+export interface DotActionRequestOptions {
     contentType?: string;
     data: { [key: string]: string };
     action: ActionToFire;
     individualPermissions?: { [key: string]: string[] };
+    formData?: FormData;
 }
 
 export interface DotFireActionOptions<T> {
     actionId: string;
     inode?: string;
+    identifier?: string;
     data?: T;
+}
+
+export interface DotFireDefaultActionOptions {
+    action: string;
+    inodes: string[];
 }
 
 enum ActionToFire {
@@ -50,15 +57,41 @@ export class DotWorkflowActionsFireService {
     fireTo<T = Record<string, string>>(
         options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
-        const { actionId, inode, data } = options;
-        const queryInode = inode ? `inode=${inode}&` : '';
+        const { actionId, inode, data, identifier } = options;
+        let urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
+
+        if (inode) {
+            urlParams = urlParams.set('inode', inode);
+        }
+
+        if (identifier) {
+            urlParams = urlParams.set('identifier', identifier);
+        }
+
+        const url = `${this.BASE_URL}/actions/${actionId}/fire`;
 
         return this.httpClient
-            .put(
-                `${this.BASE_URL}/actions/${actionId}/fire?${queryInode}indexPolicy=WAIT_FOR`,
-                data,
-                { headers: this.defaultHeaders }
-            )
+            .put(url, data, { headers: this.defaultHeaders, params: urlParams })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Fire a default workflow action over one or multiple contentlets
+     *
+     * @param {DotFireDefaultActionOptions} options
+     * @return {*}  {Observable<DotCMSContentlet[]>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    fireDefaultAction(options: DotFireDefaultActionOptions): Observable<DotCMSContentlet[]> {
+        const { action, inodes } = options;
+        const url = `${this.BASE_URL}/actions/default/fire/${action}`;
+        const urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
+        const body = {
+            contentlet: inodes.map((inode) => ({ inode }))
+        };
+
+        return this.httpClient
+            .post(url, body, { headers: this.defaultHeaders, params: urlParams })
             .pipe(pluck('entity'));
     }
 
@@ -86,8 +119,12 @@ export class DotWorkflowActionsFireService {
      *
      * @memberof DotWorkflowActionsFireService
      */
-    newContentlet<T>(contentType: string, data: { [key: string]: string }): Observable<T> {
-        return this.request<T>({ contentType, data, action: ActionToFire.NEW });
+    newContentlet<T>(
+        contentType: string,
+        data: { [key: string]: string },
+        formData?: FormData
+    ): Observable<T> {
+        return this.request<T>({ contentType, data, action: ActionToFire.NEW, formData });
     }
 
     /**
@@ -171,21 +208,40 @@ export class DotWorkflowActionsFireService {
         contentType,
         data,
         action,
-        individualPermissions
+        individualPermissions,
+        formData
     }: DotActionRequestOptions): Observable<T> {
+        let url = `${this.BASE_URL}/actions/default/fire/${action}`;
+
         const contentlet = contentType ? { contentType: contentType, ...data } : data;
         const bodyRequest = individualPermissions
             ? { contentlet, individualPermissions }
             : { contentlet };
+        const params = new URLSearchParams({});
+
+        // It's not best approach but this legacy code
+        if (contentlet['inode']) {
+            params.append('inode', contentlet['inode']);
+            delete contentlet['inode'];
+        }
+
+        if (contentlet['indexPolicy']) {
+            params.append('indexPolicy', contentlet['indexPolicy']);
+            delete contentlet['indexPolicy'];
+        }
+
+        if (params.toString()) {
+            url = `${url}?${params.toString()}`;
+        }
+
+        if (formData) {
+            formData.append('json', JSON.stringify(bodyRequest));
+        }
 
         return this.httpClient
-            .put(
-                `${this.BASE_URL}/actions/default/fire/${action}${
-                    data['inode'] ? `?inode=${data['inode']}` : ''
-                }`,
-                bodyRequest,
-                { headers: this.defaultHeaders }
-            )
+            .put(url, formData ? formData : bodyRequest, {
+                headers: formData ? new HttpHeaders() : this.defaultHeaders
+            })
             .pipe(take(1), pluck('entity'));
     }
 }

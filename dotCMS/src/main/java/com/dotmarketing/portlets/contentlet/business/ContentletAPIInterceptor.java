@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -32,6 +33,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchResponse;
@@ -65,6 +67,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	private List<ContentletAPIPostHook> postHooks = new ArrayList<>();
 	private final ContentletAPI conAPI;
 
+	private static final String PREHOOK_FAILED_MESSAGE = "The following prehook failed: %s";
+
 	/**
 	 * Default class constructor.
 	 */
@@ -82,8 +86,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.addLinkToContentlet(contentlet, linkInode, relationName, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.addLinkToContentlet(contentlet, linkInode, relationName, user, respectFrontendRoles);
@@ -97,8 +102,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.archive(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.archive(contentlet, user, respectFrontendRoles);
@@ -112,8 +118,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.archive(contentlets, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.archive(contentlets, user, respectFrontendRoles);
@@ -127,8 +134,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
@@ -143,8 +151,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles);
@@ -160,8 +169,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles);
 			if ( !preResult ) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, generateSystemEvent);
@@ -178,8 +188,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.checkin(contentlet, contentletDependencies);
 			if ( !preResult ) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -196,8 +207,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, cats, permissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, cats, permissions, user, respectFrontendRoles);
@@ -212,8 +224,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, permissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, permissions, user, respectFrontendRoles);
@@ -228,8 +241,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, user, respectFrontendRoles, cats);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, user, respectFrontendRoles, cats);
@@ -244,8 +258,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles);
@@ -260,8 +275,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, user, respectFrontendRoles);
@@ -276,8 +292,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, contentRelationships, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkin(contentlet, contentRelationships, user, respectFrontendRoles);
@@ -295,8 +312,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
@@ -311,8 +329,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+                String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         Contentlet c = conAPI.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
@@ -327,8 +346,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(contentletInode, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.checkout(contentletInode, user, respectFrontendRoles);
@@ -343,8 +363,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(contentlets, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.checkout(contentlets, user, respectFrontendRoles);
@@ -359,8 +380,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkoutWithQuery(luceneQuery, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.checkoutWithQuery(luceneQuery, user, respectFrontendRoles);
@@ -375,8 +397,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(luceneQuery, user, respectFrontendRoles, offset, limit);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.checkout(luceneQuery, user, respectFrontendRoles, offset, limit);
@@ -391,8 +414,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.cleanField(structure, field, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.cleanField(structure, field, user, respectFrontendRoles);
@@ -407,8 +431,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.cleanField(structure, deletionDate, field, user, respectFrontendRoles);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         conAPI.cleanField(structure, deletionDate, field, user, respectFrontendRoles);
@@ -423,8 +448,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyProperties(contentlet, properties);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.copyProperties(contentlet, properties);
@@ -438,8 +464,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean noErrors = conAPI.delete(contentlet, user, respectFrontendRoles);
@@ -455,8 +482,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles, allVersions);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles, allVersions);
@@ -472,8 +500,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.destroy(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean noErrors = conAPI.destroy(contentlet, user, respectFrontendRoles);
@@ -489,8 +518,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.destroy(contentlets, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean noErrors = conAPI.destroy(contentlets, user, respectFrontendRoles);
@@ -507,9 +537,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for (ContentletAPIPreHook pre : preHooks) {
             boolean preResult = pre.deleteByHost(host, user, respectFrontendRoles);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed "
-                        + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         boolean noErrors = conAPI.deleteByHost(host, user, respectFrontendRoles);
@@ -525,8 +555,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.delete(contentlets, user, respectFrontendRoles);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         boolean noErrors = conAPI.delete(contentlets, user, respectFrontendRoles);
@@ -542,8 +573,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlets, user, respectFrontendRoles, allVersions);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.delete(contentlets, user, respectFrontendRoles, allVersions);
@@ -557,8 +589,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteOldContent(deleteFrom);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		int c = conAPI.deleteOldContent(deleteFrom);
@@ -573,8 +606,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
@@ -588,8 +622,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles);
@@ -607,9 +642,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             boolean preResult = pre.deleteRelatedContent(contentlet, relationship, hasParent, user,
                     respectFrontendRoles, contentletsToBeRelated);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException(
-                        "The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         conAPI.deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles,
@@ -626,9 +661,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for (ContentletAPIPreHook pre : preHooks) {
             boolean preResult = pre.invalidateRelatedContentCache(contentlet, relationship, hasParent);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException(
-                        "The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         conAPI.invalidateRelatedContentCache(contentlet, relationship, hasParent);
@@ -642,8 +677,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			final boolean preResult = pre.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -659,8 +695,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			final boolean preResult = pre.move(contentlet, user, host, folderFolderPath, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -676,8 +713,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			final boolean preResult = pre.move(contentlet, user, host, folder, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -690,14 +728,20 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return find(inode, user, respectFrontendRoles, false);
+	}
+
+	@Override
+	public Contentlet find(String inode, User user, boolean respectFrontendRoles, boolean ignoreStoryBlock) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
-		Contentlet c = conAPI.find(inode, user, respectFrontendRoles);
+		Contentlet c = conAPI.find(inode, user, respectFrontendRoles, ignoreStoryBlock);
 		for(ContentletAPIPostHook post : postHooks){
 			post.find(inode, user, respectFrontendRoles,c);
 		}
@@ -709,8 +753,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(category, languageId, live, orderBy, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.find(category, languageId, live, orderBy, user, respectFrontendRoles);
@@ -725,8 +770,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(categories, languageId, live, orderBy, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.find(categories, languageId, live, orderBy, user, respectFrontendRoles);
@@ -741,8 +787,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllContent(offset, limit);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findAllContent(offset, limit);
@@ -757,8 +804,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllUserVersions(identifier, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findAllUserVersions(identifier, user, respectFrontendRoles);
@@ -773,8 +821,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllVersions(identifier, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findAllVersions(identifier, user, respectFrontendRoles);
@@ -790,8 +839,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
@@ -808,8 +858,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllVersions(identifier, variant, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findAllVersions(identifier, variant, user, respectFrontendRoles);
@@ -824,8 +875,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllVersions(identifier, bringOldVersions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findAllVersions(identifier, bringOldVersions, user, respectFrontendRoles);
@@ -835,13 +887,31 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+    @Override
+    public List<Contentlet> findAllVersions(final SearchCriteria searchCriteria) throws DotSecurityException, DotDataException, DotStateException {
+        for (final ContentletAPIPreHook preHook : preHooks) {
+            final boolean preResult = preHook.findAllVersions(searchCriteria);
+            if (!preResult) {
+                final String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, preHook.getClass().getName());
+                Logger.error(this, errorMessage);
+                throw new DotRuntimeException(errorMessage);
+            }
+        }
+        final List<Contentlet> contentlets = conAPI.findAllVersions(searchCriteria);
+        for (final ContentletAPIPostHook postHook : postHooks) {
+            postHook.findAllVersions(searchCriteria, contentlets);
+        }
+        return contentlets;
+    }
+
 	@Override
 	public List<Contentlet> findByStructure(Structure structure, User user,	boolean respectFrontendRoles, int limit, int offset)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findByStructure(structure, user, respectFrontendRoles, limit, offset);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findByStructure(structure, user, respectFrontendRoles, limit, offset);
@@ -856,8 +926,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findByStructure(structureInode, user, respectFrontendRoles, limit, offset);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findByStructure(structureInode, user, respectFrontendRoles, limit, offset);
@@ -877,8 +948,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.findContentletByIdentifier(identifier, live, languageId, variantId, user, respectFrontendRoles);
@@ -888,13 +960,33 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
+	public Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId,
+			Date timeMachineDate, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException{
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		Contentlet c = conAPI.findContentletByIdentifier(identifier, languageId, variantId,
+				timeMachineDate, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
+		}
+		return c;
+	}
+
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(String identifier, final boolean includeDeleted) throws DotDataException {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier, includeDeleted);
@@ -909,8 +1001,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier);
@@ -925,8 +1018,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.findContentletByIdentifierAnyLanguageAnyVariant(identifier);
@@ -941,8 +1035,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier, variant);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier, variant);
@@ -959,8 +1054,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier, variant, includeDeleted);
@@ -974,8 +1070,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletForLanguage(languageId, contentletId);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.findContentletForLanguage(languageId, contentletId);
@@ -990,8 +1087,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentlets(inodes);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findContentlets(inodes);
@@ -1006,8 +1104,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletsByFolder(parentFolder, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findContentletsByFolder(parentFolder, user, respectFrontendRoles);
@@ -1022,8 +1121,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletsByHost(parentHost, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findContentletsByHost(parentHost, user, respectFrontendRoles);
@@ -1041,9 +1141,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             boolean preResult = pre.findContentletsByHost(parentHost, includingContentTypes,
                     excludingContentTypes, user, respectFrontendRoles);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed "
-                        + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
 
@@ -1073,9 +1173,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			boolean preResult = pre.findContentletsByHost(parentHost, includingContentTypes,
 					excludingContentTypes, user, respectFrontendRoles);
 			if (!preResult) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed "
-						+ pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -1099,9 +1199,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			boolean preResult = pre.findContentletsByHostBaseType(parentHost, includingBaseTypes,
 				user, respectFrontendRoles);
 			if (!preResult) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed "
-					+ pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -1120,8 +1220,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletsByIdentifiers(identifiers, live, languageId, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findContentletsByIdentifiers(identifiers, live, languageId, user, respectFrontendRoles);
@@ -1136,8 +1237,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findFieldValues(structureInode, field, user, respectFrontEndRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<String> c = conAPI.findFieldValues(structureInode, field, user, respectFrontEndRoles);
@@ -1152,8 +1254,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findPageContentlets(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.findPageContentlets(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId, user, respectFrontendRoles);
@@ -1168,8 +1271,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getAllLanguages(contentlet, isLiveContent, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.getAllLanguages(contentlet, isLiveContent, user, respectFrontendRoles);
@@ -1184,8 +1288,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getAllRelationships(contentletInode, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		ContentletRelationships c = conAPI.getAllRelationships(contentletInode, user, respectFrontendRoles);
@@ -1200,8 +1305,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getAllRelationships(contentlet);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		ContentletRelationships c = conAPI.getAllRelationships(contentlet);
@@ -1216,8 +1322,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getBinaryFile(contentletInode, velocityVariableName, user);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		File c = conAPI.getBinaryFile(contentletInode, velocityVariableName, user);
@@ -1232,8 +1339,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getContentletReferences(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Map<String, Object>> c = conAPI.getContentletReferences(contentlet, user, respectFrontendRoles);
@@ -1248,8 +1356,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for (final ContentletAPIPreHook pre : this.preHooks) {
 			final boolean preResult = pre.getAllContentletReferencesCount(contentletId);
 			if (!preResult) {
-				Logger.error(this, "The following prehook failed: " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed: " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		final Optional<Integer> count = this.conAPI.getAllContentletReferencesCount(contentletId);
@@ -1276,8 +1385,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getFieldValue(contentlet, theField);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Object c = conAPI.getFieldValue(contentlet, theField);
@@ -1292,8 +1402,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getFieldValue(contentlet, theField, user);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Object c = conAPI.getFieldValue(contentlet, theField, user,respectFrontEndRoles);
@@ -1311,8 +1422,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getName(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		String c = conAPI.getName(contentlet, user, respectFrontendRoles);
@@ -1327,8 +1439,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedContent(contentlet, rel, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.getRelatedContent(contentlet, rel, user, respectFrontendRoles);
@@ -1347,9 +1460,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
                     .getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles,
                             limit, offset, sortBy);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException(
-                        "The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         List<Contentlet> c = conAPI
@@ -1369,8 +1482,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, limit, offset, sortBy, language, live);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         List<Contentlet> c = conAPI.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, limit, offset, sortBy, language, live);
@@ -1387,8 +1501,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, language, live);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         List<Contentlet> c = conAPI.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, language, live);
@@ -1403,8 +1518,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedContent(contentlet, rel,pullByParent, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles);
@@ -1421,8 +1537,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.getRelatedContent(contentlet, variableName, user, respectFrontendRoles, pullByParents, limit, offset, sortBy);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         List<Contentlet> c = conAPI.getRelatedContent(contentlet, variableName, user, respectFrontendRoles, pullByParents, limit, offset, sortBy);
@@ -1439,8 +1556,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.getRelatedContent(contentlet, variableName, user, respectFrontendRoles, pullByParents, limit, offset, sortBy, language, live);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         List<Contentlet> c = conAPI.getRelatedContent(contentlet, variableName, user, respectFrontendRoles, pullByParents, limit, offset, sortBy, language, live);
@@ -1455,8 +1573,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedIdentifier(contentlet, relationshipType, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Identifier c = conAPI.getRelatedIdentifier(contentlet, relationshipType, user, respectFrontendRoles);
@@ -1471,8 +1590,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedLinks(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Link> c = conAPI.getRelatedLinks(contentlet, user, respectFrontendRoles);
@@ -1487,8 +1607,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<ContentletSearch> c = conAPI.searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
@@ -1503,8 +1624,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isContentEqual(contentlet1, contentlet2, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isContentEqual(contentlet1, contentlet2, user, respectFrontendRoles);
@@ -1519,8 +1641,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isContentlet(inode);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isContentlet(inode);
@@ -1535,8 +1658,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeBoolean(field);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isFieldTypeBoolean(field);
@@ -1551,8 +1675,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeDate(field);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isFieldTypeDate(field);
@@ -1567,8 +1692,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeFloat(field);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isFieldTypeFloat(field);
@@ -1583,8 +1709,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeLong(field);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isFieldTypeLong(field);
@@ -1599,8 +1726,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeString(field);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isFieldTypeString(field);
@@ -1615,8 +1743,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.lock(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.lock(contentlet, user, respectFrontendRoles);
@@ -1630,8 +1759,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.publish(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.publish(contentlet, user, respectFrontendRoles);
@@ -1645,8 +1775,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.publish(contentlets, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.publish(contentlets, user, respectFrontendRoles);
@@ -1660,8 +1791,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.publishRelatedHtmlPages(contentlet);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		try {
@@ -1679,8 +1811,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.reindex();
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.reindex();
@@ -1694,8 +1827,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.reindex(structure);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.reindex(structure);
@@ -1710,8 +1844,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.reindex(contentlet);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.reindex(contentlet);
@@ -1725,8 +1860,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refresh(structure);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.refresh(structure);
@@ -1740,8 +1876,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.refresh(type);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         conAPI.refresh(type);
@@ -1755,8 +1892,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.saveContentOnVariant(contentlet, variantName, user);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -1776,8 +1914,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refresh(contentlet);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.refresh(contentlet);
@@ -1791,8 +1930,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refreshAllContent();
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.refreshAllContent();
@@ -1806,8 +1946,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refreshContentUnderHost(host);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.refreshContentUnderHost(host);
@@ -1821,8 +1962,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.relateContent(contentlet, rel, related, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.relateContent(contentlet, rel, related, user, respectFrontendRoles);
@@ -1836,8 +1978,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.relateContent(contentlet, related, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.relateContent(contentlet, related, user, respectFrontendRoles);
@@ -1869,8 +2012,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             boolean preResult = pre.filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
                     limit, offset, sortBy);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         List<Contentlet> contentlets = conAPI
@@ -1889,8 +2033,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.restoreVersion(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.restoreVersion(contentlet, user, respectFrontendRoles);
@@ -1900,12 +2045,71 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public PaginatedContentList<Contentlet> searchPaginatedByPage(final String luceneQuery,
+			final int contentsPerPage, final int page, final String sortBy, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.searchPaginatedByPage(
+					luceneQuery, contentsPerPage, page, sortBy, user, respectFrontendRoles
+			);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+
+		var result = conAPI.searchPaginatedByPage(
+				luceneQuery, contentsPerPage, page, sortBy, user, respectFrontendRoles
+		);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.searchPaginatedByPage(
+					luceneQuery, contentsPerPage, page, sortBy, user, respectFrontendRoles
+			);
+		}
+
+		return result;
+	}
+
+	@Override
+	public PaginatedContentList<Contentlet> searchPaginated(final String luceneQuery,
+			final int limit, final int offset, final String sortBy, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.searchPaginated(
+					luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+			);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+
+		var result = conAPI.searchPaginated(
+				luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+		);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.searchPaginated(
+					luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+			);
+		}
+
+		return result;
+	}
+
+	@Override
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
@@ -1920,8 +2124,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
@@ -1938,9 +2143,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for (ContentletAPIPreHook pre : preHooks) {
 			boolean preResult = pre.getAllContentByVariants(user, respectFrontendRoles, variantNames);
 			if (!preResult) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed "
-						+ pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -1957,8 +2162,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
 			if ( !preResult ) {
-				Logger.error( this, "The following prehook failed " + pre.getClass().getName() );
-				throw new DotRuntimeException( "The following prehook failed " + pre.getClass().getName() );
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
@@ -1972,8 +2178,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.setContentletProperty(contentlet, field, value);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		conAPI.setContentletProperty(contentlet, field, value);
+		for(ContentletAPIPostHook post : postHooks){
+			post.setContentletProperty(contentlet, field, value);
+		}
+	}
+
+	@Override
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.setContentletProperty(contentlet, field, value);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.setContentletProperty(contentlet, field, value);
@@ -1987,8 +2210,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unarchive(contentlets, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.unarchive(contentlets, user, respectFrontendRoles);
@@ -2002,8 +2226,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unarchive(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.unarchive(contentlet, user, respectFrontendRoles);
@@ -2017,8 +2242,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unlock(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.unlock(contentlet, user, respectFrontendRoles);
@@ -2032,8 +2258,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unpublish(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.unpublish(contentlet, user, respectFrontendRoles);
@@ -2047,8 +2274,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unpublish(contentlets, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.unpublish(contentlets, user, respectFrontendRoles);
@@ -2062,8 +2290,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentlet(contentlet, cats);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.validateContentlet(contentlet, cats);
@@ -2077,8 +2306,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentlet(contentlet, contentRelationships, cats);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.validateContentlet(contentlet, contentRelationships, cats);
@@ -2092,8 +2322,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentlet(contentlet, contentRelationships, cats);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.validateContentlet(contentlet, contentRelationships, cats);
@@ -2107,14 +2338,49 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentletNoRels(contentlet, cats);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.validateContentletNoRels(contentlet, cats);
 		for(ContentletAPIPostHook post : postHooks){
 			post.validateContentletNoRels(contentlet, cats);
 		}
+	}
+
+	@Override
+	public void validateContentlet(Contentlet contentlet,
+			ContentletRelationships contentRelationships, List<Category> cats, boolean preview ) throws DotContentletValidationException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		conAPI.validateContentlet(contentlet, contentRelationships, cats, preview);
+		for(ContentletAPIPostHook post : postHooks){
+			post.validateContentletNoRels(contentlet, cats);
+		}
+	}
+
+	@Override
+	public void validateContentletNoRels(Contentlet contentlet,
+										   List<Category> cats, boolean preview) throws DotContentletValidationException {
+			for(ContentletAPIPreHook pre : preHooks){
+				boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+				if(!preResult){
+					String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+					Logger.error(this, errorMessage);
+					throw new DotRuntimeException(errorMessage);
+				}
+			}
+			conAPI.validateContentletNoRels(contentlet, cats, preview);
+			for(ContentletAPIPostHook post : postHooks){
+				post.validateContentletNoRels(contentlet, cats);
+			}
 	}
 
 	@Override
@@ -2235,8 +2501,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.contentletCount();
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		long c = conAPI.contentletCount();
@@ -2251,8 +2518,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.contentletIdentifierCount();
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		long c = conAPI.contentletIdentifierCount();
@@ -2276,8 +2544,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 			 boolean preResult = pre.getSiblings(identifier);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> contents= conAPI.getSiblings(identifier);
@@ -2293,8 +2562,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.DBSearch(query, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Map<String, Serializable>> c = conAPI.DBSearch(query, user, respectFrontendRoles);
@@ -2309,8 +2579,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.copyContentlet(contentlet, user, respectFrontendRoles);
@@ -2325,8 +2596,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, host, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.copyContentlet(contentlet, host, user, respectFrontendRoles);
@@ -2337,12 +2609,34 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType,
+									 final Host site, final User user, final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException, DotContentletStateException {
+		for (final ContentletAPIPreHook preHook : this.preHooks) {
+			final boolean preResult = preHook.copyContentlet(contentlet, contentType, site, user,
+					respectFrontendRoles);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, preHook.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		final Contentlet returnedContent = this.conAPI.copyContentlet(contentlet, contentType, site, user,
+				respectFrontendRoles);
+		for (final ContentletAPIPostHook postHook : this.postHooks) {
+			postHook.copyContentlet(contentlet, contentType, site, user, respectFrontendRoles, returnedContent);
+		}
+		return returnedContent;
+	}
+
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.copyContentlet(contentlet, folder, user, respectFrontendRoles);
@@ -2353,12 +2647,36 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType,
+									 final Folder folder, final User user,
+									 final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException, DotContentletStateException {
+		for (final ContentletAPIPreHook preHook : this.preHooks) {
+			final boolean preResult = preHook.copyContentlet(contentlet, contentType, folder, user,
+					respectFrontendRoles);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, preHook.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		final Contentlet returnedContent = this.conAPI.copyContentlet(contentlet, contentType,
+				folder, user, respectFrontendRoles);
+		for (final ContentletAPIPostHook postHook : this.postHooks) {
+			postHook.copyContentlet(contentlet, contentType, folder, user, respectFrontendRoles,
+					returnedContent);
+		}
+		return returnedContent;
+	}
+
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, appendCopyToFileName, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet c = conAPI.copyContentlet(contentlet, folder, user, appendCopyToFileName, respectFrontendRoles);
@@ -2377,8 +2695,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 			final boolean preResult = pre.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles);
 			if(!preResult) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -2393,12 +2712,37 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet copyContentlet(final Contentlet contentletToCopy,
+									 final ContentType contentType, final Host site,
+									 final Folder folder, final User user,
+									 final String copySuffix, final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException, DotContentletStateException {
+		for (final ContentletAPIPreHook pre : this.preHooks) {
+			final boolean preResult = pre.copyContentlet(contentletToCopy, contentType, site, folder, user,
+					copySuffix, respectFrontendRoles);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		final Contentlet copiedContentlet = this.conAPI.copyContentlet(contentletToCopy, contentType, site,
+				folder, user, copySuffix, respectFrontendRoles);
+		for (final ContentletAPIPostHook post : this.postHooks) {
+			post.copyContentlet(contentletToCopy, contentType, site, folder, user, copySuffix,
+					respectFrontendRoles, copiedContentlet);
+		}
+		return copiedContentlet;
+	}
+
+	@Override
 	public boolean isInodeIndexed(String inode) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isInodeIndexed(inode);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isInodeIndexed(inode);
@@ -2413,9 +2757,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for (ContentletAPIPreHook pre : preHooks) {
 			boolean preResult = pre.isInodeIndexed(inode, live, working);
 			if (!preResult) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException(
-						"The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isInodeIndexed(inode, live, working);
@@ -2430,8 +2774,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.isInodeIndexed(inode,live);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         boolean c = conAPI.isInodeIndexed(inode,live);
@@ -2446,9 +2791,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for (ContentletAPIPreHook pre : preHooks) {
 			boolean preResult = pre.isInodeIndexed(inode, live, secondsToWait);
 			if (!preResult) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException(
-						"The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isInodeIndexed(inode, live, secondsToWait);
@@ -2463,8 +2808,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isInodeIndexed(inode,secondsToWait);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isInodeIndexed(inode,secondsToWait);
@@ -2479,8 +2825,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             final boolean preResult = pre.isInodeIndexedArchived(inode);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         boolean c = conAPI.isInodeIndexedArchived(inode);
@@ -2495,8 +2842,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			final boolean preResult = pre.isInodeIndexedArchived(inode, secondsToWait);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		boolean c = conAPI.isInodeIndexedArchived(inode, secondsToWait);
@@ -2511,8 +2859,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.UpdateContentWithSystemHost(hostIdentifier);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.UpdateContentWithSystemHost(hostIdentifier);
@@ -2526,8 +2875,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeUserReferences(userId);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.removeUserReferences(userId);
@@ -2541,8 +2891,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getUrlMapForContentlet(contentlet, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		String result = conAPI.getUrlMapForContentlet(contentlet, user, respectFrontendRoles);
@@ -2558,8 +2909,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteVersion(contentlet,user,respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.deleteVersion(contentlet, user, respectFrontendRoles);
@@ -2573,8 +2925,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet savedContentlet = conAPI.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
@@ -2590,8 +2943,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.saveDraft(contentlet,contentletRelationships, cats,permissions, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Contentlet savedContentlet = conAPI.saveDraft(contentlet,contentletRelationships, cats,permissions, user, respectFrontendRoles);
@@ -2607,8 +2961,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
@@ -2623,8 +2978,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
@@ -2639,8 +2995,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Contentlet> c = conAPI.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
@@ -2656,8 +3013,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refreshContentUnderFolder(folder);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.refreshContentUnderFolder(folder);
@@ -2671,8 +3029,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.refreshContentUnderFolderPath(hostId, folderPath);
 			if ( !preResult ) {
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.refreshContentUnderFolderPath(hostId, folderPath);
@@ -2686,8 +3045,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeFolderReferences(folder);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.removeFolderReferences(folder);
@@ -2741,8 +3101,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentRelationships(contentlet, user);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		Map<Relationship, List<Contentlet>> c = conAPI.findContentRelationships(contentlet, user);
@@ -2757,8 +3118,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.loadField(inode,field);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
 
@@ -2776,8 +3138,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.loadField(inode,field);
 			if(!preResult){
-				Logger.error(this, "The following pre-hook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following pre-hook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 
@@ -2794,8 +3157,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.indexCount(luceneQuery,user,respectFrontendRoles);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
 
@@ -2814,8 +3178,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getMostViewedContent(structureVariableName, startDate, endDate, user);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		List<Map<String, String>> c = conAPI.getMostViewedContent(structureVariableName, startDate, endDate, user);
@@ -2830,8 +3195,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.publishAssociated(contentlet,isNew);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         conAPI.publishAssociated(contentlet,isNew);
@@ -2845,8 +3211,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.publishAssociated(contentlet,isNew,isNewVersion);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         conAPI.publishAssociated(contentlet,isNew,isNewVersion);
@@ -2862,8 +3229,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     	for(ContentletAPIPreHook pre : preHooks){
              boolean preResult = pre.esSearch(esQuery, live, user, respectFrontendRoles);
              if(!preResult){
-                 Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				 String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				 Logger.error(this, errorMessage);
+				 throw new DotRuntimeException(errorMessage);
              }
          }
     	 	ESSearchResults ret = conAPI.esSearch(esQuery, live, user, respectFrontendRoles);
@@ -2883,8 +3251,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     	for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.esSearchRaw(esQuery, live, user, respectFrontendRoles);
             if(!preResult){
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
     	SearchResponse ret = conAPI.esSearchRaw(esQuery, live, user, respectFrontendRoles);
@@ -2900,8 +3269,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.updateUserReferences(userToReplace,replacementUserId, user);
 			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
 			}
 		}
 		conAPI.updateUserReferences(userToReplace,replacementUserId, user);
@@ -2928,8 +3298,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for (ContentletAPIPreHook pre : preHooks) {
             boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         Optional<Contentlet> savedContentlet =
@@ -2940,13 +3311,59 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
         return savedContentlet;
     }
+
+	@Override
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+																	 boolean respectFrontendRoles, String variantName) {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		Optional<Contentlet> savedContentlet =
+				conAPI.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+		}
+
+		return savedContentlet;
+	}
+
+	@Override
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, incomingLangId,
+					variantId, timeMachine, user, respectFrontendRoles);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		final Optional<Contentlet> found =
+				conAPI.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+						timeMachine, user, respectFrontendRoles);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+					timeMachine, user, respectFrontendRoles);
+		}
+
+		return found;
+	}
+
+
     @Override
     public Optional<Contentlet> findInDb(String inode) {
         for (ContentletAPIPreHook pre : preHooks) {
             boolean preResult = pre.findInDb(inode);
             if (!preResult) {
-                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
             }
         }
         Optional<Contentlet> savedContentlet =

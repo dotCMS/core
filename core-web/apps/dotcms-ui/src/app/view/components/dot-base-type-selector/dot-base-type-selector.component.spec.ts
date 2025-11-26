@@ -8,15 +8,16 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SelectItem } from 'primeng/api';
 import { Dropdown } from 'primeng/dropdown';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component';
 
+import { DOTTestBed } from '../../../test/dot-test-bed';
+
 @Injectable()
 class MockDotContentTypeService {
-    getAllContentTypes = jasmine.createSpy('getContentTypes').and.returnValue(
+    getAllContentTypes = jest.fn().mockReturnValue(
         observableOf([
             { name: 'FORM', label: 'Form' },
             { name: 'WIDGET', label: 'Widget' }
@@ -35,8 +36,7 @@ describe('DotBaseTypeSelectorComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotBaseTypeSelectorComponent],
-            imports: [BrowserAnimationsModule],
+            imports: [DotBaseTypeSelectorComponent, BrowserAnimationsModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -56,12 +56,14 @@ describe('DotBaseTypeSelectorComponent', () => {
 
     it('should emit the selected content type', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change').and.callThrough();
+        jest.spyOn(component.selected, 'emit');
+        jest.spyOn(component, 'change');
         pDropDown.triggerEventHandler('onChange', allContentTypesItem);
 
         expect(component.change).toHaveBeenCalledWith(allContentTypesItem);
+        expect(component.change).toHaveBeenCalledTimes(1);
         expect(component.selected.emit).toHaveBeenCalledWith(allContentTypesItem.value);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should add All Content Types option as first position', () => {

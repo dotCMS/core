@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
-import { ServerSideTypeModel } from './services/ServerSideFieldModel';
-import { I18nService } from './services/system/locale/I18n';
+import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
+
+import { LoggerService } from '@dotcms/dotcms-js';
+
 import {
     RULE_CONDITION_UPDATE_PARAMETER,
     RULE_CONDITION_UPDATE_TYPE,
@@ -8,66 +9,70 @@ import {
     RULE_CONDITION_UPDATE_OPERATOR,
     ConditionModel
 } from './services/Rule';
-import { LoggerService } from '@dotcms/dotcms-js';
+import { ServerSideTypeModel } from './services/ServerSideFieldModel';
+import { I18nService } from './services/system/locale/I18n';
 
 @Component({
     selector: 'rule-condition',
-    template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
-            <div class="cw-btn-group cw-condition-toggle">
-                <button
-                    pButton
-                    class="p-button-secondary"
-                    aria-label="Swap And/Or"
-                    (click)="toggleOperator()"
-                    [label]="condition.operator"
-                    *ngIf="index !== 0"
-                ></button>
+    template: `
+        @if (typeDropdown !== null) {
+            <div flex layout="row" class="cw-condition cw-entry">
+                <div class="cw-btn-group cw-condition-toggle">
+                    @if (index !== 0) {
+                        <button
+                            (click)="toggleOperator()"
+                            [label]="condition.operator"
+                            pButton
+                            class="p-button-secondary"
+                            aria-label="Swap And/Or"></button>
+                    }
+                </div>
+                <cw-input-dropdown
+                    (onDropDownChange)="onTypeChange($event)"
+                    [options]="typeDropdown?.options"
+                    [value]="condition.type?.key"
+                    flex="25"
+                    class="cw-type-dropdown"
+                    placeholder="{{ conditionTypePlaceholder }}"></cw-input-dropdown>
+                <div flex="75" class="cw-condition-row-main">
+                    @switch (condition.type?.key) {
+                        @case ('NoSelection') {
+                            <div class="cw-condition-component"></div>
+                        }
+                        @case ('VisitorsGeolocationConditionlet') {
+                            <cw-visitors-location-container
+                                (parameterValuesChange)="onParameterValuesChange($event)"
+                                [componentInstance]="condition"></cw-visitors-location-container>
+                        }
+                        @default {
+                            <cw-serverside-condition
+                                (parameterValueChange)="onParameterValueChange($event)"
+                                [componentInstance]="condition"
+                                class="cw-condition-component"></cw-serverside-condition>
+                        }
+                    }
+                </div>
             </div>
-
-            <cw-input-dropdown
-                [options]="typeDropdown.options"
-                flex="25"
-                class="cw-type-dropdown"
-                [value]="condition.type?.key"
-                placeholder="{{ conditionTypePlaceholder }}"
-                (onDropDownChange)="onTypeChange($event)"
-            >
-            </cw-input-dropdown>
-            <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-                <ng-template [ngSwitchCase]="'NoSelection'">
-                    <div class="cw-condition-component"></div>
-                </ng-template>
-                <ng-template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
-                    <cw-visitors-location-container
-                        [componentInstance]="condition"
-                        (parameterValuesChange)="onParameterValuesChange($event)"
-                    ></cw-visitors-location-container>
-                </ng-template>
-                <ng-template ngSwitchDefault>
-                    <cw-serverside-condition
-                        class="cw-condition-component"
-                        [componentInstance]="condition"
-                        (parameterValueChange)="onParameterValueChange($event)"
-                    >
-                    </cw-serverside-condition>
-                </ng-template>
-            </div>
-        </div>
+        }
         <div class="cw-btn-group cw-delete-btn">
             <div class="ui basic icon buttons">
                 <button
+                    (click)="onDeleteConditionClicked()"
+                    [disabled]="!condition.isPersisted()"
                     pButton
                     type="button"
                     icon="pi pi-trash"
                     class="p-button-rounded p-button-danger p-button-text"
-                    aria-label="Delete Condition"
-                    (click)="onDeleteConditionClicked()"
-                    [disabled]="!condition.isPersisted()"
-                ></button>
+                    aria-label="Delete Condition"></button>
             </div>
-        </div> `
+        </div>
+    `,
+    standalone: false
 })
 export class ConditionComponent implements OnInit {
+    private _resources = inject(I18nService);
+    private loggerService = inject(LoggerService);
+
     @Input() condition: ConditionModel;
     @Input() index: number;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -90,15 +95,14 @@ export class ConditionComponent implements OnInit {
         payload: { condition: ConditionModel };
     }> = new EventEmitter(false);
 
-    typeDropdown: any;
-
-    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
+    typeDropdown: any = null;
 
     ngOnInit(): void {
         setTimeout(() => {
             this.typeDropdown = {
                 options: Object.keys(this.conditionTypes).map((key) => {
                     const type = this.conditionTypes[key];
+
                     return {
                         label: type._opt.label,
                         value: type._opt.value

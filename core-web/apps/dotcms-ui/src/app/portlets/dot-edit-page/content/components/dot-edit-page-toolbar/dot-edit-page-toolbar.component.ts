@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -7,8 +8,17 @@ import {
     OnChanges,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { TagModule } from 'primeng/tag';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
@@ -20,13 +30,41 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotGlobalMessageComponent } from '../../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
+import { DotEditPageInfoComponent } from '../../../components/dot-edit-page-info/dot-edit-page-info.component';
+import { DotEditPageStateControllerComponent } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.component';
+import { DotEditPageViewAsControllerComponent } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.component';
+import { DotEditPageWorkflowsActionsComponent } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.component';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
-    styleUrls: ['./dot-edit-page-toolbar.component.scss']
+    styleUrls: ['./dot-edit-page-toolbar.component.scss'],
+    imports: [
+        ButtonModule,
+        CommonModule,
+        CheckboxModule,
+        DotEditPageWorkflowsActionsComponent,
+        DotEditPageInfoComponent,
+        DotEditPageViewAsControllerComponent,
+        DotEditPageStateControllerComponent,
+        DotSecondaryToolbarComponent,
+        FormsModule,
+        ToolbarModule,
+        TooltipModule,
+        DotGlobalMessageComponent,
+        RouterLink,
+        TagModule,
+        DotMessagePipe
+    ]
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy {
+    private dotLicenseService = inject(DotLicenseService);
+    private dotConfigurationService = inject(DotPropertiesService);
+
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
     @Input() runningExperiment: DotExperiment | null = null;
@@ -44,11 +82,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotConfigurationService: DotPropertiesService
-    ) {}
 
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release

@@ -1,6 +1,7 @@
 package com.dotcms.graphql.business;
 
 import com.dotmarketing.exception.DotDataException;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLType;
 import java.util.Collection;
 
@@ -13,8 +14,8 @@ import java.util.Collection;
 public interface GraphQLTypesProvider {
 
     /**
-     * Returns a collection of {@link GraphQLType}s to be included in the GraphQL Schema
-     * @return a collection of {@link GraphQLType}s
+     * Returns a collection of {@link GraphQLNamedSchemaElement}s to be included in the GraphQL Schema
+     * @return a collection of {@link GraphQLNamedSchemaElement}s
      * @throws DotDataException in case of invalid data
      */
     Collection<? extends GraphQLType> getTypes() throws DotDataException;

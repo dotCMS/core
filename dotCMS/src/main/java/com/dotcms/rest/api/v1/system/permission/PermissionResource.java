@@ -1,16 +1,13 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.user.RestUser;
-import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,19 +18,19 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -41,7 +38,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +49,8 @@ import java.util.stream.Stream;
  * @author jsanca
  */
 @Path("/v1/permissions")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Permissions")
 public class PermissionResource {
 
     private final WebResource      webResource;
@@ -83,16 +81,37 @@ public class PermissionResource {
      * @return Response
      * @throws DotDataException
      */
+    @Operation(
+        summary = "Get permissions by permission type",
+        description = "Load a map of permission type indexed by permissionable types and permissions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Permissions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPermissionsByTypeView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/_bypermissiontype")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getPermissionsByPermissionType(final @Context HttpServletRequest request,
                                                    final @Context HttpServletResponse response,
+                                                   @Parameter(description = "User ID", required = false)
                                                    final @QueryParam("userid")         String userid,
+                                                   @Parameter(description = "Permission type (READ, WRITE)", required = false)
                                                    final @QueryParam("permission")     String permissions,
+                                                   @Parameter(description = "Permissionable types", required = false)
                                                    final @QueryParam("permissiontype") String permissionableTypes)
             throws DotDataException, DotSecurityException {
 
@@ -119,7 +138,7 @@ public class PermissionResource {
                 null != permissionableTypes? Arrays.asList(permissionableTypes.split(StringPool.COMMA)): null
                 );
 
-        return Response.ok(new ResponseEntityView(permissionsMap)).build();
+        return Response.ok(new ResponseEntityView<>(permissionsMap)).build();
     }
 
     /**
@@ -135,9 +154,9 @@ public class PermissionResource {
     @Path("/_bycontent")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Get permission for a Contentlet",
+            description = "Retrieves permissions for a specific contentlet by its identifier. Only admin users can access this endpoint. Optionally filter by permission type (READ, WRITE, PUBLISH).",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -146,7 +165,9 @@ public class PermissionResource {
                     @ApiResponse(responseCode = "403", description = "If not admin user"),})
     public Response getByContentlet(final @Context HttpServletRequest request,
                                     final @Context HttpServletResponse response,
+                                    @Parameter(description = "Contentlet identifier", required = true)
                                     final @QueryParam("contentletId")   String contentletId,
+                                    @Parameter(description = "Permission type (READ, WRITE, PUBLISH)", required = false)
                                     final @DefaultValue("READ") @QueryParam("type")   String type)
             throws DotDataException, DotSecurityException {
 
@@ -192,9 +213,9 @@ public class PermissionResource {
     @Path("/_bycontent/_groupbytype")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Get permissions roles group by type for a Contentlet",
+            description = "Retrieves permissions for a specific contentlet grouped by permission type (READ, WRITE, PUBLISH). Only admin users or content owners can access this endpoint.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -203,6 +224,7 @@ public class PermissionResource {
                     @ApiResponse(responseCode = "403", description = "If not admin user"),})
     public Response getByContentletGroupByType(final @Context HttpServletRequest request,
                                     final @Context HttpServletResponse response,
+                                    @Parameter(description = "Contentlet identifier", required = true)
                                     final @QueryParam("contentletId")   String contentletId)
             throws DotDataException, DotSecurityException {
 

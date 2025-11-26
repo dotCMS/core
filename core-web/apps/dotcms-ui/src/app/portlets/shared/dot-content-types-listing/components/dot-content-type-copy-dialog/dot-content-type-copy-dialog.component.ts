@@ -1,5 +1,6 @@
 import { combineLatest, Observable, of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewChecked,
     ChangeDetectionStrategy,
@@ -9,29 +10,59 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { map } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
-import { DotValidators } from '@shared/validators/dotValidators';
+import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotValidators
+} from '@dotcms/ui';
+
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
+import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
 
 @Component({
     selector: 'dot-content-type-copy-dialog',
     templateUrl: './dot-content-type-copy-dialog.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-content-type-copy-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        InputTextModule,
+        DotFieldValidationMessageComponent,
+        DotDialogComponent,
+        DotMdIconSelectorComponent,
+        DotSiteSelectorFieldComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {
+    private readonly fb = inject(UntypedFormBuilder);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly cd = inject(ChangeDetectorRef);
+
     @ViewChild('dot-site-selector-field') siteSelector;
     dialogActions: DotDialogActions;
     inputNameWithType = '';
@@ -48,11 +79,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     validFormFields = new EventEmitter<DotCopyContentTypeDialogFormFields>();
     form!: UntypedFormGroup;
 
-    constructor(
-        private readonly fb: UntypedFormBuilder,
-        private readonly dotMessageService: DotMessageService,
-        private readonly cd: ChangeDetectorRef
-    ) {
+    constructor() {
         this.initForm();
     }
 

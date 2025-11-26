@@ -2,8 +2,7 @@ import { Component } from '@angular/core';
 
 @Component({
     selector: 'dotcms-root',
-    templateUrl: './app.component.html'
+    template: '',
+    standalone: false
 })
-export class AppComponent {
-    title = 'dotcms-binary-field-builder';
-}
+export class AppComponent {}

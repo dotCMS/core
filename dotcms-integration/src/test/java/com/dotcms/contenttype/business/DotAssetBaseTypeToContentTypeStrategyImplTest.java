@@ -24,7 +24,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -98,7 +98,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");
@@ -122,12 +122,12 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                 }
             }
          */ // creates a contentlet map without content type but dotAsset baseType with temporal file
-        final Map<String, Object> map =  CollectionsUtils.map("baseType", "dotAsset", "asset", dotTempFile.id);
+        final Map<String, Object> map =  Map.of("baseType", "dotAsset", "asset", dotTempFile.id);
 
         final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
         final Optional<ContentType> contentTypeOpt = baseTypeToContentTypeStrategy.get().apply(BaseContentType.DOTASSET,
-                CollectionsUtils.map("user", APILocator.systemUser(), "host", defaultHost,
+                Map.of("user", APILocator.systemUser(), "host", defaultHost,
                         "contentletMap", map, "accessingList", Arrays.asList(APILocator.systemUser().getUserId(),
                                 APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId)));
 

@@ -9,34 +9,59 @@ import {
     OnDestroy,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
 
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
     DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSite
+    DotAppsSite,
+    DotDialogActions
 } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
+
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
-    styleUrls: ['./dot-apps-import-export-dialog.component.scss']
+    styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
+    imports: [
+        ReactiveFormsModule,
+        InputTextModule,
+        PasswordModule,
+        DotDialogComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
+    private dotAppsService = inject(DotAppsService);
+    private dotMessageService = inject(DotMessageService);
+    private fb = inject(UntypedFormBuilder);
+
     @ViewChild('importFile') importFile: ElementRef;
     @Input() action?: string;
     @Input() app?: DotApp;
@@ -51,12 +76,6 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     dialogHeaderKey = '';
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotAppsService: DotAppsService,
-        private dotMessageService: DotMessageService,
-        private fb: UntypedFormBuilder
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes?.action?.currentValue) {
@@ -141,9 +160,10 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
                         .exportConfiguration(requestConfiguration)
                         .then((errorMsg: string) => {
                             if (errorMsg) {
-                                this.errorMessage = this.dotMessageService.get(
-                                    'apps.confirmation.export.error'
-                                );
+                                this.errorMessage =
+                                    this.dotMessageService.get('apps.confirmation.export.error') +
+                                    ': ' +
+                                    errorMsg;
                             } else {
                                 this.closeExportDialog();
                             }

@@ -60,7 +60,17 @@ public class ContentletCacheImpl extends ContentletCache {
         }
 
 		key = primaryGroup + key;
-
+		if (content.getIdentifier().equals("b9b88559-335c-47cd-a53f-979181d39153") && 1 == content.getLanguageId()) {
+			Logger.warn(this, "==========================================================================");
+			Logger.warn(this, "==== Expected URL content is being added/updated in cache ====");
+			Logger.warn(this, "==========================================================================");
+			Logger.warn(this, "-> URL value being set = " + content.getStringProperty("url"));
+			Logger.warn(this, "-> Inode = " + content.getInode());
+			Logger.warn(this, "-> Site ID = " + content.getHost());
+			Logger.warn(this, "-> Mod User = " + content.getModUser());
+			Logger.warn(this, "-> Mod Date = " + content.getModDate());
+			Thread.dumpStack();
+		}
 		// Add the key to the cache
 		cache.put(key, content, primaryGroup);
 
@@ -135,7 +145,7 @@ public class ContentletCacheImpl extends ContentletCache {
 			Logger.debug(this, "Cache not able to be removed", e);
 		}
 
-		final Host host = CacheLocator.getHostCache().get(key);
+		final Host host = CacheLocator.getHostCache().getById(key, false);
 		if(host != null){
 			CacheLocator.getHostCache().remove(host);
 		}

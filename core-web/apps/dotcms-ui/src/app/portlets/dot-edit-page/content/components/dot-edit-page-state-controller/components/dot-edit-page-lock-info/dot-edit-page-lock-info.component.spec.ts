@@ -4,9 +4,8 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
 
@@ -22,8 +21,7 @@ describe('DotEditPageLockInfoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotPipesModule, DotMessagePipe],
-            declarations: [DotEditPageLockInfoComponent],
+            imports: [DotSafeHtmlPipe, DotMessagePipe, DotEditPageLockInfoComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -84,8 +82,8 @@ describe('DotEditPageLockInfoComponent', () => {
             });
 
             it('should blink', fakeAsync(() => {
-                spyOn(lockedMessage.nativeElement.classList, 'add');
-                spyOn(lockedMessage.nativeElement.classList, 'remove');
+                jest.spyOn(lockedMessage.nativeElement.classList, 'add');
+                jest.spyOn(lockedMessage.nativeElement.classList, 'remove');
                 component.blinkLockMessage();
 
                 expect(lockedMessage.nativeElement.classList.add).toHaveBeenCalledWith(

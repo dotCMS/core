@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule, NgFor } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,7 +7,8 @@ import {
     Input,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
@@ -20,17 +20,18 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateLayoutProperties } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
-import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
+import { DotLayoutPropertiesComponent } from '../dot-layout-properties/dot-layout-properties.component';
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    standalone: true,
-    imports: [CommonModule, ButtonModule, NgFor, DotLayoutPropertiesModule, DotMessagePipe],
+    imports: [ButtonModule, DotLayoutPropertiesComponent, DotMessagePipe],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
+    private store = inject(DotTemplateBuilderStore);
+
     @Input() set layoutProperties(layoutProperties: DotTemplateLayoutProperties) {
         this.group?.patchValue(
             {
@@ -52,8 +53,6 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
     group: UntypedFormGroup;
 
     destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private store: DotTemplateBuilderStore) {}
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({

@@ -141,7 +141,7 @@ describe('DotBinaryFieldUrlModeComponent', () => {
 
     describe('template', () => {
         it('should show error message when url is invalid', () => {
-            const input = spectator.query(byTestId('url-input')) as HTMLInputElement;
+            const input = spectator.query<HTMLInputElement>(byTestId('url-input'));
 
             input.focus(); // to trigger touched
             input.value = 'Not a url'; // to trigger invalid

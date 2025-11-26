@@ -1,0 +1,27 @@
+@if (socialMedia) {
+    <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
+        <i
+            [ngClass]="socialMediaIconClass"
+            class="dot-select-seo-tool__icon"
+            data-testId="select-seo-tool-icon"></i>
+        <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
+            {{ SOCIAL_MEDIA_TILES[socialMedia]?.label }}
+        </h5>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
+            {{ SOCIAL_MEDIA_TILES[socialMedia]?.description | dm }}
+        </span>
+    </div>
+} @else {
+    <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
+        <i
+            [ngClass]="device?.icon"
+            class="dot-select-seo-tool__icon"
+            data-testId="select-seo-tool-icon"></i>
+        <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
+            {{ device?.name }}
+        </h5>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
+            {{ device?.cssHeight | number }} x {{ device?.cssWidth | number }}
+        </span>
+    </div>
+}

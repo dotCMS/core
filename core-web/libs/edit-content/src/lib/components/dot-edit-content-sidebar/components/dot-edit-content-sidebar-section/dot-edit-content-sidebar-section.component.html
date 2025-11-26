@@ -1,0 +1,16 @@
+<section class="dot-section h-full" data-testid="dot-section">
+    @if ($title()) {
+        <div class="dot-section__header" data-testid="dot-section-header">
+            <h2 class="dot-section__title" data-testid="dot-section-title">{{ $title() }}</h2>
+
+            @if (actionTemplate) {
+                <div class="dot-section__action" data-testid="dot-section-action">
+                    <ng-container [ngTemplateOutlet]="actionTemplate" />
+                </div>
+            }
+        </div>
+    }
+    <div class="dot-section__content h-full" data-testid="dot-section-content">
+        <ng-content />
+    </div>
+</section>

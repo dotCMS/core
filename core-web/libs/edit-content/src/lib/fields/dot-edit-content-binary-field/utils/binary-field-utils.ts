@@ -1,3 +1,5 @@
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { UiMessageI, UiMessageMap } from '../interfaces';
 
 const UiMessageMap: UiMessageMap = {
@@ -33,4 +35,18 @@ export const getUiMessage = (messageKey: string, ...args: string[]): UiMessageI 
         ...UiMessageMap[messageKey],
         args
     };
+};
+
+export const getFileMetadata = (contentlet: DotCMSContentlet) => {
+    const { metaData, fieldVariable } = contentlet;
+
+    const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
+
+    return metadata || {};
+};
+
+export const getFieldVersion = (contentlet: DotCMSContentlet) => {
+    const { fileAssetVersion, fieldVariable } = contentlet;
+
+    return fileAssetVersion || contentlet[`${fieldVariable}Version`];
 };

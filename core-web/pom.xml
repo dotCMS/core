@@ -1,36 +1,32 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>dotcms-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../parent/pom.xml</relativePath>
+        <artifactId>dotcms-nodejs-parent</artifactId>
+        <version>${revision}${sha1}${changelist}</version>
+        <relativePath>../nodejs-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>dotcms-core-web</artifactId>
     <packaging>war</packaging>
 
     <properties>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v18.17.0</node.js.version>
-        <npm.version>9.8.1</npm.version>
-        <yarn.version>v1.22.19</yarn.version>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
         <nx.build.options></nx.build.options>
         <cargo.server.port>8084</cargo.server.port>
-        <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
+        <yarn.install.cmd>--frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
-        <sonar.sources>apps,libs</sonar.sources>
-        <sonar.exclusions>**/node_modules/**,**/*.spec.ts</sonar.exclusions>
-        <sonar.tests>apps,libs</sonar.tests>
-        <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
+        <skip.core-web.updates>false</skip.core-web.updates>
+        <skip.validate>true</skip.validate>
+        <git.origin.branch>origin/main</git.origin.branch>
+        <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
+        <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
+        <skip.nx.reset.execution>true</skip.nx.reset.execution>
     </properties>
 
     <dependencies>
@@ -41,19 +37,12 @@
         <plugins>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.2.0</version>
                 <configuration>
                     <filesets>
                         <fileset>
                             <directory>dist</directory>
                             <includes>
                                 <include>**/*</include>
-                            </includes>
-                        </fileset>
-                        <fileset>
-                            <directory>.nx/cache</directory>
-                            <includes>
-                                <include>*/**</include>
                             </includes>
                         </fileset>
                     </filesets>
@@ -67,7 +56,8 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
-                                <echo file="${basedir}/.nvmrc" append="false">${node.js.version}</echo>
+                                echo "Using node.js ${node.js.version}"
+                                <echo append="false" file="${basedir}/.nvmrc">${node.js.version}</echo>
                                 <!--
                                 <filter token="node.js.version" value="${node.js.version}"/>
                                 <copy file="${basedir}/version-template.txt" tofile="${basedir}/.nvmrc" overwrite="true" filtering="true"/>
@@ -84,52 +74,11 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <!-- Use the latest released version:
-                https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
-                <version>1.12.1</version>
                 <configuration>
-                    <workingDirectory>${project.basedir}</workingDirectory>
-                    <installDirectory>${project.basedir}/installs</installDirectory>
-
-                    <nodeVersion>${node.js.version}</nodeVersion>
-                    <!-- <npmVersion>${npm.version}</npmVersion>-->
-                    <yarnVersion>${yarn.version}</yarnVersion>
-
-                    <!-- optional: where to download node and npm from. Defaults to https://nodejs.org/dist/ -->
-                    <!--<downloadRoot>http://myproxy.example.org/nodejs/</downloadRoot>-->
-
+                    <!-- Base config defined in dotcms-core-web-parent -->
                 </configuration>
+
                 <executions>
-                    <execution>
-                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
-                        <id>install node and yarn</id>
-                        <goals>
-                            <goal>install-node-and-yarn</goal>
-                        </goals>
-                        <!-- optional: default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
-                    </execution>
-
-                    <execution>
-                        <id>config yarn timeout</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>config set network-timeout 6000000</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>config yarn registry</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
-                        </configuration>
-                    </execution>
-
                     <execution>
                         <id>install</id>
                         <goals>
@@ -144,50 +93,60 @@
                             <arguments>${yarn.install.cmd}</arguments>
                         </configuration>
                     </execution>
+
                     <execution>
-                        <id>build dotcms-ui</id>
+                        <id>lint-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
-
+                        <phase>generate-resources</phase>
                         <configuration>
-                            <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
+                            <skip>${skip.validate}</skip>
+                            <arguments>nx affected -t lint --base=origin/main --exclude='tag:skip:lint'</arguments>
                         </configuration>
                     </execution>
 
                     <execution>
-                        <id>build dotcms-block-editor</id>
+                        <id>format-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>compile</phase>
-
+                        <phase>generate-resources</phase>
                         <configuration>
-                            <arguments>run nx run dotcms-block-editor:build</arguments>
+                            <skip>${skip.validate}</skip>
+                            <arguments>nx format:check</arguments>
                         </configuration>
                     </execution>
 
                     <execution>
-                        <id>build dotcms-binary-field-builder</id>
+                        <id>build-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
-
                         <configuration>
-                            <arguments>run nx run dotcms-binary-field-builder:build</arguments>
+                            <arguments>nx run-many -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
                     <execution>
-                        <id>test</id>
+                        <id>build-analytics</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>compile</phase>
+                        <configuration>
+                            <arguments>nx run sdk-analytics:build:standalone</arguments>
+                        </configuration>
+                    </execution>
+
+
+                    <execution>
+                        <id>unit-test</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
@@ -197,7 +156,19 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx test</arguments>
+                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test'</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>nx-reset</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <arguments>exec nx reset</arguments>
+                            <skip>${skip.nx.reset.execution}</skip>
                         </configuration>
                     </execution>
                 </executions>
@@ -215,7 +186,7 @@
                             <targetPath>dotAdmin</targetPath>
                         </resource>
                         <resource>
-                            <directory>${project.basedir}/dist/libs</directory>
+                            <directory>${project.basedir}/dist/libs/dotcms-webcomponents/dist</directory>
                             <filtering>false</filtering>
                             <includes>
                                 <include>dotcms-webcomponents/**/*</include>
@@ -232,6 +203,20 @@
                             <directory>${project.basedir}/dist/apps/dotcms-block-editor</directory>
                             <filtering>false</filtering>
                             <targetPath>dotcms-block-editor</targetPath>
+                        </resource>
+
+                        <resource>
+                            <directory>${project.basedir}/dist/libs/sdk/analytics-standalone</directory>
+                            <filtering>false</filtering>
+                            <targetPath>ext/analytics</targetPath>
+                            <includes>
+                                <include>**/*.js</include>
+                            </includes>
+                        </resource>
+                        <resource>
+                            <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
+                            <filtering>false</filtering>
+                            <targetPath>html/js/legacy_custom_field_bridge</targetPath>
                         </resource>
                     </webResources>
                 </configuration>
@@ -299,9 +284,86 @@
             </activation>
             <properties>
                 <nx.build.options>--prod</nx.build.options>
-                <yarn.install.cmd>--frozen-lockfile --silent</yarn.install.cmd>
+                <yarn.install.cmd>--frozen-lockfile --prefer-offline</yarn.install.cmd>
             </properties>
+            <build/>
+        </profile>
+
+        <profile>
+            <id>do-nx-reset</id>
+            <activation>
+                <property>
+                    <name>nx.reset</name>
+                </property>
+            </activation>
+            <properties>
+                <skip.nx.reset.execution>false</skip.nx.reset.execution>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>validate</id>
+            <properties>
+                <skip.validate>false</skip.validate>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>is_pr</id>
+            <!-- Configuration specific to PRs -->
+            <activation>
+                <property>
+                    <name>github.event.name</name>
+                    <value>pull_request</value>
+                </property>
+            </activation>
+            <properties>
+                <git.origin.branch>origin/main</git.origin.branch>
+                <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
+                <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
+                <skip.validate>false</skip.validate>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>format</id>
             <build>
+                <defaultGoal>generate-resources</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- Base config defined in dotcms-core-web-parent -->
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>auto-format</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <!-- optional: the default phase is "generate-resources" -->
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <skip>${skip.core-web.updates}</skip>
+                                    <arguments>run format</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>auto-lint</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <!-- optional: the default phase is "generate-resources" -->
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <skip>${skip.core-web.updates}</skip>
+                                    <arguments>ng lint</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>

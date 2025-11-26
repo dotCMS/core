@@ -1,0 +1,132 @@
+/**
+ * Event models for DotCMS Analytics
+ * Contains interfaces for different types of analytics events
+ */
+
+import {
+    DotCMSContentImpressionPageData,
+    DotCMSEventPageData,
+    DotCMSEventUtmData
+} from './data.model';
+
+import {
+    DotCMSCustomEventType,
+    DotCMSEventType,
+    DotCMSPredefinedEventType
+} from '../constants/dot-content-analytics.constants';
+
+/**
+ * JSON value type for analytics custom data.
+ * Represents any valid JSON value that can be serialized and sent to the analytics server.
+ */
+export type JsonValue = string | number | boolean | null | undefined | JsonObject | JsonArray;
+
+/**
+ * JSON object type for analytics custom data.
+ */
+export type JsonObject = { [key: string]: JsonValue };
+
+/**
+ * JSON array type for analytics custom data.
+ */
+export type JsonArray = JsonValue[];
+
+/**
+ * Generic base event structure for DotCMS Analytics.
+ * All events share this base structure with customizable event type and data.
+ *
+ * @template TEventType - The type of the event (pageview, custom event name, etc.)
+ * @template TData - The data structure for the event
+ */
+export interface DotCMSEventBase<TEventType extends DotCMSEventType, TData> {
+    /** The type of event being tracked */
+    event_type: TEventType;
+    /** Local timestamp when the event occurred */
+    local_time: string;
+    /** Event-specific data with structured format */
+    data: TData;
+}
+
+/**
+ * Data structure for pageview events.
+ * Contains page and optional UTM/custom data.
+ */
+export type DotCMSPageViewEventData = {
+    /** Page data associated with the event */
+    page: DotCMSEventPageData;
+    /** UTM parameters for campaign tracking (optional) */
+    utm?: DotCMSEventUtmData;
+    /** Custom data associated with the event (any valid JSON) */
+    custom?: JsonObject;
+};
+
+/**
+ * Data structure for custom events.
+ * Contains user-defined custom data.
+ */
+export type DotCMSCustomEventData = {
+    /** Custom data associated with the event (any valid JSON) */
+    custom: JsonObject;
+};
+
+/**
+ * Partial content impression data sent by producer plugins.
+ * Contains only impression-specific data (content and position).
+ * The enricher plugin will add page data automatically.
+ */
+export type DotCMSContentImpressionPayload = {
+    /** Content information */
+    content: {
+        /** Content identifier */
+        identifier: string;
+        /** Content inode */
+        inode: string;
+        /** Content title */
+        title: string;
+        /** Content type name */
+        content_type: string;
+    };
+    /** Position information in the viewport and DOM */
+    position: {
+        /** Viewport offset percentage from top */
+        viewport_offset_pct: number;
+        /** DOM index position */
+        dom_index: number;
+    };
+};
+
+/**
+ * Complete data structure for content impression events after enrichment.
+ * Includes minimal page data (title and url) added by the enricher plugin.
+ */
+export type DotCMSContentImpressionEventData = DotCMSContentImpressionPayload & {
+    /** Minimal page data where the impression occurred (added by enricher) */
+    page: DotCMSContentImpressionPageData;
+};
+
+/**
+ * Pageview event structure.
+ */
+export type DotCMSPageViewEvent = DotCMSEventBase<
+    typeof DotCMSPredefinedEventType.PAGEVIEW,
+    DotCMSPageViewEventData
+>;
+
+/**
+ * Content impression event structure.
+ */
+export type DotCMSContentImpressionEvent = DotCMSEventBase<
+    typeof DotCMSPredefinedEventType.CONTENT_IMPRESSION,
+    DotCMSContentImpressionEventData
+>;
+
+/**
+ * Custom event structure.
+ */
+export type DotCMSCustomEvent = DotCMSEventBase<DotCMSCustomEventType, DotCMSCustomEventData>;
+
+/**
+ * Union type for all possible analytics events.
+ * Used primarily for type documentation and validation.
+ */
+export type DotCMSEvent = DotCMSPageViewEvent | DotCMSContentImpressionEvent | DotCMSCustomEvent;

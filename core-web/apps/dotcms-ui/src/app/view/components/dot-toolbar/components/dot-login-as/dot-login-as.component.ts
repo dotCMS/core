@@ -1,190 +1,177 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectionStrategy,
     Component,
     ElementRef,
-    EventEmitter,
-    Inject,
-    Input,
+    inject,
+    input,
     OnDestroy,
     OnInit,
-    Output,
-    ViewChild
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
 import {
-    UntypedFormBuilder,
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormBuilder,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
     Validators
 } from '@angular/forms';
 
-import { take, takeUntil } from 'rxjs/operators';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { PasswordModule } from 'primeng/password';
 
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { take } from 'rxjs/operators';
+
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-login-as',
     styleUrls: ['./dot-login-as.component.scss'],
-    templateUrl: 'dot-login-as.component.html'
+    templateUrl: 'dot-login-as.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        ReactiveFormsModule,
+        DialogModule,
+        ButtonModule,
+        PasswordModule,
+        DropdownModule,
+        DotMessagePipe
+    ]
 })
 export class DotLoginAsComponent implements OnInit, OnDestroy {
-    @Output()
-    cancel = new EventEmitter<boolean>();
+    visible = input<boolean>(false);
+    visibleChange = output<boolean>();
+    cancel = output<boolean>();
 
-    @Input()
-    visible: boolean;
+    passwordElem = viewChild<ElementRef>('password');
+    dropdown = viewChild<Dropdown>('dropdown');
+    formEl = viewChild<HTMLFormElement>('formEl');
 
-    @ViewChild('password')
-    passwordElem: ElementRef;
+    form: FormGroup;
+    needPassword = signal<boolean>(false);
+    userCurrentPage = signal<User[]>([]);
+    errorMessage = signal<string>('');
+    loading = signal<boolean>(false);
 
-    @ViewChild('formEl', { static: true })
-    formEl: HTMLFormElement;
-
-    form: UntypedFormGroup;
-    needPassword = false;
-    userCurrentPage: User[];
-    errorMessage: string;
-    dialogActions: DotDialogActions;
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        @Inject(LOCATION_TOKEN) private location: Location,
-        private dotMessageService: DotMessageService,
-        private dotNavigationService: DotNavigationService,
-        private fb: UntypedFormBuilder,
-        private loginService: LoginService,
-        public paginationService: PaginatorService
-    ) {}
+    #destroy$ = new Subject<boolean>();
+    #location = inject(LOCATION_TOKEN);
+    #dotMessageService = inject(DotMessageService);
+    #dotNavigationService = inject(DotNavigationService);
+    #fb = inject(FormBuilder);
+    #loginService = inject(LoginService);
+    #paginationService = inject(PaginatorService);
 
     ngOnInit(): void {
-        this.paginationService.url = 'v1/users/loginAsData';
+        this.#paginationService.url = 'v1/users/loginAsData';
         this.getUsersList();
 
-        this.form = this.fb.group({
-            loginAsUser: new UntypedFormControl('', Validators.required),
+        this.form = this.#fb.group({
+            loginAsUser: new FormControl('', Validators.required),
             password: ''
         });
-
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.dialogActions = {
-                ...this.dialogActions,
-                accept: {
-                    ...this.dialogActions.accept,
-                    disabled: !this.form.valid
-                }
-            };
-        });
-
-        this.dialogActions = {
-            accept: {
-                label: this.dotMessageService.get('Change'),
-                action: () => {
-                    this.formEl.ngSubmit.emit();
-                },
-                disabled: true
-            },
-            cancel: {
-                label: this.dotMessageService.get('cancel')
-            }
-        };
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+        this.#destroy$.next(true);
+        this.#destroy$.complete();
     }
 
     /**
      * Emit cancel
-     *
-     * @memberof LoginAsComponent
      */
     close(): void {
         this.cancel.emit(true);
     }
 
     /**
-     * Do request to login as specfied user
-     *
-     * @memberof LoginAsComponent
+     * Do request to login as specified user
      */
     doLoginAs(): void {
-        this.errorMessage = '';
-        const password: string = this.form.value.password;
-        const user: User = this.form.value.loginAsUser;
-        this.loginService
-            .loginAs({ user: user, password: password })
-            .pipe(take(1))
-            .subscribe(
-                (data) => {
-                    if (data) {
-                        this.dotNavigationService.goToFirstPortlet().then(() => {
-                            this.location.reload();
-                        });
+        if (this.form.valid) {
+            this.loading.set(true);
+            this.errorMessage.set('');
+            const password: string = this.form.value.password;
+            const user: User = this.form.value.loginAsUser;
+            this.#loginService
+                .loginAs({ user: user, password: password })
+                .pipe(take(1))
+                .subscribe({
+                    next: (data) => {
+                        if (data) {
+                            this.#dotNavigationService.goToFirstPortlet().then(() => {
+                                this.#location.reload();
+                            });
+                        }
+
+                        this.loading.set(false);
+                    },
+                    error: (response) => {
+                        this.loading.set(false);
+                        if (response.errorsMessages) {
+                            this.errorMessage.set(response.errorsMessages);
+                        } else {
+                            this.errorMessage.set(
+                                this.#dotMessageService.get('loginas.error.wrong-credentials')
+                            );
+                            if (this.passwordElem()) {
+                                this.passwordElem().nativeElement.focus();
+                            }
+                        }
                     }
-                },
-                (response) => {
-                    if (response.errorsMessages) {
-                        this.errorMessage = response.errorsMessages;
-                    } else {
-                        this.errorMessage = this.dotMessageService.get(
-                            'loginas.error.wrong-credentials'
-                        );
-                        this.passwordElem.nativeElement.focus();
-                    }
-                }
-            );
+                });
+        }
     }
 
     /**
      * Set need password
-     *
-     * @param {User} user
-     * @memberof LoginAsComponent
      */
     userSelectedHandler(user: User): void {
-        this.errorMessage = '';
-        this.needPassword = user.requestPassword || false;
+        this.errorMessage.set('');
+        this.needPassword.set(user?.requestPassword || false);
     }
 
     /**
      * Call to load a new page of user.
-     *
-     * @param string [filter='']
-     * @param number [page=1]
-     * @memberof LoginAsComponent
      */
     getUsersList(filter = '', offset = 0): void {
-        this.paginationService.filter = filter;
-        this.paginationService
+        this.#paginationService.filter = filter;
+        this.#paginationService
             .getWithOffset<User[]>(offset)
             .pipe(take(1))
             .subscribe((items: User[]) => {
-                // items.splice(0) to return a new object and trigger the change detection
-                this.userCurrentPage = items.splice(0);
+                this.userCurrentPage.set(items.slice());
             });
     }
 
     /**
-     * Call when the user global serach changed
-     * @param any filter
-     * @memberof SiteSelectorComponent
+     * Call when the user global search changed
      */
-    handleFilterChange(filter): void {
-        this.getUsersList(filter);
+    handleFilterChange(event: { filter: string }): void {
+        this.getUsersList(event.filter);
     }
 
     /**
      * Call when the current page changed
-     * @param any event
-     * @memberof SiteSelectorComponent
      */
-    handlePageChange(event): void {
+    handlePageChange(event: { filter: string; first: number }): void {
         this.getUsersList(event.filter, event.first);
+    }
+
+    /**
+     * Clear user selection
+     */
+    clearSelection(): void {
+        this.needPassword.set(false);
+        this.errorMessage.set('');
     }
 }

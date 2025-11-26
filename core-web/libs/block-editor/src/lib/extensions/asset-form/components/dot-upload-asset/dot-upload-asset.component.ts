@@ -10,17 +10,17 @@ import {
     ChangeDetectionStrategy,
     OnDestroy,
     HostListener,
-    ElementRef
+    ElementRef,
+    inject
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { catchError, take } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { shakeAnimation } from './animations';
-
-import { DotUploadFileService } from '../../../../shared';
 
 export enum STATUS {
     SELECT = 'SELECT',
@@ -34,7 +34,8 @@ export enum STATUS {
     templateUrl: './dot-upload-asset.component.html',
     styleUrls: ['./dot-upload-asset.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [shakeAnimation]
+    animations: [shakeAnimation],
+    standalone: false
 })
 export class DotUploadAssetComponent implements OnDestroy {
     @Output()
@@ -70,12 +71,10 @@ export class DotUploadAssetComponent implements OnDestroy {
         }
     }
 
-    constructor(
-        private readonly sanitizer: DomSanitizer,
-        private readonly dotUploadFileService: DotUploadFileService,
-        private readonly cd: ChangeDetectorRef,
-        private readonly el: ElementRef
-    ) {}
+    private readonly sanitizer = inject(DomSanitizer);
+    private readonly dotUploadFileService = inject(DotUploadFileService);
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly el = inject(ElementRef);
 
     ngOnDestroy(): void {
         this.preventClose.emit(false);

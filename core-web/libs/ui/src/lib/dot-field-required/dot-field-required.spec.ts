@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     ReactiveFormsModule,
@@ -12,20 +12,26 @@ import { By } from '@angular/platform-browser';
 import { DotFieldRequiredDirective } from './dot-field-required.directive';
 
 @Component({
+    standalone: false,
     template: `
         <form [formGroup]="form">
             <label data-testid="nameLabel" dotFieldRequired for="name">Name</label>
             <input id="name" type="text" formControlName="name" />
             <br />
-            <label data-testid="textLabel" checkIsRequiredControl="text" dotFieldRequired for="text"
-                >Text</label
-            >
+            <label
+                data-testid="textLabel"
+                checkIsRequiredControl="text"
+                dotFieldRequired
+                for="text">
+                Text
+            </label>
             <input id="text" type="text" formControlName="text" />
         </form>
     `
 })
 class TestHostComponent {
-    constructor(private fb: UntypedFormBuilder) {}
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup = this.fb.group({
         name: new UntypedFormControl('', Validators.required),
         text: new UntypedFormControl('')

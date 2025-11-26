@@ -1,13 +1,10 @@
 package com.dotcms.vanityurl.model;
 
-import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
@@ -26,7 +23,8 @@ import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
  */
 public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl> {
 
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+
     final public Pattern pattern;
     final public String vanityUrlId;
     final public String url;
@@ -41,7 +39,6 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
      *
      * @param vanityUrl The vanityurl Url to cache
      */
-
     public CachedVanityUrl(final VanityUrl vanityUrl) {
         this(vanityUrl.getIdentifier(),vanityUrl.getURI(),vanityUrl.getLanguageId(),vanityUrl.getSite(),vanityUrl.getForwardTo(),vanityUrl.getAction(), vanityUrl.getOrder());
     }
@@ -61,10 +58,11 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
     /**
      * rewrites the vanity with the matching groups if needed, returns
      * the rewritten url, parameters from the request
-     * @param urlIn
+     * @param url
      * @return
      */
-    final Tuple2<String, String> processForward(final String urlIn) {
+    final Tuple2<String, String> processForward(final String url) {
+      final String urlIn = !url.startsWith(StringPool.SLASH) ? StringPool.SLASH + url : url;
       String newForward = this.forwardTo;
       String queryString = null;
       if(pattern!=null) {
@@ -75,6 +73,10 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
           }
         }
       }
+
+      //check to handle the cases where forwardTo is empty, which means that it should redirect to the root
+      newForward = newForward.isEmpty() ? "/" : newForward;
+
       if (UtilMethods.isSet(newForward) && newForward.contains("?")) {
           String[] arr = newForward.split("\\?", 2);
           newForward = arr[0];
@@ -124,13 +126,38 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
      *
      * @return The appropriate result based on the selected action for the incoming URL.
      */
-    public VanityUrlResult handle(final String uriIn,
-                    final HttpServletResponse response) {
-        
+    public VanityUrlResult handle(final String uriIn) {
         final Tuple2<String,String> rewritten = processForward(uriIn);
         final String rewrite = rewritten._1;
         final String queryString = rewritten._2;
         return new VanityUrlResult(rewrite, queryString, this.response);
+    }
+
+    /**
+     * Returns whether the Vanity URL represents a {@code 200 Forward} or not.
+     *
+     * @return If the Vanity URL represents a {@code 200 Forward}, returns {@code true}.
+     */
+    public boolean isForward() {
+        return this.response == HttpServletResponse.SC_OK;
+    }
+
+    /**
+     * Returns whether the Vanity URL represents a {@code 302 Temporary Redirect} or not.
+     *
+     * @return If the Vanity URL represents a {@code 302 Temporary Redirect}, returns {@code true}.
+     */
+    public boolean isTemporaryRedirect() {
+        return this.response == HttpServletResponse.SC_MOVED_TEMPORARILY;
+    }
+
+    /**
+     * Returns whether the Vanity URL represents a {@code 301 Permanent Redirect} or not.
+     *
+     * @return If the Vanity URL represents a {@code 301 Permanent Redirect}, returns {@code true}.
+     */
+    public boolean isPermanentRedirect() {
+        return this.response == HttpServletResponse.SC_MOVED_PERMANENTLY;
     }
 
     @Override

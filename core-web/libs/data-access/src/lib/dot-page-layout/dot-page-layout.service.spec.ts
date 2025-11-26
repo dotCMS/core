@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotLayout } from '@dotcms/utils-testing';
 
 import { DotPageLayoutService } from './dot-page-layout.service';
 
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
+
 describe('DotPageLayoutService', () => {
-    let injector: TestBed;
     let dotPageLayoutService: DotPageLayoutService;
     let httpMock: HttpTestingController;
 
@@ -23,9 +23,8 @@ describe('DotPageLayoutService', () => {
                 DotSessionStorageService
             ]
         });
-        injector = getTestBed();
-        dotPageLayoutService = injector.get(DotPageLayoutService);
-        httpMock = injector.get(HttpTestingController);
+        dotPageLayoutService = TestBed.inject(DotPageLayoutService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should post data and return an entity', () => {

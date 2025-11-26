@@ -1,10 +1,9 @@
 /* eslint-disable no-console */
-import { Meta, moduleMetadata } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import {
     DotMessageService,
     DotThemesService,
@@ -17,12 +16,14 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
     'Last-Updated': 'Last updated'
 });
 
-export default {
+const meta: Meta<DotThemeSelectorDropdownComponent> = {
     title: 'DotCMS/ThemeSelector',
     component: DotThemeSelectorDropdownComponent,
     decorators: [
@@ -205,33 +206,13 @@ export default {
             iframeHeight: 800
         }
     },
-    args: {
-        onThemeSelectorChange: (event) => {
-            console.log(event);
-        },
-        totalRecords: 8,
-        paginationPerPage: 5,
-        rows: 5
-    }
-} as Meta;
-
-const ThemeSelectorTemplate = `
-  <dot-theme-selector-dropdown
-          (change)="onThemeSelectorChange($event)"
-  ></dot-theme-selector-dropdown>
-`;
-
-export const Basic = (props) => {
-    return {
-        template: ThemeSelectorTemplate,
-        props
-    };
+    render: (args) => ({
+        props: args,
+        template: `<dot-theme-selector-dropdown ${argsToTemplate(args)} />`
+    })
 };
+export default meta;
 
-Basic.parameters = {
-    docs: {
-        source: {
-            code: ThemeSelectorTemplate
-        }
-    }
-};
+type Story = StoryObj<DotThemeSelectorDropdownComponent>;
+
+export const Default: Story = {};

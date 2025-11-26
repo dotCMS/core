@@ -1,7 +1,5 @@
 package com.dotcms.publisher.receiver;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
@@ -42,7 +40,6 @@ import com.dotcms.publishing.manifest.CSVManifestReader;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReason;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishEndOnReceiverEvent;
@@ -60,11 +57,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarBuffer;
@@ -76,10 +71,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -107,6 +105,7 @@ public class BundlePublisher extends Publisher {
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
+        Logger.debug(BundlePublisher.class, "Initializing bundle publisher");
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             throw new RuntimeException("need an enterprise license to run this");
         }
@@ -119,10 +118,8 @@ public class BundlePublisher extends Publisher {
         handlers.add(new HostHandler(config));
         handlers.add(new FolderHandler(config));
         handlers.add(new WorkflowHandler(config));
-        if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
-            handlers.add(new ContentTypeHandler(config));
-            handlers.add(new RelationshipHandler(config));
-        }
+        handlers.add(new ContentTypeHandler(config));
+        handlers.add(new RelationshipHandler(config));
         handlers.add(new ContainerHandler(config));
         handlers.add(new TemplateHandler(config));
         handlers.add(new LanguageHandler(config));
@@ -150,6 +147,7 @@ public class BundlePublisher extends Publisher {
      */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
+        Logger.debug(BundlePublisher.class, "Processing bundle");
         if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
@@ -167,6 +165,7 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
+            Logger.debug(BundlePublisher.class, "Updating audit table for bundle with ID '" + bundleName + "'");
             currentStatusHistory = config.getPublishAuditStatus().getStatusPojo();
             currentStatusHistory.setPublishStart(new Date());
 
@@ -211,6 +210,7 @@ public class BundlePublisher extends Publisher {
         BundleMetaDataFile bundleMetaDataFile = null;
 
         try {
+            Logger.debug(BundlePublisher.class, "Getting assets list from received bundle with ID '" + bundleName + "'");
             bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
             assetsDetails = bundleMetaDataFile.getAssetsDetails();
         } catch (Exception e) {
@@ -221,6 +221,7 @@ public class BundlePublisher extends Publisher {
             HibernateUtil.startTransaction();
             // Execute the handlers
             for (IHandler handler : handlers) {
+                Logger.debug(BundlePublisher.class, "Start of Handler: " + handler.getName());
                 handler.handle(folderOut);
 
                 if (!handler.getWarnings().isEmpty()){
@@ -232,6 +233,7 @@ public class BundlePublisher extends Publisher {
                     }
                     hasWarnings = true;
                 }
+                Logger.debug(BundlePublisher.class, "End of Handler: " + handler.getName());
             }
             HibernateUtil.commitTransaction();
         } catch (Exception e) {
@@ -313,7 +315,8 @@ public class BundlePublisher extends Publisher {
      * @throws DotPublisherException 
      */
     private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
-      TarArchiveEntry entry;
+        Logger.debug(BundlePublisher.class, "Untaring bundle: " + fileName);
+        TarArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
         OutputStream outputStream = null;
         File baseBundlePath = new File(ConfigUtils.getBundlePath());
@@ -381,7 +384,7 @@ public class BundlePublisher extends Publisher {
                     Logger.warn(this.getClass(), "Error Closing Stream.", e);
                 }
             }// while
-
+            Logger.debug(BundlePublisher.class, "Untaring bundle finished");
         } catch (Exception e) {
             throw new DotPublishingException(e.getMessage(),e);
 
@@ -418,6 +421,7 @@ public class BundlePublisher extends Publisher {
         }
 
         private Map<String, Object> getAssetsDetailsFromBundleXML(final String finalBundlePath) {
+            Logger.debug(BundlePublisher.class, "Getting assets details from bundle.xml for bundle: " + finalBundlePath);
             File xml = new File(finalBundlePath + File.separator + "bundle.xml");
 
             PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
@@ -427,10 +431,11 @@ public class BundlePublisher extends Publisher {
             final Map<String, String> assetsDetails = bundlerAssets.stream()
                     .collect(Collectors
                             .toMap(PublishQueueElement::getAsset, PublishQueueElement::getType));
-            return map(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
+            return Map.of(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
         }
 
         private Map<String, Object> getAssetsDetailsFromManifest(final File manifestFile) {
+            Logger.debug(BundlePublisher.class, "Getting assets details from manifest for bundle: " + manifestFile.getName());
             final Map<String, String> assetsDetails = new HashMap<>();
 
             Collection<ManifestInfo> bundlerAssets;
@@ -443,7 +448,7 @@ public class BundlePublisher extends Publisher {
                 }
             }
 
-            return map(ASSET_DETAILS_KEY, assetsDetails,
+            return Map.of(ASSET_DETAILS_KEY, assetsDetails,
                     BUNDLER_ASSETS_KEY, csvManifestReader.getPublishQueueElement());
         }
 

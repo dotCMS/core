@@ -6,16 +6,15 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Folder}
@@ -30,20 +29,19 @@ public class FolderAssertionChecker implements AssertionChecker<Folder> {
 
             final Identifier hostIdentifier = APILocator.getIdentifierAPI().find(folder.getHostId());
 
-           final Map<String, Object> map = map(
-                   "inode", folder.getInode(),
-                   "id", folder.getIdentifier(),
-                   "name", folder.getName(),
-                   "sort_order", folder.getSortOrder(),
-                   "host_id", folder.getHost().getIdentifier(),
-                   "host_name", folder.getHost().getHostname(),
-                   "host_title", folder.getHost().getTitle(),
-                   "host_inode", folder.getHost().getInode(),
-                   "host_asset_name", hostIdentifier.getAssetName(),
-                   "title", folder.getTitle(),
-                   "asset_name", identifier.getAssetName()
-           );
+           final Map<String, Object> map = new HashMap<>();
 
+           map.put("inode", folder.getInode());
+           map.put("id", folder.getIdentifier());
+           map.put("name", folder.getName());
+           map.put("sort_order", folder.getSortOrder());
+           map.put("host_id", folder.getHost().getIdentifier());
+           map.put("host_name", folder.getHost().getHostname());
+           map.put("host_title", folder.getHost().getTitle());
+           map.put("host_inode", folder.getHost().getInode());
+           map.put("host_asset_name", hostIdentifier.getAssetName());
+           map.put("title", folder.getTitle());
+           map.put("asset_name", identifier.getAssetName());
            map.put("parent_path", parentPath);
            return map;
        } catch (DotDataException | DotSecurityException e) {

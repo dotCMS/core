@@ -1,31 +1,8 @@
 package com.dotcms.rest.api.v1.temp;
 
-import static com.dotcms.storage.FileMetadataAPIImpl.*;
-
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.storage.FileMetadataAPIImpl;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import org.xbill.DNS.Address;
-import org.xbill.DNS.ExtendedResolver;
-import org.xbill.DNS.Resolver;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
@@ -37,10 +14,10 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,9 +29,35 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Encryptor;
 import com.liferay.util.StringPool;
-
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.dotcms.storage.FileMetadataAPIImpl.META_TMP;
+
+/**
+ * This API allows for the creation and retrieval of temporary files in the content repository.
+ * <p>dotCMS allows you to upload temporary files in situations where users/developers need to store
+ * temporary information somewhere in the repository without having to worry how/when it must be
+ * deleted. For instance, this very API is used by dotCMS when content authors upload binary files
+ * via the UI and haven't saved or published them.</p>
+ *
+ * @author Will Ezell
+ * @since Jul 8th, 2019
+ */
 public class TempFileAPI {
 
   public static final String TEMP_RESOURCE_MAX_AGE_SECONDS = "TEMP_RESOURCE_MAX_AGE_SECONDS";
@@ -68,7 +71,7 @@ public class TempFileAPI {
 
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
-  
+  private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
   
 
   /**
@@ -196,63 +199,51 @@ public class TempFileAPI {
   }
 
   /**
-   * Takes a url, downloads it and the returns the resulting file as tempFile with a unique id and
-   * file handle that can be used to access the temp file. The request will be used to create a fingerprint
-   * that will be written to the "allowList" and can be used to retreive the temp resource in other requests
-   * 
-   * @param incomingFileName
-   * @param request
-   * @return
-   * @throws DotSecurityException
+   * Takes a URL, downloads it and the returns the resulting file as tempFile with a unique ID and
+   * file handle that can be used to access the temp file. The request will be used to create a
+   * fingerprint that will be written to the "allowList" and can be used to retrieve the temp
+   * resource in other requests.
+   *
+   * @param incomingFileName The name of the file to be created.
+   * @param request          The current instance of the {@link HttpServletRequest}.
+   * @param url              The URL pointing to the file that must be downloaded.
+   * @param timeoutSeconds   The number of seconds to wait for the download to complete.
+   *
+   * @return The {@link DotTempFile} instance representing the downloaded file.
+   *
+   * @throws DotSecurityException The Temporary File could not be created.
+   * @throws IOException          An error occurred when retrieving the binary file from the
+   *                              download URL.
    */
   public DotTempFile createTempFileFromUrl(final String incomingFileName,
-          final HttpServletRequest request, final URL url, final int timeoutSeconds,
-          final long maxLength)
+                                           final HttpServletRequest request,
+                                           final URL url,
+                                           final int timeoutSeconds)
           throws DotSecurityException, IOException {
-
+      final boolean tempFilesByUrlAdminOnly = Config
+              .getBooleanProperty(TEMP_RESOURCE_BY_URL_ADMIN_ONLY, false);
+      // Only allow admins to use the URL functionality
+      final User user = PortalUtil.getUser(request);
+      if (user == null || tempFilesByUrlAdminOnly && !user.isAdmin()) {
+        throw new DotRuntimeException("Only Admin Users can import files by URL via the Temp API.");
+      }
+      // If url requested is on a private subnet, block by default
+      if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Optional.ofNullable(allowAccessToPrivateSubnets.get()).orElse(false)) {
+        throw new DotRuntimeException(String.format("Failed to download file by URL: %s as it is in a private subnet", url));
+      }
       final String fileName = resolveFileName(incomingFileName, url);
-
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
       final File tempFile = dotTempFile.file;
 
-      
-      final boolean tempFilesByUrlAdminOnly = Config
-                      .getBooleanProperty(TEMP_RESOURCE_BY_URL_ADMIN_ONLY, false);
-      
-      
-      /**
-       * If url requested is on a private subnet, block by default
-       */
-      if(IPUtils.isIpPrivateSubnet(url.getHost())) {
-          throw new DotRuntimeException("Unable to load file by url:" + url);
-      }
-      
-            
-      /**
-       * by adding the source IP give visibility to the 
-       * remote server of who initiatied the reuqest
-       */
+      // By adding the source IP, we give visibility to the remote server of who initiated the request
       final String sourceIpAddress = request.getRemoteAddr();
-      final String finalUrl = url.toString().contains("?") ? url.toString() + "&sourceIp=" + sourceIpAddress :  url.toString() + "?sourceIp=" + sourceIpAddress ;
-      
-      
-      
-      /**
-       * Only allow admins to use the URL functionality
-       */
-      User user = PortalUtil.getUser(request);
-      if(user == null || tempFilesByUrlAdminOnly && !user.isAdmin()) {
-          throw new DotRuntimeException("Only Admins can import a file by URL");
-      }
-      
+      final String finalUrl = url.toString().contains("?") ? url + "&sourceIp=" + sourceIpAddress :  url + "?sourceIp=" + sourceIpAddress ;
       try(final OutputStream out = new BoundedOutputStream(maxFileSize(request),
                       Files.newOutputStream(tempFile.toPath()))){
-
-              final CircuitBreakerUrl urlGetter =
-                      CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(finalUrl)
-                              .setTimeout(timeoutSeconds * 1000).build();
-        
-              urlGetter.doOut(out);
+        final CircuitBreakerUrl urlGetter =
+                CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(finalUrl)
+                        .setTimeout(timeoutSeconds * 1000L).build();
+        urlGetter.doOut(out);
       }
 
       if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
@@ -276,15 +267,16 @@ public class TempFileAPI {
       Logger.error(this, "URL does not starts with http or https");
       return false;
     }
-    try {
+      String done;
+      try {
       final CircuitBreakerUrl urlGetter =
               CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
-      urlGetter.doString();
+       done = urlGetter.doString();
     } catch (IOException | BadRequestException e) {//If response is not 200, CircuitBreakerUrl throws BadRequestException
       return false;
     }
 
-    return true;
+    return StringUtils.isSet(done);
   }
 
   private String resolveFileName(final String desiredName, final URL url) {

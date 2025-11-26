@@ -1,10 +1,15 @@
-import { Component, forwardRef, Input, OnInit, ViewEncapsulation } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { MultiSelectModule } from 'primeng/multiselect';
 
 import { take } from 'rxjs/operators';
 
 import { PushPublishService } from '@dotcms/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { DotEnvironment } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-env-selector',
@@ -16,9 +21,12 @@ import { DotEnvironment } from '@models/dot-environment/dot-environment';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => PushPublishEnvSelectorComponent)
         }
-    ]
+    ],
+    imports: [FormsModule, ButtonModule, MultiSelectModule, DotMessagePipe]
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
+    private pushPublishService = inject(PushPublishService);
+
     @Input()
     assetIdentifier: string;
     @Input()
@@ -27,8 +35,6 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     selectedEnvironments: DotEnvironment[];
     selectedEnvironmentIds: string[] = [];
     value: string[];
-
-    constructor(private pushPublishService: PushPublishService) {}
 
     ngOnInit() {
         this.pushPublishService

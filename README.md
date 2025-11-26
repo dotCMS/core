@@ -1,34 +1,55 @@
-<img src="https://dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms java content management system">
+<img src="https://www2.dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms - Universal content management system ">
 
-dotCMS is an open source headless/hybrid content management system (CMS) that has been designed to manage and deliver personalized, permission-based content experiences across multiple channels. dotCMS can can serve as a headless content hub and also as a platform for sites, mobile apps, mini-sites, portals, intranets. dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. Written in java dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects.
 
-dotCMS is available for download or as a cloud based product.
+[![Merge Queue](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml)
 
--   Download dotCMS: https://dotcms.com/download
--   dotCMS Enterprise Cloud: https://dotcms.com/cms-platform/cloud-cms/
+[![Trunk](https://github.com/dotCMS/core/actions/workflows/cicd_3-trunk.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_3-trunk.yml)
+
+[![Nightly](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml)
+
+
+dotCMS is the leading Universal content management system powering thousands of digital experiences for over 150 customers worldwide.
+
+With powerful visual editing tools, multi-tenancy and a tech-agnostic architecture dotCMS empowers technical and content teams to collaborate efficiently and deliver content globally, on any stack, and at any scale.
+
+- **BSL Licensed** - Generous BSL 1.1 licensing terms makes dotCMS free to use in many cases.
+- **Universal Visual Editing** - Full featured page editing that works both headlessly and for SSR content, in your SPA or for web page rendering and delivery.
+- **Multi-tenancy** - Manage multiple sites in multiple languages, from microsites to brand sites to intranet/extranets or knowledge centers all from a single instance.
+- **REST & GraphQL APIs** - instant endpoints for your all your content
+- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity and facet based searches.  dotCMS can also vectorize all content and assets, offering semantic content searching to power AI applications such as chatbots or knowledge centers.
+- **Personalization, Rules & A/B Testing** - Empower your marketing teams with targeting and content optimizations.
+- **Cloud, Cloud Anywhere or Self-Hosted** - Flexible deployment works with your IT/cloud strategies. 
+- **Feature Rich** - Custom content workflows, scriptable APIs, push and static publishing, custom roles and permissions, osgi based plugin architecture.  Do more with more.
+
+
+dotCMS is available as a docker image or as a cloud based product.
+
+-  [Docker Images](https://www.dotcms.com/download)
+-  [dotCMS Cloud](https://www.dotcms.com/product/dotcms-cloud)
+
 
 ---
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://dotcms.com/cms-platform/features).
+dotCMS is licensed under the terms of the BSL 1.1 license and all features are free to use by companies, individuals and organizations whose total finances are below $5,000,000 USD.  For more information about the BSL license terms, see the [dotCMS BSL FAQ](http://www.dotcms.com/bsl-faq). 
 
 ## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
+[CONTRIBUTING](/CONTRIBUTING.md)
 
 ## Requirements
 
-For a complete list of requirements, see [this page](http://dotcms.com/docs/latest/dotcms-technology-requirements).
+For a complete list of requirements, see [this page](http://www.dotcms.com/docs/latest/dotcms-technology-requirements).
 
 ## Getting Help
 
 | Source          | Location                                                            |
 | --------------- | ------------------------------------------------------------------- |
-| Installation    | [Installation](https://dotcms.com/docs/latest/installation)         |
-| Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
-| Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
-| Code Examples   | [Codeshare](https://dotcms.com/codeshare/)                          |
+| Installation    | [Installation](https://www.dotcms.com/docs/latest/installation)         |
+| Documentation   | [Documentation](https://www.dotcms.com/docs/latest/table-of-contents)   |
+| Videos          | [Helpful Videos](http://www.dotcms.com/videos/)                         |
+| Merge Queue   | [Merge Queue](https://github.com/dotCMS/core/queue/main)                          |
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
-| Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
+| Main Site       | [dotCMS.com](https://www.dotcms.com/)                                   |

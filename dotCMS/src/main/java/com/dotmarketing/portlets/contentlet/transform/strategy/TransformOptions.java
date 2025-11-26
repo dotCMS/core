@@ -95,9 +95,22 @@ public enum TransformOptions {
     /**
      * Instructs the Strategy to velocity-render the render-able fields
      */
-    RENDER_FIELDS,
+    RENDER_FIELDS, //This triggers a Strategy that will render the fields explicitly
     JSON_VIEW,
-    DATETIME_FIELDS_TO_TIMESTAMP;
+    DATETIME_FIELDS_TO_TIMESTAMP,
+
+    /**
+     * Instructs the Strategy to skip the rendering of the widget code
+     * I hate to introduce this but seems like the safest way to avoid breaking backward compatibility
+     * This options controls the Strategy that gets fired by the Widget Content Type which by default will render the widget code
+     */
+    SKIP_WIDGET_CODE_RENDERING,
+    /** Instructs the Strategy to include specific properties that are displayed in the History
+     * tab of the Content Editor page. */
+    HISTORY_VIEW,
+    /** Instructs the Strategy to clear all existing data in the Contentlet Map before applying a
+     * specific Strategy. */
+    CLEAR_EXISTING_DATA;
 
     // -----------------------------------------------------------------------------------------
     // Plug additional Transform Options to manipulate the outcome as a particular type of view

@@ -1,0 +1,85 @@
+@use "variables" as *;
+
+.p-accordion .p-accordion-header .p-accordion-header-link {
+    padding: $spacing-3;
+    border: 1px solid $color-palette-gray-400;
+    color: $black;
+    font-weight: $font-weight-semi-bold;
+    border-radius: $border-radius-md;
+    transition: box-shadow 0.2s;
+    font-size: $font-size-lmd;
+}
+.p-accordion .p-accordion-header .p-accordion-header-link .p-accordion-toggle-icon {
+    margin-right: $spacing-1;
+}
+.p-accordion .p-accordion-header .p-accordion-header-link:focus {
+    outline: 0 none;
+    outline-offset: 0;
+}
+
+.p-accordion .p-accordion-header.p-highlight .p-accordion-header-link {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom: none;
+}
+
+.p-accordion .p-accordion-content {
+    padding: $spacing-3;
+    border: 1px solid $color-palette-gray-400;
+    border-top: 0;
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+    border-bottom-right-radius: $border-radius-md;
+    border-bottom-left-radius: $border-radius-md;
+}
+.p-accordion p-accordiontab .p-accordion-tab {
+    margin-bottom: $spacing-3;
+}
+
+.p-accordion p-accordiontab:first-child .p-accordion-header .p-accordion-header-link {
+    border-top-right-radius: $border-radius-md;
+    border-top-left-radius: $border-radius-md;
+}
+.p-accordion
+    p-accordiontab:last-child
+    .p-accordion-header:not(.p-highlight)
+    .p-accordion-header-link {
+    border-bottom-right-radius: $border-radius-md;
+    border-bottom-left-radius: $border-radius-md;
+}
+.p-accordion p-accordiontab:last-child .p-accordion-content {
+    border-bottom-right-radius: $border-radius-md;
+    border-bottom-left-radius: $border-radius-md;
+}
+
+//Custom
+.p-accordion {
+    .p-accordion-header {
+        .p-accordion-header-link .p-accordion-toggle-icon-end {
+            &.pi {
+                border: 1px solid;
+                border-radius: 100px;
+                height: $spacing-5;
+                width: $spacing-5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: $color-palette-primary;
+            }
+
+            &.pi:before {
+                font-size: $spacing-2;
+            }
+        }
+
+        &.p-disabled {
+            .p-accordion-header-link {
+                color: $color-palette-gray-400;
+
+                .p-accordion-toggle-icon-end.pi {
+                    color: $color-palette-gray-400;
+                }
+            }
+        }
+    }
+}

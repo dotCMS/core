@@ -1,4 +1,4 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator';
+import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -21,7 +21,7 @@ describe('AnnouncementsStore', () => {
                 useValue: siteServiceMock
             },
             mockProvider(HttpClient, {
-                get: jasmine.createSpy('get').and.returnValue(
+                get: jest.fn().mockReturnValue(
                     of({
                         entity: [
                             {

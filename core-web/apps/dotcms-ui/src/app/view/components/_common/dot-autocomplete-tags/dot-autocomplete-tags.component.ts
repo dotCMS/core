@@ -1,7 +1,8 @@
-import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, Input, OnInit, ViewChild, inject } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
-import { AutoComplete } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteUnselectEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { ChipsModule } from 'primeng/chips';
 
 import { take } from 'rxjs/operators';
 
@@ -18,6 +19,7 @@ import { DotTag } from '@dotcms/dotcms-models';
     selector: 'dot-autocomplete-tags',
     templateUrl: './dot-autocomplete-tags.component.html',
     styleUrls: ['./dot-autocomplete-tags.component.scss'],
+    imports: [ChipsModule, AutoCompleteModule, FormsModule],
     providers: [
         {
             multi: true,
@@ -27,6 +29,8 @@ import { DotTag } from '@dotcms/dotcms-models';
     ]
 })
 export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccessor {
+    private dotTagsService = inject(DotTagsService);
+
     @Input() placeholder: string;
 
     value: DotTag[] = [];
@@ -36,8 +40,6 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
     @ViewChild('autoComplete', { static: true }) autoComplete: AutoComplete;
 
     private lastDeletedTag: DotTag;
-
-    constructor(private dotTagsService: DotTagsService) {}
 
     propagateChange = (_: unknown) => {
         /* empty */
@@ -94,9 +96,11 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      *
      * @memberof DotAutocompleteTagsComponent
      */
-    removeItem(tag: DotTag): void {
+    removeItem(event: AutoCompleteUnselectEvent): void {
         this.propagateChange(this.getStringifyLabels());
-        this.lastDeletedTag = tag;
+        if (event?.value) {
+            this.lastDeletedTag = event.value;
+        }
     }
     /**
      * Set the function to be called when the control receives a change event.

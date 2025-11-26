@@ -15,7 +15,6 @@ export interface InfoPage {
 
 @Component({
     selector: 'dot-info-page',
-    standalone: true,
     imports: [DotMessagePipe, ButtonModule, RouterLink],
     templateUrl: './dot-info-page.component.html',
     styleUrl: './dot-info-page.component.scss',

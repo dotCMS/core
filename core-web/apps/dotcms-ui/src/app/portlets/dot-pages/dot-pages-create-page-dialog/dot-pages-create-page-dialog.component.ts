@@ -1,7 +1,7 @@
 import { fromEvent, Observable, of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -16,12 +16,17 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
-    standalone: true,
-    imports: [CommonModule, DotAutofocusDirective, DotIconModule, DotMessagePipe, InputTextModule],
+    imports: [
+        CommonModule,
+        DotAutofocusDirective,
+        DotIconComponent,
+        DotMessagePipe,
+        InputTextModule
+    ],
     providers: [
         DotESContentService,
         DotLanguagesService,
@@ -32,17 +37,15 @@ import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui
     styleUrls: ['./dot-pages-create-page-dialog.component.scss']
 })
 export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
+    private dotRouterService = inject(DotRouterService);
+    private ref = inject(DynamicDialogRef);
+    config = inject(DynamicDialogConfig);
+
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
 
     pageTypes$: Observable<DotCMSContentType[]>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotRouterService: DotRouterService,
-        private ref: DynamicDialogRef,
-        public config: DynamicDialogConfig
-    ) {}
 
     /**
      * Redirect to Create content page
@@ -52,15 +55,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-
-        // Get the feature flag from the store and change the routing
-        const url =
-            this.config.data.isContentEditor2Enabled &&
-            !this.shouldRedirectToOldContentEditor(variableName)
-                ? `content/new/${variableName}`
-                : `/pages/new/${variableName}`;
-
-        this.dotRouterService.goToURL(url);
+        this.dotRouterService.goToURL(`/pages/new/${variableName}`);
     }
 
     ngOnInit(): void {
@@ -88,20 +83,5 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    /**
-     * Check if the content type is in the feature flag list
-     *
-     * @private
-     * @param {string} contentType
-     * @return {*}  {boolean}
-     * @memberof DotCustomEventHandlerService
-     */
-    private shouldRedirectToOldContentEditor(contentType: string): boolean {
-        return (
-            !this.config.data.availableContentTypes.includes('*') &&
-            this.config.data.availableContentTypes.indexOf(contentType) === -1
-        );
     }
 }

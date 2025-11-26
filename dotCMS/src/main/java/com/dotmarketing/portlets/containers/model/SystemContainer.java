@@ -43,6 +43,12 @@ public class SystemContainer extends Container {
         super.setMaxContentlets(DEFAULT_MAX_CONTENTS);
     }
 
+    // we override it, in order to do the permissionable behind a container object
+    @Override
+    public String getPermissionType() {
+        return Container.class.getCanonicalName();
+    }
+
     @Override
     public void setIdentifier(String identifier) {
         Logger.debug(this, () -> "System Container ID cannot be overridden.");

@@ -41,6 +41,37 @@ public class CubeJSTest {
 
     /**
      * Method to test: {@link Builder#build()}
+     * When: Create a CubeJS Query with time dimension and date range equals to: Events.count
+     * Should: Create the follow query:
+     * <code>
+     *  {
+     *    "timeDimensions":[
+     *       {
+     *          "dimension":"Events.day",
+     *          "granularity":"day",
+     *          "dateRange":"This Week"
+     *       }
+     *    ],
+     *    "dimensions":[
+     *       "Events.day"
+     *    ]
+     * }
+     * </code>
+     */
+    @Test
+    public void timeDimensions(){
+        final CubeJSQuery cubeJSQuery = new Builder()
+                .dimensions("Events.day")
+                .timeDimension("Events.day", "day", "This Week")
+                .build();
+
+        final String queryExpected = "{\"timeDimensions\":[{\"dimension\":\"Events.day\",\"granularity\":\"day\",\"dateRange\":\"This Week\"}],\"dimensions\":[\"Events.day\"]}";
+
+        assertEquals(queryExpected, cubeJSQuery.toString());
+    }
+
+    /**
+     * Method to test: {@link Builder#build()}
      * When: Create a CubeJS Query with measures equals to: Events.count
      * Should: Create the follow query:
      * <code>

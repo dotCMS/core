@@ -1,0 +1,196 @@
+# Deployment Phase Workflow
+#
+# This reusable workflow is responsible for deploying artifacts to various environments,
+# building and pushing Docker images, and sending notifications about the deployment.
+#
+# Key features:
+# - Configurable deployment environment
+# - Use of Docker environments to enable per-deployment environment secrets
+# - Docker image building and pushing (including dev images)
+# - Artifact deployment to JFrog Artifactory
+# - CLI publishing to NPM
+# - Slack notifications for Docker image and CLI deployments
+
+name: Deployment Phase
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'The environment to deploy to'
+        required: true
+        type: string
+      artifact-run-id:
+        default: ${{ github.run_id }}
+        type: string
+      latest:
+        default: false
+        type: boolean
+      deploy-dev-image:
+        default: false
+        type: boolean
+      reuse-previous-build:
+        default: false
+        type: boolean
+      publish-npm-cli:
+        default: false
+        type: boolean
+      publish-npm-sdk-libs:
+        default: false
+        type: boolean        
+    secrets:
+      DOCKER_USERNAME:
+        required: false
+        description: 'Docker.io username'
+      DOCKER_TOKEN:
+        required: false
+        description: 'Docker.io token'
+      EE_REPO_USERNAME:
+        required: false
+        description: 'Artifactory username'
+      EE_REPO_PASSWORD:
+        required: false
+        description: 'Artifactory password'
+      SLACK_BOT_TOKEN:
+        required: false
+        description: 'Slack webhook for developers'
+      NPM_ORG_TOKEN:
+        required: false
+        description: 'NPM token'
+      DEV_REQUEST_TOKEN:
+        required: false
+        description: 'Token to request a dev license from license.dotcms.com'
+
+jobs:
+  deployment:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    # Use of Docker environments to enable per-deployment environment secrets
+    # This allows for different secrets to be used based on the deployment environment
+    environment: ${{ inputs.environment }}
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get SDKMan Version
+        id: get-sdkman-version
+        shell: bash
+        run: |
+          if [ -f .sdkmanrc ]; then
+            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+            echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "No .sdkmanrc file found"
+            exit 1
+          fi
+
+      # Clean up the runner to ensure a fresh environment
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      # Build and push the main Docker image
+      - name: Build/Push Docker Image
+        id: docker_build
+        uses: ./.github/actions/core-cicd/deployment/deploy-docker
+        with:
+          image_name: dotcms/dotcms
+          docker_platforms: linux/amd64,linux/arm64
+          build_run_id: ${{ inputs.artifact-run-id }}
+          commit_id: ${{ github.sha }}
+          ref: ${{ inputs.environment }}
+          latest: ${{ inputs.latest }}
+          do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_args: |
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+
+      # Build and push the dev Docker image (if required)
+      - name: Build/Push Docker Dev Image
+        id: docker_build_dev
+        if: inputs.deploy-dev-image
+        uses: ./.github/actions/core-cicd/deployment/deploy-docker
+        with:
+          image_name: dotcms/dotcms-dev
+          docker_platforms: linux/amd64,linux/arm64
+          docker_context: dev-env
+          commit_id: ${{ github.sha }}
+          ref: ${{ inputs.environment }}
+          latest: true
+          do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_args: |
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+
+      # Deploy CLI artifacts to JFrog Artifactory
+      - name: CLI Deploy
+        continue-on-error: true
+        id: cli_deploy
+        uses: ./.github/actions/core-cicd/deployment/deploy-jfrog
+        with:
+          artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
+          artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Publish CLI to NPM (if required)
+      - name: CLI Publish
+        id: cli_publish
+        if: inputs.publish-npm-cli
+        uses: ./.github/actions/core-cicd/deployment/deploy-cli-npm
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          cli-artifact-run-id: ${{ github.run_id }}
+
+      - name: SDKs Publish
+        id: sdks_publish
+        if: inputs.publish-npm-sdk-libs
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+
+      # Send Slack notification for Docker image deployment (if repository is 'dotcms/core')
+      - name: Slack Notification (Docker image announcement)
+        if: github.repository == 'dotcms/core'
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-docker"
+          payload: |
+            > :large_purple_circle: *Attention dotters:* Docker image built!
+            >
+            > This automated script is happy to announce that a new *docker* image has been built for *${{ inputs.environment }}* with *tags:* [`${{ steps.docker_build.outputs.tags }}`] :docker:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # Send Slack notification for CLI publication (if required)
+      - name: Slack Notification (dotCLI announcement)
+        if: inputs.publish-npm-cli
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-dotcli"
+          payload: |
+            > :large_purple_circle: *Attention dotters:* dotCLI published!
+            >
+            > This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!
+            > `npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 
+
+      # Send Slack notification for SDK publication (if required)          
+      - name: Slack Notification (SDK announcement)
+        if: success() && steps.sdks_publish.outputs.published == 'true'
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}         
+            

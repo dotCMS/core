@@ -7,24 +7,33 @@ import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_EMPTY_FOLD
 import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_FOLDER_PATTERNS;
 import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
 import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
+import com.dotcms.api.client.pull.file.FileTraverseResult;
+import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.SitesTestHelperService;
+import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.pull.PullOptions;
+import io.quarkus.security.UnauthorizedException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,12 +42,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
@@ -61,6 +73,9 @@ class PullServiceIT {
 
     @Inject
     FilesTestHelperService filesTestHelper;
+
+    @Inject
+    SitesTestHelperService sitesTestHelper;
 
     @Inject
     WorkspaceManager workspaceManager;
@@ -146,12 +161,9 @@ class PullServiceIT {
                     }
                     try (final Stream<Path> walk = Files.walk(tempFolder)) {
                         walk.filter(Files::isRegularFile)
-                                .forEach(path -> {
-                                    String decodedPath = URLDecoder.decode(
-                                            tempFolder.relativize(path).toString(),
-                                            StandardCharsets.UTF_8);
-                                    collectedFiles.add(decodedPath);
-                                });
+                                .forEach(path -> collectedFiles.add(
+                                        tempFolder.relativize(path).toString()
+                                ));
                     }
                     //Let's remove the workspace folder from the list
                     List<String> existingFolders = collectedFolders.stream()
@@ -180,7 +192,7 @@ class PullServiceIT {
                             Map.entry(basePath + "/folder2",
                                     Arrays.asList("subFolder2-1", "subFolder2-2", "subFolder2-3")),
                             Map.entry(basePath + "/folder2/subFolder2-1",
-                                    Arrays.asList("subFolder2-1-1", "subFolder2-1-2",
+                                    Arrays.asList("subFolder2-1-1-子資料夾", "subFolder2-1-2",
                                             "subFolder2-1-3")),
                             Map.entry(basePath + "/folder2/subFolder2-2",
                                     Collections.emptyList()),
@@ -197,8 +209,8 @@ class PullServiceIT {
                             basePath, Collections.emptyList(),
                             basePath + "/folder1/subFolder1-1/subFolder1-1-1",
                             Arrays.asList("image1.png", "image4.jpg"),
-                            basePath + "/folder2/subFolder2-1/subFolder2-1-1",
-                            Arrays.asList("image2.png"),
+                            basePath + "/folder2/subFolder2-1/subFolder2-1-1-子資料夾",
+                            Arrays.asList("image2.png", "這就是我的想像6.png", "image (7)+.png"),
                             basePath + "/folder3", Arrays.asList("image 3.png"),
                             basePath + "/folder4 withSpace", Arrays.asList("image5.jpg")
                     );
@@ -329,11 +341,8 @@ class PullServiceIT {
             }
             try (final Stream<Path> walk = Files.walk(tempFolder)) {
                 walk.filter(Files::isRegularFile)
-                        .forEach(path -> {
-                            String decodedPath = URLDecoder.decode(
-                                    tempFolder.relativize(path).toString(), StandardCharsets.UTF_8);
-                            collectedFiles.add(decodedPath);
-                        });
+                        .forEach(
+                                path -> collectedFiles.add(tempFolder.relativize(path).toString()));
             }
             //Let's remove the workspace folder from the list
             List<String> existingFolders = collectedFolders.stream().map(folder -> folder.replaceAll(
@@ -357,7 +366,8 @@ class PullServiceIT {
                     Map.entry(basePath + "/folder2",
                             Arrays.asList("subFolder2-1", "subFolder2-2", "subFolder2-3")),
                     Map.entry(basePath + "/folder2/subFolder2-1",
-                            Arrays.asList("subFolder2-1-1", "subFolder2-1-2", "subFolder2-1-3")),
+                            Arrays.asList("subFolder2-1-1-子資料夾", "subFolder2-1-2",
+                                    "subFolder2-1-3")),
                     Map.entry(basePath + "/folder2/subFolder2-2",
                             Collections.emptyList()),
                     Map.entry(basePath + "/folder2/subFolder2-3",
@@ -372,7 +382,8 @@ class PullServiceIT {
             Map<String, List<String>> expectedFiles = Map.of(
                     basePath, Collections.emptyList(),
                     basePath + "/folder1/subFolder1-1/subFolder1-1-1", Arrays.asList("image1.png", "image4.jpg"),
-                    basePath + "/folder2/subFolder2-1/subFolder2-1-1", Arrays.asList("image2.png"),
+                    basePath + "/folder2/subFolder2-1/subFolder2-1-1-子資料夾",
+                    Arrays.asList("image2.png", "這就是我的想像6.png", "image (7)+.png"),
                     basePath + "/folder3", Arrays.asList("image 3.png"),
                     basePath + "/folder4 withSpace", Arrays.asList("image5.jpg")
             );
@@ -494,11 +505,9 @@ class PullServiceIT {
             }
             try (final Stream<Path> walk = Files.walk(tempFolder)) {
                 walk.filter(Files::isRegularFile)
-                        .forEach(path -> {
-                            String decodedPath = URLDecoder.decode(
-                                    tempFolder.relativize(path).toString(), StandardCharsets.UTF_8);
-                            collectedFiles.add(decodedPath);
-                        });
+                        .forEach(
+                                path -> collectedFiles.add(tempFolder.relativize(path).toString())
+                        );
             }
             //Let's remove the workspace folder from the list
             List<String> existingFolders = collectedFolders.stream()
@@ -594,7 +603,7 @@ class PullServiceIT {
             final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format(
-                    "//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png", testSiteName);
+                    "//%s/folder2/subFolder2-1/subFolder2-1-1-子資料夾/image2.png", testSiteName);
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
@@ -638,11 +647,9 @@ class PullServiceIT {
             }
             try (final Stream<Path> walk = Files.walk(tempFolder)) {
                 walk.filter(Files::isRegularFile)
-                        .forEach(path -> {
-                            String decodedPath = URLDecoder.decode(
-                                    tempFolder.relativize(path).toString(), StandardCharsets.UTF_8);
-                            collectedFiles.add(decodedPath);
-                        });
+                        .forEach(
+                                path -> collectedFiles.add(tempFolder.relativize(path).toString())
+                        );
             }
             //Let's remove the workspace folder from the list
             List<String> existingFolders = collectedFolders.stream()
@@ -656,13 +663,14 @@ class PullServiceIT {
             Map<String, List<String>> expectedFolders = Map.of(
                     basePath, Arrays.asList("folder2"),
                     basePath + "/folder2", Arrays.asList("subFolder2-1"),
-                    basePath + "/folder2/subFolder2-1", Arrays.asList("subFolder2-1-1")
+                    basePath + "/folder2/subFolder2-1", Arrays.asList("subFolder2-1-1-子資料夾")
             );
 
             // Expected folder structure based on the treeNode object
             Map<String, List<String>> expectedFiles = Map.of(
                     basePath, Collections.emptyList(),
-                    basePath + "/folder2/subFolder2-1/subFolder2-1-1", Arrays.asList("image2.png")
+                    basePath + "/folder2/subFolder2-1/subFolder2-1-1-子資料夾",
+                    Arrays.asList("image2.png")
             );
 
             // Validate the actual folders against the expected folders
@@ -731,7 +739,7 @@ class PullServiceIT {
         try {
 
             // Creating a site, for this test we don't need to create any content
-            final var testSiteName = filesTestHelper.createSite();
+            final var testSiteName = sitesTestHelper.createSiteOnServer().siteName();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -812,5 +820,117 @@ class PullServiceIT {
             filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
+
+    /**
+     * Given scenario: Here we want to test fetchByKeys method see if the pullService still throws a ForceSilentExitException carrying the ExitCode.SOFTWARE
+     * First we use a non-existent site to force an exception
+     * Expected behavior: The pullService should throw a ForceSilentExitException with the ExitCode.SOFTWARE
+     * @throws IOException if there is an error creating the temporary folder or deleting it
+     */
+    @Test
+    void Test_Handle_Early_Thrown_Exception_Expect_SOFTWARE_ExitCode() throws IOException {
+        Exception exception = null;
+        // Creating a site, for this test we don't need to create any content
+        final var testSiteName = String.format("non-existent-site-%s", UUID.randomUUID());
+        final var folderPath = String.format("//%s", testSiteName);
+        OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+        FileFetcher mockedProvider = Mockito.mock(FileFetcher.class);
+        //But here is where the real test lies. We are going to return a List of FileTraverseResult with multiple exceptions
+        //They all should be logged and the first one should be the one that triggers the exit code
+        when(mockedProvider.fetchByKey(anyString(), anyBoolean(),any())).thenReturn(
+                        FileTraverseResult.builder().tree(new TreeNode(FolderView.builder().host(testSiteName).path("/test").name("name").build())).exceptions(
+                                List.of(
+                                        new UnauthorizedException(),
+                                        new TraversalTaskException("Unexpected Error Traversing folders ")
+                                )).build()
+                );
+
+        var tempFolder = filesTestHelper.createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+        try {
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            //pullService must be called with the contentKey param to trigger the fetchByKeys method
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(false).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    mockedProvider,
+                    filePullHandler
+            );
+        } catch (Exception e) {
+               exception = e;
+        } finally {
+                // Clean up the temporal folder
+                filesTestHelper.deleteTempDirectory(tempFolder);
+        }
+        Assertions.assertNotNull(exception);
+        Assertions.assertTrue(exception instanceof ForceSilentExitException);
+        ForceSilentExitException forceSilentExitException = (ForceSilentExitException) exception;
+        Assertions.assertEquals(ExitCode.SOFTWARE, forceSilentExitException.getExitCode());
+    }
+
+
+    /**
+     * Given scenario: Similarly to the previous test, we want to test the fetch Method and see if the pullService still throws a ForceSilentExitException carrying the ExitCode.SOFTWARE
+     * This time we're going to feed the service with a FieldFetcher that throws brings mixed elements of FileTraverseResult with exceptions and without exceptions
+     * Expected behavior: The elements with exceptions should be written to the output and the first exception should be the one that triggers the exit code
+     * @throws IOException if there is an error creating the temporary folder or deleting it
+     */
+    @Test
+    void Test_Handle_Multiple_Thrown_Exceptions() throws IOException {
+        Exception exception = null;
+        // Creating a site, for this test we don't need to create any content
+        final var testSiteName = String.format("any-site-%s", UUID.randomUUID());
+
+        MockOutputOptionMixin outputOptions = new MockOutputOptionMixin();
+        FileFetcher mockedProvider = Mockito.mock(FileFetcher.class);
+        //But here is where the real test lies. We are going to return a List of FileTraverseResult with multiple exceptions
+        //They all should be logged and the first one should be the one that triggers the exit code
+        when(mockedProvider.fetch(anyBoolean(), any())).thenReturn(
+                List.of(
+                     FileTraverseResult.builder().tree(new TreeNode(FolderView.builder().host(testSiteName).path("/test").name("name").build())).exceptions(
+                     List.of(
+                             new UnauthorizedException(),
+                             new TraversalTaskException("Unexpected Error Traversing folders ")
+                     )).build()
+                ));
+
+       //We're going to use PullHandler but this time we do not specify the contentKey so the fetch method gets called
+        var tempFolder = filesTestHelper.createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+        try {
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            isShortOutput(false).
+                            failFast(false).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    mockedProvider,
+                    filePullHandler
+            );
+        } catch (Exception e) {
+            exception = e;
+        } finally {
+            // Clean up the temporal folder
+            filesTestHelper.deleteTempDirectory(tempFolder);
+        }
+        Assertions.assertNotNull(exception);
+        Assertions.assertTrue(exception instanceof ForceSilentExitException);
+        ForceSilentExitException forceSilentExitException = (ForceSilentExitException) exception;
+        //Test that the exit code is the one from the first exception thrown
+        Assertions.assertEquals(ExitCode.SOFTWARE, forceSilentExitException.getExitCode());
+       // Here we simply test that the output contains the expected messages making sure they were written to the output
+       // WebApplicationExceptions are transformed a bit so UnauthorizedException  gets rendered as Forbidden: You don't have permission to access this resource
+        Assertions.assertTrue(outputOptions.getMockErr().contains("Forbidden: You don't have permission to access this resource"));
+        Assertions.assertTrue(outputOptions.getMockErr().contains("Unexpected Error Traversing folders"));
+
+    }
+
 
 }

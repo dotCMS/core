@@ -11,7 +11,7 @@ import org.junit.jupiter.api.*;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -52,7 +52,7 @@ class StatusCommandIT extends CommandTest {
             final int status = commandLine.execute(StatusCommand.NAME);
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
             Assertions.assertTrue(writer.toString()
-                    .contains("No dotCMS configured instances were found. Please run 'init' to initialize the CLI"));
+                    .contains("No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI."));
         }
     }
 
@@ -91,7 +91,7 @@ class StatusCommandIT extends CommandTest {
         serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true)
                 .url(new URL("http://localhost:8080"))
                 .credentials(
-                        CredentialsBean.builder().user(user).token(token.toCharArray()).build())
+                        CredentialsBean.builder().user(user).tokenSupplier(token::toCharArray).build())
                 .build());
 
         final CommandLine commandLine = createCommand();
@@ -137,5 +137,33 @@ class StatusCommandIT extends CommandTest {
         }
     }
 
+
+    /**
+     * Given Scenario: In this scenario we want to see our status command's displaying the version of the CLI
+     * Expected: We should see the version of the CLI
+     * @throws IOException if there is an error
+     */
+    @Test
+    void Test_Command_Status_Prints_Version() throws IOException {
+
+        final String user = "admin@dotCMS.com";
+        final String passwd = "admin";
+
+        resetServiceProfiles();
+        authenticationContext.login(user, passwd.toCharArray());
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(StatusCommand.NAME);
+            Assertions.assertEquals(ExitCode.OK, status);
+            final String outputAsString = writer.toString();
+            Assertions.assertTrue(outputAsString.contains("Build Version:"));
+            Assertions.assertTrue(outputAsString.contains("Build Name:"));
+            Assertions.assertTrue(outputAsString.contains("Build Timestamp:"));
+            Assertions.assertTrue(outputAsString.contains("Build Revision:"));
+        }
+    }
 
 }

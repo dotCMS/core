@@ -1,11 +1,12 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { DotExperiment } from '@dotcms/dotcms-models';
+import { map } from 'rxjs/operators';
 
-import { DotExperimentsService } from '../services/dot-experiments.service';
+import { DotExperimentsService } from '@dotcms/data-access';
+import { DotExperiment } from '@dotcms/dotcms-models';
 
 /**
  * Return a DotExperiment getting the experimentId from query params
@@ -18,7 +19,7 @@ import { DotExperimentsService } from '../services/dot-experiments.service';
  */
 @Injectable()
 export class DotExperimentExperimentResolver implements Resolve<Observable<DotExperiment | null>> {
-    constructor(private readonly dotExperimentsService: DotExperimentsService) {}
+    private readonly dotExperimentsService = inject(DotExperimentsService);
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotExperiment | null> {
         const { experimentId } = route.queryParams;
@@ -27,6 +28,8 @@ export class DotExperimentExperimentResolver implements Resolve<Observable<DotEx
             return of(null);
         }
 
-        return this.dotExperimentsService.getById(experimentId);
+        return this.dotExperimentsService
+            .getById(experimentId)
+            .pipe(map((result) => result ?? null));
     }
 }

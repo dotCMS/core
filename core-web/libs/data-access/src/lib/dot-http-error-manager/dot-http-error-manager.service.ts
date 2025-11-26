@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
@@ -15,7 +15,6 @@ export interface DotHttpErrorHandled {
     redirected: boolean;
     status: HttpCode;
 }
-
 /**
  * Handle the UI for http errors messages
  *
@@ -24,16 +23,16 @@ export interface DotHttpErrorHandled {
  */
 @Injectable()
 export class DotHttpErrorManagerService {
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotMessageService = inject(DotMessageService);
+    private loginService = inject(LoginService);
+    private dotRouterService = inject(DotRouterService);
+
     private readonly errorHandlers?: Record<HttpCode, (response?: HttpErrorResponse) => boolean>;
     private _unobtrusive = false;
 
-    constructor(
-        private dotDialogService: DotAlertConfirmService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotMessageService: DotMessageService,
-        private loginService: LoginService,
-        private dotRouterService: DotRouterService
-    ) {
+    constructor() {
         if (!this.errorHandlers) {
             this.errorHandlers = {
                 [HttpCode.NOT_FOUND]: this.handleNotFound.bind(this),
@@ -78,7 +77,7 @@ export class DotHttpErrorManagerService {
             ? this.isLicenseError(response)
                 ? this.handleLicense()
                 : this.handleForbidden()
-            : this.errorHandlers?.[code as HttpCode](response) ?? false;
+            : (this.errorHandlers?.[code as HttpCode](response) ?? false);
     }
 
     private contentletIsForbidden(error: string): boolean {
@@ -188,15 +187,97 @@ export class DotHttpErrorManagerService {
         return false;
     }
 
+    /**
+     * Extracts a readable error message from an HttpErrorResponse
+     *
+     * @param response The HttpErrorResponse to extract the message from
+     * @returns A string containing the error message or empty string if no message found
+     */
     private getErrorMessage(response?: HttpErrorResponse): string {
-        let msg: string;
-        if (Array.isArray(response?.['error']) || Array.isArray(response?.error?.errors)) {
-            msg = response.error[0]?.message || response.error?.errors[0]?.message;
-        } else {
-            const error = response?.['error'];
-            msg = error?.message || error?.error;
+        if (!response) {
+            return '';
         }
 
-        return msg;
+        const { error } = response;
+        let errorMessage = '';
+
+        // Handle array of errors
+        if (Array.isArray(error) && error.length > 0) {
+            errorMessage = this.extractMessageFromErrorObject(error[0]);
+        }
+        // Handle error object with nested errors array
+        else if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+            errorMessage = this.extractMessageFromErrorObject(error.errors[0]);
+        }
+        // Handle direct error object
+        else if (error && typeof error === 'object') {
+            errorMessage = this.extractMessageFromErrorObject(error);
+        }
+        // Handle string error
+        else if (error && typeof error === 'string') {
+            errorMessage = error;
+        }
+
+        // Try to get localized message if it's a message key
+        const localizedMessage = this.dotMessageService.get(errorMessage);
+
+        return localizedMessage !== errorMessage ? localizedMessage : errorMessage;
+    }
+
+    /**
+     * Extracts message from an error object and trims it if it contains a colon
+     *
+     * @param errorObj The error object to extract message from
+     * @returns The extracted message or empty string
+     */
+    private extractMessageFromErrorObject(errorObj: unknown): string {
+        if (!errorObj) {
+            return '';
+        }
+
+        // Handle string directly
+        if (typeof errorObj === 'string') {
+            return this.formatErrorMessage(errorObj);
+        }
+
+        // Handle error object
+        if (typeof errorObj === 'object' && errorObj !== null) {
+            const errorRecord = errorObj as Record<string, unknown>;
+
+            // Try to extract message from common error properties in priority order
+            const message =
+                this.getStringProperty(errorRecord, 'message') ||
+                this.getStringProperty(errorRecord, 'error') ||
+                this.getStringProperty(errorRecord, 'detail') ||
+                this.getStringProperty(errorRecord, 'description') ||
+                '';
+
+            return this.formatErrorMessage(message);
+        }
+
+        return '';
+    }
+
+    /**
+     * Safely extracts a string property from an object
+     *
+     * @param obj The object to extract from
+     * @param prop The property name to extract
+     * @returns The string value or empty string
+     */
+    private getStringProperty(obj: Record<string, unknown>, prop: string): string {
+        const value = obj[prop];
+
+        return typeof value === 'string' ? value : '';
+    }
+
+    /**
+     * Formats an error message by trimming at first colon if present
+     *
+     * @param message The message to format
+     * @returns The formatted message
+     */
+    private formatErrorMessage(message: string): string {
+        return message.includes(':') ? message.substring(0, message.indexOf(':')) : message;
     }
 }

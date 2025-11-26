@@ -1,0 +1,21 @@
+<p-button
+    icon="pi pi-angle-down"
+    iconPos="right"
+    [label]="$currentModeLabel() | dm"
+    styleClass="p-button-outlined p-2 p-button-sm mode-selector"
+    (click)="menu.toggle($event)"
+    data-testId="more-button" />
+
+<p-menu #menu [popup]="true" styleClass="more-menu" [model]="$menuItems()" data-testId="more-menu">
+    <ng-template pTemplate="item" let-item>
+        <a
+            pRipple
+            class="flex flex-column p-menuitem-link menu-item align-items-start"
+            [ngClass]="{ 'menu-item--active': item.id === $currentMode() }"
+            (click)="onModeChange(item.id)"
+            [attr.data-testId]="item.id + '-menu-item'">
+            <span class="menu-item__label">{{ item.label | dm }}</span>
+            <span class="menu-item__description">{{ item.description | dm }}</span>
+        </a>
+    </ng-template>
+</p-menu>

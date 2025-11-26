@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { AsyncPipe, CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -8,26 +9,68 @@ import {
     OnChanges,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TabViewModule } from 'primeng/tabview';
 
 import { take } from 'rxjs/operators';
 
-import { DotInlineEditComponent } from '@components/_common/dot-inline-edit/dot-inline-edit.component';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotApiLinkComponent,
+    DotAutofocusDirective,
+    DotCopyButtonComponent,
+    DotIconComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
+import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
+import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
+import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',
     styleUrls: ['./content-types-layout.component.scss'],
-    templateUrl: 'content-types-layout.component.html'
+    templateUrl: 'content-types-layout.component.html',
+    imports: [
+        CommonModule,
+        AsyncPipe,
+        TabViewModule,
+        SplitButtonModule,
+        ButtonModule,
+        InputTextModule,
+        DotSecondaryToolbarComponent,
+        DotIconComponent,
+        DotApiLinkComponent,
+        DotCopyButtonComponent,
+        DotMessagePipe,
+        DotAutofocusDirective,
+        DotInlineEditComponent,
+        DotPortletBoxComponent,
+        IframeComponent,
+        DotAddToMenuComponent,
+        ContentTypesFieldsListComponent
+    ]
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
+    private dotMessageService = inject(DotMessageService);
+    private dotMenuService = inject(DotMenuService);
+    private fieldDragDropService = inject(FieldDragDropService);
+    private dotEventsService = inject(DotEventsService);
+    private dotCurrentUserService = inject(DotCurrentUserService);
+
     @Input() contentType: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<unknown> = new EventEmitter();
     @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
@@ -42,14 +85,6 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     addToMenuContentType = false;
 
     actions: MenuItem[];
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotMenuService: DotMenuService,
-        private fieldDragDropService: FieldDragDropService,
-        private dotEventsService: DotEventsService,
-        private dotCurrentUserService: DotCurrentUserService
-    ) {}
 
     ngOnInit(): void {
         this.showPermissionsTab = this.dotCurrentUserService.hasAccessToPortlet('permissions');

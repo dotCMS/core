@@ -7,6 +7,7 @@ import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.PullHandler;
 import com.dotcms.api.client.pull.exception.PullException;
+import com.dotcms.api.client.util.ErrorHandlingUtil;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.command.files.TreePrinter;
@@ -16,20 +17,22 @@ import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 /**
- * The FilePullHandler class is responsible for pulling files from dotCMS.
- * It extends the PullHandler class and handles the pulling of FileTraverseResult objects providing
- * its own implementation of the pull method.
+ * The FilePullHandler class is responsible for pulling files from dotCMS. It extends the
+ * PullHandler class and handles the pulling of FileTraverseResult objects providing its own
+ * implementation of the pull method.
  */
 @Dependent
 public class FilePullHandler extends PullHandler<FileTraverseResult> {
@@ -39,6 +42,9 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
     @Inject
     RestClientFactory clientFactory;
+
+    @Inject
+    ErrorHandlingUtil errorHandlerUtil;
 
     @Inject
     Puller puller;
@@ -91,9 +97,20 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
     @Override
     @ActivateRequestContext
-    public boolean pull(List<FileTraverseResult> contents,
+    public int pull(List<FileTraverseResult> contents,
             PullOptions pullOptions,
             OutputOptionMixin output) throws ExecutionException, InterruptedException {
+
+        //Collect all exceptions from the returned contents
+        final List<Exception> allExceptions = contents.stream().map(FileTraverseResult::exceptions)
+                .flatMap(List::stream).collect(Collectors.toList());
+
+        //Any failed TreeNode will not be present
+        //So no need to separate the results
+
+        //Save the error code for the traversal process. This will be used to determine the exit
+        // code of the command if greater than 0 (zero)
+        int errorCode = errorHandlerUtil.handlePullExceptions(allExceptions, output);
 
         boolean preserve = false;
         boolean includeEmptyFolders = false;
@@ -105,11 +122,19 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        var failed = false;
-
-        output.info(startPullingHeader(contents));
+        var isPullingHeaderDisplayed = false;
 
         for (final var content : contents) {
+
+            // If the traversal process failed, there is no point in trying to pull the content
+            if (!content.exceptions().isEmpty()) {
+                continue;
+            }
+
+            if (!isPullingHeaderDisplayed) {
+                output.info(startPullingHeader(contents));
+                isPullingHeaderDisplayed = true;
+            }
 
             var errors = pullTree(
                     content,
@@ -119,13 +144,14 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     includeEmptyFolders
             );
 
-            printErrors(errors, output);
-            if (!errors.isEmpty()) {
-                failed = true;
-            }
+            final int e = errorHandlerUtil.handlePullExceptions(errors, output);
+            //This should always keep the highest error code
+            // Meaning that if no errors occurred, the error code will be 0
+            errorCode = Math.max(e, errorCode);
+
         }
 
-        return failed;
+        return errorCode;
     }
 
     /**
@@ -189,11 +215,16 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
             CompletableFuture.allOf(treeBuilderFuture, animationFuture).join();
             foundErrors = treeBuilderFuture.get();
 
-        } catch (InterruptedException | ExecutionException e) {
-            var errorMessage = String.format("Error occurred while pulling assets: [%s].",
-                    e.getMessage());
+        } catch (InterruptedException e) {
+            var errorMessage = String.format(
+                    "Error occurred while pulling assets: [%s].", e.getMessage()
+            );
             logger.error(errorMessage, e);
+            Thread.currentThread().interrupt();
             throw new PullException(errorMessage, e);
+        } catch (ExecutionException | CompletionException e) {
+            var cause = e.getCause();
+            throw errorHandlerUtil.mapPullException(cause);
         }
 
         output.info(String.format("%n"));

@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
@@ -11,6 +11,7 @@ import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testi
 import { DotWorkflowActionsComponent } from './dot-workflow-actions.component';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
 
 const WORKFLOW_ACTIONS_SEPARATOR_MOCK: DotCMSWorkflowAction = {
     assignable: true,
@@ -75,7 +76,8 @@ describe('DotWorkflowActionsComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            DotClipboardUtil
         ],
         detectChanges: false
     });
@@ -84,12 +86,12 @@ describe('DotWorkflowActionsComponent', () => {
         spectator = createComponent({
             props: {
                 actions: WORKFLOW_ACTIONS_MOCK,
-                groupAction: true,
+                groupActions: true,
                 loading: false,
                 size: 'normal'
             }
         });
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
     });
 
     describe('without actions', () => {
@@ -100,8 +102,8 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should render the empty button with loading', () => {
             spectator.setInput('loading', true);
-
             spectator.detectChanges();
+
             const button = spectator.query(Button);
 
             expect(button.loading).toBeTruthy();
@@ -111,10 +113,9 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should render the empty button with disabled', () => {
             spectator.setInput('loading', false);
+            spectator.detectChanges();
 
             const button = spectator.query(Button);
-
-            spectator.detectChanges();
 
             expect(button.disabled).toBeTruthy();
             expect(button.loading).toBeFalsy();
@@ -125,11 +126,12 @@ describe('DotWorkflowActionsComponent', () => {
     describe('group action', () => {
         it('should render an extra split button for each `SEPARATOR` Action', () => {
             const splitButtons = spectator.queryAll(SplitButton);
+            spectator.detectComponentChanges();
             expect(splitButtons.length).toBe(2);
         });
 
         it('should emit the action when click on a split button', () => {
-            const spy = spyOn(spectator.component.actionFired, 'emit');
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const splitButton = spectator.query('.p-splitbutton > button');
             splitButton.dispatchEvent(new Event('click'));
 
@@ -147,7 +149,7 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('not group action', () => {
         beforeEach(() => {
-            spectator.setInput('groupAction', false);
+            spectator.setInput('groupActions', false);
             spectator.detectComponentChanges();
         });
 
@@ -190,6 +192,37 @@ describe('DotWorkflowActionsComponent', () => {
         });
     });
 
+    describe('disabled', () => {
+        beforeEach(() => {
+            spectator.setInput('actions', [
+                ...WORKFLOW_ACTIONS_MOCK,
+                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                WORKFLOW_ACTIONS_MOCK[0]
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should disable the button', () => {
+            const button = spectator.query(Button);
+            expect(button.disabled).toBeFalsy();
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(button.disabled).toBeTruthy();
+        });
+
+        it('should disabled split buttons ', () => {
+            const splitButton = spectator.query(SplitButton);
+            expect(splitButton.disabled).toBeFalsy();
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(splitButton.disabled).toBeTruthy();
+        });
+    });
+
     describe('size', () => {
         beforeEach(() => {
             spectator.setInput('actions', [
@@ -203,7 +236,7 @@ describe('DotWorkflowActionsComponent', () => {
         it('should have default size', () => {
             const { button, splitButton } = getComponents(spectator);
             expect(button.styleClass.trim()).toBe('');
-            expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('');
         });
 
         it('should set style class p-button-sm', () => {
@@ -212,7 +245,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const { button, splitButton } = getComponents(spectator);
 
-            expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('p-button-sm');
             expect(button.styleClass.trim()).toBe('p-button-sm');
         });
 
@@ -223,7 +256,7 @@ describe('DotWorkflowActionsComponent', () => {
             const { button, splitButton } = getComponents(spectator);
 
             expect(button.styleClass.trim()).toBe('p-button-lg');
-            expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
+            expect(splitButton.styleClass.trim()).toBe('p-button-lg');
         });
     });
 });

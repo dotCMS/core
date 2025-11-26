@@ -132,8 +132,7 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
             final int offset, final String hostId, final OrderDirection direction,
             final String searchParams, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-
-        final PaginatedArrayList<Theme> result = new PaginatedArrayList();
+        final PaginatedArrayList<Theme> result = new PaginatedArrayList<>();
 
         //If themeId is sent, it's because a specific theme is wanted, so call the findThemeById
         if (UtilMethods.isSet(themeId)) {
@@ -143,7 +142,7 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
 
         //TODO: If we modify that the hostId is not required we need to add system theme is hostId is not set.
         //This is because themes can not live under system_host
-        if (hostId.equals(this.systemTheme.getHostId())) {
+        if (UtilMethods.isSet(hostId) && hostId.equals(this.systemTheme.getHostId())) {
             result.add(this.systemTheme());
             return result;
         }
@@ -175,17 +174,17 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         }
 
         //Don't include archived themes (template.vtl archived)
-        sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
+        sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
 
         final String sortBy = String.format("id.parent_path %s", direction.toString().toLowerCase());
-        sqlQuery.append(" order by " + sortBy);
+        sqlQuery.append(" order by ").append(sortBy);
 
         final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString())
                 .setMaxRows(limit).setStartRow(offset);
-        parameters.forEach(param -> dc.addParam(param));
+        parameters.forEach(dc::addParam);
 
         //List of inodes of the template.vtl files found
-        final List<Map<String,String>> inodesMapList =  dc.loadResults();
+        final List<Map<String,String>> inodesMapList = dc.loadResults();
 
         final List<String> inodes = new ArrayList<>();
         for (final Map<String, String> versionInfoMap : inodesMapList) {
@@ -201,6 +200,6 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         }
 
         return result;
-
     }
+
 }

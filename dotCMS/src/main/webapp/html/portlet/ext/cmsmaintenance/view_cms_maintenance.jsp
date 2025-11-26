@@ -51,6 +51,7 @@ List<ContentType> structs = APILocator.getContentTypeAPI(APILocator.systemUser()
 <script language="Javascript">
 dojo.require("dijit.Editor");
 dojo.require("dijit.form.MultiSelect");
+dojo.require("dijit.form.ValidationTextBox")
 
 
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
@@ -357,7 +358,7 @@ dojo.ready(function () {
             function (evt) {
                 selectedTab = tab.selectedChildWidget;
                 if (selectedTab.id == "systemProps") {
-                    showSystemVars();
+                    initLoadConfigsAPI();
                 }
 
             });
@@ -693,7 +694,8 @@ function undohighlight(id) {
 function getAllThreads() {
 	document.getElementById('threadList').innerHTML = "";
 	dojo.query('#threadProgress').style({display:"block"});
-    ThreadMonitorTool.getThreads({
+    const hideSystemThreads = document.getElementById("hideSystemThreads").checked;
+    ThreadMonitorTool.getThreads(hideSystemThreads, {
         callback:function(data) {
         	dojo.query('#threadProgress').style({display:"none"});
             var tempString = "";
@@ -707,8 +709,6 @@ function getAllThreads() {
                 }
             }
 
-//             var editor = dijit.byId('threadList');
-//             editor.set('value',tempString);
             dwr.util.setValue("threadList", tempString, { escapeHtml:false });
 
         },
@@ -791,22 +791,22 @@ var createRow = function (tableId, rowInnerHtml, className, id) {
     }, tableNode );
 };
 
-function killSessionById(sessionId) {
-    var invalidateButtonElem = dijit.byId("invalidateButtonNode-"+sessionId);
+function killSessionById(obfSessionId) {
+    var invalidateButtonElem = dijit.byId("invalidateButtonNode-"+obfSessionId);
 
 	dojo.style(invalidateButtonElem.domNode,{display:"none",visibility:"hidden"});
-	dojo.query('#killSessionProgress-'+sessionId).style({display:"block"});
-	UserSessionAjax.invalidateSession(sessionId,{
+	dojo.query('#killSessionProgress-'+obfSessionId).style({display:"block"});
+	UserSessionAjax.invalidateSession(obfSessionId,{
 			callback:function() {
 				dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
-			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
+			    dojo.query('#killSessionProgress-'+obfSessionId).style({display:"none"});
 			    invalidateButtonElem.set('disabled',true);
 
 			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			},
 			errorHandler:function(message) {
 				dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
-			    dojo.query('#killSessionProgress-'+sessionId).style({display:"none"});
+			    dojo.query('#killSessionProgress-'+obfSessionId).style({display:"none"});
 
 			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
@@ -855,21 +855,21 @@ function loadUsers() {
 					html+="<td>"+session.userEmail+"</td> ";
 					html+="<td>"+session.userFullName+"</td> ";
 					html+="<td> ";
-					if("<%=session.getId()%>" !=session.sessionId ){
-						html+=" <img style='display:none;' id='killSessionProgress-"+session.sessionId+"' src='/html/images/icons/round-progress-bar.gif'/> ";
-						html+=" <button id='" + invalidateButtonIdPrefix + session.sessionId + "'></button>";
+					if( "true" !== session.isCurrent ){
+						html+=" <img style='display:none;' id='killSessionProgress-"+session.obfSession+"' src='/html/images/icons/round-progress-bar.gif'/> ";
+						html+=" <button id='" + invalidateButtonIdPrefix + session.obfSession + "'></button>";
 					}
 
 					html+=" </td>";
 
                     //Creating the row and adding it to the table
-                    createRow(tableId, html, rowsClass, "loggedUser-"+session.sessionId)
+                    createRow(tableId, html, rowsClass, "loggedUser-"+session.obfSession)
 				}
 
 				for(var i=0;i<sessionList.length;i++) {
                     var session=sessionList[i];
 
-                    var id = invalidateButtonIdPrefix + session.sessionId;
+                    var id = invalidateButtonIdPrefix + session.obfSession;
 
                     //Verify if a button widget with this id exist, if it exist we must delete firts before to try to create a new one
                     if (dojo.byId(id)) {
@@ -883,11 +883,11 @@ function loadUsers() {
                             label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killsession")) %>",
                             iconClass: "deleteIcon",
                             "class": "killsessionButton",
-                            sid : session.sessionId,
+                            obsid : session.obfSession,
                             onClick: function(){
-                                killSessionById(this.sid);
+                                killSessionById(this.obsid);
                             }
-                        }, invalidateButtonIdPrefix + session.sessionId);
+                        }, invalidateButtonIdPrefix + session.obfSession);
                     }
 				}
 			}
@@ -1131,61 +1131,6 @@ function assetHostListTable_deleteHost(hostId){
 	}
 }
 
-function showSystemVars(){
-
-
-
-    const keys = ["release", "jvm", "host" ,"environment","system"];
-    const currentDiv = document.getElementById("systemInfoDiv");
-
-    currentDiv.innerHTML="";
-    fetch('/api/v1/jvm')
-    .then(response => response.json())
-    .then(data => {
-        const headerDiv = document.createElement("h2");
-        headerDiv.innerHTML="Version: " + data.release.version + " (" +data.release.buildDate + ")" ;
-        currentDiv.appendChild(headerDiv);
-
-
-        keys.forEach(key=>{
-            const myDiv = document.createElement("div");
-            myDiv.className="propDiv";
-            const fieldSet = document.createElement("fieldset");
-            fieldSet.className="propFieldSet";
-            const label = document.createElement("label");
-            label.className="propLabel";
-            label.innerHTML=key;
-            const table = document.createElement("table");
-
-            myDiv.appendChild(fieldSet);
-            currentDiv.appendChild(myDiv);
-            fieldSet.appendChild(label);
-
-            table.className="listingTable propTable";
-            fieldSet.appendChild(table)
-
-            Object.entries(data[key]).forEach(([key, value]) =>{
-                const tr = document.createElement("tr");
-
-                const th = document.createElement("th");
-                th.className="propTh";
-                const td = document.createElement("td");
-                td.className="propTd";
-                table.appendChild(tr)
-                tr.appendChild(th);
-                tr.appendChild(td);
-                th.innerHTML=key;
-                td.innerHTML=value;
-
-            })
-
-        });
-
-
-
-
-    });
-}
 
     /**
      * When the User needs to download dotCMS assets, this function will display a dialog asking them whether they want
@@ -1196,21 +1141,113 @@ function showSystemVars(){
         assetExportDialog = new dijit.Dialog({
             title: "<%= LanguageUtil.get(pageContext, "Import/Export-dotCMS-Content") %>",
             content: "<%= LanguageUtil.get(pageContext, "download-assets-include-old-versions") %>",
+            style: "maxWidth: 400px;",
             onBlur: () => {
                 if (assetExportDialog.open) {
                     assetExportDialog.hide();
                 }
             }
         });
-        const btnContainer = document.createElement("div");
-        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", downloadUrl + "?oldAssets=true");
-        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", downloadUrl + "?oldAssets=false");
-        btnContainer.className = "dialogBtnContainer";
-        // Add the buttons to the container
-        btnContainer.appendChild(btnConfirm.domNode)
-        btnContainer.appendChild(btnReject.domNode);
-        // Add the container to the dialog
+
+        if(dijit.byId("oldAssetsRadioIdTrue") != null){
+            dijit.byId("oldAssetsRadioIdTrue").destroy();
+            dijit.byId("oldAssetsRadioIdFalse").destroy();
+            dijit.byId("maxFileSize").destroy();
+        }
+
+        let btnContainer = document.createElement("div");
+        btnContainer.style.padding = "10px";
+        btnContainer.style.textAlign = "center";
+        let radioButton = new dijit.form.RadioButton({
+            name: "oldAssetsRadio",
+            id:"oldAssetsRadioIdTrue",
+            value: "true",
+            checked: false
+        });
+        let label = document.createElement("label");
+        label.style.paddingRight = "30px";
+        label.style.paddingLeft = "5px";
+        label.htmlFor = "oldAssetsRadioIdTrue";
+        label.innerHTML = "<%= LanguageUtil.get(pageContext, "Yes") %>";
+        btnContainer.appendChild(radioButton.domNode);
+        btnContainer.appendChild(label);
+
+
+        radioButton = new dijit.form.RadioButton({
+            name: "oldAssetsRadio",
+            id:"oldAssetsRadioIdFalse",
+            value: "false",
+            checked: true
+        });
+        label = document.createElement("label");
+        label.style.paddingRight = "10px";
+        label.style.paddingLeft = "5px";
+
+        label.htmlFor = "oldAssetsRadioIdFalse";
+        label.innerHTML = "<%= LanguageUtil.get(pageContext, "No") %>";
+        btnContainer.appendChild(radioButton.domNode);
+        btnContainer.appendChild(label);
         assetExportDialog.containerNode.appendChild(btnContainer);
+
+
+        btnContainer = document.createElement("div");
+        btnContainer.style.textAlign = "center";
+
+
+        let input = new dijit.form.ValidationTextBox({
+            name: "maxFileSize",
+            id:"maxFileSize",
+            required: false,
+            label: "E.g: 1mb, 512k, 2gb",
+            placeHolder: "512k, 1mb, 2gb...",
+            regExp: "([0-9]+)\\s?(b|kb|mb|gb|k|m|g)?",
+            invalidMessage: "<%= LanguageUtil.get(pageContext, "Invalid-Size") %>",
+
+        });
+        input.domNode.style.width = "150px";
+        input.domNode.style.margin = "auto";
+        let labelDiv = document.createElement("div");
+        labelDiv.style.paddingTop = "10px";
+        labelDiv.style.paddingBottom = "10px";
+        labelDiv.innerHTML = "Max file size for included assets? Leave empty for no limit.";
+        btnContainer.appendChild(labelDiv);
+        btnContainer.appendChild(input.domNode);
+        labelDiv = document.createElement("div");
+        labelDiv.style.padding = "10px";
+        labelDiv.innerHTML="Leave empty for no limit"
+        //btnContainer.appendChild(labelDiv);
+        assetExportDialog.containerNode.appendChild(btnContainer);
+
+
+
+
+        let buttonDiv = document.createElement("div");
+        buttonDiv.style.padding = "20px";
+
+
+        buttonDiv.style.textAlign = "center";
+
+        let button = new dijit.form.Button({
+            label: "Download Now",
+            class: "dialogButton",
+            onClick: () => {
+                if(!dijit.byId("maxFileSize").isValid()){
+                    alert("Invalid file size");
+                    return;
+                }
+                let oldAssets = dijit.byId("oldAssetsRadioIdTrue").checked;
+                let maxFileSize = dijit.byId("maxFileSize").get("value");
+                location.href = downloadUrl + "?oldAssets=" + oldAssets + "&maxSize=" + maxFileSize;
+                assetExportDialog.hide();
+            }
+        });
+        button.domNode.style.width = "130px";
+
+        buttonDiv.appendChild(button.domNode);
+
+        assetExportDialog.containerNode.appendChild(buttonDiv);
+
+
         assetExportDialog.show();
     }
 
@@ -1276,35 +1313,7 @@ dd.leftdl {
     font-size: 1%;
 }
 
-.propDiv{
 
-    margin:30px;
-}
-.propTh{
-    width:40%;
-    text-align: right;
-    font-size:14px;
-}
-.propTd{
-    font-family: monospace;
-    max-width: 400px;
-    overflow-wrap: break-word;
-    font-size:14px;
-}
-.propLabel{
-    background-color: white;
-    font-size:24px;
-    margin-top: -48px;
-    padding:10px;
-
-    display:inline-block;
-
-    max-width:50%;
-}
-
-.propFieldSet{
-    margin-bottom:40px;
-}
 
 </style>
 
@@ -1378,31 +1387,40 @@ dd.leftdl {
                         <div id="cacheStatsCp" dojoType="dojox.layout.ContentPane" parseOnLoad="true" style="text-align: center;min-height: 100px;">
 
 
+                            <%
+
+                                long maxMemory = Runtime.getRuntime().maxMemory();
+                                long totalMemoryInUse = Runtime.getRuntime().totalMemory();
+                                long freeMemory = Runtime.getRuntime().freeMemory();
+                                long usedMemory = totalMemoryInUse - freeMemory;
+                                long availableMemory = maxMemory - usedMemory;
+
+                            %>
                             <div style="padding-bottom:30px;">
 
                                 <table class="listingTable shadowBox" style="width:400px">
                                     <tr>
-                                        <th><%= LanguageUtil.get( pageContext, "Total-Memory-Available" ) %>
+                                        <th><%= LanguageUtil.get( pageContext, "Total-Memory-Available" ) %> / Xmx
                                         </th>
-                                        <td align="right"><%=UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory() )%>
+                                        <td align="right"><%=UtilMethods.prettyByteify( maxMemory )%>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get( pageContext, "Memory-Allocated" ) %>
                                         </th>
-                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() )%>
+                                        <td align="right"><%= UtilMethods.prettyByteify( totalMemoryInUse )%>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get( pageContext, "Filled-Memory" ) %>
                                         </th>
-                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() )%>
+                                        <td align="right"><%= UtilMethods.prettyByteify( usedMemory )%>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get( pageContext, "Free-Memory" ) %>
                                         </th>
-                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() )%>
+                                        <td align="right"><%= UtilMethods.prettyByteify( availableMemory )%>
                                         </td>
                                     </tr>
                                 </table>
@@ -1855,11 +1873,11 @@ dd.leftdl {
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-      <div style="width:80%;margin: 0 auto;" id="systemInfoDiv">
-
-      </div>
-
+        <%@ include file="/html/portlet/ext/cmsmaintenance/system_config.jsp" %>
     </div>
+
+
+
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START Threads TAB -->
@@ -1878,6 +1896,11 @@ dd.leftdl {
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
          <div class="buttonRow" style="text-align:right;width:98% !important;">
+             <checkbox id="hideSystemThreads" name="hideSystemThreads" value="true" dojoType="dijit.form.CheckBox"
+                       checked="true"></checkbox>&nbsp;&nbsp;
+             <label for="hideSystemThreads"><%= LanguageUtil.get(pageContext, "Hide-System-Threads")
+                     .replaceAll("-", " ") %>
+             </label>&nbsp;&nbsp;
             <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
             </button>

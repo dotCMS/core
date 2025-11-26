@@ -1,22 +1,33 @@
 import { Observable, of, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     OnDestroy,
     OnInit,
     Output,
     ViewChild
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
+import { CalendarModule } from 'primeng/calendar';
+import { DropdownModule } from 'primeng/dropdown';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotHttpErrorManagerService,
     DotMessageService,
@@ -25,16 +36,45 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
+
+import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
+import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
+import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
-    styleUrls: ['./dot-push-publish-form.component.scss']
+    styleUrls: ['./dot-push-publish-form.component.scss'],
+    imports: [
+        CommonModule,
+        AutoFocusModule,
+        FormsModule,
+        CalendarModule,
+        PushPublishEnvSelectorComponent,
+        ReactiveFormsModule,
+        DropdownModule,
+        DotFieldValidationMessageComponent,
+        SelectButtonModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
+    private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
+    private dotParseHtmlService = inject(DotParseHtmlService);
+    private dotcmsConfigService = inject(DotcmsConfigService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    fb = inject(UntypedFormBuilder);
+
+    readonly #dotMessageService = inject(DotMessageService);
+
     dateFieldMinDate = new Date();
     form: UntypedFormGroup;
     pushActions: SelectItem[];
@@ -44,7 +84,7 @@ export class DotPushPublishFormComponent
     assetIdentifier: string;
     localTimezone: string;
     showTimezonePicker = false;
-    changeTimezoneActionLabel = this.dotMessageService.get('Change');
+    changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
     @Input() data: DotPushPublishDialogData;
 
@@ -56,15 +96,6 @@ export class DotPushPublishFormComponent
     private defaultFilterKey: string;
     private _filterOptions: SelectItem[] = null;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotPushPublishFiltersService: DotPushPublishFiltersService,
-        private dotParseHtmlService: DotParseHtmlService,
-        private dotMessageService: DotMessageService,
-        private dotcmsConfigService: DotcmsConfigService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        public fb: UntypedFormBuilder
-    ) {}
 
     ngOnInit() {
         if (this.data) {
@@ -114,8 +145,8 @@ export class DotPushPublishFormComponent
         this.showTimezonePicker = !this.showTimezonePicker;
 
         this.changeTimezoneActionLabel = this.showTimezonePicker
-            ? this.dotMessageService.get('hide')
-            : this.dotMessageService.get('Change');
+            ? this.#dotMessageService.get('hide')
+            : this.#dotMessageService.get('Change');
     }
 
     private setPreviousDayToMinDate() {
@@ -261,18 +292,18 @@ export class DotPushPublishFormComponent
     private getPushPublishActions(): SelectItem[] {
         return [
             {
-                label: this.dotMessageService.get('contenttypes.content.push_publish.action.push'),
+                label: this.#dotMessageService.get('contenttypes.content.push_publish.action.push'),
                 value: 'publish'
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'contenttypes.content.push_publish.action.remove'
                 ),
                 value: 'expire',
                 disabled: this.isRestrictedOrCategory()
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'contenttypes.content.push_publish.action.pushremove'
                 ),
                 value: 'publishexpire',

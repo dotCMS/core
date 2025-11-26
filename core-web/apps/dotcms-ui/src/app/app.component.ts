@@ -1,27 +1,27 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
 
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss']
+    styleUrls: ['./app.component.scss'],
+    imports: [RouterOutlet, DotAlertConfirmComponent]
 })
 export class AppComponent implements OnInit {
-    constructor(
-        private dotCmsConfigService: DotcmsConfigService,
-        private dotUiColors: DotUiColorsService,
-        private dotMessageService: DotMessageService,
-        private dotNavLogoService: DotNavLogoService,
-        private dotLicense: DotLicenseService
-    ) {}
+    private dotCmsConfigService = inject(DotcmsConfigService);
+    private dotUiColors = inject(DotUiColorsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotNavLogoService = inject(DotNavLogoService);
+    private dotLicense = inject(DotLicenseService);
 
     ngOnInit() {
         this.dotCmsConfigService
