@@ -885,5 +885,33 @@ describe('withBreadcrumbs Feature', () => {
             expect(breadcrumbs.length).toBe(3);
             expect(breadcrumbs[0].label).toBe('Home');
         });
+
+        describe('Menu Item Matching with mId Query Parameter', () => {
+            it('should NOT match when URL has query params but no mId (old bookmark)', () => {
+                routerMock.triggerNavigationEnd('/c/content?someParam=value');
+                TestBed.tick();
+
+                // Should not create breadcrumbs for old bookmarks with query params but no mId
+                expect(storeWithRouter.breadcrumbs().length).toBe(0);
+            });
+
+            it('should match when URL has mId that matches parentMenuId prefix', () => {
+                // parentMenuId is 'content-parent', so mId=content should match
+                routerMock.triggerNavigationEnd('/c/content?mId=content');
+                TestBed.tick();
+
+                const breadcrumbs = storeWithRouter.breadcrumbs();
+                expect(breadcrumbs.length).toBe(3);
+                expect(breadcrumbs[2].label).toBe('Content');
+            });
+
+            it('should NOT match when mId does not match parentMenuId prefix', () => {
+                // parentMenuId is 'content-parent', mId=xyz should NOT match
+                routerMock.triggerNavigationEnd('/c/content?mId=xyz');
+                TestBed.tick();
+
+                expect(storeWithRouter.breadcrumbs().length).toBe(0);
+            });
+        });
     });
 });
