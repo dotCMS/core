@@ -651,7 +651,7 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should create breadcrumbs with Home when navigating to a menu link', () => {
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const breadcrumbs = storeWithRouter.breadcrumbs();
@@ -668,12 +668,12 @@ describe('withBreadcrumbs Feature', () => {
             expect(breadcrumbs[2]).toMatchObject({
                 label: 'Content',
                 target: '_self',
-                url: '/dotAdmin/#/c/content?mId=cont'
+                url: '/dotAdmin/#/c/content'
             });
         });
 
         it('should always include Home as the first breadcrumb item', () => {
-            routerMock.triggerNavigationEnd('/c/site-browser?mId=tool');
+            routerMock.triggerNavigationEnd('/c/site-browser');
             TestBed.flushEffects();
 
             const breadcrumbs = storeWithRouter.breadcrumbs();
@@ -683,7 +683,7 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should set Home breadcrumb as disabled', () => {
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const breadcrumbs = storeWithRouter.breadcrumbs();
@@ -694,21 +694,21 @@ describe('withBreadcrumbs Feature', () => {
 
         it('should truncate breadcrumbs when navigating back to existing URL', () => {
             // Navigate to first page
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const firstBreadcrumbs = storeWithRouter.breadcrumbs();
             expect(firstBreadcrumbs.length).toBe(3);
 
             // Navigate to second page
-            routerMock.triggerNavigationEnd('/pages?mId=cont');
+            routerMock.triggerNavigationEnd('/pages');
             TestBed.flushEffects();
 
             const secondBreadcrumbs = storeWithRouter.breadcrumbs();
             expect(secondBreadcrumbs.length).toBe(3);
 
             // Navigate back to first page (should truncate)
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const truncatedBreadcrumbs = storeWithRouter.breadcrumbs();
@@ -730,7 +730,7 @@ describe('withBreadcrumbs Feature', () => {
 
         it('should maintain breadcrumb structure with Home after multiple navigations', () => {
             // First navigation
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             let breadcrumbs = storeWithRouter.breadcrumbs();
@@ -738,7 +738,7 @@ describe('withBreadcrumbs Feature', () => {
             expect(breadcrumbs.length).toBe(3);
 
             // Second navigation
-            routerMock.triggerNavigationEnd('/c/site-browser?mId=tool');
+            routerMock.triggerNavigationEnd('/c/site-browser');
             TestBed.flushEffects();
 
             breadcrumbs = storeWithRouter.breadcrumbs();
@@ -750,7 +750,7 @@ describe('withBreadcrumbs Feature', () => {
             // Verify that navigating updates the breadcrumbs in the store
             const initialCount = storeWithRouter.breadcrumbCount();
 
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const finalCount = storeWithRouter.breadcrumbCount();
@@ -762,7 +762,7 @@ describe('withBreadcrumbs Feature', () => {
 
         it('should handle content filter URLs by adding new breadcrumb', () => {
             // First set up initial breadcrumbs
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const initialBreadcrumbs = storeWithRouter.breadcrumbs();
@@ -784,17 +784,17 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should properly construct breadcrumb URLs with /dotAdmin/# prefix', () => {
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const breadcrumbs = storeWithRouter.breadcrumbs();
             const currentBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
 
-            expect(currentBreadcrumb.url).toBe('/dotAdmin/#/c/content?mId=cont');
+            expect(currentBreadcrumb.url).toBe('/dotAdmin/#/c/content');
         });
 
         it('should use labelParent from menu item for parent breadcrumb', () => {
-            routerMock.triggerNavigationEnd('/c/site-browser?mId=tool');
+            routerMock.triggerNavigationEnd('/c/site-browser');
             TestBed.flushEffects();
 
             const breadcrumbs = storeWithRouter.breadcrumbs();
@@ -807,7 +807,7 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should update breadcrumbs reactively when menuItems signal changes', () => {
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             let breadcrumbs = storeWithRouter.breadcrumbs();
@@ -844,7 +844,7 @@ describe('withBreadcrumbs Feature', () => {
             ]);
 
             // Navigate to the new page (different URL to avoid truncation)
-            routerMock.triggerNavigationEnd('/new-page?mId=new-');
+            routerMock.triggerNavigationEnd('/new-page');
             TestBed.flushEffects();
 
             breadcrumbs = storeWithRouter.breadcrumbs();
@@ -877,7 +877,7 @@ describe('withBreadcrumbs Feature', () => {
             expect(storeWithRouter.breadcrumbCount()).toBe(5);
 
             // Navigate back to the third item
-            routerMock.triggerNavigationEnd('/c/content?mId=cont');
+            routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();
 
             const breadcrumbs = storeWithRouter.breadcrumbs();

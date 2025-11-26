@@ -55,7 +55,9 @@ export class DotNavigationService {
                             }
 
                             // validation for bookmark links with missing or invalid mId query param SHOULD MBE REMOVED SOON
-                            const queryParamsValid = !!this.dotRouterService.queryParams['mId'];
+                            const queryParamsValid =
+                                !this.dotRouterService.queryParams['mId'] &&
+                                Object.keys(this.dotRouterService.queryParams).length === 0;
 
                             if (this.dotRouterService.currentPortlet.id) {
                                 this.#globalStore.setActiveMenu(
