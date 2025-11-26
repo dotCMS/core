@@ -403,7 +403,7 @@ describe('CollectionBuilder', () => {
             expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:draftContent +languageId:1 +live:false +conhost:test-site',
+                    query: '+contentType:draftContent +languageId:1 +(live:false AND working:true AND deleted:false) +conhost:test-site',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -509,7 +509,7 @@ describe('CollectionBuilder', () => {
             expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
+                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +(live:false AND working:true AND deleted:false) +conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
                     render: true,
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
