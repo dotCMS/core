@@ -35,7 +35,8 @@ export class DotNavigationService {
             if (this.dotRouterService.currentPortlet.id) {
                 this.#globalStore.setActiveMenu(
                     this.dotRouterService.currentPortlet.id,
-                    this.dotRouterService.queryParams['mId']
+                    this.dotRouterService.queryParams['mId'],
+                    true
                 );
             }
         });
@@ -53,10 +54,14 @@ export class DotNavigationService {
                                 this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
                             }
 
+                            // validation for bookmark links with missing or invalid mId query param SHOULD MBE REMOVED SOON
+                            const queryParamsValid = !!this.dotRouterService.queryParams['mId'];
+
                             if (this.dotRouterService.currentPortlet.id) {
                                 this.#globalStore.setActiveMenu(
                                     this.dotRouterService.currentPortlet.id,
-                                    this.dotRouterService.queryParams['mId']
+                                    this.dotRouterService.queryParams['mId'],
+                                    queryParamsValid
                                 );
                             }
                         }),

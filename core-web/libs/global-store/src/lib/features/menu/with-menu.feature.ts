@@ -268,7 +268,11 @@ export function withMenu() {
              * @param portletId - The ID of the menu item (portlet) to activate
              * @param shortParentMenuId - The first 4 characters of the parent menu ID
              */
-            const setActiveMenu = (portletId: string, shortParentMenuId: string) => {
+            const setActiveMenu = (
+                portletId: string,
+                shortParentMenuId: string,
+                bookmark?: boolean
+            ) => {
                 if (!portletId) {
                     return;
                 }
@@ -279,7 +283,7 @@ export function withMenu() {
                 const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (!portletId || !shortParentMenuId) {
+                if (bookmark) {
                     const item = Object.values(entityMap).find((item) => item.id === portletId);
                     if (item) {
                         compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
@@ -288,8 +292,7 @@ export function withMenu() {
                 }
 
                 if (item) {
-                    const collapsed = store.isNavigationCollapsed();
-                    activateMenuItemWithParent(compositeKey, collapsed ? null : item.parentMenuId);
+                    activateMenuItemWithParent(compositeKey, item.parentMenuId);
                 }
             };
 
