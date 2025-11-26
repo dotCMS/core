@@ -184,12 +184,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
                     const item = menu.find((item) => {
-                        const pathMatches =
-                            item.menuLink === urlPath &&
-                            item.parentMenuId.startsWith(shortMenuId || '');
+                        const pathMatches = item.menuLink === urlPath;
                         const parentMatches = shortMenuId
                             ? item.parentMenuId.startsWith(shortMenuId)
-                            : true;
+                            : false;
                         return pathMatches && parentMatches;
                     });
 
