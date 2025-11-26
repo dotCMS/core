@@ -313,7 +313,6 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
     clazz: typeof DotCMSClazzes.CUSTOM_FIELD;
     values: string;
     regexCheck?: string;
-    fieldVariables: (DotCMSContentTypeFieldVariable | DotCMSContentTypeFieldVariableRenderMode)[];
 }
 
 /**
