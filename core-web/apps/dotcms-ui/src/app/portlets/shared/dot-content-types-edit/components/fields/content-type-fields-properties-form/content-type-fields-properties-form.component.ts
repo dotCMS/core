@@ -87,9 +87,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                 ...value,
                 fieldVariables: [
                     {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: 'newRenderMode',
-                        value: value.newRenderMode === 'true'
+                        value: value.newRenderMode
                     }
                 ]
             };

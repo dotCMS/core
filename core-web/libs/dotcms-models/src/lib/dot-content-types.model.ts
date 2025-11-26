@@ -38,7 +38,16 @@ export const DotCMSClazzes = {
     TEXT: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     TEXTAREA: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
     TIME: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
-    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+    FIELD_VARIABLE: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+} as const;
+
+/**
+ * Constants defining the render modes available in DotCMS content type fields
+ */
+export const DotRenderModes = {
+    IFRAME: 'iframe',
+    COMPONENTS: 'components'
 } as const;
 
 /**
@@ -304,6 +313,7 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
     clazz: typeof DotCMSClazzes.CUSTOM_FIELD;
     values: string;
     regexCheck?: string;
+    fieldVariables: (DotCMSContentTypeFieldVariable | DotCMSContentTypeFieldVariableRenderMode)[];
 }
 
 /**
@@ -585,6 +595,12 @@ export interface DotCMSContentTypeFieldVariable {
     id: string;
     key: string;
     value: string;
+}
+
+export interface DotCMSContentTypeFieldVariableRenderMode extends DotCMSContentTypeFieldVariable {
+    clazz: typeof DotCMSClazzes.FIELD_VARIABLE;
+    key: 'newRenderMode';
+    value: (typeof DotRenderModes)[keyof typeof DotRenderModes];
 }
 
 export interface DotCMSAssetDialogFields {
