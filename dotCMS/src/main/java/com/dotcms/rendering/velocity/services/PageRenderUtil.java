@@ -606,13 +606,18 @@ public class PageRenderUtil implements Serializable {
         final long resolveLanguageId = this.resolveLanguageId();
         try {
             if(null != timeMachineDate && hasPublishOrExpireDateSet(contentletIdentifier)){
-                // if a time machine date is provided we need to return regardless of the result.
+                //if a time-machine date is provided, we test for a match
                 Logger.debug(this, "Trying to find contentlet with Time Machine date");
-                return contentletAPI.findContentletByIdentifier(
+                Contentlet contentletMatchingTimeMachineDate = contentletAPI.findContentletByIdentifier(
                         contentletIdentifier,
                         resolveLanguageId,
                         variantName, timeMachineDate, user, mode.respectAnonPerms
                 );
+                if(null != contentletMatchingTimeMachineDate){
+                    return contentletMatchingTimeMachineDate;
+                }
+                //Now if no contentlet was found using time-machine Date, we'll try to find the latest live contentlet
+                return contentletAPI.findContentletByIdentifier(contentletIdentifier,true, resolveLanguageId, user, mode.respectAnonPerms);
             }
             //If no time machine date is provided, we will return the contentlet based on the mode.showLive
             return contentletAPI.findContentletByIdentifier(
@@ -698,6 +703,12 @@ public class PageRenderUtil implements Serializable {
                         true);
                 if(contentlet.isPresent()) {
                      return contentlet.get();
+                }
+                final Optional<Contentlet> live = contentletAPI.findContentletByIdentifierOrFallback(
+                        contentletIdentifier, true, languageId,
+                        user, true);
+                if(live.isPresent()){
+                    return live.get();
                 }
             }
             // No need to apply the Time Machine date, just return the contentlet based on the mode.showLive
