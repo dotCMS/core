@@ -150,11 +150,16 @@ describe('DotNavItemComponent', () => {
                 tabDescription: 'Description',
                 tabIcon: 'icon',
                 tabName: 'Name',
-                url: 'url'
+                url: 'url',
+                label: 'Name'
             }
         ]);
 
+        // Set the menu to isOpen so the nav item shows as active
+        componentHost.menu.isOpen = true;
+
         fixtureHost.detectChanges();
+
         navItem = de.query(By.css('[data-testid="nav-item"]'));
         subNav = de.query(By.css('dot-sub-nav'));
     });
@@ -174,7 +179,8 @@ describe('DotNavItemComponent', () => {
         const arrow: DebugElement = de.query(By.css('.dot-nav__item-arrow'));
 
         expect(icon.componentInstance.icon).toBe('icon');
-        expect(arrow.componentInstance.name).toBe('arrow_drop_up');
+        // When menu.isOpen = true, arrow should be arrow_drop_down (see beforeEach)
+        expect(arrow.componentInstance.name).toBe('arrow_drop_down');
     });
 
     it('should avoid label_important icon', () => {
@@ -314,7 +320,7 @@ describe('DotNavItemComponent', () => {
             fixtureHost.detectChanges();
 
             expect(subNav.styles.cssText).toEqual(
-                'height: 0px; overflow: hidden; position: absolute; top: 5000px; bottom: 0px;'
+                'position: absolute; top: 5000px; height: 0px; overflow: hidden; bottom: 0px;'
             );
         });
 
