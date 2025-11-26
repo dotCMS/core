@@ -8,7 +8,8 @@ import {
     viewChild,
     forwardRef,
     computed,
-    NgZone, OnInit
+    NgZone,
+    OnInit
 } from '@angular/core';
 import {
     ControlContainer,
@@ -24,9 +25,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 
-
 @Component({
-    selector: 'dot-wc-field',
+    selector: 'dot-native-field',
     template: '<div #container></div>',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -38,13 +38,13 @@ import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotWCCompoment),
+            useExisting: forwardRef(() => NativeFieldComponent),
             multi: true
         }
     ],
     imports: [ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
-export class DotWCCompoment implements AfterViewInit, OnInit {
+export class NativeFieldComponent implements AfterViewInit, OnInit {
     /**
      * The field to render.
      */
@@ -58,10 +58,10 @@ export class DotWCCompoment implements AfterViewInit, OnInit {
 
     #formBridge: FormBridge;
 
-     /**
+    /**
      * The zone to run the code in.
      */
-     #zone = inject(NgZone);
+    #zone = inject(NgZone);
 
     /**
      * The control container to get the form.
@@ -75,7 +75,6 @@ export class DotWCCompoment implements AfterViewInit, OnInit {
     #webComponentInstance: HTMLElement | null = null;
 
     ngOnInit() {
-        console.log('ngOnInit');
         this.initializeFormBridge();
     }
 
@@ -85,7 +84,6 @@ export class DotWCCompoment implements AfterViewInit, OnInit {
 
     async loadCode() {
         const jsCode = this.$context();
-        console.log('jsCode', jsCode);
         this.updateContent(jsCode);
     }
 
@@ -96,19 +94,19 @@ export class DotWCCompoment implements AfterViewInit, OnInit {
         hostElement.innerHTML = '';
 
         if (!htmlString) {
-          return;
+            return;
         }
 
         // 2. Regex para encontrar todas las etiquetas <script>
         // g = global, m = multilínea, i = insensible a mayúsculas
-        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gmi;
+        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gim;
 
         let scriptContents = '';
         let match;
 
         // 3. Extraemos el contenido de TODOS los scripts y los concatenamos
         while ((match = scriptRegex.exec(htmlString))) {
-          scriptContents += match[1] + '\n'; // Agregamos el contenido del script
+            scriptContents += match[1] + '\n'; // Agregamos el contenido del script
         }
 
         // 4. Obtenemos el HTML "limpio" (sin las etiquetas <script>)
@@ -121,12 +119,12 @@ export class DotWCCompoment implements AfterViewInit, OnInit {
         // 6. Creamos una nueva etiqueta <script> y la ejecutamos
         // Esta es la única forma de que el navegador ejecute JS insertado dinámicamente
         if (scriptContents) {
-          const scriptElement = document.createElement('script');
-          scriptElement.textContent = scriptContents;
-          scriptElement.type = 'module';
-          hostElement.appendChild(scriptElement);
+            const scriptElement = document.createElement('script');
+            scriptElement.textContent = scriptContents;
+            scriptElement.type = 'module';
+            hostElement.appendChild(scriptElement);
         }
-      }
+    }
 
     async loadAndCreateComponent() {
         const jsCode = this.$context();
@@ -180,8 +178,6 @@ export class DotWCCompoment implements AfterViewInit, OnInit {
             zone: this.#zone
         });
 
-
         window['DotCustomFieldApi'] = this.#formBridge;
     }
-
 }

@@ -7,8 +7,8 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { BridgeFieldComponent } from './components/bridge-field/bridge-field.components';
-import { DotWCCompoment } from './components/wc-field/wc-field.compoment';
+import { IframeFieldComponent } from './components/iframe-field/iframe-field.components';
+import { NativeFieldComponent } from './components/native-field/native-field.compoment';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -31,8 +31,8 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
         DotCardFieldLabelComponent,
-        BridgeFieldComponent,
-        DotWCCompoment
+        IframeFieldComponent,
+        NativeFieldComponent
     ],
     templateUrl: './dot-edit-content-custom-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -50,13 +50,16 @@ export class DotEditContentCustomFieldComponent extends BaseWrapperField {
      * The contentlet to render the field for.
      */
     $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
-
-    $isWC = computed(() => {
+    /**
+     * The render mode to use.
+     */
+    $renderMode = computed(() => {
         const field = this.$field();
-        if (!field) return false;
+        if (!field) return 'iframe';
 
-        console.log('field.variable', field.variable);
-
-        return field.variable === 'pageTitleCount' || field.variable === 'metaDescriptionCount';
+        const newRenderMode = field.fieldVariables?.find(
+            (variable) => variable.key === 'newRenderMode'
+        )?.value;
+        return newRenderMode || 'iframe';
     });
 }

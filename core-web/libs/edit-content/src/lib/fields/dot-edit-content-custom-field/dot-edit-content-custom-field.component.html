@@ -9,14 +9,22 @@
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        @if ($isWC()) {
-            <dot-wc-field [field]="field" [contentlet]="$contentlet()" />
-        } @else {
-            <dot-bridge-field
-                [field]="field"
-                [showLabel]="showLabel"
-                [contentType]="$contentType()"
-                [contentlet]="$contentlet()" />
+        @switch ($renderMode()) {
+            @case ('iframe') {
+                <dot-iframe-field
+                    [field]="field"
+                    [contentType]="$contentType()"
+                    [contentlet]="$contentlet()" />
+            }
+            @case ('components') {
+                <dot-native-field [field]="field" [contentlet]="$contentlet()" />
+            }
+            @default {
+                <dot-iframe-field
+                    [field]="field"
+                    [contentType]="$contentType()"
+                    [contentlet]="$contentlet()" />
+            }
         }
     </dot-card-field-content>
     @if (field.hint) {

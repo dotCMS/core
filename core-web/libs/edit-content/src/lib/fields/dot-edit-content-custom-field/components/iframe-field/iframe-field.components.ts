@@ -32,16 +32,10 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
  * It uses an iframe to render the custom field and provides a form bridge to communicate with the custom field.
  */
 @Component({
-    selector: 'dot-bridge-field',
-    imports: [
-        SafeUrlPipe,
-        ButtonModule,
-        InputTextModule,
-        DialogModule,
-        ReactiveFormsModule
-    ],
-    templateUrl: './bridge-field.component.html',
-    styleUrls: ['./bridge-field.component.scss'],
+    selector: 'dot-iframe-field',
+    imports: [SafeUrlPipe, ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule],
+    templateUrl: './iframe-field.component.html',
+    styleUrls: ['./iframe-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
@@ -53,7 +47,7 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
         '[class.no-label]': '!$showLabel()'
     }
 })
-export class BridgeFieldComponent implements OnDestroy {
+export class IframeFieldComponent implements OnDestroy {
     /**
      * The field to render.
      */
