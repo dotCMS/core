@@ -1,8 +1,7 @@
 import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
-import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ElementRef, Injectable, NgZone, inject } from '@angular/core';
+import { ElementRef, Injectable, NgZone, inject, DOCUMENT } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 

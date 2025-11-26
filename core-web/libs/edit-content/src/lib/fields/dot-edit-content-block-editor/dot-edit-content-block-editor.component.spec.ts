@@ -2,8 +2,9 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -97,6 +98,11 @@ describe('DotEditContentBlockEditorComponent', () => {
 
         const blockEditorElement = spectator.query('dot-block-editor');
         expect(blockEditorElement).toBeTruthy();
-        expect(blockEditorElement.getAttribute('ng-reflect-language-id')).toBe('2');
+
+        // Access the component instance to verify the languageId property
+        const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
+        const blockEditorComponent =
+            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        expect(blockEditorComponent.languageId).toBe(2);
     });
 });

@@ -28,6 +28,11 @@
         padding: 0 $spacing-3;
         text-transform: capitalize;
 
+        &.p-confirm-dialog-accept,
+        &.p-confirm-dialog-reject {
+            gap: 0;
+        }
+
         &.p-button-lg,
         .p-button-lg & {
             @extend #large;

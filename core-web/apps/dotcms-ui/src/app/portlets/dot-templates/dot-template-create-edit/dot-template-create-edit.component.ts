@@ -18,6 +18,7 @@ import { takeUntil, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder/dot-template-builder.component';
@@ -52,6 +53,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotTemplateStore);
+    readonly #globalStore = inject(GlobalStore);
 
     vm$: Observable<VM>;
 
@@ -72,7 +74,18 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
 
                 if (!template.identifier) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: this.dotMessageService.get('templates.create.title'),
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/create`
+                    });
                     this.createTemplate();
+                } else if (template.title) {
+                    this.#globalStore.addNewBreadcrumb({
+                        label: template.title,
+                        target: '_self',
+                        url: `/dotAdmin/#/templates/edit/${template.identifier}`
+                    });
                 }
             })
         );

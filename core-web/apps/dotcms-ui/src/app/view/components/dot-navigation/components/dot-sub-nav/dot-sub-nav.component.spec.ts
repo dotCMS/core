@@ -1,10 +1,14 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 
@@ -30,7 +34,16 @@ describe('DotSubNavComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule, BrowserAnimationsModule, DotSubNavComponent]
+            imports: [RouterTestingModule, BrowserAnimationsModule, DotSubNavComponent],
+            providers: [
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
         }).compileComponents();
     }));
 
@@ -66,7 +79,7 @@ describe('DotSubNavComponent', () => {
         fixture.detectChanges();
         const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
         expect(groupName).not.toBeNull();
-        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
     });
 
     it('should have group name element with proper styling when collapsed', () => {
@@ -74,7 +87,7 @@ describe('DotSubNavComponent', () => {
         fixture.detectChanges();
         const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
         expect(groupName).not.toBeNull();
-        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
         // Verify it's a span element (not a link) so it won't navigate
         expect(groupName.nativeElement.tagName.toLowerCase()).toBe('span');
     });
@@ -105,7 +118,7 @@ describe('DotSubNavComponent', () => {
         links.forEach((link: DebugElement, index) => {
             expect(link.nativeElement.classList.contains('dot-nav-sub__link')).toBe(true);
             expect(link.nativeElement.textContent.trim()).toBe(`Label ${index + 1}`);
-            expect(link.properties.href).toContain(`/url/link${index + 1}`);
+            expect(link.properties.href).toContain(`/url/${index === 0 ? 'one' : 'two'}`);
 
             if (index === 1) {
                 expect(link.nativeElement.classList.contains('dot-nav-sub__link--active')).toBe(
@@ -155,7 +168,7 @@ describe('DotSubNavComponent', () => {
                 it('should show group name when collapsed', () => {
                     const groupName = de.query(By.css('.dot-nav-sub__group-name'));
                     expect(groupName).not.toBeNull();
-                    expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+                    expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
                 });
             });
 

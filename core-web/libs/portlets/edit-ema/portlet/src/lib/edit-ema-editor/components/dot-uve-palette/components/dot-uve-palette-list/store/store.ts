@@ -89,21 +89,7 @@ export const DotPaletteListStore = signalStore(
             $currentSort: computed(() => ({
                 orderby: params.orderby(),
                 direction: params.direction()
-            })),
-            $emptyStateMessage: computed(() => {
-                const currentView = store.currentView();
-                const listType = params.listType();
-
-                if (currentView === DotUVEPaletteListView.CONTENTLETS) {
-                    return 'uve.palette.empty.contentlets.message';
-                }
-
-                if (listType === DotUVEPaletteListTypes.FAVORITES) {
-                    return 'uve.palette.empty.favorites.message';
-                }
-
-                return 'uve.palette.empty.content-types.message';
-            })
+            }))
         };
     }),
     withMethods((store) => {

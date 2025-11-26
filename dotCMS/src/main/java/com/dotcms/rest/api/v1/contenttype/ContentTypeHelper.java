@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -13,8 +15,10 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.DetailPageTransformerImpl;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -29,18 +33,34 @@ import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappi
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.web.VelocityWebUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * Contentlet helper.
@@ -433,40 +453,103 @@ public class ContentTypeHelper implements Serializable {
      */
     public Map<String, Object> contentTypeToMap(final ContentType contentType, final User user)
             throws DotDataException, DotSecurityException {
-        return contentTypeToMap(contentType, null, user);
+        return contentTypeToMap(contentType, null, false, user);
     }
 
     /**
      * Converts a ContentType object to a Map representation for use as a response.
      *
-     * @param contentType                     The ContentType object to convert.
-     * @param contentTypeInternationalization The ContentTypeInternationalization object.
-     * @param user                            The user making the request.
-     * @return The converted ContentType object as a Map.
-     * @throws DotDataException     If an error occurs while accessing data.
+     * @param contentType                     The {@link ContentType} object to convert.
+     * @param contentTypeInternationalization The {@link ContentTypeInternationalization} object
+     *                                        with the parameters to internationalize the Content
+     *                                        Type's fields.
+     * @param renderCustomFields              Defaults to {@code false}. If Custom Fields must
+     *                                        include an attribute with their Velocity code parsed,
+     *                                        set this to {@code true}.
+     * @param user                            The {@link User} requesting this information.
+     *
+     * @return The Map with properties from the specified Content Type.
+     *
+     * @throws DotDataException     An error occurred while interacting with the database.
      * @throws DotSecurityException If there are security restrictions preventing the conversion.
      */
     public Map<String, Object> contentTypeToMap(final ContentType contentType,
-            final ContentTypeInternationalization contentTypeInternationalization, final User user)
+                                                final ContentTypeInternationalization contentTypeInternationalization,
+                                                final boolean renderCustomFields, final User user)
             throws DotDataException, DotSecurityException {
-
         // Transform the content type to a map
         var contentTypeMap = new JsonContentTypeTransformer(
                 contentType, contentTypeInternationalization
         ).mapObject();
-
+        if (renderCustomFields) {
+            this.includeRenderedCustomFields(contentTypeMap);
+        }
         try {
             // Add the detail page path to the map
             final var pageDetailURIOptional = new DetailPageTransformerImpl(
                     contentType, user).idToUri();
             pageDetailURIOptional.ifPresent(s -> contentTypeMap.put(DETAIL_PAGE_PATH, s));
-        } catch (DoesNotExistException e) {
+        } catch (final DoesNotExistException e) {
             // The idToUri method throws a DoesNotExistException and logs a warning if the detail
             // page is not found.
             contentTypeMap.remove(DETAIL_PAGE);
         }
-
         return contentTypeMap;
+    }
+
+    /**
+     * Inspects the fields inside a Content Type, and parses the Velocity code in every single
+     * Custom Field. When it does that, it adds a new attribute named {@code 'rendered'} with the
+     * generated HTML/JavaScript code.
+     *
+     * @param contentTypeMap The {@link Map} containing all the Content Type's properties, including
+     *                       its fields.
+     */
+    @SuppressWarnings("unchecked")
+    private void includeRenderedCustomFields(final Map<String, Object> contentTypeMap) {
+        final List<Map<String, Object>> fieldsMap = (List<Map<String, Object>>) contentTypeMap.get("fields");
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        fieldsMap.forEach(field -> {
+            if (field.get("clazz").equals(ImmutableCustomField.class.getName())
+                    && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.IFRAME)) {
+                try {
+                    final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
+                    final String textValue = (String) field.getOrDefault("values", BLANK);
+                    final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
+                    field.put("rendered", htmlString);
+                } catch (final Exception e) {
+                    Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
+                            "'%s': %s", field.get("variable"), ExceptionUtil.getErrorMessage(e)));
+                }
+            }
+        });
+    }
+
+    /**
+     * Tries to get the render mode for the specified Custom Field. Such a mode is set via Field
+     * Variable. If it exists, then the specified mode is returned.
+     *
+     * @param fieldData A map with all the properties and attributes of the Custom Field.
+     *
+     * @return The render mode for the specified Custom Field, as specified by the
+     * {@link CustomField.RenderMode} enum.
+     */
+    @SuppressWarnings("unchecked")
+    private CustomField.RenderMode getCustomFieldRenderMode(final Map<String, Object> fieldData) {
+        final List<Map<String, Object>> fieldVariables =
+                (List<Map<String, Object>>) fieldData.get(JsonFieldTransformer.FIELDS_VARIABLES_PROPERTY_NAME);
+        if (!fieldVariables.isEmpty()) {
+            final Optional<Map<String, Object>> renderMode = fieldVariables.stream()
+                    .filter(fieldVariable -> fieldVariable.get("key").equals("newRenderMode"))
+                    .findFirst();
+            if (renderMode.isPresent()) {
+                return Try.of(
+                        () -> CustomField.RenderMode.valueOf(renderMode.get().get("value").toString().trim().toUpperCase()))
+                        .getOrElse(CustomField.RenderMode.COMPONENT);
+            }
+        }
+        return CustomField.RenderMode.COMPONENT;
     }
 
     /**
@@ -780,71 +863,6 @@ public class ContentTypeHelper implements Serializable {
                         .map(s -> s.trim().toLowerCase())
                         .filter(s -> !s.isEmpty())
                         .collect(Collectors.toList());
-    }
-
-    /**
-     * Sorts a list of Content Types based on the given orderBy parameter. Sorting is case-insensitive for string fields.
-     * <p>
-     * It will order for a valid property of the {@link ContentType} class such as "name",
-     * "variable", "description", etc. If the field is not found, the Content Types are sorted by "name".
-     * <p>
-     * By default, the Content Types are sorted ascending, you can override this by adding a sort
-     * type suffix to any property. Supports ':' and 'space-separated' order syntax. e.g.
-     * - "name:asc"
-     * - "variable desc"
-     * </p>
-     * @param contentTypes The list of Content Types to sort.
-     * @param orderBy The field and direction to sort the Content Types by.
-     * @return The sorted list of Content Types.
-     */
-    public List<ContentType> sortContentTypes(final Collection<ContentType> contentTypes,
-            final String orderBy) {
-
-        if (contentTypes == null || contentTypes.isEmpty() || orderBy == null || orderBy.isBlank()) {
-            return contentTypes == null ? Collections.emptyList() : new ArrayList<>(contentTypes);
-        }
-
-        final String[] parts = orderBy.split("[:\\s]+");
-        final String field = parts[0].trim().toLowerCase(Locale.ROOT);
-        final boolean ascending = parts.length < 2 || !"desc".equalsIgnoreCase(parts[1].trim());
-
-        final Function<ContentType, Comparable> keyExtractor =
-                FIELD_COMPARABLE_MAP.getOrDefault(field, ct -> lower(ct.name()));
-
-        final Comparator<ContentType> comparator = Comparator.comparing(
-                keyExtractor,
-                Comparator.nullsLast(Comparator.naturalOrder())
-        );
-
-        return contentTypes.stream()
-                .sorted(ascending ? comparator : comparator.reversed())
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Map of field names to their corresponding Comparable function.
-     */
-    private final Map<String, Function<ContentType, Comparable>> FIELD_COMPARABLE_MAP = createFieldComparableMap();
-
-    /**
-     * Creates a map of field names to their corresponding Comparable function.
-     * @return Map of field names to their corresponding Comparable function. (when needed you can add more map entries)
-     */
-    private Map<String, Function<ContentType, Comparable>> createFieldComparableMap() {
-        return Map.ofEntries(
-                Map.entry("name", c -> lower(c.name())),
-                Map.entry("variable", c -> lower(c.variable())),
-                Map.entry("velocity_var_name", c -> lower(c.variable()))
-        );
-    }
-
-    /**
-     * Converts a string to lowercase using a consistent locale.
-     * @param field field name of the class attributes in the {@link ContentType} class.
-     * @return The lowercase string.
-     */
-    private static String lower(final String field) {
-        return field != null ? field.toLowerCase(Locale.ROOT) : null;
     }
 
 } // E:O:F:ContentTypeHelper.

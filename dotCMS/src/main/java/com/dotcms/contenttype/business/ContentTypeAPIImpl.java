@@ -57,6 +57,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -875,11 +876,49 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                   orderBy, remainingLimit, offset, includedIds);
 
           returnTypes.addAll(searchResults);
+
+          // Sort the final merged results to maintain consistent ordering
+          // when ensure parameter is used, we need to re-sort the combined list
+          if (!returnTypes.isEmpty() && orderBy != null && !orderBy.trim().isEmpty()) {
+              final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+              final String orderByForComparator = ((ContentTypeFactoryImpl) this.contentTypeFactory)
+                      .extractOrderByForComparator(orderBy, sanitizedOrderBy.isEmpty() ? "mod_date" : sanitizedOrderBy);
+              returnTypes.sort(((ContentTypeFactoryImpl) this.contentTypeFactory)
+                      .createContentTypeComparator(orderByForComparator));
+          }
+
           return returnTypes;
 
       } catch (final DotSecurityException e) {
           Logger.error(this,
                   String.format("An error occurred when searching for Content Types: %s",
+                          ExceptionUtil.getErrorMessage(e)));
+          throw new DotStateException(e);
+      }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @WrapInTransaction
+  public List<ContentType> searchMultipleTypes(final String condition,
+                                                final java.util.Collection<BaseContentType> types,
+                                                final String orderBy, final int limit, final int offset,
+                                                final String siteId, final List<String> requestedContentTypes)
+          throws DotDataException {
+
+      // Delegate directly to the factory method which performs efficient UNION query
+      final List<ContentType> allResults = this.contentTypeFactory.searchMultipleTypes(
+              condition, types, orderBy, limit, offset, siteId, requestedContentTypes);
+
+      // Filter by permissions
+      try {
+          return this.perms.filterCollection(allResults, PermissionAPI.PERMISSION_READ,
+                  this.respectFrontendRoles, this.user);
+      } catch (final DotSecurityException e) {
+          Logger.error(this,
+                  String.format("An error occurred when filtering Content Types by permissions: %s",
                           ExceptionUtil.getErrorMessage(e)));
           throw new DotStateException(e);
       }

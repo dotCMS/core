@@ -25,11 +25,12 @@ import { IBundle } from '../services/bundle-service';
             width="700"
             header="Add to Bundle"
             appendTo="body">
-            <p-message
-                *ngIf="errorMessage"
-                [text]="errorMessage"
-                style="margin-bottom: 16px; display: block;"
-                severity="error"></p-message>
+            @if (errorMessage) {
+                <p-message
+                    [text]="errorMessage"
+                    style="margin-bottom: 16px; display: block;"
+                    severity="error"></p-message>
+            }
             <cw-input-dropdown
                 (onDropDownChange)="setSelectedBundle($event)"
                 (keyup.enter)="addToBundle.emit(selectedBundle)"

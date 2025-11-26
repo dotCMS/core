@@ -24,6 +24,7 @@ import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -43,6 +44,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -7631,6 +7633,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.validateFileAsset(contentlet, contentIdentifier, contentType);
         }
 
+        if(contentlet.isDotAsset()){
+            this.validateDotAsset(contentlet);
+        }
+
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
@@ -8264,7 +8270,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    final static Pattern dnsPattern = Pattern.compile(dnsRegEx);
+    /**
+     * Simple dotAssetValidation
+     * @param contentlet
+     * @throws DotAssetValidationException
+     */
+    private void validateDotAsset(final Contentlet contentlet) throws DotAssetValidationException {
+        try {
+            final FolderAPI folderAPI = APILocator.getFolderAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Folder folder = UtilMethods.isSet(contentlet.getFolder()) ?
+                    folderAPI.find(contentlet.getFolder(),
+                            systemUser, false) :
+                    folderAPI.findSystemFolder();
+            final String fileName =
+                    contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR) != null
+                            ? contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName()
+                            : BLANK;
+            if (UtilMethods.isNotSet(fileName)) {
+                throw new DotAssetValidationException(
+                        "Unable to get The Asset From the Given dotAsset Contentlet");
+            }
+            if (!folderAPI.matchFilter(folder, fileName)) {
+                final String fileExtension = UtilMethods.getFileExtension(fileName);
+                throw new DotAssetValidationException(String.format(
+                        "The target folder %s does not accept the given file extension %s",
+                        folder.getPath(), fileExtension));
+            }
+        } catch (Exception e) {
+            if (e instanceof DotAssetValidationException) {
+                throw (DotAssetValidationException) e;
+            }
+            Logger.warn(this, e.getMessage());
+        }
+    }
+
+    static final Pattern dnsPattern = Pattern.compile(dnsRegEx);
 
     /**
      * Host validation method shared by HostResource and ContentletWebAPI
@@ -8535,13 +8576,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     //grouping by id to avoid duplicate contents due to different languages
-                    List<Contentlet> contentsInRelationshipSameLanguage = new ArrayList<>(contentsInRelationship.stream()
-                            .collect(Collectors.toMap(
-                                    Contentlet::getIdentifier,
-                                    Function.identity(),
-                                    (existing, replacement) -> existing
-                            ))
-                            .values());
+                    List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
 
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
@@ -8599,8 +8634,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final DotContentletValidationException.Builder builder, final Relationship relationship,
             final List<Contentlet> contentsInRelationship) {
 
+        List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
         //Trying to relate more than one piece of content
-        if (contentsInRelationship.size() > 1) {
+        if (contentsInRelationshipSameLanguage.size() > 1) {
             Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One", 
                     contentlet.getIdentifier(), relationship.getRelationTypeValue()));
             builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
@@ -8627,6 +8663,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return false;
         }
         return true;
+    }
+
+    private List<Contentlet> groupContentletsByLanguage(List<Contentlet> contentsInRelationship) {
+
+    return new ArrayList<>(contentsInRelationship.stream()
+            .collect(Collectors.toMap(
+                    Contentlet::getIdentifier,
+                    Function.identity(),
+                    (existing, replacement) -> existing
+            ))
+            .values());
     }
 
     @Override
@@ -9299,7 +9346,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     multitree.getRelationType(),
                                     multitree.getTreeOrder(),
                                     multitree.getPersonalization(),
-                                    multitree.getVariantId()));
+                                    multitree.getVariantId(),
+                                    multitree.getStyleProperties()));
                 }
             }
         }

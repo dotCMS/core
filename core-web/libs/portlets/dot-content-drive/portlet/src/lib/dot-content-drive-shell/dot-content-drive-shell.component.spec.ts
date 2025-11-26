@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 
 import {
     DotContentSearchService,
@@ -303,7 +304,14 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+            expect(dialog).toBeTruthy();
+
+            // Access the PrimeNG Dialog component instance to verify visible property
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.visible).toBe(true);
         });
 
         it('should not have a dialog when dialog is not set', () => {
@@ -311,7 +319,14 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
+            expect(dialog).toBeTruthy();
+
+            // Access the PrimeNG Dialog component instance to verify visible property
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.visible).toBe(false);
         });
 
         it('should show dialog-folder component when folder dialog type is set', () => {
@@ -651,6 +666,46 @@ describe('DotContentDriveShellComponent', () => {
                 severity: 'error',
                 summary: expect.any(String),
                 detail: expect.any(String),
+                life: ERROR_MESSAGE_LIFE
+            });
+        });
+
+        it('should show error message on upload failure with errors', () => {
+            const error = {
+                error: {
+                    errors: [{ message: 'Upload failed' }]
+                }
+            };
+            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
+            store.selectedNode.mockReturnValue({
+                ...ALL_FOLDER,
+                data: {
+                    hostname: MOCK_SITES[0].hostname,
+                    path: '',
+                    type: 'folder',
+                    id: MOCK_SITES[0].identifier
+                }
+            });
+            const addSpy = jest.spyOn(messageService, 'add');
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            Object.defineProperty(fileInput, 'files', {
+                value: [mockFile],
+                writable: false
+            });
+
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(addSpy).toHaveBeenCalledTimes(2);
+            expect(addSpy).toHaveBeenNthCalledWith(1, {
+                severity: 'info',
+                summary: 'content-drive.file-upload-in-progress',
+                detail: 'content-drive.file-upload-in-progress-detail'
+            });
+            expect(addSpy).toHaveBeenNthCalledWith(2, {
+                severity: 'error',
+                summary: 'content-drive.add-dotasset-error',
+                detail: 'content-drive.add-dotasset-error-detail',
                 life: ERROR_MESSAGE_LIFE
             });
         });

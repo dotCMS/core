@@ -16,14 +16,13 @@ import {
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import {
+    DotEventsService,
     DotMessageService,
-    DotThemesService,
-    PaginatorService,
     DotSystemConfigService,
-    DotEventsService
+    DotThemesService,
+    PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotSite } from '@dotcms/dotcms-models';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 
@@ -295,15 +294,20 @@ describe('DotThemeSelectorDropdownComponent', () => {
             });
 
             it('should system to true', () => {
-                const siteSelector = spectator.query('[data-testId="siteSelector"]');
-                expect(siteSelector.getAttribute('ng-reflect-system')).toBe('true');
+                const siteSelectorDebugElement = spectator.debugElement.query(
+                    (el) => el.nativeElement?.getAttribute('data-testId') === 'siteSelector'
+                );
+                const siteSelectorComponent =
+                    siteSelectorDebugElement?.componentInstance as MockDotSiteSelectorComponent;
+                expect(siteSelectorComponent?.system).toBe(true);
             });
 
             it('should update themes, totalRecords and call setExtraParams when site selector change', fakeAsync(() => {
                 component.siteChange({
                     identifier: '123',
-                    hostname: 'test'
-                } as DotSite);
+                    hostname: 'test',
+                    archived: false
+                } as Site);
                 tick();
                 expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123'); // Call from dropdown open (onShow)
                 expect(paginationService.setExtraParams).toHaveBeenCalledTimes(2); // Called twice: once when dropdown opens (onShow) and once on siteChange

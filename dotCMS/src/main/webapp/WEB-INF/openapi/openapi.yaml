@@ -3748,42 +3748,6 @@ paths:
       summary: Download asset file
       tags:
       - Web Assets
-  /v1/assets/drive:
-    post:
-      description: Search and browse assets using drive-like functionality with filtering
-        and navigation capabilities
-      operationId: drive
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DriveRequestForm"
-        description: Drive search request parameters
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                description: Drive search response containing assets and navigation
-                  data
-          description: Drive search results retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid request parameters
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized access
-        "404":
-          content:
-            application/json: {}
-          description: Not found. e.g Site/folder not found
-      summary: Search assets with drive functionality
-      tags:
-      - Web Assets
   /v1/assets/folders:
     post:
       description: Create a new folder at the specified path with the provided configuration
@@ -6757,14 +6721,14 @@ paths:
       tags:
       - Content Type
     get:
-      description: Returns one content type based on the provided ID or Velocity variable
+      description: Returns a Content Type based on the provided ID or Velocity variable
         name.
       operationId: getContentTypeIdVar
       parameters:
       - description: |-
-          The ID or Velocity variable name of the content type to retrieve.
+          The ID or Velocity variable name of the Content Type to retrieve.
 
-          Example: `htmlpageasset` (Default page content type)
+          Variable name example: `htmlpageasset` (Default page Content Type)
         in: path
         name: idOrVar
         required: true
@@ -6820,14 +6784,14 @@ paths:
                   perPage: 0
                   totalEntries: 0
                 permissions: []
-          description: Content type retrieved successfully
+          description: Content Type retrieved successfully
         "403":
           description: Forbidden
         "404":
           description: Not Found
         "500":
           description: Internal Server Error
-      summary: Retrieves a single content type
+      summary: Retrieves a single Content Type
       tags:
       - Content Type
     put:
@@ -7070,6 +7034,82 @@ paths:
       summary: Retrieves a list of content types for a page
       tags:
       - getPagesContentTypes
+      - Content Type
+  /v1/contenttype/render/id/{idOrVar}:
+    get:
+      description: "Returns a Content Type based on the provided ID or Velocity variable\
+        \ name. Additionally, the Velocity code in all of its Custom Fields will be\
+        \ parsed."
+      operationId: getContentTypeIdVar_1
+      parameters:
+      - description: |-
+          The ID or Velocity variable name of the Content Type to retrieve.
+
+          Variable name example: `htmlpageasset` (Default page Content Type)
+        in: path
+        name: idOrVar
+        required: true
+        schema:
+          type: string
+      - description: The language ID for localization.
+        in: query
+        name: languageId
+        schema:
+          type: integer
+          format: int64
+      - description: Determines whether live versions of language variables are used
+          in the returned object.
+        in: query
+        name: live
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fields: []
+                  fixed: false
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  systemActionMappings: {}
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content Type retrieved successfully
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a single Content Type with their rendered Custom Fields
+      tags:
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:
@@ -18093,7 +18133,11 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
-      operationId: moveFields
+      description: "Moves or adds a field to a Content Type. This endpoint is called\
+        \ (1) when dragging-and-dropping a new field to a Content Type, (2) when updating\
+        \ an existing field, or (3) when moving such a field around in the Content\
+        \ Type's layout."
+      operationId: moveOrAddContentTypeField
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -18106,11 +18150,119 @@ paths:
             schema:
               $ref: "#/components/schemas/MoveFieldsForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - divider:
+                    clazz: com.dotcms.contenttype.model.field.ImmutableRowField
+                    contentTypeId: 3b70f386cf65117a675f284eea928415
+                    dataType: SYSTEM
+                    fieldContentTypeProperties: []
+                    fieldType: Row
+                    fieldTypeLabel: Row
+                    fieldVariables: []
+                    fixed: false
+                    forceIncludeInApi: false
+                    iDate: 1763758144000
+                    id: 1b950209ec7b1a5e6901f7fe277e0a6a
+                    indexed: false
+                    listed: false
+                    modDate: 1763758164000
+                    name: fields-0
+                    readOnly: false
+                    required: false
+                    searchable: false
+                    sortOrder: 0
+                    unique: false
+                    variable: fields0
+                  columns:
+                  - columnDivider:
+                      clazz: com.dotcms.contenttype.model.field.ImmutableColumnField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: SYSTEM
+                      fieldContentTypeProperties: []
+                      fieldType: Column
+                      fieldTypeLabel: Column
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758144000
+                      id: 6515a7a25deb3b99711398c14bfe3062
+                      indexed: false
+                      listed: false
+                      modDate: 1763758164000
+                      name: fields-1
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 1
+                      unique: false
+                      variable: fields1
+                    fields:
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758164000
+                      id: ba34f109c9e86793384387e2619267ea
+                      indexed: false
+                      listed: false
+                      modDate: 1763761740000
+                      name: title
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 2
+                      unique: false
+                      variable: title
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables:
+                      - clazz: com.dotcms.contenttype.model.field.ImmutableFieldVariable
+                        fieldId: e39533a92ee05d8c083f7e6a1a5ee5e5
+                        id: 7844f04c-0481-4b0d-aa22-95e1a097bb30
+                        key: My Field Var
+                        value: My value
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1764008792000
+                      id: e39533a92ee05d8c083f7e6a1a5ee5e5
+                      indexed: true
+                      listed: true
+                      modDate: 1764018597000
+                      name: Description
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 7
+                      unique: false
+                      variable: description
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Field was added or updated successfully
+        "400":
+          description: Invalid JSON body
+        "401":
+          description: User not specified
+        "404":
+          description: Content Type ID not found
+        "415":
+          description: Body must be a JSON object
+        "500":
+          description: Internal Server Error
+      summary: Moves or adds a field to a Content Type
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:
@@ -19787,6 +19939,10 @@ components:
           type: string
         relationType:
           type: string
+        styleProperties:
+          type: object
+          additionalProperties:
+            type: object
         treeOrder:
           type: integer
           format: int32
@@ -20268,74 +20424,6 @@ components:
             type: string
           versionable:
             type: boolean
-    DriveRequestForm:
-      type: object
-      properties:
-        assetPath:
-          type: string
-        baseTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        contentTypes:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        filter:
-          type: string
-        language:
-          type: array
-          items:
-            type: string
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        live:
-          type: boolean
-        maxResults:
-          type: integer
-          format: int32
-        offset:
-          type: integer
-          format: int32
-        showArchived:
-          type: boolean
-        showContent:
-          type: boolean
-        showDotAssets:
-          type: boolean
-        showFiles:
-          type: boolean
-        showFolders:
-          type: boolean
-        showImages:
-          type: boolean
-        showLinks:
-          type: boolean
-        showPages:
-          type: boolean
-        sortBy:
-          type: string
-        working:
-          type: boolean
     EmbeddingsForm:
       type: object
       properties:

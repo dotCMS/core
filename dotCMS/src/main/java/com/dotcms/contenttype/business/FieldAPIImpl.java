@@ -75,7 +75,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
@@ -92,10 +91,17 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.ConnectException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.liferay.util.StringPool.BLANK;
 
@@ -155,9 +161,6 @@ public class FieldAPIImpl implements FieldAPI {
     @Override
     public Field save(final Field field, final User user, final boolean reorder)
             throws DotDataException, DotSecurityException {
-
-
-
         if (!UtilMethods.isSet(field.contentTypeId())) {
             Logger.error(this, "ContentTypeId needs to be set to save the Field");
             throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
@@ -244,7 +247,6 @@ public class FieldAPIImpl implements FieldAPI {
 
         return result;
     }
-
 
     /**
      * Processes relationships for the given field. If the field is a {@link RelationshipField}, it
@@ -643,6 +645,89 @@ public class FieldAPIImpl implements FieldAPI {
         }
     }
 
+    @Override
+    public void save(final List<FieldVariable> fieldVariables, final Field field) {
+        if (null == field) {
+            Logger.error(getClass(), "Failed to save Field Variables as Field is null");
+            return;
+        }
+        if (UtilMethods.isNotSet(field.id())) {
+            Logger.error(getClass(), String.format("Failed to save Field Variables as Field ID in " +
+                    "'%s' is missing", field.name()));
+            return;
+        }
+        try {
+            final List<FieldVariable> existingVariables = loadVariables(field);
+
+            // Delete variables that either:
+            // 1. Don't have a complete match (key, id, value) in incoming list, OR
+            // 2. Their key doesn't exist at all in incoming list
+            existingVariables.stream()
+                    .filter(existingVar -> {
+                        // Check if key exists in incoming list
+                        boolean keyExistsInIncoming = fieldVariables.stream()
+                                .anyMatch(incomingVar -> hasSameKey(existingVar, incomingVar));
+
+                        if (!keyExistsInIncoming) {
+                            // Key doesn't exist in incoming list - delete it
+                            return true;
+                        }
+
+                        // Key exists - check if there's a complete match
+                        boolean hasCompleteMatch = fieldVariables.stream()
+                                .anyMatch(incomingVar -> matchesFieldVariable(existingVar, incomingVar));
+
+                        // Delete if no complete match found
+                        return !hasCompleteMatch;
+                    })
+                    .forEach(varToDelete -> {
+                        try {
+                            delete(varToDelete);
+                        } catch (final DotDataException | UniqueFieldValueDuplicatedException e) {
+                            throw new DotStateException(e);
+                        }
+                    });
+
+            // Save only variables that don't already exist (by key, id, and value)
+            fieldVariables.stream()
+                    .filter(incomingVar -> existingVariables.stream()
+                            .noneMatch(existingVar -> matchesFieldVariable(existingVar, incomingVar))
+                    )
+                    .forEach(fieldVariable -> {
+                        try {
+                            save(ImmutableFieldVariable.builder()
+                                            .from(fieldVariable)
+                                            .fieldId(field.id())
+                                            .id(null)
+                                            .build(),
+                                    APILocator.systemUser());
+                        } catch (final DotDataException | DotSecurityException e) {
+                            throw new DotStateException(String.format("Failed to save Field Variable " +
+                                    "'%s': %s", fieldVariable.key(), getErrorMessage(e)), e);
+                        }
+                    });
+        } catch (final DotDataException e) {
+            throw new DotStateException(String.format("Failed to save Field Variables in Field " +
+                    "'%s' [ %s ]: %s", field.name(), field.id(), getErrorMessage(e)), e);
+        }
+    }
+
+    /**
+     * Checks if two field variables have the same key.
+     */
+    private boolean hasSameKey(final FieldVariable var1, final FieldVariable var2) {
+        return var1.key() != null && var1.key().equals(var2.key());
+    }
+
+    /**
+     * Checks if two field variables match by comparing their key, id, and value.
+     */
+    private boolean matchesFieldVariable(final FieldVariable var1, final FieldVariable var2) {
+        return var1.key() != null && var1.key().equals(var2.key()) &&
+                var1.id() != null && var1.id().equals(var2.id()) &&
+                var1.value() != null && var1.value().equals(var2.value());
+    }
+
     @WrapInTransaction
     @Override
     public FieldVariable save(final FieldVariable var, final User user) throws DotDataException, DotSecurityException {
@@ -686,7 +771,7 @@ public class FieldAPIImpl implements FieldAPI {
                 this.sendEndRecalculationNotification(user, field);
             } catch (final UniqueFieldValueDuplicatedException e) {
                 this.sendFailedRecalculationNotification(user, field);
-                Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
+                Logger.error(this, getErrorMessage(e), e);
                 throw new DotDataException(e);
             }
         }
@@ -945,15 +1030,36 @@ public class FieldAPIImpl implements FieldAPI {
 		contentTypeAPI.updateModDate(type);
     } catch (final DotSecurityException e) {
         final String errorMsg = String.format("Error updating Content Type mode_date containing Field Variable " +
-                "'%s': %s", fieldVar.key(), ExceptionUtil.getErrorMessage(e));
+                "'%s': %s", fieldVar.key(), getErrorMessage(e));
         throw new DotDataException(errorMsg);
     }
     if (fieldVar.key().equals(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)) {
         final UniqueFieldValidationStrategyResolver resolver =
               CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
-        final User user = Try.of(() -> WebAPILocator.getUserWebAPI()
-                        .getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                        .getOrElse(APILocator.systemUser());
+        // During bundle publishing or background jobs, HTTP request context is not available
+        // because bundle processing runs in background threads (Quartz jobs or thread pools).
+        // The HTTP request lifecycle completes before the background thread executes, and
+        // Tomcat recycles request objects after the HTTP response completes.
+        //
+        // SECURITY NOTE: This method is called during ContentType save operations. The actual
+        // permission checks are performed earlier in the call chain by ContentTypeAPI using
+        // the user from PublisherConfig (bundle owner). The user here is only used for sending
+        // notifications, not for permission checks. Using systemUser as fallback is acceptable
+        // for notifications in background thread contexts.
+        User user = Try.of(() -> {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            if (request != null) {
+                return WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+            }
+            return (User) null;
+        }).getOrElse((User) null);
+        
+        // If no user from request (bundle publishing, background jobs), use system user
+        // This is safe because permission checks happen earlier in ContentTypeAPI.save()
+        if (user == null) {
+            user = APILocator.systemUser();
+        }
+        
         try {
             this.sendStartRecalculationNotification(user, field);
             resolver.get().recalculate(field, false);
@@ -992,15 +1098,8 @@ public class FieldAPIImpl implements FieldAPI {
     return deleteIds;
   }
 
-    /**
-     * Save a bunch of fields, , if a Exception is throw deleting any field then no field is save
-     *
-     * @param fields fields to save
-     * @param user user who save the fields
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
   @WrapInTransaction
+  @Override
   public void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
     for (final Field field : fields) {
         save(field, user, false);
@@ -1100,7 +1199,7 @@ public class FieldAPIImpl implements FieldAPI {
             return true;
 
         } catch (final Exception e) {
-            Logger.warnAndDebug(this.getClass(), "isFullScreenField failed: " + ExceptionUtil.getErrorMessage(e) + ", field: " + field, e);
+            Logger.warnAndDebug(this.getClass(), "isFullScreenField failed: " + getErrorMessage(e) + ", field: " + field, e);
         }
 
         return false;

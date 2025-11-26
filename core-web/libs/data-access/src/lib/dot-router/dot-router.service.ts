@@ -15,13 +15,15 @@ import { filter } from 'rxjs/operators';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
 
     portletReload$ = new Subject();
-    private _storedRedirectUrl: string;
+    private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
     private _routeCanBeDeactivated = new BehaviorSubject(true);
@@ -50,7 +52,8 @@ export class DotRouterService {
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
-            id: this.getPortletId(this.router.routerState.snapshot.url)
+            id: this.getPortletId(this.router.routerState.snapshot.url),
+            parentMenuId: this.route.snapshot.queryParams['mId']
         };
     }
 
@@ -71,7 +74,7 @@ export class DotRouterService {
     }
 
     get queryParams(): Params {
-        const nav = this.router.getCurrentNavigation();
+        const nav = this.router.currentNavigation();
 
         return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
     }
@@ -115,9 +118,9 @@ export class DotRouterService {
         const menuId = 'edit-page';
 
         return this.router.navigate([`/${menuId}/content`], {
-            queryParams,
-            state: {
-                menuId
+            queryParams: {
+                ...queryParams,
+                mId: menuId.substring(0, 4)
             }
         });
     }
@@ -343,6 +346,7 @@ export class DotRouterService {
             queryParamsHandling = '',
             queryParams = {}
         } = navigateToPorletOptions || {};
+
         const url = this.router.createUrlTree([link], {
             queryParamsHandling,
             queryParams
