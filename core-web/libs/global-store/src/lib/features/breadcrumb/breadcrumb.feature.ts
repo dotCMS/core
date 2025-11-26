@@ -17,6 +17,8 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
+import { processSpecialRoute } from './breadcrumb.utils';
+
 /**
  * State interface for the Breadcrumb feature.
  * Contains the breadcrumb navigation items.
@@ -221,46 +223,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                             }
                         ]);
                     } else {
-                        // Handle special case: /templates/edit/:id
-                        const templatesEditRegex = /^\/templates\/edit\/[a-zA-Z0-9-]+$/;
-
-                        if (templatesEditRegex.test(url)) {
-                            const templatesItem = menu.find(
-                                (item) => item.menuLink === '/templates'
-                            );
-
-                            if (templatesItem) {
-                                // Only build base breadcrumb if it doesn't exist yet
-                                const hasTemplatesBreadcrumb = breadcrumbs.some(
-                                    (crumb) => crumb.url === '/dotAdmin/#/templates'
-                                );
-
-                                if (!hasTemplatesBreadcrumb) {
-                                    setBreadcrumbs([
-                                        {
-                                            label: 'Home',
-                                            disabled: true
-                                        },
-                                        {
-                                            label: templatesItem.parentMenuLabel,
-                                            disabled: true
-                                        },
-                                        {
-                                            label: templatesItem.label,
-                                            target: '_self',
-                                            url: '/dotAdmin/#/templates'
-                                        }
-                                    ]);
-                                }
-                            }
-                        } else if (url.includes('/content?filter=')) {
-                            const filter = url.split('/content?filter=')[1];
-                            addNewBreadcrumb({
-                                label: filter,
-                                target: '_self',
-                                url: newUrl
-                            });
-                        }
+                        processSpecialRoute(url, menu, breadcrumbs, {
+                            setBreadcrumbs,
+                            addNewBreadcrumb
+                        });
                     }
                 }
             };
