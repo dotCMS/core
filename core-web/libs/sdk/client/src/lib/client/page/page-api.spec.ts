@@ -325,6 +325,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/page', graphQLOptions);
+                fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -333,6 +334,196 @@ describe('PageClient', () => {
                     );
                     expect(error.httpError).toBe(httpError);
                     expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                    expect(error.graphql?.variables).toEqual({
+                        url: '/page',
+                        mode: 'LIVE',
+                        languageId: '1',
+                        fireRules: false,
+                        siteId: 'test-site',
+                        personaId: undefined,
+                        publishDate: undefined,
+                        variantName: undefined
+                    });
+                }
+            }
+        });
+
+        it('should throw Bad Request error when GraphQL returns DotPage errors', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'Some Page'
+                    }
+                },
+                errors: [
+                    { message: 'Some other error' },
+                    { message: 'DotPage entity error: Invalid page configuration' }
+                ]
+            });
+
+            try {
+                await pageClient.get('/bad-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/bad-page': GraphQL query failed for URL '/bad-page': DotPage entity error: Invalid page configuration"
+                    );
+                    // The httpError should be set from the thrown DotHttpError
+                    expect(error.httpError).toBeInstanceOf(DotHttpError);
+                    if (error.httpError) {
+                        expect(error.httpError.status).toBe(400);
+                        expect(error.httpError.statusText).toBe('Bad Request');
+                        expect(error.httpError.message).toBe(
+                            "GraphQL query failed for URL '/bad-page': DotPage entity error: Invalid page configuration"
+                        );
+                    }
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                }
+            }
+        });
+
+        it('should throw 404 error with httpError when page is not found', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: []
+            });
+
+            try {
+                await pageClient.get('/missing-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/missing-page': Page /missing-page not found. Check the page URL and permissions."
+                    );
+                    // The httpError should be set from the thrown DotHttpError
+                    expect(error.httpError).toBeInstanceOf(DotHttpError);
+                    if (error.httpError) {
+                        expect(error.httpError.status).toBe(404);
+                        expect(error.httpError.statusText).toBe('Not Found');
+                        expect(error.httpError.message).toBe(
+                            'Page /missing-page not found. Check the page URL and permissions.'
+                        );
+                    }
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                    expect(error.graphql?.variables['url']).toBe('/missing-page');
+                }
+            }
+        });
+
+        it('should handle generic non-HTTP errors', async () => {
+            const genericError = new Error('Network timeout');
+            mockRequest.mockRejectedValue(genericError);
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            try {
+                await pageClient.get('/error-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/error-page': Network timeout"
+                    );
+                    expect(error.httpError).toBeUndefined();
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                    expect(error.graphql?.variables['url']).toBe('/error-page');
+                }
+            }
+        });
+
+        it('should handle unknown errors (non-Error instances)', async () => {
+            mockRequest.mockRejectedValue('Some string error');
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            try {
+                await pageClient.get('/unknown-error-page');
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/unknown-error-page': Unknown error"
+                    );
+                    expect(error.httpError).toBeUndefined();
+                    expect(error.graphql).toBeDefined();
+                }
+            }
+        });
+
+        it('should include graphql query and variables in all error scenarios', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { blogPosts: 'query BlogPosts { items { title } }' },
+                    variables: {
+                        customVar: 'customValue'
+                    }
+                },
+                languageId: '2',
+                personaId: 'test-persona',
+                variantName: 'test-variant'
+            };
+
+            mockRequest.mockResolvedValue({
+                data: { page: null },
+                errors: []
+            });
+
+            try {
+                await pageClient.get('/test-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toContain('containers');
+                    expect(error.graphql?.query).toContain('BlogPosts');
+                    expect(error.graphql?.variables).toEqual({
+                        url: '/test-page',
+                        mode: 'LIVE',
+                        languageId: '2',
+                        fireRules: false,
+                        siteId: 'test-site',
+                        personaId: 'test-persona',
+                        publishDate: undefined,
+                        variantName: 'test-variant',
+                        customVar: 'customValue'
+                    });
                 }
             }
         });

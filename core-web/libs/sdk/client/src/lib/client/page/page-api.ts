@@ -155,19 +155,32 @@ export class PageClient extends BaseApiClient {
                 response.errors.forEach((error: { message: string }) => {
                     consola.error('[DotCMS GraphQL Error]: ', error.message);
                 });
+
+                const pageError = response.errors.find((error: { message: string }) =>
+                    error.message.includes('DotPage')
+                );
+
+                if (pageError) {
+                    // Throw HTTP error - will be caught and wrapped in DotErrorPage below
+                    throw new DotHttpError({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        message: `GraphQL query failed for URL '${url}': ${pageError.message}`,
+                        data: response.errors
+                    });
+                }
             }
 
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
-                throw new DotErrorPage(
-                    `Page ${url} not found. Check the page URL and permissions.`,
-                    undefined,
-                    {
-                        query: completeQuery,
-                        variables: requestVariables
-                    }
-                );
+                // Throw HTTP error - will be caught and wrapped in DotErrorPage below
+                throw new DotHttpError({
+                    status: 404,
+                    statusText: 'Not Found',
+                    message: `Page ${url} not found. Check the page URL and permissions.`,
+                    data: response.errors
+                });
             }
 
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
@@ -181,7 +194,7 @@ export class PageClient extends BaseApiClient {
                 }
             };
         } catch (error) {
-            // Handle DotHttpError instances from httpClient.request
+            // Handle DotHttpError instances
             if (error instanceof DotHttpError) {
                 throw new DotErrorPage(
                     `Page request failed for URL '${url}': ${error.message}`,
