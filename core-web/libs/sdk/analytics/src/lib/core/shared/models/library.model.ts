@@ -123,16 +123,16 @@ export interface DotCMSAnalyticsConfig {
     queue?: QueueConfig | boolean;
 
     /**
-     * Content impression tracking configuration:
-     * - `undefined` or `false` (default): Impression tracking disabled
+     * Content impression tracking configuration (default: undefined - disabled):
+     * - `undefined` or `false`: Impression tracking disabled
      * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 1000)
      * - `ImpressionConfig`: Enable with custom settings
      */
     impressions?: ImpressionConfig | boolean;
 
     /**
-     * Content click tracking configuration:
-     * - `undefined` or `false` (default): Click tracking disabled
+     * Content click tracking configuration (default: undefined - disabled):
+     * - `undefined` or `false`: Click tracking disabled
      * - `true`: Enable click tracking
      */
     clicks?: boolean;
