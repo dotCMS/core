@@ -79,7 +79,7 @@ describe('DotSubNavComponent', () => {
         fixture.detectChanges();
         const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
         expect(groupName).not.toBeNull();
-        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
     });
 
     it('should have group name element with proper styling when collapsed', () => {
@@ -87,7 +87,7 @@ describe('DotSubNavComponent', () => {
         fixture.detectChanges();
         const groupName = de.query(By.css('[data-testid="nav-sub-group-name"]'));
         expect(groupName).not.toBeNull();
-        expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
         // Verify it's a span element (not a link) so it won't navigate
         expect(groupName.nativeElement.tagName.toLowerCase()).toBe('span');
     });
@@ -168,7 +168,7 @@ describe('DotSubNavComponent', () => {
                 it('should show group name when collapsed', () => {
                     const groupName = de.query(By.css('.dot-nav-sub__group-name'));
                     expect(groupName).not.toBeNull();
-                    expect(groupName.nativeElement.textContent.trim()).toBe(data.tabName);
+                    expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
                 });
             });
 

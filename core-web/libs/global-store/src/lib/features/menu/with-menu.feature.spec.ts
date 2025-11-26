@@ -16,6 +16,7 @@ describe('withMenu Feature', () => {
         {
             active: false,
             id: '1',
+            label: 'Home Menu',
             isOpen: false,
             menuItems: [
                 {
@@ -39,6 +40,7 @@ describe('withMenu Feature', () => {
             active: false,
             id: '2',
             isOpen: false,
+            label: 'About Menu',
             menuItems: [
                 {
                     active: false,
@@ -61,6 +63,7 @@ describe('withMenu Feature', () => {
             active: false,
             id: '3',
             isOpen: false,
+            label: 'Legacy Menu',
             menuItems: [
                 {
                     active: false,
@@ -143,6 +146,7 @@ describe('withMenu Feature', () => {
                     active: false,
                     id: '100',
                     isOpen: false,
+                    label: 'New Menu',
                     menuItems: [
                         {
                             active: false,
@@ -181,6 +185,7 @@ describe('withMenu Feature', () => {
                     active: false,
                     id: 'legacy',
                     isOpen: false,
+                    label: 'Legacy Menu',
                     menuItems: [
                         {
                             active: false,
@@ -332,16 +337,16 @@ describe('withMenu Feature', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
 
-        it('should close all parent menus when collapsing', () => {
+        it('should not close parent menus when collapsing', () => {
             store.toggleParent('1');
-            store.toggleNavigation(); // Expand (should open active item's parent)
-            store.toggleNavigation(); // Collapse (should close all)
-            expect(store.openParentMenuId()).toBeNull();
+            store.expandNavigation(); // Expand (should open active item's parent)
+            store.collapseNavigation(); // Collapse (should NOT close all)
+            expect(store.openParentMenuId()).toBe('1');
         });
 
         it('should open active item parent menu when expanding', () => {
             store.activateMenuItem('1-1__1');
-            store.toggleNavigation(); // Expand
+            store.expandNavigation(); // Use expandNavigation instead of toggleNavigation
             expect(store.openParentMenuId()).toBe('1');
         });
     });
@@ -357,10 +362,10 @@ describe('withMenu Feature', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
 
-        it('should close all parent menu groups when collapsing', () => {
+        it('should not close parent menu groups when collapsing', () => {
             store.toggleParent('1');
             store.collapseNavigation();
-            expect(store.openParentMenuId()).toBeNull();
+            expect(store.openParentMenuId()).toBe('1');
         });
     });
 
@@ -400,12 +405,11 @@ describe('withMenu Feature', () => {
             expect(store.openParentMenuId()).toBe('1');
         });
 
-        it('should not open parent menu when navigation is collapsed', () => {
+        it('should activate parent menu when navigation is collapsed', () => {
             store.collapseNavigation();
             store.setActiveMenu('1-1', '1');
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('1-1');
-            expect(store.openParentMenuId()).toBeNull();
         });
 
         it('should not activate if portletId is empty', () => {
@@ -486,7 +490,7 @@ describe('withMenu Feature', () => {
 
             // Collapse navigation (should close all)
             store.collapseNavigation();
-            expect(store.openParentMenuId()).toBeNull();
+            expect(store.openParentMenuId()).toBe('1');
         });
 
         it('should maintain single active item constraint', () => {

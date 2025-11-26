@@ -68,7 +68,7 @@ export function withMenu() {
                 }, {});
 
                 // Transform grouped object into array of MenuGroup
-                return Object.entries(grouped).map(([parentMenuId, menuItems]) => {
+                const groups = Object.entries(grouped).map(([parentMenuId, menuItems]) => {
                     const firstItem = menuItems[0];
                     return {
                         id: parentMenuId,
@@ -78,6 +78,7 @@ export function withMenu() {
                         isOpen: parentMenuId === currentOpenParentMenuId
                     };
                 });
+                return groups;
             });
 
             /**
@@ -230,21 +231,9 @@ export function withMenu() {
              * Toggles the navigation menu collapsed/expanded state.
              */
             const toggleNavigation = () => {
-                const isCollapsed = store.isNavigationCollapsed();
-                patchState(store, {
-                    isNavigationCollapsed: !isCollapsed
-                });
-
-                // When collapsing, close all parent menu groups
-                if (!isCollapsed) {
-                    patchState(store, { openParentMenuId: null });
-                } else {
-                    // When expanding, open the parent menu group of the active item if there is one
-                    const activeItem = store.activeMenuItem();
-                    if (activeItem) {
-                        patchState(store, { openParentMenuId: activeItem.parentMenuId });
-                    }
-                }
+                patchState(store, (state) => ({
+                    isNavigationCollapsed: !state.isNavigationCollapsed
+                }));
             };
 
             /**
@@ -253,8 +242,7 @@ export function withMenu() {
              */
             const collapseNavigation = () => {
                 patchState(store, {
-                    isNavigationCollapsed: true,
-                    openParentMenuId: null
+                    isNavigationCollapsed: true
                 });
             };
 
@@ -280,7 +268,11 @@ export function withMenu() {
              * @param portletId - The ID of the menu item (portlet) to activate
              * @param shortParentMenuId - The first 4 characters of the parent menu ID
              */
-            const setActiveMenu = (portletId: string, shortParentMenuId: string) => {
+            const setActiveMenu = (
+                portletId: string,
+                shortParentMenuId: string,
+                bookmark?: boolean
+            ) => {
                 if (!portletId) {
                     return;
                 }
@@ -291,7 +283,7 @@ export function withMenu() {
                 const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (!portletId || !shortParentMenuId) {
+                if (bookmark) {
                     const item = Object.values(entityMap).find((item) => item.id === portletId);
                     if (item) {
                         compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
@@ -300,8 +292,7 @@ export function withMenu() {
                 }
 
                 if (item) {
-                    const collapsed = store.isNavigationCollapsed();
-                    activateMenuItemWithParent(compositeKey, collapsed ? null : item.parentMenuId);
+                    activateMenuItemWithParent(compositeKey, item.parentMenuId);
                 }
             };
 

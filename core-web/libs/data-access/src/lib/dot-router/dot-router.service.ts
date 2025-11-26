@@ -52,7 +52,8 @@ export class DotRouterService {
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
-            id: this.getPortletId(this.router.routerState.snapshot.url)
+            id: this.getPortletId(this.router.routerState.snapshot.url),
+            parentMenuId: this.route.snapshot.queryParams['mId']
         };
     }
 
@@ -339,11 +340,7 @@ export class DotRouterService {
      * @return {*}  {Promise<boolean>}
      * @memberof DotRouterService
      */
-    gotoPortlet(
-        link: string,
-        navigateToPorletOptions?: DotNavigateToOptions,
-        parentMenuId?: string
-    ): Promise<boolean> {
+    gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
         const {
             replaceUrl = false,
             queryParamsHandling = '',
@@ -352,7 +349,7 @@ export class DotRouterService {
 
         const url = this.router.createUrlTree([link], {
             queryParamsHandling,
-            queryParams: { ...queryParams, ...(parentMenuId ? { mId: parentMenuId } : {}) }
+            queryParams
         });
 
         return this.router.navigateByUrl(url, { replaceUrl });

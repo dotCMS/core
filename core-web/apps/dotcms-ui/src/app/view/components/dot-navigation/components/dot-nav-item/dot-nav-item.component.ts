@@ -32,7 +32,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
         DotRandomIconPipe
     ],
     host: {
-        'dot-nav-item__collapsed': '$collapsed()'
+        '[class.dot-nav-item__collapsed]': '$collapsed()'
     }
 })
 export class DotNavItemComponent {
@@ -59,8 +59,6 @@ export class DotNavItemComponent {
 
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
-
-    isGroupActive = this.#globalStore.isGroupActive;
 
     @HostListener('mouseleave', ['$event'])
     menuUnhovered() {

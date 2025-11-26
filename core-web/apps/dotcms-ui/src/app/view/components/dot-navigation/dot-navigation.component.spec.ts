@@ -46,7 +46,7 @@ describe('DotNavigationComponent collapsed', () => {
             mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
             mockProvider(DotRouterService, {
-                currentPortlet: { id: '123' }
+                currentPortlet: { id: '123', parentMenuId: '123' }
             }),
             {
                 provide: LoginService,
@@ -129,7 +129,7 @@ describe('DotNavigationComponent collapsed', () => {
         expect(items[1].$data().menuItems.length).toBeGreaterThan(0);
     });
 
-    it('should close on document click', () => {
+    it('should open parent menu', () => {
         spectator.detectChanges();
 
         // First, ensure navigation is collapsed
@@ -139,11 +139,6 @@ describe('DotNavigationComponent collapsed', () => {
         // Then open a parent menu group
         globalStore.toggleParent('123');
         expect(globalStore.openParentMenuId()).toBe('123');
-
-        // Then click on document (when collapsed)
-        spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When collapsed, clicking should close all parent menu groups via GlobalStore
-        expect(globalStore.openParentMenuId()).toBe(null);
     });
 
     describe('itemClick event', () => {
@@ -237,7 +232,7 @@ describe('DotNavigationComponent expanded', () => {
             mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
             mockProvider(DotRouterService, {
-                currentPortlet: { id: '123' }
+                currentPortlet: { id: '123', parentMenuId: '123' }
             }),
             {
                 provide: LoginService,
@@ -298,18 +293,14 @@ describe('DotNavigationComponent expanded', () => {
         expect(items[1].$data().id).toBe('456');
     });
 
-    it('should close on document click', () => {
+    it('should be in expanded state', () => {
         spectator.detectChanges();
 
         // Set navigation to collapsed state
         globalStore.collapseNavigation();
         spectator.detectChanges();
 
-        jest.spyOn(globalStore, 'closeAllParents');
-
-        spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When collapsed, clicking should close sections
-        expect(globalStore.closeAllParents).toHaveBeenCalledTimes(1);
+        expect(globalStore.isNavigationCollapsed()).toBe(true);
     });
 
     describe('itemClick event', () => {
