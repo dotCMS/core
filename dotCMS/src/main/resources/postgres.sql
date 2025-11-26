@@ -1060,6 +1060,7 @@ create table multi_tree (
    tree_order int4,
    personalization varchar(255) not null default 'dot:default',
    variant_id varchar(255) default 'DEFAULT' not null,
+   style_properties JSONB,
    primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (

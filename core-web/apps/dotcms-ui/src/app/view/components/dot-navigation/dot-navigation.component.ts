@@ -1,4 +1,4 @@
-import { Component, HostBinding, HostListener, inject } from '@angular/core';
+import { Component, HostBinding, inject } from '@angular/core';
 
 import { DotEventsService, DotRouterService } from '@dotcms/data-access';
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
@@ -74,7 +74,10 @@ export class DotNavigationComponent {
         $event.originalEvent.stopPropagation();
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
-            if (this.#dotRouterService.currentPortlet.id === $event.data.id) {
+            if (
+                this.#dotRouterService.currentPortlet.id === $event.data.id &&
+                this.#dotRouterService.currentPortlet.parentMenuId === $event.data.parentMenuId
+            ) {
                 this.#dotRouterService.reloadCurrentPortlet($event.data.id);
             } else {
                 this.#dotRouterService.gotoPortlet($event.data.menuLink, {
@@ -107,18 +110,6 @@ export class DotNavigationComponent {
             }
 
             this.#globalStore.toggleParent(event.data.id);
-        }
-    }
-
-    /**
-     * Handle click on document to hide the fly-out menu
-     *
-     * @memberof DotNavItemComponent
-     */
-    @HostListener('document:click')
-    handleDocumentClick(): void {
-        if (this.$isCollapsed()) {
-            this.#globalStore.closeAllParents();
         }
     }
 
