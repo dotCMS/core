@@ -172,7 +172,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                 const newUrl = `/dotAdmin/#${url}`;
                 const breadcrumbs = store.breadcrumbs();
-                const existingIndex = breadcrumbs.findIndex((crumb) => crumb.url === newUrl);
+
+                const existingIndex = breadcrumbs.findIndex((crumb) => {
+                    return crumb.url === newUrl;
+                });
 
                 if (existingIndex > -1) {
                     truncateBreadcrumbs(existingIndex);
@@ -182,8 +185,9 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                     const item = menu.find((item) => {
                         const pathMatches = item.menuLink === urlPath;
-                        const parentMatches =
-                            !shortMenuId || item.parentMenuId.startsWith(shortMenuId);
+                        const parentMatches = shortMenuId
+                            ? item.parentMenuId.startsWith(shortMenuId)
+                            : true;
                         return pathMatches && parentMatches;
                     });
 
@@ -206,6 +210,7 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     } else {
                         // Handle special case: /templates/edit/:id
                         const templatesEditRegex = /^\/templates\/edit\/[a-zA-Z0-9-]+$/;
+
                         if (templatesEditRegex.test(url)) {
                             const templatesItem = menu.find(
                                 (item) => item.menuLink === '/templates'
