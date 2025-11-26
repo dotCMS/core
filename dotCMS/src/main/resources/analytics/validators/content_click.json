@@ -60,16 +60,20 @@
       },
       "id": {
         "type": "string",
-        "required": true
+        "required": false
       },
       "class": {
         "type": "string",
-        "required": true
+        "required": false
+      },
+      "href": {
+        "type": "string",
+        "required": false
       },
       "attributes": {
         "type": "json_array",
         "array_type": "string",
-        "required": true
+        "required": false
       }
     }
   }
