@@ -342,7 +342,7 @@ public class PageRenderUtil implements Serializable {
         }
 
         return rawContainers;
-        }
+    }
 
     private String getUniqueUUIDForRender(String uniqueId, Container container) {
         if (needParseContainerPrefix(container, uniqueId)) {
