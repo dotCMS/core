@@ -13,7 +13,8 @@ export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
  */
 export const DotCMSPredefinedEventType = {
     PAGEVIEW: 'pageview',
-    CONTENT_IMPRESSION: 'content_impression'
+    CONTENT_IMPRESSION: 'content_impression',
+    CONTENT_CLICK: 'content_click'
 } as const;
 
 /**
@@ -159,6 +160,23 @@ export const DEFAULT_IMPRESSION_CONFIG = {
  * Must match DotCMSPredefinedEventType.CONTENT_IMPRESSION
  */
 export const IMPRESSION_EVENT_TYPE = 'content_impression';
+
+/**
+ * Event type for content clicks
+ * Must match DotCMSPredefinedEventType.CONTENT_CLICK
+ */
+export const CLICK_EVENT_TYPE = 'content_click';
+
+/**
+ * Default debounce time in milliseconds for clicks
+ */
+export const DEFAULT_CLICK_THROTTLE_MS = 300;
+
+/**
+ * CSS selector for clickable elements to track
+ * Only clicks on <a> and <button> elements are tracked
+ */
+export const CLICKABLE_ELEMENTS_SELECTOR = 'a, button';
 
 /**
  * Session storage key for tracked impressions (deduplication)

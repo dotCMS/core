@@ -2,25 +2,31 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Analytics } from 'analytics';
 
-import { initializeContentAnalytics } from './dot-content-analytics';
-import { dotAnalytics } from './plugin/dot-analytics.plugin';
+import { initializeContentAnalytics } from './dot-analytics.content';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
+import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
 import { DotCMSAnalyticsConfig } from './shared/models';
 
 // Mock dependencies
 jest.mock('analytics');
-jest.mock('./plugin/dot-analytics.plugin');
+jest.mock('./plugin/main/dot-analytics.plugin');
 jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
 jest.mock('./plugin/identity/dot-analytics.identity.plugin');
 jest.mock('./plugin/impression/dot-analytics.impression.plugin');
 
 // Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
-jest.mock('./shared/dot-content-analytics.utils', () => ({
-    ...jest.requireActual('./shared/dot-content-analytics.utils'),
-    cleanupActivityTracking: jest.fn()
-}));
+jest.mock('./shared/utils/dot-analytics.utils', () => {
+    const actual = jest.requireActual('./shared/utils/dot-analytics.utils') as Record<
+        string,
+        unknown
+    >;
+    return {
+        ...actual,
+        cleanupActivityTracking: jest.fn()
+    };
+});
 
 const mockAnalytics = Analytics as jest.MockedFunction<typeof Analytics>;
 const mockDotAnalytics = dotAnalytics as jest.MockedFunction<typeof dotAnalytics>;
@@ -96,16 +102,12 @@ describe('initializeContentAnalytics', () => {
         expect(mockAnalytics).toHaveBeenCalledWith({
             app: 'dotAnalytics',
             debug: false,
-            plugins: [
-                expect.any(Object), // dotAnalyticsIdentityPlugin result
-                expect.any(Object), // dotAnalyticsImpressionPlugin result
-                expect.any(Object), // dotAnalyticsEnricherPlugin result
-                expect.any(Object) // dotAnalytics result
-            ]
+            plugins: expect.any(Array)
         });
 
         expect(mockDotAnalyticsIdentityPlugin).toHaveBeenCalledWith(mockConfig);
-        expect(mockDotAnalyticsImpressionPlugin).toHaveBeenCalledWith(mockConfig);
+        // impressions and clicks not enabled in mockConfig, so these should NOT be called
+        expect(mockDotAnalyticsImpressionPlugin).not.toHaveBeenCalled();
         expect(mockDotAnalyticsEnricherPlugin).toHaveBeenCalled();
         expect(mockDotAnalytics).toHaveBeenCalledWith(mockConfig);
     });
@@ -135,7 +137,7 @@ describe('initializeContentAnalytics', () => {
 
         expect(analytics).toBeNull();
         expect(consoleSpy).toHaveBeenCalledWith(
-            'DotCMS Analytics: Missing "siteAuth" in configuration'
+            'DotCMS Analytics [Core]: Missing "siteAuth" in configuration'
         );
 
         consoleSpy.mockRestore();
@@ -149,7 +151,7 @@ describe('initializeContentAnalytics', () => {
 
         expect(analytics).toBeNull();
         expect(consoleSpy).toHaveBeenCalledWith(
-            'DotCMS Analytics: Missing "server" in configuration'
+            'DotCMS Analytics [Core]: Missing "server" in configuration'
         );
 
         consoleSpy.mockRestore();
@@ -184,7 +186,7 @@ describe('initializeContentAnalytics', () => {
             // Should not throw error even if internal analytics is null
             expect(() => analytics!.pageView({ path: '/test' })).not.toThrow();
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: Analytics instance not initialized'
+                'DotCMS Analytics [Core]: Analytics instance not initialized'
             );
 
             consoleWarnSpy.mockRestore();
@@ -222,7 +224,7 @@ describe('initializeContentAnalytics', () => {
             // Should not throw error even if internal analytics is null
             expect(() => analytics!.track('test_event', { value: 123 })).not.toThrow();
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: Analytics instance not initialized'
+                'DotCMS Analytics [Core]: Analytics instance not initialized'
             );
 
             consoleWarnSpy.mockRestore();
