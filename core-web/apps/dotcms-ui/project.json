@@ -118,21 +118,31 @@
                     "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
                     "baseHref": "",
                     "optimization": false,
-                    "sourceMap": true,
-                    "namedChunks": true,
+                    "sourceMap": false,
+                    "namedChunks": false,
                     "vendorChunk": true,
-                    "buildOptimizer": false
+                    "buildOptimizer": false,
+                    "extractLicenses": false,
+                    "fileReplacements": [],
+                    "progress": false,
+                    "outputHashing": "none",
+                    "commonChunk": true,
+                    "budgets": [],
+                    "externalDependencies": ["date-fns/locale"],
                 }
             },
             "defaultConfiguration": "production",
             "dependsOn": ["^build"]
         },
         "serve": {
-            "dependsOn": ["dotcms-webcomponents:build"],
+            "dependsOn": [],
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
-                "buildTarget": "dotcms-ui:build:development"
+                "buildTarget": "dotcms-ui:build:development",
+                "hmr": true,
+                "liveReload": false,
+                "watch": true
             }
         },
         "extract-i18n": {

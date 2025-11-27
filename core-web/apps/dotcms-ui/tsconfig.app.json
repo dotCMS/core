@@ -4,7 +4,9 @@
         "outDir": "../../dist/out-tsc",
         "types": [],
         "target": "ES2022",
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
+        "incremental": true,
+        "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo"
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
     "exclude": ["**/*.stories.ts", "**/*.stories.js"]
