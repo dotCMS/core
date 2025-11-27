@@ -1,12 +1,11 @@
 # Angular Development Standards
 
 ## Tech Stack Configuration
-- **Angular**: 18.2.3 with standalone components
-- **UI Components**: PrimeNG 17.18.11
-- **State Management**: NgRx Component Store (@ngrx/component-store 18.0.2), NgRx Signals (@ngrx/signals 18.0.2)
-- **Styling**: PrimeFlex 3.3.1
-- **Build**: Nx 19.6.5
-- **Testing**: Jest + Spectator (required)
+- **Angular**: 20.3.9 standalone components
+- **UI**: PrimeNG 17.18.11, PrimeFlex 3.3.1
+- **State**: NgRx Signals, Component Store  
+- **Build**: Nx 20.5.1
+- **Testing**: Jest + Spectator (REQUIRED)
 
 ## Modern Template Syntax (Required)
 Use Angular's new control flow syntax instead of structural directives:
