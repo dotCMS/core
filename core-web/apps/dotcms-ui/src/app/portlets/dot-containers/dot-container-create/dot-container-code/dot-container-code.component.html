@@ -46,7 +46,7 @@
         <p-tabpanels>
             <p-tabpanel [value]="0">
                 <div
-                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-col">
+                    class="dot-container-code__empty-content flex justify-center items-center flex-col">
                     <dot-icon data-testId="code" name="code" size="100"></dot-icon>
                     <div
                         class="dot-container-code__empty-content-title"
@@ -77,7 +77,7 @@
                             (click)="handleAddVariable(containerContent.value)"
                             [disabled]="contentTypes.length === 0"
                             [label]="'add-variable' | dm"
-                            class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
+                            class="p-button-outlined dot-container-code__variable-btn ml-4 mb-2 mt-2 p-button-sm"
                             pButton></button>
                         <dot-textarea-content
                             (monacoInit)="monacoInit($event)"

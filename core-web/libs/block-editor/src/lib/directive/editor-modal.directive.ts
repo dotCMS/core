@@ -21,7 +21,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     private readonly PROPER_MODIFIERS = {
         modifiers: [
             {
-                name: 'flip',
+                name: 'animate-flip',
                 options: { fallbackPlacements: ['top-start'] }
             }
         ]

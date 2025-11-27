@@ -1,6 +1,6 @@
-<div class="flex align-items-center h-1rem" [class]="$styleClass()">
+<div class="flex items-center h-4" [class]="$styleClass()">
     @if ($isCollapsed()) {
-        <div class="flex align-items-center">
+        <div class="flex items-center">
             <div>
                 <p-menu #menu [model]="$itemsToHide()" [popup]="true" appendTo="body" />
                 <p-button
@@ -8,7 +8,7 @@
                     icon="pi pi-ellipsis-h"
                     type="button"
                     data-testid="btn-collapse"
-                    styleClass="p-button-rounded p-button-text p-button-sm outline-none" />
+                    styleClass="p-button-rounded p-button-text p-button-sm outline-0" />
             </div>
             <div class="mx-2">
                 <ChevronRightIcon />

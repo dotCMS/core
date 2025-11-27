@@ -4,31 +4,25 @@
     [title]="'experiments.reports.resume' | dm">
     <ng-template #headers>
         <div class="flex col row-container">
-            <div class="flex col-fixed flex-wrap align-items-center" style="width: 20%">
+            <div class="flex col-fixed flex-wrap items-center" style="width: 20%">
                 {{ 'experiments.reports.variants' | dm }}
             </div>
-            <div
-                class="flex col-fixed flex-wrap align-items-center justify-content-end"
-                style="width: 120px">
+            <div class="flex col-fixed flex-wrap items-center justify-end" style="width: 120px">
                 {{ 'experiments.reports.conversions' | dm }}
             </div>
-            <div
-                class="flex col-fixed flex-wrap align-items-center justify-content-end"
-                style="width: 110px">
+            <div class="flex col-fixed flex-wrap items-center justify-end" style="width: 110px">
                 {{ 'experiments.reports.sessions' | dm }}
             </div>
-            <div
-                class="flex col-fixed flex-wrap align-items-center justify-content-end"
-                style="width: 150px">
+            <div class="flex col-fixed flex-wrap items-center justify-end" style="width: 150px">
                 {{ 'experiments.reports.conversions.rate' | dm }}
             </div>
-            <div class="flex col flex-wrap align-items-center justify-content-end text-right">
+            <div class="flex col flex-wrap items-center justify-end text-right">
                 {{ 'experiments.reports.probability.best' | dm }}
             </div>
-            <div class="flex col flex-wrap align-items-center justify-content-end text-right">
+            <div class="flex col flex-wrap items-center justify-end text-right">
                 {{ 'experiments.reports.conversion.rate.range' | dm }}
             </div>
-            <div class="flex col flex-wrap align-items-center justify-content-end">
+            <div class="flex col flex-wrap items-center justify-end">
                 {{ 'experiments.reports.promote' | dm }}
             </div>
         </div>
@@ -38,7 +32,7 @@
         <div class="flex col row-container">
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex align-content-center col-fixed flex-wrap align-content-center first-column gap-1"
+                class="flex content-center col-fixed flex-wrap content-center first-column gap-1"
                 style="width: 20%">
                 @if (row.isWinner) {
                     <svg class="trophy" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -50,35 +44,35 @@
             </div>
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col-fixed flex-wrap align-content-center justify-content-end"
+                class="flex col-fixed flex-wrap content-center justify-end"
                 style="width: 120px">
                 {{ row.conversions }}
             </div>
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col-fixed flex-wrap align-content-center justify-content-end"
+                class="flex col-fixed flex-wrap content-center justify-end"
                 style="width: 110px">
                 {{ row.sessions }}
             </div>
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col-fixed flex-wrap align-content-center justify-content-end"
+                class="flex col-fixed flex-wrap content-center justify-end"
                 style="width: 150px">
                 {{ row.conversionRate }}
             </div>
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col flex-wrap align-content-center justify-content-end">
+                class="flex col flex-wrap content-center justify-end">
                 {{ row.probabilityToBeBest }}
             </div>
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col flex-wrap align-content-center justify-content-end">
+                class="flex col flex-wrap content-center justify-end">
                 {{ row.conversionRateRange }}
             </div>
             <div
                 [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col flex-wrap align-content-center justify-content-end">
+                class="flex col flex-wrap content-center justify-end">
                 @if (!promotedVariantId && row.id !== defaultVariantId) {
                     <button
                         (click)="promoteVariant($event, experimentId, row)"

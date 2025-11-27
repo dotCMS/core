@@ -12,12 +12,11 @@
                 [scheduling]="vm.experiment.scheduling"
                 [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
                 [suggestedWinner]="vm.winnerLegendSummary" />
-            <div
-                class="flex align-items-center flex-col w-full dot-experiment-report__container gap-3">
+            <div class="flex items-center flex-col w-full dot-experiment-report__container gap-4">
                 <div class="dot-experiment-report__tabview">
                     <p-tabs>
                         <p-tab header="{{ 'experiments.reports.chart.title' | dm }}">
-                            <div class="flex flex-col gap-2 align-items-center content">
+                            <div class="flex flex-col gap-2 items-center content">
                                 <dot-experiments-reports-chart
                                     [config]="axisLabelsProbabilityChart"
                                     [data]="vm.dailyChart.chartData"
@@ -27,7 +26,7 @@
                             </div>
                         </p-tab>
                         <p-tab header="{{ 'experiments.bayesian.reports.chart.title' | dm }}">
-                            <div class="flex flex-col gap-2 align-items-center content">
+                            <div class="flex flex-col gap-2 items-center content">
                                 <dot-experiments-reports-chart
                                     [config]="axisLabelsBayesianChart"
                                     [data]="vm.bayesianChart.chartData"

@@ -3,7 +3,7 @@
         <dot-crumbtrail class="toolbar__crumbtrail w-full" />
     </ng-template>
     <ng-template pTemplate="end">
-        <div class="flex gap-1 align-items-center">
+        <div class="flex gap-1 items-center">
             <div class="px-2">
                 <dot-site-selector
                     (switch)="siteChange($event)"
@@ -20,8 +20,8 @@
             </ng-container>
             <dot-toolbar-notifications />
         </div>
-        <div class="flex align-items-center gap-0">
-            <div class="h-2rem">
+        <div class="flex items-center gap-0">
+            <div class="h-8">
                 <p-divider layout="vertical" styleClass="ml-0 text-gray-500" />
             </div>
             <dot-toolbar-user />

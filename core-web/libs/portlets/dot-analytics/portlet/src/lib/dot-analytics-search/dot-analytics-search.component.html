@@ -1,4 +1,4 @@
-<p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
+<p-splitter [panelSizes]="[35, 65]" styleClass="mb-8">
     <ng-template pTemplate>
         <section>
             <div class="content-analytics__query-header">
@@ -57,7 +57,7 @@
         [modal]="true"
         [style]="{ width: '45rem' }">
         @for (example of store.queryExamples(); track $index) {
-            <div class="mb-4" data-testid="query-example-container">
+            <div class="mb-6" data-testid="query-example-container">
                 <p class="mb-2">{{ example.title | dm }}</p>
                 <pre>
                     <code>{{ example.query }}</code>

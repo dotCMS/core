@@ -76,9 +76,9 @@
     <ng-template pTemplate="emptymessage">
         <tr>
             <td [colSpan]="$totalColumns()">
-                <div class="flex p-2 gap-2 justify-content-center">
+                <div class="flex p-2 gap-2 justify-center">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-500">
+                    <p class="text-surface-500 dark:text-surface-300">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
                     </p>
                 </div>
@@ -161,7 +161,7 @@
     <ng-template pTemplate="summary">
         @if (hintText || showPagination || hasError) {
             <div
-                class="flex align-items-center"
+                class="flex items-center"
                 [class.justify-content-between]="hintText || hasError"
                 [class.justify-content-center]="!hintText && !hasError">
                 @if (hasError) {

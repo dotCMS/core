@@ -49,7 +49,7 @@ export enum DotPaletteListStatus {
  * - grid: Card-based grid layout
  * - list: Compact list layout
  */
-export type DotPaletteViewMode = 'grid' | 'list';
+export type DotPaletteViewMode = 'grid grid-cols-12 gap-4' | 'list';
 
 /**
  * Parameters for Elasticsearch content queries.

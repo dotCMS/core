@@ -1,8 +1,8 @@
 @if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
-            <div class="flex justify-content-between">
-                <h2 class="flex align-items-center gap-1 uppercase">
+            <div class="flex justify-between">
+                <h2 class="flex items-center gap-1 uppercase">
                     <dot-icon
                         [ngClass]="{ isDone: vm.goals }"
                         [size]="16"
@@ -18,8 +18,8 @@
             </h3>
         </ng-template>
         @if (vm.goals) {
-            <div class="grid">
-                <div class="col-12">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12">
                     @if (vm.goals.primary.conditions.length) {
                         <dot-experiments-details-table
                             [data]="vm.goals.primary.conditions"
@@ -27,7 +27,7 @@
                             [title]="titleTpl">
                             <ng-template #headers>
                                 <div
-                                    class="flex col flex-wrap align-items-center"
+                                    class="flex col flex-wrap items-center"
                                     data-testId="goal-header-parameter">
                                     {{
                                         vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
@@ -35,15 +35,15 @@
                                             : ('experiments.goal.conditions.parameter' | dm)
                                     }}
                                 </div>
-                                <div class="flex col flex-wrap align-items-center">
+                                <div class="flex col flex-wrap items-center">
                                     {{ 'experiments.goal.conditions.operator' | dm }}
                                 </div>
-                                <div class="flex col flex-wrap align-items-center">
+                                <div class="flex col flex-wrap items-center">
                                     {{ 'experiments.goal.conditions.value' | dm }}
                                 </div>
                             </ng-template>
                             <ng-template #rows let-row>
-                                <div class="flex col flex-wrap align-items-center capitalize">
+                                <div class="flex col flex-wrap items-center capitalize">
                                     @if (row.isDefault) {
                                         <span data-testId="goal-default-parameter">
                                             {{ 'experiments.goal.conditions.default' | dm }}
@@ -56,11 +56,11 @@
                                             : row.parameter
                                     }}
                                 </div>
-                                <div class="flex col flex-wrap align-content-center capitalize">
+                                <div class="flex col flex-wrap content-center capitalize">
                                     {{ row.operator | lowercase }}
                                 </div>
                                 <div
-                                    class="flex col flex-wrap align-items-center"
+                                    class="flex col flex-wrap items-center"
                                     data-testId="goal-value">
                                     {{
                                         vm.goals.primary.type === GOAL_TYPES.URL_PARAMETER
@@ -71,8 +71,8 @@
                             </ng-template>
                         </dot-experiments-details-table>
                     } @else {
-                        <div class="flex align-items-center flex-1">
-                            <h3 class="flex-grow-1 flex gap-1 detail__title">
+                        <div class="flex items-center flex-1">
+                            <h3 class="grow flex gap-1 detail__title">
                                 <span data-testId="goal-label-type-goal">
                                     {{ GOALS_METADATA_MAP[vm.goals.primary.type].label | dm }}
                                 </span>
@@ -81,7 +81,7 @@
                                     {{ vm.goals.primary.name | dm }}
                                 </span>
                             </h3>
-                            <div class="flex-none flex align-items-center delete">
+                            <div class="flex-none flex items-center delete">
                                 <div
                                     [pTooltip]="vm.disabledTooltipLabel | dm"
                                     [tooltipDisabled]="!vm.disabledTooltipLabel"

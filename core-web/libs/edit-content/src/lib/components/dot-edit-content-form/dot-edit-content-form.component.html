@@ -77,15 +77,15 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="dot-edit-content-actions flex align-items-center w-full"
+        class="dot-edit-content-actions flex items-center w-full"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         <!-- Left group for lock controls -->
-        <div class="dot-edit-content-actions__left flex align-items-center">
+        <div class="dot-edit-content-actions__left flex items-center">
             @if (!$store.isViewingHistoricalVersion()) {
                 @if (canLock) {
                     <div
-                        class="dot-edit-content-actions__lock flex align-items-center gap-2"
+                        class="dot-edit-content-actions__lock flex items-center gap-2"
                         [class.locked]="isContentLocked">
                         <p-inputSwitch
                             [ngModel]="isContentLocked"
@@ -100,7 +100,7 @@
         </div>
 
         <!-- Right group for all other actions -->
-        <div class="dot-edit-content-actions__right flex align-items-center">
+        <div class="dot-edit-content-actions__right flex items-center">
             @if ($store.isViewingHistoricalVersion()) {
                 <!-- Historical version actions - only Restore -->
                 <button
@@ -142,7 +142,7 @@
 
             <!-- Sidebar toggle always visible -->
             <div
-                class="dot-edit-content-actions__sidebar-toggle flex align-items-center"
+                class="dot-edit-content-actions__sidebar-toggle flex items-center"
                 data-testId="sidebar-toggle"
                 [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
                 <button

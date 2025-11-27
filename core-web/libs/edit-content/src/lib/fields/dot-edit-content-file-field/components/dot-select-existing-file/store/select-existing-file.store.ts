@@ -47,7 +47,7 @@ export interface SelectExisingFileState {
     };
     selectedContent: DotCMSContentlet | null;
     searchQuery: string;
-    viewMode: 'list' | 'grid';
+    viewMode: 'list' | 'grid grid-cols-12 gap-4';
     mimeTypes: string[];
 }
 

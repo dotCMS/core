@@ -130,7 +130,7 @@ export const tableChangeToItems: DotMenuItem[] = [...headings, paragraph, ...lis
 
 export const SuggestionPopperModifiers = [
     {
-        name: 'flip',
+        name: 'animate-flip',
         options: {
             fallbackPlacements: ['top']
         }
@@ -175,7 +175,7 @@ export const BASIC_TIPPY_OPTIONS: Partial<Props> = {
     popperOptions: {
         modifiers: [
             {
-                name: 'flip',
+                name: 'animate-flip',
                 options: { fallbackPlacements: ['top-start'] }
             }
         ]

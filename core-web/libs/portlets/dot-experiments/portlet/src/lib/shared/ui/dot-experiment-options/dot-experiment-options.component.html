@@ -10,7 +10,7 @@
             <div
                 [attr.data-testId]="'dot-options-item-content_' + item.val"
                 [class.expanded]="expanded.has(i)"
-                class="option-item__content flex flex-grow-1 flex-col"
+                class="option-item__content flex grow flex-col"
                 [@contentExpansion]="expanded.has(i) ? 'expanded' : 'collapsed'">
                 @if (expanded.has(i) && item?.content?.templateRef) {
                     <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>

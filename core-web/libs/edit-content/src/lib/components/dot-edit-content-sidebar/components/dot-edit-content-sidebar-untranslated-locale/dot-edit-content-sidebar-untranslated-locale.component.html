@@ -1,12 +1,12 @@
 <p>{{ 'edit.content.sidebar.locales.untranslated.text' | dm }}</p>
-<div class="flex gap-2 align-items-center">
+<div class="flex gap-2 items-center">
     <p-radioButton value="populate" name="option" inputId="populate" [(ngModel)]="selectedOption" />
     <label for="populate" data-testId="populate-label">
         {{ 'edit.content.sidebar.locales.untranslated.populate' | dm }}
         <b>{{ config?.data?.currentLocale?.isoCode | dotIsoCode }}</b>
     </label>
 </div>
-<div class="flex gap-2 align-items-center">
+<div class="flex gap-2 items-center">
     <p-radioButton value="manual" name="option" inputId="manual" [(ngModel)]="selectedOption" />
     <label for="manual" data-testId="manual-label">
         {{ 'edit.content.sidebar.locales.untranslated.manually' | dm }}

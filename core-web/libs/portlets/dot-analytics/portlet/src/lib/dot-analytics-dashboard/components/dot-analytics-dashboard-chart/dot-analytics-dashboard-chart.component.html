@@ -23,34 +23,30 @@
 
     @if ($isError()) {
         <!-- Error state -->
-        <div
-            class="chart-error flex align-items-center justify-content-center"
-            [style.height]="height">
+        <div class="chart-error flex items-center justify-center" [style.height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.error.loading"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isLoading) {
         <!-- Loading state with skeletons -->
-        <div
-            class="chart-loading flex align-items-center justify-content-center"
-            [style.height]="height">
+        <div class="chart-loading flex items-center justify-center" [style.height]="height">
             @if (type === 'line') {
                 <!-- Line chart skeleton -->
                 <div class="chart-skeleton chart-skeleton--line">
                     <div class="line-chart-skeleton">
                         <!-- Y-axis labels skeleton -->
                         <div class="y-axis-skeleton">
-                            <p-skeleton height="0.75rem" width="1.875rem" class="mb-4"></p-skeleton>
+                            <p-skeleton height="0.75rem" width="1.875rem" class="mb-6"></p-skeleton>
                             <p-skeleton
                                 height="0.75rem"
                                 width="1.5625rem"
-                                class="mb-4"></p-skeleton>
+                                class="mb-6"></p-skeleton>
                             <p-skeleton
                                 height="0.75rem"
                                 width="2.1875rem"
-                                class="mb-4"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="1.75rem" class="mb-4"></p-skeleton>
+                                class="mb-6"></p-skeleton>
+                            <p-skeleton height="0.75rem" width="1.75rem" class="mb-6"></p-skeleton>
                             <p-skeleton height="0.75rem" width="1.25rem"></p-skeleton>
                         </div>
 
@@ -91,7 +87,7 @@
     } @else if (isEmpty) {
         <!-- Empty state -->
         <div
-            class="chart-container chart-empty w-full flex align-items-center justify-content-center"
+            class="chart-container chart-empty w-full flex items-center justify-center"
             [style.height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.empty.description"

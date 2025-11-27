@@ -286,7 +286,7 @@ const HorizontalTemplate = `
 
 
 <h3>Grid</h3>
-<div class="p-fluid p-formgrid grid">
+<div class="p-fluid p-formgrid grid grid-cols-12 gap-4">
     <div class="p-field p-col">
         <label for="firstname1">Firstname</label>
         <input id="firstname1" type="text" pInputText>

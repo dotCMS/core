@@ -1,7 +1,7 @@
-<div class="dot-device-selector wrapper h-full flex-auto flex align-items-center gap-3 min-w-full">
+<div class="dot-device-selector wrapper h-full flex-auto flex items-center gap-4 min-w-full">
     <dot-icon big name="devices"></dot-icon>
 
-    <div class="device-selector__field flex-grow-1">
+    <div class="device-selector__field grow">
         <p-select
             (onChange)="change($event.value)"
             [(ngModel)]="value"

@@ -50,7 +50,7 @@
         <ng-template pTemplate="item" let-item>
             <a
                 pRipple
-                class="flex align-items-center p-menuitem-link menu-item"
+                class="flex items-center p-menuitem-link menu-item"
                 [ngClass]="{ 'menu-item--active': item.id === activeMenuItemId() }">
                 <span>{{ item.label }}</span>
             </a>

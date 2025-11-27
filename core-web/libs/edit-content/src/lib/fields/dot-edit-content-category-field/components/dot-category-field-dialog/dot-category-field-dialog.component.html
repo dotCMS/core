@@ -16,7 +16,7 @@
                     (term)="store.search($event)"
                     [isLoading]="store.isSearchLoading()" />
             </div>
-            <div class="flex-grow-1 category-field__categories">
+            <div class="grow category-field__categories">
                 @if (store.mode() === 'list') {
                     <dot-category-field-category-list
                         (itemChecked)="store.updateSelected($event.selected, $event.item)"
@@ -45,7 +45,7 @@
                         (removeItem)="store.removeSelected($event)"
                         [categories]="store.dialog.selected()" />
                 </div>
-                <div class="category-field__actions flex justify-content-end">
+                <div class="category-field__actions flex justify-end">
                     <button
                         (click)="store.removeSelected(store.dialogSelectedKeys())"
                         class="p-button p-button-link"

@@ -1,15 +1,15 @@
 @if ($showMessage()) {
     <p-message severity="info" data-testid="message">
         <ng-template pTemplate="content">
-            <div class="flex align-items-center justify-content-between gap-2 w-full">
-                <div class="flex align-items-center gap-2">
+            <div class="flex items-center justify-between gap-2 w-full">
+                <div class="flex items-center gap-2">
                     <i class="pi pi-info-circle"></i>
                     <span data-testid="message-content">
                         {{ 'content-drive.feature.state' | dm }}
                         <b>{{ 'development' | dm }}</b>
                     </span>
                 </div>
-                <div class="flex align-items-center gap-2">
+                <div class="flex items-center gap-2">
                     <a
                         href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
                         target="_blank"

@@ -1,6 +1,6 @@
-<div class="grid grid-nogutter justify-content-between md:gap-2 xl:gap-3 wrapper">
+<div class="grid grid-cols-12 gap-4 grid-nogutter justify-between md:gap-2 xl:gap-4 wrapper">
     @if (suggestedWinner) {
-        <div class="flex align-items-center justify-content-center gap-3">
+        <div class="flex items-center justify-center gap-4">
             @if (suggestedWinner.icon === 'dot-trophy') {
                 <img
                     alt="winner icon"
@@ -14,23 +14,23 @@
             }
             <span
                 [innerHTML]="suggestedWinner.legend | dm"
-                class="flex-grow-1"
+                class="grow"
                 data-TestId="suggested-winner-legend"></span>
         </div>
     }
     @if (goals) {
-        <div class="flex align-items-center justify-content-center gap-3">
+        <div class="flex items-center justify-center gap-4">
             <i class="pi pi-flag"></i>
-            <div class="flex-grow-1">
+            <div class="grow">
                 <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
                 <span data-TestId="goal-label">{{ goals.primary.name }}</span>
             </div>
         </div>
     }
     @if (scheduling) {
-        <div class="flex align-items-center justify-content-center gap-3">
+        <div class="flex items-center justify-center gap-4">
             <i class="pi pi-calendar"></i>
-            <div class="flex-grow-1">
+            <div class="grow">
                 <span data-TestId="schedule-start-date">
                     {{ scheduling.startDate | date: 'longDate' }}
                 </span>
@@ -41,14 +41,14 @@
             </div>
         </div>
     }
-    <div class="flex align-items-center justify-content-center gap-3">
+    <div class="flex items-center justify-center gap-4">
         <i class="pi pi-user"></i>
-        <div class="flex-grow-1" data-TestId="summary-sessions-reached">
+        <div class="grow" data-TestId="summary-sessions-reached">
             <span class="font-bold">{{ 'experiments.summary.winner.session-to-date' | dm }}</span>
             {{ sessionsReached | number }}
         </div>
     </div>
-    <div class="flex align-items-center justify-content-center gap-3">
+    <div class="flex items-center justify-center gap-4">
         <button
             (click)="updateResults.emit()"
             [label]="'Refresh' | dm"

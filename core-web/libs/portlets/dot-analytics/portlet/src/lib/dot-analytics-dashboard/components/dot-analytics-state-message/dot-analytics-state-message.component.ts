@@ -7,7 +7,7 @@ import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
     imports: [DotMessagePipe],
     template: `
         <div
-            class="flex flex-col justify-content-center align-items-center h-full text-center gap-3"
+            class="flex flex-col justify-center items-center h-full text-center gap-4"
             [@fadeInContent]>
             <i [class]="$iconClasses()"></i>
             <div class="state-message">{{ message() | dm }}</div>

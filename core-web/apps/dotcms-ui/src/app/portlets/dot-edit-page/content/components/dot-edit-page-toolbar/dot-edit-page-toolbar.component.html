@@ -1,6 +1,6 @@
 <dot-secondary-toolbar>
     <!-- Header title and actions-->
-    <div class="main-toolbar-left flex align-items-center gap-2">
+    <div class="main-toolbar-left flex items-center gap-2">
         @if (variant) {
             <button
                 (click)="backToExperiment.emit(true)"
@@ -13,7 +13,7 @@
             <dot-edit-page-info
                 [title]="variant.variant.title"
                 [url]="variant.variant.url"
-                class="dot-variant-header flex gap-3" />
+                class="dot-variant-header flex gap-4" />
         } @else {
             <dot-edit-page-info
                 [apiLink]="apiLink"
@@ -25,7 +25,7 @@
                     (click)="favoritePage.emit(true)"
                     [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
                     [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
-                    class="flex gap-3"
+                    class="flex gap-4"
                     data-testId="addFavoritePageButton"
                     styleClass="p-button-rounded p-button-sm p-button-text"
                     tooltipPosition="bottom"></p-button>
@@ -33,7 +33,7 @@
         }
     </div>
 
-    <div class="main-toolbar-right flex align-items-center gap-3">
+    <div class="main-toolbar-right flex items-center gap-4">
         @if (variant) {
             <dot-global-message data-testId="globalMessage" right />
             <i class="pi pi-filter-fill -rotate-180"></i>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Tab actions and dropdowns -->
-    <div class="lower-toolbar-left w-7">
+    <div class="lower-toolbar-left w-7/12">
         <dot-edit-page-state-controller
             (modeChange)="stateChange()"
             [pageState]="pageState"
@@ -89,7 +89,7 @@
         }
     </div>
 
-    <div class="lower-toolbar-right w-5">
+    <div class="lower-toolbar-right w-5/12">
         <dot-edit-page-view-as-controller
             [pageState]="pageState"
             [variant]="variant"

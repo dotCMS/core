@@ -19,8 +19,7 @@ const meta: Meta<MultiSelect> = {
             imports: [MultiSelectModule, BrowserAnimationsModule, FormsModule]
         }),
         componentWrapperDecorator(
-            (story) =>
-                `<div class="card flex justify-content-center w-50rem h-25rem">${story}</div>`
+            (story) => `<div class="card flex justify-center w-50rem h-25rem">${story}</div>`
         )
     ],
     parameters: {
@@ -52,7 +51,7 @@ const meta: Meta<MultiSelect> = {
         <p-multiSelect
             ${argsToTemplate(args)}
             containerStyleClass="w-full"
-            class="w-full md:w-20rem"
+            class="w-full md:w-80"
         />`
     })
 };

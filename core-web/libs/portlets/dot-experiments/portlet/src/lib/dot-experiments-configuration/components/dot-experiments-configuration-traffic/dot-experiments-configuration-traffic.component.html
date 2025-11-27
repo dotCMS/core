@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
-            <h2 class="flex align-items-center gap-1 uppercase" data-testId="traffic-card-title">
+            <h2 class="flex items-center gap-1 uppercase" data-testId="traffic-card-title">
                 <dot-icon
                     [ngClass]="{ isDone: vm.trafficAllocation }"
                     [size]="16"
@@ -12,8 +12,8 @@
             </h2>
         </ng-template>
         <p-card>
-            <div class="flex flex-row align-items-center align-content-between gap-2">
-                <div class="title flex flex-grow-1 flex-col">
+            <div class="flex flex-row items-center content-between gap-2">
+                <div class="title flex grow flex-col">
                     <span data-testId="card-title">
                         {{ 'experiments.configure.traffic.load.name' | dm }}
                     </span>

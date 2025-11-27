@@ -31,9 +31,9 @@
         [totalRecords]="totalRecords"
         [value]="themes"
         #dataView
-        layout="grid">
-        <ng-template let-themes pTemplate="grid">
-            <div class="grid grid-nogutter">
+        layout="grid grid-cols-12 gap-4">
+        <ng-template let-themes pTemplate="grid grid-cols-12 gap-4">
+            <div class="grid grid-cols-12 gap-4 grid-nogutter">
                 @for (theme of themes; track $index) {
                     <div
                         (click)="selectTheme(theme); $event.stopImmediatePropagation()"

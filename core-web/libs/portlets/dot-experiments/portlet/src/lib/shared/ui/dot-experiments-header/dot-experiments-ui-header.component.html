@@ -1,4 +1,4 @@
-<div class="wrapper flex flex-row align-items-center gap-2">
+<div class="wrapper flex flex-row items-center gap-2">
     <button
         (click)="goBack.emit(true)"
         class="p-button-rounded p-button-text"
@@ -13,7 +13,7 @@
     }
 
     @if (!!experiment?.status) {
-        <div class="flex flex-grow-1 align-items-center justify-content-end">
+        <div class="flex grow items-center justify-end">
             <p-chip
                 [icon]="this.statusIcon"
                 [label]="

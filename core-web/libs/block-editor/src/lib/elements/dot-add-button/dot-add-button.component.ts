@@ -14,7 +14,7 @@ import { PluginKey } from '@tiptap/pm/state';
             [pluginKey]="pluginKey"
             [tippyOptions]="tippyOptions">
             <button
-                class="add-button flex  align-items-center justify-content-center cursor-pointer"
+                class="add-button flex  items-center justify-center cursor-pointer"
                 (click)="onClick()">
                 <span class="pi pi-plus"></span>
             </button>

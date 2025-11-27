@@ -14,7 +14,7 @@
             class="ai-content__form">
             @if (vm.status === ComponentStatus.LOADING) {
                 <p-skeleton width="100%" height="22rem" />
-                <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
+                <p-skeleton class="flex justify-center" width="7rem" height="2rem" />
             } @else if (vm.generatedContent[vm.activeIndex]?.error) {
                 <dot-empty-container
                     (buttonAction)="store.generateContent(form.value.textPrompt)"

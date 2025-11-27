@@ -54,7 +54,7 @@ const meta: Meta<Args> = {
             ]
         }),
         componentWrapperDecorator(
-            (story) => `<div class="card flex h-25rem justify-content-center w-full">${story}</div>`
+            (story) => `<div class="card flex h-[25rem] justify-center w-full">${story}</div>`
         )
     ],
     render: (args) => ({
@@ -66,7 +66,7 @@ const meta: Meta<Args> = {
         },
         template: `
             <form [formGroup]="form" class="w-full flex flex-col">
-                <div class="flex align-items-center">
+                <div class="flex items-center">
                     <dot-edit-content-host-folder-field
                         [formControlName]="field.variable"
                         ${argsToTemplate(args)} />

@@ -3,13 +3,13 @@
         {{ 'dot.file.relationship.dialog.search.title' | dm }}
     </span>
 </div>
-<div class="flex justify-content-between align-items-center w-full mb-2">
-    <div class="flex align-items-center gap-2">
+<div class="flex justify-between items-center w-full mb-2">
+    <div class="flex items-center gap-2">
         <div class="flex-none">
             <dot-search (onSearch)="store.search($event)" [isLoading]="store.isLoading()" />
         </div>
 
-        <div class="flex-grow-1">
+        <div class="grow">
             <p class="text-primary-500">
                 {{
                     'dot.file.relationship.dialog.per.page'
@@ -18,7 +18,7 @@
             </p>
         </div>
     </div>
-    <div class="flex align-items-center gap-2">
+    <div class="flex items-center gap-2">
         <p-inputSwitch
             [attr.aria-label]="'dot.file.relationship.dialog.show.selected.items' | dm"
             inputId="show-selected-switch"

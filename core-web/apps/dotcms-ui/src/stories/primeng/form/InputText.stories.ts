@@ -5,7 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { InputText, InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-const InputTextTemplate = `<div class="flex flex-col gap-3 mb-2">
+const InputTextTemplate = `<div class="flex flex-col gap-4 mb-2">
 <div class="flex flex-col gap-2" style="width:200px;">
     <label htmlFor="username">Username</label>
     <input id="username" pInputText aria-describedby="username-help" placeholder="Placeholder" autocomplete="off" />
@@ -53,7 +53,7 @@ const InputTextTemplate = `<div class="flex flex-col gap-3 mb-2">
 </div>
 </div>
 <h4>Small</h4>
-<div class="flex flex-col gap-3 mb-1">
+<div class="flex flex-col gap-4 mb-1">
 <div class="flex flex-col gap-2" style="width:200px;">
     <label htmlFor="username">Username</label>
     <input class="p-inputtext-sm" id="username" pInputText aria-describedby="username-help" placeholder="Placeholder" autocomplete="off" />

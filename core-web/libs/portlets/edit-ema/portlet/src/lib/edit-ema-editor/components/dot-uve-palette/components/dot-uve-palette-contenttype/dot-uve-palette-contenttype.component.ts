@@ -23,7 +23,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     }
 })
 export class DotUVEPaletteContenttypeComponent {
-    $view = input<'grid' | 'list'>('grid', { alias: 'view' });
+    $view = input<'grid grid-cols-12 gap-4' | 'list'>('grid grid-cols-12 gap-4', { alias: 'view' });
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
     readonly onSelectContentType = output<string>();

@@ -11,7 +11,7 @@
 
 <!-- Header template to avoid repetition -->
 <ng-template #metricHeader>
-    <div class="flex justify-content-between align-items-start">
+    <div class="flex justify-between items-start">
         <h3 class="metric-title" data-testid="metric-title">
             {{ metricName | dm }}
         </h3>
@@ -31,14 +31,12 @@
     data-testid="metric-card">
     @if (isErrorState) {
         <!-- Error state -->
-        <div class="flex flex-col justify-content-between h-full gap-3">
+        <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon -->
             <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
 
             <!-- Error message centered -->
-            <div
-                class="flex flex-col justify-content-center align-items-center flex-1"
-                [@fadeInContent]>
+            <div class="flex flex-col justify-center items-center flex-1" [@fadeInContent]>
                 <dot-analytics-state-message
                     message="analytics.metrics.error.reload"
                     icon="pi-exclamation-triangle" />
@@ -46,14 +44,12 @@
         </div>
     } @else if (isEmptyState) {
         <!-- Empty state -->
-        <div class="flex flex-col justify-content-between h-full gap-3">
+        <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon -->
             <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
 
             <!-- Empty message centered -->
-            <div
-                class="flex flex-col justify-content-center align-items-center flex-1"
-                [@fadeInContent]>
+            <div class="flex flex-col justify-center items-center flex-1" [@fadeInContent]>
                 <dot-analytics-state-message
                     message="analytics.metrics.empty.insufficient-data"
                     icon="pi-info-circle" />
@@ -61,9 +57,9 @@
         </div>
     } @else if (isLoadingState) {
         <!-- Loading state with skeleton -->
-        <div class="flex flex-col justify-content-between h-full gap-3">
+        <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon skeletons -->
-            <div class="flex justify-content-between align-items-start" [@fadeInContent]>
+            <div class="flex justify-between items-start" [@fadeInContent]>
                 <p-skeleton width="10rem" height="1.4rem"></p-skeleton>
                 @if (hasIcon) {
                     <p-skeleton width="1.5rem" height="1.5rem" shape="circle"></p-skeleton>
@@ -71,7 +67,7 @@
             </div>
 
             <!-- Skeleton content -->
-            <div class="flex flex-col gap-3" [@fadeInContent]>
+            <div class="flex flex-col gap-4" [@fadeInContent]>
                 <!-- Skeleton value -->
                 <p-skeleton width="1.5rem" height="1.4rem"></p-skeleton>
             </div>
@@ -81,12 +77,12 @@
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
-        <div class="flex flex-col justify-content-between h-full gap-3">
+        <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon -->
             <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
 
             <!-- Contenido principal -->
-            <div class="flex flex-col gap-3" [@fadeInContent]>
+            <div class="flex flex-col gap-4" [@fadeInContent]>
                 <div class="metric-value" data-testid="metric-value">
                     {{ formattedValue }}
                 </div>

@@ -27,8 +27,7 @@ const meta: Meta<Args> = {
             imports: [TreeSelectModule, FormsModule, BrowserModule, BrowserAnimationsModule]
         }),
         componentWrapperDecorator(
-            (story) =>
-                `<div class="card flex justify-content-center w-25rem h-25rem">${story}</div>`
+            (story) => `<div class="card flex justify-center w-[25rem] h-25rem">${story}</div>`
         )
     ],
     component: TreeSelect,
@@ -54,7 +53,7 @@ const meta: Meta<Args> = {
         <p-treeSelect
             ${argsToTemplate(args)}
             containerStyleClass="w-full"
-            class="w-full md:w-20rem"
+            class="w-full md:w-80"
             [class.ng-invalid]="invalid"
             [class.ng-dirty]="invalid"
         >
@@ -111,8 +110,8 @@ export const WithLabel: Story = {
     decorators: [
         componentWrapperDecorator(
             (story) =>
-                `<div class="card flex justify-content-center w-25rem h-25rem">
-                    <span class="md:w-20rem w-full">
+                `<div class="card flex justify-center w-[25rem] h-[25rem]">
+                    <span class="md:w-80 w-full">
                         <label for="treeselect">Label</label>
                         ${story}
                     </span>
@@ -125,7 +124,7 @@ export const WithFloatLabel: Story = {
     decorators: [
         componentWrapperDecorator(
             (story) =>
-                `<div class="md:w-20rem w-full">
+                `<div class="md:w-80 w-full">
                     <span class="p-float-label w-full">
                         ${story}
                         <label for="treeselect">Label</label>

@@ -27,8 +27,7 @@ const meta: Meta = {
             ]
         }),
         componentWrapperDecorator(
-            (story) =>
-                `<div class="card flex justify-content-center  w-50rem h-25rem">${story}</div>`
+            (story) => `<div class="card flex justify-center  w-50rem h-25rem">${story}</div>`
         )
     ],
     parameters: {

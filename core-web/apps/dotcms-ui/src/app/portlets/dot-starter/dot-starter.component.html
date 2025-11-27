@@ -1,10 +1,10 @@
 @if (userData$ | async; as user) {
-    <div class="grid dot-starter-top-content">
-        <div class="col-12 dot-starter-header">
+    <div class="grid grid-cols-12 gap-4 dot-starter-top-content">
+        <div class="col-span-12 dot-starter-header">
             <div>
                 <p
                     [innerHTML]="'starter.description' | dm: [user.username]"
-                    class="dot-starter-description mt-5"></p>
+                    class="dot-starter-description mt-8"></p>
             </div>
             <div class="flex items-center">
                 <p-checkbox
@@ -16,9 +16,9 @@
                 </label>
             </div>
         </div>
-        <div class="col-12">
-            <div class="grid">
-                <div class="md:col-12">
+        <div class="col-span-12">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="md:col-span-12">
                     <div class="dot-starter-top-main__section">
                         @if (user.showCreateDataModelLink) {
                             <a
@@ -94,12 +94,12 @@
                         }
                     </div>
                 </div>
-                <div class="md:col-12 dot-starter-offset">
+                <div class="md:col-span-12 dot-starter-offset">
                     <h5 class="dot-starter-top-main__title" data-testId="dot-side-title">
                         {{ 'starter.side.title' | dm }}
                     </h5>
                 </div>
-                <div class="md:col-12 lg:col-6 dot-starter-offset">
+                <div class="md:col-span-12 lg:col-span-6 dot-starter-offset">
                     <a
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/graphql"
@@ -143,7 +143,7 @@
                         </div>
                     </a>
                 </div>
-                <div class="md:col-12 lg:col-5 dot-starter-offset">
+                <div class="md:col-span-12 lg:col-span-5 dot-starter-offset">
                     <a
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/content-api"
@@ -177,12 +177,12 @@
         </div>
     </div>
     <div class="dot-starter-bottom-content">
-        <div class="md:col-12">
+        <div class="md:col-span-12">
             <h3 class="dot-starter-top-main__title" data-test="dot-resources-title">
                 {{ 'starter.side.resources.title' | dm }}
             </h3>
         </div>
-        <div class="lg:col-4 md:col-12">
+        <div class="lg:col-span-4 md:col-span-12">
             <a
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/docs/latest/"
@@ -201,7 +201,7 @@
                 </div>
             </a>
         </div>
-        <div class="lg:col-4 md:col-12">
+        <div class="lg:col-span-4 md:col-span-12">
             <a
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/codeshare/"
@@ -216,7 +216,7 @@
                 </div>
             </a>
         </div>
-        <div class="lg:col-4 md:col-12">
+        <div class="lg:col-span-4 md:col-span-12">
             <a
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/forum/"
@@ -233,7 +233,7 @@
                 </div>
             </a>
         </div>
-        <div class="lg:col-4 md:col-12">
+        <div class="lg:col-span-4 md:col-span-12">
             <a
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/courses/"
@@ -248,7 +248,7 @@
                 </div>
             </a>
         </div>
-        <div class="lg:col-4 md:col-12">
+        <div class="lg:col-span-4 md:col-span-12">
             <a
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/review/"
@@ -263,7 +263,7 @@
                 </div>
             </a>
         </div>
-        <div class="lg:col-4 md:col-12">
+        <div class="lg:col-span-4 md:col-span-12">
             <a
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/contact-us/"

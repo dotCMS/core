@@ -6,7 +6,7 @@
 <div class="w-full h-full">
     @if (store.errorMessage()) {
         <div
-            class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base">
+            class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base">
             <p>{{ store.errorMessage() | dm }}</p>
         </div>
     } @else {
@@ -33,7 +33,7 @@
                 <tr>
                     <th
                         scope="col"
-                        class="max-w-5rem"
+                        class="max-w-20"
                         pFrozenColumn
                         alignFrozen="left"
                         [frozen]="true">
@@ -41,29 +41,29 @@
                             <p-tableHeaderCheckbox />
                         }
                     </th>
-                    <th scope="col" [colSpan]="2" class="max-w-11rem" [pSortableColumn]="'title'">
+                    <th scope="col" [colSpan]="2" class="max-w-44" [pSortableColumn]="'title'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.title' | dm }}
                         </span>
                         <p-sortIcon [field]="'title'" />
                     </th>
                     @for (column of columns; track $index) {
-                        <th class="max-w-11rem" scope="col" [pSortableColumn]="column.field">
+                        <th class="max-w-44" scope="col" [pSortableColumn]="column.field">
                             <span class="capitalize">{{ column.header }}</span>
                             <p-sortIcon [field]="column.field" />
                         </th>
                     }
-                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'language'">
+                    <th scope="col" class="max-w-44" [pSortableColumn]="'language'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.language' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'status'">
+                    <th scope="col" class="max-w-44" [pSortableColumn]="'status'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.status' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'modDate'">
+                    <th scope="col" class="max-w-44" [pSortableColumn]="'modDate'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.last.modified' | dm }}
                         </span>
@@ -73,8 +73,8 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td [colSpan]="columns.length + $staticColumns()" class="border-none">
-                        <div class="flex justify-content-center p-6 text-base gap-2">
+                    <td [colSpan]="columns.length + $staticColumns()" class="border-0">
+                        <div class="flex justify-center p-12 text-base gap-2">
                             <i class="pi pi-folder-open"></i>
                             <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
                         </div>
@@ -83,7 +83,7 @@
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
                 <tr [class.p-highlight]="checkIfSelected(item)">
-                    <td class="max-w-5rem" pFrozenColumn alignFrozen="left" [frozen]="true">
+                    <td class="max-w-20" pFrozenColumn alignFrozen="left" [frozen]="true">
                         @if (selectionMode === 'multiple') {
                             <p-tableCheckbox [value]="item" />
                         } @else {
@@ -99,24 +99,24 @@
                                 data-testId="contentlet-thumbnail" />
                         </div>
                     </td>
-                    <td class="max-w-11rem">
+                    <td class="max-w-44">
                         <p class="truncate-text">{{ item.title }}</p>
                     </td>
                     @for (column of columns; track $index) {
-                        <td class="max-w-11rem">
+                        <td class="max-w-44">
                             <p class="truncate-text">{{ item[column.field] }}</p>
                         </td>
                     }
-                    <td class="max-w-11rem">
+                    <td class="max-w-44">
                         <p class="truncate-text">{{ item.language | language }}</p>
                     </td>
-                    <td class="max-w-11rem">
+                    <td class="max-w-44">
                         @let status = item | contentletStatus;
                         <p-chip
                             [styleClass]="'p-chip-sm ' + status.classes"
                             [label]="status.label" />
                     </td>
-                    <td class="max-w-11rem">
+                    <td class="max-w-44">
                         <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>
                     </td>
                 </tr>

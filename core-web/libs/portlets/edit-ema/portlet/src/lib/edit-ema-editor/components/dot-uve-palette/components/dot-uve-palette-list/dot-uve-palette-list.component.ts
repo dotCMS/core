@@ -179,8 +179,8 @@ export class DotUvePaletteListComponent implements OnInit {
                 items: [
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
-                        command: () => this.onViewSelect('grid'),
-                        styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
+                        command: () => this.onViewSelect('grid grid-cols-12 gap-4'),
+                        styleClass: viewMode === 'grid grid-cols-12 gap-4' ? 'active-menu-item' : ''
                     },
                     {
                         label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
@@ -265,7 +265,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Handles view mode selection (grid/list) from the options menu.
      * Updates the view signal to toggle between grid and list layouts.
      *
-     * @param viewOption - Selected view mode ('grid' or 'list')
+     * @param viewOption - Selected view mode ('grid grid-cols-12 gap-4' or 'list')
      */
     protected onViewSelect(viewOption: DotPaletteViewMode) {
         this.#paletteListStore.setLayoutMode(viewOption);

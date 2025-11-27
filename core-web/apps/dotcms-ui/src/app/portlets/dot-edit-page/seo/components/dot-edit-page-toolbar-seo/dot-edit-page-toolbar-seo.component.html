@@ -1,6 +1,6 @@
 <dot-secondary-toolbar>
     <!-- Header title and actions-->
-    <div class="main-toolbar-left flex align-items-center gap-2">
+    <div class="main-toolbar-left flex items-center gap-2">
         @if (variant) {
             <button
                 (click)="backToExperiment.emit(true)"
@@ -14,7 +14,7 @@
                 [title]="variant.variant.title"
                 [apiLink]="apiLink"
                 [url]="variant.variant.url"
-                class="dot-variant-header flex gap-3"></dot-edit-page-info-seo>
+                class="dot-variant-header flex gap-4"></dot-edit-page-info-seo>
         } @else {
             <dot-edit-page-info-seo
                 [title]="pageState.page.title"
@@ -26,7 +26,7 @@
                     (click)="favoritePage.emit(true)"
                     [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
                     [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
-                    class="flex gap-3"
+                    class="flex gap-4"
                     styleClass="p-button-rounded p-button-sm p-button-text"
                     data-testId="addFavoritePageButton"
                     tooltipPosition="bottom"></p-button>
@@ -34,7 +34,7 @@
         }
     </div>
 
-    <div class="main-toolbar-right flex align-items-center gap-3">
+    <div class="main-toolbar-right flex items-center gap-4">
         @if (variant) {
             <dot-global-message data-testId="globalMessage" right></dot-global-message>
             <i class="pi pi-filter-fill -rotate-180"></i>
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Tab actions and dropdowns -->
-    <div class="lower-toolbar-left w-6">
+    <div class="lower-toolbar-left w-6/12">
         <dot-edit-page-state-controller-seo
             (modeChange)="stateChange()"
             [pageState]="pageState"
@@ -78,7 +78,7 @@
             [apiLink]="apiLink"></dot-edit-page-state-controller-seo>
     </div>
 
-    <div class="lower-toolbar-right w-6">
+    <div class="lower-toolbar-right w-6/12">
         @if (showWhatsChanged && isEnterpriseLicense$ | async) {
             <div class="flex items-center">
                 <p-checkbox

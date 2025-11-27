@@ -190,7 +190,7 @@ export class DotBubbleMenuComponent implements OnInit {
             modifiers: [
                 // This modifier is needed to flip the bubble menu when it is too close to the edge of the screen
                 {
-                    name: 'flip',
+                    name: 'animate-flip',
                     options: {
                         fallbackPlacements: ['top', 'bottom']
                     }

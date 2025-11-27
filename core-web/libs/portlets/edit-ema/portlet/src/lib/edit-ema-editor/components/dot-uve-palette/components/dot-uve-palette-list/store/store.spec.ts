@@ -126,7 +126,7 @@ describe('DotPaletteListStore', () => {
             });
             expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
             expect(store.status()).toBe(DotPaletteListStatus.LOADING);
-            expect(store.layoutMode()).toBe('grid');
+            expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
         });
 
         it('should initialize search params with correct defaults', () => {
@@ -204,8 +204,8 @@ describe('DotPaletteListStore', () => {
         });
 
         describe('$showListLayout', () => {
-            it('should return false when layoutMode is grid and in content types view', () => {
-                store.setLayoutMode('grid');
+            it('should return false when layoutMode is grid grid-cols-12 gap-4 and in content types view', () => {
+                store.setLayoutMode('grid grid-cols-12 gap-4');
 
                 expect(store.$showListLayout()).toBe(false);
             });
@@ -217,14 +217,14 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should return true when in contentlets view regardless of layout mode', () => {
-                store.setLayoutMode('grid');
+                store.setLayoutMode('grid grid-cols-12 gap-4');
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.$showListLayout()).toBe(true);
             });
 
-            it('should return false when back to content types view with grid layout', () => {
-                store.setLayoutMode('grid');
+            it('should return false when back to content types view with grid grid-cols-12 gap-4 layout', () => {
+                store.setLayoutMode('grid grid-cols-12 gap-4');
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.$showListLayout()).toBe(true);
@@ -281,21 +281,21 @@ describe('DotPaletteListStore', () => {
     describe('Methods', () => {
         describe('setLayoutMode', () => {
             it('should update layoutMode to list', () => {
-                expect(store.layoutMode()).toBe('grid');
+                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
 
                 store.setLayoutMode('list');
 
                 expect(store.layoutMode()).toBe('list');
             });
 
-            it('should update layoutMode to grid', () => {
+            it('should update layoutMode to grid grid-cols-12 gap-4', () => {
                 store.setLayoutMode('list');
 
                 expect(store.layoutMode()).toBe('list');
 
-                store.setLayoutMode('grid');
+                store.setLayoutMode('grid grid-cols-12 gap-4');
 
-                expect(store.layoutMode()).toBe('grid');
+                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
             });
 
             it('should affect $showListLayout computed', () => {
@@ -305,7 +305,7 @@ describe('DotPaletteListStore', () => {
 
                 expect(store.$showListLayout()).toBe(true);
 
-                store.setLayoutMode('grid');
+                store.setLayoutMode('grid grid-cols-12 gap-4');
 
                 expect(store.$showListLayout()).toBe(false);
             });
@@ -711,7 +711,7 @@ describe('DotPaletteListStore', () => {
                 );
 
                 // When null is returned, defaults to grid
-                expect(store.layoutMode()).toBe('grid');
+                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
             });
 
             it('should call getItem for sort options on initialization', () => {
@@ -728,7 +728,7 @@ describe('DotPaletteListStore', () => {
 
         describe('State Management: Layout and Sort', () => {
             it('should update layoutMode state when changed', () => {
-                expect(store.layoutMode()).toBe('grid');
+                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
 
                 store.setLayoutMode('list');
 
@@ -764,12 +764,12 @@ describe('DotPaletteListStore', () => {
                 store.setLayoutMode('list');
                 expect(store.layoutMode()).toBe('list');
 
-                store.setLayoutMode('grid');
-                expect(store.layoutMode()).toBe('grid');
+                store.setLayoutMode('grid grid-cols-12 gap-4');
+                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
             });
 
             it('should affect computed $showListLayout', () => {
-                store.setLayoutMode('grid');
+                store.setLayoutMode('grid grid-cols-12 gap-4');
                 expect(store.$showListLayout()).toBe(false);
 
                 store.setLayoutMode('list');

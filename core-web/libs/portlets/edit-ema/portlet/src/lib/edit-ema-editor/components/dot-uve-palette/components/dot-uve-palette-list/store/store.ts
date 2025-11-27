@@ -65,7 +65,7 @@ export const DEFAULT_STATE: DotPaletteListState = {
     },
     currentView: DotUVEPaletteListView.CONTENT_TYPES,
     status: DotPaletteListStatus.LOADING,
-    layoutMode: 'grid'
+    layoutMode: 'grid grid-cols-12 gap-4'
 };
 
 export const DotPaletteListStore = signalStore(
@@ -223,7 +223,7 @@ export const DotPaletteListStore = signalStore(
                 const layoutMode =
                     dotLocalstorageService.getItem<DotPaletteViewMode>(
                         DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY
-                    ) || 'grid';
+                    ) || 'grid grid-cols-12 gap-4';
                 const { orderby, direction } =
                     dotLocalstorageService.getItem<DotPaletteSortOption>(
                         DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY

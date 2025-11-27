@@ -13,7 +13,7 @@
     [(selection)]="$selectedProduct"
     (onRowSelect)="onRowSelect.emit($event.data)"
     [globalFilterFields]="['title', 'modUserName']"
-    styleClass="flex flex-col h-full justify-content-between">
+    styleClass="flex flex-col h-full justify-between">
     <ng-template pTemplate="emptymessage">
         <tr>
             <td colspan="4">
@@ -53,8 +53,8 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-content>
-        <tr class="h-3rem" [pSelectableRow]="content">
-            <td class="max-w-2rem">
+        <tr class="h-12" [pSelectableRow]="content">
+            <td class="max-w-8">
                 <div class="dataview-thumbnail">
                     <dot-contentlet-thumbnail
                         [iconSize]="'48px'"
@@ -63,7 +63,7 @@
                         data-testId="contentlet-thumbnail" />
                 </div>
             </td>
-            <td class="max-w-12rem">
+            <td class="max-w-48">
                 <p class="truncate-text">{{ content.title }}</p>
             </td>
             <td>{{ content.modUserName }}</td>

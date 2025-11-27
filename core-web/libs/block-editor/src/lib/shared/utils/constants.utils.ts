@@ -54,7 +54,7 @@ export const popperModifiers = [
         }
     },
     {
-        name: 'flip',
+        name: 'animate-flip',
         options: {
             fallbackPlacements: ['bottom-start', 'top-start']
         }

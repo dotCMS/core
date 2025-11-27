@@ -3,15 +3,15 @@
         <div class="flex flex-col gap-2">
             @if (title) {
                 <div
-                    class="header-title flex flex-row flex-wrap align-items-center"
+                    class="header-title flex flex-row flex-wrap items-center"
                     data-testId="header-title">
                     <ng-container *dotStringTemplateOutlet="title">
                         {{ title }}
                     </ng-container>
                 </div>
             }
-            <div class="flex flex-col gap-3 details">
-                <div class="details__headers grid grid-nogutter">
+            <div class="flex flex-col gap-4 details">
+                <div class="details__headers grid grid-cols-12 gap-4 grid-nogutter">
                     <ng-container
                         *ngTemplateOutlet="
                             headers || defaultHeaders;
@@ -20,7 +20,9 @@
                 </div>
                 <div class="details__rows-wrapper flex flex-col gap-2">
                     @for (row of data; track row) {
-                        <div class="details__row grid grid-nogutter" data-testId="detail-row">
+                        <div
+                            class="details__row grid grid-cols-12 gap-4 grid-nogutter"
+                            data-testId="detail-row">
                             <ng-container
                                 *ngTemplateOutlet="
                                     rows || defaultRowsTemplate;
@@ -35,7 +37,7 @@
                     @for (header of data[0] | keyvalue; track header; let last = $last) {
                         <div
                             [ngClass]="{ 'justify-content-end': last }"
-                            class="flex col flex-wrap align-items-center capitalize"
+                            class="flex col flex-wrap items-center capitalize"
                             data-testId="default-header-columns">
                             {{ header.key }}
                         </div>
@@ -45,7 +47,7 @@
             <ng-template #defaultRowsTemplate let-row>
                 @for (r of row | keyvalue; track r) {
                     <div
-                        class="flex col flex-wrap align-items-center capitalize"
+                        class="flex col flex-wrap items-center capitalize"
                         data-testId="default-row">
                         {{ r.value }}
                     </div>
@@ -53,9 +55,7 @@
             </ng-template>
         </div>
     } @else {
-        <div
-            class="empty flex justify-content-center align-items-center flex-col"
-            data-testId="empty-template">
+        <div class="empty flex justify-center items-center flex-col" data-testId="empty-template">
             <i class="empty__icon pi pi-table mb-2"></i>
             <p class="empty__message m-0" data-testId="empty-title">
                 {{ 'experiments.reports.summary.empty.title' | dm }}
@@ -66,11 +66,11 @@
         </div>
     }
 } @else {
-    <div class="grid" data-testId="loading-skeleton">
-        <div class="col-2 mt-4">
+    <div class="grid grid-cols-12 gap-4" data-testId="loading-skeleton">
+        <div class="col-span-2 mt-6">
             <p-skeleton height="1rem" width="100%"></p-skeleton>
         </div>
-        <div class="col-12">
+        <div class="col-span-12">
             <p-skeleton height="33rem" width="100%"></p-skeleton>
         </div>
     </div>

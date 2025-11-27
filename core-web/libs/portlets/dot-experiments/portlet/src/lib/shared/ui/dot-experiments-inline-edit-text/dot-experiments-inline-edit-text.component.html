@@ -1,6 +1,6 @@
 <p-inplace [disabled]="disabled" class="flex w-full">
     <ng-template pTemplate="display">
-        <div class="flex flex-wrap align-items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             @if (text) {
                 <span data-testId="text-input">{{ text }}</span>
             } @else {
@@ -20,8 +20,8 @@
     </ng-template>
 
     <ng-template pTemplate="content">
-        <form [class]="inputSize" [formGroup]="form" class="flex flex-grow-1 gap-2" novalidate>
-            <div class="flex-grow-1 flex p-input-icon-right">
+        <form [class]="inputSize" [formGroup]="form" class="flex grow gap-2" novalidate>
+            <div class="grow flex p-input-icon-right">
                 <input
                     (keydown.enter)="saveAction()"
                     (keydown.escape)="deactivateInplace()"

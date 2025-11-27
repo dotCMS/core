@@ -1,4 +1,4 @@
-<div class="flex gap-2 align-items-center flex-wrap" data-testId="category-list">
+<div class="flex gap-2 items-center flex-wrap" data-testId="category-list">
     @for (category of $categoriesToShow(); track category.key) {
         <p-chip
             [pTooltip]="category.path || category.value"

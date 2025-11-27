@@ -10,15 +10,15 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { RippleModule } from 'primeng/ripple';
 
 const InputGroupTemplate = `
-<div class="grid p-fluid">
-  <div class="p-col-12 mb-3">
+<div class="grid grid-cols-12 gap-4 p-fluid">
+  <div class="p-col-12 mb-4">
       <div class="p-inputgroup">
           <span class="p-inputgroup-addon"><i class="pi pi-user"></i></span>
           <input type="text" pInputText placeholder="Username">
       </div>
   </div>
 
-  <div class="p-col-12 mb-3">
+  <div class="p-col-12 mb-4">
       <div class="p-inputgroup">
           <span class="p-inputgroup-addon">$</span>
           <input type="text" pInputText placeholder="Price">
@@ -26,15 +26,15 @@ const InputGroupTemplate = `
     </div>
   </div>
 
-  <div class="p-col-12 mb-3">
+  <div class="p-col-12 mb-4">
       <div class="p-inputgroup">
           <span class="p-inputgroup-addon">www</span>
           <input type="text" pInputText placeholder="Website">
       </div>
   </div>
 </div>
-<div class="grid">
-  <div class="p-col-12 mb-3">
+<div class="grid grid-cols-12 gap-4">
+  <div class="p-col-12 mb-4">
       <div class="p-inputgroup">
           <span class="p-inputgroup-addon"><i class="pi pi-tags" style="line-height: 1.25;"></i></span>
           <span class="p-inputgroup-addon"><i class="pi pi-shopping-cart" style="line-height: 1.25;"></i></span>
@@ -44,8 +44,8 @@ const InputGroupTemplate = `
       </div>
   </div>
 </div>
-<div class="grid p-fluid">
-  <div class="p-col-12 p-md-4 mb-3">
+<div class="grid grid-cols-12 gap-4 p-fluid">
+  <div class="p-col-12 p-md-4 mb-4">
       <div class="p-inputgroup">
           <button type="button" pButton pRipple>
               <span pButtonLabel>Search</span>
@@ -54,7 +54,7 @@ const InputGroupTemplate = `
       </div>
   </div>
 
-  <div class="p-col-12 p-md-4 mb-3">
+  <div class="p-col-12 p-md-4 mb-4">
       <div class="p-inputgroup">
           <input type="text" pInputText placeholder="Keyword">
           <button type="button" pButton pRipple class="p-button-warn">
@@ -63,7 +63,7 @@ const InputGroupTemplate = `
       </div>
   </div>
 
-  <div class="p-col-12 p-md-4 mb-3">
+  <div class="p-col-12 p-md-4 mb-4">
       <div class="p-inputgroup">
           <button type="button" pButton pRipple class="p-button-success">
               <i class="pi pi-check" pButtonIcon></i>
@@ -75,22 +75,22 @@ const InputGroupTemplate = `
       </div>
   </div>
 </div>
-<div class="grid p-fluid">
-  <div class="p-col-12 p-md-12 mb-3">
+<div class="grid grid-cols-12 gap-4 p-fluid">
+  <div class="p-col-12 p-md-12 mb-4">
       <div class="p-inputgroup">
           <span class="p-inputgroup-addon"><p-checkbox></p-checkbox></span>
           <input type="text" pInputText placeholder="Username">
       </div>
   </div>
 
-  <div class="p-col-12 p-md-12 mb-3">
+  <div class="p-col-12 p-md-12 mb-4">
       <div class="p-inputgroup">
           <input type="text" pInputText placeholder="Price">
           <span class="p-inputgroup-addon"><p-radioButton></p-radioButton></span>
       </div>
   </div>
 
-  <div class="p-col-12 p-md-12 mb-3">
+  <div class="p-col-12 p-md-12 mb-4">
       <div class="p-inputgroup">
           <span class="p-inputgroup-addon"><p-checkbox></p-checkbox></span>
           <input type="text" pInputText placeholder="Website">

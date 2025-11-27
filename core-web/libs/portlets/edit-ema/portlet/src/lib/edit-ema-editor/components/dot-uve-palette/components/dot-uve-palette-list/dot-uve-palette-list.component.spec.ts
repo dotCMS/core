@@ -43,7 +43,7 @@ const mockStore = {
     },
     currentView: signal(DotUVEPaletteListView.CONTENT_TYPES),
     status: signal(DotPaletteListStatus.LOADING),
-    layoutMode: signal('grid' as 'grid' | 'list'),
+    layoutMode: signal('grid grid-cols-12 gap-4' as 'grid grid-cols-12 gap-4' | 'list'),
     $isLoading: signal(false),
     $isEmpty: signal(false),
     $showListLayout: signal(false),

@@ -28,7 +28,7 @@ export default meta;
 type Story = StoryObj;
 
 const InputTextAreaTemplate = `
-<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
         <label htmlFor="test">Label</label>
         <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder"></textarea>
@@ -59,7 +59,7 @@ export const Basic: Story = {
 };
 
 const InputTextAreaTemplateAutoRezise = `
-<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
         <label htmlFor="test">Label</label>
         <textarea

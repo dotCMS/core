@@ -1,6 +1,6 @@
 @if (vm$ | async; as vm) {
     <dot-portlet-base>
-        <div class="px-3 py-2">
+        <div class="px-4 py-2">
             <p-breadcrumb
                 (onItemClick)="updateBreadCrumb($event)"
                 [model]="vm.categoryBreadCrumbs"
@@ -26,7 +26,7 @@
                 loadingIcon="pi pi-spin pi-spinner"
                 dataKey="categoryId">
                 <ng-template pTemplate="caption">
-                    <div class="flex justify-content-between p-3">
+                    <div class="flex justify-between p-4">
                         <div>
                             <button
                                 (click)="actionsMenu.toggle($event)"
@@ -43,14 +43,14 @@
                                 #actionsMenu
                                 appendTo="body"></p-menu>
                         </div>
-                        <div class="w-2">
+                        <div class="w-2/12">
                             <div class="p-inputgroup">
-                                <span class="border-right-none p-inputgroup-addon">
+                                <span class="border-r-0 p-inputgroup-addon">
                                     <i class="pi pi-search"></i>
                                 </span>
                                 <input
                                     [placeholder]="'message.category.search' | dm"
-                                    class="border-left-none"
+                                    class="border-l-0"
                                     #gf
                                     (input)="dataTable.filterGlobal(gf.value, 'contains')"
                                     type="text"
@@ -67,7 +67,7 @@
                                 icon="pi pi-upload"></button>
                             <button
                                 [label]="'message.category.export' | dm"
-                                class="p-button-outlined mx-4"
+                                class="p-button-outlined mx-6"
                                 pButton
                                 pRipple
                                 type="button"

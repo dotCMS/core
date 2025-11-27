@@ -2,8 +2,8 @@
     @if ($toggleLockOptions()?.showBanner && $showBanner()) {
         <p-message severity="warning" data-testid="message">
             <ng-template pTemplate="content">
-                <div class="flex align-items-center justify-content-between gap-2 w-full">
-                    <div class="flex align-items-center gap-2">
+                <div class="flex items-center justify-between gap-2 w-full">
+                    <div class="flex items-center gap-2">
                         <i class="pi pi-info-circle"></i>
                         <span class="lock-message" data-testid="message-content">
                             {{

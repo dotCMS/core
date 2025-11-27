@@ -14,7 +14,7 @@ import { DotUVEPaletteContenttypeComponent } from './dot-uve-palette-contenttype
     `
 })
 class TestHostComponent {
-    view: 'grid' | 'list' = 'grid';
+    view: 'grid grid-cols-12 gap-4' | 'list' = 'grid grid-cols-12 gap-4';
     contentType: DotCMSContentType = {
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -112,7 +112,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
     describe('View Input and CSS Classes', () => {
         it('should not have list-view class when view is "grid"', () => {
-            spectator.setHostInput({ view: 'grid' });
+            spectator.setHostInput({ view: 'grid grid-cols-12 gap-4' });
             spectator.detectChanges();
 
             const element = spectator.element as HTMLElement;
@@ -130,7 +130,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         it('should toggle list-view class when view changes', () => {
             const element = spectator.element as HTMLElement;
 
-            spectator.setHostInput({ view: 'grid' });
+            spectator.setHostInput({ view: 'grid grid-cols-12 gap-4' });
             spectator.detectChanges();
             expect(element.classList.contains('list-view')).toBe(false);
 
@@ -138,7 +138,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.detectChanges();
             expect(element.classList.contains('list-view')).toBe(true);
 
-            spectator.setHostInput({ view: 'grid' });
+            spectator.setHostInput({ view: 'grid grid-cols-12 gap-4' });
             spectator.detectChanges();
             expect(element.classList.contains('list-view')).toBe(false);
         });

@@ -1,8 +1,9 @@
 @let folders = store.folders();
 @let content = store.content();
 
-<div class="file-selector flex flex-col gap-3">
-    <div class="file-selector__main grid grid-nogutter flex-nowrap flex-grow-1 overflow-hidden">
+<div class="file-selector flex flex-col gap-4">
+    <div
+        class="file-selector__main grid grid-cols-12 gap-4 grid-nogutter flex-nowrap grow overflow-hidden">
         <div class="file-selector__sidebar h-full overflow-auto">
             <dot-sidebar
                 [folders]="folders.data"
@@ -18,7 +19,7 @@
                 (onRowSelect)="store.setSelectedContent($event)" />
         </div>
     </div>
-    <div class="flex justify-content-end flex-none flex-wrap gap-3">
+    <div class="flex justify-end flex-none flex-wrap gap-4">
         <p-button
             (click)="closeDialog()"
             [label]="'dot.file.field.dialog.select.existing.file.actions.cancel' | dm"
