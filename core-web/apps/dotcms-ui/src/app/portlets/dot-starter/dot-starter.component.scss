@@ -66,6 +66,9 @@
                 padding: 0;
             }
         }
+        ul, ol {
+            padding-inline-start: $spacing-4;
+        }
         ul ul,
         ol ol,
         ul ol,
