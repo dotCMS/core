@@ -14,7 +14,7 @@ import {
  */
 export interface DotCMSAISearchValue<T extends DotCMSBasicContentlet> {
     response: DotCMSAISearchResponse<T> | null;
-    results: DotCMSAISearchContentletData<T>[] | undefined;
+    results: DotCMSAISearchContentletData<T>[];
     status: DotCMSEntityStatus;
     search: (prompt: string) => Promise<void>;
     reset: () => void;

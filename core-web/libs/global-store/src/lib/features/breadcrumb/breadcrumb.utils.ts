@@ -5,7 +5,7 @@ import { MenuItemEntity } from '@dotcms/dotcms-models';
 /**
  * Helper functions available to route handlers for building breadcrumbs.
  */
-export interface BreadcrumbHelpers {
+interface BreadcrumbHelpers {
     /**
      * Sets the entire breadcrumb array.
      */
@@ -32,7 +32,7 @@ export type RouteHandler = (
  * Route handler configuration.
  * Contains a test function to check if the URL matches, and a handler to process it.
  */
-export interface RouteHandlerConfig {
+interface RouteHandlerConfig {
     /**
      * Test function that returns true if this handler should process the URL.
      * Can use regex, string matching, or any custom logic.

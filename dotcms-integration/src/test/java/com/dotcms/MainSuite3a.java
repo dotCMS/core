@@ -4,6 +4,7 @@ import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
@@ -49,6 +50,7 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
+        AppsAPIImplTest.class,
         Task251103AddStylePropertiesColumnInMultiTreeTest.class
 })
 
