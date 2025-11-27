@@ -28,6 +28,11 @@ header {
         line-height: 1.5;
     }
 }
+h2 {
+    margin: 0;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium-bold;
+}
 
 markdown {
     font-size: 1em;
@@ -134,6 +139,7 @@ markdown {
     }
 }
 
+
 .dot-onboarding {
     padding-block-start: $spacing-4;
     flex: 1;
@@ -169,12 +175,6 @@ markdown {
         gap: $spacing-1;
         align-items: center;
     }
-}
-
-h2 {
-    margin: 0;
-    font-size: $font-size-md;
-    font-weight: $font-weight-medium-bold;
 }
 
 .dot-step {
