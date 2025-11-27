@@ -105,14 +105,19 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final String mapKey = entry.getKey();
             final Object rawValue = entry.getValue();
 
+            // Searches if the map contains any key ending with "_raw".
             if (mapKey.endsWith("_raw") && rawValue instanceof String) {
+                // Creates a baseKey variable deleting the "_raw" string at the end of the mapKey. i.e. blogContent_raw = blogContent
                 final String baseKey = mapKey.substring(0, mapKey.length() - 4);
 
+                // Checks if the baseKey exist in the map
                 if (hydratedMap.containsKey(baseKey)) {
+                    // Checks if the baseValue (hydrated) is not empty. If the baseValue is empty, we add the rawValue as the baseValue.
                     final String baseValue = hydratedMap.get(baseKey).toString().trim().isEmpty()
                             ? rawValue.toString()
                             : hydratedMap.get(baseKey).toString();
 
+                    // Parse the baseValue as JSON
                     try {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> parsed = objectMapper.readValue(baseValue, Map.class);
