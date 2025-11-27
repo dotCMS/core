@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.system.permission;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -13,7 +12,7 @@ import java.util.Set;
  * and what asset types support permissions (HOST, FOLDER, CONTENT, etc.).
  */
 @Schema(description = "Permission metadata containing available levels and scopes in the system")
-public class PermissionMetadata {
+public class PermissionMetadataView {
 
     @JsonProperty("levels")
     @Schema(
@@ -21,12 +20,12 @@ public class PermissionMetadata {
         example = "[\"READ\", \"WRITE\", \"PUBLISH\", \"EDIT_PERMISSIONS\", \"CAN_ADD_CHILDREN\"]",
         required = true
     )
-    private final List<String> levels;
+    private final Set<String> levels;
 
     @JsonProperty("scopes")
     @Schema(
         description = "Available permission scopes (asset types) that support permissions",
-        example = "[\"INDIVIDUAL\", \"HOST\", \"FOLDER\", \"CONTENT\", \"TEMPLATE\", \"PAGE\", \"CONTAINER\", \"STRUCTURE\", \"CATEGORY\"]",
+        example = "[\"INDIVIDUAL\", \"HOST\", \"FOLDER\", \"CONTENT\", \"TEMPLATE\", \"PAGE\", \"CONTAINER\", \"CONTENT_TYPE\", \"CATEGORY\"]",
         required = true
     )
     private final Set<String> scopes;
@@ -34,10 +33,10 @@ public class PermissionMetadata {
     /**
      * Constructs permission metadata with available levels and scopes.
      *
-     * @param levels The list of available permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+     * @param levels The set of available permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
      * @param scopes The set of available permission scopes (asset types that support permissions)
      */
-    public PermissionMetadata(final List<String> levels, final Set<String> scopes) {
+    public PermissionMetadataView(final Set<String> levels, final Set<String> scopes) {
         this.levels = levels;
         this.scopes = scopes;
     }
@@ -45,9 +44,9 @@ public class PermissionMetadata {
     /**
      * Gets the available permission levels.
      *
-     * @return List of permission level names
+     * @return Set of permission level names
      */
-    public List<String> getLevels() {
+    public Set<String> getLevels() {
         return levels;
     }
 

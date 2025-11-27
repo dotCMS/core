@@ -1281,16 +1281,10 @@ public class UserResource implements Serializable {
 		validateMaximumLength(updateUserForm.getFirstName(),updateUserForm.getLastName(),updateUserForm.getEmail(),
 				updateUserForm.getMiddleName(),updateUserForm.getNickName(),updateUserForm.getBirthday());
 
-		if (UtilMethods.isSet(updateUserForm.getFirstName())) {
-			userToSave.setFirstName(updateUserForm.getFirstName());
-		}
+		userToSave.setFirstName(updateUserForm.getFirstName());
 
 		if (UtilMethods.isSet(updateUserForm.getLastName())) {
 			userToSave.setLastName(updateUserForm.getLastName());
-		}
-
-		if (UtilMethods.isSet(updateUserForm.getEmail())) {
-			userToSave.setEmailAddress(updateUserForm.getEmail());
 		}
 
 		if (UtilMethods.isSet(updateUserForm.getBirthday())) {
@@ -1543,18 +1537,18 @@ public class UserResource implements Serializable {
 			throw new DotDataException("User role not found for: " + userId);
 		}
 
-		final List<UserPermissionAsset> permissions = userPermissionHelper
+		final List<Map<String, Object>> permissions = userPermissionHelper
 			.buildUserPermissionResponse(userRole, requestingUser);
 
-		final UserPermissions userPermissions = new UserPermissions(
-			finalTargetUser.getUserId(),
-			userRole.getId(),
-			permissions
+		final Map<String, Object> responseData = Map.of(
+			"userId", finalTargetUser.getUserId(),
+			"roleId", userRole.getId(),
+			"assets", permissions
 		);
 
 		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
 			finalTargetUser.getUserId(), requestingUser.getUserId()));
-		return new ResponseEntityUserPermissionsView(userPermissions);
+		return new ResponseEntityUserPermissionsView(responseData);
 	}
 
 

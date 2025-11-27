@@ -30,6 +30,7 @@ import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,7 +72,7 @@ public class UserPermissionHelper {
     /**
      * Builds permission response data for the given role, grouped by asset.
      */
-    public List<UserPermissionAsset> buildUserPermissionResponse(final Role role, final User requestingUser)
+    public List<Map<String, Object>> buildUserPermissionResponse(final Role role, final User requestingUser) 
             throws DotDataException, DotSecurityException {
 
         final User systemUser = userAPI.getSystemUser();
@@ -83,10 +84,10 @@ public class UserPermissionHelper {
 
         final List<Permission> permissions = permissionAPI.getPermissionsByRole(role, true, true);
 
-        collectPermissionAssets(permissions, systemUser, respectFrontendRoles,
+        collectPermissionAssets(permissions, systemUser, respectFrontendRoles, 
                                permissionAssets, permissionsByInode);
 
-        final List<UserPermissionAsset> result = new ArrayList<>();
+        final List<Map<String, Object>> result = new ArrayList<>();
         boolean systemHostInList = false;
 
         for (Permissionable asset : permissionAssets) {
@@ -147,48 +148,43 @@ public class UserPermissionHelper {
     /**
      * Builds response data for a single permissionable asset.
      */
-    private UserPermissionAsset buildAssetResponse(final Permissionable asset,
+    private Map<String, Object> buildAssetResponse(final Permissionable asset, 
                                                    final List<Permission> permissions,
                                                    final User requestingUser,
-                                                   final User systemUser)
+                                                   final User systemUser) 
             throws DotDataException, DotSecurityException {
 
-        final String id;
-        final String type;
-        final String name;
-        final String path;
-        final String hostId;
-
+        final Map<String, Object> response = new HashMap<>();
+        
         if (asset instanceof Host) {
             final Host host = (Host) asset;
-            id = host.getIdentifier();
-            type = "HOST";
-            name = host.getHostname();
-            path = "/" + host.getHostname();
-            hostId = host.getIdentifier();
+            response.put("id", host.getIdentifier());
+            response.put("type", "HOST");
+            response.put("name", host.getHostname());
+            response.put("path", "/" + host.getHostname());
+            response.put("hostId", host.getIdentifier());
         } else if (asset instanceof Folder) {
             final Folder folder = (Folder) asset;
-            final Identifier identifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+            final Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
             final Host host = hostAPI.find(folder.getHostId(), systemUser, false);
-
-            id = folder.getInode();
-            type = "FOLDER";
-            name = folder.getName();
-            path = "/" + host.getHostname() + identifier.getParentPath() + folder.getName();
-            hostId = folder.getHostId();
-        } else {
-            throw new DotDataException("Unsupported asset type: " + asset.getClass().getName());
+            
+            response.put("id", folder.getInode());
+            response.put("type", "FOLDER");
+            response.put("name", folder.getName());
+            response.put("path", "/" + host.getHostname() + id.getParentPath() + folder.getName());
+            response.put("hostId", folder.getHostId());
         }
 
-        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
-                asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser, false);
+        response.put("canEditPermissions", 
+            permissionAPI.doesUserHavePermission(
+                asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser, false));
+                
+        response.put("inheritsPermissions",
+            permissionAPI.isInheritingPermissions(asset));
 
-        final boolean inheritsPermissions = permissionAPI.isInheritingPermissions(asset);
+        response.put("permissions", buildPermissionMap(permissions));
 
-        final Map<String, List<String>> permissionMap = buildPermissionMap(permissions);
-
-        return new UserPermissionAsset(id, type, name, path, hostId,
-                                      canEditPermissions, inheritsPermissions, permissionMap);
+        return response;
     }
 
     /**
@@ -241,32 +237,9 @@ public class UserPermissionHelper {
     }
 
     /**
-     * Returns all available permission scopes that can be assigned.
-     * These represent the different asset types that support permissions.
-     * 
-     * @return Set of permission scope names (e.g., "INDIVIDUAL", "HOST", "FOLDER")
+     * Avoids duplicate aliases like USE/read or EDIT/WRITE
      */
-    public Set<String> getAvailablePermissionScopes() {
-        return new HashSet<>(PERMISSION_TYPE_MAPPINGS.values());
-    }
-
-    /**
-     * Returns all available permission levels that can be assigned.
-     * These represent the different types of access (READ, WRITE, etc.).
-     * 
-     * @return List of permission level names
-     */
-    public List<String> getAvailablePermissionLevels() {
-        return convertBitsToPermissionNames(
-            PermissionAPI.PERMISSION_READ | 
-            PermissionAPI.PERMISSION_WRITE |
-            PermissionAPI.PERMISSION_PUBLISH |
-            PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
-            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-        );
-    }
-
-    public List<String> convertBitsToPermissionNames(final int permissionBits) {
+    private List<String> convertBitsToPermissionNames(final int permissionBits) {
         final List<String> permissions = new ArrayList<>();
 
         if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
@@ -286,5 +259,31 @@ public class UserPermissionHelper {
         }
 
         return permissions;
+    }
+
+    /**
+     * Returns all available permission scopes that can be assigned.
+     * These represent the different asset types that support permissions.
+     *
+     * @return Set of permission scope names (e.g., "INDIVIDUAL", "HOST", "FOLDER")
+     */
+    public Set<String> getAvailablePermissionScopes() {
+        return new HashSet<>(PERMISSION_TYPE_MAPPINGS.values());
+    }
+
+    /**
+     * Returns all available permission levels that can be assigned.
+     * These represent the different types of access (READ, WRITE, etc.).
+     *
+     * @return Set of permission level names (maintains insertion order)
+     */
+    public Set<String> getAvailablePermissionLevels() {
+        return new LinkedHashSet<>(convertBitsToPermissionNames(
+            PermissionAPI.PERMISSION_READ |
+            PermissionAPI.PERMISSION_WRITE |
+            PermissionAPI.PERMISSION_PUBLISH |
+            PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
+            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
+        ));
     }
 }

@@ -8,14 +8,14 @@ import com.dotcms.rest.ResponseEntityView;
  * CAN_ADD_CHILDREN) and permission scopes (HOST, FOLDER, CONTENT, TEMPLATE, etc.)
  * that can be assigned to users and roles in the dotCMS system.
  */
-public class ResponseEntityPermissionMetadataView extends ResponseEntityView<PermissionMetadata> {
+public class ResponseEntityPermissionMetadataView extends ResponseEntityView<PermissionMetadataView> {
 
     /**
      * Constructs a new response wrapper for permission metadata.
      *
      * @param metadata The permission metadata containing levels and scopes
      */
-    public ResponseEntityPermissionMetadataView(final PermissionMetadata metadata) {
+    public ResponseEntityPermissionMetadataView(final PermissionMetadataView metadata) {
         super(metadata);
     }
 }
