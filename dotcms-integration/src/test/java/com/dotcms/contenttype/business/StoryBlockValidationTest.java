@@ -82,6 +82,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 
@@ -386,6 +388,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             fail("Expected DotContentletValidationException for empty required code block");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 
@@ -434,6 +438,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             // Expected behavior - invalid JSON should fail validation
             assertTrue("Should contain required field error", e.hasRequiredErrors());
             Logger.info(this, "Expected validation failure for invalid JSON: " + e.getMessage());
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         } catch (Exception e) {
             fail("Unexpected exception type: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -545,6 +551,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 
@@ -583,6 +591,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             fail("Expected DotContentletValidationException for multiple empty paragraphs");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 }
