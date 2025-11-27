@@ -103,8 +103,22 @@ export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalyt
         [instance, isInUVE]
     );
 
+    const conversion = useCallback(
+        (name: string, options: JsonObject = {}) => {
+            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
+            // with editor interactions and preview activities
+            if (isInUVE) {
+                return;
+            }
+
+            instance.conversion(name, options);
+        },
+        [instance, isInUVE]
+    );
+
     return {
         track,
-        pageView
+        pageView,
+        conversion
     };
 };

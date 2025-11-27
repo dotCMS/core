@@ -14,7 +14,8 @@ export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
 export const DotCMSPredefinedEventType = {
     PAGEVIEW: 'pageview',
     CONTENT_IMPRESSION: 'content_impression',
-    CONTENT_CLICK: 'content_click'
+    CONTENT_CLICK: 'content_click',
+    CONVERSION: 'conversion'
 } as const;
 
 /**

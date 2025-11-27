@@ -61,21 +61,31 @@ export interface ViewportMetrics {
 
 /**
  * Main interface for the DotCMS Analytics SDK.
- * Provides the core methods for tracking page views and custom events.
+ * Provides the core methods for tracking page views, custom events, and conversions.
  */
 export interface DotCMSAnalytics {
     /**
      * Track a page view event.
      * @param payload - Optional custom data to include with the page view (any valid JSON object)
      */
-    pageView: (payload?: JsonObject) => void;
+    pageView(): void;
+    pageView(payload: JsonObject): void;
 
     /**
      * Track a custom event.
      * @param eventName - The name/type of the event to track
      * @param payload - Custom data to include with the event (any valid JSON object)
      */
-    track: (eventName: string, payload: JsonObject) => void;
+    track(eventName: string): void;
+    track(eventName: string, payload: JsonObject): void;
+
+    /**
+     * Track a conversion event.
+     * @param name - Name of the conversion (e.g., 'purchase', 'download', 'signup')
+     * @param options - Optional custom data and element information
+     */
+    conversion(name: string): void;
+    conversion(name: string, options: JsonObject): void;
 }
 
 /**

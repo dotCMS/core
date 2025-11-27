@@ -231,6 +231,98 @@ describe('initializeContentAnalytics', () => {
         });
     });
 
+    describe('conversion', () => {
+        it('should call analytics.track with conversion event type and name', () => {
+            const conversionName = 'download';
+            const analytics = initializeContentAnalytics(mockConfig);
+
+            expect(analytics).not.toBeNull();
+            analytics!.conversion(conversionName);
+
+            expect(mockAnalyticsInstance.track).toHaveBeenCalledWith('conversion', {
+                name: conversionName
+            });
+        });
+
+        it('should call analytics.track with conversion name and custom metadata', () => {
+            const conversionName = 'purchase';
+            const options = {
+                value: 99.99,
+                currency: 'USD',
+                category: 'ecommerce',
+                productId: 'SKU-12345'
+            };
+            const analytics = initializeContentAnalytics(mockConfig);
+
+            expect(analytics).not.toBeNull();
+            analytics!.conversion(conversionName, options);
+
+            expect(mockAnalyticsInstance.track).toHaveBeenCalledWith('conversion', {
+                name: conversionName,
+                custom: options
+            });
+        });
+
+        it('should call analytics.track with conversion name and custom data including element', () => {
+            const conversionName = 'signup';
+            const options = {
+                element: {
+                    type: 'button',
+                    text: 'Subscribe Now',
+                    id: 'newsletter-btn',
+                    class: 'btn-primary'
+                }
+            };
+            const analytics = initializeContentAnalytics(mockConfig);
+
+            expect(analytics).not.toBeNull();
+            analytics!.conversion(conversionName, options);
+
+            expect(mockAnalyticsInstance.track).toHaveBeenCalledWith('conversion', {
+                name: conversionName,
+                custom: options
+            });
+        });
+
+        it('should call analytics.track with conversion name and all custom metadata', () => {
+            const conversionName = 'purchase';
+            const options = {
+                element: {
+                    type: 'button',
+                    text: 'Buy Now',
+                    id: 'buy-btn'
+                },
+                value: 99.99,
+                currency: 'USD',
+                productId: 'SKU-12345'
+            };
+            const analytics = initializeContentAnalytics(mockConfig);
+
+            expect(analytics).not.toBeNull();
+            analytics!.conversion(conversionName, options);
+
+            expect(mockAnalyticsInstance.track).toHaveBeenCalledWith('conversion', {
+                name: conversionName,
+                custom: options
+            });
+        });
+
+        it('should handle case when analytics instance is null', () => {
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            mockAnalytics.mockReturnValue(null as any);
+            const analytics = initializeContentAnalytics(mockConfig);
+
+            expect(analytics).not.toBeNull();
+            // Should not throw error even if internal analytics is null
+            expect(() => analytics!.conversion('test_conversion')).not.toThrow();
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                'DotCMS Analytics [Core]: Analytics instance not initialized'
+            );
+
+            consoleWarnSpy.mockRestore();
+        });
+    });
+
     describe('when window is not available (SSR)', () => {
         it('should work without window object', () => {
             delete (global as any).window;

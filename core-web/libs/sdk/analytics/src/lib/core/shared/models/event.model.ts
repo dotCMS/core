@@ -70,6 +70,25 @@ export type DotCMSCustomEventData = {
 };
 
 /**
+ * Element information for analytics events.
+ * Base type for element metadata in click and conversion events.
+ */
+export type DotCMSElementData = {
+    /** Text content of the element */
+    text: string;
+    /** Type of element (anchor, button, input, etc.) */
+    type: string;
+    /** Element ID (required by backend, empty string if not present) */
+    id: string;
+    /** Element classes (required by backend, empty string if not present) */
+    class: string;
+    /** Link destination as written in HTML (relative path, only for <a> elements, empty string for buttons) */
+    href: string;
+    /** Additional element attributes in key:value format (e.g., ['data-category:val', 'data-campaign:val2']) */
+    attributes: string[];
+};
+
+/**
  * Partial content impression data sent by producer plugins.
  * Contains only impression-specific data (content and position).
  * The enricher plugin will add page data automatically.
@@ -101,20 +120,18 @@ export type DotCMSContentImpressionPayload = {
  */
 export type DotCMSContentClickPayload = DotCMSContentImpressionPayload & {
     /** Clicked element information */
-    element: {
-        /** Text content of the element */
-        text: string;
-        /** Type of element (anchor, button, etc.) */
-        type: string;
-        /** Element ID (required by backend, empty string if not present) */
-        id: string;
-        /** Element classes (required by backend, empty string if not present) */
-        class: string;
-        /** Link destination as written in HTML (relative path, only for <a> elements, empty string for buttons) */
-        href: string;
-        /** Additional element attributes in key:value format (e.g., ['data-category:val', 'data-campaign:val2']) */
-        attributes: string[];
-    };
+    element: DotCMSElementData;
+};
+
+/**
+ * Conversion payload sent when tracking conversions.
+ * Contains conversion name and optional custom data.
+ */
+export type DotCMSConversionPayload = {
+    /** Name of the conversion event */
+    name: string;
+    /** Optional custom user data (any valid JSON) */
+    custom?: JsonObject;
 };
 
 /**
@@ -133,6 +150,22 @@ export type DotCMSContentImpressionEventData = DotCMSContentImpressionPayload & 
 export type DotCMSContentClickEventData = DotCMSContentClickPayload & {
     /** Minimal page data where the click occurred (added by enricher) */
     page: DotCMSContentImpressionPageData;
+};
+
+/**
+ * Complete data structure for conversion events after enrichment.
+ * Includes page data added by the enricher plugin.
+ */
+export type DotCMSConversionEventData = {
+    /** Conversion information */
+    conversion: {
+        /** Name of the user-defined conversion */
+        name: string;
+    };
+    /** Page data where the conversion occurred (added by enricher) */
+    page: DotCMSContentImpressionPageData;
+    /** Optional custom user data (any valid JSON) */
+    custom?: JsonObject;
 };
 
 /**
@@ -160,6 +193,14 @@ export type DotCMSContentClickEvent = DotCMSEventBase<
 >;
 
 /**
+ * Conversion event structure.
+ */
+export type DotCMSConversionEvent = DotCMSEventBase<
+    typeof DotCMSPredefinedEventType.CONVERSION,
+    DotCMSConversionEventData
+>;
+
+/**
  * Custom event structure.
  */
 export type DotCMSCustomEvent = DotCMSEventBase<DotCMSCustomEventType, DotCMSCustomEventData>;
@@ -172,4 +213,5 @@ export type DotCMSEvent =
     | DotCMSPageViewEvent
     | DotCMSContentImpressionEvent
     | DotCMSContentClickEvent
+    | DotCMSConversionEvent
     | DotCMSCustomEvent;

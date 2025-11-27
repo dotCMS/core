@@ -3,8 +3,13 @@ import { sendAnalyticsEvent } from '../../shared/http/dot-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
+    DotCMSContentClickEvent,
     DotCMSContentClickPayload,
+    DotCMSContentImpressionEvent,
     DotCMSContentImpressionPayload,
+    DotCMSConversionEvent,
+    DotCMSConversionPayload,
+    DotCMSCustomEvent,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload,
     JsonObject
@@ -115,7 +120,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
             const { event, properties, context, local_time } = payload;
 
-            let analyticsEvent;
+            let analyticsEvent:
+                | DotCMSContentImpressionEvent
+                | DotCMSContentClickEvent
+                | DotCMSConversionEvent
+                | DotCMSCustomEvent;
 
             // Handle predefined and custom events using switch for extensibility
             switch (event) {
@@ -137,7 +146,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             position,
                             page
                         }
-                    };
+                    } satisfies DotCMSContentImpressionEvent;
                     break;
                 }
 
@@ -160,7 +169,29 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             element,
                             page
                         }
-                    };
+                    } satisfies DotCMSContentClickEvent;
+                    break;
+                }
+
+                case DotCMSPredefinedEventType.CONVERSION: {
+                    // Extract conversion data from properties (sent by user)
+                    const conversionPayload = properties as DotCMSConversionPayload;
+                    const { name, custom } = conversionPayload;
+                    const { page } = payload; // Added by enricher
+
+                    if (!name || !page) {
+                        throw new Error('DotCMS Analytics: Missing required conversion data');
+                    }
+
+                    analyticsEvent = {
+                        event_type: DotCMSPredefinedEventType.CONVERSION,
+                        local_time,
+                        data: {
+                            conversion: { name },
+                            page,
+                            ...(custom && { custom })
+                        }
+                    } satisfies DotCMSConversionEvent;
                     break;
                 }
 
@@ -172,7 +203,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                         data: {
                             custom: properties as JsonObject
                         }
-                    };
+                    } satisfies DotCMSCustomEvent;
                     break;
                 }
             }

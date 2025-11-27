@@ -10,6 +10,7 @@ import {
     IMPRESSION_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
+import { INITIAL_SCAN_DELAY_MS } from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
 jest.mock('@dotcms/uve');
@@ -212,6 +213,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).toHaveBeenCalledWith(element);
         });
@@ -225,6 +227,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
         });
@@ -238,6 +241,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
         });
@@ -249,6 +253,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
         });
@@ -260,6 +265,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
         });
@@ -271,6 +277,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
         });
@@ -289,6 +296,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(customConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             // Should only observe 2 elements
             expect(mockIntersectionObserver.observe).toHaveBeenCalledTimes(2);
@@ -302,6 +310,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
         });
@@ -314,6 +323,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             // Simulate intersection (element becomes visible)
             const entry = {
@@ -335,6 +345,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             // Element becomes visible
@@ -370,6 +381,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             // Element becomes visible
@@ -406,6 +418,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             // Element becomes visible
@@ -441,6 +454,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             // First visibility
@@ -474,6 +488,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             const timerCountBefore = jest.getTimerCount();
 
@@ -496,6 +511,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             // Fire first impression
@@ -533,6 +549,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             // Fire impression
             intersectionCallback(
@@ -556,6 +573,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             const timerCountBeforeElements = jest.getTimerCount();
@@ -599,6 +617,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             const timerCountBeforeHidden = jest.getTimerCount();
 
@@ -641,6 +660,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             // Start tracking an element
             intersectionCallback(
@@ -680,6 +700,7 @@ describe('DotCMSImpressionTracker', () => {
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.onImpression(callback);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             // Fire first impression on initial page
             intersectionCallback(
@@ -714,6 +735,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback1);
             tracker.onImpression(callback2);
 
@@ -736,6 +758,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             const subscription = tracker.onImpression(callback);
 
             // Unsubscribe before impression
@@ -763,6 +786,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker({ ...mockConfig, debug: true });
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(errorCallback);
             tracker.onImpression(validCallback);
 
@@ -793,6 +817,7 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             // Fire impression
@@ -844,6 +869,7 @@ describe('DotCMSImpressionTracker', () => {
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             const timerCountBeforeElements = jest.getTimerCount(); // Just the interval
 
@@ -879,12 +905,14 @@ describe('DotCMSImpressionTracker', () => {
             const callback = jest.fn();
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             tracker.onImpression(callback);
 
             tracker.cleanup();
 
             // Re-initialize and fire impression
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
             intersectionCallback(
                 [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
@@ -907,6 +935,7 @@ describe('DotCMSImpressionTracker', () => {
         it('should detect and observe new contentlets added to DOM', () => {
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
+            jest.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
 
             // Initially no contentlets
             expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
