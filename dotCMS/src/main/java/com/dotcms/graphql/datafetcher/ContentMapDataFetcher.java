@@ -107,9 +107,12 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
             if (mapKey.endsWith("_raw") && rawValue instanceof String) {
                 final String baseKey = mapKey.substring(0, mapKey.length() - 4);
-                final String baseValue = hydratedMap.get(baseKey).toString();
 
-                if (hydratedMap.containsKey(baseKey) && UtilMethods.isSet(baseValue)) {
+                if (hydratedMap.containsKey(baseKey)) {
+                    final String baseValue = hydratedMap.get(baseKey).toString().trim().isEmpty()
+                            ? rawValue.toString()
+                            : hydratedMap.get(baseKey).toString();
+
                     try {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> parsed = objectMapper.readValue(baseValue, Map.class);

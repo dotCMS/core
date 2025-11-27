@@ -51,15 +51,65 @@ public class ContentMapDataFetcherTest {
     /**
      * Given a contentlet with both `blockEditor_raw` and `blockEditor`,
      * When fetched through ContentMapDataFetcher,
-     * Then the base field is replaced with the parsed JSON object
+     * Then the base field is replaced with the parsed JSON object of the `blockEditor`
      */
     @Test
     @SuppressWarnings("unchecked") // safe cast after instanceof check
-    public void testMapIncludesRawAndParsedBlockEditor() throws Exception {
+    public void testMapIncludesRawAndParsedHydratedBlockEditor() throws Exception {
+        Contentlet contentlet = TestDataUtils.getNewsContent(true, defaultLanguage.getId(), getNewsLikeContentType().id());
+        String rawJson = "{\"foo\": \"bar\"}";
+        contentlet.setStringProperty("blockEditor_raw", rawJson);
+        contentlet.setStringProperty("blockEditor",
+                "{\"type\":\"doc\",\"attrs\":{\"charCount\":4},\"marks\":[{\"type\":\"underline\"},{\"type\":\"bold\"}]}"); // base field pre-exists
+
+        var environment = mock(DataFetchingEnvironment.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        DotGraphQLContext context = mock(DotGraphQLContext.class);
+        when(context.getHttpServletRequest()).thenReturn(request);
+        when(context.getHttpServletResponse()).thenReturn(response);
+        when(context.getUser()).thenReturn(user);
+
+        when(environment.getContext()).thenReturn(context);
+        when(environment.getArgument("key")).thenReturn(null);
+        when(environment.getArgument("depth")).thenReturn(0);
+        when(environment.getArgument("render")).thenReturn(false);
+        when(environment.getSource()).thenReturn(contentlet);
+
+        var fetcher = new ContentMapDataFetcher();
+        Object result = fetcher.get(environment);
+
+        assertNotNull(result);
+        assertTrue("Expected result to be a Map", result instanceof Map);
+
+        Map<String, Object> map = (Map<String, Object>) result;
+
+        assertTrue(map.containsKey("blockEditor_raw"));
+        assertTrue(map.get("blockEditor_raw") instanceof String);
+        assertEquals(rawJson, map.get("blockEditor_raw"));
+
+        assertTrue(map.containsKey("blockEditor"));
+        assertTrue(map.get("blockEditor") instanceof Map);
+
+        Map<String, Object> parsed = (Map<String, Object>) map.get("blockEditor");
+        assertEquals("doc", parsed.get("type"));
+        assertTrue(parsed.containsKey("attrs"));
+        assertTrue(parsed.containsKey("marks"));
+    }
+
+    /**
+     * Given a contentlet with both `blockEditor_raw` and `blockEditor` equal to null,
+     * When fetched through ContentMapDataFetcher,
+     * Then the base field is replaced with the parsed JSON object of the `blockEditor_raw`
+     */
+    @Test
+    @SuppressWarnings("unchecked") // safe cast after instanceof check
+    public void testMapIncludesRawAndParsedNullBlockEditor() throws Exception {
         Contentlet contentlet = TestDataUtils.getNewsContent(true, defaultLanguage.getId(), getNewsLikeContentType().id());
         String rawJson = "{\"type\":\"doc\",\"attrs\":{\"charCount\":4}}";
         contentlet.setStringProperty("blockEditor_raw", rawJson);
-        contentlet.setStringProperty("blockEditor", "some string"); // base field pre-exists
+        contentlet.setStringProperty("blockEditor", ""); // base field not defined
 
         var environment = mock(DataFetchingEnvironment.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
