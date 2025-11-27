@@ -60,14 +60,13 @@ export interface RouteHandlerConfig {
  * }
  * ```
  */
-export const SPECIAL_ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
+export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
     /**
      * Handles /templates/edit/:id routes.
-     * Builds breadcrumbs based on the templates menu item.
      */
     templatesEdit: {
         test: (url: string) => /^\/templates\/edit\/[a-zA-Z0-9-]+$/.test(url),
-        handler: (url, menu, breadcrumbs, { setBreadcrumbs }) => {
+        handler: (_url, menu, breadcrumbs, { setBreadcrumbs }) => {
             const templatesItem = menu.find((item) => item.menuLink === '/templates');
 
             if (templatesItem) {
@@ -101,11 +100,10 @@ export const SPECIAL_ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
 
     /**
      * Handles /content?filter= routes.
-     * Adds a new breadcrumb with the filter value as the label.
      */
     contentFilter: {
         test: (url: string) => url.includes('/content?filter='),
-        handler: (url, menu, breadcrumbs, { addNewBreadcrumb }) => {
+        handler: (url, _menu, _breadcrumbs, { addNewBreadcrumb }) => {
             const filter = url.split('/content?filter=')[1];
             const newUrl = `/dotAdmin/#${url}`;
             addNewBreadcrumb({
@@ -134,7 +132,11 @@ export function processSpecialRoute(
     breadcrumbs: MenuItem[],
     helpers: BreadcrumbHelpers
 ): boolean {
-    const handler = Object.values(SPECIAL_ROUTE_HANDLERS).find((config) => config.test(url));
+    const handler = Object.values(ROUTE_HANDLERS).find((config) => config.test(url));
 
-    return handler ? handler.handler(url, menu, breadcrumbs, helpers) : false;
+    if (!handler) {
+        return false;
+    }
+
+    return handler.handler(url, menu, breadcrumbs, helpers);
 }
