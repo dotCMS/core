@@ -415,22 +415,115 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that invalid JSON fails gracefully and is treated as non-empty (safe default)
+     * Test that invalid JSON fails validation (treated as empty)
      */
     @Test
-    public void test_invalid_json_treated_as_non_empty() throws DotDataException, DotSecurityException {
+    public void test_invalid_json_fails_validation() {
         final String invalidJson = "{ invalid json }";
 
         final Contentlet contentlet = new ContentletDataGen(testContentType)
                 .setProperty("storyBlockField", invalidJson)
                 .next();
 
-        // Should not throw validation exception - invalid JSON treated as non-empty for safety
-        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+        try {
+            // Should throw validation exception - invalid JSON treated as empty = validation fails
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+            fail("Expected DotContentletValidationException for invalid JSON");
+        } catch (DotContentletValidationException e) {
+            // Expected behavior - invalid JSON should fail validation
+            assertTrue("Should contain required field error", e.hasRequiredErrors());
+            Logger.info(this, "Expected validation failure for invalid JSON: " + e.getMessage());
+        } catch (Exception e) {
+            fail("Unexpected exception type: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
 
-        // Assert that the contentlet was successfully saved
-        assertNotNull("Saved contentlet should not be null", savedContentlet);
-        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    /**
+     * Test that a story block field with wrong type (Integer) fails validation
+     */
+    @Test
+    public void test_story_block_integer_type_validation_fails() {
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                .setProperty("storyBlockField", 12345) // Integer instead of String
+                .next();
+
+        try {
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+            fail("Expected DotContentletValidationException for Integer field type");
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should contain bad type error", e.hasBadTypeErrors());
+            Logger.info(this, "Expected validation failure for Integer type: " + e.getMessage());
+        } catch (Exception e) {
+            fail("Unexpected exception type: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test that a story block field with wrong type (Boolean) fails validation
+     */
+    @Test
+    public void test_story_block_boolean_type_validation_fails() {
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                .setProperty("storyBlockField", Boolean.TRUE) // Boolean instead of String
+                .next();
+
+        try {
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+            fail("Expected DotContentletValidationException for Boolean field type");
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should contain bad type error", e.hasBadTypeErrors());
+            Logger.info(this, "Expected validation failure for Boolean type: " + e.getMessage());
+        } catch (Exception e) {
+            fail("Unexpected exception type: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test that a story block field with wrong type (Object) fails validation
+     */
+    @Test
+    public void test_story_block_object_type_validation_fails() {
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                .setProperty("storyBlockField", new Object()) // Object instead of String
+                .next();
+
+        try {
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+            fail("Expected DotContentletValidationException for Object field type");
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should contain bad type error", e.hasBadTypeErrors());
+            Logger.info(this, "Expected validation failure for Object type: " + e.getMessage());
+        } catch (Exception e) {
+            fail("Unexpected exception type: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test that type validation provides helpful error information
+     */
+    @Test
+    public void test_story_block_type_validation_error_details() {
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                .setProperty("storyBlockField", 42) // Integer
+                .next();
+
+        try {
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+            fail("Expected DotContentletValidationException for wrong field type");
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should contain bad type error", e.hasBadTypeErrors());
+
+            // Verify we get the field information
+            assertTrue("Should have bad type fields map",
+                e.getNotValidFields().containsKey(DotContentletValidationException.VALIDATION_FAILED_BADTYPE));
+
+            assertFalse("Bad type fields list should not be empty",
+                e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE).isEmpty());
+
+            Logger.info(this, "Type validation error details: " + e.getMessage());
+        } catch (Exception e) {
+            fail("Unexpected exception type: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
     }
 
     /**

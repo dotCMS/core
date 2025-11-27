@@ -56,8 +56,7 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.contenttype.util.StoryBlockUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
@@ -68,7 +67,6 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
-import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
@@ -7741,9 +7739,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         continue;
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
-                    // Story Block validation - we know it's a string containing JSON
-                    if (fieldValue == null || isEmptyStoryBlock((String) fieldValue)) {
-                        cveBuilder.addRequiredField(field, fieldValue != null ? fieldValue.toString() : "null");
+                    // Story Block validation - must be a string containing JSON
+                    if (fieldValue == null) {
+                        cveBuilder.addRequiredField(field, "null");
+                        hasError = true;
+                        Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
+                        continue;
+                    } else if (!(fieldValue instanceof String)) {
+                        cveBuilder.addBadTypeField(field, fieldValue);
+                        hasError = true;
+                        Logger.warn(this, String.format("Story Block Field [%s] must be a String, but got: %s",
+                            field.getVelocityVarName(), fieldValue.getClass().getSimpleName()));
+                        continue;
+                    } else if (StoryBlockUtil.isEmptyStoryBlock((String) fieldValue)) {
+                        cveBuilder.addRequiredField(field, fieldValue.toString());
                         hasError = true;
                         Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
                         continue;
@@ -8332,110 +8341,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    /**
-     * Helper method to determine if a Story Block field is effectively empty.
-     * A Story Block is considered empty if all top-level content blocks have no nested content.
-     *
-     * @param storyBlockValue The JSON string value of the Story Block field
-     * @return true if the Story Block is empty, false otherwise
-     */
-    private boolean isEmptyStoryBlock(String storyBlockValue) {
-        if (!UtilMethods.isSet(storyBlockValue) || storyBlockValue.trim().isEmpty()) {
-            return true;
-        }
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode storyBlockJson = mapper.readTree(storyBlockValue);
-
-            // Check if it has content array
-            JsonNode contentNode = storyBlockJson.get("content");
-            if (contentNode == null || !contentNode.isArray()) {
-                return true;
-            }
-
-            if (contentNode.size() == 0) {
-                return true;
-            }
-
-            // If any block has content, the story block has content
-            for (JsonNode block : contentNode) {
-                if (!isEmptyBlock(block)) {
-                    return false; // Found content, story block is not empty
-                }
-            }
-
-            // All blocks are empty, so story block is empty
-            return true;
-
-        } catch (Exception e) {
-            Logger.warn(this, "Error parsing Story Block JSON, treating as non-empty: " + e.getMessage());
-            return false; // If we can't parse, assume it has content to be safe
-        }
-    }
-
-    /**
-     * Helper method to determine if a specific block within a Story Block is empty.
-     * Simple logic: If it's a text block, check if it has actual text content.
-     * For everything else (images, videos, custom blocks, etc.), assume it has content.
-     *
-     * @param block The JSON object representing a single block
-     * @return true if the block is effectively empty, false otherwise
-     */
-    private boolean isEmptyBlock(JSONObject block) {
-        if (!block.has("type")) {
-            return true; // No type means invalid/empty block
-        }
-
-        String blockType = block.optString("type");
-
-        // For text-based blocks, check if they contain actual text content
-        if ("paragraph".equals(blockType) || "heading".equals(blockType) || "codeBlock".equals(blockType)) {
-            return isTextContentEmpty(block);
-        }
-
-        // For everything else (images, videos, lists, tables, blockquotes, custom blocks, etc.):
-        // If the block exists, it represents content,
-        // This is to avoid recursive checking of blocks that are not text-based like lists on tables or similar.
-        return false;
-    }
-
-    /**
-     * Helper method to check if a text block contains only empty text
-     * @param block The block to check for text content
-     * @return true if all text content is empty, false otherwise
-     */
-    private boolean isTextContentEmpty(JsonNode block) {
-        JsonNode contentNode = block.get("content");
-        if (contentNode == null || !contentNode.isArray()) {
-            return true; // No content property means empty
-        }
-
-        if (contentNode.size() == 0) {
-            return true; // Empty content array means empty
-        }
-
-        // Check if all content items are empty text nodes
-        for (JsonNode contentItem : contentNode) {
-            JsonNode typeNode = contentItem.get("type");
-            if (typeNode != null && typeNode.isTextual()) {
-                String itemType = typeNode.asText();
-
-                if ("text".equals(itemType)) {
-                    JsonNode textNode = contentItem.get("text");
-                    String text = textNode != null ? textNode.asText("") : "";
-                    if (UtilMethods.isSet(text.trim())) {
-                        return false; // Found non-empty text
-                    }
-                } else {
-                    // Non-text nodes (marks, etc.) indicate content exists
-                    return false;
-                }
-            }
-        }
-
-        return true; // All content items are empty text
-    }
 
 
     @CloseDBIfOpened
