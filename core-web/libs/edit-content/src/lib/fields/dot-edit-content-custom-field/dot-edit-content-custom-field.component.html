@@ -5,18 +5,12 @@
 <dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
-            {{ field.name }}
+            {{ field.name }} {{ $renderMode() }}
         </dot-card-field-label>
     }
     <dot-card-field-content>
         @switch ($renderMode()) {
             @case ('iframe') {
-                <dot-iframe-field
-                    [field]="field"
-                    [contentType]="$contentType()"
-                    [contentlet]="$contentlet()" />
-            }
-            @case ('components') {
                 <dot-native-field [field]="field" [contentlet]="$contentlet()" />
             }
             @default {

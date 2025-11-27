@@ -9,7 +9,8 @@ import {
     forwardRef,
     computed,
     NgZone,
-    OnInit
+    OnInit,
+    signal
 } from '@angular/core';
 import {
     ControlContainer,
@@ -22,8 +23,10 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
+import { WINDOW } from '@dotcms/utils';
+import { signalMethod } from '@ngrx/signals';
 
 @Component({
     selector: 'dot-native-field',
@@ -40,11 +43,15 @@ import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => NativeFieldComponent),
             multi: true
+        },
+        {
+            provide: WINDOW,
+            useValue: window
         }
     ],
     imports: [ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
-export class NativeFieldComponent implements AfterViewInit, OnInit {
+export class NativeFieldComponent implements OnInit {
     /**
      * The field to render.
      */
@@ -53,116 +60,46 @@ export class NativeFieldComponent implements AfterViewInit, OnInit {
      * The content type to render the field for.
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
-
+    /**
+     * The variable id of the field.
+     */
     $variableId = computed(() => this.$field().variable);
-
+    /**
+     * The template code of the field.
+     */
+    $templateCode = computed(() => this.$field().values);
+    /**
+     * The form bridge to communicate with the custom field.
+     */
     #formBridge: FormBridge;
-
     /**
      * The zone to run the code in.
      */
     #zone = inject(NgZone);
-
+    /**
+     * The window object.
+     */
+    #window = inject(WINDOW);
     /**
      * The control container to get the form.
      */
     #controlContainer = inject(ControlContainer);
-
+    /**
+     * The container element to render the custom field in.
+     */
     $container = viewChild.required<ElementRef>('container');
 
-    $context = computed(() => this.$field().values);
+    /**
+     * Whether the custom field is mounted.
+     */
+    $isBridgeReady = signal(false);
 
-    #webComponentInstance: HTMLElement | null = null;
+    constructor() {
+        this.mountComponent(this.$isBridgeReady);
+    }
 
     ngOnInit() {
         this.initializeFormBridge();
-    }
-
-    async ngAfterViewInit() {
-        await this.loadCode();
-    }
-
-    async loadCode() {
-        const jsCode = this.$context();
-        this.updateContent(jsCode);
-    }
-
-    private updateContent(htmlString: string): void {
-        const hostElement = this.$container().nativeElement;
-
-        // 1. Limpiamos el contenido anterior
-        hostElement.innerHTML = '';
-
-        if (!htmlString) {
-            return;
-        }
-
-        // 2. Regex para encontrar todas las etiquetas <script>
-        // g = global, m = multilínea, i = insensible a mayúsculas
-        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gim;
-
-        let scriptContents = '';
-        let match;
-
-        // 3. Extraemos el contenido de TODOS los scripts y los concatenamos
-        while ((match = scriptRegex.exec(htmlString))) {
-            scriptContents += match[1] + '\n'; // Agregamos el contenido del script
-        }
-
-        // 4. Obtenemos el HTML "limpio" (sin las etiquetas <script>)
-        const htmlPart = htmlString.replace(scriptRegex, '');
-
-        // 5. Insertamos el HTML en el elemento
-        // Esto SÍ renderizará el HTML, pero no ejecutará los scripts
-        hostElement.innerHTML = htmlPart;
-
-        // 6. Creamos una nueva etiqueta <script> y la ejecutamos
-        // Esta es la única forma de que el navegador ejecute JS insertado dinámicamente
-        if (scriptContents) {
-            const scriptElement = document.createElement('script');
-            scriptElement.textContent = scriptContents;
-            scriptElement.type = 'module';
-            hostElement.appendChild(scriptElement);
-        }
-    }
-
-    async loadAndCreateComponent() {
-        const jsCode = this.$context();
-        const componentTag = 'dot-url-slug';
-
-        // Solo define el componente si no existe
-        if (!customElements.get(componentTag)) {
-            const script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.textContent = jsCode;
-            document.body.appendChild(script);
-
-            try {
-                await customElements.whenDefined(componentTag);
-            } catch (error) {
-                console.error('Error waiting for custom element:', error);
-                throw new Error(`Failed to define custom element: ${componentTag}`);
-            }
-        }
-
-        const component = customElements.get(componentTag);
-        if (!component) {
-            throw new Error(`Component ${componentTag} not found after registration`);
-        }
-
-        // Crear la instancia del Web Component
-        this.#webComponentInstance = document.createElement(componentTag) as HTMLElement;
-        this.$container().nativeElement.appendChild(this.#webComponentInstance);
-
-        // Escuchar eventos del Web Component
-        this.#webComponentInstance.addEventListener('dotChangeValues', (event: CustomEvent) => {
-            this.#controlContainer.control.patchValue(event.detail.value, { emitEvent: false });
-        });
-    }
-
-    #updateComponentContext(context: Record<string, unknown>) {
-        if (!this.#webComponentInstance) return;
-        this.#webComponentInstance.setAttribute('context', JSON.stringify(context));
     }
 
     get form() {
@@ -178,6 +115,51 @@ export class NativeFieldComponent implements AfterViewInit, OnInit {
             zone: this.#zone
         });
 
-        window['DotCustomFieldApi'] = this.#formBridge;
+        this.#window['DotCustomFieldApi'] = this.#formBridge;
+        this.$isBridgeReady.set(true);
     }
+
+    readonly mountComponent = signalMethod<boolean>((isBridgeReady) => {
+        if (!isBridgeReady) {
+            return;
+        }
+
+        const templateCode = this.$templateCode();
+
+        if (!templateCode) {
+            return;
+        }
+
+        const hostElement = this.$container().nativeElement;
+
+        // 1. Clear the content of the container
+        hostElement.innerHTML = '';
+
+        // 2. Regex to find all <script> tags
+        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gim;
+
+        let scriptContents = '';
+        let match;
+
+        // 3. Extract the content of ALL scripts and concatenate them
+        while ((match = scriptRegex.exec(templateCode))) {
+            scriptContents += match[1] + '\n'; // Add the content of the script
+        }
+
+        // 4. Get the HTML "clean" (without the <script> tags)
+        const htmlPart = templateCode.replace(scriptRegex, '');
+
+        // 5. Insert the HTML into the element
+        // This will render the HTML, but not execute the scripts
+        hostElement.innerHTML = htmlPart;
+
+        // 6. Create a new <script> tag and execute it
+        // This is the only way for the browser to execute JS inserted dynamically
+        if (scriptContents) {
+            const scriptElement = document.createElement('script');
+            scriptElement.textContent = scriptContents;
+            scriptElement.type = 'module';
+            hostElement.appendChild(scriptElement);
+        }
+    });
 }

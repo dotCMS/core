@@ -1,4 +1,4 @@
-import { FormBridge, FormFieldValue } from '../interfaces/form-bridge.interface';
+import { FormBridge, FormFieldAPI, FormFieldValue } from '../interfaces/form-bridge.interface';
 
 interface FieldCallback {
     id: symbol;
@@ -192,6 +192,83 @@ export class DojoFormBridge implements FormBridge {
             window.removeEventListener('load', this.loadHandler);
             this.loadHandler = undefined;
         }
+    }
+
+    /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     *
+     * @param fieldId - The ID of the field to get the API for.
+     * @returns A FormFieldAPI object for the specified field.
+     */
+    getField(fieldId: string): FormFieldAPI {
+        return {
+            getValue: (): FormFieldValue => {
+                return this.get(fieldId);
+            },
+
+            setValue: (value: FormFieldValue): void => {
+                this.set(fieldId, value);
+            },
+
+            onChange: (callback: (value: FormFieldValue) => void): void => {
+                this.onChangeField(fieldId, callback);
+            },
+
+            enable: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (
+                        element instanceof HTMLInputElement ||
+                        element instanceof HTMLTextAreaElement
+                    ) {
+                        element.disabled = false;
+                        element.removeAttribute('disabled');
+                    }
+                } catch (error) {
+                    console.warn('Error enabling field:', error);
+                }
+            },
+
+            disable: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (
+                        element instanceof HTMLInputElement ||
+                        element instanceof HTMLTextAreaElement
+                    ) {
+                        element.disabled = true;
+                        element.setAttribute('disabled', 'disabled');
+                    }
+                } catch (error) {
+                    console.warn('Error disabling field:', error);
+                }
+            },
+
+            show: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (element) {
+                        element.removeAttribute('data-bridge-hidden');
+                        element.style.display = '';
+                    }
+                } catch (error) {
+                    console.warn('Error showing field:', error);
+                }
+            },
+
+            hide: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (element) {
+                        element.setAttribute('data-bridge-hidden', 'true');
+                        element.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.warn('Error hiding field:', error);
+                }
+            }
+        };
     }
 
     /**

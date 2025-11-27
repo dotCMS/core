@@ -5,6 +5,7 @@ import {
     FieldCallback,
     FieldSubscription,
     FormBridge,
+    FormFieldAPI,
     FormFieldValue
 } from '../interfaces/form-bridge.interface';
 
@@ -173,5 +174,65 @@ export class AngularFormBridge implements FormBridge {
         if (AngularFormBridge.instance === this) {
             AngularFormBridge.instance = null;
         }
+    }
+
+    /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     *
+     * @param fieldId - The ID of the field to get the API for.
+     * @returns A FormFieldAPI object for the specified field.
+     */
+    getField(fieldId: string): FormFieldAPI {
+        return {
+            getValue: (): FormFieldValue => {
+                return this.get(fieldId);
+            },
+
+            setValue: (value: FormFieldValue): void => {
+                this.set(fieldId, value);
+            },
+
+            onChange: (callback: (value: FormFieldValue) => void): void => {
+                this.onChangeField(fieldId, callback);
+            },
+
+            enable: (): void => {
+                this.zone.run(() => {
+                    const control = this.form.get(fieldId);
+                    if (control) {
+                        control.enable({ emitEvent: true });
+                    }
+                });
+            },
+
+            disable: (): void => {
+                this.zone.run(() => {
+                    const control = this.form.get(fieldId);
+                    if (control) {
+                        control.disable({ emitEvent: true });
+                    }
+                });
+            },
+
+            show: (): void => {
+                // TODO: Implement show method
+                console.warn('AngularFormBridge: show method not implemented');
+            },
+
+            hide: (): void => {
+                // TODO: Implement hide method
+                console.warn('AngularFormBridge: hide method not implemented');
+            }
+        };
+    }
+
+    /**
+     * Executes callback when bridge is ready, handling iframe load.
+     *
+     * @param callback - The callback function to execute when the bridge is ready.
+     */
+    ready(callback: (api: FormBridge) => void): void {
+        callback(this);
     }
 }
