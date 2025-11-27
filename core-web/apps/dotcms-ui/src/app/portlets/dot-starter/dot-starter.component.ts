@@ -3,8 +3,8 @@ import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 
 interface OnboardingCommand {
     code: string;
-    description: string;
     language: string;
+    explanation: string;
 }
 
 interface OnboardingTroubleshooting {
@@ -17,10 +17,7 @@ interface OnboardingStep {
     number: number;
     title: string;
     description: string;
-    notes?: string[];
     commands?: OnboardingCommand[];
-    explanation?: string;
-    verification?: string[];
     troubleshooting?: OnboardingTroubleshooting[];
 }
 
@@ -49,37 +46,26 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             title: 'Set up your Next.js app',
             description:
                 'Set up a modern Next.js development environment with TypeScript and Tailwind CSS that will serve as the foundation for your headless CMS application.',
-            notes: [
-                "If you're using the dotCMS starter template, this step is already complete. Skip to Step 2."
-            ],
             commands: [
                 {
                     code: 'npx create-next-app@latest my-dotcms-app --yes',
-                    description: 'Create a new Next.js project with all defaults',
-                    language: 'bash'
+                    language: 'bash',
+                    explanation: `Create a new Next.js project with all defaults.
+
+The \`--yes\` flag creates a Next.js app with TypeScript support, Tailwind CSS for styling, ESLint for code quality, App Router (not Pages Router), Turbopack for faster builds, import alias \`@/*\` for cleaner imports, and \`src\` directory structure.`
                 },
                 {
                     code: 'cd my-dotcms-app',
-                    description: 'Navigate into the project directory',
-                    language: 'bash'
+                    language: 'bash',
+                    explanation: 'Navigate into the project directory. Change into the newly created project directory so you can run commands within it.'
                 },
                 {
                     code: 'npm run dev',
-                    description: 'Start the development server',
-                    language: 'bash'
+                    language: 'bash',
+                    explanation: `Start the development server.
+
+The Next.js development server will start and the app will be available at http://localhost:3000. Keep this terminal running while developing.`
                 }
-            ],
-            explanation: `The \`--yes\` flag creates a Next.js app with these features enabled:
-- TypeScript support
-- Tailwind CSS for styling
-- ESLint for code quality
-- App Router (not Pages Router)
-- Turbopack for faster builds
-- Import alias \`@/*\` for cleaner imports
-- \`src\` directory structure`,
-            verification: [
-                'Open your browser at http://localhost:3000',
-                'You should see the default Next.js welcome page'
             ]
         },
         {
@@ -91,17 +77,15 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             commands: [
                 {
                     code: 'npm install @dotcms/client @dotcms/react @dotcms/types',
-                    description: 'Install dotCMS packages',
-                    language: 'bash'
-                }
-            ],
-            explanation: `**Package Overview:**
+                    language: 'bash',
+                    explanation: `Install dotCMS packages.
 
-- **@dotcms/client**: Handles authentication, API communication, and content fetching from dotCMS
-- **@dotcms/react**: Provides React-specific hooks and components for rendering dotCMS content
-- **@dotcms/types**: TypeScript type definitions for dotCMS SDK`,
-            verification: [
-                'Check your `package.json` - you should see the packages listed in dependencies'
+**@dotcms/client** handles authentication, API communication, and content fetching from dotCMS.
+
+**@dotcms/react** provides React-specific hooks and components for rendering dotCMS content.
+
+**@dotcms/types** provides TypeScript type definitions for dotCMS SDK.`
+                }
             ]
         },
         {
@@ -110,46 +94,29 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             title: 'Authenticate dotCMS (create your API Key)',
             description:
                 'Set up secure authentication between your Next.js app and dotCMS using a read-only API key and environment variables.',
-            notes: [
-                'Using read-only API permissions follows security best practices for frontend applications, limiting potential risks.'
-            ],
             commands: [
                 {
                     code: 'touch .env.local',
-                    description: 'Create .env.local file in project root',
-                    language: 'bash'
-                }
-            ],
-            explanation: `**Step 1: Create API Key in dotCMS**
+                    language: 'bash',
+                    explanation: `Create .env.local file in project root.
 
-1. Navigate to [**System** → **Users**](https://minstarter.dotcms.com/c/users) in your dotCMS instance
-2. Select your user account (e.g., \`admin@dotcms.com\`)
-3. Scroll to the **API Access Key** section
-4. Click **Generate** to create a new key (read-only permissions recommended)
-5. Copy the generated key - it will look something like: \`abcd1234efgh5678ijkl9012mnop3456\`
-6. **Important:** Save this key safely - you'll need it in the next step!
+Navigate to [**System** → **Users**](https://minstarter.dotcms.com/c/users) in your dotCMS instance, select your user account (e.g., \`admin@dotcms.com\`), scroll to the **API Access Key** section, and click **Generate** to create a new key (read-only permissions recommended). Copy the generated key - it will look something like: \`abcd1234efgh5678ijkl9012mnop3456\`. **Important:** Save this key safely - you'll need it in the next step!
 
-For detailed instructions, refer to: [dotCMS REST API Authentication](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken)
-
-**Step 2: Create Environment Variables File**
-
-Add your dotCMS credentials to \`.env.local\`:
-
-\`\`\`env
-# .env.local
+For detailed instructions, refer to: [dotCMS REST API Authentication](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken)`
+                },
+                {
+                    code: `# .env.local
 NEXT_PUBLIC_DOTCMS_URL=https://minstarter.dotcms.com
-DOTCMS_TOKEN=your-api-key-here
-\`\`\`
+DOTCMS_TOKEN=your-api-key-here`,
+                    language: 'env',
+                    explanation: `Add your dotCMS credentials to \`.env.local\`.
 
 Replace \`your-api-key-here\` with the actual API Key you copied from dotCMS.
 
-- **NEXT_PUBLIC_DOTCMS_URL**: The \`NEXT_PUBLIC_\` prefix makes this variable available in both server and client components (browser). This is required because the Banner component needs access to the URL to construct image paths.
-- **DOTCMS_TOKEN**: No prefix means this is server-only, keeping your API key secure and never exposed to the browser.
+**NEXT_PUBLIC_DOTCMS_URL** uses the \`NEXT_PUBLIC_\` prefix to make this variable available in both server and client components (browser). This is required because the Banner component needs access to the URL to construct image paths.
 
-This setup keeps your API key safe while allowing necessary configuration to be accessible where needed.`,
-            verification: [
-                'Check that `.env.local` exists in your project root',
-                "Ensure it's listed in `.gitignore` (Next.js adds this by default)"
+**DOTCMS_TOKEN** has no prefix, meaning it's server-only, keeping your API key secure and never exposed to the browser. This setup keeps your API key safe while allowing necessary configuration to be accessible where needed.`
+                }
             ]
         },
         {
@@ -181,20 +148,17 @@ export default async function Home() {
     </div>
   );
 }`,
-                    description: 'Replace all content in src/app/page.tsx',
-                    language: 'typescript'
+                    language: 'typescript',
+                    explanation: `Replace all content in src/app/page.tsx.
+
+**createDotCMSClient** creates a configured client instance that can communicate with your dotCMS instance.
+
+**client.page.get('/')** makes an API call to fetch the home page content (identified by path \`/\`).
+
+**pageAsset** is the complete page object containing all content, layout, and configuration data.
+
+**JSON.stringify** converts the JavaScript object into readable JSON format for inspection.`
                 }
-            ],
-            explanation: `- **createDotCMSClient**: Creates a configured client instance that can communicate with your dotCMS instance
-- **client.page.get('/')**: Makes an API call to fetch the home page content (identified by path \`/\`)
-- **pageAsset**: The complete page object containing all content, layout, and configuration data
-- **JSON.stringify**: Converts the JavaScript object into readable JSON format for inspection`,
-            verification: [
-                'Open http://localhost:3000 in your browser',
-                'You should see a JSON output displaying the page data from dotCMS',
-                'Look for the `containers` object - it should contain banner and default containers with content',
-                '`page.title` should show "Home"',
-                'Banner data should include: `title`, `caption`, `image`, and `link` fields'
             ],
             troubleshooting: [
                 {
@@ -238,8 +202,10 @@ export default async function Home() {
             commands: [
                 {
                     code: 'mkdir -p src/components && touch src/components/DotCMSPageClient.tsx',
-                    description: 'Create components directory and client component file',
-                    language: 'bash'
+                    language: 'bash',
+                    explanation: `Create components directory and client component file.
+
+Creates the components directory structure and an empty file for the client component. The \`-p\` flag creates parent directories if they don't exist.`
                 },
                 {
                     code: `'use client';
@@ -322,8 +288,21 @@ export function DotCMSPageClient({ pageAsset }: DotCMSPageClientProps) {
     />
   );
 }`,
-                    description: 'Add this code to src/components/DotCMSPageClient.tsx',
-                    language: 'typescript'
+                    language: 'typescript',
+                    explanation: `Add this code to src/components/DotCMSPageClient.tsx.
+
+This creates a client component that renders dotCMS content. The \`'use client'\` directive is required because this component uses browser APIs (like Next.js Image component).
+
+The \`Banner\` component receives props from dotCMS and renders them with Tailwind CSS styling.`
+                },
+                {
+                    code: `const COMPONENTS_MAP = {
+  Banner: Banner,  // "Banner" must match your dotCMS content type name
+};`,
+                    language: 'typescript',
+                    explanation: `The \`COMPONENTS_MAP\` maps dotCMS content types to React components.
+
+The key must **exactly match** the content type name in dotCMS (case-sensitive). If your dotCMS content type is called "Banner", the key must be "Banner". If it's "HeroBanner", the key must be "HeroBanner". This is how \`DotCMSLayoutBody\` knows which React component to render for each piece of content.`
                 },
                 {
                     code: `import { createDotCMSClient } from '@dotcms/client';
@@ -341,50 +320,21 @@ export default async function Home() {
 
   return <DotCMSPageClient pageAsset={pageAsset} />;
 }`,
-                    description: 'Replace all content in src/app/page.tsx',
-                    language: 'typescript'
+                    language: 'typescript',
+                    explanation: `Replace all content in src/app/page.tsx.
+
+Here's the flow of data from dotCMS to your screen.
+
+Here's the flow of data from dotCMS to your screen.
+
+The **Server Component** (\`page.tsx\`) runs on the server (not in the browser), fetches page data from dotCMS API using \`client.page.get('/')\`, and passes the data to the client component.
+
+The **Client Component** (\`DotCMSPageClient.tsx\`) runs in the browser (needs \`'use client'\` directive), receives pageAsset data as a prop, and uses \`DotCMSLayoutBody\` to automatically render content.
+
+During **Automatic Component Rendering**, \`DotCMSLayoutBody\` reads the pageAsset, finds content with type "Banner", looks up "Banner" in \`COMPONENTS_MAP\`, and renders your \`Banner\` component with the content data (title, caption, etc.).
+
+Server components can securely access API tokens and fetch data, while client components handle interactivity and browser-specific features.`
                 }
-            ],
-            explanation: `**Component Mapping**
-
-The key in \`COMPONENTS_MAP\` must **exactly match** the content type name in dotCMS (case-sensitive).
-
-\`\`\`typescript
-const COMPONENTS_MAP = {
-  Banner: Banner,  // "Banner" must match your dotCMS content type name
-};
-\`\`\`
-
-If your dotCMS content type is called "Banner", the key must be "Banner". If it's "HeroBanner", the key must be "HeroBanner". This is how \`DotCMSLayoutBody\` knows which React component to render for each piece of content.
-
-**Data Flow**
-
-Here's the flow of data from dotCMS to your screen:
-
-1. **Server Component** (\`page.tsx\`):
-   - Runs on the server (not in the browser)
-   - Fetches page data from dotCMS API using \`client.page.get('/')\`
-   - Passes the data to the client component
-
-2. **Client Component** (\`DotCMSPageClient.tsx\`):
-   - Runs in the browser (needs \`'use client'\` directive)
-   - Receives pageAsset data as a prop
-   - Uses \`DotCMSLayoutBody\` to automatically render content
-
-3. **Automatic Component Rendering**:
-   - \`DotCMSLayoutBody\` reads the pageAsset
-   - Finds content with type "Banner"
-   - Looks up "Banner" in \`COMPONENTS_MAP\`
-   - Renders your \`Banner\` component with the content data (title, caption, etc.)
-
-**Why this separation?** Server components can securely access API tokens and fetch data, while client components handle interactivity and browser-specific features.`,
-            verification: [
-                'Refresh http://localhost:3000 in your browser',
-                'You should now see a beautiful banner instead of JSON',
-                'Title: "Your next adventure is on us"',
-                'Caption: "Discover hundreds of travel destinations around the world"',
-                'Background image from dotCMS',
-                '"Learn More" button linking to dotcms.com'
             ],
             troubleshooting: [
                 {
@@ -432,73 +382,21 @@ Here's the flow of data from dotCMS to your screen:
             number: 6,
             title: 'Configure Universal Visual Editor',
             description:
-                "Connect your Next.js app to dotCMS's Universal Visual Editor (UVE), which allows content editors to see live previews of your Next.js app inside dotCMS and edit content in context.",
-            explanation:
-                '**Video Walkthrough:** Configuring the UVE App in dotCMS by adding your local development URL (http://localhost:3000)\n\nThe video shows how to navigate to the UVE app configuration and register your Next.js app URL, creating a bridge between dotCMS and your frontend.'
+                "Connect your Next.js app to dotCMS's Universal Visual Editor (UVE), which allows content editors to see live previews of your Next.js app inside dotCMS and edit content in context. Navigate to the UVE app configuration in dotCMS and register your local development URL (http://localhost:3000) to create a bridge between dotCMS and your frontend."
         },
         {
             id: 'step-7',
             number: 7,
             title: 'Edit your page visually',
             description:
-                'Test the Universal Visual Editor by making live edits to your banner content. This demonstrates the core value of headless CMS - developers build components once, and content editors can update them without touching code.',
-            explanation:
-                '**Video Walkthrough:** Using the Universal Visual Editor to edit the banner content (text, images, links) and seeing changes reflected in your Next.js app\n\nThe video shows how to navigate to Pages, open the Home page in the UVE, click on the banner to edit its content, save changes, and verify the updates appear in your Next.js app.'
+                'Test the Universal Visual Editor by making live edits to your banner content. Navigate to Pages in dotCMS, open the Home page in the UVE, click on the banner to edit its content (text, images, links), save changes, and verify the updates appear in your Next.js app. This demonstrates the core value of headless CMS - developers build components once, and content editors can update them without touching code.'
         },
         {
             id: 'step-8',
             number: 8,
             title: 'You Did It!',
             description:
-                "Congratulations! You've successfully built a headless Next.js application powered by dotCMS.",
-            verification: [
-                'Next.js fetches content from dotCMS via the REST API',
-                'Components render dynamically based on dotCMS content types',
-                'Visual editing works - content editors can update pages without touching code',
-                'Server/client architecture properly separates data fetching from rendering',
-                'Images are optimized using Next.js Image component'
-            ],
-            explanation: `**The Big Picture**
-
-You've experienced the core value of a headless CMS:
-- **Separation of concerns**: Content management (dotCMS) is decoupled from presentation (Next.js)
-- **Developer freedom**: Build with any framework while editors use familiar tools
-- **Visual editing**: Marketers can edit content without developer involvement
-- **API-first**: Content can be consumed by multiple frontends (web, mobile, IoT)
-
-**Next Steps**
-
-Now that you have the foundation, here are ways to expand:
-
-**Add More Content Types**
-- Create new components for different content types (Blog, Product, Hero, etc.)
-- Map them in \`COMPONENTS_MAP\`
-- Let \`DotCMSLayoutBody\` handle the rendering
-
-**Fetch Content Directly**
-- Use \`client.content.getCollection()\` to fetch specific content
-- Build custom pages without relying on page layouts
-- Example: Blog listing page, product catalog, etc.
-
-**Add More Pages**
-- Create additional pages in dotCMS
-- Use dynamic routes in Next.js: \`app/[...slug]/page.tsx\`
-- Fetch pages using the slug: \`client.page.get(slug)\`
-
-**Deploy to Production**
-- Update \`NEXT_PUBLIC_DOTCMS_URL\` to your production dotCMS URL
-- Configure UVE for your production domain
-- Deploy to Vercel, Netlify, or your preferred hosting
-
-**Learn More**
-- **dotCMS Documentation**: https://www.dotcms.com/docs/latest/
-- **@dotcms/client SDK**: API reference and advanced usage
-- **@dotcms/react SDK**: React-specific hooks and components
-- **Next.js Documentation**: https://nextjs.org/docs
-
-**Feedback**
-
-Found an issue or have suggestions? Let us know! Your feedback helps improve this onboarding experience.`
+                "Congratulations! You've successfully built a headless Next.js application powered by dotCMS. You've experienced the core value of a headless CMS: separation of concerns, developer freedom, visual editing, and API-first architecture. Next steps include adding more content types, fetching content directly, adding more pages with dynamic routes, and deploying to production. Learn more at https://www.dotcms.com/docs/latest/"
         }
     ]
 };

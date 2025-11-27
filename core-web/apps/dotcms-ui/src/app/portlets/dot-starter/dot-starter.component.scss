@@ -106,7 +106,7 @@ markdown {
     overflow: auto;
 
     &__content {
-        max-width: 80rem;
+        max-width: 60rem;
         margin: 0 auto;
     }
 
@@ -114,21 +114,6 @@ markdown {
         display: flex;
         flex-direction: column;
         gap: $spacing-3;
-    }
-
-    &__title {
-    }
-
-    &__description {
-    }
-
-    &__section-title {
-    }
-
-    &__prerequisites {
-    }
-
-    &__prerequisites-list {
     }
 
     &__progress {
@@ -155,6 +140,7 @@ markdown {
 
 .dot-step {
     display: flex;
+    flex-direction: column;
     gap: $spacing-4;
 
     &::ng-deep {
@@ -167,36 +153,33 @@ markdown {
     }
 
     &__video {
-        width: 640px;
+        width: 100%;
         height: 360px;
         background-color: $color-palette-gray-200;
         flex-shrink: 0;
     }
 
-    &__progress-count {
+    &__command {
         display: flex;
-        flex-direction: column;
-        gap: $spacing-2;
+        gap: $spacing-4;
+        margin-bottom: $spacing-4;
+
+        @media (max-width: 768px) {
+            flex-direction: column;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
     }
 
-    &__progress-ring {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-2;
+    &__command-left {
+        flex: 1;
+        min-width: 0;
     }
 
-    &__body {
-    }
-
-    &__section {
-    }
-
-    &__command-description {
-    }
-
-    &__troubleshooting {
-    }
-
-    &__problem {
+    &__command-right {
+        flex: 1;
+        min-width: 0;
     }
 }

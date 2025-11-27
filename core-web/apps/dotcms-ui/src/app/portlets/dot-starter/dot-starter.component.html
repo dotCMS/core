@@ -57,27 +57,16 @@
                     </ng-template>
                     <div class="dot-step">
                         <div class="dot-step__video"></div>
-                        <div class="dot-step__body">
-                            <markdown *ngIf="step.description" [data]="step.description"></markdown>
+                        <markdown *ngIf="step.description" [data]="step.description"></markdown>
 
-                            <ng-container *ngIf="step.notes?.length">
-                                <h3>Notes</h3>
-                                <ul>
-                                    <li *ngFor="let note of step.notes">
-                                        <markdown [data]="note"></markdown>
-                                    </li>
-                                </ul>
-                            </ng-container>
-
-                            <div class="dot-step__section" *ngIf="step.commands?.length">
-                                <h3>Commands</h3>
-                                <div
-                                    class="dot-step__command"
-                                    *ngFor="let command of step.commands">
-                                    <p class="dot-step__command-description">
-                                        {{ command.description }}
-                                    </p>
-
+                        <div *ngIf="step.commands?.length">
+                            <div
+                                class="dot-step__command"
+                                *ngFor="let command of step.commands">
+                                <div class="dot-step__command-left">
+                                    <markdown [data]="command.explanation"></markdown>
+                                </div>
+                                <div class="dot-step__command-right">
                                     <ng-template #buttonTemplate>
                                         <!-- <p-button size="small" icon="pi pi-copy" [text]="true" /> -->
                                         <dot-button-copy />
@@ -88,33 +77,19 @@
                                         [clipboardButtonTemplate]="buttonTemplate"></markdown>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="dot-step__section" *ngIf="step.explanation">
-                                <h3>Explanation</h3>
-                                <markdown [data]="step.explanation"></markdown>
-                            </div>
-
-                            <div class="dot-step__section" *ngIf="step.verification?.length">
-                                <h3>Verification</h3>
+                        <div *ngIf="step.troubleshooting?.length">
+                            <h3>Troubleshooting</h3>
+                            <div
+                                class="dot-step__troubleshooting"
+                                *ngFor="let item of step.troubleshooting">
+                                <p class="dot-step__problem">{{ item.problem }}</p>
                                 <ul>
-                                    <li *ngFor="let item of step.verification">
-                                        <markdown [data]="item"></markdown>
+                                    <li *ngFor="let solution of item.solutions">
+                                        <markdown [data]="solution"></markdown>
                                     </li>
                                 </ul>
-                            </div>
-
-                            <div class="dot-step__section" *ngIf="step.troubleshooting?.length">
-                                <h3>Troubleshooting</h3>
-                                <div
-                                    class="dot-step__troubleshooting"
-                                    *ngFor="let item of step.troubleshooting">
-                                    <p class="dot-step__problem">{{ item.problem }}</p>
-                                    <ul>
-                                        <li *ngFor="let solution of item.solutions">
-                                            <markdown [data]="solution"></markdown>
-                                        </li>
-                                    </ul>
-                                </div>
                             </div>
                         </div>
                     </div>
