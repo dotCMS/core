@@ -7,7 +7,6 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -108,11 +107,12 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
             if (mapKey.endsWith("_raw") && rawValue instanceof String) {
                 final String baseKey = mapKey.substring(0, mapKey.length() - 4);
+                final String baseValue = hydratedMap.get(baseKey).toString();
 
-                if (hydratedMap.containsKey(baseKey)) {
+                if (hydratedMap.containsKey(baseKey) && UtilMethods.isSet(baseValue)) {
                     try {
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> parsed = objectMapper.readValue((String) rawValue, Map.class);
+                        Map<String, Object> parsed = objectMapper.readValue(baseValue, Map.class);
                         hydratedMap.put(baseKey, parsed);
                     } catch (Exception e) {
                         Logger.warn(this, () -> "Error parsing JSON for '" + mapKey + "': " + e.getMessage());
@@ -151,7 +151,6 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
      * </ul>
      *
      * @param request    the current HTTP request, used to extract the variant key if provided
-     * @param user       the user requesting the content, used for permissions and rendering
      * @param contentlet the contentlet to hydrate
      * @param render     whether renderable fields should be velocity-rendered
      * @return a hydrated content map including field values (rendered if requested)
