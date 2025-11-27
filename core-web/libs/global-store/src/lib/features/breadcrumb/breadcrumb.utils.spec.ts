@@ -1,10 +1,20 @@
-import { MenuItem } from 'primeng/api';
+import { signalStore, withState } from '@ngrx/signals';
+
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
+import { withBreadcrumbs } from './breadcrumb.feature';
 import { processSpecialRoute, ROUTE_HANDLERS } from './breadcrumb.utils';
 
 describe('Breadcrumb Utils - Route Handlers', () => {
+    let menuItemsSignal: ReturnType<typeof signal<MenuItemEntity[]>>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let TestStore: any;
+    let store: InstanceType<typeof TestStore>;
+
     const mockMenuItems: MenuItemEntity[] = [
         {
             id: 'templates',
@@ -21,42 +31,50 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         } as MenuItemEntity
     ];
 
+    beforeEach(() => {
+        menuItemsSignal = signal<MenuItemEntity[]>(mockMenuItems);
+
+        TestStore = signalStore(withState({}), withBreadcrumbs(menuItemsSignal));
+
+        TestBed.configureTestingModule({
+            providers: [
+                {
+                    provide: Router,
+                    useValue: {
+                        events: { pipe: () => ({ subscribe: () => ({}) }) },
+                        url: ''
+                    }
+                },
+                TestStore
+            ]
+        });
+
+        store = TestBed.inject(TestStore);
+        TestBed.flushEffects();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     describe('processSpecialRoute', () => {
         it('should execute templatesEdit handler for matching URL', () => {
-            const breadcrumbs: MenuItem[] = [];
-            const helpers = {
-                setBreadcrumbs: jest.fn(),
-                addNewBreadcrumb: jest.fn()
-            };
-
-            const result = processSpecialRoute(
-                '/templates/edit/123',
-                mockMenuItems,
-                breadcrumbs,
-                helpers
-            );
+            const result = processSpecialRoute('/templates/edit/123', mockMenuItems, [], {
+                setBreadcrumbs: store.setBreadcrumbs,
+                addNewBreadcrumb: store.addNewBreadcrumb
+            });
 
             expect(result).toBe(true);
-            expect(helpers.setBreadcrumbs).toHaveBeenCalled();
+            expect(store.breadcrumbs().length).toBeGreaterThan(0);
         });
 
         it('should return false when no handler matches the URL', () => {
-            const breadcrumbs: MenuItem[] = [];
-            const helpers = {
-                setBreadcrumbs: jest.fn(),
-                addNewBreadcrumb: jest.fn()
-            };
-
-            const result = processSpecialRoute(
-                '/unknown-route',
-                mockMenuItems,
-                breadcrumbs,
-                helpers
-            );
+            const result = processSpecialRoute('/unknown-route', mockMenuItems, [], {
+                setBreadcrumbs: store.setBreadcrumbs,
+                addNewBreadcrumb: store.addNewBreadcrumb
+            });
 
             expect(result).toBe(false);
-            expect(helpers.setBreadcrumbs).not.toHaveBeenCalled();
-            expect(helpers.addNewBreadcrumb).not.toHaveBeenCalled();
         });
     });
 
@@ -72,41 +90,38 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should build breadcrumbs when template exists in menu', () => {
-            const helpers = {
-                setBreadcrumbs: jest.fn(),
-                addNewBreadcrumb: jest.fn()
-            };
-
             const result = ROUTE_HANDLERS.templatesEdit.handler(
                 '/templates/edit/123',
                 mockMenuItems,
                 [],
-                helpers
+                {
+                    setBreadcrumbs: store.setBreadcrumbs,
+                    addNewBreadcrumb: store.addNewBreadcrumb
+                }
             );
 
             expect(result).toBe(true);
-            expect(helpers.setBreadcrumbs).toHaveBeenCalledWith([
-                { label: 'Home', disabled: true },
-                { label: 'Content', disabled: true },
-                expect.objectContaining({ label: 'Templates', url: '/dotAdmin/#/templates' })
-            ]);
+
+            const breadcrumbs = store.breadcrumbs();
+            expect(breadcrumbs.length).toBe(3);
+            expect(breadcrumbs[0]).toEqual({ label: 'Home', disabled: true });
+            expect(breadcrumbs[1]).toEqual({ label: 'Content', disabled: true });
+            expect(breadcrumbs[2]).toMatchObject({
+                label: 'Templates',
+                url: '/dotAdmin/#/templates'
+            });
         });
 
         it('should return false when template not found in menu', () => {
-            const helpers = {
-                setBreadcrumbs: jest.fn(),
-                addNewBreadcrumb: jest.fn()
-            };
+            store.setBreadcrumbs([]);
 
-            const result = ROUTE_HANDLERS.templatesEdit.handler(
-                '/templates/edit/123',
-                [],
-                [],
-                helpers
-            );
+            const result = ROUTE_HANDLERS.templatesEdit.handler('/templates/edit/123', [], [], {
+                setBreadcrumbs: store.setBreadcrumbs,
+                addNewBreadcrumb: store.addNewBreadcrumb
+            });
 
             expect(result).toBe(false);
-            expect(helpers.setBreadcrumbs).not.toHaveBeenCalled();
+            expect(store.breadcrumbs().length).toBe(0);
         });
     });
 
@@ -122,14 +137,16 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should add breadcrumb with extracted filter value', () => {
-            const helpers = {
-                setBreadcrumbs: jest.fn(),
-                addNewBreadcrumb: jest.fn()
-            };
+            store.setBreadcrumbs([]);
 
-            ROUTE_HANDLERS.contentFilter.handler('/content?filter=Products', [], [], helpers);
+            ROUTE_HANDLERS.contentFilter.handler('/content?filter=Products', [], [], {
+                setBreadcrumbs: store.setBreadcrumbs,
+                addNewBreadcrumb: store.addNewBreadcrumb
+            });
 
-            expect(helpers.addNewBreadcrumb).toHaveBeenCalledWith({
+            const breadcrumbs = store.breadcrumbs();
+            expect(breadcrumbs.length).toBe(1);
+            expect(breadcrumbs[0]).toEqual({
                 label: 'Products',
                 target: '_self',
                 url: '/dotAdmin/#/content?filter=Products'
@@ -137,21 +154,15 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should handle complex filter values', () => {
-            const helpers = {
-                setBreadcrumbs: jest.fn(),
-                addNewBreadcrumb: jest.fn()
-            };
+            store.setBreadcrumbs([]);
 
-            ROUTE_HANDLERS.contentFilter.handler(
-                '/content?filter=My-Complex-Filter',
-                [],
-                [],
-                helpers
-            );
+            ROUTE_HANDLERS.contentFilter.handler('/content?filter=My-Complex-Filter', [], [], {
+                setBreadcrumbs: store.setBreadcrumbs,
+                addNewBreadcrumb: store.addNewBreadcrumb
+            });
 
-            expect(helpers.addNewBreadcrumb).toHaveBeenCalledWith(
-                expect.objectContaining({ label: 'My-Complex-Filter' })
-            );
+            const breadcrumbs = store.breadcrumbs();
+            expect(breadcrumbs[0].label).toBe('My-Complex-Filter');
         });
     });
 });
