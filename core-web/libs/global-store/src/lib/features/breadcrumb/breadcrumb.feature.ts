@@ -15,7 +15,7 @@ import { MenuItem } from 'primeng/api';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotMenuItem } from '@dotcms/dotcms-models';
+import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -57,7 +57,7 @@ const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
  *
  */
 
-export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
+export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
         withProps(() => ({
@@ -172,12 +172,35 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
 
                 const newUrl = `/dotAdmin/#${url}`;
                 const breadcrumbs = store.breadcrumbs();
-                const existingIndex = breadcrumbs.findIndex((crumb) => crumb.url === newUrl);
+
+                const existingIndex = breadcrumbs.findIndex((crumb) => {
+                    return crumb.url === newUrl;
+                });
 
                 if (existingIndex > -1) {
                     truncateBreadcrumbs(existingIndex);
                 } else {
-                    const item = menu.find((item) => item.menuLink === url);
+                    const [urlPath, queryString] = url.split('?');
+                    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
+
+                    const hasQueryParams = queryString && queryString.length > 0;
+
+                    const item = menu.find((item) => {
+                        const pathMatches = item.menuLink === urlPath;
+
+                        // If we have query params but no mId, it's likely an old bookmark - don't match
+                        if (hasQueryParams && !shortMenuId) {
+                            return false;
+                        }
+
+                        // If we have mId, validate both path and parent match
+                        if (shortMenuId) {
+                            return pathMatches && item.parentMenuId.startsWith(shortMenuId);
+                        }
+
+                        // Default: no query params, no mId - match by path only
+                        return pathMatches;
+                    });
 
                     if (item) {
                         setBreadcrumbs([
@@ -186,7 +209,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                                 disabled: true
                             },
                             {
-                                label: item.labelParent,
+                                label: item.parentMenuLabel,
                                 disabled: true
                             },
                             {
@@ -198,6 +221,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                     } else {
                         // Handle special case: /templates/edit/:id
                         const templatesEditRegex = /^\/templates\/edit\/[a-zA-Z0-9-]+$/;
+
                         if (templatesEditRegex.test(url)) {
                             const templatesItem = menu.find(
                                 (item) => item.menuLink === '/templates'
@@ -216,7 +240,7 @@ export function withBreadcrumbs(menuItems: Signal<DotMenuItem[]>) {
                                             disabled: true
                                         },
                                         {
-                                            label: templatesItem.labelParent,
+                                            label: templatesItem.parentMenuLabel,
                                             disabled: true
                                         },
                                         {

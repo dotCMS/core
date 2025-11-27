@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, forwardRef, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -23,7 +22,7 @@ import { DotMessagePipe } from '@dotcms/ui';
             useExisting: forwardRef(() => PushPublishEnvSelectorComponent)
         }
     ],
-    imports: [CommonModule, FormsModule, ButtonModule, MultiSelectModule, DotMessagePipe]
+    imports: [FormsModule, ButtonModule, MultiSelectModule, DotMessagePipe]
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
     private pushPublishService = inject(PushPublishService);

@@ -108,13 +108,15 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 ## ⚙️ Configuration Options
 
-| Option | Type | Required | Default | Description |
-| -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
-| `siteAuth` | `string` | ✅ | - | Site auth from dotCMS Analytics app |
-| `server` | `string` | ✅ | - | Your dotCMS server URL |
-| `debug` | `boolean` | ❌ | `false` | Enable verbose logging |
-| `autoPageView` | `boolean` | ❌ | React: `true` / Standalone: `false` | Auto track page views on route changes |
-| `queueConfig` | `QueueConfig` | ❌ | See below | Event batching configuration |
+| Option         | Type                        | Required | Default                             | Description                                                      |
+| -------------- | --------------------------- | -------- | ----------------------------------- | ---------------------------------------------------------------- |
+| `siteAuth`     | `string`                    | ✅       | -                                   | Site auth from dotCMS Analytics app                              |
+| `server`       | `string`                    | ✅       | -                                   | Your dotCMS server URL                                           |
+| `debug`        | `boolean`                   | ❌       | `false`                             | Enable verbose logging                                           |
+| `autoPageView` | `boolean`                   | ❌       | React: `true` / Standalone: `false` | Auto track page views on route changes                           |
+| `queueConfig`  | `QueueConfig`               | ❌       | See below                           | Event batching configuration                                     |
+| `impressions`  | `ImpressionConfig\|boolean` | ❌       | `false`                             | Content impression tracking (disabled by default)                |
+| `clicks`       | `boolean`                   | ❌       | `false`                             | Content click tracking with 300ms throttle (disabled by default) |
 
 ### Queue Configuration
 
@@ -165,6 +167,194 @@ const analytics = initializeContentAnalytics({
         eventBatchSize: 10, // Auto-send when 10 events queued
         flushInterval: 3000 // Or send every 3 seconds
     }
+});
+```
+
+### Impression Tracking Configuration
+
+The `impressions` option controls automatic tracking of content visibility:
+
+-   **`false` or `undefined` (default)**: Impression tracking disabled
+-   **`true`**: Enable tracking with default settings
+-   **`ImpressionConfig` object**: Enable tracking with custom settings
+
+| Option                | Type     | Default | Description                               |
+| --------------------- | -------- | ------- | ----------------------------------------- |
+| `visibilityThreshold` | `number` | `0.5`   | Min percentage visible (0.0 to 1.0)       |
+| `dwellMs`             | `number` | `750`   | Min time visible in milliseconds          |
+| `maxNodes`            | `number` | `1000`  | Max elements to track (performance limit) |
+
+**How it works:**
+
+-   ✅ Tracks contentlets marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+-   ✅ Uses Intersection Observer API for high performance and battery efficiency
+-   ✅ Only fires when element is ≥50% visible for ≥750ms (configurable)
+-   ✅ Only tracks during active tab (respects page visibility)
+-   ✅ One impression per contentlet per session (no duplicates)
+-   ✅ Respects user consent settings
+-   ✅ Automatically disabled in dotCMS editor mode
+
+**Example: Enable with defaults**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: true // 50% visible, 750ms dwell, 1000 max nodes
+});
+```
+
+**Example: Custom thresholds**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: {
+        visibilityThreshold: 0.7, // Require 70% visible
+        dwellMs: 1000, // Must be visible for 1 second
+        maxNodes: 500 // Track max 500 elements
+    }
+});
+```
+
+**Example: Disable tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: false // Explicitly disabled (also default if omitted)
+});
+```
+
+### Click Tracking Configuration
+
+The `clicks` option controls automatic tracking of user interactions with content elements:
+
+-   **`false` or `undefined` (default)**: Click tracking disabled
+-   **`true`**: Enable tracking with default settings (300ms throttle)
+
+**How it works:**
+
+-   ✅ Tracks clicks on `<a>` and `<button>` elements within contentlets
+-   ✅ Contentlets must be marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+-   ✅ Captures semantic attributes (`href`, `aria-label`, `data-*`) and excludes CSS classes
+-   ✅ Throttles rapid clicks to prevent duplicate tracking (300ms fixed)
+-   ✅ One click event per interaction
+-   ✅ Respects user consent settings
+-   ✅ Automatically disabled in dotCMS editor mode
+
+**Captured Data:**
+
+For each click, the SDK captures:
+
+-   **Content Info**: `identifier`, `inode`, `title`, `content_type`
+-   **Element Info**:
+    -   `text` - Button/link text (truncated to 100 chars)
+    -   `type` - Element type (`a` or `button`)
+    -   `id` - Element ID (required by backend, empty string if not present)
+    -   `class` - Element CSS classes (required by backend, empty string if not present)
+    -   `href` - Link destination as written in HTML (e.g., `/signup` not `http://...`, only for `<a>`, empty string for buttons)
+    -   `attributes` - Additional useful attributes (see below)
+-   **Position Info**:
+    -   `viewport_offset_pct` - Position relative to viewport (0-100%)
+    -   `dom_index` - Element position in DOM
+
+**Attributes Array:**
+
+> **Note**: The `attributes` field is formatted as an array of `'key:value'` strings (e.g., `['data-category:primary-cta', 'aria-label:Sign up']`) for efficient serialization and backend parsing.
+
+The `attributes` array captures additional semantic data in `'key:value'` string format:
+
+✅ **Included** (semantic/analytics value):
+
+-   `data-*` - Custom data attributes (e.g., `'data-category:primary-cta'`)
+-   `aria-*` - Accessibility attributes (e.g., `'aria-label:Sign up now'`)
+-   `title` - Element title
+-   `target` - Link target (e.g., `'target:_blank'`)
+-   Any other standard HTML attributes
+
+❌ **Excluded** (to avoid duplication):
+
+-   `class` - Already captured as top-level property
+-   `id` - Already captured as top-level property
+-   `href` - Already captured as top-level property
+-   `data-dot-analytics-*` - Internal SDK attributes
+
+**Example: Enable click tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    clicks: true // Enable with 300ms throttle (fixed)
+});
+```
+
+**Example: Adding Custom Analytics Metadata**
+
+Use `data-*` attributes to enrich click tracking with custom metadata:
+
+```html
+<!-- Primary CTA with category -->
+<a
+    href="/signup"
+    id="cta-signup"
+    data-category="primary-cta"
+    data-campaign="summer-sale"
+    aria-label="Sign up for free trial">
+    Start Free Trial →
+</a>
+
+<!-- Product link with metadata -->
+<a href="/products/123" data-product-id="123" data-product-name="Premium Plan" data-price="29.99">
+    View Product
+</a>
+
+<!-- Button with custom tracking -->
+<button data-action="download" data-file-type="pdf" data-category="lead-magnet">
+    Download Whitepaper
+</button>
+```
+
+**Resulting Click Event:**
+
+```json
+{
+    "content": {
+        "identifier": "abc123",
+        "inode": "xyz789",
+        "title": "Product Page",
+        "content_type": "Page"
+    },
+    "element": {
+        "text": "Start Free Trial →",
+        "type": "a",
+        "id": "cta-signup",
+        "class": "btn btn-primary text-white",
+        "href": "/signup",
+        "attributes": [
+            "data-category:primary-cta",
+            "data-campaign:summer-sale",
+            "aria-label:Sign up for free trial",
+            "target:_blank"
+        ]
+    },
+    "position": {
+        "viewport_offset_pct": 45.2,
+        "dom_index": 2
+    }
+}
+```
+
+**Example: Disable tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    clicks: false // Explicitly disabled (also default if omitted)
 });
 ```
 

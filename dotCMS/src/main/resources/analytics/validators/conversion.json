@@ -23,31 +23,5 @@
         "required": true
       }
     }
-  },
-  "element": {
-    "type": "json_object",
-    "allowed_attributes": {
-      "text": {
-        "type": "string",
-        "required": true
-      },
-      "type": {
-        "type": "string",
-        "required": true
-      },
-      "id": {
-        "type": "string",
-        "required": true
-      },
-      "class": {
-        "type": "string",
-        "required": true
-      },
-      "attributes": {
-        "type": "json_array",
-        "array_type": "string",
-        "required": true
-      }
-    }
   }
-},
+}

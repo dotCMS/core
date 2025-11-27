@@ -95,7 +95,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -2362,7 +2362,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request());
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER,user);
         request.setAttribute(WebKeys.USER_ID,user.getUserId());
@@ -2789,6 +2789,98 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertEquals(results.get("errors").size(), 0);
+        }finally {
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Given Scenario: A parent content type related to a child content type with a one-to-one relationship,
+     * where both the parent and child have two versions in two different languages
+     * ExpectedResult: The importer should return without errors, so content will be ready to be imported.
+     */
+    @Test
+    public void importPreviewRelationshipLanguageOneToOneTest() throws DotDataException, DotSecurityException, IOException {
+        //Creates content types
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        HashMap<String, List<String>> results;
+        CsvReader csvreader;
+        Reader reader;
+        String[] csvHeaders;
+        final int cardinality = RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+
+        try {
+            final Relationship relationship;
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
+
+
+            com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(childContentType.variable()).build();
+
+            field = fieldAPI.save(field, user);
+            relationship = relationshipAPI.byTypeValue(
+                    parentContentType.variable() + StringPool.PERIOD + field.variable());
+
+
+            //Creates child contentlet with 2 language versions
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(language_1.getId())
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            ContentletDataGen.createNewVersion(childContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
+
+            //Creates parent contentlet with 2 language versions
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(language_1.getId())
+                    .setProperty(TITLE_FIELD_NAME, "parent contentlet")
+                    .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
+
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    Map.of(relationship, list(childContentlet)),
+                    user, false);
+
+            //Create second language version of parent
+            ContentletDataGen.createNewVersion(parentContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
+
+            reader = createTempFile(
+                    "identifier, languageCode, countryCode, " + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME
+                            + "\r\n"
+                            + parentContentlet.getIdentifier() + ",en, US, Test1_edited, " + "\r\n" );
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+
+
+            results = ImportUtil.importFile(0L, defaultSite.getInode(), parentContentType.inode(),
+                    new String[]{}, true, true, user, language_1.getId(), csvHeaders,
+                    csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
+
+            validate(results, true, false, true);
+
+            assertEquals(0, results.get("errors").size());
         }finally {
             try {
                 if (parentContentType != null) {
