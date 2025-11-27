@@ -12,7 +12,24 @@
     }
 }
 
-:host markdown {
+header {
+    max-width: 70ch;
+    margin-block-end: $spacing-4;
+
+    h1 {
+        font-weight: $font-weight-medium-bold;
+        font-size: $font-size-xl;
+        margin: 0;
+        margin-block-end: $spacing-1;
+    }
+
+    p {
+        margin: 0;
+        line-height: 1.5;
+    }
+}
+
+markdown {
     font-size: 1em;
     line-height: 1.5em;
 
@@ -113,6 +130,7 @@
 }
 
 .dot-onboarding {
+    padding-block-start: $spacing-4;
     flex: 1;
     overflow: auto;
 

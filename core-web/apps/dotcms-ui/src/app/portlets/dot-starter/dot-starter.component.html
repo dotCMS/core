@@ -1,9 +1,9 @@
 <div class="dot-onboarding">
     <div class="dot-onboarding__content">
-        <section class="dot-onboarding__intro">
-            <!-- <h1 class="dot-onboarding__title">{{ content.title }}</h1>
-            <p class="dot-onboarding__description">{{ content.description }}</p> -->
-
+        <header>
+            <h1>{{ content.title }}</h1>
+            <p>{{ content.description }}</p>
+        </header>
             <!-- @if (content.prerequisites.length) {
             <div class="dot-onboarding__prerequisites">
                 <h2 class="dot-onboarding__section-title">Prerequisites</h2>
@@ -18,7 +18,6 @@
                 </ul>
             </div>
             } -->
-        </section>
 
         <section class="dot-onboarding__steps">
             <p-accordion [activeIndex]="0" [multiple]="false">

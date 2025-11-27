@@ -34,9 +34,9 @@ interface OnboardingContent {
 const STORAGE_KEY = 'dotcmsDeveloperOnboarding';
 
 const ONBOARDING_CONTENT: OnboardingContent = {
-    title: 'dotCMS Headless Integration Onboarding',
+    title: 'Build Your First dotCMS Headless Application',
     description:
-        'Complete guide to integrate dotCMS with Next.js and build a headless CMS application.',
+        'Step-by-step guide to connect Next.js with dotCMS. Learn authentication, content fetching, rendering, and visual editing in under 30 minutes.',
     prerequisites: [
         'Node.js installed (v18 or higher)',
         'A dotCMS instance (minstarter.dotcms.com)',
