@@ -194,12 +194,34 @@ h2 {
 
     &::ng-deep {
         markdown {
+            pre, code {
+                white-space: pre; // prevent wrapping
+                overflow-x: auto;
+                max-height: 400px;
+            }
+
             code {
                 padding: 0;
-                white-space: pre-wrap;
             }
         }
     }
+
+    &__command {
+        display: grid;
+        grid-template-columns: 3fr 4fr;
+        gap: $spacing-4;
+        margin-bottom: $spacing-6;
+
+        // Ensure code/pre inside right grid cell never overflow container
+        & > div:last-child {
+            min-width: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
 
     &__video {
         width: 100%;
@@ -212,16 +234,6 @@ h2 {
         padding: 0 $spacing-2;
     }
 
-    &__command {
-        display: grid;
-        grid-template-columns: 3fr 4fr;
-        gap: $spacing-4;
-        margin-bottom: $spacing-6;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-    }
 
     &__command-description {
         display: block;
