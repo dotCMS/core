@@ -392,6 +392,26 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
+     * Test that a null story block field (not set at all) fails validation when required
+     */
+    @Test
+    public void test_null_story_block_required_validation_fails() {
+        // Create contentlet without setting the storyBlockField property at all
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                // Intentionally NOT setting storyBlockField - it will be null
+                .next();
+
+        try {
+            APILocator.getContentletAPI().validateContentlet(contentlet, null);
+            fail("Expected DotContentletValidationException for null required story block field");
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should have required field errors", e.hasRequiredErrors());
+            assertEquals("Should have one required field error", 1,
+                    e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        }
+    }
+
+    /**
      * Test that multiple empty paragraphs still fail validation
      */
     @Test

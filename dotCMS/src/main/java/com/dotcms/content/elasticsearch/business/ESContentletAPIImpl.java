@@ -7742,9 +7742,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
                     // Story Block validation - we know it's a string containing JSON
-                    String s1 = (String) fieldValue;
-                    if (isEmptyStoryBlock(s1)) {
-                        cveBuilder.addRequiredField(field, s1);
+                    if (fieldValue == null || isEmptyStoryBlock((String) fieldValue)) {
+                        cveBuilder.addRequiredField(field, fieldValue != null ? fieldValue.toString() : "null");
                         hasError = true;
                         Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
                         continue;
