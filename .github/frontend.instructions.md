@@ -21,9 +21,9 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class {{ClassName}} {
-  protected readonly isServerRunning = signal(true);
+  protected readonly $isServerRunning = signal(true);
   toggleServerStatus() {
-    this.isServerRunning.update(isServerRunning => !isServerRunning);
+    this.$isServerRunning.update(isServerRunning => !isServerRunning);
   }
 }
 ```
@@ -44,7 +44,7 @@ export class {{ClassName}} {
 
 ```html
 <section class="container">
-    @if (isServerRunning()) {
+    @if ($isServerRunning()) {
         <span>Yes, the server is running</span>
     } @else {
         <span>No, the server is not running</span>
@@ -76,6 +76,8 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - Use strict type checking
 - Prefer type inference when the type is obvious
 - Avoid the `any` type; use `unknown` when type is uncertain
+- Don't allow use enums, use `as const` instead.
+- Use `#` prefix to indicate that a property is private, example: `#myPrivateProperty`.
 
 ### Angular Best Practices
 
@@ -85,6 +87,8 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - Implement lazy loading for feature routes
 - Use `NgOptimizedImage` for all static images.
 - Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
+- For signals, use the `$` prefix to indicate that it is a signal, example: `$mySignal`
+- For observables, use the `$` suffix to indicate that it is an observable, example: `myObservable$`
 
 ### Components
 
@@ -97,6 +101,7 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - Prefer Reactive forms instead of Template-driven ones
 - Do NOT use `ngClass`, use `class` bindings instead, for context: https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings
 - Do NOT use `ngStyle`, use `style` bindings instead, for context: https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings
+- Do NOT use `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
 
 ### State Management
 
@@ -121,8 +126,14 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 
 ### Testing
 
-- Always use Spectator with jest or Vitest for testing using @ngneat/spectator/jest package.
+- Always use Spectator with jest or Vitest for testing using `@ngneat/spectator` package.
 - Use the `createComponentFactory` function to create a component factory.
+- Use the `createDirectiveFactory` function to create a directive factory.
+- Use the `createPipeFactory` function to create a pipe factory.
+- Use the `createServiceFactory` function to create a service factory.
+- Use the `createHostFactory` function to create a host factory.
+- Use the `createRoutingFactory` function to create a routing factory.
+- Use the `createHttpFactory` function to create a http factory.
 - Use the `Spectator` class to create a spectator instance.
 - Use the `byTestId` function to select a component by its test id.
 - Use the `mockProvider` function to mock a service.

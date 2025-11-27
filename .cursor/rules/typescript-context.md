@@ -21,6 +21,22 @@ This project adheres to modern Angular best practices, emphasizing maintainabili
         let name = 'Angular';
         ```
 * **Avoid `any`:** Do not use the `any` type unless absolutely necessary as it bypasses type checking. Prefer `unknown` when a type is uncertain and you need to handle it safely.
+* **Don't allow use enums, use `as const` instead, example:**
+    ```typescript
+    const MyEnum = {
+      VALUE1: 'value1',
+      VALUE2: 'value2',
+    } as const;
+    ```
+* **Private properties:** Use `#` prefix to indicate that a property is private, example: `#myPrivateProperty`.
+    * **Bad:**
+        ```typescript
+        private myPrivateProperty = 'private';
+        ```
+    * **Good:**
+        ```typescript
+        #myPrivateProperty = 'private';
+        ```
 
 ## Angular Best Practices
 
@@ -61,12 +77,11 @@ This project adheres to modern Angular best practices, emphasizing maintainabili
         import { input, output } from '@angular/core';
 
         // ...
-        userId = input<string>('');
-        userSelected = output<string>();
+        $userId = input<string>('');
+        $userSelected = output<string>();
         ```
 * **`computed()` for Derived State:** Use the `computed()` function from `@angular/core` for derived state based on signals.
 * **`ChangeDetectionStrategy.OnPush`:** Always set `changeDetection: ChangeDetectionStrategy.OnPush` in the `@Component` decorator for performance benefits by reducing unnecessary change detection cycles.
-* **Inline Templates:** Prefer inline templates (template: `...`) for small components to keep related code together. For larger templates, use external HTML files.
 * **Reactive Forms:** Prefer Reactive forms over Template-driven forms for complex forms, validation, and dynamic controls due to their explicit, immutable, and synchronous nature.
 * **No `ngClass` / `NgClass`:** Do not use the `ngClass` directive. Instead, use native `class` bindings for conditional styling.
     * **Bad:**
@@ -95,6 +110,8 @@ This project adheres to modern Angular best practices, emphasizing maintainabili
         * component-name.component.html    # Template  
         * component-name.component.scss    # Styles
         * component-name.component.spec.ts # Tests
+* **For signals**, use the `$` prefix to indicate that it is a signal, example: `$mySignal`
+* **For observables**, use the `$` suffix to indicate that it is an observable, example: `myObservable$`
 
 ## State Management
 
@@ -102,6 +119,7 @@ This project adheres to modern Angular best practices, emphasizing maintainabili
 * **`computed()` for Derived State:** Leverage `computed()` for any state that can be derived from other signals.
 * **Pure and Predictable Transformations:** Ensure state transformations are pure functions (no side effects) and predictable.
 * **Signal value updates:** Do NOT use `mutate` on signals, use `update` or `set` instead.
+* **Signal Store:** For complex state management, use the Signal Store pattern, learn more here https://ngrx.io/guide/signals
 
 ## Templates
 
