@@ -131,9 +131,9 @@ DOTCMS_TOKEN=your-api-key-here`,
                         title: 'Add your dotCMS credentials to `.env.local`',
                         description: `Replace \`your-api-key-here\` with the actual API Key you copied from dotCMS.
 
-- \`NEXT_PUBLIC_DOTCMS_URL\` - Uses the \`NEXT_PUBLIC_\` prefix to make this variable available in both server and client components (browser). This is required because the Banner component needs access to the URL to construct image paths.
+- \`NEXT_PUBLIC_DOTCMS_URL\` - Available in both server and client components (needed for image URLs)
 
-- \`DOTCMS_TOKEN\` - Has no prefix, meaning it's server-only, keeping your API key secure and never exposed to the browser. This setup keeps your API key safe while allowing necessary configuration to be accessible where needed.`
+- \`DOTCMS_TOKEN\` - Server-only (keeps your API key secure, never exposed to browser)`
                     }
                 }
             ]
