@@ -5,20 +5,17 @@
 <dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
-            {{ field.name }} {{ $renderMode() }}
+            {{ field.name }}
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        @switch ($renderMode()) {
-            @case ('iframe') {
-                <dot-native-field [field]="field" [contentlet]="$contentlet()" />
-            }
-            @default {
-                <dot-iframe-field
-                    [field]="field"
-                    [contentType]="$contentType()"
-                    [contentlet]="$contentlet()" />
-            }
+        @if ($renderMode() === 'iframe') {
+            <dot-native-field [field]="field" [contentlet]="$contentlet()" />
+        } @else {
+            <dot-iframe-field
+                [field]="field"
+                [contentType]="$contentType()"
+                [contentlet]="$contentlet()" />
         }
     </dot-card-field-content>
     @if (field.hint) {

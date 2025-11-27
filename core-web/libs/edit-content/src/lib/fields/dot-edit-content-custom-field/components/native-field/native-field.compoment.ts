@@ -1,3 +1,5 @@
+import { signalMethod } from '@ngrx/signals';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,7 +28,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
-import { signalMethod } from '@ngrx/signals';
 
 @Component({
     selector: 'dot-native-field',
