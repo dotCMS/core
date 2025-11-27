@@ -51,7 +51,14 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                     language: 'bash',
                     explanation: {
                         title: 'Create a new Next.js project with all defaults',
-                        description: `The \`--yes\` flag creates a Next.js app with TypeScript support, Tailwind CSS for styling, ESLint for code quality, App Router (not Pages Router), Turbopack for faster builds, import alias \`@/*\` for cleaner imports, and \`src\` directory structure.`
+                        description: `The \`--yes\` flag creates a Next.js app with:
+- TypeScript support
+- Tailwind CSS for styling
+- ESLint for code quality
+- App Router (not Pages Router)
+- Turbopack for faster builds
+- Import alias \`@/*\` for cleaner imports
+- \`src\` directory structure`
                     }
                 },
                 {
@@ -84,11 +91,9 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                     language: 'bash',
                     explanation: {
                         title: 'Install dotCMS packages',
-                        description: `**@dotcms/client** handles authentication, API communication, and content fetching from dotCMS.
-
-**@dotcms/react** provides React-specific hooks and components for rendering dotCMS content.
-
-**@dotcms/types** provides TypeScript type definitions for dotCMS SDK.`
+                        description: `- \`@dotcms/client\` - Handles authentication, API communication, and content fetching from dotCMS
+- \`@dotcms/react\` - Provides React-specific hooks and components for rendering dotCMS content
+- \`@dotcms/types\` - Provides TypeScript type definitions for dotCMS SDK`
                     }
                 }
             ]
@@ -105,7 +110,14 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                     language: 'bash',
                     explanation: {
                         title: 'Create .env.local file in project root',
-                        description: `Navigate to [**System** → **Users**](https://minstarter.dotcms.com/c/users) in your dotCMS instance, select your user account (e.g., \`admin@dotcms.com\`), scroll to the **API Access Key** section, and click **Generate** to create a new key (read-only permissions recommended). Copy the generated key - it will look something like: \`abcd1234efgh5678ijkl9012mnop3456\`. **Important:** Save this key safely - you'll need it in the next step!
+                        description: `To generate your API key:
+- Navigate to [**System** → **Users**](https://minstarter.dotcms.com/c/users) in your dotCMS instance
+- Select your user account (e.g., \`admin@dotcms.com\`)
+- Scroll to the **API Access Key** section
+- Click **Generate** to create a new key (read-only permissions recommended)
+- Copy the generated key - it will look something like: \`abcd1234efgh5678ijkl9012mnop3456\`
+
+**Important:** Save this key safely - you'll need it in the next step!
 
 For detailed instructions, refer to: [dotCMS REST API Authentication](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken)`
                     }
@@ -119,9 +131,9 @@ DOTCMS_TOKEN=your-api-key-here`,
                         title: 'Add your dotCMS credentials to `.env.local`',
                         description: `Replace \`your-api-key-here\` with the actual API Key you copied from dotCMS.
 
-**NEXT_PUBLIC_DOTCMS_URL** uses the \`NEXT_PUBLIC_\` prefix to make this variable available in both server and client components (browser). This is required because the Banner component needs access to the URL to construct image paths.
+- \`NEXT_PUBLIC_DOTCMS_URL\` - Uses the \`NEXT_PUBLIC_\` prefix to make this variable available in both server and client components (browser). This is required because the Banner component needs access to the URL to construct image paths.
 
-**DOTCMS_TOKEN** has no prefix, meaning it's server-only, keeping your API key secure and never exposed to the browser. This setup keeps your API key safe while allowing necessary configuration to be accessible where needed.`
+- \`DOTCMS_TOKEN\` - Has no prefix, meaning it's server-only, keeping your API key secure and never exposed to the browser. This setup keeps your API key safe while allowing necessary configuration to be accessible where needed.`
                     }
                 }
             ]
@@ -158,13 +170,10 @@ export default async function Home() {
                     language: 'typescript',
                     explanation: {
                         title: 'Replace all content in src/app/page.tsx',
-                        description: `**createDotCMSClient** creates a configured client instance that can communicate with your dotCMS instance.
-
-**client.page.get('/')** makes an API call to fetch the home page content (identified by path \`/\`).
-
-**pageAsset** is the complete page object containing all content, layout, and configuration data.
-
-**JSON.stringify** converts the JavaScript object into readable JSON format for inspection.`
+                        description: `- \`createDotCMSClient\` - Creates a configured client instance that can communicate with your dotCMS instance
+- \`client.page.get('/')\` - Makes an API call to fetch the home page content (identified by path \`/\`)
+- \`pageAsset\` - The complete page object containing all content, layout, and configuration data
+- \`JSON.stringify\` - Converts the JavaScript object into readable JSON format for inspection`
                     }
                 }
             ]
@@ -302,13 +311,13 @@ export default async function Home() {
                     language: 'typescript',
                     explanation: {
                         title: 'Replace all content in src/app/page.tsx',
-                        description: `Here's the flow of data from dotCMS to your screen.
+                        description: `Here's the flow of data from dotCMS to your screen:
 
-The **Server Component** (\`page.tsx\`) runs on the server (not in the browser), fetches page data from dotCMS API using \`client.page.get('/')\`, and passes the data to the client component.
+- **Server Component** (\`page.tsx\`) - Runs on the server (not in the browser), fetches page data from dotCMS API using \`client.page.get('/')\`, and passes the data to the client component
 
-The **Client Component** (\`DotCMSPageClient.tsx\`) runs in the browser (needs \`'use client'\` directive), receives pageAsset data as a prop, and uses \`DotCMSLayoutBody\` to automatically render content.
+- **Client Component** (\`DotCMSPageClient.tsx\`) - Runs in the browser (needs \`'use client'\` directive), receives pageAsset data as a prop, and uses \`DotCMSLayoutBody\` to automatically render content
 
-During **Automatic Component Rendering**, \`DotCMSLayoutBody\` reads the pageAsset, finds content with type "Banner", looks up "Banner" in \`COMPONENTS_MAP\`, and renders your \`Banner\` component with the content data (title, caption, etc.).
+- **Automatic Component Rendering** - \`DotCMSLayoutBody\` reads the pageAsset, finds content with type "Banner", looks up "Banner" in \`COMPONENTS_MAP\`, and renders your \`Banner\` component with the content data (title, caption, etc.)
 
 Server components can securely access API tokens and fetch data, while client components handle interactivity and browser-specific features.`
                     }
