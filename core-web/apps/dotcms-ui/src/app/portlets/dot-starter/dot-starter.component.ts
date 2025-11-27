@@ -6,10 +6,14 @@ interface OnboardingSubstepExplanation {
     description: string;
 }
 
+type SubstepType = 'command' | 'file' | 'ui';
+
 interface OnboardingSubstep {
     code: string;
     language: string;
     explanation: OnboardingSubstepExplanation;
+    type: SubstepType;
+    filePath?: string;
 }
 
 interface OnboardingStep {
@@ -49,6 +53,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'npx create-next-app@latest my-dotcms-app --yes',
                     language: 'bash',
+                    type: 'command',
                     explanation: {
                         title: 'Create a new Next.js project with all defaults',
                         description: `The \`--yes\` flag creates a Next.js app with:
@@ -64,6 +69,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'cd my-dotcms-app',
                     language: 'bash',
+                    type: 'command',
                     explanation: {
                         title: 'Navigate into the project directory',
                         description: 'Change into the newly created project directory so you can run commands within it.'
@@ -72,6 +78,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'npm run dev',
                     language: 'bash',
+                    type: 'command',
                     explanation: {
                         title: 'Start the development server',
                         description: `The Next.js development server will start and the app will be available at http://localhost:3000. Keep this terminal running while developing.`
@@ -89,6 +96,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'npm install @dotcms/client @dotcms/react @dotcms/types',
                     language: 'bash',
+                    type: 'command',
                     explanation: {
                         title: 'Install dotCMS packages',
                         description: `- \`@dotcms/client\` - Handles authentication, API communication, and content fetching from dotCMS
@@ -108,6 +116,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'touch .env.local',
                     language: 'bash',
+                    type: 'command',
                     explanation: {
                         title: 'Create .env.local file in project root',
                         description: `To generate your API key:
@@ -123,12 +132,13 @@ For detailed instructions, refer to: [dotCMS REST API Authentication](https://de
                     }
                 },
                 {
-                    code: `# .env.local
-NEXT_PUBLIC_DOTCMS_URL=https://minstarter.dotcms.com
+                    code: `NEXT_PUBLIC_DOTCMS_URL=https://minstarter.dotcms.com
 DOTCMS_TOKEN=your-api-key-here`,
                     language: 'env',
+                    type: 'file',
+                    filePath: '.env.local',
                     explanation: {
-                        title: 'Add your dotCMS credentials to `.env.local`',
+                        title: 'Add your dotCMS credentials',
                         description: `Replace \`your-api-key-here\` with the actual API Key you copied from dotCMS.
 
 - \`NEXT_PUBLIC_DOTCMS_URL\` - Available in both server and client components (needed for image URLs)
@@ -168,8 +178,10 @@ export default async function Home() {
   );
 }`,
                     language: 'typescript',
+                    type: 'file',
+                    filePath: 'src/app/page.tsx',
                     explanation: {
-                        title: 'Replace all content in src/app/page.tsx',
+                        title: 'Replace all content in the page component',
                         description: `- \`createDotCMSClient\` - Creates a configured client instance that can communicate with your dotCMS instance
 - \`client.page.get('/')\` - Makes an API call to fetch the home page content (identified by path \`/\`)
 - \`pageAsset\` - The complete page object containing all content, layout, and configuration data
@@ -188,6 +200,7 @@ export default async function Home() {
                 {
                     code: 'mkdir -p src/components && touch src/components/DotCMSPageClient.tsx',
                     language: 'bash',
+                    type: 'command',
                     explanation: {
                         title: 'Create components directory and client component file',
                         description: `Creates the components directory structure and an empty file for the client component. The \`-p\` flag creates parent directories if they don't exist.`
@@ -275,8 +288,10 @@ export function DotCMSPageClient({ pageAsset }: DotCMSPageClientProps) {
   );
 }`,
                     language: 'typescript',
+                    type: 'file',
+                    filePath: 'src/components/DotCMSPageClient.tsx',
                     explanation: {
-                        title: 'Add this code to src/components/DotCMSPageClient.tsx',
+                        title: 'Add the client component code',
                         description: `This creates a client component that renders dotCMS content. The \`'use client'\` directive is required because this component uses browser APIs (like Next.js Image component).
 
 The \`Banner\` component receives props from dotCMS and renders them with Tailwind CSS styling.`
@@ -287,6 +302,8 @@ The \`Banner\` component receives props from dotCMS and renders them with Tailwi
   Banner: Banner,  // "Banner" must match your dotCMS content type name
 };`,
                     language: 'typescript',
+                    type: 'file',
+                    filePath: 'src/components/DotCMSPageClient.tsx',
                     explanation: {
                         title: 'The `COMPONENTS_MAP` maps dotCMS content types to React components',
                         description: `The key must **exactly match** the content type name in dotCMS (case-sensitive). If your dotCMS content type is called "Banner", the key must be "Banner". If it's "HeroBanner", the key must be "HeroBanner". This is how \`DotCMSLayoutBody\` knows which React component to render for each piece of content.`
@@ -309,8 +326,10 @@ export default async function Home() {
   return <DotCMSPageClient pageAsset={pageAsset} />;
 }`,
                     language: 'typescript',
+                    type: 'file',
+                    filePath: 'src/app/page.tsx',
                     explanation: {
-                        title: 'Replace all content in src/app/page.tsx',
+                        title: 'Update the page component',
                         description: `Here's the flow of data from dotCMS to your screen:
 
 - **Server Component** (\`page.tsx\`) - Runs on the server (not in the browser), fetches page data from dotCMS API using \`client.page.get('/')\`, and passes the data to the client component

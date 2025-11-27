@@ -69,6 +69,11 @@
                                             <markdown class="dot-step__substep-description" [data]="substep.explanation.description"></markdown>
                                         </div>
                                         <div>
+                                            @if (substep.filePath) {
+                                                <div class="dot-step__file-path">{{ substep.filePath }}</div>
+                                            } @else if (substep.type === 'command') {
+                                                <div class="dot-step__file-path">terminal</div>
+                                            }
                                             <ng-template #buttonTemplate>
                                                 <dot-button-copy />
                                             </ng-template>
