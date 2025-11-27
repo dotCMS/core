@@ -57,6 +57,7 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.contenttype.util.StoryBlockUtil;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
@@ -7746,7 +7747,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
                         continue;
                     } else if (!(fieldValue instanceof String)) {
-                        cveBuilder.addBadTypeField(field, fieldValue);
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
                         hasError = true;
                         Logger.warn(this, String.format("Story Block Field [%s] must be a String, but got: %s",
                             field.getVelocityVarName(), fieldValue.getClass().getSimpleName()));
