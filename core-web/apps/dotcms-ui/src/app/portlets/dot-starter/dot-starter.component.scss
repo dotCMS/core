@@ -209,7 +209,7 @@ h2 {
         }
     }
 
-    &__command {
+    &__substep {
         display: grid;
         grid-template-columns: 3fr 4fr;
         gap: $spacing-4;
@@ -233,12 +233,12 @@ h2 {
         margin-bottom: $spacing-4;
     }
 
-    &__commands {
+    &__substeps {
         padding: 0 $spacing-2;
     }
 
 
-    &__command-description {
+    &__substep-description {
         display: block;
         margin-left: 2.2rem;
         color: $color-palette-gray-700;

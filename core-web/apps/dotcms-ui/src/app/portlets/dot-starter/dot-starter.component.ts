@@ -1,15 +1,15 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 
-interface OnboardingCommandExplanation {
+interface OnboardingSubstepExplanation {
     title: string;
     description: string;
 }
 
-interface OnboardingCommand {
+interface OnboardingSubstep {
     code: string;
     language: string;
-    explanation: OnboardingCommandExplanation;
+    explanation: OnboardingSubstepExplanation;
 }
 
 interface OnboardingStep {
@@ -17,7 +17,7 @@ interface OnboardingStep {
     number: number;
     title: string;
     description: string;
-    commands?: OnboardingCommand[];
+    substeps?: OnboardingSubstep[];
 }
 
 interface OnboardingContent {
@@ -45,7 +45,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             title: 'Set up your Next.js app',
             description:
                 'Set up a modern Next.js development environment with TypeScript and Tailwind CSS that will serve as the foundation for your headless CMS application.',
-            commands: [
+            substeps: [
                 {
                     code: 'npx create-next-app@latest my-dotcms-app --yes',
                     language: 'bash',
@@ -85,7 +85,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             title: 'Install dotCMS libraries',
             description:
                 'Install the official dotCMS SDK packages that enable your Next.js app to communicate with dotCMS and render content with full TypeScript support.',
-            commands: [
+            substeps: [
                 {
                     code: 'npm install @dotcms/client @dotcms/react @dotcms/types',
                     language: 'bash',
@@ -104,7 +104,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             title: 'Authenticate dotCMS (create your API Key)',
             description:
                 'Set up secure authentication between your Next.js app and dotCMS using a read-only API key and environment variables.',
-            commands: [
+            substeps: [
                 {
                     code: 'touch .env.local',
                     language: 'bash',
@@ -144,7 +144,7 @@ DOTCMS_TOKEN=your-api-key-here`,
             title: 'Fetch content from dotCMS',
             description:
                 'Test your dotCMS connection by fetching page data and displaying it as JSON. Seeing the raw data helps you understand the structure of dotCMS content before rendering it visually.',
-            commands: [
+            substeps: [
                 {
                     code: `import { createDotCMSClient } from '@dotcms/client';
 
@@ -184,7 +184,7 @@ export default async function Home() {
             title: 'Render content with DotCMSLayoutBody',
             description:
                 'Transform that JSON data into a rendered page by creating a Banner component and mapping it to your dotCMS content.',
-            commands: [
+            substeps: [
                 {
                     code: 'mkdir -p src/components && touch src/components/DotCMSPageClient.tsx',
                     language: 'bash',
@@ -451,11 +451,11 @@ export class DotStarterComponent implements OnInit {
         return this.completedSteps.size > 0;
     }
 
-    formatCommand(command: OnboardingCommand): string {
-        const language = command.language || '';
+    formatSubstep(substep: OnboardingSubstep): string {
+        const language = substep.language || '';
 
         return `\`\`\`${language}
-${command.code}
+${substep.code}
 \`\`\``;
     }
 

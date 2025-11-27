@@ -60,19 +60,19 @@
 
                         <hr />
 
-                        <div class="dot-step__commands">
-                            @if (step.commands?.length) {
-                                @for (command of step.commands; track command) {
-                                    <div class="dot-step__command">
+                        <div class="dot-step__substeps">
+                            @if (step.substeps?.length) {
+                                @for (substep of step.substeps; track substep) {
+                                    <div class="dot-step__substep">
                                         <div>
-                                            <h3 class="dot-step__command-title">{{ command.explanation.title }}</h3>
-                                            <markdown class="dot-step__command-description" [data]="command.explanation.description"></markdown>
+                                            <h3 class="dot-step__substep-title">{{ substep.explanation.title }}</h3>
+                                            <markdown class="dot-step__substep-description" [data]="substep.explanation.description"></markdown>
                                         </div>
                                         <div>
                                             <ng-template #buttonTemplate>
                                                 <dot-button-copy />
                                             </ng-template>
-                                            <markdown clipboard [data]="formatCommand(command)"
+                                            <markdown clipboard [data]="formatSubstep(substep)"
                                                 [clipboardButtonTemplate]="buttonTemplate"></markdown>
                                         </div>
                                     </div>
