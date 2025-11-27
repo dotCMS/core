@@ -68,14 +68,16 @@ export interface DotCMSAnalytics {
      * Track a page view event.
      * @param payload - Optional custom data to include with the page view (any valid JSON object)
      */
-    pageView: (payload?: JsonObject) => void;
+    pageView(): void;
+    pageView(payload: JsonObject): void;
 
     /**
      * Track a custom event.
      * @param eventName - The name/type of the event to track
      * @param payload - Custom data to include with the event (any valid JSON object)
      */
-    track: (eventName: string, payload: JsonObject) => void;
+    track(eventName: string): void;
+    track(eventName: string, payload: JsonObject): void;
 
     /**
      * Track a conversion event.
