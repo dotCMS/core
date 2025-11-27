@@ -1,7 +1,6 @@
 ---
-description: Angular frontend development context - loads only for Angular files  
-globs: ["core-web/**/*.{ts,html,scss,css}"]
-alwaysApply: false
+description: Frontend development instructions
+applyTo: "core-web/**/*.{ts,html,scss,css}"
 ---
 
 # Angular Frontend Context
