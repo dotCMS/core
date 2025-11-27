@@ -5,6 +5,10 @@
     height: 100%;
     position: relative;
     flex-direction: column;
+
+    &::ng-deep .p-accordion .p-accordion-content {
+        padding-block-start: 0;
+    }
 }
 
 :host markdown {
@@ -157,9 +161,9 @@ h2 {
         font-size: $font-size-md;
         font-weight: $font-weight-medium-bold;
         position: relative;
-        padding-left: 2.4em; // Reserve space for the counter
+        padding-inline-start: 2.4em; // Reserve space for the counter
         counter-increment: step-counter;
-        line-height: 2em;
+        padding-block-start: 3px; // Had to hardcode this to align the counter with the text
 
         &::before {
             content: counter(step-counter);
@@ -176,7 +180,10 @@ h2 {
             border-radius: 0.4em;
             box-sizing: border-box;
             display: inline-block;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
     }
 
