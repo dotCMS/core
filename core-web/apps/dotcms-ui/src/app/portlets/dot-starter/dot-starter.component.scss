@@ -34,6 +34,11 @@ markdown {
     line-height: 1.5em;
 
     &::ng-deep {
+        & > div:last-child pre,
+        & > div:last-child code {
+            margin-bottom: 0;
+        }
+
         *:last-child {
             margin-bottom: 0;
         }
@@ -268,6 +273,7 @@ h2 {
 
     &__substeps {
         padding: 0 $spacing-2;
+        margin-bottom: $spacing-6;
     }
 
 
@@ -284,5 +290,9 @@ h2 {
         background-color: $color-palette-gray-900;
         padding: $spacing-1 $spacing-2;
         border-radius: 0.25rem 0.25rem 0 0;
+    }
+
+    &__next-button {
+        margin-inline-start: $spacing-2;
     }
 }

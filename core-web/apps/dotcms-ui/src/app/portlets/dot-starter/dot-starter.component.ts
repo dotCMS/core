@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 
 interface OnboardingSubstepExplanation {
     title: string;
@@ -377,6 +377,8 @@ export class DotStarterComponent implements OnInit {
     readonly content = ONBOARDING_CONTENT;
 
     progress = 0;
+    activeAccordionIndex = 0;
+    @ViewChild('onboardingContainer', { read: ElementRef }) onboardingContainer?: ElementRef<HTMLElement>;
     private completedSteps = new Set<string>();
     private readonly platformId = inject(PLATFORM_ID);
 
@@ -398,6 +400,37 @@ export class DotStarterComponent implements OnInit {
 
         this.persistProgress();
         this.updateProgress();
+    }
+
+    completeStepAndOpenNext(stepId: string): void {
+        // Mark current step as completed
+        if (!this.completedSteps.has(stepId)) {
+            this.completedSteps.add(stepId);
+            this.persistProgress();
+            this.updateProgress();
+        }
+
+        // Find and open the next step
+        const currentIndex = this.content.steps.findIndex((step) => step.id === stepId);
+        if (currentIndex !== -1 && currentIndex < this.content.steps.length - 1) {
+            const nextIndex = currentIndex + 1;
+            this.activeAccordionIndex = nextIndex;
+            // Scroll to the accordion item after it opens
+            setTimeout(() => {
+                if (!isPlatformBrowser(this.platformId) || !this.onboardingContainer?.nativeElement) {
+                    return;
+                }
+                const container = this.onboardingContainer.nativeElement;
+                const activeTab = container.querySelector('.p-accordion-tab-active') as HTMLElement;
+                if (activeTab) {
+                    const tabTop = activeTab.offsetTop - container.offsetTop - 24;
+                    container.scrollTo({
+                        top: tabTop,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 300);
+        }
     }
 
     resetProgress(): void {

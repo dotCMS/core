@@ -1,10 +1,10 @@
-<div class="dot-onboarding">
+<div class="dot-onboarding" #onboardingContainer>
     <div class="dot-onboarding__content">
         <header>
             <h1>{{ content.title }}</h1>
             <p>{{ content.description }}</p>
         </header>
-            <!-- @if (content.prerequisites.length) {
+        <!-- @if (content.prerequisites.length) {
             <div class="dot-onboarding__prerequisites">
                 <h2 class="dot-onboarding__section-title">Prerequisites</h2>
 
@@ -20,7 +20,7 @@
             } -->
 
         <section class="dot-onboarding__steps">
-            <p-accordion [activeIndex]="0" [multiple]="false">
+            <p-accordion [(activeIndex)]="activeAccordionIndex" [multiple]="false">
                 @for (step of content.steps; track step) {
                 <p-accordionTab>
                     <ng-template pTemplate="header">
@@ -60,38 +60,41 @@
                     <div class="dot-step">
                         <div class="dot-step__video"></div>
                         @if (step.description) {
-                            <markdown class="dot-step__description" [data]="step.description" />
+                        <markdown class="dot-step__description" [data]="step.description" />
                         }
 
                         @if (step.substeps?.length) {
-                            <hr />
+                        <hr />
                         }
 
                         <div class="dot-step__substeps">
                             @if (step.substeps?.length) {
-                                @for (substep of step.substeps; track substep) {
-                                <div class="dot-step__substep">
-                                    <div>
-                                        <h3>{{ substep.explanation.title }}</h3>
-                                        <markdown class="dot-step__substep-description"
-                                            [data]="substep.explanation.description"></markdown>
-                                    </div>
-                                    <div>
-                                        @if (substep.filePath) {
-                                        <div class="dot-step__file-path">{{ substep.filePath }}</div>
-                                        } @else if (substep.type === 'command') {
-                                        <div class="dot-step__file-path">terminal</div>
-                                        }
-                                        <ng-template #buttonTemplate>
-                                            <dot-button-copy />
-                                        </ng-template>
-                                        <markdown clipboard [data]="formatSubstep(substep)"
-                                            [clipboardButtonTemplate]="buttonTemplate"></markdown>
-                                    </div>
+                            @for (substep of step.substeps; track substep) {
+                            <div class="dot-step__substep">
+                                <div>
+                                    <h3>{{ substep.explanation.title }}</h3>
+                                    <markdown class="dot-step__substep-description"
+                                        [data]="substep.explanation.description"></markdown>
                                 </div>
-                                }
+                                <div>
+                                    @if (substep.filePath) {
+                                    <div class="dot-step__file-path">{{ substep.filePath }}</div>
+                                    } @else if (substep.type === 'command') {
+                                    <div class="dot-step__file-path">terminal</div>
+                                    }
+                                    <ng-template #buttonTemplate>
+                                        <dot-button-copy />
+                                    </ng-template>
+                                    <markdown clipboard [data]="formatSubstep(substep)"
+                                        [clipboardButtonTemplate]="buttonTemplate"></markdown>
+                                </div>
+                            </div>
+                            }
                             }
                         </div>
+
+                        <button class="dot-step__next-button" type="button" pButton label="Next Step"
+                            (click)="completeStepAndOpenNext(step.id)"></button>
 
                     </div>
                 </p-accordionTab>
