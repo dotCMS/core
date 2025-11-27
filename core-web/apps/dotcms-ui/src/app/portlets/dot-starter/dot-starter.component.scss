@@ -164,12 +164,12 @@ h2 {
             left: 0;
             top: 0;
             font-size: $font-size-md;
-            font-weight: $font-weight-medium-bold;
-            color: $color-palette-gray-800;
+            font-weight: $font-weight-regular-bold;
+            color: $color-palette-primary-800;
             width: 2em;
             height: 2em;
             text-align: right;
-            background: $color-palette-gray-300;
+            background: $color-palette-primary-200;
             border-radius: 0.4em;
             box-sizing: border-box;
             display: inline-block;
@@ -181,6 +181,7 @@ h2 {
         font-size: $font-size-lg;
         line-height: 1.5;
         padding: 0 $spacing-2;
+        color: $color-palette-gray-700;
     }
 
     hr {
@@ -225,5 +226,6 @@ h2 {
     &__command-description {
         display: block;
         margin-left: 2.2rem;
+        color: $color-palette-gray-700;
     }
 }
