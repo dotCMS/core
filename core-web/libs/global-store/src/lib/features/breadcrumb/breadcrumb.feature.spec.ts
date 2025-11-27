@@ -889,7 +889,7 @@ describe('withBreadcrumbs Feature', () => {
         describe('Menu Item Matching with mId Query Parameter', () => {
             it('should NOT match when URL has query params but no mId (old bookmark)', () => {
                 routerMock.triggerNavigationEnd('/c/content?someParam=value');
-                TestBed.tick();
+                TestBed.flushEffects();
 
                 // Should not create breadcrumbs for old bookmarks with query params but no mId
                 expect(storeWithRouter.breadcrumbs().length).toBe(0);
@@ -898,7 +898,7 @@ describe('withBreadcrumbs Feature', () => {
             it('should match when URL has mId that matches parentMenuId prefix', () => {
                 // parentMenuId is 'content-parent', so mId=content should match
                 routerMock.triggerNavigationEnd('/c/content?mId=content');
-                TestBed.tick();
+                TestBed.flushEffects();
 
                 const breadcrumbs = storeWithRouter.breadcrumbs();
                 expect(breadcrumbs.length).toBe(3);
@@ -908,7 +908,7 @@ describe('withBreadcrumbs Feature', () => {
             it('should NOT match when mId does not match parentMenuId prefix', () => {
                 // parentMenuId is 'content-parent', mId=xyz should NOT match
                 routerMock.triggerNavigationEnd('/c/content?mId=xyz');
-                TestBed.tick();
+                TestBed.flushEffects();
 
                 expect(storeWithRouter.breadcrumbs().length).toBe(0);
             });
