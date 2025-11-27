@@ -8358,15 +8358,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return true;
             }
 
-            // Count blocks that have no nested content
+            // Count blocks that are actually empty (no meaningful content)
             int emptyBlocks = 0;
             for (int i = 0; i < contentArray.length(); i++) {
                 JSONObject block = contentArray.getJSONObject(i);
 
-                // If block has no "content" property or has empty content array, it's empty
-                if (!block.has("content") ||
-                    (block.get("content") instanceof JSONArray &&
-                     ((JSONArray) block.get("content")).length() == 0)) {
+                if (isEmptyBlock(block)) {
                     emptyBlocks++;
                 }
             }
@@ -8378,6 +8375,68 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Logger.warn(this, "Error parsing Story Block JSON, treating as non-empty: " + e.getMessage());
             return false; // If we can't parse, assume it has content to be safe
         }
+    }
+
+    /**
+     * Helper method to determine if a specific block within a Story Block is empty.
+     * Simple logic: If it's a text block, check if it has actual text content.
+     * For everything else (images, videos, custom blocks, etc.), assume it has content.
+     *
+     * @param block The JSON object representing a single block
+     * @return true if the block is effectively empty, false otherwise
+     */
+    private boolean isEmptyBlock(JSONObject block) {
+        if (!block.has("type")) {
+            return true; // No type means invalid/empty block
+        }
+
+        String blockType = block.optString("type");
+
+        // For text-based blocks, check if they contain actual text content
+        if ("paragraph".equals(blockType) || "heading".equals(blockType) || "codeBlock".equals(blockType)) {
+            return isTextContentEmpty(block);
+        }
+
+        // For everything else (images, videos, lists, tables, blockquotes, custom blocks, etc.):
+        // If the block exists, it represents content,
+        // This is to avoid recursive checking of blocks that are not text-based like lists on tables or similar.
+        return false;
+    }
+
+    /**
+     * Helper method to check if a text block contains only empty text
+     * @param block The block to check for text content
+     * @return true if all text content is empty, false otherwise
+     */
+    private boolean isTextContentEmpty(JSONObject block) {
+        if (!block.has("content")) {
+            return true; // No content property means empty
+        }
+
+        JSONArray contentArray = block.optJSONArray("content");
+        if (contentArray == null || contentArray.length() == 0) {
+            return true; // Empty content array means empty
+        }
+
+        // Check if all content items are empty text nodes
+        for (int i = 0; i < contentArray.length(); i++) {
+            JSONObject contentItem = contentArray.optJSONObject(i);
+            if (contentItem != null) {
+                String itemType = contentItem.optString("type");
+
+                if ("text".equals(itemType)) {
+                    String text = contentItem.optString("text", "");
+                    if (UtilMethods.isSet(text.trim())) {
+                        return false; // Found non-empty text
+                    }
+                } else {
+                    // Non-text nodes (marks, etc.) indicate content exists
+                    return false;
+                }
+            }
+        }
+
+        return true; // All content items are empty text
     }
 
 
