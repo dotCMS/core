@@ -30,7 +30,6 @@ import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -220,7 +219,7 @@ public class UserPermissionHelper {
         Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
         Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
         Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
-        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "CONTENT_TYPE"),
+        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "STRUCTURE"),
         Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
         Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
         Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
@@ -259,31 +258,5 @@ public class UserPermissionHelper {
         }
 
         return permissions;
-    }
-
-    /**
-     * Returns all available permission scopes that can be assigned.
-     * These represent the different asset types that support permissions.
-     *
-     * @return Set of permission scope names (e.g., "INDIVIDUAL", "HOST", "FOLDER")
-     */
-    public Set<String> getAvailablePermissionScopes() {
-        return new HashSet<>(PERMISSION_TYPE_MAPPINGS.values());
-    }
-
-    /**
-     * Returns all available permission levels that can be assigned.
-     * These represent the different types of access (READ, WRITE, etc.).
-     *
-     * @return Set of permission level names (maintains insertion order)
-     */
-    public Set<String> getAvailablePermissionLevels() {
-        return new LinkedHashSet<>(convertBitsToPermissionNames(
-            PermissionAPI.PERMISSION_READ |
-            PermissionAPI.PERMISSION_WRITE |
-            PermissionAPI.PERMISSION_PUBLISH |
-            PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
-            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-        ));
     }
 }
