@@ -79,6 +79,67 @@ pageView(customData?: Record<string, unknown>): void
 -   **React**: In development (API may change)
 -   Custom data is optional and gets attached to the pageview event under the `custom` property alongside all automatically captured data.
 
+### Conversion Tracking
+
+The `conversion()` method tracks user conversions (purchases, downloads, sign-ups, etc.) from your application.
+
+**⚠️ IMPORTANT: Conversion events are business events that should only be tracked after a successful action or completed goal.** Tracking conversions on clicks or attempts (before success) diminishes their value as conversion metrics. Only track conversions when:
+
+-   ✅ Purchase is completed and payment is confirmed
+-   ✅ Download is successfully completed
+-   ✅ Sign-up form is submitted and account is created
+-   ✅ Form submission is successful and data is saved
+-   ✅ Any business goal is actually achieved
+
+**Method signature:**
+
+```typescript
+conversion(name: string): void
+conversion(name: string, options?: Record<string, unknown>): void
+```
+
+**Usage examples:**
+
+```typescript
+// Basic conversion tracking (after successful download)
+analytics.conversion('download');
+
+// Conversion with custom metadata (after successful purchase)
+analytics.conversion('purchase', {
+    value: 99.99,
+    currency: 'USD',
+    category: 'ecommerce',
+    productId: 'SKU-12345'
+});
+
+// Conversion with additional context (after successful signup)
+analytics.conversion('signup', {
+    source: 'homepage',
+    plan: 'premium'
+});
+```
+
+**Event payload structure:**
+
+```json
+{
+    "event_type": "conversion",
+    "local_time": "2025-10-01T16:08:33-04:00",
+    "data": {
+        "conversion": { "name": "download" },
+        "page": { "url": "...", "title": "..." },
+        "custom": { "value": 99.99, "currency": "USD", "source": "homepage" }
+    }
+}
+```
+
+**Important:**
+
+-   `name` is required and identifies the conversion type
+-   All properties in `options` go into the `custom` object
+-   Page data (url, title) is automatically added by the SDK
+-   **Only track conversions after successful completion of business goals**
+
 ### Custom Events
 
 The `track()` method allows you to track any custom user action with a unique event name and optional properties.
@@ -91,7 +152,7 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 **Important:**
 
--   `eventName` cannot be `"pageview"` (reserved for page view tracking)
+-   `eventName` cannot be `"pageview"` or `"conversion"` (reserved for specific tracking methods)
 -   `eventName` should be a descriptive string like `"button-click"`, `"form-submit"`, `"video-play"`, etc.
 -   `properties` is optional and can contain any custom data relevant to the event
 
@@ -487,10 +548,18 @@ interface DotCMSAnalytics {
 
     /**
      * Track a custom event
-     * @param eventName - Name of the custom event (cannot be "pageview")
+     * @param eventName - Name of the custom event (cannot be "pageview" or "conversion")
      * @param properties - Optional object with event-specific properties
      */
     track: (eventName: string, properties?: Record<string, unknown>) => void;
+
+    /**
+     * Track a conversion event (purchase, download, sign-up, etc.)
+     * ⚠️ IMPORTANT: Only track conversions after successful completion of business goals
+     * @param name - Name of the conversion (e.g., "purchase", "download", "signup")
+     * @param options - Optional object with conversion metadata (all properties go into custom object)
+     */
+    conversion: (name: string, options?: Record<string, unknown>) => void;
 }
 ```
 
@@ -579,6 +648,52 @@ When you call `track(eventName, properties)`, the following structure is sent:
     }]
 }
 ```
+
+### Conversion Event Structure
+
+When you call `conversion(name, options)`, the following structure is sent:
+
+```typescript
+{
+    context: {
+        site_key: string;      // Your site key
+        session_id: string;    // Current session ID
+        user_id: string;       // Anonymous user ID
+        device: {              // 🤖 AUTOMATIC - Device & Browser Info
+            screen_resolution: string;  // Screen size
+            language: string;           // Browser language
+            viewport_width: string;     // Viewport width
+            viewport_height: string;    // Viewport height
+        }
+    },
+    events: [{
+        event_type: "conversion",
+        local_time: string,    // ISO 8601 timestamp
+        data: {
+            conversion: {      // 🤖 AUTOMATIC - Conversion Info
+                name: string;  //    Your conversion name
+            },
+            page: {            // 🤖 AUTOMATIC - Page Information
+                url: string;   //    Full URL
+                title: string; //    Page title
+            },
+            custom?: {         // 👤 YOUR DATA (optional)
+                // All properties from options parameter
+                value?: number;
+                currency?: string;
+                category?: string;
+                // ... any other custom properties
+            }
+        }
+    }]
+}
+```
+
+**Key Points:**
+
+-   🤖 Conversion name and page data are captured **automatically**
+-   👤 All properties in `options` go into the `custom` object
+-   ⚠️ **Only track conversions after successful completion of business goals**
 
 ## Under the Hood
 
