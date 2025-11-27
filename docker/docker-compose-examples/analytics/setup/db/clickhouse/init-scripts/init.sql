@@ -366,7 +366,7 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
 -- Inserts rows summarizing content presence before the conversion.
 -- =====================================================================
 CREATE MATERIALIZED VIEW content_presents_in_conversion_mv
-    REFRESH EVERY 15 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
+    REFRESH EVERY 1 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
     SELECT context_user_id,
            utc_time AS conversion_time,
@@ -394,6 +394,7 @@ SELECT
     (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
     event_type,
     context_user_id,
+    context_site_id,
     conversion.conversion_name as conversion_name,
     count(*) AS conversion_count,
     max(conversion._timestamp) as last_timestamp,
@@ -403,7 +404,7 @@ FROM clickhouse_test_db.events e
                                   e.utc_time < conversion.conversion_time AND
                                   e.utc_time > conversion.conversion_last_time AND
                                   event_type <> 'conversion'
-GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id, conversion.conversion_name, day;
+GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id, conversion.conversion_name, day, context_site_id;
 
 
 -- =====================================================================
