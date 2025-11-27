@@ -8,7 +8,12 @@ import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.iden
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
 import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
 import { DotCMSPredefinedEventType } from './shared/constants/dot-analytics.constants';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
+import {
+    DotCMSAnalytics,
+    DotCMSAnalyticsConfig,
+    DotCMSConversionPayload,
+    JsonObject
+} from './shared/models';
 import {
     cleanupActivityTracking,
     getEnhancedTrackingPlugins,
@@ -115,11 +120,15 @@ export const initializeContentAnalytics = (
                 return;
             }
 
-            const payload: { name: string; custom?: JsonObject } = { name };
-
-            if (Object.keys(options).length > 0) {
-                payload.custom = options;
+            if (!name || name.trim() === '') {
+                console.warn('DotCMS Analytics [Core]: Conversion name cannot be empty');
+                return;
             }
+
+            const payload: DotCMSConversionPayload = {
+                name,
+                ...(Object.keys(options).length > 0 && { custom: options })
+            };
 
             analyticsInstance.track(DotCMSPredefinedEventType.CONVERSION, payload);
         }
