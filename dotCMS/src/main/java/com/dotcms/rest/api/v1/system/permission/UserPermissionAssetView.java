@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.user;
+package com.dotcms.rest.api.v1.system.permission;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,9 +11,12 @@ import java.util.Set;
  * This bean encapsulates the permission details for a specific asset that a user's
  * individual role has access to, including the asset metadata and the specific
  * permission levels granted.
+ *
+ * @author dotCMS
+ * @since 24.01
  */
 @Schema(description = "Permission asset with associated permission assignments")
-public class UserPermissionAsset {
+public class UserPermissionAssetView {
 
     @JsonProperty("id")
     @Schema(
@@ -81,7 +84,7 @@ public class UserPermissionAsset {
     private final Map<String, Set<String>> permissions;
 
     /**
-     * Constructs a user permission asset with all required fields.
+     * Constructs a user permission asset view with all required fields.
      *
      * @param id Asset identifier
      * @param type Asset type (HOST or FOLDER)
@@ -92,14 +95,14 @@ public class UserPermissionAsset {
      * @param inheritsPermissions Whether permissions are inherited
      * @param permissions Map of permission types to permission names
      */
-    public UserPermissionAsset(final String id,
-                              final String type,
-                              final String name,
-                              final String path,
-                              final String hostId,
-                              final boolean canEditPermissions,
-                              final boolean inheritsPermissions,
-                              final Map<String, Set<String>> permissions) {
+    public UserPermissionAssetView(final String id,
+                                   final String type,
+                                   final String name,
+                                   final String path,
+                                   final String hostId,
+                                   final boolean canEditPermissions,
+                                   final boolean inheritsPermissions,
+                                   final Map<String, Set<String>> permissions) {
         this.id = id;
         this.type = type;
         this.name = name;

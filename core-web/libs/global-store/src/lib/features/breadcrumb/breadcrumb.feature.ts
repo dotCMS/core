@@ -183,23 +183,12 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     const [urlPath, queryString] = url.split('?');
                     const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
-                    const hasQueryParams = queryString && queryString.length > 0;
-
                     const item = menu.find((item) => {
                         const pathMatches = item.menuLink === urlPath;
-
-                        // If we have query params but no mId, it's likely an old bookmark - don't match
-                        if (hasQueryParams && !shortMenuId) {
-                            return false;
-                        }
-
-                        // If we have mId, validate both path and parent match
-                        if (shortMenuId) {
-                            return pathMatches && item.parentMenuId.startsWith(shortMenuId);
-                        }
-
-                        // Default: no query params, no mId - match by path only
-                        return pathMatches;
+                        const parentMatches = shortMenuId
+                            ? item.parentMenuId.startsWith(shortMenuId)
+                            : true;
+                        return pathMatches && parentMatches;
                     });
 
                     if (item) {

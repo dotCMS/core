@@ -1,16 +1,16 @@
-package com.dotcms.rest.api.v1.user;
+package com.dotcms.rest.api.v1.system.permission;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Response for save user permissions operation.
- * Matches naming conventions from GET /users/{userId}/permissions API.
+ * View for save user permissions operation result.
+ * Contains the result of saving permissions for a user on an asset.
  *
- * @author Hassan
+ * @author dotCMS
  * @since 24.01
  */
-public class SaveUserPermissionsResponse {
+public class SaveUserPermissionsView {
 
     @JsonProperty("userId")
     @Schema(description = "User identifier", example = "admin@dotcms.com", required = true)
@@ -22,7 +22,7 @@ public class SaveUserPermissionsResponse {
 
     @JsonProperty("asset")
     @Schema(description = "The updated asset with new permission assignments", required = true)
-    private final UserPermissionAsset asset;
+    private final UserPermissionAssetView asset;
 
     @JsonProperty("cascadeInitiated")
     @Schema(description = "Whether permission cascade to children was initiated", required = true)
@@ -36,10 +36,10 @@ public class SaveUserPermissionsResponse {
      * @param asset Updated asset with new permissions
      * @param cascadeInitiated Whether cascade was triggered
      */
-    public SaveUserPermissionsResponse(
+    public SaveUserPermissionsView(
         final String userId,
         final String roleId,
-        final UserPermissionAsset asset,
+        final UserPermissionAssetView asset,
         final boolean cascadeInitiated
     ) {
         this.userId = userId;
@@ -69,9 +69,9 @@ public class SaveUserPermissionsResponse {
     /**
      * Gets the updated asset with permissions.
      *
-     * @return Permission asset
+     * @return Permission asset view
      */
-    public UserPermissionAsset getAsset() {
+    public UserPermissionAssetView getAsset() {
         return asset;
     }
 

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.user;
+package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
@@ -13,7 +13,7 @@ import java.util.Set;
  * Form for updating user permissions on a specific asset.
  * Maps modern REST API structure to legacy RoleAjax.saveRolePermission() logic.
  *
- * @author Hassan
+ * @author dotCMS
  * @since 24.01
  */
 public class SaveUserPermissionsForm extends Validated {
@@ -76,7 +76,7 @@ public class SaveUserPermissionsForm extends Validated {
         }
 
         // Validate against metadata API
-        final UserPermissionHelper helper = new UserPermissionHelper();
+        final PermissionSaveHelper helper = new PermissionSaveHelper();
         final Set<String> validScopes = helper.getAvailablePermissionScopes();
         final Set<String> validLevels = helper.getAvailablePermissionLevels();
 

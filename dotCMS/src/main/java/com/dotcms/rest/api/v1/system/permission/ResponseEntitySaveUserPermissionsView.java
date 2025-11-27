@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.user;
+package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.rest.ResponseEntityView;
 
@@ -6,17 +6,17 @@ import com.dotcms.rest.ResponseEntityView;
  * Response entity wrapper for save user permissions endpoint.
  * Follows dotCMS pattern of specific ResponseEntity*View classes for REST endpoints.
  *
- * @author Hassan
+ * @author dotCMS
  * @since 24.01
  */
-public class ResponseEntitySaveUserPermissionsView extends ResponseEntityView<SaveUserPermissionsResponse> {
+public class ResponseEntitySaveUserPermissionsView extends ResponseEntityView<SaveUserPermissionsView> {
 
     /**
      * Constructs response wrapper for save operation.
      *
-     * @param entity The save response containing updated permissions
+     * @param entity The save view containing updated permissions
      */
-    public ResponseEntitySaveUserPermissionsView(final SaveUserPermissionsResponse entity) {
+    public ResponseEntitySaveUserPermissionsView(final SaveUserPermissionsView entity) {
         super(entity);
     }
 }
