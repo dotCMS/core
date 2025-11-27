@@ -17,8 +17,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.dotcms.rest.api.v1.user.UserPermissionHelper;
-import javax.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -58,25 +56,21 @@ public class PermissionResource {
     private final WebResource      webResource;
     private final PermissionHelper permissionHelper;
     private final UserAPI          userAPI;
-    private final UserPermissionHelper userPermissionHelper;
 
-    @Inject
-    public PermissionResource(final UserPermissionHelper userPermissionHelper) {
-        this(new WebResource(), 
-             PermissionHelper.getInstance(), 
-             APILocator.getUserAPI(),
-             userPermissionHelper);
+    public PermissionResource() {
+        this(new WebResource(),
+             PermissionHelper.getInstance(),
+             APILocator.getUserAPI());
     }
+
     @VisibleForTesting
     public PermissionResource(final WebResource      webResource,
                               final PermissionHelper permissionHelper,
-                              final UserAPI          userAPI,
-                              final UserPermissionHelper userPermissionHelper) {
+                              final UserAPI          userAPI) {
 
         this.webResource      = webResource;
         this.permissionHelper = permissionHelper;
         this.userAPI          = userAPI;
-        this.userPermissionHelper = userPermissionHelper;
     }
 
     /**
@@ -310,11 +304,11 @@ public class PermissionResource {
                 .init();
 
         final PermissionMetadataView permissionMetadata = new PermissionMetadataView(
-            userPermissionHelper.getAvailablePermissionLevels(),
-            userPermissionHelper.getAvailablePermissionScopes()
+            PermissionUtils.getAvailablePermissionLevels(),
+            PermissionUtils.getAvailablePermissionScopes()
         );
 
-        Logger.info(this, "Permission metadata retrieved successfully");
+        Logger.debug(this, () -> "Permission metadata retrieved successfully");
 
         return new ResponseEntityPermissionMetadataView(permissionMetadata);
     }
