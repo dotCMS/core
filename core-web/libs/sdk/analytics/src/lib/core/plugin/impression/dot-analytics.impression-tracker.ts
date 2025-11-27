@@ -17,6 +17,7 @@ import {
     extractContentletData,
     extractContentletIdentifier,
     findContentlets,
+    INITIAL_SCAN_DELAY_MS,
     isBrowser
 } from '../../shared/utils/dot-analytics.utils';
 
@@ -116,8 +117,16 @@ export class DotCMSImpressionTracker {
         // Setup IntersectionObserver
         this.initializeIntersectionObserver();
 
-        // Find and observe contentlet elements
-        this.findAndObserveContentletElements();
+        // Wait for DOM to be ready before scanning
+        // The delay allows React/Next.js to finish initial rendering
+        // before searching for contentlet elements
+        if (typeof window !== 'undefined') {
+            setTimeout(() => {
+                this.logger.debug('Running initial scan after timeout...');
+                // Find and observe contentlet elements
+                this.findAndObserveContentletElements();
+            }, INITIAL_SCAN_DELAY_MS);
+        }
 
         // Setup mutation observer for dynamic content
         this.initializeDynamicContentDetector();
