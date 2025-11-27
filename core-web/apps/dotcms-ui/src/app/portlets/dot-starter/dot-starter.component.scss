@@ -8,6 +8,7 @@
 
     &::ng-deep .p-accordion .p-accordion-content {
         padding-block-start: 0;
+        padding-block-end: $spacing-4;
     }
 }
 
@@ -129,7 +130,7 @@
 
     &__progress {
         background-color: $white;
-        border-top: 1px solid $color-palette-gray-200;
+        border-top: 1px solid $color-palette-gray-400;
         z-index: 5;
         flex-shrink: 0;
     }

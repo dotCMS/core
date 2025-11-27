@@ -4,21 +4,26 @@
             <!-- <h1 class="dot-onboarding__title">{{ content.title }}</h1>
             <p class="dot-onboarding__description">{{ content.description }}</p> -->
 
-            <!-- <div class="dot-onboarding__prerequisites" *ngIf="content.prerequisites.length">
-            <h2 class="dot-onboarding__section-title">Prerequisites</h2>
+            <!-- @if (content.prerequisites.length) {
+            <div class="dot-onboarding__prerequisites">
+                <h2 class="dot-onboarding__section-title">Prerequisites</h2>
 
-            <ul class="dot-onboarding__prerequisites-list">
-                <li *ngFor="let item of content.prerequisites">
-                    <i class="pi pi-check-circle"></i>
-                    <span>{{ item }}</span>
-                </li>
-            </ul>
-        </div> -->
+                <ul class="dot-onboarding__prerequisites-list">
+                    @for (item of content.prerequisites; track item) {
+                    <li>
+                        <i class="pi pi-check-circle"></i>
+                        <span>{{ item }}</span>
+                    </li>
+                    }
+                </ul>
+            </div>
+            } -->
         </section>
 
         <section class="dot-onboarding__steps">
             <p-accordion [activeIndex]="0" [multiple]="false">
-                <p-accordionTab *ngFor="let step of content.steps">
+                @for (step of content.steps; track step) {
+                <p-accordionTab>
                     <ng-template pTemplate="header">
                         <div class="flex justify-content-between align-items-center w-full">
                             <h2>{{ step.number + '. ' + step.title }}</h2>
@@ -55,38 +60,41 @@
                     </ng-template>
                     <div class="dot-step">
                         <div class="dot-step__video"></div>
-                        <markdown class="dot-step__description" *ngIf="step.description" [data]="step.description">
-                        </markdown>
+                        @if (step.description) {
+                            <markdown class="dot-step__description" [data]="step.description" />
+                        }
 
                         <hr />
 
                         <div class="dot-step__substeps">
                             @if (step.substeps?.length) {
                                 @for (substep of step.substeps; track substep) {
-                                    <div class="dot-step__substep">
-                                        <div>
-                                            <h3 class="dot-step__substep-title">{{ substep.explanation.title }}</h3>
-                                            <markdown class="dot-step__substep-description" [data]="substep.explanation.description"></markdown>
-                                        </div>
-                                        <div>
-                                            @if (substep.filePath) {
-                                                <div class="dot-step__file-path">{{ substep.filePath }}</div>
-                                            } @else if (substep.type === 'command') {
-                                                <div class="dot-step__file-path">terminal</div>
-                                            }
-                                            <ng-template #buttonTemplate>
-                                                <dot-button-copy />
-                                            </ng-template>
-                                            <markdown clipboard [data]="formatSubstep(substep)"
-                                                [clipboardButtonTemplate]="buttonTemplate"></markdown>
-                                        </div>
+                                <div class="dot-step__substep">
+                                    <div>
+                                        <h3>{{ substep.explanation.title }}</h3>
+                                        <markdown class="dot-step__substep-description"
+                                            [data]="substep.explanation.description"></markdown>
                                     </div>
+                                    <div>
+                                        @if (substep.filePath) {
+                                        <div class="dot-step__file-path">{{ substep.filePath }}</div>
+                                        } @else if (substep.type === 'command') {
+                                        <div class="dot-step__file-path">terminal</div>
+                                        }
+                                        <ng-template #buttonTemplate>
+                                            <dot-button-copy />
+                                        </ng-template>
+                                        <markdown clipboard [data]="formatSubstep(substep)"
+                                            [clipboardButtonTemplate]="buttonTemplate"></markdown>
+                                    </div>
+                                </div>
                                 }
                             }
                         </div>
 
                     </div>
                 </p-accordionTab>
+                }
             </p-accordion>
         </section>
     </div>
@@ -96,9 +104,6 @@
     <div class="dot-onboarding__progress-container">
         <div class="dot-onboarding__progress-left">
             <p class="dot-onboarding__current-title">
-                <span class="dot-onboarding__progress-counter">
-                    {{ currentStepPosition }}/{{ totalSteps }}
-                </span>
                 {{ currentStepLabel }}
             </p>
             <!-- <button type="button" pButton icon="pi pi-refresh" label="Reset Progress" (click)="resetProgress()"
