@@ -76,6 +76,8 @@ tags:
   name: System Monitoring
 - description: Endpoints for managing page templates and layouts
   name: Templates
+- description: Provides business intelligence metrics for dashboard usage
+  name: Usage
 - description: Endpoints for managing content variants
   name: Variants
 - description: Endpoints that perform operations related to workflows.
@@ -6721,14 +6723,14 @@ paths:
       tags:
       - Content Type
     get:
-      description: Returns one content type based on the provided ID or Velocity variable
+      description: Returns a Content Type based on the provided ID or Velocity variable
         name.
       operationId: getContentTypeIdVar
       parameters:
       - description: |-
-          The ID or Velocity variable name of the content type to retrieve.
+          The ID or Velocity variable name of the Content Type to retrieve.
 
-          Example: `htmlpageasset` (Default page content type)
+          Variable name example: `htmlpageasset` (Default page Content Type)
         in: path
         name: idOrVar
         required: true
@@ -6784,14 +6786,14 @@ paths:
                   perPage: 0
                   totalEntries: 0
                 permissions: []
-          description: Content type retrieved successfully
+          description: Content Type retrieved successfully
         "403":
           description: Forbidden
         "404":
           description: Not Found
         "500":
           description: Internal Server Error
-      summary: Retrieves a single content type
+      summary: Retrieves a single Content Type
       tags:
       - Content Type
     put:
@@ -7034,6 +7036,82 @@ paths:
       summary: Retrieves a list of content types for a page
       tags:
       - getPagesContentTypes
+      - Content Type
+  /v1/contenttype/render/id/{idOrVar}:
+    get:
+      description: "Returns a Content Type based on the provided ID or Velocity variable\
+        \ name. Additionally, the Velocity code in all of its Custom Fields will be\
+        \ parsed."
+      operationId: getContentTypeIdVar_1
+      parameters:
+      - description: |-
+          The ID or Velocity variable name of the Content Type to retrieve.
+
+          Variable name example: `htmlpageasset` (Default page Content Type)
+        in: path
+        name: idOrVar
+        required: true
+        schema:
+          type: string
+      - description: The language ID for localization.
+        in: query
+        name: languageId
+        schema:
+          type: integer
+          format: int64
+      - description: Determines whether live versions of language variables are used
+          in the returned object.
+        in: query
+        name: live
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fields: []
+                  fixed: false
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  systemActionMappings: {}
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content Type retrieved successfully
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a single Content Type with their rendered Custom Fields
+      tags:
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:
@@ -10503,29 +10581,6 @@ paths:
           description: default response
       tags:
       - Page
-  /v1/permissions:
-    get:
-      description: Returns available permission levels and scopes that can be assigned
-        to users and roles
-      operationId: getPermissionMetadata
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityPermissionMetadataView"
-          description: Permission metadata retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - frontend user attempted access (backend user required)
-      summary: Get permission metadata
-      tags:
-      - Permissions
   /v1/permissions/_bycontent:
     get:
       description: "Retrieves permissions for a specific contentlet by its identifier.\
@@ -13435,6 +13490,27 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/usage/summary:
+    get:
+      description: "Retrieves key business metrics optimized for dashboard display\
+        \ including content, sites, users, and system metrics"
+      operationId: getSummary
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUsageSummaryView"
+          description: Dashboard summary retrieved successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Get usage dashboard summary
+      tags:
+      - Usage
   /v1/users:
     post:
       description: "Creates a new user. Requires admin privileges or access to Users\
@@ -18080,7 +18156,11 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
-      operationId: moveFields
+      description: "Moves or adds a field to a Content Type. This endpoint is called\
+        \ (1) when dragging-and-dropping a new field to a Content Type, (2) when updating\
+        \ an existing field, or (3) when moving such a field around in the Content\
+        \ Type's layout."
+      operationId: moveOrAddContentTypeField
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -18093,11 +18173,119 @@ paths:
             schema:
               $ref: "#/components/schemas/MoveFieldsForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - divider:
+                    clazz: com.dotcms.contenttype.model.field.ImmutableRowField
+                    contentTypeId: 3b70f386cf65117a675f284eea928415
+                    dataType: SYSTEM
+                    fieldContentTypeProperties: []
+                    fieldType: Row
+                    fieldTypeLabel: Row
+                    fieldVariables: []
+                    fixed: false
+                    forceIncludeInApi: false
+                    iDate: 1763758144000
+                    id: 1b950209ec7b1a5e6901f7fe277e0a6a
+                    indexed: false
+                    listed: false
+                    modDate: 1763758164000
+                    name: fields-0
+                    readOnly: false
+                    required: false
+                    searchable: false
+                    sortOrder: 0
+                    unique: false
+                    variable: fields0
+                  columns:
+                  - columnDivider:
+                      clazz: com.dotcms.contenttype.model.field.ImmutableColumnField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: SYSTEM
+                      fieldContentTypeProperties: []
+                      fieldType: Column
+                      fieldTypeLabel: Column
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758144000
+                      id: 6515a7a25deb3b99711398c14bfe3062
+                      indexed: false
+                      listed: false
+                      modDate: 1763758164000
+                      name: fields-1
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 1
+                      unique: false
+                      variable: fields1
+                    fields:
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758164000
+                      id: ba34f109c9e86793384387e2619267ea
+                      indexed: false
+                      listed: false
+                      modDate: 1763761740000
+                      name: title
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 2
+                      unique: false
+                      variable: title
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables:
+                      - clazz: com.dotcms.contenttype.model.field.ImmutableFieldVariable
+                        fieldId: e39533a92ee05d8c083f7e6a1a5ee5e5
+                        id: 7844f04c-0481-4b0d-aa22-95e1a097bb30
+                        key: My Field Var
+                        value: My value
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1764008792000
+                      id: e39533a92ee05d8c083f7e6a1a5ee5e5
+                      indexed: true
+                      listed: true
+                      modDate: 1764018597000
+                      name: Description
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 7
+                      unique: false
+                      variable: description
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Field was added or updated successfully
+        "400":
+          description: Invalid JSON body
+        "401":
+          description: User not specified
+        "404":
+          description: Content Type ID not found
+        "415":
+          description: Body must be a JSON object
+        "500":
+          description: Internal Server Error
+      summary: Moves or adds a field to a Content Type
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:
@@ -19690,6 +19878,23 @@ components:
       required:
       - file
       - form
+    ContentMetrics:
+      type: object
+      properties:
+        contentTypes:
+          type: integer
+          format: int64
+        contentTypesWithWorkflows:
+          type: integer
+          format: int64
+        lastContentEdited:
+          type: string
+        recentlyEdited:
+          type: integer
+          format: int64
+        totalContent:
+          type: integer
+          format: int64
     ContentReferenceView:
       type: object
       properties:
@@ -19774,6 +19979,10 @@ components:
           type: string
         relationType:
           type: string
+        styleProperties:
+          type: object
+          additionalProperties:
+            type: object
         treeOrder:
           type: integer
           format: int32
@@ -22776,49 +22985,6 @@ components:
           type: string
         type:
           type: string
-    PermissionMetadata:
-      type: object
-      description: Permission metadata containing available levels and scopes in the
-        system
-      properties:
-        levels:
-          type: array
-          description: Available permission levels that can be assigned to users and
-            roles
-          example:
-          - READ
-          - WRITE
-          - PUBLISH
-          - EDIT_PERMISSIONS
-          - CAN_ADD_CHILDREN
-          items:
-            type: string
-            description: Available permission levels that can be assigned to users
-              and roles
-            example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
-              ]"
-        scopes:
-          type: array
-          description: Available permission scopes (asset types) that support permissions
-          example:
-          - INDIVIDUAL
-          - HOST
-          - FOLDER
-          - CONTENT
-          - TEMPLATE
-          - PAGE
-          - CONTAINER
-          - STRUCTURE
-          - CATEGORY
-          items:
-            type: string
-            description: Available permission scopes (asset types) that support permissions
-            example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
-              ,\"PAGE\",\"CONTAINER\",\"STRUCTURE\",\"CATEGORY\"]"
-          uniqueItems: true
-      required:
-      - levels
-      - scopes
     PermissionTabField:
       type: object
       allOf:
@@ -24216,29 +24382,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityPermissionMetadataView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/PermissionMetadata"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityPermissionView:
       type: object
       properties:
@@ -24656,11 +24799,36 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityUsageSummaryView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/UsageSummary"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityUserPermissionsView:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/UserPermissions"
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -26149,6 +26317,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
+    SiteMetrics:
+      type: object
+      properties:
+        activeSites:
+          type: integer
+          format: int64
+        siteAliases:
+          type: integer
+          format: int64
+        templates:
+          type: integer
+          format: int64
+        totalSites:
+          type: integer
+          format: int64
     SiteVariableForm:
       type: object
       properties:
@@ -26281,6 +26464,24 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
+    SystemMetrics:
+      type: object
+      properties:
+        builderTemplates:
+          type: integer
+          format: int64
+        languages:
+          type: integer
+          format: int64
+        liveContainers:
+          type: integer
+          format: int64
+        workflowSchemes:
+          type: integer
+          format: int64
+        workflowSteps:
+          type: integer
+          format: int64
     TabDividerField:
       type: object
       allOf:
@@ -26950,6 +27151,20 @@ components:
           type: string
       required:
       - upgradeTaskClass
+    UsageSummary:
+      type: object
+      properties:
+        contentMetrics:
+          $ref: "#/components/schemas/ContentMetrics"
+        lastUpdated:
+          type: string
+          format: date-time
+        siteMetrics:
+          $ref: "#/components/schemas/SiteMetrics"
+        systemMetrics:
+          $ref: "#/components/schemas/SystemMetrics"
+        userMetrics:
+          $ref: "#/components/schemas/UserMetrics"
     User:
       type: object
       properties:
@@ -27199,104 +27414,20 @@ components:
       - email
       - firstName
       - lastName
-    UserPermissionAsset:
+    UserMetrics:
       type: object
-      description: Permission asset with associated permission assignments
       properties:
-        canEditPermissions:
-          type: boolean
-          description: Whether the requesting user can edit permissions on this asset
-          example: true
-        hostId:
+        activeUsers:
+          type: integer
+          format: int64
+        lastLogin:
           type: string
-          description: "Host identifier (same as id for HOST type, parent host for\
-            \ FOLDER type)"
-          example: abc-123-def-456
-        id:
-          type: string
-          description: "Asset identifier (host identifier for HOST type, folder inode\
-            \ for FOLDER type)"
-          example: abc-123-def-456
-        inheritsPermissions:
-          type: boolean
-          description: Whether this asset inherits permissions from its parent
-          example: false
-        name:
-          type: string
-          description: "Asset name (hostname for HOST, folder name for FOLDER)"
-          example: demo.dotcms.com
-        path:
-          type: string
-          description: Full path to the asset
-          example: /demo.dotcms.com/application
-        permissions:
-          type: object
-          additionalProperties:
-            type: array
-            description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
-              \ to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
-              \ CAN_ADD_CHILDREN)"
-            example:
-              HOST:
-              - READ
-              INDIVIDUAL:
-              - READ
-              - WRITE
-              - PUBLISH
-            items:
-              type: string
-              description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
-                \ to arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
-                \ CAN_ADD_CHILDREN)"
-              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\"\
-                :[\"READ\"]}"
-          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
-            \ arrays of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
-            \ CAN_ADD_CHILDREN)"
-          example:
-            HOST:
-            - READ
-            INDIVIDUAL:
-            - READ
-            - WRITE
-            - PUBLISH
-        type:
-          type: string
-          description: Asset type
-          enum:
-          - HOST
-          - FOLDER
-          example: HOST
-      required:
-      - canEditPermissions
-      - hostId
-      - id
-      - inheritsPermissions
-      - name
-      - path
-      - permissions
-      - type
-    UserPermissions:
-      type: object
-      description: User permissions organized by asset type and scope
-      properties:
-        assets:
-          type: array
-          description: List of assets (hosts and folders) with their permission assignments
-          items:
-            $ref: "#/components/schemas/UserPermissionAsset"
-        roleId:
-          type: string
-          description: The user's individual role identifier
-          example: abc-123-def-456
-        userId:
-          type: string
-          description: User identifier (email address or user ID)
-          example: admin@dotcms.com
-      required:
-      - assets
-      - roleId
-      - userId
+        recentLogins:
+          type: integer
+          format: int64
+        totalUsers:
+          type: integer
+          format: int64
     VanityUrlContentType:
       type: object
       allOf:
