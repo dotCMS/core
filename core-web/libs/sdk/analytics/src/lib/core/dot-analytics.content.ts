@@ -7,7 +7,13 @@ import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enri
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
 import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
+import { DotCMSPredefinedEventType } from './shared/constants/dot-analytics.constants';
+import {
+    DotCMSAnalytics,
+    DotCMSAnalyticsConfig,
+    DotCMSConversionPayload,
+    JsonObject
+} from './shared/models';
 import {
     cleanupActivityTracking,
     getEnhancedTrackingPlugins,
@@ -101,6 +107,30 @@ export const initializeContentAnalytics = (
                 return;
             }
             analyticsInstance.track(eventName, payload);
+        },
+
+        /**
+         * Track a conversion event.
+         * @param name - Name of the conversion (e.g., 'purchase', 'download', 'signup')
+         * @param options - Optional custom data
+         */
+        conversion: (name: string, options: JsonObject = {}) => {
+            if (!analyticsInstance) {
+                console.warn('DotCMS Analytics [Core]: Analytics instance not initialized');
+                return;
+            }
+
+            if (!name || name.trim() === '') {
+                console.warn('DotCMS Analytics [Core]: Conversion name cannot be empty');
+                return;
+            }
+
+            const payload: DotCMSConversionPayload = {
+                name,
+                ...(Object.keys(options).length > 0 && { custom: options })
+            };
+
+            analyticsInstance.track(DotCMSPredefinedEventType.CONVERSION, payload);
         }
     };
 };
