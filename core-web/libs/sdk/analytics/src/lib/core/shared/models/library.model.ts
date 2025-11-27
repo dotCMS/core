@@ -12,6 +12,8 @@ import {
 import { DotCMSContentImpressionPayload, JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
+import { LogLevel } from '../dot-analytics.logger';
+
 /**
  * Configuration for event queue management.
  * Controls how events are batched before sending to the server.
@@ -92,6 +94,17 @@ export interface DotCMSAnalyticsConfig {
     debug: boolean;
 
     /**
+     * Set the minimum log level for console output.
+     * - 'debug': Show all logs including detailed debugging information
+     * - 'info': Show informational messages, warnings, and errors
+     * - 'warn': Show only warnings and errors
+     * - 'error': Show only errors
+     *
+     * If not specified, falls back to debug flag (debug=true → 'debug', debug=false → 'warn')
+     */
+    logLevel?: LogLevel;
+
+    /**
      * Automatically track page views when set to true.
      */
     autoPageView?: boolean;
@@ -110,12 +123,19 @@ export interface DotCMSAnalyticsConfig {
     queue?: QueueConfig | boolean;
 
     /**
-     * Content impression tracking configuration:
-     * - `undefined` or `false` (default): Impression tracking disabled
+     * Content impression tracking configuration (default: undefined - disabled):
+     * - `undefined` or `false`: Impression tracking disabled
      * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 1000)
      * - `ImpressionConfig`: Enable with custom settings
      */
     impressions?: ImpressionConfig | boolean;
+
+    /**
+     * Content click tracking configuration (default: undefined - disabled):
+     * - `undefined` or `false`: Click tracking disabled
+     * - `true`: Enable click tracking
+     */
+    clicks?: boolean;
 }
 
 /**

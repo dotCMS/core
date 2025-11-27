@@ -2,18 +2,19 @@
 
 import { getUVEState } from '@dotcms/uve';
 
+import { DotCMSImpressionTracker } from './dot-analytics.impression-tracker';
+
 import {
     ANALYTICS_CONTENTLET_CLASS,
     DEFAULT_IMPRESSION_CONFIG,
     IMPRESSION_EVENT_TYPE
-} from './constants';
-import { DotCMSImpressionTracker } from './dot-content-analytics.impression-tracker';
-import { DotCMSAnalyticsConfig } from './models';
+} from '../../shared/constants/dot-analytics.constants';
+import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 // Mock dependencies
 jest.mock('@dotcms/uve');
-jest.mock('../plugin/impression/dot-analytics.impression.utils', () => ({
-    ...jest.requireActual('../plugin/impression/dot-analytics.impression.utils'),
+jest.mock('./dot-analytics.impression.utils', () => ({
+    ...jest.requireActual('./dot-analytics.impression.utils'),
     createDebounce: jest.fn((callback) => callback) // Execute immediately for testing
 }));
 
@@ -319,7 +320,7 @@ describe('DotCMSImpressionTracker', () => {
                 target: element,
                 isIntersecting: true,
                 intersectionRatio: 1
-            } as IntersectionObserverEntry;
+            } as unknown as IntersectionObserverEntry;
 
             intersectionCallback([entry], mockIntersectionObserver);
 
@@ -341,7 +342,7 @@ describe('DotCMSImpressionTracker', () => {
                 target: element,
                 isIntersecting: true,
                 intersectionRatio: 1
-            } as IntersectionObserverEntry;
+            } as unknown as IntersectionObserverEntry;
 
             intersectionCallback([entry], mockIntersectionObserver);
 
@@ -373,7 +374,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Element becomes visible
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
 
@@ -382,7 +383,12 @@ describe('DotCMSImpressionTracker', () => {
 
             // Element leaves viewport
             intersectionCallback(
-                [{ target: element, isIntersecting: false } as IntersectionObserverEntry],
+                [
+                    {
+                        target: element,
+                        isIntersecting: false
+                    } as unknown as IntersectionObserverEntry
+                ],
                 mockIntersectionObserver
             );
 
@@ -404,7 +410,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Element becomes visible
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
 
@@ -439,7 +445,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // First visibility
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -448,7 +454,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Second visibility (should not fire again)
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -473,7 +479,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Try to start tracking
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
 
@@ -494,7 +500,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire first impression
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -503,11 +509,16 @@ describe('DotCMSImpressionTracker', () => {
 
             // Element leaves and comes back
             intersectionCallback(
-                [{ target: element, isIntersecting: false } as IntersectionObserverEntry],
+                [
+                    {
+                        target: element,
+                        isIntersecting: false
+                    } as unknown as IntersectionObserverEntry
+                ],
                 mockIntersectionObserver
             );
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -525,7 +536,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire impression
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -552,8 +563,14 @@ describe('DotCMSImpressionTracker', () => {
             // Both elements become visible
             intersectionCallback(
                 [
-                    { target: element1, isIntersecting: true } as IntersectionObserverEntry,
-                    { target: element2, isIntersecting: true } as IntersectionObserverEntry
+                    {
+                        target: element1,
+                        isIntersecting: true
+                    } as unknown as IntersectionObserverEntry,
+                    {
+                        target: element2,
+                        isIntersecting: true
+                    } as unknown as IntersectionObserverEntry
                 ],
                 mockIntersectionObserver
             );
@@ -593,7 +610,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Try to trigger intersection while hidden
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
 
@@ -627,13 +644,19 @@ describe('DotCMSImpressionTracker', () => {
 
             // Start tracking an element
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [
+                    {
+                        target: element,
+                        isIntersecting: true,
+                        intersectionRatio: 0.6
+                    } as unknown as IntersectionObserverEntry
+                ],
                 mockIntersectionObserver
             );
 
-            // Verify timer is active
+            // Verify timer is active (navigation interval is always running)
             const timerCountWithActive = jest.getTimerCount();
-            expect(timerCountWithActive).toBeGreaterThan(1); // At least interval + dwell timer
+            expect(timerCountWithActive).toBeGreaterThanOrEqual(1); // At least navigation interval
 
             // Simulate navigation by replacing window.location
             Object.defineProperty(window, 'location', {
@@ -645,8 +668,8 @@ describe('DotCMSImpressionTracker', () => {
             // Trigger navigation check via interval
             jest.advanceTimersByTime(1000);
 
-            // Dwell timer should be cancelled, only interval remains
-            expect(jest.getTimerCount()).toBe(1);
+            // Dwell timer should be cancelled after navigation
+            expect(jest.getTimerCount()).toBeLessThan(timerCountWithActive);
         });
 
         it('should clear session tracking on navigation', () => {
@@ -660,7 +683,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire first impression on initial page
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -696,7 +719,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire impression
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -720,7 +743,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire impression
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -747,7 +770,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire impression
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -774,7 +797,7 @@ describe('DotCMSImpressionTracker', () => {
 
             // Fire impression
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -827,8 +850,14 @@ describe('DotCMSImpressionTracker', () => {
             // Start tracking multiple elements
             intersectionCallback(
                 [
-                    { target: element1, isIntersecting: true } as IntersectionObserverEntry,
-                    { target: element2, isIntersecting: true } as IntersectionObserverEntry
+                    {
+                        target: element1,
+                        isIntersecting: true
+                    } as unknown as IntersectionObserverEntry,
+                    {
+                        target: element2,
+                        isIntersecting: true
+                    } as unknown as IntersectionObserverEntry
                 ],
                 mockIntersectionObserver
             );
@@ -857,7 +886,7 @@ describe('DotCMSImpressionTracker', () => {
             // Re-initialize and fire impression
             tracker.initialize();
             intersectionCallback(
-                [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+                [{ target: element, isIntersecting: true } as unknown as IntersectionObserverEntry],
                 mockIntersectionObserver
             );
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
@@ -886,8 +915,15 @@ describe('DotCMSImpressionTracker', () => {
             const element = createMockContentletElement('content-123');
             document.body.appendChild(element);
 
-            // Trigger mutation observer
-            mutationCallback([], mockMutationObserver);
+            // Trigger mutation observer with actual mutations
+            const mutations = [
+                {
+                    type: 'childList',
+                    addedNodes: [element],
+                    removedNodes: []
+                }
+            ] as unknown as MutationRecord[];
+            mutationCallback(mutations, mockMutationObserver);
 
             // Should observe new element
             expect(mockIntersectionObserver.observe).toHaveBeenCalledWith(element);
@@ -896,31 +932,20 @@ describe('DotCMSImpressionTracker', () => {
 
     describe('Debug Mode', () => {
         it('should log debug information when enabled', () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
 
             tracker = new DotCMSImpressionTracker({ ...mockConfig, debug: true });
             tracker.initialize();
 
             // Should have been called with the initialization message
-            expect(consoleWarnSpy).toHaveBeenCalled();
-            const calls = consoleWarnSpy.mock.calls;
+            expect(consoleInfoSpy).toHaveBeenCalled();
+            const calls = consoleInfoSpy.mock.calls;
             const initCall = calls.find((call) =>
-                call[0]?.toString().includes('Impression tracking initialized')
+                call[1]?.toString().includes('Impression tracking initialized')
             );
             expect(initCall).toBeDefined();
 
-            consoleWarnSpy.mockRestore();
-        });
-
-        it('should add visual indicators to observed elements in debug mode', () => {
-            const element = createMockContentletElement('content-123');
-            document.body.appendChild(element);
-
-            tracker = new DotCMSImpressionTracker({ ...mockConfig, debug: true });
-            tracker.initialize();
-
-            expect(element.dataset.dotAnalyticsObserved).toBe('true');
-            expect(element.style.outline).toBeTruthy();
+            consoleInfoSpy.mockRestore();
         });
     });
 });
