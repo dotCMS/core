@@ -389,8 +389,11 @@ import { analyticsConfig } from "@/config/analytics.config";
 function CheckoutButton({ product, quantity }) {
   const { conversion } = useContentAnalytics(analyticsConfig);
 
-  const handlePurchase = async () => {
-    // Track conversion with purchase details
+  const handlePurchase = () => {
+    // Process checkout logic here...
+    // After successful payment confirmation:
+
+    // Track conversion ONLY after successful purchase
     conversion("purchase", {
       value: product.price * quantity,
       currency: "USD",
@@ -399,8 +402,6 @@ function CheckoutButton({ product, quantity }) {
       quantity: quantity,
       category: product.category,
     });
-
-    // Process checkout...
   };
 
   return <button onClick={handlePurchase}>Complete Purchase</button>;
@@ -418,20 +419,16 @@ import { analyticsConfig } from "@/config/analytics.config";
 function DownloadWhitepaper() {
   const { conversion } = useContentAnalytics(analyticsConfig);
 
-  const handleDownload = (e) => {
-    // Track conversion with element context
+  const handleDownload = () => {
+    // Trigger download logic here...
+    // After download is successfully completed:
+
+    // Track conversion ONLY after successful download
     conversion("download", {
-      element: {
-        type: e.target.tagName.toLowerCase(),
-        text: e.target.textContent,
-        id: e.target.id,
-      },
       fileType: "pdf",
       fileName: "whitepaper-2024.pdf",
       category: "lead-magnet",
     });
-
-    // Trigger download...
   };
 
   return (
@@ -845,34 +842,36 @@ track("button-click", {
 
 Track a conversion event (purchase, download, sign-up, etc.) with optional metadata.
 
+**⚠️ IMPORTANT: Conversion events are business events that should only be tracked after a successful action or completed goal.** Tracking conversions on clicks or attempts (before success) diminishes their value as conversion metrics. Only track conversions when:
+
+- ✅ Purchase is completed and payment is confirmed
+- ✅ Download is successfully completed
+- ✅ Sign-up form is submitted and account is created
+- ✅ Form submission is successful and data is saved
+- ✅ Any business goal is actually achieved
+
 **Parameters**:
 
 - `name` (required): String identifier for the conversion (e.g., "purchase", "download", "signup")
-- `options` (optional): Object with conversion metadata
-  - `element` (optional): DOM element information
-  - Additional properties go into `custom` object
+- `options` (optional): Object with conversion metadata (all properties go into `custom` object)
 
 **Examples**:
 
 ```javascript
-// Basic conversion
+// Basic conversion (after successful download)
 conversion("download");
 
-// Conversion with custom metadata
+// Conversion with custom metadata (after successful purchase)
 conversion("purchase", {
   value: 99.99,
   currency: "USD",
   productId: "SKU-12345",
 });
 
-// Conversion with element context
+// Conversion with additional context (after successful signup)
 conversion("signup", {
-  element: {
-    type: "button",
-    text: "Subscribe Now",
-    id: "newsletter-btn",
-  },
   source: "homepage",
+  plan: "premium",
 });
 ```
 
