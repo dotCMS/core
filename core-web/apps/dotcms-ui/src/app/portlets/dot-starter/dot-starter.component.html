@@ -64,7 +64,9 @@
                             <markdown class="dot-step__description" [data]="step.description" />
                         }
 
-                        <hr />
+                        @if (step.substeps?.length) {
+                            <hr />
+                        }
 
                         <div class="dot-step__substeps">
                             @if (step.substeps?.length) {
