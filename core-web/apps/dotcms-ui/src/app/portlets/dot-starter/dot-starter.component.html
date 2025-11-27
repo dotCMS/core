@@ -1,8 +1,8 @@
 <div class="dot-onboarding">
     <div class="dot-onboarding__content">
         <section class="dot-onboarding__intro">
-            <h1 class="dot-onboarding__title">{{ content.title }}</h1>
-            <p class="dot-onboarding__description">{{ content.description }}</p>
+            <!-- <h1 class="dot-onboarding__title">{{ content.title }}</h1>
+            <p class="dot-onboarding__description">{{ content.description }}</p> -->
 
             <!-- <div class="dot-onboarding__prerequisites" *ngIf="content.prerequisites.length">
             <h2 class="dot-onboarding__section-title">Prerequisites</h2>
@@ -17,15 +17,13 @@
         </section>
 
         <section class="dot-onboarding__steps">
-            <p-accordion [multiple]="false">
+            <p-accordion [activeIndex]="0" [multiple]="false">
                 <p-accordionTab *ngFor="let step of content.steps">
                     <ng-template pTemplate="header">
                         <div class="flex justify-content-between align-items-center w-full">
-                            <span class="font-bold white-space-nowrap">
-                                {{ step.number + '. ' + step.title }}
-                            </span>
+                            <h2>{{ step.number + '. ' + step.title }}</h2>
 
-                            <div class="flex align-items-center gap-2">
+                            <!-- <div class="flex align-items-center gap-2">
                                 <p-tag
                                     [class]="
                                         isStepCompleted(step.id)
@@ -52,46 +50,36 @@
                                             : 'Mark as Complete'
                                     "
                                     (click)="toggleStepCompletion(step.id)"></button>
-                            </div>
+                            </div> -->
                         </div>
                     </ng-template>
                     <div class="dot-step">
                         <div class="dot-step__video"></div>
-                        <markdown *ngIf="step.description" [data]="step.description"></markdown>
+                        <markdown class="dot-step__description" *ngIf="step.description" [data]="step.description">
+                        </markdown>
 
-                        <div *ngIf="step.commands?.length">
-                            <div
-                                class="dot-step__command"
-                                *ngFor="let command of step.commands">
-                                <div class="dot-step__command-left">
-                                    <markdown [data]="command.explanation"></markdown>
-                                </div>
-                                <div class="dot-step__command-right">
-                                    <ng-template #buttonTemplate>
-                                        <!-- <p-button size="small" icon="pi pi-copy" [text]="true" /> -->
-                                        <dot-button-copy />
-                                    </ng-template>
-                                    <markdown
-                                        clipboard
-                                        [data]="formatCommand(command)"
-                                        [clipboardButtonTemplate]="buttonTemplate"></markdown>
-                                </div>
-                            </div>
+                        <hr />
+
+                        <div class="dot-step__commands">
+                            @if (step.commands?.length) {
+                                @for (command of step.commands; track command) {
+                                    <div class="dot-step__command">
+                                        <div>
+                                            <h3 class="dot-step__command-title">{{ command.explanation.title }}</h3>
+                                            <markdown class="dot-step__command-description" [data]="command.explanation.description"></markdown>
+                                        </div>
+                                        <div>
+                                            <ng-template #buttonTemplate>
+                                                <dot-button-copy />
+                                            </ng-template>
+                                            <markdown clipboard [data]="formatCommand(command)"
+                                                [clipboardButtonTemplate]="buttonTemplate"></markdown>
+                                        </div>
+                                    </div>
+                                }
+                            }
                         </div>
 
-                        <div *ngIf="step.troubleshooting?.length">
-                            <h3>Troubleshooting</h3>
-                            <div
-                                class="dot-step__troubleshooting"
-                                *ngFor="let item of step.troubleshooting">
-                                <p class="dot-step__problem">{{ item.problem }}</p>
-                                <ul>
-                                    <li *ngFor="let solution of item.solutions">
-                                        <markdown [data]="solution"></markdown>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
                     </div>
                 </p-accordionTab>
             </p-accordion>
@@ -116,12 +104,7 @@
             <span class="dot-onboarding__progress-percentage">
                 {{ progress | number: '1.0-0' }}%
             </span>
-            <p-knob
-                [(ngModel)]="progress"
-                [readonly]="true"
-                [size]="24"
-                [strokeWidth]="4"
-                valueTemplate=" "></p-knob>
+            <p-knob [(ngModel)]="progress" [readonly]="true" [size]="24" [strokeWidth]="4" valueTemplate=" "></p-knob>
         </div>
     </div>
 </section>
