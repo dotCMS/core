@@ -18,7 +18,7 @@ interface BreadcrumbHelpers {
 
 /**
  * Handler function for special route cases.
- * Receives the URL, menu items, current breadcrumbs, and helper functions. (SetBreadcrumbs, addNewBreadcrumb)
+ * Receives the URL, menu items, current breadcrumbs, and helper functions. (setBreadcrumbs, addNewBreadcrumb)
  * Returns true if the handler processed the URL, false otherwise.
  */
 export type RouteHandler = (
@@ -102,9 +102,22 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
      * Handles /content?filter= routes.
      */
     contentFilter: {
-        test: (url: string) => url.includes('/content?filter='),
+        test: (url: string) => /\/content\?filter=.+$/.test(url),
+
         handler: (url, _menu, _breadcrumbs, { addNewBreadcrumb }) => {
-            const filter = url.split('/content?filter=')[1];
+            const queryIndex = url.indexOf('?');
+            if (queryIndex === -1) {
+                return false;
+            }
+
+            const queryString = url.substring(queryIndex + 1);
+            const params = new URLSearchParams(queryString);
+            const filter = params.get('filter');
+
+            if (!filter) {
+                return false;
+            }
+
             const newUrl = `/dotAdmin/#${url}`;
             addNewBreadcrumb({
                 label: filter,

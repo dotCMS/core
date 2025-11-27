@@ -132,14 +132,34 @@ describe('Breadcrumb Utils - Route Handlers', () => {
             expect(ROUTE_HANDLERS.contentFilter.test('/products?filter=test')).toBe(false);
         });
 
+        it('should match URLs with /c/ prefix like /c/content?filter=', () => {
+            expect(ROUTE_HANDLERS.contentFilter.test('/c/content?filter=Test')).toBe(true);
+            expect(ROUTE_HANDLERS.contentFilter.test('/c/content?filter=YouTube')).toBe(true);
+        });
+
+        it('should not match URLs without /content path', () => {
+            expect(ROUTE_HANDLERS.contentFilter.test('/my-content?filter=Test')).toBe(false);
+            expect(ROUTE_HANDLERS.contentFilter.test('/products?filter=Test')).toBe(false);
+        });
+
+        it('should not match /content?filter= without a value', () => {
+            expect(ROUTE_HANDLERS.contentFilter.test('/content?filter=')).toBe(false);
+        });
+
         it('should add breadcrumb with extracted filter value', () => {
             store.setBreadcrumbs([]);
 
-            ROUTE_HANDLERS.contentFilter.handler('/content?filter=Products', [], [], {
-                setBreadcrumbs: store.setBreadcrumbs,
-                addNewBreadcrumb: store.addNewBreadcrumb
-            });
+            const result = ROUTE_HANDLERS.contentFilter.handler(
+                '/content?filter=Products',
+                [],
+                [],
+                {
+                    setBreadcrumbs: store.setBreadcrumbs,
+                    addNewBreadcrumb: store.addNewBreadcrumb
+                }
+            );
 
+            expect(result).toBe(true);
             const breadcrumbs = store.breadcrumbs();
             expect(breadcrumbs.length).toBe(1);
             expect(breadcrumbs[0]).toEqual({
@@ -159,6 +179,47 @@ describe('Breadcrumb Utils - Route Handlers', () => {
 
             const breadcrumbs = store.breadcrumbs();
             expect(breadcrumbs[0].label).toBe('My-Complex-Filter');
+        });
+
+        it('should extract only the filter parameter when URL has multiple query params', () => {
+            store.setBreadcrumbs([]);
+
+            ROUTE_HANDLERS.contentFilter.handler(
+                '/content?filter=Products&sort=asc&page=1',
+                [],
+                [],
+                {
+                    setBreadcrumbs: store.setBreadcrumbs,
+                    addNewBreadcrumb: store.addNewBreadcrumb
+                }
+            );
+
+            const breadcrumbs = store.breadcrumbs();
+            expect(breadcrumbs[0].label).toBe('Products');
+            expect(breadcrumbs[0].url).toBe('/dotAdmin/#/content?filter=Products&sort=asc&page=1');
+        });
+
+        it('should return false when filter parameter is empty', () => {
+            const result = ROUTE_HANDLERS.contentFilter.handler(
+                '/content?filter=&sort=asc',
+                [],
+                [],
+                {
+                    setBreadcrumbs: store.setBreadcrumbs,
+                    addNewBreadcrumb: store.addNewBreadcrumb
+                }
+            );
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when query string is missing', () => {
+            const result = ROUTE_HANDLERS.contentFilter.handler('/content', [], [], {
+                setBreadcrumbs: store.setBreadcrumbs,
+                addNewBreadcrumb: store.addNewBreadcrumb
+            });
+
+            expect(result).toBe(false);
         });
     });
 });
