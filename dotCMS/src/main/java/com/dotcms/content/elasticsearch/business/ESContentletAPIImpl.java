@@ -56,6 +56,8 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
@@ -7549,7 +7551,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     field.getVelocityVarName());
                 }
             } else {
-                
+
                 contentlet.setDateProperty(field.getVelocityVarName(), null);
             }
         } else if (field.isRequired() && value == null) {
@@ -7736,6 +7738,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         cveBuilder.addRequiredField(field, "");
                         hasError = true;
                         Logger.warn(this, String.format("String Field [%s] is required", field.getVelocityVarName()));
+                        continue;
+                    }
+                } else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
+                    // Story Block validation - we know it's a string containing JSON
+                    String s1 = (String) fieldValue;
+                    if (isEmptyStoryBlock(s1)) {
+                        cveBuilder.addRequiredField(field, s1);
+                        hasError = true;
+                        Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
                         continue;
                     }
                 } else if (fieldValue instanceof String) {
@@ -8105,7 +8116,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                     UtilMethods.prettyByteify(maxLength))))
                                     .addBadTypeField(legacyField, String.valueOf(fileLength))
                                     .build();
-                            Logger.warn(this, String.format("Name of Binary field [%s] has a length: %d but the max length is: %d", 
+                            Logger.warn(this, String.format("Name of Binary field [%s] has a length: %d but the max length is: %d",
                                     fieldName, fileLength, maxLength));
                             throw cve;
                         }
@@ -8322,6 +8333,53 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * Helper method to determine if a Story Block field is effectively empty.
+     * A Story Block is considered empty if all top-level content blocks have no nested content.
+     *
+     * @param storyBlockValue The JSON string value of the Story Block field
+     * @return true if the Story Block is empty, false otherwise
+     */
+    private boolean isEmptyStoryBlock(String storyBlockValue) {
+        if (!UtilMethods.isSet(storyBlockValue) || storyBlockValue.trim().isEmpty()) {
+            return true;
+        }
+
+        try {
+            JSONObject storyBlockJson = new JSONObject(storyBlockValue);
+
+            // Check if it has content array
+            if (!storyBlockJson.has("content")) {
+                return true;
+            }
+
+            JSONArray contentArray = storyBlockJson.getJSONArray("content");
+            if (contentArray.length() == 0) {
+                return true;
+            }
+
+            // Count blocks that have no nested content
+            int emptyBlocks = 0;
+            for (int i = 0; i < contentArray.length(); i++) {
+                JSONObject block = contentArray.getJSONObject(i);
+
+                // If block has no "content" property or has empty content array, it's empty
+                if (!block.has("content") ||
+                    (block.get("content") instanceof JSONArray &&
+                     ((JSONArray) block.get("content")).length() == 0)) {
+                    emptyBlocks++;
+                }
+            }
+
+            // If all blocks are empty, the Story Block is empty
+            return emptyBlocks == contentArray.length();
+
+        } catch (Exception e) {
+            Logger.warn(this, "Error parsing Story Block JSON, treating as non-empty: " + e.getMessage());
+            return false; // If we can't parse, assume it has content to be safe
+        }
+    }
+
 
     @CloseDBIfOpened
     @Override
@@ -8480,7 +8538,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if (!foundInRelationships && !hasExistingRelatedContent) {
                     hasError = true;
-                    Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]", 
+                    Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]",
                             (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
                     builder.addRequiredRelationship(rel, new ArrayList<>());
                 }
@@ -8526,7 +8584,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         && isRelationshipParent) {
                     if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        Logger.error(this, String.format("Error in Contentlet [%s]: Child relationship [%s] is required.", 
+                        Logger.error(this, String.format("Error in Contentlet [%s]: Child relationship [%s] is required.",
                                 contentletId, relationship.getRelationTypeValue()));
                         builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
@@ -8564,14 +8622,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         contentsInRelationship);
                             }
                         } catch (final DotDataException e) {
-                            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
+                            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]",
                                     contentInRelationship.getIdentifier()), e);
                         }
                     }
                 } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {
                     if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        Logger.error(this, String.format("Error in Contentlet [%s]: Parent relationship [%s] is required.", 
+                        Logger.error(this, String.format("Error in Contentlet [%s]: Parent relationship [%s] is required.",
                                 contentletId, relationship.getRelationTypeValue()));
                         builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
@@ -8587,7 +8645,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         final String parentIds = contentsInRelationship.stream()
                                 .map(Contentlet::getIdentifier)
                                 .collect(java.util.stream.Collectors.joining(", "));
-                        final String errorMessage = String.format("ERROR! Child content [%s] is already related to another parent content [%s]", 
+                        final String errorMessage = String.format("ERROR! Child content [%s] is already related to another parent content [%s]",
                                 contentletId, parentIds);
                         Logger.error(this, errorMessage);
                         hasError = true;
@@ -8605,14 +8663,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 && !contentInRelationship.getContentTypeId().equalsIgnoreCase(
                                 relationship.getParentStructureInode())) {
                             hasError = true;
-                            Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in relationship [%s]", 
+                            Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in relationship [%s]",
                                     contentletId, relationship.getRelationTypeValue()));
                             builder.addInvalidContentRelationship(relationship, contentsInRelationship);
                         }
                     }
                 } else {
                     hasError = true;
-                    Logger.error(this, String.format("Relationship [%s] is neither parent nor child of Contentlet [%s]", 
+                    Logger.error(this, String.format("Relationship [%s] is neither parent nor child of Contentlet [%s]",
                             relationship.getRelationTypeValue(), contentletId));
                     builder.addBadRelationship(relationship, contentsInRelationship);
                 }
@@ -8637,7 +8695,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
         //Trying to relate more than one piece of content
         if (contentsInRelationshipSameLanguage.size() > 1) {
-            Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One", 
+            Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One",
                     contentlet.getIdentifier(), relationship.getRelationTypeValue()));
             builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
             return false;
@@ -8651,13 +8709,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             .getSystemUser(), true, 1, 0, null);
             if (relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
                     .equals(contentlet.getIdentifier())) {
-                Logger.error(this, String.format("Error in related Contentlet [%s]: Relationship [%s] has been defined as One to One", 
+                Logger.error(this, String.format("Error in related Contentlet [%s]: Relationship [%s] has been defined as One to One",
                         relatedContents.get(0).getIdentifier(), relationship.getRelationTypeValue()));
                 builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
                 return false;
             }
         } catch (final DotDataException e) {
-            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
+            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]",
                     contentsInRelationship.get(0).getIdentifier()), e);
             builder.addInvalidContentRelationship(relationship, contentsInRelationship);
             return false;
