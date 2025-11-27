@@ -10,11 +10,6 @@ import { withBreadcrumbs } from './breadcrumb.feature';
 import { processSpecialRoute, ROUTE_HANDLERS } from './breadcrumb.utils';
 
 describe('Breadcrumb Utils - Route Handlers', () => {
-    let menuItemsSignal: ReturnType<typeof signal<MenuItemEntity[]>>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let TestStore: any;
-    let store: InstanceType<typeof TestStore>;
-
     const mockMenuItems: MenuItemEntity[] = [
         {
             id: 'templates',
@@ -31,11 +26,12 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         } as MenuItemEntity
     ];
 
+    const menuItemsSignal = signal<MenuItemEntity[]>(mockMenuItems);
+    const TestStore = signalStore(withState({}), withBreadcrumbs(menuItemsSignal));
+
+    let store: InstanceType<typeof TestStore>;
+
     beforeEach(() => {
-        menuItemsSignal = signal<MenuItemEntity[]>(mockMenuItems);
-
-        TestStore = signalStore(withState({}), withBreadcrumbs(menuItemsSignal));
-
         TestBed.configureTestingModule({
             providers: [
                 {
