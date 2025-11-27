@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -73,7 +74,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         try {
-            APILocator.getContentletAPI().validateContentlet(contentlet, null);
+            // Test the full save process - validation happens automatically during save
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
             fail("Expected DotContentletValidationException for empty required story block");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
@@ -115,8 +117,13 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .setProperty("storyBlockField", storyBlockWithText)
                 .next();
 
-        // Should not throw validation exception
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        // Should not throw validation exception - save should succeed
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+        assertEquals("Story block content should be preserved", storyBlockWithText, savedContentlet.get("storyBlockField"));
     }
 
     /**
@@ -143,8 +150,13 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .setProperty("storyBlockField", storyBlockWithImage)
                 .next();
 
-        // Should not throw validation exception
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        // Should not throw validation exception - save should succeed
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+        assertEquals("Story block content should be preserved", storyBlockWithImage, savedContentlet.get("storyBlockField"));
     }
 
     /**
@@ -171,8 +183,13 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .setProperty("storyBlockField", storyBlockWithVideo)
                 .next();
 
-        // Should not throw validation exception
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        // Should not throw validation exception - save should succeed
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+        assertEquals("Story block content should be preserved", storyBlockWithVideo, savedContentlet.get("storyBlockField"));
     }
 
     /**
@@ -208,7 +225,11 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         // Should not throw validation exception - empty list still represents structure/content
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**
@@ -254,7 +275,11 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         // Should not throw validation exception - empty table still represents structure/content
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**
@@ -285,7 +310,11 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         // Should not throw validation exception - blockquote structure represents content
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**
@@ -315,8 +344,12 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .setProperty("storyBlockField", storyBlockWithCode)
                 .next();
 
-        // Should not throw validation exception
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        // Should not throw validation exception - save should succeed
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**
@@ -347,7 +380,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         try {
-            APILocator.getContentletAPI().validateContentlet(contentlet, null);
+            // Test the full save process - validation happens automatically during save
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
             fail("Expected DotContentletValidationException for empty required code block");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
@@ -373,7 +407,11 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         // Should not throw validation exception - horizontal rule represents content
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**
@@ -388,7 +426,11 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         // Should not throw validation exception - invalid JSON treated as non-empty for safety
-        APILocator.getContentletAPI().validateContentlet(contentlet, null);
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        // Assert that the contentlet was successfully saved
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**
@@ -402,7 +444,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         try {
-            APILocator.getContentletAPI().validateContentlet(contentlet, null);
+            // Test the full save process - validation happens automatically during save
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
             fail("Expected DotContentletValidationException for null required story block field");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
@@ -441,7 +484,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .next();
 
         try {
-            APILocator.getContentletAPI().validateContentlet(contentlet, null);
+            // Test the full save process - validation happens automatically during save
+            APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
             fail("Expected DotContentletValidationException for multiple empty paragraphs");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());

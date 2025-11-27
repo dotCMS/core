@@ -56,8 +56,8 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
@@ -8345,30 +8345,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         try {
-            JSONObject storyBlockJson = new JSONObject(storyBlockValue);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode storyBlockJson = mapper.readTree(storyBlockValue);
 
             // Check if it has content array
-            if (!storyBlockJson.has("content")) {
+            JsonNode contentNode = storyBlockJson.get("content");
+            if (contentNode == null || !contentNode.isArray()) {
                 return true;
             }
 
-            JSONArray contentArray = storyBlockJson.getJSONArray("content");
-            if (contentArray.length() == 0) {
+            if (contentNode.size() == 0) {
                 return true;
             }
 
-            // Count blocks that are actually empty (no meaningful content)
-            int emptyBlocks = 0;
-            for (int i = 0; i < contentArray.length(); i++) {
-                JSONObject block = contentArray.getJSONObject(i);
-
-                if (isEmptyBlock(block)) {
-                    emptyBlocks++;
+            // If any block has content, the story block has content
+            for (JsonNode block : contentNode) {
+                if (!isEmptyBlock(block)) {
+                    return false; // Found content, story block is not empty
                 }
             }
 
-            // If all blocks are empty, the Story Block is empty
-            return emptyBlocks == contentArray.length();
+            // All blocks are empty, so story block is empty
+            return true;
 
         } catch (Exception e) {
             Logger.warn(this, "Error parsing Story Block JSON, treating as non-empty: " + e.getMessage());
@@ -8407,24 +8405,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param block The block to check for text content
      * @return true if all text content is empty, false otherwise
      */
-    private boolean isTextContentEmpty(JSONObject block) {
-        if (!block.has("content")) {
+    private boolean isTextContentEmpty(JsonNode block) {
+        JsonNode contentNode = block.get("content");
+        if (contentNode == null || !contentNode.isArray()) {
             return true; // No content property means empty
         }
 
-        JSONArray contentArray = block.optJSONArray("content");
-        if (contentArray == null || contentArray.length() == 0) {
+        if (contentNode.size() == 0) {
             return true; // Empty content array means empty
         }
 
         // Check if all content items are empty text nodes
-        for (int i = 0; i < contentArray.length(); i++) {
-            JSONObject contentItem = contentArray.optJSONObject(i);
-            if (contentItem != null) {
-                String itemType = contentItem.optString("type");
+        for (JsonNode contentItem : contentNode) {
+            JsonNode typeNode = contentItem.get("type");
+            if (typeNode != null && typeNode.isTextual()) {
+                String itemType = typeNode.asText();
 
                 if ("text".equals(itemType)) {
-                    String text = contentItem.optString("text", "");
+                    JsonNode textNode = contentItem.get("text");
+                    String text = textNode != null ? textNode.asText("") : "";
                     if (UtilMethods.isSet(text.trim())) {
                         return false; // Found non-empty text
                     }
