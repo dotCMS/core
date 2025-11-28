@@ -103,7 +103,15 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
         }),
         withMethods((store) => {
             const setBreadcrumbs = (breadcrumbs: MenuItem[]) => {
-                patchState(store, { breadcrumbs });
+                patchState(store, {
+                    breadcrumbs: [
+                        {
+                            label: 'Home',
+                            disabled: true
+                        },
+                        ...breadcrumbs
+                    ]
+                });
             };
 
             const appendCrumb = (crumb: MenuItem) => {
@@ -206,10 +214,6 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     if (item) {
                         setBreadcrumbs([
                             {
-                                label: 'Home',
-                                disabled: true
-                            },
-                            {
                                 label: item.parentMenuLabel,
                                 disabled: true
                             },
@@ -220,15 +224,24 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                             }
                         ]);
                     } else {
-                        processSpecialRoute({
+                        const result = processSpecialRoute({
                             url,
                             menu,
-                            breadcrumbs,
-                            helpers: {
-                                set: setBreadcrumbs,
-                                append: addNewBreadcrumb
-                            }
+                            breadcrumbs
                         });
+
+                        if (result) {
+                            switch (result.type) {
+                                case 'set':
+                                    setBreadcrumbs(result.breadcrumbs);
+                                    break;
+                                case 'append': {
+                                    const crumb = result.breadcrumbs[result.breadcrumbs.length - 1];
+                                    appendCrumb(crumb);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             };

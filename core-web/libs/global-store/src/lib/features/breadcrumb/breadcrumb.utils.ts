@@ -3,20 +3,6 @@ import { MenuItem } from 'primeng/api';
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 /**
- * Helper functions available to route handlers for building breadcrumbs.
- */
-interface BreadcrumbHelpers {
-    /**
-     * Sets the entire breadcrumb array.
-     */
-    set: (breadcrumbs: MenuItem[]) => void;
-    /**
-     * Adds a new breadcrumb to the end of the breadcrumb array.
-     */
-    append: (item: MenuItem) => void;
-}
-
-/**
  * Parameters for processing special routes and route handlers.
  */
 export interface ProcessSpecialRouteParams {
@@ -32,17 +18,28 @@ export interface ProcessSpecialRouteParams {
      * Current breadcrumbs array.
      */
     breadcrumbs: MenuItem[];
+}
+
+/**
+ * Result structure returned by a route handler.
+ */
+export interface RouteHandlerResult {
     /**
-     * Helper functions for building breadcrumbs.
+     * Type of operation: 'set' to replace all breadcrumbs, 'append' to add to existing breadcrumbs.
      */
-    helpers: BreadcrumbHelpers;
+    type: 'set' | 'append' | 'truncate';
+    /**
+     * Array of breadcrumb items to setß or append.
+     */
+    breadcrumbs: MenuItem[];
 }
 
 /**
  * Handler function for special route cases.
- * Receives parameters object with URL, menu items, breadcrumbs, and helper functions.
+ * Receives parameters object with URL, menu items, and breadcrumbs.
+ * Returns a RouteHandlerResult or void if no action is needed.
  */
-export type RouteHandler = (params: ProcessSpecialRouteParams) => void;
+export type RouteHandler = (params: ProcessSpecialRouteParams) => RouteHandlerResult | void;
 
 /**
  * Route handler configuration.
@@ -81,7 +78,7 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
      */
     templatesEdit: {
         test: (url: string) => /^\/templates\/edit\/[a-zA-Z0-9-]+$/.test(url),
-        handler: ({ menu, breadcrumbs, helpers: { set } }) => {
+        handler: ({ menu, breadcrumbs }): RouteHandlerResult | void => {
             const templatesItem = menu.find((item) => item.menuLink === '/templates');
 
             if (templatesItem) {
@@ -91,21 +88,20 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
                 );
 
                 if (!hasTemplatesBreadcrumb) {
-                    set([
-                        {
-                            label: 'Home',
-                            disabled: true
-                        },
-                        {
-                            label: templatesItem.parentMenuLabel,
-                            disabled: true
-                        },
-                        {
-                            label: templatesItem.label,
-                            target: '_self',
-                            url: '/dotAdmin/#/templates'
-                        }
-                    ]);
+                    return {
+                        type: 'set',
+                        breadcrumbs: [
+                            {
+                                label: templatesItem.parentMenuLabel,
+                                disabled: true
+                            },
+                            {
+                                label: templatesItem.label,
+                                target: '_self',
+                                url: '/dotAdmin/#/templates'
+                            }
+                        ]
+                    };
                 }
             }
         }
@@ -117,7 +113,7 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
     contentFilter: {
         test: (url: string) => /\/content\?filter=.+$/.test(url),
 
-        handler: ({ url, helpers: { append } }) => {
+        handler: ({ url }): RouteHandlerResult | void => {
             const queryIndex = url.indexOf('?');
             if (queryIndex === -1) {
                 return;
@@ -132,26 +128,84 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
             }
 
             const newUrl = `/dotAdmin/#${url}`;
-            append({
-                label: filter,
-                target: '_self',
-                url: newUrl
-            });
+            return {
+                type: 'append',
+                breadcrumbs: [
+                    {
+                        label: filter,
+                        target: '_self',
+                        url: newUrl
+                    }
+                ]
+            };
         }
     }
 };
 
 /**
+ * Finds a menu item that matches the given URL.
+ * Handles query parameters and mId validation for menu matching.
+ *
+ * @param url - The URL to match against menu items
+ * @param menu - Array of menu items to search
+ * @returns The matching menu item, or undefined if no match is found
+ */
+export function findMenuItemByUrl(url: string, menu: MenuItemEntity[]): MenuItemEntity | undefined {
+    const [urlPath, queryString] = url.split('?');
+    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
+
+    return menu.find((item) => {
+        const pathMatches = item.menuLink === urlPath;
+        const hasQueryParams = queryString && queryString.length > 0;
+
+        // If we have query params but no mId, it's likely an old bookmark - don't match
+        if (hasQueryParams && !shortMenuId) {
+            return false;
+        }
+
+        // If we have mId, validate both path and parent match
+        if (shortMenuId) {
+            return pathMatches && item.parentMenuId.startsWith(shortMenuId);
+        }
+
+        // Default: no query params, no mId - match by path only
+        return pathMatches;
+    });
+}
+
+/**
+ * Builds breadcrumb items from a menu item.
+ *
+ * @param item - The menu item to build breadcrumbs from
+ * @param url - The full URL to use for the breadcrumb (should include /dotAdmin/# prefix)
+ * @returns Array of breadcrumb items (parent label as disabled, item label as clickable)
+ */
+export function buildBreadcrumbsFromMenuItem(item: MenuItemEntity, url: string): MenuItem[] {
+    return [
+        {
+            label: item.parentMenuLabel,
+            disabled: true
+        },
+        {
+            label: item.label,
+            target: '_self',
+            url: url
+        }
+    ];
+}
+
+/**
  * Processes a URL using the special route handlers hashmap.
  * Iterates through all handlers and executes the first one that matches.
  *
- * @param params - Object containing url, menu, breadcrumbs, and helpers
+ * @param params - Object containing url, menu, and breadcrumbs
+ * @returns RouteHandlerResult if a handler matches and produces a result, undefined otherwise
  */
-export function processSpecialRoute(params: ProcessSpecialRouteParams): void {
+export function processSpecialRoute(params: ProcessSpecialRouteParams): RouteHandlerResult | void {
     const { url } = params;
-    const handler = Object.values(ROUTE_HANDLERS).find((config) => config.test(url));
+    const handlerConfig = Object.values(ROUTE_HANDLERS).find((config) => config.test(url));
 
-    if (handler) {
-        handler.handler(params);
+    if (handlerConfig) {
+        return handlerConfig.handler(params);
     }
 }

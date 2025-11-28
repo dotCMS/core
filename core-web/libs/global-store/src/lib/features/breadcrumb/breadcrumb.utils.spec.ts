@@ -29,8 +29,6 @@ describe('Breadcrumb Utils - Route Handlers', () => {
     const menuItemsSignal = signal<MenuItemEntity[]>(mockMenuItems);
     const TestStore = signalStore(withState({}), withBreadcrumbs(menuItemsSignal));
 
-    let store: InstanceType<typeof TestStore>;
-
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
@@ -45,7 +43,7 @@ describe('Breadcrumb Utils - Route Handlers', () => {
             ]
         });
 
-        store = TestBed.inject(TestStore);
+        TestBed.inject(TestStore);
         TestBed.flushEffects();
     });
 
@@ -58,29 +56,25 @@ describe('Breadcrumb Utils - Route Handlers', () => {
             const result = processSpecialRoute({
                 url: '/templates/edit/123',
                 menu: mockMenuItems,
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(true);
-            expect(store.breadcrumbs().length).toBeGreaterThan(0);
+            expect(result).toBeDefined();
+            if (result) {
+                expect(result.type).toBe('set');
+                expect(result.breadcrumbs).toBeDefined();
+                expect(result.breadcrumbs.length).toBe(2);
+            }
         });
 
-        it('should return false when no handler matches the URL', () => {
+        it('should return undefined when no handler matches the URL', () => {
             const result = processSpecialRoute({
                 url: '/unknown-route',
                 menu: mockMenuItems,
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(false);
+            expect(result).toBeUndefined();
         });
     });
 
@@ -99,40 +93,46 @@ describe('Breadcrumb Utils - Route Handlers', () => {
             const result = ROUTE_HANDLERS.templatesEdit.handler({
                 url: '/templates/edit/123',
                 menu: mockMenuItems,
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(true);
-
-            const breadcrumbs = store.breadcrumbs();
-            expect(breadcrumbs.length).toBe(3);
-            expect(breadcrumbs[0]).toEqual({ label: 'Home', disabled: true });
-            expect(breadcrumbs[1]).toEqual({ label: 'Content', disabled: true });
-            expect(breadcrumbs[2]).toMatchObject({
-                label: 'Templates',
-                url: '/dotAdmin/#/templates'
-            });
+            expect(result).toBeDefined();
+            if (result) {
+                expect(result.type).toBe('set');
+                expect(result.breadcrumbs).toBeDefined();
+                expect(result.breadcrumbs.length).toBe(2);
+                expect(result.breadcrumbs[0]).toEqual({ label: 'Content', disabled: true });
+                expect(result.breadcrumbs[1]).toMatchObject({
+                    label: 'Templates',
+                    target: '_self',
+                    url: '/dotAdmin/#/templates'
+                });
+            }
         });
 
-        it('should return false when template not found in menu', () => {
-            store.setBreadcrumbs([]);
-
+        it('should return undefined when template not found in menu', () => {
             const result = ROUTE_HANDLERS.templatesEdit.handler({
                 url: '/templates/edit/123',
                 menu: [],
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(false);
-            expect(store.breadcrumbs().length).toBe(0);
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when templates breadcrumb already exists', () => {
+            const existingBreadcrumbs = [
+                { label: 'Content', disabled: true },
+                { label: 'Templates', url: '/dotAdmin/#/templates' }
+            ];
+
+            const result = ROUTE_HANDLERS.templatesEdit.handler({
+                url: '/templates/edit/123',
+                menu: mockMenuItems,
+                breadcrumbs: existingBreadcrumbs
+            });
+
+            expect(result).toBeUndefined();
         });
     });
 
@@ -162,89 +162,72 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should add breadcrumb with extracted filter value', () => {
-            store.setBreadcrumbs([]);
-
             const result = ROUTE_HANDLERS.contentFilter.handler({
                 url: '/content?filter=Products',
                 menu: [],
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(true);
-            const breadcrumbs = store.breadcrumbs();
-            expect(breadcrumbs.length).toBe(1);
-            expect(breadcrumbs[0]).toEqual({
-                label: 'Products',
-                target: '_self',
-                url: '/dotAdmin/#/content?filter=Products'
-            });
+            expect(result).toBeDefined();
+            if (result) {
+                expect(result.type).toBe('append');
+                expect(result.breadcrumbs).toBeDefined();
+                expect(result.breadcrumbs.length).toBe(1);
+                expect(result.breadcrumbs[0]).toEqual({
+                    label: 'Products',
+                    target: '_self',
+                    url: '/dotAdmin/#/content?filter=Products'
+                });
+            }
         });
 
         it('should handle complex filter values', () => {
-            store.setBreadcrumbs([]);
-
-            ROUTE_HANDLERS.contentFilter.handler({
+            const result = ROUTE_HANDLERS.contentFilter.handler({
                 url: '/content?filter=My-Complex-Filter',
                 menu: [],
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            const breadcrumbs = store.breadcrumbs();
-            expect(breadcrumbs[0].label).toBe('My-Complex-Filter');
+            expect(result).toBeDefined();
+            if (result) {
+                expect(result.breadcrumbs[0].label).toBe('My-Complex-Filter');
+            }
         });
 
         it('should extract only the filter parameter when URL has multiple query params', () => {
-            store.setBreadcrumbs([]);
-
-            ROUTE_HANDLERS.contentFilter.handler({
+            const result = ROUTE_HANDLERS.contentFilter.handler({
                 url: '/content?filter=Products&sort=asc&page=1',
                 menu: [],
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            const breadcrumbs = store.breadcrumbs();
-            expect(breadcrumbs[0].label).toBe('Products');
-            expect(breadcrumbs[0].url).toBe('/dotAdmin/#/content?filter=Products&sort=asc&page=1');
+            expect(result).toBeDefined();
+            if (result) {
+                expect(result.breadcrumbs[0].label).toBe('Products');
+                expect(result.breadcrumbs[0].url).toBe(
+                    '/dotAdmin/#/content?filter=Products&sort=asc&page=1'
+                );
+            }
         });
 
-        it('should return false when filter parameter is empty', () => {
+        it('should return undefined when filter parameter is empty', () => {
             const result = ROUTE_HANDLERS.contentFilter.handler({
                 url: '/content?filter=&sort=asc',
                 menu: [],
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(false);
+            expect(result).toBeUndefined();
         });
 
-        it('should return false when query string is missing', () => {
+        it('should return undefined when query string is missing', () => {
             const result = ROUTE_HANDLERS.contentFilter.handler({
                 url: '/content',
                 menu: [],
-                breadcrumbs: [],
-                helpers: {
-                    set: store.setBreadcrumbs,
-                    append: store.addNewBreadcrumb
-                }
+                breadcrumbs: []
             });
 
-            expect(result).toBe(false);
+            expect(result).toBeUndefined();
         });
     });
 });
