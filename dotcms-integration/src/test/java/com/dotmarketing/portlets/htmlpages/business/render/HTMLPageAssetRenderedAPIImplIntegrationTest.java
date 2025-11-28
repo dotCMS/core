@@ -232,20 +232,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .host(site)
                 .languageId(languageId)
                 .setProperty("title", "test")
-                .setProperty("body", "{\n" +
-                        "  \"content\": [\n" +
-                        "    {\n" +
-                        "      \"type\": \"paragraph\",\n" +
-                        "      \"content\": [\n" +
-                        "        {\n" +
-                        "          \"type\": \"text\",\n" +
-                        "          \"text\": \"Test1\"\n" +
-                        "        }\n" +
-                        "      ]\n" +
-                        "    }\n" +
-                        "  ],\n" +
-                        "  \"type\": \"doc\"\n" +
-                        "}")
+                .setProperty("body", "Test1")
                 .nextPersisted();
         contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(contentlet, adminUser, false);
@@ -266,20 +253,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .checkout(page.getInode(), adminUser, false);
         final Contentlet contentletCheckout = APILocator.getContentletAPI()
                 .checkout(contentlet.getInode(), adminUser, false);
-        contentletCheckout.setProperty("body", "{\n" +
-                "  \"content\": [\n" +
-                "    {\n" +
-                "      \"type\": \"paragraph\",\n" +
-                "      \"content\": [\n" +
-                "        {\n" +
-                "          \"type\": \"text\",\n" +
-                "          \"text\": \"Test1 Modified\"\n" +
-                "        }\n" +
-                "      ]\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"type\": \"doc\"\n" +
-                "}");
+        contentletCheckout.setProperty("body", "Test1 Modified");
         contentletCheckout.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().checkin(contentletCheckout, adminUser, false);
         workingPage.setIndexPolicy(IndexPolicy.WAIT_FOR);
