@@ -232,7 +232,20 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .host(site)
                 .languageId(languageId)
                 .setProperty("title", "test")
-                .setProperty("body", "Test1")
+                .setProperty("body", "{\n" +
+                        "  \"content\": [\n" +
+                        "    {\n" +
+                        "      \"type\": \"paragraph\",\n" +
+                        "      \"content\": [\n" +
+                        "        {\n" +
+                        "          \"type\": \"text\",\n" +
+                        "          \"text\": \"Test1\"\n" +
+                        "        }\n" +
+                        "      ]\n" +
+                        "    }\n" +
+                        "  ],\n" +
+                        "  \"type\": \"doc\"\n" +
+                        "}")
                 .nextPersisted();
         contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(contentlet, adminUser, false);
@@ -253,7 +266,20 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .checkout(page.getInode(), adminUser, false);
         final Contentlet contentletCheckout = APILocator.getContentletAPI()
                 .checkout(contentlet.getInode(), adminUser, false);
-        contentletCheckout.setProperty("body", "Test1 Modified");
+        contentletCheckout.setProperty("body", "{\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"type\": \"paragraph\",\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"type\": \"text\",\n" +
+                "          \"text\": \"Test1 Modified\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}");
         contentletCheckout.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().checkin(contentletCheckout, adminUser, false);
         workingPage.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -2861,29 +2887,29 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: A template has containers with LEGACY_RELATION_TYPE UUIDs
      * Should: Transform UUIDs to consistent values in both layout and rendered container fields
-     * 
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
     public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException, WebAssetException {
         init();
-        
+
         final Host site = new SiteDataGen().nextPersisted();
         final User systemUser = APILocator.systemUser();
-        
+
 
         final ContentType contentType = new ContentTypeDataGen()
                 .field(new FieldDataGen().name("title").velocityVarName("title").next())
                 .nextPersisted();
-                
+
 
         final Container container = new ContainerDataGen()
                 .site(site)
                 .withContentType(contentType, "$!{title}")
                 .nextPersisted();
         ContainerDataGen.publish(container, systemUser);
-        
+
 
         final Template template = new TemplateDataGen()
                 .host(site)
@@ -2896,13 +2922,13 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final HTMLPageAsset page = new HTMLPageDataGen(site, template)
                 .nextPersisted();
         HTMLPageDataGen.publish(page);
-        
+
 
         final Contentlet contentlet = new ContentletDataGen(contentType)
                 .host(site)
                 .setProperty("title", "Test Content")
                 .nextPersistedAndPublish();
-        
+
 
         new MultiTreeDataGen()
                 .setPage(page)
@@ -2910,29 +2936,29 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .setContentlet(contentlet)
                 .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
                 .nextPersisted();
-        
+
 
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
         when(request.getRequestURI()).thenReturn(page.getURI());
-        
+
 
         final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
         final PageView pageView = htmlPageAssetRenderedAPI.getPageRendered(
                 request, response, systemUser, page.getURI(), PageMode.ADMIN_MODE);
-        
-        
-        boolean foundLegacyTransformation = pageView.getLayout() != null 
+
+
+        boolean foundLegacyTransformation = pageView.getLayout() != null
                 && pageView.getLayout().getBody() != null
                 && pageView.getLayout().getBody().getRows().stream()
                     .flatMap(row -> row.getColumns().stream())
                     .flatMap(column -> column.getContainers().stream())
                     .filter(containerUUID -> container.getIdentifier().equals(containerUUID.getIdentifier()))
-                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'", 
+                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'",
                             ContainerUUID.UUID_START_VALUE, containerUUID.getUUID()))
                     .findAny()
                     .isPresent();
-        
+
         assertTrue("Should have found and transformed legacy container UUID", foundLegacyTransformation);
     }
 }

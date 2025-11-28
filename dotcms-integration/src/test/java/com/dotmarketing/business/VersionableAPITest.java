@@ -9,6 +9,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -43,26 +44,26 @@ import static org.junit.Assert.*;
  * Created by Erick Gonzalez
  */
 public class VersionableAPITest {
-	
+
 	private static User user;
 	private static Host host;
 	@BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        
+
         user = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(user, false);
 	}
-	
+
 	private HTMLPageAsset createHTMLPage() throws Exception{
 		//Create HTMLPage
 		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-				
+
 		Template template = new TemplateDataGen().nextPersisted();
-		        
+
 		Folder folder = APILocator.getFolderAPI().createFolders("/testingVersionable", host, user, false);
-				
+
 		return new HTMLPageDataGen(folder,template).nextPersisted();
 	}
 	@Test
@@ -104,51 +105,51 @@ public class VersionableAPITest {
 	@Test
 	public void testFindWorkingVersionHTMLPage() throws Exception{
 		HTMLPageAsset page = createHTMLPage();
-        
+
         //Call Versionable
         Contentlet verAPI = APILocator.getContentletAPI().findContentletByIdentifier(page.getIdentifier(), false, page.getLanguageId(), user, false);
-        
+
         //Check Same HTMLPage
         assertEquals(verAPI.getTitle(),page.getTitle());
         assertEquals(verAPI.getInode(),page.getInode());
-        
+
         //Delete Template, Folder, HTMLPage
         Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
         Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
         HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
 	}
-	
+
 	@Test
 	public void testFindWorkingVersionContainer() throws Exception{
 		//Create Container
 		Structure structure = new StructureDataGen().nextPersisted();
 		Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
-        
+
         //Call Versionable
         Versionable verAPI = APILocator.getVersionableAPI().findWorkingVersion(container.getIdentifier(), user, false);
-        
+
         //Check Same Container
         assertEquals(verAPI.getTitle(),container.getTitle());
         assertEquals(verAPI.getInode(),container.getInode());
-        
+
         //Delete Container
         APILocator.getContainerAPI().delete(container, user, false);
         APILocator.getStructureAPI().delete(structure, user);
 	}
-	
+
 	@Test
 	public void testFindWorkingVersionTemplate() throws Exception{
 		//Create Template
 		Template template = new TemplateDataGen().nextPersisted();
-        
+
         //Call Versionable
         Versionable verAPI = APILocator.getVersionableAPI().findWorkingVersion(template.getIdentifier(), user, false);
-        
+
         //Check same Template
         assertEquals(verAPI.getTitle(),template.getTitle());
         assertEquals(verAPI.getInode(),template.getInode());
-        
+
         //Delete Template
         APILocator.getTemplateAPI().delete(template, user, false);
 	}
@@ -168,60 +169,60 @@ public class VersionableAPITest {
 		}
 
 	}
-	
+
 	@Test
 	public void testFindLiveVersionHTMLPage() throws Exception{
 		HTMLPageAsset page = createHTMLPage();
-        
+
         APILocator.getVersionableAPI().setLive(page);
-        
+
         //Call Versionable
         Contentlet verAPI = APILocator.getContentletAPI().findContentletByIdentifier(page.getIdentifier(), true, page.getLanguageId(), user, false);
-        
+
         //Check Same HTMLPage
         assertEquals(verAPI.getTitle(),page.getTitle());
         assertEquals(verAPI.getInode(),page.getInode());
-        
+
         //Delete Template, Folder, HTMLPage
         Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
         Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
         HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
 	}
-	
+
 	@Test
 	public void testFindLiveVersionContainer() throws Exception{
 		//Create Container
 		Structure structure = new StructureDataGen().nextPersisted();
 		Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
-        
+
         APILocator.getVersionableAPI().setLive(container);
-        
+
         //Call Versionable
         Versionable verAPI = APILocator.getVersionableAPI().findLiveVersion(container.getIdentifier(), user, false);
-        
+
         //Check Same Container
         assertEquals(verAPI.getTitle(),container.getTitle());
         assertEquals(verAPI.getInode(),container.getInode());
-        
+
         //Delete Container
         APILocator.getContainerAPI().delete(container, user, false);
         APILocator.getStructureAPI().delete(structure, user);
 	}
-	
+
 	@Test
 	public void testFindLiveVersionTemplate() throws Exception{
 		//Create Template
 		Template template = new TemplateDataGen().nextPersisted();
         APILocator.getVersionableAPI().setLive(template);
-        
+
         //Call Versionable
         Versionable verAPI = APILocator.getVersionableAPI().findLiveVersion(template.getIdentifier(), user, false);
-        
+
         //Check same Template
         assertEquals(verAPI.getTitle(),template.getTitle());
         assertEquals(verAPI.getInode(),template.getInode());
-        
+
         //Delete Template
         APILocator.getTemplateAPI().delete(template, user, false);
 	}
@@ -513,7 +514,7 @@ public class VersionableAPITest {
 
 		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
 		final Contentlet myContentlet = new ContentletDataGen(contentType)
-				.setProperty("title","Test").setProperty("body","Test Body")
+				.setProperty("title","Test").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
 				.nextPersisted();
 
 		Assert.assertTrue(myContentlet.isWorking());
@@ -531,7 +532,7 @@ public class VersionableAPITest {
 
 		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
 		final Contentlet myContentlet = new ContentletDataGen(contentType)
-				.setProperty("title","Test").setProperty("body","Test Body")
+				.setProperty("title","Test").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
 				.nextPersisted();
 		final String countryCode = "it";
 		final String languageCode = "it";
@@ -540,7 +541,7 @@ public class VersionableAPITest {
 				APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
 
 		final Contentlet myContentletIt = new ContentletDataGen(contentType)
-				.setProperty("title","Test").setProperty("body","Test Body")
+				.setProperty("title","Test").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
 				.languageId(languageIt.getId())
 				.next();
 
@@ -563,7 +564,7 @@ public class VersionableAPITest {
 
 		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
 		final Contentlet myContentlet = new ContentletDataGen(contentType)
-				.setProperty("title","Test").setProperty("body","Test Body")
+				.setProperty("title","Test").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
 				.nextPersisted();
 		final String countryCode = "it";
 		final String languageCode = "it";
@@ -572,7 +573,7 @@ public class VersionableAPITest {
 				APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
 
 		final Contentlet myContentletIt = new ContentletDataGen(contentType)
-				.setProperty("title","Test").setProperty("body","Test Body")
+				.setProperty("title","Test").setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
 				.languageId(languageIt.getId())
 				.next();
 
