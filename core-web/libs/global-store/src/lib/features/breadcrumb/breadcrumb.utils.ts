@@ -143,58 +143,6 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
 };
 
 /**
- * Finds a menu item that matches the given URL.
- * Handles query parameters and mId validation for menu matching.
- *
- * @param url - The URL to match against menu items
- * @param menu - Array of menu items to search
- * @returns The matching menu item, or undefined if no match is found
- */
-export function findMenuItemByUrl(url: string, menu: MenuItemEntity[]): MenuItemEntity | undefined {
-    const [urlPath, queryString] = url.split('?');
-    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
-
-    return menu.find((item) => {
-        const pathMatches = item.menuLink === urlPath;
-        const hasQueryParams = queryString && queryString.length > 0;
-
-        // If we have query params but no mId, it's likely an old bookmark - don't match
-        if (hasQueryParams && !shortMenuId) {
-            return false;
-        }
-
-        // If we have mId, validate both path and parent match
-        if (shortMenuId) {
-            return pathMatches && item.parentMenuId.startsWith(shortMenuId);
-        }
-
-        // Default: no query params, no mId - match by path only
-        return pathMatches;
-    });
-}
-
-/**
- * Builds breadcrumb items from a menu item.
- *
- * @param item - The menu item to build breadcrumbs from
- * @param url - The full URL to use for the breadcrumb (should include /dotAdmin/# prefix)
- * @returns Array of breadcrumb items (parent label as disabled, item label as clickable)
- */
-export function buildBreadcrumbsFromMenuItem(item: MenuItemEntity, url: string): MenuItem[] {
-    return [
-        {
-            label: item.parentMenuLabel,
-            disabled: true
-        },
-        {
-            label: item.label,
-            target: '_self',
-            url: url
-        }
-    ];
-}
-
-/**
  * Processes a URL using the special route handlers hashmap.
  * Iterates through all handlers and executes the first one that matches.
  *
