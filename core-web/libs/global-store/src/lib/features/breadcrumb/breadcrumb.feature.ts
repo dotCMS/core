@@ -220,9 +220,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                             }
                         ]);
                     } else {
-                        processSpecialRoute(url, menu, breadcrumbs, {
-                            setBreadcrumbs,
-                            addNewBreadcrumb
+                        processSpecialRoute({
+                            url,
+                            menu,
+                            breadcrumbs,
+                            helpers: {
+                                set: setBreadcrumbs,
+                                append: addNewBreadcrumb
+                            }
                         });
                     }
                 }

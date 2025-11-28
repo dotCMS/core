@@ -55,9 +55,14 @@ describe('Breadcrumb Utils - Route Handlers', () => {
 
     describe('processSpecialRoute', () => {
         it('should execute templatesEdit handler for matching URL', () => {
-            const result = processSpecialRoute('/templates/edit/123', mockMenuItems, [], {
-                setBreadcrumbs: store.setBreadcrumbs,
-                addNewBreadcrumb: store.addNewBreadcrumb
+            const result = processSpecialRoute({
+                url: '/templates/edit/123',
+                menu: mockMenuItems,
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
+                }
             });
 
             expect(result).toBe(true);
@@ -65,9 +70,14 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should return false when no handler matches the URL', () => {
-            const result = processSpecialRoute('/unknown-route', mockMenuItems, [], {
-                setBreadcrumbs: store.setBreadcrumbs,
-                addNewBreadcrumb: store.addNewBreadcrumb
+            const result = processSpecialRoute({
+                url: '/unknown-route',
+                menu: mockMenuItems,
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
+                }
             });
 
             expect(result).toBe(false);
@@ -86,15 +96,15 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should build breadcrumbs when template exists in menu', () => {
-            const result = ROUTE_HANDLERS.templatesEdit.handler(
-                '/templates/edit/123',
-                mockMenuItems,
-                [],
-                {
-                    setBreadcrumbs: store.setBreadcrumbs,
-                    addNewBreadcrumb: store.addNewBreadcrumb
+            const result = ROUTE_HANDLERS.templatesEdit.handler({
+                url: '/templates/edit/123',
+                menu: mockMenuItems,
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
                 }
-            );
+            });
 
             expect(result).toBe(true);
 
@@ -111,9 +121,14 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         it('should return false when template not found in menu', () => {
             store.setBreadcrumbs([]);
 
-            const result = ROUTE_HANDLERS.templatesEdit.handler('/templates/edit/123', [], [], {
-                setBreadcrumbs: store.setBreadcrumbs,
-                addNewBreadcrumb: store.addNewBreadcrumb
+            const result = ROUTE_HANDLERS.templatesEdit.handler({
+                url: '/templates/edit/123',
+                menu: [],
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
+                }
             });
 
             expect(result).toBe(false);
@@ -149,15 +164,15 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         it('should add breadcrumb with extracted filter value', () => {
             store.setBreadcrumbs([]);
 
-            const result = ROUTE_HANDLERS.contentFilter.handler(
-                '/content?filter=Products',
-                [],
-                [],
-                {
-                    setBreadcrumbs: store.setBreadcrumbs,
-                    addNewBreadcrumb: store.addNewBreadcrumb
+            const result = ROUTE_HANDLERS.contentFilter.handler({
+                url: '/content?filter=Products',
+                menu: [],
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
                 }
-            );
+            });
 
             expect(result).toBe(true);
             const breadcrumbs = store.breadcrumbs();
@@ -172,9 +187,14 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         it('should handle complex filter values', () => {
             store.setBreadcrumbs([]);
 
-            ROUTE_HANDLERS.contentFilter.handler('/content?filter=My-Complex-Filter', [], [], {
-                setBreadcrumbs: store.setBreadcrumbs,
-                addNewBreadcrumb: store.addNewBreadcrumb
+            ROUTE_HANDLERS.contentFilter.handler({
+                url: '/content?filter=My-Complex-Filter',
+                menu: [],
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
+                }
             });
 
             const breadcrumbs = store.breadcrumbs();
@@ -184,15 +204,15 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         it('should extract only the filter parameter when URL has multiple query params', () => {
             store.setBreadcrumbs([]);
 
-            ROUTE_HANDLERS.contentFilter.handler(
-                '/content?filter=Products&sort=asc&page=1',
-                [],
-                [],
-                {
-                    setBreadcrumbs: store.setBreadcrumbs,
-                    addNewBreadcrumb: store.addNewBreadcrumb
+            ROUTE_HANDLERS.contentFilter.handler({
+                url: '/content?filter=Products&sort=asc&page=1',
+                menu: [],
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
                 }
-            );
+            });
 
             const breadcrumbs = store.breadcrumbs();
             expect(breadcrumbs[0].label).toBe('Products');
@@ -200,23 +220,28 @@ describe('Breadcrumb Utils - Route Handlers', () => {
         });
 
         it('should return false when filter parameter is empty', () => {
-            const result = ROUTE_HANDLERS.contentFilter.handler(
-                '/content?filter=&sort=asc',
-                [],
-                [],
-                {
-                    setBreadcrumbs: store.setBreadcrumbs,
-                    addNewBreadcrumb: store.addNewBreadcrumb
+            const result = ROUTE_HANDLERS.contentFilter.handler({
+                url: '/content?filter=&sort=asc',
+                menu: [],
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
                 }
-            );
+            });
 
             expect(result).toBe(false);
         });
 
         it('should return false when query string is missing', () => {
-            const result = ROUTE_HANDLERS.contentFilter.handler('/content', [], [], {
-                setBreadcrumbs: store.setBreadcrumbs,
-                addNewBreadcrumb: store.addNewBreadcrumb
+            const result = ROUTE_HANDLERS.contentFilter.handler({
+                url: '/content',
+                menu: [],
+                breadcrumbs: [],
+                helpers: {
+                    set: store.setBreadcrumbs,
+                    append: store.addNewBreadcrumb
+                }
             });
 
             expect(result).toBe(false);
