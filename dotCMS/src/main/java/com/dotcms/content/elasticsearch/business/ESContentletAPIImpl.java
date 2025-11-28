@@ -7740,7 +7740,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         continue;
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
-                    // Story Block validation - must be a string containing JSON
+                    // Story Block validation - handle both JSON and legacy WYSIWYG content during migration
                     if (fieldValue == null) {
                         cveBuilder.addRequiredField(field, "null");
                         hasError = true;
@@ -7752,11 +7752,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         Logger.warn(this, String.format("Story Block Field [%s] must be a String, but got: %s",
                             field.getVelocityVarName(), fieldValue.getClass().getSimpleName()));
                         continue;
-                    } else if (StoryBlockUtil.isEmptyStoryBlock((String) fieldValue)) {
-                        cveBuilder.addRequiredField(field, fieldValue.toString());
-                        hasError = true;
-                        Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
-                        continue;
+                    } else {
+                        String stringValue = (String) fieldValue;
+                        if (JsonUtil.isValidJSON(stringValue)) {
+                            // Valid JSON - validate as Story Block
+                            if (StoryBlockUtil.isEmptyStoryBlock(stringValue)) {
+                                cveBuilder.addRequiredField(field, fieldValue.toString());
+                                hasError = true;
+                                Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
+                                continue;
+                            }
+                        } else {
+                            // Legacy WYSIWYG content (including malformed JSON) - use simple string validation for backward compatibility
+                            if (stringValue.trim().isEmpty()) {
+                                cveBuilder.addRequiredField(field, fieldValue.toString());
+                                hasError = true;
+                                Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
+                                continue;
+                            }
+                            // Otherwise, let legacy WYSIWYG content (including malformed JSON) pass validation during migration
+                        }
                     }
                 } else if (fieldValue instanceof String) {
                     String s1 = (String) fieldValue;
@@ -8403,6 +8418,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                    final List<Category> cats) throws DotContentletValidationException {
         validateContentlet(contentlet,contentRelationships, cats, false );
     }
+
 
     @CloseDBIfOpened
     @Override
