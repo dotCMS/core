@@ -22,21 +22,24 @@ export interface ProcessSpecialRouteParams {
 
 /**
  * Result structure returned by a route handler.
+ * Uses discriminated unions to ensure type safety:
+ * - 'set' and 'append' types require breadcrumbs array
+ * - 'truncate' type requires index and forbids breadcrumbs
  */
-export interface RouteHandlerResult {
-    /**
-     * Type of operation: 'set' to replace all breadcrumbs, 'append' to add to existing breadcrumbs, 'truncate' to truncate breadcrumbs at a specific index.
-     */
-    type: 'set' | 'append' | 'truncate';
-    /**
-     * Array of breadcrumb items to set or append. Only used when type is 'set' or 'append'.
-     */
-    breadcrumbs: MenuItem[];
-    /**
-     * Index at which to truncate breadcrumbs. Only used when type is 'truncate'.
-     */
-    index?: number;
-}
+export type RouteHandlerResult =
+    | {
+          type: 'set';
+          breadcrumbs: MenuItem[];
+      }
+    | {
+          type: 'append';
+          breadcrumbs: MenuItem[];
+      }
+    | {
+          type: 'truncate';
+          index: number;
+          breadcrumbs?: never;
+      };
 
 /**
  * Handler function for special route cases.
@@ -167,8 +170,7 @@ export function processSpecialRoute(params: ProcessSpecialRouteParams): RouteHan
     if (existingIndex > -1) {
         return {
             type: 'truncate',
-            index: existingIndex,
-            breadcrumbs: []
+            index: existingIndex
         };
     }
 
