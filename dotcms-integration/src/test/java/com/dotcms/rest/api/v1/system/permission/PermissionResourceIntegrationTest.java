@@ -67,10 +67,7 @@ public class PermissionResourceIntegrationTest {
         IntegrationTestInitService.getInstance().init();
 
         // Create resource instance
-        resource = new PermissionResource(
-            new PermissionSaveHelper(),
-            UserResourceHelper.getInstance()
-        );
+        resource = new PermissionResource(new PermissionSaveHelper());
 
         adminUser = TestUserUtils.getAdminUser();
         testHost = new SiteDataGen().nextPersisted();

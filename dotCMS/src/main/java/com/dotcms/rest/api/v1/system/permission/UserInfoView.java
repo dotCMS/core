@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.user;
+package com.dotcms.rest.api.v1.system.permission;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -6,9 +6,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * User information for permission responses.
  * Contains only safe, non-sensitive user data for embedding in permission contexts.
+ *
+ * @author dotCMS
+ * @since 24.01
  */
 @Schema(description = "User information")
-public class UserInfo {
+public class UserInfoView {
 
     @JsonProperty("id")
     @Schema(
@@ -41,7 +44,7 @@ public class UserInfo {
      * @param name User's full name
      * @param email User's email address
      */
-    public UserInfo(final String id, final String name, final String email) {
+    public UserInfoView(final String id, final String name, final String email) {
         this.id = id;
         this.name = name;
         this.email = email;

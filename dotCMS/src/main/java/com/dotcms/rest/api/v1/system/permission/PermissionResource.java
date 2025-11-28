@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -12,6 +13,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -422,21 +424,21 @@ public class PermissionResource {
         }
 
         // Get total count for pagination
-        final int totalEntries = userPermissionHelper.getTotalPermissionAssetCount(userRole, requestingUser);
+        final int totalEntries = permissionSaveHelper.getTotalPermissionAssetCount(userRole, requestingUser);
 
         // Get paginated assets
-        final List<UserPermissionAsset> paginatedAssets = userPermissionHelper
-            .buildUserPermissionResponsePaginated(userRole, requestingUser, page, perPage);
+        final List<UserPermissionAssetView> paginatedAssets = permissionSaveHelper
+            .getUserPermissionAssetsPaginated(userRole, requestingUser, page, perPage);
 
         // Build user info object
-        final UserInfo userInfo = new UserInfo(
+        final UserInfoView userInfo = new UserInfoView(
             targetUser.getUserId(),
             targetUser.getFullName(),
             targetUser.getEmailAddress()
         );
 
         // Build response entity
-        final UserPermissions userPermissions = new UserPermissions(
+        final UserPermissionsView userPermissions = new UserPermissionsView(
             userInfo,
             userRole.getId(),
             paginatedAssets

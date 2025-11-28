@@ -1,7 +1,7 @@
-package com.dotcms.rest.api.v1.user;
+package com.dotcms.rest.api.v1.system.permission;
 
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.Pagination;
+import com.dotcms.rest.ResponseEntityView;
 
 /**
  * Response entity wrapper for user permissions endpoint with pagination support.
@@ -9,10 +9,11 @@ import com.dotcms.rest.Pagination;
  * Each asset includes detailed permission information such as the permission assignments,
  * whether the user can edit those permissions, and whether permissions are inherited.
  *
- * @see UserResource#getUserPermissions(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, String)
- * @see UserPermissions
+ * @author dotCMS
+ * @since 24.01
+ * @see UserPermissionsView
  */
-public class ResponseEntityUserPermissionsView extends ResponseEntityView<UserPermissions> {
+public class ResponseEntityUserPermissionsView extends ResponseEntityView<UserPermissionsView> {
 
     /**
      * Constructs a new response wrapper for user permissions with pagination.
@@ -20,7 +21,7 @@ public class ResponseEntityUserPermissionsView extends ResponseEntityView<UserPe
      * @param entity The user permissions data
      * @param pagination Pagination metadata
      */
-    public ResponseEntityUserPermissionsView(final UserPermissions entity, final Pagination pagination) {
+    public ResponseEntityUserPermissionsView(final UserPermissionsView entity, final Pagination pagination) {
         super(entity, pagination);
     }
 }
