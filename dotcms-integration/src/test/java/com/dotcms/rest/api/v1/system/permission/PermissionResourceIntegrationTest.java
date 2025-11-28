@@ -10,7 +10,6 @@ import com.dotcms.rest.api.v1.system.permission.PermissionSaveHelper;
 import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsView;
 import com.dotcms.rest.api.v1.system.permission.UserPermissionAssetView;
 import com.dotcms.rest.api.v1.system.permission.ResponseEntitySaveUserPermissionsView;
-import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -66,11 +65,8 @@ public class PermissionResourceIntegrationTest {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        // Create resource instance
-        resource = new PermissionResource(
-            new PermissionSaveHelper(),
-            UserResourceHelper.getInstance()
-        );
+        // Create resource instance using simple constructor (uses getInstance() defaults internally)
+        resource = new PermissionResource(new PermissionSaveHelper());
 
         adminUser = TestUserUtils.getAdminUser();
         testHost = new SiteDataGen().nextPersisted();
