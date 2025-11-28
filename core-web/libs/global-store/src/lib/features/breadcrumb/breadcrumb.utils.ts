@@ -27,9 +27,9 @@ export interface RouteHandlerResult {
     /**
      * Type of operation: 'set' to replace all breadcrumbs, 'append' to add to existing breadcrumbs.
      */
-    type: 'set' | 'append' | 'truncate';
+    type: 'set' | 'append';
     /**
-     * Array of breadcrumb items to setß or append.
+     * Array of breadcrumb items to set or append.
      */
     breadcrumbs: MenuItem[];
 }
@@ -66,8 +66,9 @@ interface RouteHandlerConfig {
  * ```typescript
  * newRoute: {
  *     test: (url: string) => /^\/new-route\/.+$/.test(url),
- *     handler: ({ url, menu, breadcrumbs, helpers: { set, append } }) => {
+ *     handler: ({ url, menu, breadcrumbs }) => {
  *         // Your logic here
+ *         return { type: 'set' | 'append', breadcrumbs: [...] }
  *     }
  * }
  * ```
