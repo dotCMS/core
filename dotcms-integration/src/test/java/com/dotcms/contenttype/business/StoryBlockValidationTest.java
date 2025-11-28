@@ -9,6 +9,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,6 +30,33 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     private static User systemUser;
     private static ContentType testContentType;
     private static Field storyBlockField;
+
+    /**
+     * Helper method to handle DotContentletValidationException that might be wrapped in DotRuntimeException
+     */
+    private void expectValidationException(Runnable operation, String expectedErrorMessage) {
+        try {
+            operation.run();
+            fail(expectedErrorMessage);
+        } catch (DotContentletValidationException e) {
+            // Direct exception - validation logic working correctly
+            assertTrue("Should have required field errors", e.hasRequiredErrors());
+            assertEquals("Should have one required field error", 1,
+                    e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -82,6 +110,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -388,6 +426,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             fail("Expected DotContentletValidationException for empty required code block");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -549,6 +597,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -624,6 +682,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -651,6 +719,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -722,6 +800,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
             assertEquals("Should have one required field error", 1,
                     e.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
@@ -762,6 +850,16 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
             fail("Expected DotContentletValidationException for multiple empty paragraphs");
         } catch (DotContentletValidationException e) {
             assertTrue("Should have required field errors", e.hasRequiredErrors());
+        } catch (DotRuntimeException e) {
+            // Handle wrapped DotContentletValidationException
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should have required field errors", ve.hasRequiredErrors());
+                assertEquals("Should have one required field error", 1,
+                        ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED).size());
+            } else {
+                fail("Unexpected wrapped exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            }
         } catch (DotDataException | DotSecurityException e) {
             fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
