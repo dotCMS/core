@@ -1,936 +1,984 @@
 {
-    "info": {
-        "_postman_id": "8c59ae8d-4791-4c3d-ba76-862e984f8f40",
-        "name": "Content Version Resource",
-        "description": "The Content Versions REST Endpoint allows users to retrieve information related to the different versions a Contentlet has in the dotCMS repository. It's base path is mapped to:\n\n`/api/v1/content/versions`\n\nYou can query Contentlet versions or history data.",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "5403727"
-    },
-    "item": [
-        {
-            "name": "Contentlet History",
-            "item": [
-                {
-                    "name": "Generate Test Data",
-                    "item": [
-                        {
-                            "name": "Find Second Language",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "",
-                                            "pm.test(\"A second language must be present\", function () {",
-                                            "    const responseBody = pm.response.json();",
-                                            "    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the Spanish Language\");",
-                                            "    pm.expect(responseBody.entity.length).to.greaterThan(1, \"There must be more than 1 language\");",
-                                            "    pm.collectionVariables.set(\"secondLangId\", responseBody.entity[1].id);",
-                                            "    pm.collectionVariables.set(\"isoCode\", responseBody.entity[1].isoCode);",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v2/languages",
-                                    "host": ["{{serverURL}}"],
-                                    "path": ["api", "v2", "languages"]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Create Test Content 1 - EN",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Test Content 1 EN was created successfully\", function () {",
-                                            "    const entity = pm.response.json().entity;",
-                                            "    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Test Content 1 EN\");",
-                                            "",
-                                            "    pm.collectionVariables.set(\"contentIdentifier\", entity.identifier);",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                },
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "exec": [""],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "request": {
-                                "method": "PUT",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Test Content 1\",\n        \"body\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"},\\\"content\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"Test Content 1 Body\\\"}]}]}\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"1\"\n    }\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "workflow",
-                                        "actions",
-                                        "b9d89c80-3d88-4311-8365-187323c96436",
-                                        "fire"
-                                    ]
-                                },
-                                "description": "Create the original Contentlet."
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Create Test Content 2 - EN",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Test Content 2 EN was created successfully\", function () {",
-                                            "    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Test Content 2 EN\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                },
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "exec": [""],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "request": {
-                                "method": "PUT",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"contentlet\": {\n        \"identifier\": \"{{contentIdentifier}}\",\n        \"contentHost\": \"default\",\n        \"title\": \"Test Content 2\",\n        \"body\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"},\\\"content\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"Test Content 2 Body\\\"}]}]}\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"1\"\n    }\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "workflow",
-                                        "actions",
-                                        "b9d89c80-3d88-4311-8365-187323c96436",
-                                        "fire"
-                                    ]
-                                },
-                                "description": "Create the original Contentlet."
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Create Test Content 1 - Second Lang",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Contenido de Prueba 1 in second language was created successfully\", function () {",
-                                            "    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 1 second language\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                },
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "exec": [""],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "request": {
-                                "method": "PUT",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 1\",\n        \"body\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"},\\\"content\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"Contenido de Prueba 1 Body\\\"}]}]}\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{secondLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "workflow",
-                                        "actions",
-                                        "b9d89c80-3d88-4311-8365-187323c96436",
-                                        "fire"
-                                    ]
-                                },
-                                "description": "Create the original Contentlet."
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Create Test Content 3 - EN",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Test Content 3 EN was created successfully\", function () {",
-                                            "    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Test Content 3 EN\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                },
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "exec": [""],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "request": {
-                                "method": "PUT",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"contentlet\": {\n        \"identifier\": \"{{contentIdentifier}}\",\n        \"contentHost\": \"default\",\n        \"title\": \"Test Content 3\",\n        \"body\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"},\\\"content\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"Test Content 3 Body\\\"}]}]}\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"1\"\n    }\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "workflow",
-                                        "actions",
-                                        "b9d89c80-3d88-4311-8365-187323c96436",
-                                        "fire"
-                                    ]
-                                },
-                                "description": "Create the original Contentlet."
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Create Test Content 2- Second Lang",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Contenido de Prueba 2 in second language was created successfully\", function () {",
-                                            "    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 2 second language\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                },
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "exec": [""],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "request": {
-                                "method": "PUT",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 2\",\n        \"body\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"},\\\"content\\\":[{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"Contenido de Prueba 2 Body\\\"}]}]}\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{secondLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "workflow",
-                                        "actions",
-                                        "b9d89c80-3d88-4311-8365-187323c96436",
-                                        "fire"
-                                    ]
-                                },
-                                "description": "Create the original Contentlet."
-                            },
-                            "response": []
-                        }
-                    ],
-                    "description": "Creates a Contentlet and several different versions for it, in both English and Spanish:\n\n- Three versions in English.\n    \n- Two versions in a second language.\n    \n\nOrdered by modification date -- descending order -- they will show up like this:\n\n1. _Second language_.\n    \n2. English.\n    \n3. _Second language_.\n    \n4. English.\n    \n5. English.",
-                    "event": [
-                        {
-                            "listen": "prerequest",
-                            "script": {
-                                "type": "text/javascript",
-                                "packages": {},
-                                "exec": [""]
-                            }
-                        },
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "packages": {},
-                                "exec": [
-                                    "pm.test(\"HTTP Status code must be successful\", function() {",
-                                    "    pm.response.to.have.status(200);",
-                                    "});",
-                                    ""
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "Get Content History Data",
-                    "item": [
-                        {
-                            "name": "With Default Params",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "const entity = pm.response.json().entity;",
-                                            "",
-                                            "pm.test(\"A total of 5 records must be returned\", function() {",
-                                            "    pm.expect(entity.length).to.eql(5, \"There must be 5 contents returned as results\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking total records\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.totalEntries).to.eql(5, \"Total entries must be 5\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
-                                            "    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de Prueba 2' version must be the first one in the list\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default current page value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default perPage value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "English Versions Only",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "const entity = pm.response.json().entity;",
-                                            "",
-                                            "pm.test(\"A total of 3 records in EN must be returned\", function() {",
-                                            "    pm.expect(entity.length).to.eql(3, \"There must be 3 EN contents returned as results\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking total records\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.totalEntries).to.eql(3, \"Total entries must be 3\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
-                                            "    pm.expect(entity[0].title).to.eql(\"Test Content 3\", \"The 'Test Content 3' version must be the first one in the list\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default current page value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default perPage value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?languageId=1",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "languageId",
-                                            "value": "1"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Second Lang Versions Only",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "const entity = pm.response.json().entity;",
-                                            "",
-                                            "pm.test(\"A total of 2 records in second language must be returned\", function() {",
-                                            "    pm.expect(entity.length).to.eql(2, \"There must be 2 contents in second language returned as results\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking total records\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.totalEntries).to.eql(2, \"Total entries must be 2\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
-                                            "    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de Prueba 2' version must be the first one in the list\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default current page value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking default perPage value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?languageId={{secondLangId}}",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "languageId",
-                                            "value": "{{secondLangId}}"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Grouped by Languages",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "const entity = pm.response.json().entity;",
-                                            "",
-                                            "pm.test(\"A total of 2 language groups should've been returned\", function() {",
-                                            "    // Ensure entity is defined and has at least one item",
-                                            "    pm.expect(entity).to.be.an('array').that.is.not.empty;",
-                                            "    const languageGroups = Object.keys(entity[0]);",
-                                            "    pm.expect(languageGroups.length).to.eql(2, \"There must be 2 sets of versions, one for each language\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking number of entries for each language\", function() {",
-                                            "    // Ensure entity is defined and has language groups",
-                                            "    pm.expect(entity).to.be.an('array').that.is.not.empty;",
-                                            "    const isoCode = pm.collectionVariables.get(\"isoCode\");",
-                                            "    const enUsEntries = entity[0]['en-us'];",
-                                            "    const secondLangEntries = entity[0][isoCode];",
-                                            "",
-                                            "    pm.expect(enUsEntries).to.be.an('array', \"The 'en-us' group should be an array\");",
-                                            "    pm.expect(secondLangEntries).to.be.an('array', \"The second language '\" + isoCode + \"' group should be an array\");",
-                                            "    pm.expect(enUsEntries.length).to.eql(3, \"There should be 3 entries for 'en-us'\");",
-                                            "    pm.expect(secondLangEntries.length).to.eql(2, \"There should be 2 entries for '\" + isoCode +\"'\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?groupByLang=true",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "groupByLang",
-                                            "value": "true"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Do Not Bring Old Versions",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Only 2 records must be returned\", function() {",
-                                            "    const entity = pm.response.json().entity;",
-                                            "    // For a total of 5 records, and a page size of 3, only 2 records must be returned",
-                                            "    pm.expect(entity.length).to.eql(2, \"There must be 2 contents returned as a result\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking total entries\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.totalEntries).to.eql(2, \"There must be only 2 entries, a live version for each language\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?bringOldVersions=false",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "bringOldVersions",
-                                            "value": "false"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "With Ascending Order",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "const entity = pm.response.json().entity;",
-                                            "",
-                                            "pm.test(\"A total of 5 records must be returned\", function() {",
-                                            "    pm.expect(entity.length).to.eql(5, \"There must be 5 contents returned as results\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking that the first-ever record is returned first\", function() {",
-                                            "    pm.expect(entity[0].title).to.eql(\"Test Content 1\", \"The 'Test Content 1' version must be the first one in the list\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?direction=ASC",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "direction",
-                                            "value": "ASC"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "With Limit",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Only 1 record must be returned\", function() {",
-                                            "    const entity = pm.response.json().entity;",
-                                            "    pm.expect(entity.length).to.eql(1, \"There must be 1 content returned as a result\");",
-                                            "    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de prueba 2' version must be the only one returned as a result\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking perPage (limit) value\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.perPage).to.eql(1, \"The perPage value must be 10\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?limit=1",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "limit",
-                                            "value": "1"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "With Limit and Offset",
-                            "event": [
-                                {
-                                    "listen": "test",
-                                    "script": {
-                                        "exec": [
-                                            "pm.test(\"Only 2 records must be returned\", function() {",
-                                            "    const entity = pm.response.json().entity;",
-                                            "    // For a total of 5 records, and a page size of 3, only 2 records must be returned",
-                                            "    pm.expect(entity.length).to.eql(2, \"There must be 2 contents returned as a result\");",
-                                            "});",
-                                            "",
-                                            "pm.test(\"Checking pagination values (limit and offset)\", function() {",
-                                            "    pm.expect(pm.response.json().pagination.currentPage).to.eql(2, \"The currentPage (offset) value must be 2\");",
-                                            "    pm.expect(pm.response.json().pagination.perPage).to.eql(3, \"The perPage (limit) value must be 3\");",
-                                            "});",
-                                            ""
-                                        ],
-                                        "type": "text/javascript",
-                                        "packages": {}
-                                    }
-                                }
-                            ],
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": ""
-                                },
-                                "url": {
-                                    "raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?limit=3&offset=2",
-                                    "host": ["{{serverURL}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "content",
-                                        "versions",
-                                        "id",
-                                        "{{contentIdentifier}}",
-                                        "history"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "limit",
-                                            "value": "3"
-                                        },
-                                        {
-                                            "key": "offset",
-                                            "value": "2"
-                                        }
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ],
-                    "description": "Exposes several REST calls with different filtering parameters for returing specific and/or paginated information.",
-                    "event": [
-                        {
-                            "listen": "prerequest",
-                            "script": {
-                                "type": "text/javascript",
-                                "packages": {},
-                                "exec": [""]
-                            }
-                        },
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "packages": {},
-                                "exec": [
-                                    "pm.test(\"HTTP Status code must be successful\", function() {",
-                                    "    pm.response.to.have.status(200);",
-                                    "});",
-                                    "",
-                                    "pm.test(\"No errors must be returned\", function() {",
-                                    "    const errors = pm.response.json().errors;",
-                                    "    pm.expect(errors.length).to.eql(0, \"No errors must be returned.\");",
-                                    "});",
-                                    ""
-                                ]
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "auth": {
-        "type": "bearer",
-        "bearer": [
-            {
-                "key": "token",
-                "value": "{{jwt}}",
-                "type": "string"
-            }
-        ]
-    },
-    "event": [
-        {
-            "listen": "prerequest",
-            "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "exec": [
-                    "if (!pm.environment.get('jwt')) {",
-                    "    console.log(\"generating....\")",
-                    "    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-                    "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-                    "",
-                    "    if (!pm.environment.get('jwt')) {",
-                    "        const username = pm.environment.get(\"user\");",
-                    "        const password = pm.environment.get(\"password\");",
-                    "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-                    "",
-                    "        const requestOptions = {",
-                    "            url: apiUrl,",
-                    "            method: \"POST\",",
-                    "            header: {",
-                    "                \"accept\": \"*/*\",",
-                    "                \"content-type\": \"application/json\",",
-                    "                \"Authorization\": `Basic ${basicAuth}`",
-                    "            },",
-                    "            body: {",
-                    "                mode: \"raw\",",
-                    "                raw: JSON.stringify({",
-                    "                    \"expirationSeconds\": 7200,",
-                    "                    \"userId\": \"dotcms.org.1\",",
-                    "                    \"network\": \"0.0.0.0/0\",",
-                    "                    \"claims\": {\"label\": \"postman-tests\"}",
-                    "                })",
-                    "            }",
-                    "        };",
-                    "",
-                    "        pm.sendRequest(requestOptions, function (err, response) {",
-                    "            if (err) {",
-                    "                console.log(err);",
-                    "            } else {",
-                    "                const jwt = response.json().entity.jwt;",
-                    "                pm.environment.set('jwt', jwt);",
-                    "                console.log(jwt);",
-                    "            }",
-                    "        });",
-                    "    }",
-                    "}"
-                ]
-            }
-        },
-        {
-            "listen": "test",
-            "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "exec": [""]
-            }
-        }
-    ]
+	"info": {
+		"_postman_id": "8c59ae8d-4791-4c3d-ba76-862e984f8f40",
+		"name": "Content Version Resource",
+		"description": "The Content Versions REST Endpoint allows users to retrieve information related to the different versions a Contentlet has in the dotCMS repository. It's base path is mapped to:\n\n`/api/v1/content/versions`\n\nYou can query Contentlet versions or history data.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
+	},
+	"item": [
+		{
+			"name": "Contentlet History",
+			"item": [
+				{
+					"name": "Generate Test Data",
+					"item": [
+						{
+							"name": "Find Second Language",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"A second language must be present\", function () {",
+											"    const responseBody = pm.response.json();",
+											"    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the Spanish Language\");",
+											"    pm.expect(responseBody.entity.length).to.greaterThan(1, \"There must be more than 1 language\");",
+											"    pm.collectionVariables.set(\"secondLangId\", responseBody.entity[1].id);",
+											"    pm.collectionVariables.set(\"isoCode\", responseBody.entity[1].isoCode);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content 1 - EN",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content 1 EN was created successfully\", function () {",
+											"    const entity = pm.response.json().entity;",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Test Content 1 EN\");",
+											"",
+											"    pm.collectionVariables.set(\"contentIdentifier\", entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Test Content 1\",\n        \"body\": \"Test Content 1 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"1\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"b9d89c80-3d88-4311-8365-187323c96436",
+										"fire"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content 2 - EN",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content 2 EN was created successfully\", function () {",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Test Content 2 EN\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"identifier\": \"{{contentIdentifier}}\",\n        \"contentHost\": \"default\",\n        \"title\": \"Test Content 2\",\n        \"body\": \"Test Content 2 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"1\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"b9d89c80-3d88-4311-8365-187323c96436",
+										"fire"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content 1 - Second Lang",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Contenido de Prueba 1 in second language was created successfully\", function () {",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 1 second language\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 1\",\n        \"body\": \"Contenido de Prueba 1 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{secondLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"b9d89c80-3d88-4311-8365-187323c96436",
+										"fire"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content 3 - EN",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content 3 EN was created successfully\", function () {",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Test Content 3 EN\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"identifier\": \"{{contentIdentifier}}\",\n        \"contentHost\": \"default\",\n        \"title\": \"Test Content 3\",\n        \"body\": \"Test Content 3 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"1\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"b9d89c80-3d88-4311-8365-187323c96436",
+										"fire"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content 2- Second Lang",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Contenido de Prueba 2 in second language was created successfully\", function () {",
+											"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when creating the Contenido de Prueba 2 second language\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentHost\": \"default\",\n        \"title\": \"Contenido de Prueba 2\",\n        \"body\": \"Contenido de Prueba 2 Body\",\n        \"contentType\": \"webPageContent\",\n        \"languageId\": \"{{secondLangId}}\",\n        \"identifier\": \"{{contentIdentifier}}\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"b9d89c80-3d88-4311-8365-187323c96436",
+										"fire"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						}
+					],
+					"description": "Creates a Contentlet and several different versions for it, in both English and Spanish:\n\n- Three versions in English.\n    \n- Two versions in a second language.\n    \n\nOrdered by modification date -- descending order -- they will show up like this:\n\n1. _Second language_.\n    \n2. English.\n    \n3. _Second language_.\n    \n4. English.\n    \n5. English.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Content History Data",
+					"item": [
+						{
+							"name": "With Default Params",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 5 records must be returned\", function() {",
+											"    pm.expect(entity.length).to.eql(5, \"There must be 5 contents returned as results\");",
+											"});",
+											"",
+											"pm.test(\"Checking total records\", function() {",
+											"    pm.expect(pm.response.json().pagination.totalEntries).to.eql(5, \"Total entries must be 5\");",
+											"});",
+											"",
+											"pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
+											"    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de Prueba 2' version must be the first one in the list\");",
+											"});",
+											"",
+											"pm.test(\"Checking default current page value\", function() {",
+											"    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
+											"});",
+											"",
+											"pm.test(\"Checking default perPage value\", function() {",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "English Versions Only",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 3 records in EN must be returned\", function() {",
+											"    pm.expect(entity.length).to.eql(3, \"There must be 3 EN contents returned as results\");",
+											"});",
+											"",
+											"pm.test(\"Checking total records\", function() {",
+											"    pm.expect(pm.response.json().pagination.totalEntries).to.eql(3, \"Total entries must be 3\");",
+											"});",
+											"",
+											"pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
+											"    pm.expect(entity[0].title).to.eql(\"Test Content 3\", \"The 'Test Content 3' version must be the first one in the list\");",
+											"});",
+											"",
+											"pm.test(\"Checking default current page value\", function() {",
+											"    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
+											"});",
+											"",
+											"pm.test(\"Checking default perPage value\", function() {",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?languageId=1",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "languageId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Second Lang Versions Only",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 2 records in second language must be returned\", function() {",
+											"    pm.expect(entity.length).to.eql(2, \"There must be 2 contents in second language returned as results\");",
+											"});",
+											"",
+											"pm.test(\"Checking total records\", function() {",
+											"    pm.expect(pm.response.json().pagination.totalEntries).to.eql(2, \"Total entries must be 2\");",
+											"});",
+											"",
+											"pm.test(\"Checking default descending order. The latest version is returned first\", function() {",
+											"    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de Prueba 2' version must be the first one in the list\");",
+											"});",
+											"",
+											"pm.test(\"Checking default current page value\", function() {",
+											"    pm.expect(pm.response.json().pagination.currentPage).to.eql(1, \"Default page value must be 1\");",
+											"});",
+											"",
+											"pm.test(\"Checking default perPage value\", function() {",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(10, \"Default perPage value must be 10\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?languageId={{secondLangId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "languageId",
+											"value": "{{secondLangId}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Grouped by Languages",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 2 language groups should've been returned\", function() {",
+											"    // Ensure entity is defined and has at least one item",
+											"    pm.expect(entity).to.be.an('array').that.is.not.empty;",
+											"    const languageGroups = Object.keys(entity[0]);",
+											"    pm.expect(languageGroups.length).to.eql(2, \"There must be 2 sets of versions, one for each language\");",
+											"});",
+											"",
+											"pm.test(\"Checking number of entries for each language\", function() {",
+											"    // Ensure entity is defined and has language groups",
+											"    pm.expect(entity).to.be.an('array').that.is.not.empty;",
+											"    const isoCode = pm.collectionVariables.get(\"isoCode\");",
+											"    const enUsEntries = entity[0]['en-us'];",
+											"    const secondLangEntries = entity[0][isoCode];",
+											"",
+											"    pm.expect(enUsEntries).to.be.an('array', \"The 'en-us' group should be an array\");",
+											"    pm.expect(secondLangEntries).to.be.an('array', \"The second language '\" + isoCode + \"' group should be an array\");",
+											"    pm.expect(enUsEntries.length).to.eql(3, \"There should be 3 entries for 'en-us'\");",
+											"    pm.expect(secondLangEntries.length).to.eql(2, \"There should be 2 entries for '\" + isoCode +\"'\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?groupByLang=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "groupByLang",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Do Not Bring Old Versions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Only 2 records must be returned\", function() {",
+											"    const entity = pm.response.json().entity;",
+											"    // For a total of 5 records, and a page size of 3, only 2 records must be returned",
+											"    pm.expect(entity.length).to.eql(2, \"There must be 2 contents returned as a result\");",
+											"});",
+											"",
+											"pm.test(\"Checking total entries\", function() {",
+											"    pm.expect(pm.response.json().pagination.totalEntries).to.eql(2, \"There must be only 2 entries, a live version for each language\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?bringOldVersions=false",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "bringOldVersions",
+											"value": "false"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "With Ascending Order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"A total of 5 records must be returned\", function() {",
+											"    pm.expect(entity.length).to.eql(5, \"There must be 5 contents returned as results\");",
+											"});",
+											"",
+											"pm.test(\"Checking that the first-ever record is returned first\", function() {",
+											"    pm.expect(entity[0].title).to.eql(\"Test Content 1\", \"The 'Test Content 1' version must be the first one in the list\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?direction=ASC",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "direction",
+											"value": "ASC"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "With Limit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Only 1 record must be returned\", function() {",
+											"    const entity = pm.response.json().entity;",
+											"    pm.expect(entity.length).to.eql(1, \"There must be 1 content returned as a result\");",
+											"    pm.expect(entity[0].title).to.eql(\"Contenido de Prueba 2\", \"The 'Contenido de prueba 2' version must be the only one returned as a result\");",
+											"});",
+											"",
+											"pm.test(\"Checking perPage (limit) value\", function() {",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(1, \"The perPage value must be 10\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?limit=1",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "With Limit and Offset",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Only 2 records must be returned\", function() {",
+											"    const entity = pm.response.json().entity;",
+											"    // For a total of 5 records, and a page size of 3, only 2 records must be returned",
+											"    pm.expect(entity.length).to.eql(2, \"There must be 2 contents returned as a result\");",
+											"});",
+											"",
+											"pm.test(\"Checking pagination values (limit and offset)\", function() {",
+											"    pm.expect(pm.response.json().pagination.currentPage).to.eql(2, \"The currentPage (offset) value must be 2\");",
+											"    pm.expect(pm.response.json().pagination.perPage).to.eql(3, \"The perPage (limit) value must be 3\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/versions/id/{{contentIdentifier}}/history?limit=3&offset=2",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"versions",
+										"id",
+										"{{contentIdentifier}}",
+										"history"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "3"
+										},
+										{
+											"key": "offset",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Exposes several REST calls with different filtering parameters for returing specific and/or paginated information.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be returned\", function() {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors.length).to.eql(0, \"No errors must be returned.\");",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
 }
