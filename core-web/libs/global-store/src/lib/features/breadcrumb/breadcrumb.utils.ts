@@ -25,13 +25,17 @@ export interface ProcessSpecialRouteParams {
  */
 export interface RouteHandlerResult {
     /**
-     * Type of operation: 'set' to replace all breadcrumbs, 'append' to add to existing breadcrumbs.
+     * Type of operation: 'set' to replace all breadcrumbs, 'append' to add to existing breadcrumbs, 'truncate' to truncate breadcrumbs at a specific index.
      */
-    type: 'set' | 'append';
+    type: 'set' | 'append' | 'truncate';
     /**
-     * Array of breadcrumb items to set or append.
+     * Array of breadcrumb items to set or append. Only used when type is 'set' or 'append'.
      */
     breadcrumbs: MenuItem[];
+    /**
+     * Index at which to truncate breadcrumbs. Only used when type is 'truncate'.
+     */
+    index?: number;
 }
 
 /**
@@ -146,12 +150,29 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
 /**
  * Processes a URL using the special route handlers hashmap.
  * Iterates through all handlers and executes the first one that matches.
+ * First checks if the URL already exists in breadcrumbs and returns truncate if found.
  *
  * @param params - Object containing url, menu, and breadcrumbs
  * @returns RouteHandlerResult if a handler matches and produces a result, undefined otherwise
  */
 export function processSpecialRoute(params: ProcessSpecialRouteParams): RouteHandlerResult | void {
-    const { url } = params;
+    const { url, breadcrumbs } = params;
+    const newUrl = `/dotAdmin/#${url}`;
+
+    // Check if the URL already exists in breadcrumbs
+    const existingIndex = breadcrumbs.findIndex((crumb) => {
+        return crumb.url === newUrl;
+    });
+
+    if (existingIndex > -1) {
+        return {
+            type: 'truncate',
+            index: existingIndex,
+            breadcrumbs: []
+        };
+    }
+
+    // If not found, continue with special route handlers
     const handlerConfig = Object.values(ROUTE_HANDLERS).find((config) => config.test(url));
 
     if (handlerConfig) {

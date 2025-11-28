@@ -180,67 +180,65 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     return;
                 }
 
-                const newUrl = `/dotAdmin/#${url}`;
                 const breadcrumbs = store.breadcrumbs();
+                const [urlPath, queryString] = url.split('?');
+                const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
-                const existingIndex = breadcrumbs.findIndex((crumb) => {
-                    return crumb.url === newUrl;
+                const item = menu.find((item) => {
+                    const pathMatches = item.menuLink === urlPath;
+                    const hasQueryParams = queryString && queryString.length > 0;
+
+                    // If we have query params but no mId, it's likely an old bookmark - don't match
+                    if (hasQueryParams && !shortMenuId) {
+                        return false;
+                    }
+
+                    // If we have mId, validate both path and parent match
+                    if (shortMenuId) {
+                        return pathMatches && item.parentMenuId.startsWith(shortMenuId);
+                    }
+
+                    // Default: no query params, no mId - match by path only
+                    return pathMatches;
                 });
 
-                if (existingIndex > -1) {
-                    truncateBreadcrumbs(existingIndex);
+                if (item) {
+                    const newUrl = `/dotAdmin/#${url}`;
+                    setBreadcrumbs([
+                        {
+                            label: item.parentMenuLabel,
+                            disabled: true
+                        },
+                        {
+                            label: item.label,
+                            target: '_self',
+                            url: newUrl
+                        }
+                    ]);
                 } else {
-                    const [urlPath, queryString] = url.split('?');
-                    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
-
-                    const item = menu.find((item) => {
-                        const pathMatches = item.menuLink === urlPath;
-                        const hasQueryParams = queryString && queryString.length > 0;
-
-                        // If we have query params but no mId, it's likely an old bookmark - don't match
-                        if (hasQueryParams && !shortMenuId) {
-                            return false;
-                        }
-
-                        // If we have mId, validate both path and parent match
-                        if (shortMenuId) {
-                            return pathMatches && item.parentMenuId.startsWith(shortMenuId);
-                        }
-
-                        // Default: no query params, no mId - match by path only
-                        return pathMatches;
+                    const result = processSpecialRoute({
+                        url,
+                        menu,
+                        breadcrumbs
                     });
 
-                    if (item) {
-                        setBreadcrumbs([
-                            {
-                                label: item.parentMenuLabel,
-                                disabled: true
-                            },
-                            {
-                                label: item.label,
-                                target: '_self',
-                                url: newUrl
-                            }
-                        ]);
-                    } else {
-                        const result = processSpecialRoute({
-                            url,
-                            menu,
-                            breadcrumbs
-                        });
+                    if (result) {
+                        switch (result.type) {
+                            case 'set':
+                                setBreadcrumbs(result.breadcrumbs);
 
-                        if (result) {
-                            switch (result.type) {
-                                case 'set':
-                                    setBreadcrumbs(result.breadcrumbs);
-                                    break;
-                                case 'append': {
-                                    const crumb = result.breadcrumbs[result.breadcrumbs.length - 1];
-                                    appendCrumb(crumb);
-                                    break;
-                                }
+                                break;
+                            case 'append': {
+                                const crumb = result.breadcrumbs[result.breadcrumbs.length - 1];
+                                appendCrumb(crumb);
+
+                                break;
                             }
+                            case 'truncate':
+                                if (result.index && result.index > -1) {
+                                    truncateBreadcrumbs(result.index);
+                                }
+                                break;
                         }
                     }
                 }
