@@ -53,9 +53,9 @@ import org.junit.runners.Suite;
         OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         AppsAPIImplTest.class,
+        Task251103AddStylePropertiesColumnInMultiTreeTest.class,
         StoryBlockValidationTest.class,
-        StoryBlockUtilTest.class,
-        Task251103AddStylePropertiesColumnInMultiTreeTest.class
+        StoryBlockUtilTest.class
 })
 
 public class MainSuite3a {
