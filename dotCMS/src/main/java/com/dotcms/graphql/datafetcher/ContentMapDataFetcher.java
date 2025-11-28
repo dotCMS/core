@@ -112,10 +112,11 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
                 // Checks if the baseKey exist in the map
                 if (hydratedMap.containsKey(baseKey)) {
-                    // Checks if the baseValue (hydrated) is not empty. If the baseValue is empty, we add the rawValue as the baseValue.
-                    final String baseValue = hydratedMap.get(baseKey).toString().trim().isEmpty()
+                    // Checks if the baseValue (hydrated) is not empty. If the baseValue is empty or null, we parse the rawValue instead.
+                    Object hydratedValue = hydratedMap.get(baseKey);
+                    final String baseValue = (hydratedValue == null || hydratedValue.toString().trim().isEmpty())
                             ? rawValue.toString()
-                            : hydratedMap.get(baseKey).toString();
+                            : hydratedValue.toString();
 
                     // Parse the baseValue as JSON
                     try {
@@ -123,7 +124,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
                         Map<String, Object> parsed = objectMapper.readValue(baseValue, Map.class);
                         hydratedMap.put(baseKey, parsed);
                     } catch (Exception e) {
-                        Logger.warn(this, () -> "Error parsing JSON for '" + mapKey + "': " + e.getMessage());
+                        Logger.warn(this, () -> "Error parsing JSON for '" + baseKey + "': " + e.getMessage());
                     }
                 }
             }
