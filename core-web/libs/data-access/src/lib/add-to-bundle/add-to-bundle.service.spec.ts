@@ -3,7 +3,7 @@
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { ApiRoot, UserModel, LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
@@ -14,7 +14,6 @@ import { AddToBundleService } from './add-to-bundle.service';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
 describe('AddToBundleService', () => {
-    let injector: TestBed;
     let addToBundleService: AddToBundleService;
     let dotCurrentUserService: DotCurrentUserService;
     let httpMock: HttpTestingController;
@@ -32,10 +31,9 @@ describe('AddToBundleService', () => {
                 DotCurrentUserService
             ]
         });
-        injector = getTestBed();
-        addToBundleService = injector.get(AddToBundleService);
-        dotCurrentUserService = injector.get(DotCurrentUserService);
-        httpMock = injector.get(HttpTestingController);
+        addToBundleService = TestBed.inject(AddToBundleService);
+        dotCurrentUserService = TestBed.inject(DotCurrentUserService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get bundle list', (done) => {

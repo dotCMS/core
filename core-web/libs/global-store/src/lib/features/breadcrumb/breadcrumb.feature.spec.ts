@@ -7,14 +7,14 @@ import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { DotMenuItem } from '@dotcms/dotcms-models';
+import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './breadcrumb.feature';
 
 describe('withBreadcrumbs Feature', () => {
     // Create a test store that uses the withBreadcrumbs feature
     // Empty menu items signal for basic tests
-    const emptyMenuItemsSignal = signal<DotMenuItem[]>([]);
+    const emptyMenuItemsSignal = signal<MenuItemEntity[]>([]);
     const TestStore = signalStore(withState({}), withBreadcrumbs(emptyMenuItemsSignal));
 
     let store: InstanceType<typeof TestStore>;
@@ -585,7 +585,7 @@ describe('withBreadcrumbs Feature', () => {
         }
 
         let routerMock: RouterMock;
-        let menuItemsSignal: ReturnType<typeof signal<DotMenuItem[]>>;
+        let menuItemsSignal: ReturnType<typeof signal<MenuItemEntity[]>>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let TestStoreWithRouter: any;
         let storeWithRouter: InstanceType<typeof TestStoreWithRouter>;
@@ -597,7 +597,7 @@ describe('withBreadcrumbs Feature', () => {
             routerMock = new RouterMock();
 
             // Mock menu items with proper structure
-            menuItemsSignal = signal<DotMenuItem[]>([
+            menuItemsSignal = signal<MenuItemEntity[]>([
                 {
                     id: 'content',
                     label: 'Content',
@@ -606,8 +606,11 @@ describe('withBreadcrumbs Feature', () => {
                     url: '/c/content',
                     angular: true,
                     active: false,
-                    ajax: false
-                } as DotMenuItem,
+                    ajax: false,
+                    parentMenuId: 'content-parent',
+                    parentMenuLabel: 'Content',
+                    parentMenuIcon: 'pi pi-file'
+                } as MenuItemEntity,
                 {
                     id: 'site-browser',
                     label: 'Site Browser',
@@ -616,8 +619,11 @@ describe('withBreadcrumbs Feature', () => {
                     url: '/c/site-browser',
                     angular: true,
                     active: false,
-                    ajax: false
-                } as DotMenuItem,
+                    ajax: false,
+                    parentMenuId: 'tools-parent',
+                    parentMenuLabel: 'Tools',
+                    parentMenuIcon: 'pi pi-cog'
+                } as MenuItemEntity,
                 {
                     id: 'pages',
                     label: 'Pages',
@@ -626,8 +632,11 @@ describe('withBreadcrumbs Feature', () => {
                     url: '/pages',
                     angular: true,
                     active: false,
-                    ajax: false
-                } as DotMenuItem
+                    ajax: false,
+                    parentMenuId: 'content-parent',
+                    parentMenuLabel: 'Content',
+                    parentMenuIcon: 'pi pi-file'
+                } as MenuItemEntity
             ]);
 
             // Create store with breadcrumb feature that receives menuItems signal
@@ -814,8 +823,11 @@ describe('withBreadcrumbs Feature', () => {
                     url: '/c/content',
                     angular: true,
                     active: false,
-                    ajax: false
-                } as DotMenuItem,
+                    ajax: false,
+                    parentMenuId: 'content-parent',
+                    parentMenuLabel: 'Updated Parent',
+                    parentMenuIcon: 'pi pi-file'
+                } as MenuItemEntity,
                 {
                     id: 'new-page',
                     label: 'New Page',
@@ -824,8 +836,11 @@ describe('withBreadcrumbs Feature', () => {
                     url: '/new-page',
                     angular: true,
                     active: false,
-                    ajax: false
-                } as DotMenuItem
+                    ajax: false,
+                    parentMenuId: 'new-parent',
+                    parentMenuLabel: 'New Parent',
+                    parentMenuIcon: 'pi pi-folder'
+                } as MenuItemEntity
             ]);
 
             // Navigate to the new page (different URL to avoid truncation)
@@ -869,6 +884,34 @@ describe('withBreadcrumbs Feature', () => {
             // Should have truncated and reset to the menu structure
             expect(breadcrumbs.length).toBe(3);
             expect(breadcrumbs[0].label).toBe('Home');
+        });
+
+        describe('Menu Item Matching with mId Query Parameter', () => {
+            it('should NOT match when URL has query params but no mId (old bookmark)', () => {
+                routerMock.triggerNavigationEnd('/c/content?someParam=value');
+                TestBed.flushEffects();
+
+                // Should not create breadcrumbs for old bookmarks with query params but no mId
+                expect(storeWithRouter.breadcrumbs().length).toBe(0);
+            });
+
+            it('should match when URL has mId that matches parentMenuId prefix', () => {
+                // parentMenuId is 'content-parent', so mId=content should match
+                routerMock.triggerNavigationEnd('/c/content?mId=content');
+                TestBed.flushEffects();
+
+                const breadcrumbs = storeWithRouter.breadcrumbs();
+                expect(breadcrumbs.length).toBe(3);
+                expect(breadcrumbs[2].label).toBe('Content');
+            });
+
+            it('should NOT match when mId does not match parentMenuId prefix', () => {
+                // parentMenuId is 'content-parent', mId=xyz should NOT match
+                routerMock.triggerNavigationEnd('/c/content?mId=xyz');
+                TestBed.flushEffects();
+
+                expect(storeWithRouter.breadcrumbs().length).toBe(0);
+            });
         });
     });
 });

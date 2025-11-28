@@ -7,7 +7,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -17,9 +16,6 @@ import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.exception.ExceptionUtil;
-import com.dotmarketing.util.IdentifierValidator;
-import javax.validation.constraints.NotNull;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -39,7 +35,9 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IdentifierValidator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -48,6 +46,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -60,12 +59,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import com.dotmarketing.util.SecurityUtils;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.PERCENT;
@@ -376,14 +375,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private ContentType dbSelectDefaultType() throws DotDataException {
-    DotConnect dc = new DotConnect().setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
+    DotConnect dc = new DotConnect().setSQL(ContentTypeSql.SELECT_DEFAULT_TYPE);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).from();
   }
 
   private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
 
-    new DotConnect().setSQL(this.contentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
+    new DotConnect().setSQL(ContentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
     type = ContentTypeBuilder.builder(type).defaultType(true).build();
     return save(type);
 
@@ -392,7 +391,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbByType(int type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = this.contentTypeSql.SELECT_BY_TYPE;
+    String sql = ContentTypeSql.SELECT_BY_TYPE;
     dc.setSQL(String.format(sql, "mod_date desc")).addParam(type);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
@@ -401,7 +400,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbAll(String orderBy) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = this.contentTypeSql.SELECT_ALL;
+    String sql = ContentTypeSql.SELECT_ALL;
     orderBy = SQLUtil.sanitizeSortBy(orderBy);
     dc.setSQL(String.format(sql, orderBy));
 
@@ -411,12 +410,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private ContentType dbById(@NotNull String id) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.SELECT_BY_INODE);
+    dc.setSQL(ContentTypeSql.SELECT_BY_INODE);
     dc.addParam(id);
     List<Map<String, Object>> results;
 
     results = dc.loadObjectResults();
-    if (results.size() == 0) {
+    if (results.isEmpty()) {
       throw new NotFoundInDbException("Content Type with id:'" + id + "' not found");
     }
     return new DbContentTypeTransformer(results.get(0)).from();
@@ -430,7 +429,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String suggestedVarName = VelocityUtil.convertToVelocityVariable(tryVar, true);
     String varName = suggestedVarName;
     for (int i = 1; i < 100000; i++) {
-      dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
+      dc.setSQL(ContentTypeSql.SELECT_COUNT_VAR);
       dc.addParam(varName.toLowerCase());
       if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName.toLowerCase())) {
         return varName;
@@ -447,18 +446,27 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       throw new NotFoundInDbException("Content Type with var:" + var + " not found");
     }
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.SELECT_BY_VAR);
+    dc.setSQL(ContentTypeSql.SELECT_BY_VAR);
     dc.addParam(var.toLowerCase());
     List<Map<String, Object>> results;
 
     results = dc.loadObjectResults();
-    if (results.size() == 0) {
+    if (results.isEmpty()) {
       throw new NotFoundInDbException("Content Type with var:" + var + " not found");
     }
     return new DbContentTypeTransformer(results.get(0)).from();
 
   }
 
+    /**
+     * Saves the specific Content Type.
+     *
+     * @param saveType The {@link ContentType} being saved.
+     *
+     * @return The {@link ContentType} that was saved.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
   private ContentType dbSaveUpdate(final ContentType saveType) throws DotDataException {
     final ContentTypeBuilder builder = ContentTypeBuilder
             .builder(saveType)
@@ -476,11 +484,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     ContentType oldContentType = null;
     try {
       oldContentType = dbById(saveType.id());
-    } catch (NotFoundInDbException notThere) {
-      Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
+    } catch (final NotFoundInDbException notThere) {
+      Logger.debug(getClass(), String.format("Content Type ID '%s' not found in the database", saveType.id()));
     }
 
-    //The id generator needs to use the CT variable. Since we're gonna need it upfront generating the deterministic id
+    // The id generator needs to use the CT variable. Since we're gonna need it upfront generating
+    // the deterministic id
     final String variable;
     if (oldContentType == null) {
     	if (UtilMethods.isSet(saveType.variable())) {
@@ -525,10 +534,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
       if (isNew) {
           if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase()) && !retType.system()) {
-              throw new IllegalArgumentException("cannot save a structure with name:" + retType.name());
+              throw new IllegalArgumentException("cannot save a Content Type with name:" + retType.name());
           }
           if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase()) && !retType.system()) {
-              throw new IllegalArgumentException("cannot save a structure with name:" + retType.name());
+              throw new IllegalArgumentException("cannot save a Content Type with variable name:" + retType.variable());
           }
       }
 
@@ -540,7 +549,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     final List<Field> fields = new ArrayList<>(saveType.fields());
     for (final Field requiredField : retType.requiredFields()) {
-        Optional<Field> foundField = fields
+        final Optional<Field> foundField = fields
                 .stream()
                 .filter(x -> requiredField.variable().equalsIgnoreCase(x.variable()))
                 .findFirst();
@@ -549,60 +558,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         }
     }
 
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-    // set up default fields
+    final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
     for (Field field : fields) {
         final List<FieldVariable> fieldVariables = field.fieldVariables();
 
         if (oldContentType == null) {
             field = FieldBuilder.builder(field).contentTypeId(retType.id()).build();
             try {
-                field = fapi.save(field, APILocator.systemUser(), false);
-            } catch (DotSecurityException e) {
-                Logger.error(this, String.format("Could not save field %s", field.id()), e);
+                field = fieldAPI.save(field, APILocator.systemUser(), false);
+            } catch (final DotSecurityException e) {
+                Logger.error(this, String.format("Could not save Field '%s' [ %s ]: " +
+                        "%s", field.name(), field.id(), getErrorMessage(e)), e);
                 throw new DotStateException(e);
             }
         }
-
-        saveFieldVariables(field, fieldVariables);
+        fieldAPI.save(fieldVariables, field);
     }
 
     return retType;
-  }
-
-  /**
-   * For each field provided variable try to create one not before resetting the whole list
-   *
-   * @param field field variables belong to
-   * @param fieldVariables original field variables
-   */
-  private void saveFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
-      if (field.id() == null) {
-          Logger.warn(getClass(), String.format("Not saving field variables. Found null id at field %s", field.name()));
-          return;
-      }
-
-      final FieldAPI fieldApi = APILocator.getContentTypeFieldAPI();
-      try {
-          // delete variables
-          for(final FieldVariable fieldVariable : fieldApi.loadVariables(field)) {
-              fieldApi.delete(fieldVariable);
-          }
-
-          // add provided variables
-          for(final FieldVariable fieldVariable : fieldVariables) {
-              fieldApi.save(
-                      ImmutableFieldVariable
-                              .builder()
-                              .from(fieldVariable)
-                              .fieldId(field.id())
-                              .id(null)
-                              .build(),
-                      APILocator.systemUser());
-          }
-      } catch (final DotDataException | UniqueFieldValueDuplicatedException | DotSecurityException e) {
-          throw new DotStateException(e);
-      }
   }
 
   private boolean doesTypeWithVariableExist(String variable) throws DotDataException {
@@ -620,7 +593,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeUpdate(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
+    dc.setSQL(ContentTypeSql.UPDATE_TYPE_INODE);
     dc.addParam(type.owner());
     dc.addParam(type.id());
     dc.loadResult();
@@ -628,7 +601,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeInsert(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.INSERT_TYPE_INODE);
+    dc.setSQL(ContentTypeSql.INSERT_TYPE_INODE);
     dc.addParam(type.id());
     dc.addParam(type.iDate());
     dc.addParam(type.owner());
@@ -736,8 +709,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // remove structure itself
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
-    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
     return true;
   }
 
@@ -856,7 +829,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 .map(type -> Try.of(() -> find((String) type.get(INODE_COLUMN)))
                         .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
                                 String.format("Failed to retrieve Content Type with Inode '%s': %s",
-                                        type.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
+                                        type.get(INODE_COLUMN), getErrorMessage(e)), e))
                         .getOrNull())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -1039,7 +1012,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     try {
       contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
 
-      while (contentlets.size() > 0) {
+      while (!contentlets.isEmpty()) {
         conAPI.destroy(contentlets, APILocator.systemUser(), false);
         contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
       }
@@ -1419,7 +1392,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     @Override
  public long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL(this.contentTypeSql.COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW);
+        dc.setSQL(ContentTypeSql.COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW);
         final Map results = (Map) dc.loadResults().get(0);
         return Long.valueOf(results.get("count").toString());
  }
@@ -1594,7 +1567,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                         .map(typeMap -> Try.of(() -> find((String) typeMap.get(INODE_COLUMN)))
                                 .onFailure(e -> Logger.warnAndDebug(ContentTypeFactoryImpl.class,
                                         String.format("Failed to retrieve Content Type with Inode '%s': %s",
-                                                typeMap.get(INODE_COLUMN), ExceptionUtil.getErrorMessage(e)), e))
+                                                typeMap.get(INODE_COLUMN), getErrorMessage(e)), e))
                                 .getOrNull())
                         .filter(Objects::nonNull)
                         .sorted(createContentTypeComparator(orderByForComparator))
@@ -1723,7 +1696,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
-	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.setSQL(ContentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
 	 dc.addParam(type.modDate());
 	 dc.addParam(type.id());
 	 dc.loadResult();

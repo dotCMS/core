@@ -695,7 +695,8 @@ describe('EditEmaEditorComponent', () => {
 
                     const pDialog = dialog.query(By.css('p-dialog'));
 
-                    expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                    // Access the PrimeNG Dialog component instance to verify visible property
+                    expect(pDialog.componentInstance.visible).toBe(true);
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
@@ -798,7 +799,8 @@ describe('EditEmaEditorComponent', () => {
 
                         const pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(true);
                     });
 
                     it('should reload the page after saving the new navigation order', () => {
@@ -827,7 +829,8 @@ describe('EditEmaEditorComponent', () => {
 
                         const pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(false);
                     });
 
                     it('should advice the users when they can not save the new order', () => {
@@ -874,7 +877,8 @@ describe('EditEmaEditorComponent', () => {
 
                         let pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(true);
 
                         dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
 
@@ -886,9 +890,13 @@ describe('EditEmaEditorComponent', () => {
                             })
                         });
 
+                        spectator.detectChanges();
+
+                        dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
                         pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(false);
                     });
 
                     afterEach(() => jest.clearAllMocks());
@@ -2289,12 +2297,19 @@ describe('EditEmaEditorComponent', () => {
                         window.dispatchEvent(drop);
 
                         spectator.detectChanges();
+                        spectator.detectComponentChanges();
 
-                        const dialog = spectator.debugElement.query(
-                            By.css('[data-testId="dialog"]')
+                        // Find the ema-dialog component first, then the p-dialog inside it
+                        const emaDialog = spectator.debugElement.query(
+                            By.css('[data-testId="ema-dialog"]')
                         );
 
-                        expect(dialog.attributes['ng-reflect-visible']).toBe('true');
+                        expect(emaDialog).toBeTruthy();
+
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        const pDialog = emaDialog.query(By.css('p-dialog[data-testId="dialog"]'));
+                        expect(pDialog).toBeTruthy();
+                        expect(pDialog.componentInstance.visible).toBe(true);
                         expect(resetEditorPropertiesSpy).toHaveBeenCalled();
                     });
 

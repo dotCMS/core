@@ -5,6 +5,9 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.api.v1.user.UserResourceHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -18,20 +21,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.dotcms.rest.api.v1.user.UserPermissionHelper;
-import com.dotcms.rest.api.v1.user.UserResourceHelper;
-import com.dotcms.rest.api.v1.user.UserPermissions;
-import com.dotcms.rest.api.v1.user.UserPermissionAsset;
-import com.dotcms.rest.api.v1.user.UserInfo;
-import com.dotcms.rest.api.v1.user.ResponseEntityUserPermissionsView;
-import com.dotcms.rest.api.v1.user.SaveUserPermissionsForm;
-import com.dotcms.rest.api.v1.user.SaveUserPermissionsResponse;
-import com.dotcms.rest.api.v1.user.ResponseEntitySaveUserPermissionsView;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.Pagination;
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotmarketing.business.Role;
-import javax.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -41,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -71,32 +61,32 @@ import java.util.stream.Stream;
 @Tag(name = "Permissions")
 public class PermissionResource {
 
-    private final WebResource      webResource;
+    private final WebResource webResource;
     private final PermissionHelper permissionHelper;
-    private final UserAPI          userAPI;
-    private final UserPermissionHelper userPermissionHelper;
+    private final UserAPI userAPI;
+    private final PermissionSaveHelper permissionSaveHelper;
     private final UserResourceHelper userResourceHelper;
 
     @Inject
-    public PermissionResource(final UserPermissionHelper userPermissionHelper,
-                             final UserResourceHelper userResourceHelper) {
+    public PermissionResource(final PermissionSaveHelper permissionSaveHelper) {
         this(new WebResource(),
              PermissionHelper.getInstance(),
              APILocator.getUserAPI(),
-             userPermissionHelper,
-             userResourceHelper);
+             permissionSaveHelper,
+             UserResourceHelper.getInstance());
     }
+
     @VisibleForTesting
-    public PermissionResource(final WebResource      webResource,
+    public PermissionResource(final WebResource webResource,
                               final PermissionHelper permissionHelper,
-                              final UserAPI          userAPI,
-                              final UserPermissionHelper userPermissionHelper,
+                              final UserAPI userAPI,
+                              final PermissionSaveHelper permissionSaveHelper,
                               final UserResourceHelper userResourceHelper) {
 
-        this.webResource      = webResource;
+        this.webResource = webResource;
         this.permissionHelper = permissionHelper;
-        this.userAPI          = userAPI;
-        this.userPermissionHelper = userPermissionHelper;
+        this.userAPI = userAPI;
+        this.permissionSaveHelper = permissionSaveHelper;
         this.userResourceHelper = userResourceHelper;
     }
 
@@ -115,17 +105,17 @@ public class PermissionResource {
         description = "Load a map of permission type indexed by permissionable types and permissions"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
+        @ApiResponse(responseCode = "200",
                     description = "Permissions retrieved successfully",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityPermissionsByTypeView.class))),
-        @ApiResponse(responseCode = "400", 
+        @ApiResponse(responseCode = "400",
                     description = "Bad request - invalid parameters",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "401", 
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "403", 
+        @ApiResponse(responseCode = "403",
                     description = "Forbidden - insufficient permissions",
                     content = @Content(mediaType = "application/json"))
     })
@@ -331,8 +321,8 @@ public class PermissionResource {
                 .init();
 
         final PermissionMetadataView permissionMetadata = new PermissionMetadataView(
-            userPermissionHelper.getAvailablePermissionLevels(),
-            userPermissionHelper.getAvailablePermissionScopes()
+            permissionSaveHelper.getAvailablePermissionLevels(),
+            permissionSaveHelper.getAvailablePermissionScopes()
         );
 
         Logger.info(this, "Permission metadata retrieved successfully");
@@ -561,7 +551,7 @@ public class PermissionResource {
 
         final User systemUser = APILocator.systemUser();
         final User targetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
-        final Permissionable asset = userPermissionHelper.resolveAsset(assetId, systemUser);
+        final Permissionable asset = permissionSaveHelper.resolveAsset(assetId, systemUser);
 
         // Security check: User must have EDIT_PERMISSIONS on the asset
         if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, requestingUser)) {
@@ -570,7 +560,7 @@ public class PermissionResource {
             throw new DotSecurityException("User does not have permission to edit permissions on this asset");
         }
 
-        final SaveUserPermissionsResponse saveResponse = userPermissionHelper.saveUserPermissions(
+        final SaveUserPermissionsView saveResult = permissionSaveHelper.saveUserPermissions(
             targetUser.getUserId(),
             assetId,
             form,
@@ -580,7 +570,7 @@ public class PermissionResource {
         Logger.info(this, () -> String.format("Successfully updated permissions for user %s on asset %s (requested by %s)",
             targetUser.getUserId(), assetId, requestingUser.getUserId()));
 
-        return new ResponseEntitySaveUserPermissionsView(saveResponse);
+        return new ResponseEntitySaveUserPermissionsView(saveResult);
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {

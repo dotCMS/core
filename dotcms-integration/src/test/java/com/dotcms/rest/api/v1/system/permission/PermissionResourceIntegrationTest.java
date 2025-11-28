@@ -5,14 +5,12 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.user.UserPermissionHelper;
+import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsForm;
+import com.dotcms.rest.api.v1.system.permission.PermissionSaveHelper;
+import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsView;
+import com.dotcms.rest.api.v1.system.permission.UserPermissionAssetView;
+import com.dotcms.rest.api.v1.system.permission.ResponseEntitySaveUserPermissionsView;
 import com.dotcms.rest.api.v1.user.UserResourceHelper;
-import com.dotcms.rest.api.v1.user.UserPermissions;
-import com.dotcms.rest.api.v1.user.UserPermissionAsset;
-import com.dotcms.rest.api.v1.user.ResponseEntityUserPermissionsView;
-import com.dotcms.rest.api.v1.user.SaveUserPermissionsForm;
-import com.dotcms.rest.api.v1.user.SaveUserPermissionsResponse;
-import com.dotcms.rest.api.v1.user.ResponseEntitySaveUserPermissionsView;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -25,7 +23,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
@@ -36,7 +33,6 @@ import org.glassfish.jersey.internal.util.Base64;
 import static org.junit.Assert.*;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,8 +42,7 @@ import org.junit.Test;
 
 /**
  * Integration tests for PermissionResource user permissions endpoints.
- * Tests both GET /api/v1/permissions/user/{userId} and
- * PUT /api/v1/permissions/user/{userId}/asset/{assetId}
+ * Tests PUT /api/v1/permissions/user/{userId}/asset/{assetId}
  */
 public class PermissionResourceIntegrationTest {
 
@@ -56,19 +51,15 @@ public class PermissionResourceIntegrationTest {
     static User adminUser;
     static Host testHost;
 
-    // Test data for GET permissions testing
-    static User permissionTestUser;
-    static Host permissionTestHost;
-    static Folder permissionTestFolder1;
-    static Folder permissionTestFolder2;
-    static User limitedUser;
-
     // Test data for PUT permissions testing
     static Host updateTestHost;
     static Folder updateTestFolder;
     static Folder parentFolder;
     static Folder childFolder;
     static User updateTestUser;
+    static User limitedUser;
+    static User permissionTestUser;
+    static Host permissionTestHost;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -77,7 +68,7 @@ public class PermissionResourceIntegrationTest {
 
         // Create resource instance
         resource = new PermissionResource(
-            new UserPermissionHelper(),
+            new PermissionSaveHelper(),
             UserResourceHelper.getInstance()
         );
 
@@ -85,67 +76,22 @@ public class PermissionResourceIntegrationTest {
         testHost = new SiteDataGen().nextPersisted();
         response = new MockHttpResponse();
 
-        // Setup comprehensive permission test data
-        setupPermissionTestData();
-    }
-
-    private static void setupPermissionTestData() throws Exception {
-        // Create test host and folders with comprehensive permissions
-        permissionTestHost = new SiteDataGen().nextPersisted();
-        permissionTestFolder1 = new FolderDataGen()
-                .site(permissionTestHost)
-                .title("test-folder-1")
-                .nextPersisted();
-        permissionTestFolder2 = new FolderDataGen()
-                .site(permissionTestHost)
-                .title("test-folder-2")
-                .nextPersisted();
-
-        // Create test users
-        permissionTestUser = TestUserUtils.getChrisPublisherUser(permissionTestHost);
-        limitedUser = UserTestUtil.getUser("limiteduser", false, true);
-
-        // Give limited user backend access role (required for REST API access)
-        Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
-        if (!APILocator.getRoleAPI().doesUserHaveRole(limitedUser, backendRole)) {
-            APILocator.getRoleAPI().addRoleToUser(backendRole, limitedUser);
-        }
-
-        // Set up comprehensive permissions
-        Role userRole = APILocator.getRoleAPI().getUserRole(permissionTestUser);
-
-        // Host permissions: READ, WRITE, PUBLISH
-        Permission hostPerms = new Permission(
-                permissionTestHost.getPermissionId(),
-                userRole.getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH,
-                true
-        );
-        APILocator.getPermissionAPI().save(hostPerms, permissionTestHost, adminUser, false);
-
-        // Folder1: READ, WRITE, CAN_ADD_CHILDREN
-        Permission folder1Perms = new Permission(
-                permissionTestFolder1.getInode(),
-                userRole.getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,
-                true
-        );
-        APILocator.getPermissionAPI().save(folder1Perms, permissionTestFolder1, adminUser, false);
-
-        // Folder2: READ only
-        Permission folder2Perms = new Permission(
-                permissionTestFolder2.getInode(),
-                userRole.getId(),
-                PermissionAPI.PERMISSION_READ,
-                true
-        );
-        APILocator.getPermissionAPI().save(folder2Perms, permissionTestFolder2, adminUser, false);
-
         // Setup test data for PUT permission tests
         setupUpdatePermissionTestData();
     }
 
     private static void setupUpdatePermissionTestData() throws Exception {
+        // Create test host for permission test user
+        permissionTestHost = new SiteDataGen().nextPersisted();
+        permissionTestUser = TestUserUtils.getChrisPublisherUser(permissionTestHost);
+
+        // Limited user for security tests
+        limitedUser = UserTestUtil.getUser("limiteduser", false, true);
+        Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        if (!APILocator.getRoleAPI().doesUserHaveRole(limitedUser, backendRole)) {
+            APILocator.getRoleAPI().addRoleToUser(backendRole, limitedUser);
+        }
+
         // Host for update tests
         updateTestHost = new SiteDataGen().nextPersisted();
 
@@ -172,7 +118,6 @@ public class PermissionResourceIntegrationTest {
 
         // User for update tests
         updateTestUser = UserTestUtil.getUser("updateuser", false, true);
-        Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
         if (!APILocator.getRoleAPI().doesUserHaveRole(updateTestUser, backendRole)) {
             APILocator.getRoleAPI().addRoleToUser(backendRole, updateTestUser);
         }
@@ -220,158 +165,6 @@ public class PermissionResourceIntegrationTest {
         return request;
     }
 
-    // ==================== GET Permission Tests ====================
-
-    @Test
-    public void test_getUserPermissions_adminAccessingOtherUser_success() throws Exception {
-        // Admin can view any user's permissions
-        HttpServletRequest request = mockRequest();
-        ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(
-            request, response, permissionTestUser.getUserId()
-        );
-
-        assertNotNull(responseEntity);
-        assertNotNull(responseEntity.getEntity());
-
-        UserPermissions responseData = responseEntity.getEntity();
-        List<UserPermissionAsset> permissions = responseData.getAssets();
-
-        // Validate structure
-        assertNotNull(permissions);
-        assertTrue(permissions.size() >= 3); // At least host + 2 folders
-
-        // Validate specific assets
-        validateHostPermissions(permissions);
-        validateFolderPermissions(permissions);
-    }
-
-    @Test
-    public void test_getUserPermissions_userAccessingSelf_success() throws Exception {
-        // User can view their own permissions
-        MockHeaderRequest request = new MockHeaderRequest(
-            new MockSessionRequest(
-                new MockAttributeRequest(
-                    new MockHttpRequestIntegrationTest(permissionTestHost.getHostname(), "/").request()
-                ).request()
-            ).request()
-        );
-
-        // Authenticate as permissionTestUser
-        String auth = permissionTestUser.getEmailAddress() + ":" + "password";
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode(auth.getBytes())));
-        request.getSession().setAttribute(WebKeys.USER_ID, permissionTestUser.getUserId());
-
-        ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(
-            request, response, permissionTestUser.getUserId()
-        );
-
-        assertNotNull(responseEntity);
-        assertNotNull(responseEntity.getEntity());
-
-        UserPermissions responseData = responseEntity.getEntity();
-        List<UserPermissionAsset> permissions = responseData.getAssets();
-
-        assertNotNull(permissions);
-        assertTrue("Should have permissions", !permissions.isEmpty());
-    }
-
-    @Test
-    public void test_getUserPermissions_userAccessingOther_forbidden() throws Exception {
-        // Regular user cannot view other user's permissions
-        MockHeaderRequest request = new MockHeaderRequest(
-            new MockSessionRequest(
-                new MockAttributeRequest(
-                    new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request()
-                ).request()
-            ).request()
-        );
-
-        // Set up session for limited user (non-admin)
-        request.getSession().setAttribute(WebKeys.USER_ID, limitedUser.getUserId());
-        request.getSession().setAttribute(WebKeys.USER, limitedUser);
-        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
-        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
-
-        try {
-            resource.getUserPermissions(request, response, permissionTestUser.getUserId());
-            fail("Should have thrown DotSecurityException");
-        } catch (Exception e) {
-            assertTrue("Should be security exception",
-                e.getMessage().contains("can only access their own permissions"));
-        }
-    }
-
-    @Test
-    public void test_getUserPermissions_systemHostAlwaysIncluded() throws Exception {
-        // System host should always be in response
-        HttpServletRequest request = mockRequest();
-        ResponseEntityUserPermissionsView responseEntity = resource.getUserPermissions(
-            request, response, limitedUser.getUserId()
-        );
-
-        assertNotNull(responseEntity);
-        assertNotNull(responseEntity.getEntity());
-
-        UserPermissions responseData = responseEntity.getEntity();
-        List<UserPermissionAsset> permissions = responseData.getAssets();
-
-        boolean hasSystemHost = permissions.stream()
-            .anyMatch(p -> "HOST".equals(p.getType()) &&
-                          "System Host".equals(p.getName()));
-
-        assertTrue("System host must be included", hasSystemHost);
-    }
-
-    // Helper validation methods
-    private void validateHostPermissions(List<UserPermissionAsset> permissions) {
-        UserPermissionAsset hostPerm = permissions.stream()
-            .filter(p -> "HOST".equals(p.getType()) &&
-                        permissionTestHost.getIdentifier().equals(p.getId()))
-            .findFirst()
-            .orElse(null);
-
-        assertNotNull("Should have test host permissions", hostPerm);
-        assertEquals(permissionTestHost.getHostname(), hostPerm.getName());
-
-        Map<String, Set<String>> perms = hostPerm.getPermissions();
-        assertNotNull(perms);
-
-        Set<String> individualPerms = perms.get("INDIVIDUAL");
-        assertNotNull(individualPerms);
-        assertTrue(individualPerms.contains("READ"));
-        assertTrue(individualPerms.contains("WRITE"));
-        assertTrue(individualPerms.contains("PUBLISH"));
-    }
-
-    private void validateFolderPermissions(List<UserPermissionAsset> permissions) {
-        // Validate folder1 permissions
-        UserPermissionAsset folder1Perm = permissions.stream()
-            .filter(p -> "FOLDER".equals(p.getType()) &&
-                        permissionTestFolder1.getInode().equals(p.getId()))
-            .findFirst()
-            .orElse(null);
-
-        assertNotNull("Should have folder1 permissions", folder1Perm);
-        Map<String, Set<String>> perms1 = folder1Perm.getPermissions();
-        Set<String> individualPerms1 = perms1.get("INDIVIDUAL");
-        assertTrue(individualPerms1.contains("READ"));
-        assertTrue(individualPerms1.contains("WRITE"));
-        assertTrue(individualPerms1.contains("CAN_ADD_CHILDREN"));
-
-        // Validate folder2 permissions
-        UserPermissionAsset folder2Perm = permissions.stream()
-            .filter(p -> "FOLDER".equals(p.getType()) &&
-                        permissionTestFolder2.getInode().equals(p.getId()))
-            .findFirst()
-            .orElse(null);
-
-        assertNotNull("Should have folder2 permissions", folder2Perm);
-        Map<String, Set<String>> perms2 = folder2Perm.getPermissions();
-        Set<String> individualPerms2 = perms2.get("INDIVIDUAL");
-        assertTrue(individualPerms2.contains("READ"));
-        assertFalse(individualPerms2.contains("WRITE"));
-    }
-
     // ==================== PUT Permission Tests ====================
 
     @Test
@@ -390,31 +183,18 @@ public class PermissionResourceIntegrationTest {
 
         // Assert response
         assertNotNull(response);
-        SaveUserPermissionsResponse data = response.getEntity();
+        SaveUserPermissionsView data = response.getEntity();
         assertNotNull(data);
         assertFalse("Cascade should not be initiated", data.isCascadeInitiated());
         assertEquals(updateTestUser.getUserId(), data.getUserId());
 
         // Verify asset in response
-        UserPermissionAsset asset = data.getAsset();
+        UserPermissionAssetView asset = data.getAsset();
         assertEquals(updateTestHost.getIdentifier(), asset.getId());
         Set<String> individualPerms = asset.getPermissions().get("INDIVIDUAL");
         assertNotNull(individualPerms);
         assertEquals(3, individualPerms.size());
         assertTrue(individualPerms.containsAll(Set.of("READ", "WRITE", "PUBLISH")));
-
-        // END-TO-END: Verify via GET API
-        ResponseEntityUserPermissionsView getResponse = resource.getUserPermissions(
-                request, this.response, updateTestUser.getUserId()
-        );
-        UserPermissions getUserData = getResponse.getEntity();
-        UserPermissionAsset hostAsset = getUserData.getAssets().stream()
-                .filter(a -> updateTestHost.getIdentifier().equals(a.getId()))
-                .findFirst()
-                .orElse(null);
-        assertNotNull("Host asset should be in GET response", hostAsset);
-        Set<String> getPerms = hostAsset.getPermissions().get("INDIVIDUAL");
-        assertTrue("GET should show all 3 permissions", getPerms.containsAll(Set.of("READ", "WRITE", "PUBLISH")));
     }
 
     @Test
@@ -435,8 +215,8 @@ public class PermissionResourceIntegrationTest {
 
         // Assert response
         assertNotNull(response);
-        SaveUserPermissionsResponse data = response.getEntity();
-        UserPermissionAsset asset = data.getAsset();
+        SaveUserPermissionsView data = response.getEntity();
+        UserPermissionAssetView asset = data.getAsset();
 
         // Verify all 3 scopes present
         Map<String, Set<String>> permMap = asset.getPermissions();
@@ -452,18 +232,6 @@ public class PermissionResourceIntegrationTest {
 
         // Verify FOLDER permissions
         assertTrue(permMap.get("FOLDER").containsAll(Set.of("READ", "CAN_ADD_CHILDREN")));
-
-        // END-TO-END: Verify via GET API
-        ResponseEntityUserPermissionsView getResponse = resource.getUserPermissions(
-                request, this.response, updateTestUser.getUserId()
-        );
-        UserPermissions getUserData = getResponse.getEntity();
-        UserPermissionAsset folderAsset = getUserData.getAssets().stream()
-                .filter(a -> updateTestFolder.getInode().equals(a.getId()))
-                .findFirst()
-                .orElse(null);
-        assertNotNull("Folder asset should be in GET response", folderAsset);
-        assertTrue("GET should show all scopes", folderAsset.getPermissions().keySet().containsAll(Set.of("INDIVIDUAL", "HOST", "FOLDER")));
     }
 
     @Test
@@ -485,7 +253,7 @@ public class PermissionResourceIntegrationTest {
 
         // Assert response successful
         assertNotNull(response);
-        SaveUserPermissionsResponse data = response.getEntity();
+        SaveUserPermissionsView data = response.getEntity();
         assertEquals(childFolder.getInode(), data.getAsset().getId());
 
         // VERIFY inheritance broken after PUT (critical assertion)
@@ -493,15 +261,7 @@ public class PermissionResourceIntegrationTest {
                 APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
 
         // Verify permissions set on child
-        ResponseEntityUserPermissionsView getResponse = resource.getUserPermissions(
-                request, this.response, updateTestUser.getUserId()
-        );
-        UserPermissions getUserData = getResponse.getEntity();
-        UserPermissionAsset childAsset = getUserData.getAssets().stream()
-                .filter(a -> childFolder.getInode().equals(a.getId()))
-                .findFirst()
-                .orElse(null);
-        assertNotNull("Child folder should have individual permissions", childAsset);
+        UserPermissionAssetView childAsset = data.getAsset();
         assertFalse("Child should not be inheriting", childAsset.isInheritsPermissions());
         assertTrue("Child should have READ and WRITE",
                 childAsset.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
@@ -526,7 +286,7 @@ public class PermissionResourceIntegrationTest {
 
         // Assert cascade was initiated
         assertNotNull(response);
-        SaveUserPermissionsResponse data = response.getEntity();
+        SaveUserPermissionsView data = response.getEntity();
         assertTrue("Cascade should be initiated for parent permissionable", data.isCascadeInitiated());
     }
 
@@ -543,13 +303,10 @@ public class PermissionResourceIntegrationTest {
         );
 
         // Verify setup worked
-        ResponseEntityUserPermissionsView getResponse1 = resource.getUserPermissions(
-                request, this.response, updateTestUser.getUserId()
+        ResponseEntitySaveUserPermissionsView setupResponse = resource.updateUserPermissions(
+                request, this.response, updateTestUser.getUserId(), updateTestHost.getIdentifier(), setupForm
         );
-        UserPermissionAsset hostAsset1 = getResponse1.getEntity().getAssets().stream()
-                .filter(a -> updateTestHost.getIdentifier().equals(a.getId()))
-                .findFirst()
-                .orElse(null);
+        UserPermissionAssetView hostAsset1 = setupResponse.getEntity().getAsset();
         assertTrue("Setup should have all 3 permissions",
                 hostAsset1.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
@@ -564,24 +321,12 @@ public class PermissionResourceIntegrationTest {
 
         // Assert: Should have ONLY READ (replacement not merge)
         assertNotNull(response);
-        UserPermissionAsset asset = response.getEntity().getAsset();
+        UserPermissionAssetView asset = response.getEntity().getAsset();
         Set<String> resultPerms = asset.getPermissions().get("INDIVIDUAL");
         assertEquals("Should have only 1 permission", 1, resultPerms.size());
         assertTrue("Should have READ", resultPerms.contains("READ"));
         assertFalse("Should NOT have WRITE", resultPerms.contains("WRITE"));
         assertFalse("Should NOT have PUBLISH", resultPerms.contains("PUBLISH"));
-
-        // END-TO-END: Verify via GET API
-        ResponseEntityUserPermissionsView getResponse2 = resource.getUserPermissions(
-                request, this.response, updateTestUser.getUserId()
-        );
-        UserPermissionAsset hostAsset2 = getResponse2.getEntity().getAssets().stream()
-                .filter(a -> updateTestHost.getIdentifier().equals(a.getId()))
-                .findFirst()
-                .orElse(null);
-        Set<String> getPerms = hostAsset2.getPermissions().get("INDIVIDUAL");
-        assertEquals("GET should show only READ", 1, getPerms.size());
-        assertTrue(getPerms.contains("READ"));
     }
 
     @Test
@@ -660,11 +405,6 @@ public class PermissionResourceIntegrationTest {
                     e.getMessage().contains("Only admin users can update permissions"));
         }
     }
-
-    // Note: test_updateUserPermissions_noEditPermissionsOnAsset_forbidden has been removed
-    // Reason: Only admin users can update permissions via this API, and system admins
-    // always have EDIT_PERMISSIONS on all assets. The scenario (admin without EDIT_PERMISSIONS)
-    // cannot be tested with system administrators.
 
     @Test
     public void test_updateUserPermissions_nullPermissionLevel_badRequest() throws Exception {
