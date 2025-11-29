@@ -50,6 +50,17 @@ export class DotContentTypeService {
     }
 
     /**
+     * Get a content type by id or variable name with render mode
+     * @param idOrVar content type's id or variable name
+     * @returns Content Type
+     */
+    getContentTypeWithRender(idOrVar: string): Observable<DotCMSContentType> {
+        return this.#httpClient
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`)
+            .pipe(take(1), pluck('entity'));
+    }
+
+    /**
      * Creates HttpParams for retrieving content types with optional parameters
      * Only includes parameters that have meaningful values (not empty, null, or undefined)
      */
