@@ -20,7 +20,8 @@ export default [
             '/JSONTags',
             '/api/vtl',
             '/tinymce',
-            '/ext'
+            '/ext',
+            "/image"
         ],
         target: 'http://localhost:8080',
         secure: false,

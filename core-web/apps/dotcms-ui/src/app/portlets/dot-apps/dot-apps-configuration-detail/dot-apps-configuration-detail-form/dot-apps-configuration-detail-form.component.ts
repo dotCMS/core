@@ -76,6 +76,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
     private isDestroyed = false;
 
     constructor() {
+        // TODO: (migration) this is not working, but is not working in demo either
         effect(() => {
             const formFields = this.$formFields();
             const formContainer = this.$formContainer();

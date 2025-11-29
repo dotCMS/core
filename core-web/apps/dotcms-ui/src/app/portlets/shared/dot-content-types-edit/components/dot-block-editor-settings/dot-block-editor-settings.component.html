@@ -1,20 +1,13 @@
 <!-- Block Editor Settings -->
-<form [formGroup]="form" class="wrapper">
+<form [formGroup]="form" class="form">
     @for (setting of settings; track setting) {
-        <div class="field">
-            <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>
-                {{ setting.label }}
-            </label>
-            <p-multiSelect
-                [id]="setting.key"
-                [placeholder]="setting.placeholder"
-                [formControlName]="setting.key"
-                [options]="setting.options"
-                [style]="{ width: '100%' }"
-                appendTo="body"
-                display="chip"
-                optionLabel="label"
-                optionValue="code"></p-multiSelect>
-        </div>
+    <div class="field">
+        <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>
+            {{ setting.label }}
+        </label>
+        <p-multiSelect [id]="setting.key" [placeholder]="setting.placeholder" [formControlName]="setting.key"
+            [options]="setting.options" [style]="{ width: '100%' }" appendTo="body" display="chip" optionLabel="label"
+            optionValue="code"></p-multiSelect>
+    </div>
     }
 </form>

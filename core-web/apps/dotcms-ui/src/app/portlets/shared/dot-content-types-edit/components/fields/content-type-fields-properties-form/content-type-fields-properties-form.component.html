@@ -1,7 +1,7 @@
 <form
     (ngSubmit)="saveFieldProperties()"
     [formGroup]="form"
-    class="content-type-fields__properties-form p-fluid"
+    class="form"
     novalidate>
     @for (property of fieldProperties; track property) {
         <div #properties>

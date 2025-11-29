@@ -1,169 +1,120 @@
-<p-dialog
-    [(visible)]="visible"
-    [header]="'my-account' | dm"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style.width]="'380px'"
-    appendTo="body"
-    styleClass="dot-my-account-dialog"
-    data-testid="dot-my-account-dialog"
-    (onHide)="handleClose()">
-    <div class="my-account-container" data-testid="dot-my-account-container">
-        <form class="my-account p-fluid" [formGroup]="form" data-testid="dot-my-account-form">
-            <div class="field">
-                <label dotFieldRequired for="dot-my-account-first-name-input">
-                    {{ 'First-Name' | dm }}
-                </label>
-                <input
-                    formControlName="givenName"
-                    id="dot-my-account-first-name-input"
-                    data-testid="dot-my-account-first-name-input"
-                    pInputText />
-                @if (form.get('givenName')?.invalid && form.get('givenName')?.touched) {
-                    <small class="p-invalid" data-testid="dot-my-account-first-name-error">
-                        {{ errorMessages().firstName }}
-                    </small>
-                }
-            </div>
+<p-dialog [(visible)]="visible" [header]="'my-account' | dm" [modal]="true" [draggable]="false" [resizable]="false"
+    [style]="{ width: '40rem' }" appendTo="body" data-testid="dot-my-account-dialog" (onHide)="handleClose()">
+    <form class="form" [formGroup]="form" data-testid="dot-my-account-form">
+        <div class="field">
+            <label dotFieldRequired for="dot-my-account-first-name-input">
+                {{ 'First-Name' | dm }}
+            </label>
+            <input formControlName="givenName" id="dot-my-account-first-name-input"
+                data-testid="dot-my-account-first-name-input" pInputText />
+            @if (form.get('givenName')?.invalid && form.get('givenName')?.touched) {
+            <small class="p-invalid" data-testid="dot-my-account-first-name-error">
+                {{ errorMessages().firstName }}
+            </small>
+            }
+        </div>
 
-            <div class="field">
-                <label dotFieldRequired for="dot-my-account-last-name-input">
-                    {{ 'Last-Name' | dm }}
-                </label>
-                <input
-                    formControlName="surname"
-                    id="dot-my-account-last-name-input"
-                    data-testid="dot-my-account-last-name-input"
-                    pInputText />
-                @if (form.get('surname')?.invalid && form.get('surname')?.touched) {
-                    <small class="p-invalid" data-testid="dot-my-account-last-name-error">
-                        {{ errorMessages().lastName }}
-                    </small>
-                }
-            </div>
+        <div class="field">
+            <label dotFieldRequired for="dot-my-account-last-name-input">
+                {{ 'Last-Name' | dm }}
+            </label>
+            <input formControlName="surname" id="dot-my-account-last-name-input"
+                data-testid="dot-my-account-last-name-input" pInputText />
+            @if (form.get('surname')?.invalid && form.get('surname')?.touched) {
+            <small class="p-invalid" data-testid="dot-my-account-last-name-error">
+                {{ errorMessages().lastName }}
+            </small>
+            }
+        </div>
 
-            <div class="field">
-                <label dotFieldRequired for="dot-my-account-email-input">
-                    {{ 'email-address' | dm }}
-                </label>
-                <input
-                    formControlName="email"
-                    id="dot-my-account-email-input"
-                    data-testid="dot-my-account-email-input"
-                    pInputText
-                    type="email" />
-                @if (form.get('email')?.invalid && form.get('email')?.touched) {
-                    <small class="p-invalid" data-testid="dot-my-account-email-error">
-                        @if (form.get('email')?.errors?.['required']) {
-                            <span>
-                                {{ errorMessages().email.required }}
-                            </span>
-                        }
-                        @if (form.get('email')?.errors?.['pattern']) {
-                            <span>
-                                {{ errorMessages().email.pattern }}
-                            </span>
-                        }
-                    </small>
+        <div class="field">
+            <label dotFieldRequired for="dot-my-account-email-input">
+                {{ 'email-address' | dm }}
+            </label>
+            <input formControlName="email" id="dot-my-account-email-input" data-testid="dot-my-account-email-input"
+                pInputText type="email" />
+            @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <small class="p-invalid" data-testid="dot-my-account-email-error">
+                @if (form.get('email')?.errors?.['required']) {
+                <span>
+                    {{ errorMessages().email.required }}
+                </span>
                 }
-            </div>
+                @if (form.get('email')?.errors?.['pattern']) {
+                <span>
+                    {{ errorMessages().email.pattern }}
+                </span>
+                }
+            </small>
+            }
+        </div>
 
-            <div class="field">
-                <p-checkbox
-                    [ngModel]="showStarter()"
-                    (ngModelChange)="showStarter.set($event); setShowStarter()"
-                    [ngModelOptions]="{ standalone: true }"
-                    data-testid="dot-my-account-show-starter-checkbox"
-                    binary="true"
-                    [inputId]="'show-starter'"></p-checkbox>
+        <div class="field">
+            <div class="checkbox">
+                <p-checkbox [ngModel]="showStarter()" (ngModelChange)="showStarter.set($event); setShowStarter()"
+                    [ngModelOptions]="{ standalone: true }" data-testid="dot-my-account-show-starter-checkbox"
+                    binary="true" [inputId]="'show-starter'"></p-checkbox>
                 <label [for]="'show-starter'">
                     {{ 'starter.show.getting.started' | dm }}
                 </label>
             </div>
+        </div>
 
-            <div class="field">
-                <label dotFieldRequired for="dot-my-account-current-password-input">
-                    {{ 'current-password' | dm }}
-                </label>
-                <input
-                    formControlName="currentPassword"
-                    [feedback]="false"
-                    id="dot-my-account-current-password-input"
-                    data-testid="dot-my-account-current-password-input"
-                    pPassword
-                    type="password" />
+        <div class="field">
+            <label dotFieldRequired for="dot-my-account-current-password-input">
+                {{ 'current-password' | dm }}
+            </label>
+            <input formControlName="currentPassword" [feedback]="false" id="dot-my-account-current-password-input"
+                data-testid="dot-my-account-current-password-input" pPassword type="password" />
 
-                @if (confirmPasswordFailedMsg()) {
-                    <small class="p-invalid" data-testid="dot-my-account-current-password-error">
-                        {{ confirmPasswordFailedMsg() }}
-                    </small>
-                }
-            </div>
-            <div class="field">
-                <p-checkbox
-                    [ngModel]="changePasswordOption()"
-                    (ngModelChange)="toggleChangePasswordOption()"
-                    [ngModelOptions]="{ standalone: true }"
-                    id="dot-my-account-change-password-option"
-                    data-testid="dot-my-account-change-password-checkbox"
-                    binary="true"
+            @if (confirmPasswordFailedMsg()) {
+            <small class="p-invalid" data-testid="dot-my-account-current-password-error">
+                {{ confirmPasswordFailedMsg() }}
+            </small>
+            }
+        </div>
+        <div class="field">
+            <div class="checkbox">
+                <p-checkbox [ngModel]="changePasswordOption()" (ngModelChange)="toggleChangePasswordOption()"
+                    [ngModelOptions]="{ standalone: true }" id="dot-my-account-change-password-option"
+                    data-testid="dot-my-account-change-password-checkbox" binary="true"
                     [inputId]="'change-password-option'"></p-checkbox>
                 <label [for]="'change-password-option'">
                     {{ 'change-password' | dm }}
                 </label>
             </div>
-            <div class="field">
-                <label for="dot-my-account-new-password-input">{{ 'new-password' | dm }}</label>
-                <input
-                    formControlName="newPassword"
-                    id="dot-my-account-new-password-input"
-                    data-testid="dot-my-account-new-password-input"
-                    pPassword
-                    type="password" />
+        </div>
+        <div class="field">
+            <label for="dot-my-account-new-password-input">{{ 'new-password' | dm }}</label>
+            <input formControlName="newPassword" id="dot-my-account-new-password-input"
+                data-testid="dot-my-account-new-password-input" pPassword type="password" />
 
-                @if (newPasswordFailedMsg()) {
-                    <small class="p-invalid" data-testid="dot-my-account-new-password-error">
-                        {{ newPasswordFailedMsg() }}
-                    </small>
-                }
-            </div>
-            <div class="field">
-                <label for="dot-my-account-confirm-new-password-input">
-                    {{ 're-enter-new-password' | dm }}
-                </label>
-                <input
-                    formControlName="confirmPassword"
-                    [feedback]="false"
-                    id="dot-my-account-confirm-new-password-input"
-                    data-testid="dot-my-account-confirm-password-input"
-                    pPassword
-                    type="password" />
-                @if (
-                    form.get('confirmPassword')?.errors?.['passwordMismatch'] &&
-                    form.get('confirmPassword')?.touched
-                ) {
-                    <small class="p-invalid" data-testid="dot-my-account-confirm-password-error">
-                        {{ errorMessages().passwordsDontMatch }}
-                    </small>
-                }
-            </div>
-        </form>
-    </div>
+            @if (newPasswordFailedMsg()) {
+            <small class="p-invalid" data-testid="dot-my-account-new-password-error">
+                {{ newPasswordFailedMsg() }}
+            </small>
+            }
+        </div>
+        <div class="field">
+            <label for="dot-my-account-confirm-new-password-input">
+                {{ 're-enter-new-password' | dm }}
+            </label>
+            <input formControlName="confirmPassword" [feedback]="false" id="dot-my-account-confirm-new-password-input"
+                data-testid="dot-my-account-confirm-password-input" pPassword type="password" />
+            @if (
+            form.get('confirmPassword')?.errors?.['passwordMismatch'] &&
+            form.get('confirmPassword')?.touched
+            ) {
+            <small class="p-invalid" data-testid="dot-my-account-confirm-password-error">
+                {{ errorMessages().passwordsDontMatch }}
+            </small>
+            }
+        </div>
+    </form>
     <ng-template pTemplate="footer">
-        <button
-            pButton
-            class="p-button-outlined"
-            [label]="'modes.Close' | dm"
-            [disabled]="isSaving()"
-            data-testid="dot-my-account-close-button"
-            (click)="handleClose()"></button>
-        <button
-            pButton
-            [label]="'save' | dm"
-            [loading]="isSaving()"
-            [disabled]="form.invalid || isSaving()"
-            data-testid="dot-my-account-save-button"
-            (click)="save()"></button>
+        <button pButton class="p-button-outlined" [label]="'modes.Close' | dm" [disabled]="isSaving()"
+            data-testid="dot-my-account-close-button" (click)="handleClose()"></button>
+        <button pButton [label]="'save' | dm" [loading]="isSaving()" [disabled]="form.invalid || isSaving()"
+            data-testid="dot-my-account-save-button" (click)="save()"></button>
     </ng-template>
 </p-dialog>

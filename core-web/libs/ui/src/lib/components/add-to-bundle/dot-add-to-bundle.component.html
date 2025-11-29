@@ -2,17 +2,21 @@
     [(visible)]="dialogShow"
     [header]="'contenttypes.content.add_to_bundle' | dm"
     [modal]="true"
-    [style]="{ width: '50rem' }"
+    [style]="{ width: '25rem' }"
     (visibleChange)="close()">
     <form
         (ngSubmit)="submitBundle($event)"
         (keyup.enter)="submitBundle($event)"
         [formGroup]="form"
-        class="p-fluid"
+        class="form"
         #formEl="ngForm"
         novalidate>
         <div class="field">
+            <label for="addBundleDropdown">
+                {{ 'contenttypes.content.add_to_bundle.label' | dm }}
+            </label>
             <p-select
+                id="addBundleDropdown"
                 [options]="bundle$ | async"
                 [placeholder]="placeholder"
                 #addBundleDropdown

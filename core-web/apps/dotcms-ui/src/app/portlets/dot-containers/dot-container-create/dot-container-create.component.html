@@ -1,38 +1,35 @@
 <dot-portlet-base [boxed]="false">
-    <div class="container-create__tab-container">
-        <p-tabs value="0" class="container-create__tabs">
-            <p-tablist>
-                <p-tab [value]="0">
-                    {{ 'message.containers.tab.properties' | dm }}
-                </p-tab>
-                @if (containerId) {
-                    <p-tab [value]="1">
-                        {{ 'message.containers.tab.permissions' | dm }}
-                    </p-tab>
-                }
-                @if (containerId) {
-                    <p-tab [value]="2">
-                        {{ 'message.containers.tab.history' | dm }}
-                    </p-tab>
-                }
-            </p-tablist>
-            <p-tabpanels>
-                <p-tabpanel [value]="0">
-                    <dot-container-properties></dot-container-properties>
-                </p-tabpanel>
-                @if (containerId) {
-                    <p-tabpanel [value]="1">
-                        <dot-container-permissions
-                            [containerId]="containerId"></dot-container-permissions>
-                    </p-tabpanel>
-                }
-                @if (containerId) {
-                    <p-tabpanel [value]="2">
-                        <dot-container-history [containerId]="containerId"></dot-container-history>
-                    </p-tabpanel>
-                }
-            </p-tabpanels>
-        </p-tabs>
-    </div>
+    <p-tabs value="0">
+        <p-tablist>
+            <p-tab [value]="0">
+                {{ 'message.containers.tab.properties' | dm }}
+            </p-tab>
+            @if (containerId) {
+            <p-tab [value]="1">
+                {{ 'message.containers.tab.permissions' | dm }}
+            </p-tab>
+            }
+            @if (containerId) {
+            <p-tab [value]="2">
+                {{ 'message.containers.tab.history' | dm }}
+            </p-tab>
+            }
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel [value]="0">
+                <dot-container-properties></dot-container-properties>
+            </p-tabpanel>
+            @if (containerId) {
+            <p-tabpanel [value]="1">
+                <dot-container-permissions [containerId]="containerId"></dot-container-permissions>
+            </p-tabpanel>
+            }
+            @if (containerId) {
+            <p-tabpanel [value]="2">
+                <dot-container-history [containerId]="containerId"></dot-container-history>
+            </p-tabpanel>
+            }
+        </p-tabpanels>
+    </p-tabs>
     <dot-global-message></dot-global-message>
 </dot-portlet-base>

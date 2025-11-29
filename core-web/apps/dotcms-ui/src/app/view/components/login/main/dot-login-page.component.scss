@@ -1,21 +1,5 @@
-@use "variables" as *;
-@import "mixins";
-
 :host {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-.login {
-    @include box_shadow(5);
-    background-color: $white;
-    border-radius: $border-radius-xs * 3;
-    align-self: center;
-    max-width: 520px;
-    width: 90%;
-    display: flex;
-    justify-content: center;
-    padding: 5.5rem 0 4rem;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
 }

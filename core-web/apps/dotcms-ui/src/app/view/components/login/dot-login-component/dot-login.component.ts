@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import {
     FormControl,
     UntypedFormBuilder,
@@ -32,7 +32,6 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
 import { SharedModule } from '../../../../shared/shared.module';
-import { DotLoadingIndicatorComponent } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
 @Component({
@@ -47,12 +46,11 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
         SelectModule,
         InputTextModule,
         SharedModule,
-        DotLoadingIndicatorComponent,
         DotDirectivesModule,
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        RouterLink
+        RouterLink,
     ]
 })
 /**
@@ -60,6 +58,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
  * the info required to log in the dotCMS angular backend
  */
 export class DotLoginComponent implements OnInit, OnDestroy {
+    loading = signal(false);
     private loginService = inject(LoginService);
     private fb = inject(UntypedFormBuilder);
     private dotRouterService = inject(DotRouterService);
@@ -105,8 +104,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
      *  @memberof DotLoginComponent
      */
     logInUser(): void {
-        this.setFromState(true);
-        this.dotLoadingIndicatorService.show();
+        this.loading.set(true);
         this.setMessage('');
         this.loginService
             .loginUser(this.loginForm.value as DotLoginParams)
@@ -114,7 +112,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
             .subscribe(
                 (user: User) => {
                     this.setMessage('');
-                    this.dotLoadingIndicatorService.hide();
+                    this.loading.set(false);
                     this.dotRouterService.goToMain(user['editModeUrl']);
                     this.dotFormatDateService.setLang(user.languageId);
                 },
@@ -124,9 +122,8 @@ export class DotLoginComponent implements OnInit, OnDestroy {
                     } else {
                         this.loggerService.debug(res);
                     }
-
+                    this.loading.set(false);
                     this.setFromState(false);
-                    this.dotLoadingIndicatorService.hide();
                 }
             );
     }

@@ -2,21 +2,21 @@
     [(visible)]="showDialog"
     [header]="'download.bundle.header' | dm"
     [modal]="true"
-    [style]="{ width: '50rem' }"
+    [style]="{ width: '30rem' }"
     (visibleChange)="close()">
     @if (showDialog) {
         <form
             (ngSubmit)="handleSubmit()"
             (keyup.enter)="handleSubmit()"
             [formGroup]="form"
-            class="p-fluid">
+            class="form">
             <div class="field">
                 <label dotFieldRequired for="download-btn">
                     {{ 'download.bundle.i.want' | dm }}
                 </label>
                 <p-selectButton
                     [options]="downloadOptions"
-                    class="p-button-tabbed"
+                    class="w-full"
                     id="download-btn"
                     formControlName="downloadOptionSelected"></p-selectButton>
             </div>

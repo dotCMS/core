@@ -7,14 +7,13 @@
         styleClass="p-fluid"
         appendTo="body"
         (visibleChange)="closeExportDialog()">
-        <form [formGroup]="form" novalidate>
+        <form class="form" [formGroup]="form" novalidate>
             @switch (action) {
                 @case ('Export') {
                     <div class="field">
                         <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
                         <input
                             [placeholder]="'apps.confirmation.export.password.label' | dm"
-                            class="dot-apps-export-dialog__password"
                             id="export-password"
                             dotAutofocus
                             pPassword
@@ -38,7 +37,6 @@
                         <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
                         <input
                             [placeholder]="'apps.confirmation.import.password.label' | dm"
-                            class="dot-apps-import-dialog__password"
                             id="import-password"
                             autocomplete="new-password"
                             formControlName="password"

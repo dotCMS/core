@@ -1,4 +1,4 @@
-import { combineLatest, Observable, of } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -8,6 +8,7 @@ import {
     Component,
     EventEmitter,
     Input,
+    OnDestroy,
     OnInit,
     Output,
     ViewChild,
@@ -25,7 +26,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { map } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
@@ -60,18 +61,17 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
         DotMessagePipe
     ]
 })
-export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {
+export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked, OnDestroy {
     private readonly fb = inject(UntypedFormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly cd = inject(ChangeDetectorRef);
+    private readonly destroy$ = new Subject<boolean>();
 
     @ViewChild('dot-site-selector-field') siteSelector;
     dialogActions: DotDialogActions;
     inputNameWithType = '';
     dialogTitle = '';
     isVisibleDialog = false;
-
-    dialogActions$: Observable<DotDialogActions>;
 
     @Input()
     isSaving$ = new Observable<boolean>();
@@ -139,8 +139,13 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
         this.cd.detectChanges();
     }
 
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
     private setDialogConfig(): void {
-        const dialogActions$: Observable<DotDialogActions> = of({
+        this.dialogActions = {
             accept: {
                 action: () => {
                     this.submitForm();
@@ -154,15 +159,18 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
                 },
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel')
             }
+        };
+
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.dialogActions = {
+                ...this.dialogActions,
+                accept: {
+                    ...this.dialogActions.accept,
+                    disabled: !this.form.valid
+                }
+            };
+            this.cd.markForCheck();
         });
-
-        this.dialogActions$ = combineLatest([dialogActions$, this.form.valueChanges]).pipe(
-            map(([dialogActions]) => {
-                dialogActions.accept.disabled = !this.form.valid;
-
-                return dialogActions;
-            })
-        );
     }
 
     private initForm(): void {

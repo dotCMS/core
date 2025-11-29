@@ -1,32 +1,20 @@
-<form [formGroup]="form" class="wrapper">
+<form [formGroup]="form" class="form">
     <div class="field">
         <label for="allowed-file-type">{{ 'binary-field.settings.allow.type' | dm }}</label>
-        <input
-            [style]="{ width: '100%' }"
-            id="allowed-file-type"
-            formControlName="accept"
-            placeholder="ex: image/*"
-            pInputText
-            data-testId="setting-accept" />
-        <small style="display: inline-block; margin-top: 0.5rem">
-            <a
-                href="https://www.dotcms.com/docs/latest/field-variables#BinaryField"
-                target="_blank"
-                rel="noopener">
-                {{ 'binary-field-settings.system.link.to.documentation' | dm }}
-            </a>
-        </small>
+        <input [style]="{ width: '100%' }" id="allowed-file-type" formControlName="accept" placeholder="ex: image/*"
+            pInputText data-testId="setting-accept" />
+        <a class="text-sm" href="https://www.dotcms.com/docs/latest/field-variables#BinaryField" target="_blank"
+            rel="noopener">
+            {{ 'binary-field-settings.system.link.to.documentation' | dm }}
+        </a>
     </div>
-    @for (option of systemOptions; track option.key) {
-        <p-divider
-            [style]="{
-                margin: '1rem 0'
-            }"></p-divider>
-        <div class="horizontal-field" formGroupName="systemOptions">
-            <p [innerHTML]="option.message | dm" class="info"></p>
-            <p-inputSwitch
-                [formControlName]="option.key"
-                data-testId="setting-switch"></p-inputSwitch>
-        </div>
-    }
+    <div formGroupName="systemOptions" class="flex flex-col gap-2">
+        @for (option of systemOptions; track option.key) {
+            <div class="flex items-center gap-2 justify-between border border-gray-200 rounded-md p-2">
+                <p [innerHTML]="option.message | dm"></p>
+                <p-toggleswitch [formControlName]="option.key" data-testId="setting-switch"></p-toggleswitch>
+            </div>
+        }
+    </div>
+
 </form>

@@ -1,24 +1,12 @@
-<p-dialog
-    [(visible)]="dialogShow"
-    [header]="'contenttypes.content.add_to_menu.header' | dm: [contentType?.name]"
-    [modal]="true"
-    [style]="{ width: '592px' }"
-    (visibleChange)="close()">
-    <form (ngSubmit)="submit()" [formGroup]="form" class="p-fluid" novalidate>
+<p-dialog [(visible)]="dialogShow" [header]="'contenttypes.content.add_to_menu.header' | dm: [contentType?.name]"
+    [modal]="true" [style]="{ width: '592px' }" (visibleChange)="close()">
+    <form (ngSubmit)="submit()" [formGroup]="form" class="form" novalidate>
         <div class="field">
             <label dotFieldRequired for="title" data-testId="titleMenuLabel">
                 {{ 'contenttypes.content.add_to_menu.name' | dm }}
             </label>
-            <input
-                id="title"
-                #titleName
-                dotAutofocus
-                pInputText
-                formControlName="title"
-                data-testId="titleMenu" />
-            <dot-field-validation-message
-                [field]="form.get('title')"
-                message="{{
+            <input id="title" #titleName dotAutofocus pInputText formControlName="title" data-testId="titleMenu" />
+            <dot-field-validation-message [field]="form.get('title')" message="{{
                     'contenttypes.field.properties.name.error.required' | dm
                 }}"></dot-field-validation-message>
         </div>
@@ -26,65 +14,40 @@
             <label dotFieldRequired for="menu" data-testId="menuOptionLabel">
                 {{ 'contenttypes.content.add_to_menu.show_under' | dm }}
             </label>
-            <p-select
-                [options]="menu$ | async"
-                id="menu"
-                data-testId="menuOption"
-                appendTo="body"
-                formControlName="menuOption"
-                optionLabel="name"
-                optionValue="id"></p-select>
+            <p-select [options]="menu$ | async" id="menu" data-testId="menuOption" appendTo="body"
+                formControlName="menuOption" optionLabel="name" optionValue="id"></p-select>
         </div>
         <div class="field">
             <label dotFieldRequired for="cardViewMode" data-testId="ViewModeLabel">
                 {{ 'contenttypes.content.add_to_menu.default_view' | dm }}
             </label>
-            <div class="field">
-                <div class="flex items-center">
-                    <p-radioButton
-                        [inputId]="'cardViewMode'"
-                        id="cardViewMode"
-                        data-testId="cardViewMode"
-                        name="defaultView"
-                        value="card"
-                        formControlName="defaultView"></p-radioButton>
-                    <label [for]="'cardViewMode'">
-                        {{ 'custom.content.portlet.dataViewMode.card' | dm }}
-                    </label>
-                </div>
+            <div class="radio">
+                <p-radioButton [inputId]="'cardViewMode'" data-testId="cardViewMode" name="defaultView" value="card"
+                    formControlName="defaultView"></p-radioButton>
+                <label [for]="'cardViewMode'">
+                    {{ 'custom.content.portlet.dataViewMode.card' | dm }}
+                </label>
             </div>
-            <div class="field">
-                <div class="flex items-center">
-                    <p-radioButton
-                        [inputId]="'listViewMode'"
-                        data-testId="listViewMode"
-                        name="defaultView"
-                        value="list"
-                        formControlName="defaultView"></p-radioButton>
-                    <label [for]="'listViewMode'">
-                        {{ 'custom.content.portlet.dataViewMode.list' | dm }}
-                    </label>
-                </div>
+
+            <div class="radio">
+                <p-radioButton [inputId]="'listViewMode'" data-testId="listViewMode" name="defaultView" value="list"
+                    formControlName="defaultView"></p-radioButton>
+                <label [for]="'listViewMode'">
+                    {{ 'custom.content.portlet.dataViewMode.list' | dm }}
+                </label>
             </div>
         </div>
     </form>
     @if (dialogActions) {
-        <ng-template pTemplate="footer">
-            @if (dialogActions.cancel) {
-                <p-button
-                    [label]="dialogActions.cancel.label"
-                    [disabled]="dialogActions.cancel.disabled"
-                    severity="secondary"
-                    (click)="dialogActions.cancel.action()"
-                    data-testId="dotDialogCancelAction"></p-button>
-            }
-            @if (dialogActions.accept) {
-                <p-button
-                    [label]="dialogActions.accept.label"
-                    [disabled]="dialogActions.accept.disabled"
-                    (click)="dialogActions.accept.action()"
-                    data-testId="dotDialogAcceptAction"></p-button>
-            }
-        </ng-template>
+    <ng-template pTemplate="footer">
+        @if (dialogActions.cancel) {
+        <p-button [label]="dialogActions.cancel.label" [disabled]="dialogActions.cancel.disabled" severity="secondary"
+            (click)="dialogActions.cancel.action()" data-testId="dotDialogCancelAction"></p-button>
+        }
+        @if (dialogActions.accept) {
+        <p-button [label]="dialogActions.accept.label" [disabled]="dialogActions.accept.disabled"
+            (click)="dialogActions.accept.action()" data-testId="dotDialogAcceptAction"></p-button>
+        }
+    </ng-template>
     }
 </p-dialog>
