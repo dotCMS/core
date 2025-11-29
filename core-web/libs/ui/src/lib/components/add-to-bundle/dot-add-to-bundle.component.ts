@@ -71,6 +71,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     ngOnInit() {
         this.initForm();
+        this.setDialogConfig(this.form);
 
         this.bundle$ = this.#addToBundleService.getBundles().pipe(
             take(1),
@@ -90,7 +91,6 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                 return bundles;
             }),
             tap(() => {
-                this.setDialogConfig(this.form);
                 this.dialogShow = true;
             })
         );

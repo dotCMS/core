@@ -5,8 +5,8 @@
     [style]="{ width: '600px' }"
     styleClass="no-overflow"
     (visibleChange)="closeDialog()">
-    <form [formGroup]="form" class="p-fluid" #formEl="ngForm" novalidate>
-        <div class="field form__group--validation">
+    <form [formGroup]="form" class="form" #formEl="ngForm" novalidate>
+        <div class="field">
             <label dotFieldRequired for="content-type-form-name">{{ inputNameWithType }}</label>
             <input
                 [tabindex]="1"
@@ -23,7 +23,7 @@
                 "></dot-field-validation-message>
         </div>
 
-        <div class="field form__group--validation">
+        <div class="field">
             <label for="content-type-form-variable-name">
                 {{ 'contenttypes.form.label.variable_name' | dm }}
             </label>
@@ -58,22 +58,22 @@
                 formControlName="host"></dot-site-selector-field>
         </div>
     </form>
-    @if (dialogActions$ | async; as actions) {
+    @if (dialogActions) {
         <ng-template pTemplate="footer">
-            @if (actions.cancel) {
+            @if (dialogActions.cancel) {
                 <p-button
-                    [label]="actions.cancel.label"
-                    [disabled]="actions.cancel.disabled"
+                    [label]="dialogActions.cancel.label"
+                    [disabled]="dialogActions.cancel.disabled"
                     severity="secondary"
-                    (click)="actions.cancel.action()"
+                    (click)="dialogActions.cancel.action()"
                     data-testId="dotDialogCancelAction"></p-button>
             }
-            @if (actions.accept) {
+            @if (dialogActions.accept) {
                 <p-button
-                    [label]="actions.accept.label"
-                    [disabled]="actions.accept.disabled"
+                    [label]="dialogActions.accept.label"
+                    [disabled]="dialogActions.accept.disabled"
                     [loading]="isSaving$ | async"
-                    (click)="actions.accept.action()"
+                    (click)="dialogActions.accept.action()"
                     data-testId="dotDialogAcceptAction"></p-button>
             }
         </ng-template>

@@ -1,10 +1,11 @@
 <div [formGroup]="fg" class="dot-container-code__content-tab-container">
-    <div class="field mb-0">
-        <label class="block" dotFieldRequired>
+    <div class="field mb-1">
+        <label dotFieldRequired>
             {{ 'message.containers.create.content_type_code' | dm }}
         </label>
     </div>
     <p-tabs
+        class="border border-gray-200"
         [value]="activeTabIndex"
         (onChange)="handleTabClick($event, $event.value)"
         [scrollable]="true"
