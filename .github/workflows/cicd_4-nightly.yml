@@ -15,7 +15,7 @@ name: '-4 Nightly Workflow'
 
 on:
   schedule:
-    - cron: "18 3 * * *" # every night at 3:18 AM
+    - cron: '18 3 * * *' # every night at 3:18 AM
   workflow_dispatch:
     inputs:
       reuse-previous-build:
@@ -47,7 +47,7 @@ jobs:
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: Nightly Build
-    needs: [ initialize ]
+    needs: [initialize]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     permissions:
@@ -57,7 +57,7 @@ jobs:
   # Test job - runs all tests by default
   test:
     name: Nightly Test
-    needs: [ initialize,build ]
+    needs: [initialize, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
@@ -72,7 +72,7 @@ jobs:
   # CLI Build job - builds CLI artifacts
   build-cli:
     name: Nightly CLI Build
-    needs: [ initialize, test ]
+    needs: [initialize, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
@@ -82,7 +82,7 @@ jobs:
 
   # Deployment job - deploys to the nightly environment
   deployment:
-    needs: [ initialize,build-cli,test ]
+    needs: [initialize, build-cli, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
@@ -104,7 +104,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, deployment ]
+    needs: [initialize, build, build-cli, test, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
@@ -114,7 +114,7 @@ jobs:
   report:
     name: Report
     if: always()
-    needs: [ finalize ]
+    needs: [finalize]
     uses: ./.github/workflows/cicd_post-workflow-reporting.yml
     secrets:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

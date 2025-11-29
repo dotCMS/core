@@ -13,11 +13,11 @@ jobs:
   scan:
     runs-on: ubuntu-24.04
     permissions:
-      contents: write  # Ensure write access to contents
+      contents: write # Ensure write access to contents
 
     steps:
       - name: Checkout core-test-results repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: dotCMS/core-test-results
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -70,4 +70,4 @@ jobs:
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
