@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -48,6 +49,7 @@ import org.junit.runners.Suite;
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
+        RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         AppsAPIImplTest.class,
