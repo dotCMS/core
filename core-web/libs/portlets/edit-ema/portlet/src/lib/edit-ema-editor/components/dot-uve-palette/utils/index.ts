@@ -298,6 +298,12 @@ export const EMPTY_MESSAGE_SEARCH = {
     message: 'uve.palette.empty.search.state.message'
 };
 
+export const EMPTY_MESSAGE_CONTELETS = {
+    icon: 'pi pi-folder-open',
+    title: 'uve.palette.empty.state.contentlets.title',
+    message: 'uve.palette.empty.state.contentlets.message'
+};
+
 /**
  * Object containing empty messages for different list types.
  * Each key corresponds to a DotUVEPaletteListTypes enum value.
