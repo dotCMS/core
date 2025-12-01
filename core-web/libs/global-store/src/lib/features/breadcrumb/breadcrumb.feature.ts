@@ -185,7 +185,7 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
                 const item = menu.find((item) => {
-                    const pathMatches = item.menuLink === urlPath || item.id === urlPath;
+                    const pathMatches = item.menuLink === urlPath;
 
                     const hasQueryParams = queryString && queryString.length > 0;
 
