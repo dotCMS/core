@@ -23,6 +23,11 @@ import { initialMenuSlice, menuConfig } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
+export const replaceSectionsMap: Record<string, string> = {
+    'edit-page': 'site-browser',
+    analytics: 'analytics-dashboard'
+};
+
 /**
  * Custom Store Feature for managing menu state using Entity Management.
  *
@@ -277,14 +282,19 @@ export function withMenu() {
                     return;
                 }
 
+                // Check if portletId should be replaced according to replaceSectionsMap
+                const mappedPortletId = replaceSectionsMap[portletId] || portletId;
+
                 // Direct lookup using the composite key
                 const entityMap = store.entityMap();
-                let compositeKey = `${portletId}__${shortParentMenuId}`;
+                let compositeKey = `${mappedPortletId}__${shortParentMenuId}`;
                 const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (bookmark) {
-                    const item = Object.values(entityMap).find((item) => item.id === portletId);
+                if (bookmark || !shortParentMenuId) {
+                    const item = Object.values(entityMap).find((item) => {
+                        return item.id === mappedPortletId || item.id === portletId;
+                    });
                     if (item) {
                         compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
                         activateMenuItemWithParent(compositeKey, item.parentMenuId);

@@ -19,6 +19,8 @@ import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { processSpecialRoute } from './breadcrumb.utils';
 
+import { replaceSectionsMap } from '../menu/with-menu.feature';
+
 /**
  * State interface for the Breadcrumb feature.
  * Contains the breadcrumb navigation items.
@@ -185,7 +187,11 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
                 const item = menu.find((item) => {
-                    const pathMatches = item.menuLink === urlPath;
+                    // Check if the item's id should be mapped
+                    const mappedItemId = replaceSectionsMap[item.id] || item.id;
+
+                    const pathMatches = item.menuLink === urlPath || mappedItemId === urlPath;
+
                     const hasQueryParams = queryString && queryString.length > 0;
 
                     // If we have query params but no mId, it's likely an old bookmark - don't match
