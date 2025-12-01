@@ -286,7 +286,7 @@ export function withMenu() {
                 const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (bookmark || !shortParentMenuId) {
+                if (bookmark) {
                     const item = Object.values(entityMap).find((item) => {
                         return item.id === resolvedPortletId || item.id === portletId;
                     });
