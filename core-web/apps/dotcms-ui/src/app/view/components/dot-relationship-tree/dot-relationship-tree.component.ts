@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -8,7 +7,7 @@ import { DotIconComponent } from '@dotcms/ui';
     selector: 'dot-relationship-tree',
     templateUrl: './dot-relationship-tree.component.html',
     styleUrls: ['./dot-relationship-tree.component.scss'],
-    imports: [CommonModule, DotIconComponent]
+    imports: [DotIconComponent]
 })
 export class DotRelationshipTreeComponent implements OnChanges {
     @Input() velocityVar: string;

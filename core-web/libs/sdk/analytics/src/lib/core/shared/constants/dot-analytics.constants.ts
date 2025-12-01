@@ -12,7 +12,10 @@ export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
  * These events have specific data structures and validation
  */
 export const DotCMSPredefinedEventType = {
-    PAGEVIEW: 'pageview'
+    PAGEVIEW: 'pageview',
+    CONTENT_IMPRESSION: 'content_impression',
+    CONTENT_CLICK: 'content_click',
+    CONVERSION: 'conversion'
 } as const;
 
 /**
@@ -113,3 +116,75 @@ export const ANALYTICS_JS_DEFAULT_PROPERTIES = [
     'height',
     'referrer'
 ] as const;
+
+/**
+ * Impression tracking configuration constants
+ */
+
+/**
+ * Default minimum percentage of element that must be visible (0.0 to 1.0)
+ */
+export const DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD = 0.5;
+
+/**
+ * Default minimum time in milliseconds element must be visible
+ */
+export const DEFAULT_IMPRESSION_DWELL_MS = 750;
+
+/**
+ * Default maximum number of elements to track (performance limit)
+ */
+export const DEFAULT_IMPRESSION_MAX_NODES = 100;
+
+/**
+ * Default throttle time in milliseconds for intersection callbacks
+ */
+export const DEFAULT_IMPRESSION_THROTTLE_MS = 100;
+
+/**
+ * Default debounce time in milliseconds for MutationObserver
+ */
+export const DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS = 250;
+
+/**
+ * Default impression tracking configuration
+ */
+export const DEFAULT_IMPRESSION_CONFIG = {
+    visibilityThreshold: DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
+    dwellMs: DEFAULT_IMPRESSION_DWELL_MS,
+    maxNodes: DEFAULT_IMPRESSION_MAX_NODES,
+    throttleMs: DEFAULT_IMPRESSION_THROTTLE_MS
+} as const;
+
+/**
+ * Event type for content impressions
+ * Must match DotCMSPredefinedEventType.CONTENT_IMPRESSION
+ */
+export const IMPRESSION_EVENT_TYPE = 'content_impression';
+
+/**
+ * Event type for content clicks
+ * Must match DotCMSPredefinedEventType.CONTENT_CLICK
+ */
+export const CLICK_EVENT_TYPE = 'content_click';
+
+/**
+ * Default debounce time in milliseconds for clicks
+ */
+export const DEFAULT_CLICK_THROTTLE_MS = 300;
+
+/**
+ * CSS selector for clickable elements to track
+ * Only clicks on <a> and <button> elements are tracked
+ */
+export const CLICKABLE_ELEMENTS_SELECTOR = 'a, button';
+
+/**
+ * Session storage key for tracked impressions (deduplication)
+ */
+export const IMPRESSION_SESSION_KEY = 'dot_analytics_impressions';
+
+/**
+ * CSS class selector for trackable contentlets
+ */
+export const ANALYTICS_CONTENTLET_CLASS = 'dotcms-analytics-contentlet';

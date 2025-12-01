@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectorRef,
     Component,
@@ -26,7 +25,7 @@ import { DotSpinnerComponent } from '@dotcms/ui';
     selector: 'dot-global-message',
     templateUrl: './dot-global-message.component.html',
     styleUrls: ['./dot-global-message.component.scss'],
-    imports: [CommonModule, DotSpinnerComponent]
+    imports: [DotSpinnerComponent]
 })
 export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     private dotEventsService = inject(DotEventsService);

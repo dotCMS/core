@@ -16,10 +16,12 @@ import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
+
+const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
@@ -57,6 +59,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     }
 
     ngOnInit(): void {
+        // TODO: Migrate to Signal Forms
         this.initFormGroup();
     }
 
@@ -72,12 +75,33 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.form.value);
+            this.saveField.emit(this.transformFormValue(this.form.value));
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
 
-        this.valid.next(false);
+        this.valid.emit(false);
+    }
+
+    transformFormValue(value) {
+        if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
+            const existingVariables = this.formFieldData.fieldVariables || [];
+            const otherVariables = existingVariables.filter(
+                (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY
+            );
+            return {
+                ...value,
+                fieldVariables: [
+                    ...otherVariables,
+                    {
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value: value.newRenderMode
+                    }
+                ]
+            };
+        }
+        return value;
     }
 
     destroy(): void {
@@ -114,7 +138,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                     formFields[property] = [
                         {
                             value:
-                                this.formFieldData[property] ||
+                                this.fieldPropertyService.getValue(this.formFieldData, property) ||
                                 this.fieldPropertyService.getDefaultValue(
                                     property,
                                     this.formFieldData.clazz
@@ -137,7 +161,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private notifyFormChanges() {
         this.originalValue = this.form.value;
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.next(this.isFormValueUpdated() && this.form.valid);
+            this.valid.emit(this.isFormValueUpdated() && this.form.valid);
         });
     }
 
@@ -153,9 +177,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.fieldProperties = properties
             .filter((property) => this.fieldPropertyService.existsComponent(property))
             .sort(
-                (property1, proeprty2) =>
+                (property1, property2) =>
                     this.fieldPropertyService.getOrder(property1) -
-                    this.fieldPropertyService.getOrder(proeprty2)
+                    this.fieldPropertyService.getOrder(property2)
             );
     }
 

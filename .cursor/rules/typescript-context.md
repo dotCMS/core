@@ -1,66 +1,172 @@
 ---
 description: Angular frontend development context - loads only for Angular files  
-globs: ["core-web/**/*.ts", "core-web/**/*.html", "core-web/**/*.scss"]
+globs: ["core-web/**/*.{ts,html,scss,css}"]
 alwaysApply: false
 ---
 
 # Angular Frontend Context
 
-## Immediate Patterns (Copy-Paste Ready)
+This project adheres to modern Angular best practices, emphasizing maintainability, performance, accessibility, and scalability.
 
-### Modern Template Syntax (REQUIRED)
-```html
-<!-- Use @if instead of *ngIf -->
-@if (isLoading()) {
-  <dot-spinner />
-} @else {
-  <dot-content />
-}
+## TypeScript Best Practices
 
-<!-- Use @for instead of *ngFor -->
-@for (item of items(); track item.id) {
-  <div [data-testid]="'item-' + item.id">{{item.name}}</div>
-} @empty {
-  <dot-empty-state />
-}
+* **Strict Type Checking:** Always enable and adhere to strict type checking. This helps catch errors early and improves code quality.
+* **Prefer Type Inference:** Allow TypeScript to infer types when they are obvious from the context. This reduces verbosity while maintaining type safety.
+    * **Bad:**
+        ```typescript
+        let name: string = 'Angular';
+        ```
+    * **Good:**
+        ```typescript
+        let name = 'Angular';
+        ```
+* **Avoid `any`:** Do not use the `any` type unless absolutely necessary as it bypasses type checking. Prefer `unknown` when a type is uncertain and you need to handle it safely.
+* **Don't allow use enums, use `as const` instead, example:**
+    ```typescript
+    const MyEnum = {
+      VALUE1: 'value1',
+      VALUE2: 'value2',
+    } as const;
+    ```
+* **Private properties:** Use `#` prefix to indicate that a property is private, example: `#myPrivateProperty`.
+    * **Bad:**
+        ```typescript
+        private myPrivateProperty = 'private';
+        ```
+    * **Good:**
+        ```typescript
+        #myPrivateProperty = 'private';
+        ```
 
-<!-- Use @switch instead of [ngSwitch] -->
-@switch (status()) {
-  @case ('loading') { <dot-loading /> }
-  @case ('error') { <dot-error /> }
-  @default { <dot-content /> }
-}
-```
+## Angular Best Practices
 
-### Component Structure (REQUIRED)
-```typescript
-@Component({
-  selector: 'dot-my-component',
-  standalone: true,                    // REQUIRED
-  imports: [CommonModule],
-  templateUrl: './my-component.html',
-  styleUrls: ['./my-component.scss'],  // Note: plural
-  changeDetection: ChangeDetectionStrategy.OnPush
-})
-export class MyComponent {
-  // Input/Output signals (REQUIRED)
-  data = input<string>();              // NOT @Input()
-  config = input<Config>();
-  change = output<string>();           // NOT @Output()
-  
-  // State signals
-  loading = signal(false);
-  
-  // Computed signals  
-  isValid = computed(() => this.data() && this.loading());
-  
-  // Dependency injection
-  private service = inject(MyService);
-}
-```
+* **Standalone Components:** Always use standalone components, directives, and pipes. Avoid using `NgModules` for new features or refactoring existing ones.
+* **Implicit Standalone:** When creating standalone components, you do not need to explicitly set `standalone: true` inside the `@Component`, `@Directive` and `@Pipe` decorators, as it is implied by default.
+    * **Bad:**
+        ```typescript
+        @Component({
+          standalone: true,
+          // ...
+        })
+        export class MyComponent {}
+        ```
+    * **Good:**
+        ```typescript
+        @Component({
+          // `standalone: true` is implied
+          // ...
+        })
+        export class MyComponent {}
+        ```
+* **Signals for State Management:** Utilize Angular Signals for reactive state management within components and services.
+* **Lazy Loading:** Implement lazy loading for feature routes to improve initial load times of your application.
+* **NgOptimizedImage:** Use `NgOptimizedImage` for all static images to automatically optimize image loading and performance.
+* **Host bindings:** Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead.
+
+## Components
+
+* **Single Responsibility:** Keep components small, focused, and responsible for a single piece of functionality.
+* **`input()` and `output()` Functions:** Prefer `input()` and `output()` functions over the `@Input()` and `@Output()` decorators for defining component inputs and outputs.
+    * **Old Decorator Syntax:**
+        ```typescript
+        @Input() userId!: string;
+        @Output() userSelected = new EventEmitter<string>();
+        ```
+    * **New Function Syntax:**
+        ```typescript
+        import { input, output } from '@angular/core';
+
+        // ...
+        $userId = input<string>('');
+        $userSelected = output<string>();
+        ```
+* **`computed()` for Derived State:** Use the `computed()` function from `@angular/core` for derived state based on signals.
+* **`ChangeDetectionStrategy.OnPush`:** Always set `changeDetection: ChangeDetectionStrategy.OnPush` in the `@Component` decorator for performance benefits by reducing unnecessary change detection cycles.
+* **Reactive Forms:** Prefer Reactive forms over Template-driven forms for complex forms, validation, and dynamic controls due to their explicit, immutable, and synchronous nature.
+* **No `ngClass` / `NgClass`:** Do not use the `ngClass` directive. Instead, use native `class` bindings for conditional styling.
+    * **Bad:**
+        ```html
+        <section [ngClass]="{'active': isActive}"></section>
+        ```
+    * **Good:**
+        ```html
+        <section [class.active]="isActive"></section>
+        <section [class]="{'active': isActive}"></section>
+        <section [class]="myClasses"></section>
+        ```
+* **No `ngStyle` / `NgStyle`:** Do not use the `ngStyle` directive. Instead, use native `style` bindings for conditional inline styles.
+    * **Bad:**
+        ```html
+        <section [ngStyle]="{'font-size': fontSize + 'px'}"></section>
+        ```
+    * **Good:**
+        ```html
+        <section [style.font-size.px]="fontSize"></section>
+        <section [style]="myStyles"></section>
+        ```
+* **File Structure:** Follow the file structure below for components.
+    * component-name/
+        * component-name.component.ts      # Logic
+        * component-name.component.html    # Template  
+        * component-name.component.scss    # Styles
+        * component-name.component.spec.ts # Tests
+* **For signals**, use the `$` prefix to indicate that it is a signal, example: `$mySignal`
+* **For observables**, use the `$` suffix to indicate that it is an observable, example: `myObservable$`
+
+## State Management
+
+* **Signals for Local State:** Use signals for managing local component state.
+* **`computed()` for Derived State:** Leverage `computed()` for any state that can be derived from other signals.
+* **Pure and Predictable Transformations:** Ensure state transformations are pure functions (no side effects) and predictable.
+* **Signal value updates:** Do NOT use `mutate` on signals, use `update` or `set` instead.
+* **Signal Store:** For complex state management, use the Signal Store pattern, learn more here https://ngrx.io/guide/signals
+
+## Templates
+
+* **Simple Templates:** Keep templates as simple as possible, avoiding complex logic directly in the template. Delegate complex logic to the component's TypeScript code.
+* **Native Control Flow:** Use the new built-in control flow syntax (`@if`, `@for`, `@switch`) instead of the older structural directives (`*ngIf`, `*ngFor`, `*ngSwitch`).
+    * **Old Syntax:**
+        ```html
+        <section *ngIf="isVisible">Content</section>
+        <section *ngFor="let item of items">{{ item }}</section>
+        ```
+    * **New Syntax:**
+        ```html
+        @if (isVisible) {
+          <section>Content</section>
+        }
+        @for (item of items; track item.id) {
+          <section>{{ item }}</section>
+        }
+        ```
+* **Async Pipe:** Use the `async` pipe to handle observables in templates. This automatically subscribes and unsubscribes, preventing memory leaks.
+
+## Services
+
+* **Single Responsibility:** Design services around a single, well-defined responsibility.
+* **`providedIn: 'root'`:** Use the `providedIn: 'root'` option when declaring injectable services to ensure they are singletons and tree-shakable.
+* **`inject()` Function:** Prefer the `inject()` function over constructor injection when injecting dependencies, especially within `provide` functions, `computed` properties, or outside of constructor context.
+    * **Old Constructor Injection:**
+        ```typescript
+        constructor(private myService: MyService) {}
+        ```
+    * **New `inject()` Function:**
+        ```typescript
+        import { inject } from '@angular/core';
+
+        export class MyComponent {
+          private myService = inject(MyService);
+          // ...
+        }
+        ```
 
 ### Testing Patterns (CRITICAL)
+
+Always use Spectator with jest or Vitest for testing using @ngneat/spectator/jest package.
+
 ```typescript
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
+
 // Spectator setup
 const createComponent = createComponentFactory({
   component: MyComponent,
@@ -104,15 +210,6 @@ spectator.typeInElement('test', byTestId('name-input'));
 .feature-list__item--active { }
 ```
 
-### File Structure (REQUIRED)
-```
-component-name/
-├── component-name.component.ts      # Logic
-├── component-name.component.html    # Template  
-├── component-name.component.scss    # Styles
-└── component-name.component.spec.ts # Tests
-```
-
 ## Build Commands
 ```bash
 # Development server
@@ -126,10 +223,10 @@ cd core-web && yarn install  # NOT npm install
 ```
 
 ## Tech Stack
-- **Angular**: 18.2.3 standalone components
+- **Angular**: 20.3.9 standalone components
 - **UI**: PrimeNG 17.18.11, PrimeFlex 3.3.1
 - **State**: NgRx Signals, Component Store  
-- **Build**: Nx 19.6.5
+- **Build**: Nx 20.5.1
 - **Testing**: Jest + Spectator (REQUIRED)
 
 ## On-Demand Documentation

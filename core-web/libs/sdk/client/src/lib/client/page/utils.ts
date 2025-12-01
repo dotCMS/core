@@ -102,6 +102,8 @@ export const buildPageQuery = ({
     canLock
     canRead
     runningExperimentId
+    lockedBy
+    lockedByName
     urlContentMap {
       _map
     }

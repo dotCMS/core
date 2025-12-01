@@ -1,4 +1,3 @@
-import { NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
     AbstractControl,
@@ -32,7 +31,6 @@ const PARAMETER_QUERY_PARAMETER = 'queryParameter';
     styleUrls: ['./dot-experiments-goal-configuration-url-parameter-component.component.scss'],
     imports: [
         ReactiveFormsModule,
-        NgForOf,
         DotDropdownDirective,
         DotFieldValidationMessageComponent,
         DotMessagePipe,
