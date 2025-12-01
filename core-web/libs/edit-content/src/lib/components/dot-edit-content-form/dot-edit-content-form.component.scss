@@ -1,10 +1,43 @@
 @use "variables" as *;
+@import 'tailwindcss';
 
 $tab-min-height: 52px;
 
 :host {
     min-width: 0;
     overflow: auto;
+
+    ::ng-deep {
+        dot-card-field {
+            // Didn't use space-y-2 because it would break the layout since dot-card-field-footer it show even if it's empty
+            @apply flex flex-col gap-1;
+        }
+
+        dot-card-field-label {
+            @apply flex gap-1 items-center;
+
+            label {
+                @apply text-sm font-medium;
+            }
+        }
+
+        dot-card-field-content {
+            @apply block;
+        }
+
+        dot-card-field-footer {
+            @apply block;
+
+            .p-field-error {
+                @apply text-sm text-red-500;
+            }
+
+            .p-field-hint {
+                @apply text-sm text-gray-500;
+            }
+        }
+
+    }
 }
 
 // Edit Content Form
@@ -81,65 +114,66 @@ $tab-min-height: 52px;
 }
 
 // PrimeNG Tabview Overrides
-::ng-deep {
-    .p-tabview-nav {
-        flex: none;
-    }
-    .tabview-append-content {
-        min-height: $tab-min-height;
-        display: flex;
-        align-items: center;
-    }
-    .dot-edit-content-tabview {
-        .p-tabview-nav-container {
-            padding: 0;
-            border-bottom: solid 1px $color-palette-gray-300;
-            border-right: none;
-            overflow: initial;
-            position: sticky;
-            top: 0;
-            background-color: $white;
-            z-index: 10;
-        }
+// TODO: (migration) I commented this out because I think we don't needed anymore.
+// ::ng-deep {
+//     .p-tabview-nav {
+//         flex: none;
+//     }
+//     .tabview-append-content {
+//         min-height: $tab-min-height;
+//         display: flex;
+//         align-items: center;
+//     }
+//     .dot-edit-content-tabview {
+//         .p-tabview-nav-container {
+//             padding: 0;
+//             border-bottom: solid 1px $color-palette-gray-300;
+//             border-right: none;
+//             overflow: initial;
+//             position: sticky;
+//             top: 0;
+//             background-color: $white;
+//             z-index: 10;
+//         }
 
-        .p-tabview-nav-content .p-tabview-nav {
-            border: none;
-            border-left: solid 1px $color-palette-gray-300;
-            border-right: solid 1px $color-palette-gray-300;
-            min-height: $tab-min-height;
-            min-width: auto;
-        }
+//         .p-tabview-nav-content .p-tabview-nav {
+//             border: none;
+//             border-left: solid 1px $color-palette-gray-300;
+//             border-right: solid 1px $color-palette-gray-300;
+//             min-height: $tab-min-height;
+//             min-width: auto;
+//         }
 
-        .p-tabview-nav-content {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            gap: $spacing-3;
-            overflow: visible;
-            flex-wrap: wrap;
-        }
+//         .p-tabview-nav-content {
+//             display: flex;
+//             align-items: center;
+//             width: 100%;
+//             gap: $spacing-3;
+//             overflow: visible;
+//             flex-wrap: wrap;
+//         }
 
-        &.dot-edit-content-tabview--single-tab {
-            ul.p-tabview-nav {
-                display: none;
-            }
+//         &.dot-edit-content-tabview--single-tab {
+//             ul.p-tabview-nav {
+//                 display: none;
+//             }
 
-            .tabview-append-content {
-                border-left: solid 1px $color-palette-gray-300;
-                padding-left: $spacing-3;
-            }
-        }
-    }
+//             .tabview-append-content {
+//                 border-left: solid 1px $color-palette-gray-300;
+//                 padding-left: $spacing-3;
+//             }
+//         }
+//     }
 
-    .p-tabview-nav-content {
-        display: flex;
-        align-items: center;
-        width: 100%;
-    }
+//     .p-tabview-nav-content {
+//         display: flex;
+//         align-items: center;
+//         width: 100%;
+//     }
 
-    .tabview-append-content {
-        flex: 1;
-        display: flex;
-        align-items: center;
-    }
-}
+//     .tabview-append-content {
+//         flex: 1;
+//         display: flex;
+//         align-items: center;
+//     }
+// }

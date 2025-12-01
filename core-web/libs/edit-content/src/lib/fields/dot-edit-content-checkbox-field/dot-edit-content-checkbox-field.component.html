@@ -30,19 +30,16 @@
         </div>
     </dot-card-field-content>
     <dot-card-field-footer>
-        @if (fieldHasError) {
-            <div class="error-message">
-                @if (isRequired) {
-                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
-                }
-            </div>
+        @if (fieldHasError && isRequired) {
+            <small class="p-field-error">
+                {{ 'dot.edit.content.form.field.required' | dm }}
+            </small>
         }
+
         @if (!fieldHasError && field.hint) {
-            <div class="hint-message">
-                <small [attr.data-testId]="'hint-' + field.variable">
-                    {{ field.hint }}
-                </small>
-            </div>
+            <small class="p-field-hint" [attr.data-testId]="'hint-' + field.variable">
+                {{ field.hint }}
+            </small>
         }
     </dot-card-field-footer>
 </dot-card-field>

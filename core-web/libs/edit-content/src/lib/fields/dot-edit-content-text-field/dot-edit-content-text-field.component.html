@@ -23,21 +23,19 @@
             [attr.step]="inputTextOptions[dataType].step"
             pInputText />
     </dot-card-field-content>
-    <dot-card-field-footer>
-        @if (fieldHasError) {
-            <div class="error-message">
-                @if (isRequired) {
-                    <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
-                }
-            </div>
-        }
+    @if ((fieldHasError && isRequired) || (!fieldHasError && field.hint)) {
+        <dot-card-field-footer>
+            @if (fieldHasError && isRequired) {
+                <small class="p-field-error">
+                    {{ 'dot.edit.content.form.field.required' | dm }}
+                </small>
+            }
 
-        @if (!fieldHasError && field.hint) {
-            <div class="hint-message">
-                <small [attr.data-testId]="'hint-' + field.variable">
+            @if (!fieldHasError && field.hint) {
+                <small class="p-field-hint" [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}
                 </small>
-            </div>
-        }
-    </dot-card-field-footer>
+            }
+        </dot-card-field-footer>
+    }
 </dot-card-field>
