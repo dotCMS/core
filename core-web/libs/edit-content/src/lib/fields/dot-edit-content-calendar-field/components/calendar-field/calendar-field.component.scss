@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+:host {
+    display: block;
+}
+
 .calendar-field {
     display: flex;
     flex-direction: column;
