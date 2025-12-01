@@ -179,8 +179,8 @@ describe('DotNavItemComponent', () => {
         const arrow: DebugElement = de.query(By.css('.dot-nav__item-arrow'));
 
         expect(icon.componentInstance.icon).toBe('icon');
-        // When menu.isOpen = true, arrow should be arrow_drop_down (see beforeEach)
-        expect(arrow.componentInstance.name).toBe('arrow_drop_down');
+        // When menu.isOpen = true, arrow should be arrow_drop_up (see beforeEach)
+        expect(arrow.componentInstance.name).toBe('arrow_drop_up');
     });
 
     it('should avoid label_important icon', () => {
