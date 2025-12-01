@@ -119,7 +119,16 @@
     [popup]="true"
     appendTo="body"
     styleClass="options-menu-popup"
-    showTransitionOptions="0ms" />
+    showTransitionOptions="0ms">
+    <ng-template pTemplate="submenuheader" let-item>
+        <span>{{ item.label | dm }}</span>
+    </ng-template>
+    <ng-template pTemplate="item" let-item>
+        <a class="p-ripple p-element p-menuitem-link">
+            <span class="p-menuitem-text">{{ item.label | dm }}</span>
+        </a>
+    </ng-template>
+</p-menu>
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
 

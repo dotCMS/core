@@ -1,3 +1,5 @@
+import { MenuItem } from 'primeng/api';
+
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
@@ -9,6 +11,7 @@ import {
     DEFAULT_PER_PAGE,
     DotPaletteSortOption,
     DotPaletteListStatus,
+    DotPaletteViewMode,
     DotUVEPaletteListTypes
 } from '../models';
 
@@ -86,6 +89,65 @@ export function getSortActiveClass(
     const isActive = sameOrderby && sameDirection;
 
     return isActive ? 'active-menu-item' : '';
+}
+
+export function buildPaletteMenuItems({
+    viewMode,
+    currentSort,
+    onSortSelect,
+    onViewSelect
+}: {
+    viewMode: DotPaletteViewMode;
+    currentSort: DotPaletteSortOption;
+    onSortSelect: (sortOption: DotPaletteSortOption) => void;
+    onViewSelect: (viewMode: DotPaletteViewMode) => void;
+}): MenuItem[] {
+    return [
+        {
+            label: 'uve.palette.menu.sort.title',
+            items: [
+                {
+                    label: 'uve.palette.menu.sort.option.popular',
+                    command: () => onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'usage', direction: 'ASC' },
+                        currentSort
+                    )
+                },
+                {
+                    label: 'uve.palette.menu.sort.option.a-to-z',
+                    command: () => onSortSelect({ orderby: 'name', direction: 'ASC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'name', direction: 'ASC' },
+                        currentSort
+                    )
+                },
+                {
+                    label: 'uve.palette.menu.sort.option.z-to-a',
+                    command: () => onSortSelect({ orderby: 'name', direction: 'DESC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'name', direction: 'DESC' },
+                        currentSort
+                    )
+                }
+            ]
+        },
+        {
+            label: 'uve.palette.menu.view.title',
+            items: [
+                {
+                    label: 'uve.palette.menu.view.option.grid',
+                    command: () => onViewSelect('grid'),
+                    styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
+                },
+                {
+                    label: 'uve.palette.menu.view.option.list',
+                    command: () => onViewSelect('list'),
+                    styleClass: viewMode === 'list' ? 'active-menu-item' : ''
+                }
+            ]
+        }
+    ];
 }
 
 /**

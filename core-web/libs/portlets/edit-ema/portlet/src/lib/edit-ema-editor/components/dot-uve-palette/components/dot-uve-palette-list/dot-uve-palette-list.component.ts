@@ -39,15 +39,17 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPaletteListStore } from './store/store';
 
 import {
+    DotPaletteSearchParams,
     DotPaletteSortOption,
     DotPaletteViewMode,
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../models';
 import {
+    buildPaletteMenuItems,
+    EMPTY_MESSAGE_CONTELETS,
     EMPTY_MESSAGE_SEARCH,
     EMPTY_MESSAGES,
-    getSortActiveClass,
     LOADING_ROWS_MOCK
 } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
@@ -118,6 +120,9 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isEmpty = this.#paletteListStore.$isEmpty;
     protected readonly $layoutMode = this.#paletteListStore.layoutMode;
     protected readonly $showListLayout = this.#paletteListStore.$showListLayout;
+    protected readonly $isContentletsView = this.#paletteListStore.$isContentletsView;
+    protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
+
     protected readonly $hideControls = computed(() => {
         return this.$isEmpty() && !(this.searchControl.value.trim().length > 0);
     });
@@ -125,6 +130,10 @@ export class DotUvePaletteListComponent implements OnInit {
         const searchTerm = this.searchControl.value.trim();
         if (searchTerm.length > 0) {
             return EMPTY_MESSAGE_SEARCH;
+        }
+
+        if (this.$isContentletsView()) {
+            return EMPTY_MESSAGE_CONTELETS;
         }
 
         return EMPTY_MESSAGES[this.$type()];
@@ -137,60 +146,17 @@ export class DotUvePaletteListComponent implements OnInit {
     );
     readonly $isFavoritesList = computed(() => this.$type() === DotUVEPaletteListTypes.FAVORITES);
     readonly $showSortButton = computed(
-        () =>
-            this.$currentView() === DotUVEPaletteListView.CONTENT_TYPES && !this.$isFavoritesList()
+        () => this.$isContentTypesView() && !this.$isFavoritesList()
     );
 
-    protected $menuItems = computed(() => {
-        const viewMode = this.$layoutMode();
-        const currentSort = this.#paletteListStore.$currentSort();
-        return [
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.sort.title'),
-                items: [
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.popular'),
-                        command: () => this.onSortSelect({ orderby: 'usage', direction: 'ASC' }),
-                        styleClass: getSortActiveClass(
-                            { orderby: 'usage', direction: 'ASC' },
-                            currentSort
-                        )
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.a-to-z'),
-                        command: () => this.onSortSelect({ orderby: 'name', direction: 'ASC' }),
-                        styleClass: getSortActiveClass(
-                            { orderby: 'name', direction: 'ASC' },
-                            currentSort
-                        )
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.sort.option.z-to-a'),
-                        command: () => this.onSortSelect({ orderby: 'name', direction: 'DESC' }),
-                        styleClass: getSortActiveClass(
-                            { orderby: 'name', direction: 'DESC' },
-                            currentSort
-                        )
-                    }
-                ]
-            },
-            {
-                label: this.#dotMessageService.get('uve.palette.menu.view.title'),
-                items: [
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.view.option.grid'),
-                        command: () => this.onViewSelect('grid'),
-                        styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
-                    },
-                    {
-                        label: this.#dotMessageService.get('uve.palette.menu.view.option.list'),
-                        command: () => this.onViewSelect('list'),
-                        styleClass: viewMode === 'list' ? 'active-menu-item' : ''
-                    }
-                ]
-            }
-        ];
-    });
+    protected $menuItems = computed(() =>
+        buildPaletteMenuItems({
+            viewMode: this.$layoutMode(),
+            currentSort: this.#paletteListStore.$currentSort(),
+            onSortSelect: (sortOption) => this.onSortSelect(sortOption),
+            onViewSelect: (viewOption) => this.onViewSelect(viewOption)
+        })
+    );
 
     constructor() {
         // React to input changes and fetch content types
@@ -216,19 +182,7 @@ export class DotUvePaletteListComponent implements OnInit {
         // Set up debounced search with distinctUntilChanged to avoid duplicate calls
         this.searchControl.valueChanges
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((searchTerm) => {
-                if (this.#paletteListStore.$isContentTypesView()) {
-                    this.#paletteListStore.getContentTypes({
-                        filter: searchTerm,
-                        page: 1 // Reset to first page on search
-                    });
-                } else {
-                    this.#paletteListStore.getContentlets({
-                        filter: searchTerm,
-                        page: 1
-                    });
-                }
-            });
+            .subscribe((filter) => this.#loadItems({ filter, page: 1 }));
     }
 
     /**
@@ -240,11 +194,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected onPageChange(event: PaginatorState) {
         const page = (event.page ?? 0) + 1; // PrimeNG uses 0-based pages
 
-        if (this.#paletteListStore.$isContentTypesView()) {
-            this.#paletteListStore.getContentTypes({ page });
-        } else {
-            this.#paletteListStore.getContentlets({ page });
-        }
+        this.#loadItems({ page });
     }
 
     /**
@@ -283,7 +233,7 @@ export class DotUvePaletteListComponent implements OnInit {
             filter: '',
             page: 1
         });
-        this.searchControl.setValue('', { emitEvent: false });
+        this.#resetSearch();
     }
 
     /**
@@ -296,7 +246,7 @@ export class DotUvePaletteListComponent implements OnInit {
             filter: '',
             page: 1
         });
-        this.searchControl.setValue('', { emitEvent: false });
+        this.#resetSearch();
     }
 
     protected onContextMenu(contentType: DotCMSContentType) {
@@ -305,16 +255,32 @@ export class DotUvePaletteListComponent implements OnInit {
             ? 'uve.palette.menu.favorite.option.remove'
             : 'uve.palette.menu.favorite.option.add';
         const command = isFavorite
-            ? () => this.removeFavoriteItems(contentType)
-            : () => this.addFavoriteItems(contentType);
+            ? () => this.#removeFavoriteItems(contentType)
+            : () => this.#addFavoriteItems(contentType);
         this.$contextMenuItems.set([{ label: this.#dotMessageService.get(label), command }]);
+    }
+
+    /**
+     * Handles clicks on the empty state message.
+     * Opens the favorites panel when a span element is clicked.
+     * @param event - The click event
+     */
+    protected onEmptyStateClick(event: Event) {
+        const target = event.target as HTMLElement;
+        const isTargetSpan = target.tagName === 'SPAN' || target.closest('span');
+
+        if (!isTargetSpan) {
+            return;
+        }
+
+        this.favoritesPanel?.toggle(event);
     }
 
     /**
      * Remove a content type from favorites.
      * @param contentType - The content type to remove.
      */
-    private removeFavoriteItems(contentType: DotCMSContentType) {
+    #removeFavoriteItems(contentType: DotCMSContentType) {
         const contenttypes = this.#dotFavoriteContentTypeService.remove(contentType.id);
 
         if (this.$type() === DotUVEPaletteListTypes.FAVORITES) {
@@ -333,7 +299,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Add a content type to favorites.
      * @param contentType - The content type to add.
      */
-    private addFavoriteItems(contentType: DotCMSContentType) {
+    #addFavoriteItems(contentType: DotCMSContentType) {
         const contenttypes = this.#dotFavoriteContentTypeService.add(contentType);
 
         if (this.$type() === DotUVEPaletteListTypes.FAVORITES) {
@@ -349,18 +315,26 @@ export class DotUvePaletteListComponent implements OnInit {
     }
 
     /**
-     * Handles clicks on the empty state message.
-     * Opens the favorites panel when a span element is clicked.
-     * @param event - The click event
+     * Clears the search input without triggering another request.
+     * Keeps debounced listeners quiet when switching views manually.
      */
-    protected onEmptyStateClick(event: Event) {
-        const target = event.target as HTMLElement;
-        const isTargetSpan = target.tagName === 'SPAN' || target.closest('span');
+    #resetSearch() {
+        this.searchControl.setValue('', { emitEvent: false });
+    }
 
-        if (!isTargetSpan) {
+    /**
+     * Dispatches the appropriate store fetch based on the current view.
+     * Accepts any partial search params so pagination and filtering can reuse it.
+     *
+     * @param params - Partial palette search params (filter/page/order/etc.)
+     */
+    #loadItems(params: Partial<DotPaletteSearchParams>) {
+        if (this.$isContentTypesView()) {
+            this.#paletteListStore.getContentTypes(params);
             return;
         }
 
-        this.favoritesPanel?.toggle(event);
+        this.#paletteListStore.getContentlets(params);
+        return;
     }
 }
