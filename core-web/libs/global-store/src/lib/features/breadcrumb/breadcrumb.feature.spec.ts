@@ -928,6 +928,34 @@ describe('withBreadcrumbs Feature', () => {
 
                 expect(storeWithRouter.breadcrumbs().length).toBe(0);
             });
+
+            it('should resolve legacy section URLs using REPLACE_SECTIONS_MAP', () => {
+                // Update menu to include mapped section
+                menuItemsSignal.set([
+                    {
+                        id: 'site-browser',
+                        label: 'Site Browser',
+                        menuLink: '/edit-page',
+                        url: '/edit-page',
+                        ajax: true,
+                        angular: true,
+                        active: false,
+                        parentMenuId: 'CONTENT',
+                        parentMenuLabel: 'Content',
+                        parentMenuIcon: 'pi pi-folder'
+                    } as MenuItemEntity
+                ]);
+
+                // Navigate using legacy 'edit-page' URL
+                routerMock.triggerNavigationEnd('/edit-page');
+                TestBed.flushEffects();
+
+                const breadcrumbs = storeWithRouter.breadcrumbs();
+
+                // Should create breadcrumbs because menuLink matches
+                expect(breadcrumbs.length).toBeGreaterThan(0);
+                expect(breadcrumbs[breadcrumbs.length - 1].label).toBe('Site Browser');
+            });
         });
     });
 });

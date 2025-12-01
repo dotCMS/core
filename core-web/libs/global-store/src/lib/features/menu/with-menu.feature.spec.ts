@@ -418,6 +418,46 @@ describe('withMenu Feature', () => {
             const finalActive = store.activeMenuItem();
             expect(finalActive).toEqual(initialActive);
         });
+
+        it('should resolve legacy section IDs using REPLACE_SECTIONS_MAP', () => {
+            // Add items that match the mapped sections
+            const menuWithMappedSections: DotMenu[] = [
+                ...mockMenuItems,
+                {
+                    active: false,
+                    id: 'CONTENT',
+                    label: 'Content',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'site-browser',
+                            label: 'Site Browser',
+                            url: '/c/site-browser',
+                            menuLink: '/c/site-browser',
+                            parentMenuId: 'CONTENT'
+                        }
+                    ],
+                    name: 'Content',
+                    tabDescription: 'Content',
+                    tabIcon: 'pi pi-folder',
+                    tabName: 'Content',
+                    url: '/content'
+                }
+            ];
+
+            store.loadMenu(menuWithMappedSections);
+
+            // Test legacy ID 'edit-page' maps to 'site-browser'
+            store.setActiveMenu('edit-page', 'CONT');
+            expect(store.activeMenuItem()?.id).toBe('site-browser');
+
+            // Test current ID still works
+            store.setActiveMenu('site-browser', 'CONT');
+            expect(store.activeMenuItem()?.id).toBe('site-browser');
+        });
     });
 
     describe('Entity Map', () => {
