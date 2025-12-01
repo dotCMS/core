@@ -37,7 +37,7 @@ on:
         type: boolean
       publish-npm-sdk-libs:
         default: false
-        type: boolean        
+        type: boolean
     secrets:
       DOCKER_USERNAME:
         required: false
@@ -162,7 +162,7 @@ jobs:
         if: github.repository == 'dotcms/core'
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
-          channel-id: "log-docker"
+          channel-id: 'log-docker'
           payload: |
             > :large_purple_circle: *Attention dotters:* Docker image built!
             >
@@ -174,23 +174,22 @@ jobs:
         if: inputs.publish-npm-cli
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
-          channel-id: "log-dotcli"
+          channel-id: 'log-dotcli'
           payload: |
             > :large_purple_circle: *Attention dotters:* dotCLI published!
             >
             > This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!
             > `npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }} 
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
-      # Send Slack notification for SDK publication (if required)          
+      # Send Slack notification for SDK publication (if required)
       - name: Slack Notification (SDK announcement)
         if: success() && steps.sdks_publish.outputs.published == 'true'
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
-          channel-id: "log-sdk-libs"
+          channel-id: 'log-sdk-libs'
           payload: |
             > :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!
             >
             > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
-          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}         
-            
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

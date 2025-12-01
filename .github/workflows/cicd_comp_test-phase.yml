@@ -5,7 +5,7 @@
 #
 # Key features:
 # - Configurable test execution based on input parameters
-# - Parallel execution of different test suites  
+# - Parallel execution of different test suites
 # - Matrix strategy for running multiple test suites concurrently
 # - Reusable Maven job action for consistent test environment setup
 # - Artifact reuse from previous workflow runs
@@ -70,7 +70,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        
+
       - name: Parse test configuration
         id: parse-config
         uses: mikefarah/yq@v4.47.1
@@ -83,32 +83,32 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            
+
             // Read the parsed JSON configuration
             const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-            
+
             // Build matrix from configuration
             const matrix = [];
             const inputs = {
               'run-all-tests': ${{ inputs.run-all-tests }},
               'jvm_unit_test': ${{ inputs.jvm_unit_test }},
               'cli': ${{ inputs.cli }},
-              'frontend': ${{ inputs.frontend }}, 
+              'frontend': ${{ inputs.frontend }},
               'postman': ${{ inputs.postman }},
               'karate': ${{ inputs.karate }},
               'integration': ${{ inputs.integration }},
               'e2e': ${{ inputs.e2e }}
             };
-            
+
             // Process each test type
             for (const [testType, testConfig] of Object.entries(config.test_types)) {
               const shouldRun = inputs['run-all-tests'] || inputs[testConfig.condition_input];
-              
+
               if (!shouldRun) {
                 console.log(`Skipping ${testType} tests - not enabled`);
                 continue;
               }
-              
+
               // Process each suite in this test type
               for (const suite of testConfig.suites) {
                 const testEntry = {
@@ -122,7 +122,7 @@ jobs:
                   test_type: testType,
                   condition_input: testConfig.condition_input
                 };
-                
+
                 // Build Maven args
                 if (testEntry.test_class) {
                   // For integration/karate tests with test_class
@@ -138,18 +138,18 @@ jobs:
                   // Use base_maven_args if no specific maven_args
                   testEntry.maven_args = testEntry.base_maven_args;
                 }
-                
+
                 // Clean up temporary fields
                 delete testEntry.base_maven_args;
                 delete testEntry.test_class;
                 delete testEntry.collection;
-                
+
                 matrix.push(testEntry);
               }
             }
-            
+
             console.log(`Generated matrix with ${matrix.length} test configurations`);
-            
+
             // Output the matrix
             core.setOutput('matrix', JSON.stringify({ include: matrix }));
             core.setOutput('has-tests', matrix.length > 0 ? 'true' : 'false');
@@ -167,12 +167,12 @@ jobs:
       fail-fast: true
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
-    steps:          
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Run ${{ matrix.name }}
         uses: ./.github/actions/core-cicd/maven-job
         with:
@@ -185,5 +185,3 @@ jobs:
           needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-
-

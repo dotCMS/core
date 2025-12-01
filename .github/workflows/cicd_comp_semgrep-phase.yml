@@ -37,7 +37,7 @@ jobs:
       - name: Build Dependency Tre
         uses: ./.github/actions/core-cicd/maven-job
         with:
-          stage-name: "Dependency Tree Scan"
+          stage-name: 'Dependency Tree Scan'
           artifacts-from: ${{ inputs.artifact-run-id }}
           require-main: true
           github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -36,7 +36,7 @@ outputs:
     value: ${{ steps.npm-version-tag.outputs.npm-package-version-tag }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: 'Checkout'
       uses: actions/checkout@v4
@@ -51,7 +51,6 @@ runs:
     - name: 'Install Jinja2'
       run: pip install jinja2-cli
       shell: bash
-
 
     - name: 'Download all cli build artifacts.'
       id: download-cli-artifacts
@@ -70,7 +69,6 @@ runs:
         ls -R ${{ github.workspace }}/artifacts
         echo "::endgroup::"
       shell: bash
-
 
     - name: 'Extract package version'
       id: project
@@ -127,7 +125,7 @@ runs:
           # Extract max RC version
           MAX_RC_VERSION=$(echo $LATEST_RC_VERSIONS | jq -r --arg filter $VERSION_NPM_FORMAT-rc 'map(.| select(. | contains($filter)) | sub($filter; "") | tonumber ) | max')
           echo "MAX_RC_VERSION: ${MAX_RC_VERSION}"
-        
+
           if [[ $MAX_RC_VERSION != null ]]; then
             RC_SUFFIX="-rc$(( $MAX_RC_VERSION + 1 ))"
           else
@@ -147,7 +145,6 @@ runs:
         echo "npm-package-version-tag=$NPM_PACKAGE_VERSION_TAG" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
-
 
     # Sets up the NPM package
     # Creates the bin folder with the binaries

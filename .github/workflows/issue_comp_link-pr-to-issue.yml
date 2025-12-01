@@ -36,11 +36,11 @@ jobs:
               repos/${{ github.repository }}/pulls/${{ inputs.pr_number }} \
             | jq -c -r \
           )
-          
+
           pr_merged=$(echo "${pr_json}" | jq '.merged')
           [[ "${{ inputs.validate_merge }}" == 'true' && "${pr_merged}" != 'true' ]] && echo "PR [${{ inputs.pr_number }}] is not merged" && exit 1
           echo "pr_merged=${pr_merged}"
-          
+
           pr_branch=${{ inputs.pr_branch }}
           issue_number=
           if [[ ${pr_branch} =~ ^[0-9]+- ]]; then
@@ -51,7 +51,7 @@ jobs:
           fi
           [[ -z "${issue_number}" ]] && echo 'Issue number could not be resolved' && exit 2
           echo "issue_number=${issue_number}"
-          
+
           issue_json=$(\
             gh api \
               --method GET \
@@ -59,13 +59,13 @@ jobs:
           )
           fetched_issue_number=$(echo "${issue_json}" | jq -r '.number')
           [[ -z "${fetched_issue_number}" ]] && echo "Issue [${issue_number}] could not be resolved" && exit 3
-          
+
           pr_body=$(echo "${pr_json}" | jq -r '.body')
           [[ "${pr_body}" == 'null' ]] && pr_body=
           [[ -n "${pr_body}" ]] && pr_body="${pr_body}"$'\n\n'
           pr_body="${pr_body}This PR fixes: #${issue_number}"
           echo "pr_body=${pr_body}"
-          
+
           gh api \
             --method PATCH \
             -H "Accept: application/vnd.github+json" \

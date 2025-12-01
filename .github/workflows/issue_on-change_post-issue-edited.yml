@@ -1,7 +1,7 @@
 name: Post Issue Edited
 on:
   issues:
-    types: [ edited, labeled ]
+    types: [edited, labeled]
 
 jobs:
   frontend-notify:

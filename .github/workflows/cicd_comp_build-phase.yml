@@ -17,20 +17,20 @@ on:
   workflow_call:
     inputs:
       core-build:
-        description: "Run core build"
+        description: 'Run core build'
         type: boolean
         default: true
       run-pr-checks:
-        description: "Run PR checks"
+        description: 'Run PR checks'
         type: boolean
         default: false
       ref:
-        description: "Branch or tag ref"
+        description: 'Branch or tag ref'
         required: false
         default: ''
         type: string
       validate:
-        description: "Run validation"
+        description: 'Run validation'
         type: boolean
         default: false
       version:
@@ -49,7 +49,7 @@ jobs:
   # This job performs a basic build and install with Maven without running tests.
   # It provides a local Maven repo for subsequent steps.
   build-jdk11:
-    name: "Initial Artifact Build"
+    name: 'Initial Artifact Build'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.core-build == true
     permissions:
@@ -93,8 +93,8 @@ jobs:
       # Run the Maven build job
       - uses: ./.github/actions/core-cicd/maven-job
         with:
-          stage-name: "Initial Artifact Build"
-          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true -Dgithub.event.name=${{ github.event_name }}"
+          stage-name: 'Initial Artifact Build'
+          maven-args: 'clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true -Dgithub.event.name=${{ github.event_name }}'
           generate-artifacts: true
           require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

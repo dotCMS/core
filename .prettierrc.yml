@@ -1,0 +1,17 @@
+# Prettier configuration for workflow files
+# https://prettier.io/docs/en/configuration.html
+
+# Apply to workflow files
+overrides:
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - ".github/actions/**/action.yml"
+    options:
+      printWidth: 120
+      tabWidth: 2
+      useTabs: false
+      singleQuote: true
+      trailingComma: "none"
+      bracketSpacing: true
+      proseWrap: "preserve"

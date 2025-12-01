@@ -33,7 +33,7 @@ jobs:
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: PR Build
-    needs: [ initialize ]
+    needs: [initialize]
     if: needs.initialize.outputs.build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
@@ -47,7 +47,7 @@ jobs:
   # Test job - runs various tests based on initialization outputs
   test:
     name: PR Test
-    needs: [ initialize,build ]
+    needs: [initialize, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
@@ -65,7 +65,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ test ]
+    needs: [test]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

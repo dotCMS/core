@@ -19,6 +19,13 @@ gh = "latest"
 # Python for cicd-diagnostics skill and automation scripts
 python = "3.11"
 
+# Workflow linting tools
+# yamllint for YAML syntax validation (installed via pip in venv)
+# actionlint for GitHub Actions workflow validation
+actionlint = "1.7.8" # https://github.com/rhysd/actionlint
+shellcheck = "0.11.0" # used by actionlint also
+"pipx:yamllint" = "latest"
+
 [env]
 # Python virtual environment location
 _.python.venv = { path = ".venv", create = true }

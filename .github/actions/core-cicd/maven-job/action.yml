@@ -141,7 +141,6 @@ runs:
       run: |
         echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
         echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
-      
 
     - id: restore-cache-yarn
       name: Restore Yarn Cache
@@ -153,7 +152,6 @@ runs:
         restore-keys: |
           ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
           ${{ runner.os }}-yarn-
-          
 
     - id: cache-sonar
       name: Cache SonarQube Packages
@@ -194,7 +192,7 @@ runs:
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
-        name: "build-classes"
+        name: 'build-classes'
 
     - id: run-maven-build
       name: Run Maven Build
@@ -257,7 +255,7 @@ runs:
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: "build-classes"
+        name: 'build-classes'
         path: |
           **/target/classes/**/*.class
           **/target/generated-sources/**/*.java
@@ -308,7 +306,7 @@ runs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: "build-reports-${{ inputs.stage-name }}"
+        name: 'build-reports-${{ inputs.stage-name }}'
         path: |
           target/build-report.json
           LICENSE
@@ -319,7 +317,7 @@ runs:
       uses: actions/upload-artifact@v4
       if: always() && inputs.generates-test-results == 'true'
       with:
-        name: "build-reports-test-${{ inputs.stage-name }}"
+        name: 'build-reports-test-${{ inputs.stage-name }}'
         path: |
           **/target/jacoco-report/*.exec
           **/target/*-reports/*.xml
