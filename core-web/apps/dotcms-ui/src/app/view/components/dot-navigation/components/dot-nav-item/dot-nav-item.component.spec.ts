@@ -176,11 +176,11 @@ describe('DotNavItemComponent', () => {
 
     it('should have icons set', () => {
         const icon: DebugElement = de.query(By.css('dot-nav-icon'));
-        const arrow: DebugElement = de.query(By.css('.dot-nav__item-arrow'));
+        const arrow: DebugElement = de.query(By.css('[data-testid="nav-item-toggle"] i'));
 
         expect(icon.componentInstance.icon).toBe('icon');
-        // When menu.isOpen = true, arrow should be arrow_drop_up (see beforeEach)
-        expect(arrow.componentInstance.name).toBe('arrow_drop_up');
+        // When menu.isOpen = true, arrow should have pi-chevron-up class (see beforeEach)
+        expect(arrow.nativeElement.classList.contains('pi-chevron-up')).toBe(true);
     });
 
     it('should avoid label_important icon', () => {

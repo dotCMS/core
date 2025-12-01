@@ -20,10 +20,10 @@
             class="dot-nav__item-toggle"
             data-testid="nav-item-toggle"
             (click)="toggleHandler($event, data)">
-            <dot-icon
-                class="dot-nav__item-arrow"
-                aria-hidden="true"
-                name="{{ data.isOpen ? 'arrow_drop_up' : 'arrow_drop_down' }}"></dot-icon>
+            <i
+                class="dot-nav__item-arrow pi"
+                [ngClass]="data.isOpen ? 'pi-chevron-up' : 'pi-chevron-down'"
+                aria-hidden="true"></i>
         </div>
     </div>
 </div>
