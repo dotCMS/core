@@ -19,7 +19,7 @@ import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { processSpecialRoute } from './breadcrumb.utils';
 
-import { replaceSectionsMap } from '../menu/with-menu.feature';
+import { REPLACE_SECTIONS_MAP } from '../menu/menu.slice';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -188,9 +188,9 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                 const item = menu.find((item) => {
                     // Check if the item's id should be mapped
-                    const mappedItemId = replaceSectionsMap[item.id] || item.id;
+                    const resolvedItemId = REPLACE_SECTIONS_MAP[item.id] || item.id;
 
-                    const pathMatches = item.menuLink === urlPath || mappedItemId === urlPath;
+                    const pathMatches = item.menuLink === urlPath || resolvedItemId === urlPath;
 
                     const hasQueryParams = queryString && queryString.length > 0;
 

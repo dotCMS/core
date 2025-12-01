@@ -19,14 +19,9 @@ import { computed, effect, inject } from '@angular/core';
 import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { initialMenuSlice, menuConfig } from './menu.slice';
+import { initialMenuSlice, menuConfig, REPLACE_SECTIONS_MAP } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
-
-export const replaceSectionsMap: Record<string, string> = {
-    'edit-page': 'site-browser',
-    analytics: 'analytics-dashboard'
-};
 
 /**
  * Custom Store Feature for managing menu state using Entity Management.
@@ -282,18 +277,18 @@ export function withMenu() {
                     return;
                 }
 
-                // Check if portletId should be replaced according to replaceSectionsMap
-                const mappedPortletId = replaceSectionsMap[portletId] || portletId;
+                // Check if portletId should be replaced according to REPLACE_SECTIONS_MAP
+                const resolvedPortletId = REPLACE_SECTIONS_MAP[portletId] || portletId;
 
                 // Direct lookup using the composite key
                 const entityMap = store.entityMap();
-                let compositeKey = `${mappedPortletId}__${shortParentMenuId}`;
+                let compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
                 const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
                 if (bookmark || !shortParentMenuId) {
                     const item = Object.values(entityMap).find((item) => {
-                        return item.id === mappedPortletId || item.id === portletId;
+                        return item.id === resolvedPortletId || item.id === portletId;
                     });
                     if (item) {
                         compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
