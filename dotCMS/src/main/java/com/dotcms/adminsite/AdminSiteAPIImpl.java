@@ -8,7 +8,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
@@ -68,13 +68,10 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             headers.put(tmpHeaders[i], tmpHeaders[++i]);
         }
         return Collections.unmodifiableMap(headers);
-
     }
 
-    ;
-
     @Override
-    public boolean isAdminSiteUri(HttpServletRequest request) {
+    public boolean isAdminSiteUri(@Nonnull HttpServletRequest request) {
 
         String uri = request.getRequestURI().toLowerCase();
 
@@ -82,9 +79,10 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
     @Override
-    public boolean isAdminSiteUri(String uri) {
+    public boolean isAdminSiteUri(@Nonnull String uri) {
+        final String lowerUri = uri.toLowerCase();
         for (String test : getAdminUris()) {
-            if (uri.startsWith(test)) {
+            if (lowerUri.startsWith(test)) {
                 return true;
             }
         }
@@ -92,16 +90,16 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
     @Override
-    public boolean isAdminSite(HttpServletRequest request) {
+    public boolean isAdminSite(@Nonnull HttpServletRequest request) {
 
-        if (request != null && request.getAttribute(ADMIN_SITE_REQUEST_HEADERS) != null) {
+        if (request.getAttribute(ADMIN_SITE_REQUEST_HEADERS) != null) {
             return true;
         }
 
         String host =
                 request.getHeader("host") != null ? request.getHeader("host").toLowerCase() : "local.dotcms.site";
 
-        host = host.indexOf(":") > -1 ? host.substring(0, host.indexOf(":")) : host;
+        host = host.contains(":") ? host.substring(0, host.indexOf(":")) : host;
         if (isAdminSite(host)) {
             request.setAttribute(ADMIN_SITE_REQUEST_VALIDATED, true);
             return true;
@@ -111,19 +109,18 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
     @Override
-    public boolean isAdminSite(String site) {
-
+    public boolean isAdminSite(@Nonnull String site) {
+        final String lowerSite = site.toLowerCase();
         for (String test : getAdminDomains()) {
-            if (site.endsWith(test)) {
+            if (lowerSite.endsWith(test)) {
                 return true;
             }
         }
-
         return false;
     }
 
     @Override
-    public boolean isAdminAllowed(HttpServletRequest request) {
+    public boolean isAdminAllowed(@Nonnull HttpServletRequest request) {
         return false;
     }
 
@@ -216,33 +213,35 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         return (String[]) getConfig().computeIfAbsent(ADMIN_SITE_REQUEST_URIS, k -> _adminUris());
     }
 
-    ;
-
     String[] _adminUris() {
-        Set<String> allowedUrls = new HashSet<>(Arrays.asList(AdminSiteAPI.ADMIN_SITE_REQUEST_URIS_DEFAULT));
+        Set<String> allowedUrls = new HashSet<>();
 
-        allowedUrls.addAll(
-                Arrays.asList(Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_URIS, new String[0])));
+        // Add defaults (lowercased)
+        for (String uri : AdminSiteAPI.ADMIN_SITE_REQUEST_URIS_DEFAULT) {
+            allowedUrls.add(uri.toLowerCase());
+        }
 
-        Arrays.asList(Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_URIS_EXCLUDE,
-                new String[0])).forEach(
-                allowedUrls::remove);
+        // Add configured URIs (lowercased)
+        for (String uri : Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_URIS, new String[0])) {
+            allowedUrls.add(uri.toLowerCase());
+        }
+
+        // Remove excluded URIs (lowercased for matching)
+        for (String uri : Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_URIS_EXCLUDE, new String[0])) {
+            allowedUrls.remove(uri.toLowerCase());
+        }
 
         return allowedUrls.toArray(new String[0]);
-
     }
 
 
     public String[] getAdminDomains() {
-
         final String adminSiteUrl = getAdminSiteUrl();
         return (String[]) getConfig().computeIfAbsent(ADMIN_SITE_REQUEST_DOMAINS, k -> _adminDomains(adminSiteUrl));
     }
 
-    ;
 
-
-    String[] _adminDomains(String adminSiteUrl) {
+    String[] _adminDomains(@Nonnull String adminSiteUrl) {
 
         // Get portal URL host first so it can be placed at the beginning
         final URL portalUrl = Try.of(() -> new URL(adminSiteUrl)).getOrNull();
@@ -251,20 +250,25 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         if (portalUrl != null) {
             allowedHosts.add(portalUrl.getHost().toLowerCase());
         }
-        allowedHosts.addAll(Arrays.asList(AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS_DEFAULT));
-        allowedHosts.addAll(
-                Arrays.asList(Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS,
-                        new String[0])));
 
-        // Remove excluded domains
-        Arrays.asList(Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE,
-                new String[0])).forEach(allowedHosts::remove);
+        // Add defaults (lowercased)
+        for (String domain : AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS_DEFAULT) {
+            allowedHosts.add(domain.toLowerCase());
+        }
+
+        // Add configured domains (lowercased)
+        for (String domain : Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS, new String[0])) {
+            allowedHosts.add(domain.toLowerCase());
+        }
+
+        // Remove excluded domains (lowercased for matching)
+        for (String domain : Config.getStringArrayProperty(AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE,
+                new String[0])) {
+            allowedHosts.remove(domain.toLowerCase());
+        }
 
         return allowedHosts.toArray(new String[0]);
     }
-
-    ;
-
 
     @Override
     public void invalidateCache() {

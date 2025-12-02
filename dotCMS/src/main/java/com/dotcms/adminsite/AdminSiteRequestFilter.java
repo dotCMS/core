@@ -54,7 +54,9 @@ public class AdminSiteRequestFilter implements Filter {
 
         if (adminURI && !adminSite) {
             Logger.warn(getClass(),
-                    "Requests to the dotCMS admin backend can only be made through a valid ADMIN url, e.g. customer-auth.dotcms.site/dotAdmin");
+                    "Admin URI blocked from non-admin domain: " + request.getRequestURI() + " from host: "
+                            + request.getHeader("host"));
+
             response.addHeader("x-dot-admin-site", "true");
             response.sendError(404);
             return;
