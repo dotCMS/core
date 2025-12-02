@@ -100,13 +100,14 @@
     transition: opacity $basic-speed ease;
 }
 
-dot-icon {
+.dot-nav__item-arrow {
     opacity: 1;
     position: absolute;
-    right: $spacing-1;
+    right: $spacing-2;
     top: 50%;
     transform: translateY(-50%);
     transition: opacity $basic-speed ease;
+    font-size: $font-size-sm;
 }
 
 dot-nav-icon {
