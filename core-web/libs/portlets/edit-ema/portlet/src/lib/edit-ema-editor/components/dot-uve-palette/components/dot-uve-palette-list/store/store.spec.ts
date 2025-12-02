@@ -113,6 +113,8 @@ describe('DotPaletteListStore', () => {
         dotESContentService.get.mockReturnValue(of(mockESResponse));
 
         dotFavoriteContentTypeService.getAll.mockReturnValue(mockContentTypes);
+        dotFavoriteContentTypeService.add.mockReturnValue(mockContentTypes);
+        dotFavoriteContentTypeService.remove.mockReturnValue(mockContentTypes);
     });
 
     describe('Initial State', () => {
@@ -352,6 +354,65 @@ describe('DotPaletteListStore', () => {
 
                 expect(store.contenttypes()).toHaveLength(20); // 50 - 30 = 20 on page 2
                 expect(store.pagination().currentPage).toBe(2);
+            });
+        });
+
+        describe('favorites actions', () => {
+            const extraFavorite = {
+                id: '3',
+                name: 'Events',
+                variable: 'events',
+                baseType: 'CONTENT'
+            } as DotCMSContentType;
+
+            it('should refresh store when adding favorites in favorites view', () => {
+                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
+                const updatedFavorites = [...mockContentTypes, extraFavorite];
+                dotFavoriteContentTypeService.add.mockReturnValueOnce(updatedFavorites);
+
+                store.addFavorite(mockContentTypes[0]);
+
+                expect(dotFavoriteContentTypeService.add).toHaveBeenCalledWith(mockContentTypes[0]);
+                // Favorites are sorted alphabetically by name: Blog, Events, News
+                const expectedOrder = [
+                    mockContentTypes[0], // Blog
+                    extraFavorite, // Events
+                    mockContentTypes[1] // News
+                ];
+                expect(store.contenttypes()).toEqual(expectedOrder);
+            });
+
+            it('should not refresh store when adding favorites outside favorites view', () => {
+                const spy = jest.spyOn(store, 'setContentTypesFromFavorite');
+
+                store.addFavorite(mockContentTypes[0]);
+
+                expect(dotFavoriteContentTypeService.add).toHaveBeenCalledWith(mockContentTypes[0]);
+                expect(spy).not.toHaveBeenCalled();
+            });
+
+            it('should refresh store when removing favorites in favorites view', () => {
+                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
+                const remainingFavorites = mockContentTypes.slice(1);
+                dotFavoriteContentTypeService.remove.mockReturnValueOnce(remainingFavorites);
+
+                store.removeFavorite(mockContentTypes[0].id);
+
+                expect(dotFavoriteContentTypeService.remove).toHaveBeenCalledWith(
+                    mockContentTypes[0].id
+                );
+                expect(store.contenttypes()).toEqual(remainingFavorites);
+            });
+
+            it('should not refresh store when removing favorites outside favorites view', () => {
+                const spy = jest.spyOn(store, 'setContentTypesFromFavorite');
+
+                store.removeFavorite(mockContentTypes[0].id);
+
+                expect(dotFavoriteContentTypeService.remove).toHaveBeenCalledWith(
+                    mockContentTypes[0].id
+                );
+                expect(spy).not.toHaveBeenCalled();
             });
         });
 
