@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const SiteSchema = z
     .object({
-        aliases: z.string().optional(),
+        aliases: z.string().nullable().optional(),
         archived: z.boolean(),
         categoryId: z.string(),
         contentTypeId: z.string(),

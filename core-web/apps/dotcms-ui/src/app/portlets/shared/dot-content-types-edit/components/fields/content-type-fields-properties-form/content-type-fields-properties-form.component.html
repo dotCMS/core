@@ -1,8 +1,4 @@
-<form
-    (ngSubmit)="saveFieldProperties()"
-    [formGroup]="form"
-    class="form"
-    novalidate>
+<form (ngSubmit)="saveFieldProperties()" [formGroup]="form" class="form" novalidate>
     @for (property of fieldProperties; track property) {
         <div #properties>
             <ng-container

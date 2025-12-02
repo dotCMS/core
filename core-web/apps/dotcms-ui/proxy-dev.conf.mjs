@@ -21,7 +21,7 @@ export default [
             '/api/vtl',
             '/tinymce',
             '/ext',
-            "/image"
+            '/image'
         ],
         target: 'http://localhost:8080',
         secure: false,

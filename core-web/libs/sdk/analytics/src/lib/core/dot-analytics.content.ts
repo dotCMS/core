@@ -2,15 +2,23 @@ import { Analytics } from 'analytics';
 
 import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
 
-import { dotAnalytics } from './plugin/dot-analytics.plugin';
+import { dotAnalyticsClickPlugin } from './plugin/click/dot-analytics.click.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
+import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
+import { DotCMSPredefinedEventType } from './shared/constants/dot-analytics.constants';
+import {
+    DotCMSAnalytics,
+    DotCMSAnalyticsConfig,
+    DotCMSConversionPayload,
+    JsonObject
+} from './shared/models';
 import {
     cleanupActivityTracking,
+    getEnhancedTrackingPlugins,
     validateAnalyticsConfig
-} from './shared/dot-content-analytics.utils';
-import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from './shared/models';
+} from './shared/utils/dot-analytics.utils';
 
 // Extend Window interface for analytics properties
 declare global {
@@ -32,7 +40,9 @@ export const initializeContentAnalytics = (
     // Validate required configuration
     const missingFields = validateAnalyticsConfig(config);
     if (missingFields) {
-        console.error(`DotCMS Analytics: Missing ${missingFields.join(' and ')} in configuration`);
+        console.error(
+            `DotCMS Analytics [Core]: Missing ${missingFields.join(' and ')} in configuration`
+        );
 
         if (typeof window !== 'undefined') {
             window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
@@ -41,13 +51,20 @@ export const initializeContentAnalytics = (
         return null;
     }
 
+    // Build enhanced tracking plugins (impressions & clicks)
+    const enhancedTrackingPlugins = getEnhancedTrackingPlugins(
+        config,
+        dotAnalyticsImpressionPlugin,
+        dotAnalyticsClickPlugin
+    );
+
     // Create Analytics.js instance with all plugins
     const analyticsInstance = Analytics({
         app: 'dotAnalytics',
         debug: config.debug,
         plugins: [
             dotAnalyticsIdentityPlugin(config), // Inject identity context
-            dotAnalyticsImpressionPlugin(config), // Track content impressions
+            ...enhancedTrackingPlugins, //Track content impressions & clicks (conditionally loaded)
             dotAnalyticsEnricherPlugin(), // Enrich and clean payload with page, device, utm data and custom data
             dotAnalytics(config) // Send events to server
         ]
@@ -73,7 +90,7 @@ export const initializeContentAnalytics = (
          */
         pageView: (payload: JsonObject = {}) => {
             if (!analyticsInstance) {
-                console.warn('DotCMS Analytics: Analytics instance not initialized');
+                console.warn('DotCMS Analytics [Core]: Analytics instance not initialized');
                 return;
             }
             analyticsInstance.page(payload);
@@ -86,10 +103,34 @@ export const initializeContentAnalytics = (
          */
         track: (eventName: string, payload: JsonObject = {}) => {
             if (!analyticsInstance) {
-                console.warn('DotCMS Analytics: Analytics instance not initialized');
+                console.warn('DotCMS Analytics [Core]: Analytics instance not initialized');
                 return;
             }
             analyticsInstance.track(eventName, payload);
+        },
+
+        /**
+         * Track a conversion event.
+         * @param name - Name of the conversion (e.g., 'purchase', 'download', 'signup')
+         * @param options - Optional custom data
+         */
+        conversion: (name: string, options: JsonObject = {}) => {
+            if (!analyticsInstance) {
+                console.warn('DotCMS Analytics [Core]: Analytics instance not initialized');
+                return;
+            }
+
+            if (!name || name.trim() === '') {
+                console.warn('DotCMS Analytics [Core]: Conversion name cannot be empty');
+                return;
+            }
+
+            const payload: DotCMSConversionPayload = {
+                name,
+                ...(Object.keys(options).length > 0 && { custom: options })
+            };
+
+            analyticsInstance.track(DotCMSPredefinedEventType.CONVERSION, payload);
         }
     };
 };

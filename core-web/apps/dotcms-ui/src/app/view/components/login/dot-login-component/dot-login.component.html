@@ -1,83 +1,120 @@
 @if (loginInfo$ | async; as loginInfo) {
-<form class="form" [formGroup]="loginForm">
-    <section class="pb-4">
-        <header class="flex justify-between items-center mb-2">
-            <img [src]="loginInfo.entity.logo" alt="DotCMS - Hybrid CMS" class="h-6" />
-            <p-select (onChange)="onLanguageChange($event.value)" [options]="languages" size="small" #languageDropdown
-                data-testId="language" formControlName="language"></p-select>
-        </header>
-        <h3 class="text-2xl font-bold" data-testId="header">
-            {{ loginInfo.i18nMessagesMap['welcome-login'] }}
-        </h3>
-    </section>
+    <form class="form" [formGroup]="loginForm">
+        <section class="pb-4">
+            <header class="flex justify-between items-center mb-2">
+                <img [src]="loginInfo.entity.logo" alt="DotCMS - Hybrid CMS" class="h-6" />
+                <p-select
+                    (onChange)="onLanguageChange($event.value)"
+                    [options]="languages"
+                    size="small"
+                    #languageDropdown
+                    data-testId="language"
+                    formControlName="language"></p-select>
+            </header>
+            <h3 class="text-2xl font-bold" data-testId="header">
+                {{ loginInfo.i18nMessagesMap['welcome-login'] }}
+            </h3>
+        </section>
 
-    <p class="text-sm text-gray-500" [ngClass]="{ 'p-invalid': isError, success: !isError }" [innerHTML]="message" data-testId="message"></p>
+        <p
+            class="text-sm text-gray-500"
+            [ngClass]="{ 'p-invalid': isError, success: !isError }"
+            [innerHTML]="message"
+            data-testId="message"></p>
 
-    <div class="field">
-        <label dotFieldRequired data-testId="emailLabel" for="inputtext">
-            {{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}
-        </label>
-        <input id="inputtext" type="text" pInputText dotAutofocus formControlName="login" autocomplete="username"
-            data-testId="userNameInput" />
-        <dot-field-validation-message [message]="
+        <div class="field">
+            <label dotFieldRequired data-testId="emailLabel" for="inputtext">
+                {{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}
+            </label>
+            <input
+                id="inputtext"
+                type="text"
+                pInputText
+                dotAutofocus
+                formControlName="login"
+                autocomplete="username"
+                data-testId="userNameInput" />
+            <dot-field-validation-message
+                [message]="
                     loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
                         '{0}',
                         loginInfo.i18nMessagesMap['emailAddressLabel']
                     )
-                " [field]="loginForm.get('login')"></dot-field-validation-message>
-    </div>
-    <div class="field">
-        <label dotFieldRequired data-testId="passwordLabel" for="password">
-            {{ loginInfo.i18nMessagesMap['password'] }}
-        </label>
-        <input id="password" pInputText type="password" formControlName="password" autocomplete="current-password"
-            data-testId="password" />
-        <dot-field-validation-message [message]="
+                "
+                [field]="loginForm.get('login')"></dot-field-validation-message>
+        </div>
+        <div class="field">
+            <label dotFieldRequired data-testId="passwordLabel" for="password">
+                {{ loginInfo.i18nMessagesMap['password'] }}
+            </label>
+            <input
+                id="password"
+                pInputText
+                type="password"
+                formControlName="password"
+                autocomplete="current-password"
+                data-testId="password" />
+            <dot-field-validation-message
+                [message]="
                     loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
                         '{0}',
                         loginInfo.i18nMessagesMap['password']
                     )
-                " [field]="loginForm.get('password')"></dot-field-validation-message>
-    </div>
-    <div class="flex justify-between items-center">
-        <div class="checkbox">
-            <p-checkbox [inputId]="'rememberMe'" formControlName="rememberMe" data-testId="rememberMe"
-                [binary]="true"></p-checkbox>
-            <label [for]="'rememberMe'">
-                {{ loginInfo.i18nMessagesMap['remember-me'] }}
-            </label>
+                "
+                [field]="loginForm.get('password')"></dot-field-validation-message>
         </div>
-        @if (!isLoginInProgress) {
-        <a [routerLink]="['/public/forgotPassword']" class="password-settings__forgot-password"
-            data-testId="actionLink">
-            {{ loginInfo.i18nMessagesMap['get-new-password'] }}
-        </a>
-        }
-    </div>
-    <div class="field">
-        @if (loginForm.enabled) {
-        <button type="submit" [loading]="loading()" (click)="logInUser()" [disabled]="!loginForm.valid"
-            [label]="loginInfo.i18nMessagesMap['sign-in']" pButton data-testId="submitButton"></button>
-        }
-    </div>
-    <footer class="text-sm text-gray-500 flex flex-col gap-1 pt-4">
-        <p>
-            <span data-testId="server">
-                {{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}
-            </span>
-            |
-            <span data-testId="version">
-                {{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }}
-                - {{ loginInfo.entity.buildDateString }}
-            </span>
-        </p>
-        @if (loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1) {
-        <p [innerHTML]="
+        <div class="flex justify-between items-center">
+            <div class="checkbox">
+                <p-checkbox
+                    [inputId]="'rememberMe'"
+                    formControlName="rememberMe"
+                    data-testId="rememberMe"
+                    [binary]="true"></p-checkbox>
+                <label [for]="'rememberMe'">
+                    {{ loginInfo.i18nMessagesMap['remember-me'] }}
+                </label>
+            </div>
+            @if (!isLoginInProgress) {
+                <a
+                    [routerLink]="['/public/forgotPassword']"
+                    class="password-settings__forgot-password"
+                    data-testId="actionLink">
+                    {{ loginInfo.i18nMessagesMap['get-new-password'] }}
+                </a>
+            }
+        </div>
+        <div class="field">
+            @if (loginForm.enabled) {
+                <button
+                    type="submit"
+                    [loading]="loading()"
+                    (click)="logInUser()"
+                    [disabled]="!loginForm.valid"
+                    [label]="loginInfo.i18nMessagesMap['sign-in']"
+                    pButton
+                    data-testId="submitButton"></button>
+            }
+        </div>
+        <footer class="text-sm text-gray-500 flex flex-col gap-1 pt-4">
+            <p>
+                <span data-testId="server">
+                    {{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}
+                </span>
+                |
+                <span data-testId="version">
+                    {{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
+                    {{ loginInfo.entity.buildDateString }}
+                </span>
+            </p>
+            @if (loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1) {
+                <p
+                    [innerHTML]="
                         loginInfo.i18nMessagesMap[
                             'angular.login.component.community.licence.message'
                         ]
-                    " data-testId="license"></p>
-        }
-    </footer>
-</form>
+                    "
+                    data-testId="license"></p>
+            }
+        </footer>
+    </form>
 }

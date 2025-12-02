@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import 'tailwindcss';
+@import "tailwindcss";
 
 $tab-min-height: 52px;
 
@@ -36,7 +36,6 @@ $tab-min-height: 52px;
                 @apply text-sm text-gray-500;
             }
         }
-
     }
 }
 

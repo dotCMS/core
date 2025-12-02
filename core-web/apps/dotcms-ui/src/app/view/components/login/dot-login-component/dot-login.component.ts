@@ -50,7 +50,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        RouterLink,
+        RouterLink
     ]
 })
 /**

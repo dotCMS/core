@@ -1,7 +1,12 @@
-<label [attr.data-testid]="'label-' + $variableName()" [class.p-label-input-required]="$isRequired()"
+<label
+    [attr.data-testid]="'label-' + $variableName()"
+    [class.p-label-input-required]="$isRequired()"
     [for]="$variableName()">
     <ng-content />
 </label>
 @if ($hint()) {
-<i class="pi pi-info-circle text-xs" [pTooltip]="$hint()" tooltipStyleClass="tooltip-label-hint"></i>
+    <i
+        class="pi pi-info-circle text-xs"
+        [pTooltip]="$hint()"
+        tooltipStyleClass="tooltip-label-hint"></i>
 }

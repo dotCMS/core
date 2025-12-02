@@ -26,7 +26,17 @@ a:visited {
 Since we using space-y-5, we need to hide the empty fields.
 This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.
 */
-.form *:not(input, textarea, button, .p-toggleswitch-handle, path, .p-radiobutton-icon, .p-checkbox-box, img):empty {
+.form
+    *:not(
+        input,
+        textarea,
+        button,
+        .p-toggleswitch-handle,
+        path,
+        .p-radiobutton-icon,
+        .p-checkbox-box,
+        img
+    ):empty {
     @apply hidden;
 }
 
@@ -38,11 +48,13 @@ This selector needs work, I don't want to have to specify every single component
     @apply text-sm font-medium;
 }
 
-.form .checkbox, .form .radio {
+.form .checkbox,
+.form .radio {
     @apply flex flex-row gap-2 items-center;
 }
 
-.form .checkbox label, .form .radio label {
+.form .checkbox label,
+.form .radio label {
     @apply text-sm font-normal;
 }
 

@@ -1,57 +1,84 @@
 <form [formGroup]="form" class="form" id="content-type-form" novalidate>
     @if (newContentEditorEnabled) {
-    <div class="banner" data-test-id="content-type__new-content-banner">
-        <p-checkbox class="p-checkbox-sm" formControlName="newEditContent" binary="true"
-            inputId="newEditContentLabel"></p-checkbox>
-        <label for="newEditContentLabel">
-            <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
-        </label>
-    </div>
+        <div class="banner" data-test-id="content-type__new-content-banner">
+            <p-checkbox
+                class="p-checkbox-sm"
+                formControlName="newEditContent"
+                binary="true"
+                inputId="newEditContentLabel"></p-checkbox>
+            <label for="newEditContentLabel">
+                <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
+            </label>
+        </div>
     }
     <div class="field">
         <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>
-        <input [tabindex]="1" id="content-type-form-name" #name pInputText type="text" name="name"
-            formControlName="name" dotAutofocus />
-        <dot-field-validation-message [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
+        <input
+            [tabindex]="1"
+            id="content-type-form-name"
+            #name
+            pInputText
+            type="text"
+            name="name"
+            formControlName="name"
+            dotAutofocus />
+        <dot-field-validation-message
+            [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')"></dot-field-validation-message>
     </div>
     <div class="field">
         <label for="content-type-form-description">{{ 'contenttypes.form.label.icon' | dm }}</label>
-        <dot-md-icon-selector [tabindex]="2" id="content-type-form-icon" formControlName="icon"></dot-md-icon-selector>
+        <dot-md-icon-selector
+            [tabindex]="2"
+            id="content-type-form-icon"
+            formControlName="icon"></dot-md-icon-selector>
     </div>
 
     <div class="field">
         <label for="content-type-form-description">
             {{ 'contenttypes.form.label.description' | dm }}
         </label>
-        <input [tabindex]="3" id="content-type-form-description" pInputText type="text" name="description"
+        <input
+            [tabindex]="3"
+            id="content-type-form-description"
+            pInputText
+            type="text"
+            name="description"
             formControlName="description" />
     </div>
     <div class="field">
         <label for="content-type-form-host">
             {{ 'contenttypes.form.field.host_folder.label' | dm }}
         </label>
-        <dot-site-selector-field [system]="true" [tabindex]="4" id="content-type-form-host" formControlName="host"
+        <dot-site-selector-field
+            [system]="true"
+            [tabindex]="4"
+            id="content-type-form-host"
+            formControlName="host"
             width="100%"></dot-site-selector-field>
     </div>
     <div class="field">
         <label for="content-type-form-workflow">
             {{ 'contenttypes.form.label.workflow' | dm }}
         </label>
-        <dot-workflows-selector-field [tabindex]="5" id="content-type-form-workflow"
+        <dot-workflows-selector-field
+            [tabindex]="5"
+            id="content-type-form-workflow"
             formControlName="workflows"></dot-workflows-selector-field>
     </div>
     <div class="field" formGroupName="systemActionMappings">
         <label for="content-type-form-workflow">
             {{ 'contenttypes.form.label.workflow.actions' | dm }}
         </label>
-        <dot-workflows-actions-selector-field [tabindex]="6" [workflows]="workflowsSelected$ | async"
+        <dot-workflows-actions-selector-field
+            [tabindex]="6"
+            [workflows]="workflowsSelected$ | async"
             formControlName="NEW"></dot-workflows-actions-selector-field>
     </div>
     @if (form.get('workflows').disabled) {
-    <span class="p-field-hint form-workflow-community-message" id="field-workflow-hint">
-        {{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}
-    </span>
+        <span class="p-field-hint form-workflow-community-message" id="field-workflow-hint">
+            {{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}
+        </span>
     }
     <div class="flex flex-col gap-1">
         <div class="flex gap-2">
@@ -59,45 +86,64 @@
                 <label for="content-type-form-publish-date-field">
                     {{ 'contenttypes.form.label.publish.date.field' | dm }}
                 </label>
-                <p-select (onChange)="handleDateVarChange($event, 'publishDateVar')" [options]="dateVarOptions"
-                    [tabindex]="7" [placeholder]="'contenttypes.form.date.field.placeholder' | dm" [showClear]="true"
-                    id="content-type-form-publish-date-field" appendTo="body" name="publishDateVar"
+                <p-select
+                    (onChange)="handleDateVarChange($event, 'publishDateVar')"
+                    [options]="dateVarOptions"
+                    [tabindex]="7"
+                    [placeholder]="'contenttypes.form.date.field.placeholder' | dm"
+                    [showClear]="true"
+                    id="content-type-form-publish-date-field"
+                    appendTo="body"
+                    name="publishDateVar"
                     formControlName="publishDateVar"></p-select>
             </div>
             <div class="field flex-1">
                 <label for="content-type-form-expire-date-field">
                     {{ 'contenttypes.form.field.expire.date.field' | dm }}
                 </label>
-                <p-select (onChange)="handleDateVarChange($event, 'expireDateVar')" [showClear]="true"
-                    [options]="dateVarOptions" [tabindex]="8"
+                <p-select
+                    (onChange)="handleDateVarChange($event, 'expireDateVar')"
+                    [showClear]="true"
+                    [options]="dateVarOptions"
+                    [tabindex]="8"
                     [placeholder]="'contenttypes.form.date.field.placeholder' | dm"
-                    id="content-type-form-expire-date-field" appendTo="body" name="expireDateVar"
+                    id="content-type-form-expire-date-field"
+                    appendTo="body"
+                    name="expireDateVar"
                     formControlName="expireDateVar"></p-select>
             </div>
         </div>
         @if (!dateVarOptions.length) {
-        <small class="p-field-hint field__date-hint" id="field-dates-hint">
-            {{ 'contenttypes.form.message.no.date.fields.defined' | dm }}
-        </small>
+            <small class="p-field-hint field__date-hint" id="field-dates-hint">
+                {{ 'contenttypes.form.message.no.date.fields.defined' | dm }}
+            </small>
         }
     </div>
     @if (form.get('detailPage')) {
-    <div class="field">
-        <label for="content-type-form-detail-page">
-            {{ 'contenttypes.form.field.detail.page' | dm }}
-        </label>
-        <dot-page-selector [tabindex]="9" id="content-type-form-detail-page"
-            formControlName="detailPage"></dot-page-selector>
-    </div>
+        <div class="field">
+            <label for="content-type-form-detail-page">
+                {{ 'contenttypes.form.field.detail.page' | dm }}
+            </label>
+            <dot-page-selector
+                [tabindex]="9"
+                id="content-type-form-detail-page"
+                formControlName="detailPage"></dot-page-selector>
+        </div>
     }
     @if (form.get('urlMapPattern')) {
-    <div class="field">
-        <dot-field-helper [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
-        <label for="content-type-form-url-map-pattern">
-            {{ 'contenttypes.form.label.URL.pattern' | dm }}
-        </label>
-        <input [tabindex]="10" id="content-type-form-url-map-pattern" pInputText type="text" name="urlMapPattern"
-            formControlName="urlMapPattern" />
-    </div>
+        <div class="field">
+            <dot-field-helper
+                [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
+            <label for="content-type-form-url-map-pattern">
+                {{ 'contenttypes.form.label.URL.pattern' | dm }}
+            </label>
+            <input
+                [tabindex]="10"
+                id="content-type-form-url-map-pattern"
+                pInputText
+                type="text"
+                name="urlMapPattern"
+                formControlName="urlMapPattern" />
+        </div>
     }
 </form>
