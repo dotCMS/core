@@ -1310,7 +1310,7 @@ public class TestDataUtils {
                 .setProperty("urlTitle", "blogContent")
                 .setProperty("author", "systemUser")
                 .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody")
+                .setProperty("body", BLOCK_EDITOR_DUMMY_CONTENT)
                 .setProperty("seo", text);
 
         return getBlogContent(persist, host, contentletDataGen);
@@ -1329,7 +1329,7 @@ public class TestDataUtils {
                 .setProperty("urlTitle", "blogContent")
                 .setProperty("author", "systemUser")
                 .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody");
+                .setProperty("body", BLOCK_EDITOR_DUMMY_CONTENT);
 
         return getBlogContent(persist, site, contentletDataGen);
     }
