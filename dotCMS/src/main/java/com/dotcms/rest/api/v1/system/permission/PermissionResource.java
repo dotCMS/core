@@ -303,10 +303,10 @@ public class PermissionResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final PermissionMetadataView permissionMetadata = new PermissionMetadataView(
-            PermissionUtils.getAvailablePermissionLevels(),
-            PermissionUtils.getAvailablePermissionScopes()
-        );
+        final PermissionMetadataView permissionMetadata = PermissionMetadataView.builder()
+            .levels(PermissionUtils.getAvailablePermissionLevels())
+            .scopes(PermissionUtils.getAvailablePermissionScopes())
+            .build();
 
         Logger.debug(this, () -> "Permission metadata retrieved successfully");
 

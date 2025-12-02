@@ -22139,6 +22139,28 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableSetString:
+      type: array
+      description: Available permission scopes (asset types) that support permissions
+      example:
+      - INDIVIDUAL
+      - HOST
+      - FOLDER
+      - CONTENT
+      - TEMPLATE
+      - PAGE
+      - CONTAINER
+      - CONTENT_TYPE
+      - CATEGORY
+      items:
+        type: string
+        description: Available permission scopes (asset types) that support permissions
+        example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\",\"\
+          PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+      properties:
+        empty:
+          type: boolean
+      uniqueItems: true
     JSONObject:
       type: object
       additionalProperties:
@@ -23010,8 +23032,6 @@ components:
           type: string
     PermissionMetadataView:
       type: object
-      description: Permission metadata containing available levels and scopes in the
-        system
       properties:
         levels:
           type: array
@@ -23029,6 +23049,9 @@ components:
               and roles
             example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
               ]"
+          properties:
+            empty:
+              type: boolean
           uniqueItems: true
         scopes:
           type: array
@@ -23048,6 +23071,9 @@ components:
             description: Available permission scopes (asset types) that support permissions
             example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
               ,\"PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+          properties:
+            empty:
+              type: boolean
           uniqueItems: true
       required:
       - levels
