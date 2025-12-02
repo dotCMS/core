@@ -512,7 +512,7 @@ public class ContentTypeHelper implements Serializable {
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         fieldsMap.forEach(field -> {
             if (field.get("clazz").equals(ImmutableCustomField.class.getName())
-                    && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.IFRAME)) {
+                    && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.COMPONENT)) {
                 try {
                     final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
                     final String textValue = (String) field.getOrDefault("values", BLANK);
