@@ -13,10 +13,10 @@ cube('Conversion', {
             SUM(daily_total) AS total
         FROM content_events_counter
         WHERE event_type = 'conversion' AND 
-                ${FILTER_PARAMS.request.customerId.filter('customer_id')}
+                ${FILTER_PARAMS.Conversion.customerId.filter('customer_id')}
                 AND (
-                    ${FILTER_PARAMS.request.clusterId ? FILTER_PARAMS.request.clusterId.filter('cluster_id') : '1=1'}
-                    OR (${FILTER_PARAMS.request.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})
+                    ${FILTER_PARAMS.Conversion.clusterId ? FILTER_PARAMS.Conversion.clusterId.filter('cluster_id') : '1=1'}
+                    OR (${FILTER_PARAMS.Conversion.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})
               )
         GROUP BY title, customer_id, cluster_id, context_site_id`,
     joins: {

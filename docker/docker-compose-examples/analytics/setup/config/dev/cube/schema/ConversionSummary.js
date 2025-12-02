@@ -65,6 +65,11 @@ cube(`ConversionSummary`, {
 
   // 3) Dimensions
   dimensions: {
+    id: {
+      sql: `concat(customer_id, '-', cluster_id,  '-', context_user_id,  '-', context_site_id, '-', event_type,'-', identifier, '-', title, '-', day)`,
+      type: `string`,
+      primaryKey: true
+    },
     day: {
       sql: `day`,
       type: `time`
