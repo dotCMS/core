@@ -59,38 +59,46 @@ body {
 }
 
 html {
-    color: $black;
-    font-family: $font-default;
+    font-size: 14px;
+    font-family: Inter var,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol;
+    font-feature-settings: "cv02","cv03","cv04","cv11";
+    line-height: normal
 }
 
-body {
-    background-position: top center;
-    background-repeat: no-repeat;
-    background-size: cover;
-}
 
-a {
-    color: $color-palette-primary;
+// html {
+//     color: $black;
+//     font-family: $font-default;
+// }
 
-    &:hover {
-        text-decoration: none;
-    }
+// body {
+//     background-position: top center;
+//     background-repeat: no-repeat;
+//     background-size: cover;
+// }
 
-    &.link-secondary {
-        color: $color-palette-secondary;
-    }
+// a {
+//     color: $color-palette-primary;
 
-    &[actionlink] {
-        color: $color-palette-secondary;
-        font-size: $button-tiny-text-size;
-        text-transform: uppercase;
-        cursor: pointer;
-    }
-}
+//     &:hover {
+//         text-decoration: none;
+//     }
 
-button {
-    font-family: $font-default;
-}
+//     &.link-secondary {
+//         color: $color-palette-secondary;
+//     }
+
+//     &[actionlink] {
+//         color: $color-palette-secondary;
+//         font-size: $button-tiny-text-size;
+//         text-transform: uppercase;
+//         cursor: pointer;
+//     }
+// }
+
+// button {
+//     font-family: $font-default;
+// }
 
 /*
 

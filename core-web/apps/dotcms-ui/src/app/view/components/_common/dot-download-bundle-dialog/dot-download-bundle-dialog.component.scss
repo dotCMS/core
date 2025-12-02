@@ -1,15 +1,1 @@
-@use "variables" as *;
-form {
-    width: $form-width;
-}
 
-p-selectbutton {
-    display: block;
-    border-bottom: solid 1px $color-palette-gray-500;
-}
-
-.download-bundle__error {
-    display: flex;
-    justify-content: flex-end;
-    color: $error;
-}

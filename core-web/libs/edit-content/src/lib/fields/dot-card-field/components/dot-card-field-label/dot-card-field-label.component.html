@@ -1,14 +1,7 @@
-<div class="flex gap-1 items-center">
-    <label
-        [attr.data-testid]="'label-' + $variableName()"
-        [class.p-label-input-required]="$isRequired()"
-        [for]="$variableName()">
-        <ng-content />
-    </label>
-    @if ($hint()) {
-        <i
-            class="pi pi-info-circle text-xs"
-            [pTooltip]="$hint()"
-            tooltipStyleClass="tooltip-label-hint"></i>
-    }
-</div>
+<label [attr.data-testid]="'label-' + $variableName()" [class.p-label-input-required]="$isRequired()"
+    [for]="$variableName()">
+    <ng-content />
+</label>
+@if ($hint()) {
+<i class="pi pi-info-circle text-xs" [pTooltip]="$hint()" tooltipStyleClass="tooltip-label-hint"></i>
+}

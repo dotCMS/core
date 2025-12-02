@@ -1,2 +1,55 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+
+a {
+    @apply text-primary-500 underline;
+}
+
+a:hover {
+    @apply text-primary-600 no-underline;
+}
+
+a:active {
+    @apply text-primary-700;
+}
+
+a:visited {
+    @apply text-primary-800;
+}
+
+/* The .form > div is because the app form is using a div to wrap the fields. */
+.form {
+    @apply w-full space-y-5;
+}
+
+/*
+Since we using space-y-5, we need to hide the empty fields.
+This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.
+*/
+.form *:not(input, textarea, button, .p-toggleswitch-handle, path, .p-radiobutton-icon, .p-checkbox-box, img):empty {
+    @apply hidden;
+}
+
+.form .field {
+    @apply flex flex-col gap-1;
+}
+
+.form .field label {
+    @apply text-sm font-medium;
+}
+
+.form .checkbox, .form .radio {
+    @apply flex flex-row gap-2 items-center;
+}
+
+.form .checkbox label, .form .radio label {
+    @apply text-sm font-normal;
+}
+
+.form .p-field-hint {
+    @apply text-sm text-gray-500;
+}
+
+.form .p-field-error {
+    @apply text-sm text-red-500;
+}

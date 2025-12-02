@@ -20,7 +20,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { TabsModule } from 'primeng/tabs';
 
-import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
@@ -117,7 +117,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             });
 
         this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise(), debounceTime(300))
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,

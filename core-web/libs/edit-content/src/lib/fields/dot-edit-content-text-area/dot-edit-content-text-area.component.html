@@ -27,6 +27,7 @@
                 @if ($displayedEditor() === editorTypes.PlainText) {
                     <textarea
                         #textarea
+                        class="w-full"
                         [id]="field.variable"
                         [formControlName]="field.variable"
                         [class.ng-invalid]="fieldHasError"

@@ -1,4 +1,4 @@
-<form [formGroup]="myFormGroup" class="p-fluid" #form="ngForm" novalidate>
+<form [formGroup]="myFormGroup" class="form" #form="ngForm" #formContainer novalidate>
     <ng-template #warningIcon let-field="field">
         @if (field.warnings && field.warnings.length) {
             <dot-icon
@@ -14,100 +14,98 @@
         </label>
     </ng-template>
 
-    <div class="dot-apps-configuration-detail__form" #formContainer>
-        @for (field of $formFields(); track field) {
-            <div [attr.data-testid]="field.name" class="field">
-                @switch (field.type) {
-                    @case ('BUTTON') {
-                        <ng-container
-                            *ngTemplateOutlet="
-                                labelField;
-                                context: { field: field }
-                            "></ng-container>
-                        <div>
-                            <button
-                                (click)="onIntegrate(field.value)"
-                                [id]="field.name"
-                                [label]="field.label"
-                                [disabled]="!$appConfigured()"
-                                pButton
-                                type="button"></button>
-                            <ng-container
-                                *ngTemplateOutlet="
-                                    warningIcon;
-                                    context: { field: field }
-                                "></ng-container>
-                        </div>
-                        <span class="form__group-hint">
-                            <markdown>{{ field.hint }}</markdown>
-                        </span>
-                    }
-                    @case ('STRING') {
-                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
-                        <ng-container
-                            *ngTemplateOutlet="
-                                warningIcon;
-                                context: { field: field }
-                            "></ng-container>
-                        <textarea
-                            (click)="field.hidden ? $event.target.select() : null"
+    @for (field of $formFields(); track field) {
+        <div [attr.data-testid]="field.name" class="field">
+            @switch (field.type) {
+                @case ('BUTTON') {
+                    <ng-container
+                        *ngTemplateOutlet="
+                            labelField;
+                            context: { field: field }
+                        "></ng-container>
+                    <div>
+                        <button
+                            (click)="onIntegrate(field.value)"
                             [id]="field.name"
-                            [formControlName]="field.name"
-                            #inputTextarea
-                            pInputTextarea
-                            autoResize="autoResize"></textarea>
-                        <span class="p-field-hint">
-                            <markdown>{{ field.hint }}</markdown>
-                        </span>
-                    }
-                    @case ('GENERATED_STRING') {
-                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
-                        <dot-apps-configuration-detail-generated-string-field
-                            data-testid="generated-string-field"
-                            [formControlName]="field.name"
-                            [field]="field" />
-                    }
-                    @case ('BOOL') {
-                        <div class="flex items-center">
-                            <p-checkbox
-                                [ngClass]="{
-                                    required: field.required
-                                }"
-                                [inputId]="field.name"
-                                [formControlName]="field.name"
-                                [value]="field.value"
-                                [binary]="true"></p-checkbox>
-                            <label [for]="field.name">{{ field.label }}</label>
-                        </div>
+                            [label]="field.label"
+                            [disabled]="!$appConfigured()"
+                            pButton
+                            type="button"></button>
                         <ng-container
                             *ngTemplateOutlet="
                                 warningIcon;
                                 context: { field: field }
                             "></ng-container>
-                        <span class="p-field-hint">
-                            <markdown>{{ field.hint }}</markdown>
-                        </span>
-                    }
-                    @case ('SELECT') {
-                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
-                        <ng-container
-                            *ngTemplateOutlet="
-                                warningIcon;
-                                context: { field: field }
-                            "></ng-container>
-                        <p-select
-                            [id]="field.name"
-                            [formControlName]="field.name"
+                    </div>
+                    <span class="form__group-hint">
+                        <markdown>{{ field.hint }}</markdown>
+                    </span>
+                }
+                @case ('STRING') {
+                    <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
+                    <ng-container
+                        *ngTemplateOutlet="
+                            warningIcon;
+                            context: { field: field }
+                        "></ng-container>
+                    <textarea
+                        (click)="field.hidden ? $event.target.select() : null"
+                        [id]="field.name"
+                        [formControlName]="field.name"
+                        #inputTextarea
+                        pInputTextarea
+                        autoResize="autoResize"></textarea>
+                    <span class="p-field-hint">
+                        <markdown>{{ field.hint }}</markdown>
+                    </span>
+                }
+                @case ('GENERATED_STRING') {
+                    <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
+                    <dot-apps-configuration-detail-generated-string-field
+                        data-testid="generated-string-field"
+                        [formControlName]="field.name"
+                        [field]="field" />
+                }
+                @case ('BOOL') {
+                    <div class="flex items-center">
+                        <p-checkbox
                             [ngClass]="{
                                 required: field.required
                             }"
-                            [options]="field.options" />
-                        <span class="p-field-hint">
-                            <markdown>{{ field.hint }}</markdown>
-                        </span>
-                    }
+                            [inputId]="field.name"
+                            [formControlName]="field.name"
+                            [value]="field.value"
+                            [binary]="true"></p-checkbox>
+                        <label [for]="field.name">{{ field.label }}</label>
+                    </div>
+                    <ng-container
+                        *ngTemplateOutlet="
+                            warningIcon;
+                            context: { field: field }
+                        "></ng-container>
+                    <span class="p-field-hint">
+                        <markdown>{{ field.hint }}</markdown>
+                    </span>
                 }
-            </div>
-        }
-    </div>
+                @case ('SELECT') {
+                    <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
+                    <ng-container
+                        *ngTemplateOutlet="
+                            warningIcon;
+                            context: { field: field }
+                        "></ng-container>
+                    <p-select
+                        [id]="field.name"
+                        [formControlName]="field.name"
+                        [ngClass]="{
+                            required: field.required
+                        }"
+                        [options]="field.options" />
+                    <span class="p-field-hint">
+                        <markdown>{{ field.hint }}</markdown>
+                    </span>
+                }
+            }
+        </div>
+    }
 </form>
