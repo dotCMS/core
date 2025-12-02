@@ -22,13 +22,11 @@
 
 package com.liferay.portal.model;
 
-import java.net.URL;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
-import io.vavr.control.Try;
 
 /**
  * <a href="CompanyModel.java.html"><b><i>View Source</i></b></a>
@@ -175,34 +173,16 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
-	private static final String ADMIN_PORTAL_URL="ADMIN_PORTAL_URL";
-    private static final String DEFAULT_ADMIN_PORTAL_URL="https://local.dotcms.site";
-    
-	public boolean isPortalUrlSet() {
-	    return Config.getStringProperty(ADMIN_PORTAL_URL, null)!=null;
-	}
-	
+
 	public String getPortalURL() {
-	    if(isPortalUrlSet()){
-	       return Config.getStringProperty(ADMIN_PORTAL_URL, null);
-	    }
-	    if("localhost".equalsIgnoreCase(_portalURL)) {
-	        return DEFAULT_ADMIN_PORTAL_URL;
-	    }
-	    return _portalURL;
+        return APILocator.getAdminSiteAPI().getAdminSiteUrl();
 
 	}
 
 	public void setPortalURL(final String portalURL) {
-	    if(isPortalUrlSet()){
-	        return;
-	    }
-	    
-	    URL url = Try.of(()->new URL(portalURL)).getOrElseThrow(DotRuntimeException::new);
-
-
-		_portalURL = url.toString();
-		setModified(true);
+        Logger.warn(this.getClass(),
+                "Set the portal URL using the  ADMIN_SITE_URL configuration variable, e.g. e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
+        //setModified(true);
 		
 	}
 

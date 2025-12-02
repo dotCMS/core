@@ -1,10 +1,7 @@
 package com.dotcms.adminsite;
 
 
-import static com.dotcms.adminsite.AdminSiteConfig.ADMIN_SITE_REQUESTS_ALLOW_INSECURE;
-
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.util.Map;
@@ -35,13 +32,18 @@ public class AdminSiteRequestFilter implements Filter {
     }
 
 
-    boolean allowInsecureRequests() {
-        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_ALLOW_INSECURE, false);
-    }
+
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
+
+        if (!adminSiteAPI.isAdminSiteEnabled()) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
+
 
         final HttpServletRequest request = ((HttpServletRequest) servletRequest);
         final HttpServletResponse response = ((HttpServletResponse) servletResponse);
@@ -51,13 +53,16 @@ public class AdminSiteRequestFilter implements Filter {
         boolean httpsOk = isHTTPSOk(request);
 
         if (adminURI && !adminSite) {
+            Logger.warn(getClass(),
+                    "Requests to the dotCMS admin backend can only be made through a valid ADMIN url, e.g. customer-auth.dotcms.site/dotAdmin");
+            response.addHeader("x-dot-admin-site", "true");
             response.sendError(404);
             return;
         }
 
         if (adminURI && !httpsOk) {
             Logger.warn(getClass(),
-                    "Requests to the dotCMS backend can only be made through a port marked secure, e.g. 8082 or 8443");
+                    "Requests to the dotCMS admin backend can only be made through a port marked secure, e.g. 8082 or 8443");
             response.sendError(426, "Upgrade to HTTPS");
             return;
         }
@@ -73,7 +78,7 @@ public class AdminSiteRequestFilter implements Filter {
 
 
     boolean isHTTPSOk(HttpServletRequest request) {
-        return allowInsecureRequests() || request.isSecure();
+        return adminSiteAPI.allowInsecureRequests() || request.isSecure();
     }
 
 

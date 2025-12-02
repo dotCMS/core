@@ -22,6 +22,8 @@
 
 package com.liferay.portal.language;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
@@ -46,12 +48,6 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.Time;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,8 +58,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.util.UtilMethods.isNotSet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * <a href="LanguageUtil.java.html"><b><i>View Source</i></b></a>
@@ -409,7 +408,7 @@ public class LanguageUtil {
 
 		if (value == null) {
 			Logger.debug(LanguageUtil.class, key);
-			value = key;
+            value = key.replace("-", " ").replace("_", " ").replace(".", " ");
 		}
 
 		return value;

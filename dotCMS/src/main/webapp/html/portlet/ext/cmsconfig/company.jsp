@@ -5,6 +5,8 @@
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
+<%@ page import="com.dotmarketing.business.APILocator" %>
+<%@ page import="com.liferay.portal.language.LanguageUtil" %>
 
 <%
    final boolean hasAdminRole = user.isAdmin();
@@ -355,8 +357,21 @@
          <div class="flex">
             <div class="form-horizontal">
                <dl>
-                  <dt><%= LanguageUtil.get(pageContext, "portal-url") %></dt>
-                  <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getPortalURL() %>" style="width: 250px"></dd>
+                   <dt><%= LanguageUtil.get(pageContext, "Admin-Site-Url") %>
+                   </dt>
+                   <dd style="display: inline-block;padding-bottom: 7px;">
+                       <%if (APILocator.getAdminSiteAPI().isAdminSiteConfigured()) {%>
+                       <%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>
+                       <%} else {%>
+                       <b><%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>
+                       </b>
+                       <div style="padding-top:4px;"><small><%=LanguageUtil.get(pageContext,
+                               "admin.site.url.set.to.default")%>
+                       </small></div>
+                       <%} %>
+
+
+                   </dd>
                </dl>
                <dl>
                   <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>
