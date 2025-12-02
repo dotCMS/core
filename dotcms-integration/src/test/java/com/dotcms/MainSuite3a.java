@@ -2,9 +2,12 @@ package com.dotcms;
 
 import com.dotcms.adminsite.AdminSiteAPITest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.contenttype.business.StoryBlockValidationTest;
+import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
@@ -51,7 +54,10 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
-        Task251103AddStylePropertiesColumnInMultiTreeTest.class
+        AppsAPIImplTest.class,
+        Task251103AddStylePropertiesColumnInMultiTreeTest.class,
+        StoryBlockValidationTest.class,
+        StoryBlockUtilTest.class
 })
 
 public class MainSuite3a {

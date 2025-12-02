@@ -1,14 +1,20 @@
-import { DotCMSPredefinedEventType } from '../shared/constants/dot-content-analytics.constants';
-import { sendAnalyticsEvent } from '../shared/dot-content-analytics.http';
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
+import { sendAnalyticsEvent } from '../../shared/http/dot-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsRequestBody,
+    DotCMSContentClickEvent,
+    DotCMSContentClickPayload,
+    DotCMSContentImpressionEvent,
     DotCMSContentImpressionPayload,
+    DotCMSConversionEvent,
+    DotCMSConversionPayload,
+    DotCMSCustomEvent,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload,
     JsonObject
-} from '../shared/models';
-import { createAnalyticsQueue } from '../shared/queue';
+} from '../../shared/models';
+import { createAnalyticsQueue } from '../../shared/queue';
 
 /**
  * Analytics plugin for tracking page views and custom events in DotCMS applications.
@@ -104,6 +110,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
          * Receives enriched payload from enricher plugin and structures it into proper event format.
          *
          * - content_impression → extracts from properties, combines with enriched page data
+         * - content_click → extracts from properties, combines with enriched page data
          * - custom events → wraps properties in custom object
          */
         track: ({ payload }: { payload: EnrichedTrackPayload }): void => {
@@ -113,7 +120,11 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
             const { event, properties, context, local_time } = payload;
 
-            let analyticsEvent;
+            let analyticsEvent:
+                | DotCMSContentImpressionEvent
+                | DotCMSContentClickEvent
+                | DotCMSConversionEvent
+                | DotCMSCustomEvent;
 
             // Handle predefined and custom events using switch for extensibility
             switch (event) {
@@ -135,7 +146,52 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                             position,
                             page
                         }
-                    };
+                    } satisfies DotCMSContentImpressionEvent;
+                    break;
+                }
+
+                case DotCMSPredefinedEventType.CONTENT_CLICK: {
+                    // Extract click data from properties (sent by click plugin)
+                    const clickPayload = properties as DotCMSContentClickPayload;
+                    const { content, position, element } = clickPayload;
+                    const { page } = payload; // Added by enricher
+
+                    if (!content || !position || !element || !page) {
+                        throw new Error('DotCMS Analytics: Missing required click data');
+                    }
+
+                    analyticsEvent = {
+                        event_type: DotCMSPredefinedEventType.CONTENT_CLICK,
+                        local_time,
+                        data: {
+                            content,
+                            position,
+                            element,
+                            page
+                        }
+                    } satisfies DotCMSContentClickEvent;
+                    break;
+                }
+
+                case DotCMSPredefinedEventType.CONVERSION: {
+                    // Extract conversion data from properties (sent by user)
+                    const conversionPayload = properties as DotCMSConversionPayload;
+                    const { name, custom } = conversionPayload;
+                    const { page } = payload; // Added by enricher
+
+                    if (!name || !page) {
+                        throw new Error('DotCMS Analytics: Missing required conversion data');
+                    }
+
+                    analyticsEvent = {
+                        event_type: DotCMSPredefinedEventType.CONVERSION,
+                        local_time,
+                        data: {
+                            conversion: { name },
+                            page,
+                            ...(custom && { custom })
+                        }
+                    } satisfies DotCMSConversionEvent;
                     break;
                 }
 
@@ -147,7 +203,7 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                         data: {
                             custom: properties as JsonObject
                         }
-                    };
+                    } satisfies DotCMSCustomEvent;
                     break;
                 }
             }

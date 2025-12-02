@@ -1,11 +1,11 @@
-import { DotCMSPredefinedEventType } from '../../shared/constants/dot-content-analytics.constants';
-import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
 import {
     AnalyticsBasePayloadWithContext,
     AnalyticsTrackPayloadWithContext,
     EnrichedAnalyticsPayload,
     EnrichedTrackPayload
 } from '../../shared/models';
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/utils/dot-analytics.utils';
 
 /**
  * Plugin that enriches the analytics payload data with page, UTM, and custom data.
@@ -42,7 +42,7 @@ export const dotAnalyticsEnricherPlugin = () => {
 
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
-         * Adds page data and timestamp for predefined events.
+         * Adds page data and timestamp for predefined content events.
          * For custom events, only adds timestamp.
          *
          * @returns {EnrichedTrackPayload} Enriched payload ready for event structuring
@@ -55,8 +55,12 @@ export const dotAnalyticsEnricherPlugin = () => {
             const { event } = payload;
             const local_time = getLocalTime();
 
-            // For content_impression events, add page data
-            if (event === DotCMSPredefinedEventType.CONTENT_IMPRESSION) {
+            // For content_impression, content_click, and conversion events, add page data
+            if (
+                event === DotCMSPredefinedEventType.CONTENT_IMPRESSION ||
+                event === DotCMSPredefinedEventType.CONTENT_CLICK ||
+                event === DotCMSPredefinedEventType.CONVERSION
+            ) {
                 return {
                     ...payload,
                     page: {
