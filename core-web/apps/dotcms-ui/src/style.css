@@ -46,7 +46,10 @@ This selector needs work, I don't want to have to specify every single component
     @apply text-sm font-normal;
 }
 
-/* Not sure if .p-field-hint is the best selector, but this needs unification. */
 .form .p-field-hint {
     @apply text-sm text-gray-500;
+}
+
+.form .p-field-error {
+    @apply text-sm text-red-500;
 }
