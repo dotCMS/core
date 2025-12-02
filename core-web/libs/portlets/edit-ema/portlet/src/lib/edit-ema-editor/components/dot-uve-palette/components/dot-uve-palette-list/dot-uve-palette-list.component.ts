@@ -12,7 +12,7 @@ import {
     untracked,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { MenuItem, MessageService } from 'primeng/api';
@@ -26,7 +26,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -47,7 +47,7 @@ import {
 } from '../../models';
 import {
     buildPaletteMenuItems,
-    EMPTY_MESSAGE_CONTELETS,
+    EMPTY_MESSAGE_CONTENTLETS,
     EMPTY_MESSAGE_SEARCH,
     EMPTY_MESSAGES,
     LOADING_ROWS_MOCK
@@ -65,8 +65,8 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
  * <dot-uve-palette-list
  *   [type]="'content'"
  *   [languageId]="1"
- *   [pagePath]="'/home'">
- * </dot-uve-palette-list>
+ *   [pagePath]="'/home'"
+ *   [variantId]="'1'" />
  * ```
  */
 @Component({
@@ -94,6 +94,7 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteListComponent implements OnInit {
+    @ViewChild('menu') menu!: { toggle: (event: Event) => void };
     @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
     $type = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
@@ -108,10 +109,11 @@ export class DotUvePaletteListComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
 
     readonly searchControl = new FormControl('', { nonNullable: true });
-
     protected readonly DotUVEPaletteListView = DotUVEPaletteListView;
     protected readonly LOADING_ROWS = LOADING_ROWS_MOCK;
 
+    protected readonly $skipNextSearch = signal(false);
+    protected readonly $contextMenuItems = signal<MenuItem[]>([]);
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
     protected readonly $pagination = this.#paletteListStore.pagination;
@@ -122,66 +124,108 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $showListLayout = this.#paletteListStore.$showListLayout;
     protected readonly $isContentletsView = this.#paletteListStore.$isContentletsView;
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
+    protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
 
-    protected readonly $hideControls = computed(() => {
-        return this.$isEmpty() && !(this.searchControl.value.trim().length > 0);
+    /**
+     * Signal to determine if the search is empty.
+     * @returns True if the search is empty, false otherwise.
+     */
+    protected readonly $isEmptySearch = toSignal(
+        this.searchControl.valueChanges.pipe(map((value) => value.trim().length > 0)),
+        { initialValue: false }
+    );
+
+    /**
+     * Computed signal to determine the start index for the pagination.
+     * @returns The start index for the pagination.
+     */
+    protected readonly $start = computed(() => {
+        const currentPage = this.$pagination().currentPage;
+        const perPage = this.$pagination().perPage;
+        return (currentPage - 1) * perPage;
     });
+
+    /**
+     * Computed signal to determine if the search and action button should be hidden.
+     * @returns True if the search and action button should be hidden, false otherwise.
+     */
+    protected readonly $hideControls = computed(() => {
+        return (this.$isEmpty() || this.$isLoading()) && !this.$isEmptySearch();
+    });
+
+    /**
+     * Computed signal to determine the action button object.
+     * @returns The action button object.
+     */
+    protected readonly $actionButton = computed(() => {
+        if (this.$isFavoritesList()) {
+            return {
+                testId: 'add-favorites-button',
+                icon: 'pi pi-plus',
+                onClick: (event: Event) => this.favoritesPanel?.toggle(event)
+            };
+        }
+
+        return {
+            testId: 'sort-menu-button',
+            icon: 'pi pi-arrow-right-arrow-left',
+            onClick: (event: Event) => this.menu.toggle(event)
+        };
+    });
+
+    /**
+     * Computed signal to determine the menu items.
+     * @returns The menu items.
+     */
+    protected $menuItems = computed(() => {
+        const currentSort = this.#paletteListStore.$currentSort();
+        const viewMode = this.$layoutMode();
+        const onSortSelect = (sortOption: DotPaletteSortOption) => this.onSortSelect(sortOption);
+        const onViewSelect = (viewOption: DotPaletteViewMode) => this.onViewSelect(viewOption);
+
+        return buildPaletteMenuItems({ viewMode, currentSort, onSortSelect, onViewSelect });
+    });
+
+    /**
+     * Getter to determine the empty message object.
+     * @returns The empty message object.
+     */
     protected readonly $emptyState = computed(() => {
-        const searchTerm = this.searchControl.value.trim();
-        if (searchTerm.length > 0) {
+        if (this.$isEmptySearch()) {
             return EMPTY_MESSAGE_SEARCH;
         }
 
         if (this.$isContentletsView()) {
-            return EMPTY_MESSAGE_CONTELETS;
+            return EMPTY_MESSAGE_CONTENTLETS;
         }
 
         return EMPTY_MESSAGES[this.$type()];
     });
 
-    protected readonly $contextMenuItems = signal<MenuItem[]>([]);
-
-    readonly $start = computed(
-        () => (this.$pagination().currentPage - 1) * this.$pagination().perPage
-    );
-    readonly $isFavoritesList = computed(() => this.$type() === DotUVEPaletteListTypes.FAVORITES);
-    readonly $showSortButton = computed(
-        () => this.$isContentTypesView() && !this.$isFavoritesList()
-    );
-
-    protected $menuItems = computed(() =>
-        buildPaletteMenuItems({
-            viewMode: this.$layoutMode(),
-            currentSort: this.#paletteListStore.$currentSort(),
-            onSortSelect: (sortOption) => this.onSortSelect(sortOption),
-            onViewSelect: (viewOption) => this.onViewSelect(viewOption)
-        })
-    );
-
     constructor() {
         // React to input changes and fetch content types
         effect(() => {
-            const pagePathOrId = this.$pagePath();
-            const language = this.$languageId();
-            const variantId = this.$variantId();
-            const listType = this.$type();
+            const params = {
+                pagePathOrId: this.$pagePath(),
+                language: this.$languageId(),
+                variantId: this.$variantId(),
+                listType: this.$type()
+            };
 
             // Use untracked to prevent writes during effect
-            untracked(() => {
-                this.#paletteListStore.getContentTypes({
-                    pagePathOrId,
-                    language,
-                    variantId,
-                    listType
-                });
-            });
+            untracked(() => this.#paletteListStore.getContentTypes(params));
         });
     }
 
     ngOnInit() {
         // Set up debounced search with distinctUntilChanged to avoid duplicate calls
         this.searchControl.valueChanges
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                debounceTime(300),
+                distinctUntilChanged(),
+                filter(() => this.#shouldRunSearch()),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((filter) => this.#loadItems({ filter, page: 1 }));
     }
 
@@ -227,9 +271,9 @@ export class DotUvePaletteListComponent implements OnInit {
      *
      * @param contentTypeName - The name of the content type to drill into
      */
-    protected onSelectContentType(contentTypeName: string) {
+    protected onSelectContentType(selectedContentType: string) {
         this.#paletteListStore.getContentlets({
-            selectedContentType: contentTypeName,
+            selectedContentType,
             filter: '',
             page: 1
         });
@@ -255,8 +299,8 @@ export class DotUvePaletteListComponent implements OnInit {
             ? 'uve.palette.menu.favorite.option.remove'
             : 'uve.palette.menu.favorite.option.add';
         const command = isFavorite
-            ? () => this.#removeFavoriteItems(contentType)
-            : () => this.#addFavoriteItems(contentType);
+            ? () => this.#removeFavorite(contentType)
+            : () => this.#addFavorite(contentType);
         this.$contextMenuItems.set([{ label: this.#dotMessageService.get(label), command }]);
     }
 
@@ -280,13 +324,8 @@ export class DotUvePaletteListComponent implements OnInit {
      * Remove a content type from favorites.
      * @param contentType - The content type to remove.
      */
-    #removeFavoriteItems(contentType: DotCMSContentType) {
-        const contenttypes = this.#dotFavoriteContentTypeService.remove(contentType.id);
-
-        if (this.$type() === DotUVEPaletteListTypes.FAVORITES) {
-            this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
-        }
-
+    #removeFavorite(contentType: DotCMSContentType) {
+        this.#paletteListStore.removeFavorite(contentType.id);
         this.#messageService.add({
             severity: 'success',
             summary: this.#dotMessageService.get('uve.palette.favorite.remove.success.summary'),
@@ -299,13 +338,8 @@ export class DotUvePaletteListComponent implements OnInit {
      * Add a content type to favorites.
      * @param contentType - The content type to add.
      */
-    #addFavoriteItems(contentType: DotCMSContentType) {
-        const contenttypes = this.#dotFavoriteContentTypeService.add(contentType);
-
-        if (this.$type() === DotUVEPaletteListTypes.FAVORITES) {
-            this.#paletteListStore.setContentTypesFromFavorite(contenttypes);
-        }
-
+    #addFavorite(contentType: DotCMSContentType) {
+        this.#paletteListStore.addFavorite(contentType);
         this.#messageService.add({
             severity: 'success',
             summary: this.#dotMessageService.get('uve.palette.favorite.add.success.summary'),
@@ -319,7 +353,14 @@ export class DotUvePaletteListComponent implements OnInit {
      * Keeps debounced listeners quiet when switching views manually.
      */
     #resetSearch() {
-        this.searchControl.setValue('', { emitEvent: false });
+        if (!this.$isEmptySearch()) {
+            // Search is already empty, nothing to do
+            return;
+        }
+
+        // Search has text, clear it and skip the debounced search trigger
+        this.$skipNextSearch.set(true);
+        this.searchControl.setValue('');
     }
 
     /**
@@ -336,5 +377,17 @@ export class DotUvePaletteListComponent implements OnInit {
 
         this.#paletteListStore.getContentlets(params);
         return;
+    }
+
+    /**
+     * Determines if the search should be run.
+     * @returns True if the search should be run, false otherwise.
+     */
+    #shouldRunSearch() {
+        if (this.$skipNextSearch()) {
+            this.$skipNextSearch.set(false);
+            return false;
+        }
+        return true;
     }
 }

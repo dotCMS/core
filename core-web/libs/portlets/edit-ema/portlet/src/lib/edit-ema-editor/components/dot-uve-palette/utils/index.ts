@@ -54,7 +54,8 @@ export const EMPTY_CONTENTTYPE_RESPONSE = {
  */
 export const EMPTY_CONTENTLET_RESPONSE = {
     contentlets: [] as DotCMSContentlet[],
-    pagination: EMPTY_PAGINATION
+    pagination: EMPTY_PAGINATION,
+    status: DotPaletteListStatus.EMPTY
 };
 
 export const DEFAULT_SORT_OPTIONS: DotPaletteSortOption = {
@@ -187,7 +188,7 @@ export function getPaletteState(
  *
  * @example
  * ```typescript
- * const result = filterAndBuildFavoriteResponse({
+ * const result = buildPaletteFavorite({
  *   contentTypes: allContentTypes,
  *   filter: 'blog',
  *   page: 2
@@ -198,7 +199,7 @@ export function getPaletteState(
  * // }
  * ```
  */
-export function filterAndBuildFavoriteResponse({
+export function buildPaletteFavorite({
     contentTypes,
     filter = '',
     page = 1
@@ -209,6 +210,7 @@ export function filterAndBuildFavoriteResponse({
 }): {
     contenttypes: DotCMSContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
+    status: DotPaletteListStatus;
 } {
     // Filter and sort all content types
     const filteredContentTypes = contentTypes.filter(
@@ -228,7 +230,7 @@ export function filterAndBuildFavoriteResponse({
         totalEntries
     };
 
-    return { contenttypes, pagination };
+    return { contenttypes, pagination, status: getPaletteState(contenttypes) };
 }
 
 /**
@@ -244,19 +246,20 @@ export function filterAndBuildFavoriteResponse({
  *
  * @example
  * ```typescript
- * const result = buildContentletsResponse(esResponse, 30);
+ * const result = buildContentlet(esResponse, 30);
  * // Returns: {
  * //   contentlets: [...],
  * //   pagination: { currentPage: 2, perPage: 10, totalEntries: 100 }
  * // }
  * ```
  */
-export function buildContentletsResponse(
+export function buildPaletteContent(
     response: ESContent,
     offset: number
 ): {
     contentlets: DotCMSContentlet[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
+    status: DotPaletteListStatus;
 } {
     const contentlets = response.jsonObjectView.contentlets;
     const totalEntries = response.resultsSize;
@@ -264,7 +267,8 @@ export function buildContentletsResponse(
 
     return {
         contentlets,
-        pagination: { currentPage, perPage: contentlets.length, totalEntries }
+        pagination: { currentPage, perPage: contentlets.length, totalEntries },
+        status: getPaletteState(contentlets)
     };
 }
 
@@ -360,7 +364,7 @@ export const EMPTY_MESSAGE_SEARCH = {
     message: 'uve.palette.empty.search.state.message'
 };
 
-export const EMPTY_MESSAGE_CONTELETS = {
+export const EMPTY_MESSAGE_CONTENTLETS = {
     icon: 'pi pi-folder-open',
     title: 'uve.palette.empty.state.contentlets.title',
     message: 'uve.palette.empty.state.contentlets.message'
