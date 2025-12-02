@@ -13,7 +13,7 @@ import java.util.Set;
  * Form for updating user permissions on a specific asset.
  * Maps modern REST API structure to legacy RoleAjax.saveRolePermission() logic.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since 24.01
  */
 public class SaveUserPermissionsForm extends Validated {

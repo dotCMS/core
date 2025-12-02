@@ -6,7 +6,7 @@ import com.dotcms.rest.ResponseEntityView;
  * Response entity wrapper for save user permissions endpoint.
  * Follows dotCMS pattern of specific ResponseEntity*View classes for REST endpoints.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since 24.01
  */
 public class ResponseEntitySaveUserPermissionsView extends ResponseEntityView<SaveUserPermissionsView> {

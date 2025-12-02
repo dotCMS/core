@@ -112,6 +112,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
+import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
@@ -491,6 +492,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
+        PermissionResourceIntegrationTest.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
         LanguageUtilTest.class,

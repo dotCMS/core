@@ -12,7 +12,7 @@ import java.util.Set;
  * individual role has access to, including the asset metadata and the specific
  * permission levels granted.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since 24.01
  */
 @Schema(description = "Permission asset with associated permission assignments")

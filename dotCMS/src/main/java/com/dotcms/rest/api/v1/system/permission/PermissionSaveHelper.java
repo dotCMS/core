@@ -48,7 +48,7 @@ import javax.inject.Named;
  * Helper for saving user permissions on assets.
  * Handles permission conversion, asset resolution, and save operations.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since 24.01
  */
 @ApplicationScoped
