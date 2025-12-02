@@ -6,7 +6,6 @@ import {
     ElementRef,
     inject,
     input,
-    AfterViewInit,
     viewChild,
     forwardRef,
     computed,
@@ -68,7 +67,7 @@ export class NativeFieldComponent implements OnInit {
     /**
      * The template code of the field.
      */
-    $templateCode = computed(() => this.$field().values);
+    $templateCode = computed(() => this.$field().rendered);
     /**
      * The form bridge to communicate with the custom field.
      */
@@ -130,6 +129,8 @@ export class NativeFieldComponent implements OnInit {
         if (!templateCode) {
             return;
         }
+
+        console.log('templateCode', templateCode);
 
         const hostElement = this.$container().nativeElement;
 

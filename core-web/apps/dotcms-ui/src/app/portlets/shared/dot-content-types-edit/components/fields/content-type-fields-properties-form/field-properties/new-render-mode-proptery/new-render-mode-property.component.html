@@ -6,11 +6,11 @@
         <div class="flex align-items-center">
             <p-radioButton
                 name="newRenderMode"
-                value="iframe"
+                value="component"
                 [formControlName]="property.name"
-                inputId="iframe" />
+                inputId="component" />
             <label
-                for="iframe"
+                for="component"
                 class="ml-2"
                 [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
                 {{ 'contenttypes.field.properties.newRenderMode.component.label' | dm }}
@@ -20,11 +20,11 @@
         <div class="flex align-items-center">
             <p-radioButton
                 name="newRenderMode"
-                value="components"
+                value="iframe"
                 [formControlName]="property.name"
-                inputId="components" />
+                inputId="iframe" />
             <label
-                for="components"
+                for="iframe"
                 class="ml-2"
                 [pTooltip]="'contenttypes.field.properties.newRenderMode.iframe.tooltip' | dm">
                 {{ 'contenttypes.field.properties.newRenderMode.iframe.label' | dm }}

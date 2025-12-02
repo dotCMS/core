@@ -89,17 +89,22 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             const otherVariables = existingVariables.filter(
                 (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY
             );
-            return {
+            const existingNewRenderMode = existingVariables.find(
+                (v) => v.key === NEW_RENDER_MODE_VARIABLE_KEY
+            );
+            const newFormValue = {
                 ...value,
                 fieldVariables: [
                     ...otherVariables,
                     {
+                        ...existingNewRenderMode,
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: NEW_RENDER_MODE_VARIABLE_KEY,
                         value: value.newRenderMode
                     }
                 ]
             };
+            return newFormValue;
         }
         return value;
     }
