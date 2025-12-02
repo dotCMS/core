@@ -492,7 +492,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
-        PermissionResourceIntegrationTest.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
         LanguageUtilTest.class,
@@ -557,7 +556,8 @@ import org.junit.runners.Suite.SuiteClasses;
         OpenAIAutoTagActionletTest.class,
         Task250828CreateCustomAttributeTableTest.class,
         CustomAttributeAPIImplTest.class,
-        CustomAttributeFactoryTest.class
+        CustomAttributeFactoryTest.class,
+        PermissionResourceIntegrationTest.class,
 })
 
 public class MainSuite2b {
