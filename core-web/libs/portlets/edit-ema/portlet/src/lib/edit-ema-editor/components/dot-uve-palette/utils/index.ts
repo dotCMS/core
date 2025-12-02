@@ -246,7 +246,7 @@ export function buildPaletteFavorite({
  *
  * @example
  * ```typescript
- * const result = buildContentlet(esResponse, 30);
+ * const result = buildContentletsResponse(esResponse, 30);
  * // Returns: {
  * //   contentlets: [...],
  * //   pagination: { currentPage: 2, perPage: 10, totalEntries: 100 }

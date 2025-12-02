@@ -199,9 +199,9 @@ export const DotPaletteListStore = signalStore(
             patchState(store, response);
         };
 
-        const isFavoritesList = computed(() => {
-            return params.listType() === DotUVEPaletteListTypes.FAVORITES;
-        });
+        const $isFavoritesList = computed(
+            () => params.listType() === DotUVEPaletteListTypes.FAVORITES
+        );
 
         return {
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
@@ -211,7 +211,7 @@ export const DotPaletteListStore = signalStore(
                 const response = dotFavoriteContentTypeService.add(contentType);
 
                 // If the list is a favorites list, update the favorite state
-                if (isFavoritesList()) {
+                if ($isFavoritesList()) {
                     updateFavoriteState(response);
                 }
             },
@@ -219,7 +219,7 @@ export const DotPaletteListStore = signalStore(
                 const response = dotFavoriteContentTypeService.remove(contentTypeId);
 
                 // If the list is a favorites list, update the favorite state
-                if (isFavoritesList()) {
+                if ($isFavoritesList()) {
                     updateFavoriteState(response);
                 }
             }

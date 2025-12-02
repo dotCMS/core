@@ -127,10 +127,10 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
 
     /**
-     * Signal to determine if the search is empty.
-     * @returns True if the search is empty, false otherwise.
+     * Signal to determine if the search field has text.
+     * @returns True if the search field has non-whitespace content, false otherwise.
      */
-    protected readonly $isEmptySearch = toSignal(
+    protected readonly $hasSearchText = toSignal(
         this.searchControl.valueChanges.pipe(map((value) => value.trim().length > 0)),
         { initialValue: false }
     );
@@ -150,7 +150,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @returns True if the search and action button should be hidden, false otherwise.
      */
     protected readonly $hideControls = computed(() => {
-        return (this.$isEmpty() || this.$isLoading()) && !this.$isEmptySearch();
+        return (this.$isEmpty() || this.$isLoading()) && !this.$hasSearchText();
     });
 
     /**
@@ -191,7 +191,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @returns The empty message object.
      */
     protected readonly $emptyState = computed(() => {
-        if (this.$isEmptySearch()) {
+        if (this.$hasSearchText()) {
             return EMPTY_MESSAGE_SEARCH;
         }
 
@@ -353,7 +353,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Keeps debounced listeners quiet when switching views manually.
      */
     #resetSearch() {
-        if (!this.$isEmptySearch()) {
+        if (!this.$hasSearchText()) {
             // Search is already empty, nothing to do
             return;
         }
@@ -376,7 +376,6 @@ export class DotUvePaletteListComponent implements OnInit {
         }
 
         this.#paletteListStore.getContentlets(params);
-        return;
     }
 
     /**
