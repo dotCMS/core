@@ -63,6 +63,7 @@ jobs:
     with:
       run-all-tests: ${{ inputs.run-all-tests || true }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      e2e: false
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:
