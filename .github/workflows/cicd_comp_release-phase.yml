@@ -1,0 +1,221 @@
+# Release Phase Workflow
+#
+# This reusable workflow handles release-specific finalization operations:
+# - Deploying artifacts to Artifactory (Maven repository)
+# - Generating and uploading Javadocs to S3
+# - Triggering plugin repository updates
+# - Generating and uploading SBOM (Software Bill of Materials)
+# - Updating GitHub issue labels for release tracking
+#
+# This phase runs after the standard deployment phase (which handles Docker/NPM)
+# and focuses on release-specific operations.
+#
+# Key features:
+# - Configurable release operations (artifacts, javadocs, plugins, labels)
+# - SBOM generation and GitHub release asset upload
+# - GitHub issue label management for release tracking
+# - AWS S3 integration for javadoc hosting
+
+name: Release Phase
+
+on:
+  workflow_call:
+    inputs:
+      release_version:
+        description: 'Release version'
+        required: true
+        type: string
+      release_tag:
+        description: 'Release tag'
+        required: true
+        type: string
+      artifact_run_id:
+        description: 'Artifact run ID'
+        required: false
+        type: string
+        default: ${{ github.run_id }}
+      deploy_artifact:
+        description: 'Deploy artifact to Artifactory'
+        type: boolean
+        default: true
+      upload_javadocs:
+        description: 'Upload Javadocs to S3'
+        type: boolean
+        default: true
+      update_plugins:
+        description: 'Update Plugins'
+        type: boolean
+        default: true
+      update_github_labels:
+        description: 'Update GitHub labels'
+        type: boolean
+        default: true
+      deployment_succeeded:
+        description: 'Whether the deployment phase succeeded (required for safe label updates)'
+        type: boolean
+        required: true
+    secrets:
+      EE_REPO_USERNAME:
+        required: false
+        description: 'Artifactory username'
+      EE_REPO_PASSWORD:
+        required: false
+        description: 'Artifactory password'
+      AWS_ACCESS_KEY_ID:
+        required: false
+        description: 'AWS access key ID'
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+        description: 'AWS secret access key'
+      CI_MACHINE_TOKEN:
+        required: false
+        description: 'CI machine token for GitHub API operations'
+
+jobs:
+  # Deploy release artifacts to Artifactory and S3
+  release-artifacts:
+    name: Release Artifacts
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    env:
+      AWS_REGION: us-east-1
+      JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: Setup Java
+        id: setup-java
+        uses: ./.github/actions/core-cicd/setup-java
+
+      - name: Restore Maven Repository
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository
+
+      - name: Configure Maven Settings
+        uses: whelk-io/maven-settings-xml-action@v20
+        with:
+          servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+        if: inputs.upload_javadocs == true
+
+      - name: Deploy Release Artifacts to Artifactory
+        run: |
+          ./mvnw -ntp \
+            "${JVM_TEST_MAVEN_OPTS}" \
+            -Dprod=true \
+            -DskipTests=true \
+            deploy
+        if: inputs.deploy_artifact == true
+
+      - name: Generate and Upload Javadocs
+        run: |
+          ./mvnw -ntp \
+            "${JVM_TEST_MAVEN_OPTS}" \
+            javadoc:javadoc \
+            -pl :dotcms-core
+          rc=$?
+          if [[ $rc != 0 ]]; then
+            echo "Javadoc generation failed with exit code $rc"
+            exit $rc
+          fi
+
+          site_dir=./dotCMS/target/site
+          javadoc_dir=${site_dir}/javadocs
+          s3_uri=s3://static.dotcms.com/docs/${{ inputs.release_version }}/javadocs
+
+          mv ${site_dir}/apidocs ${javadoc_dir}
+          echo "Running: aws s3 cp ${javadoc_dir} ${s3_uri} --recursive"
+          aws s3 cp ${javadoc_dir} ${s3_uri} --recursive
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        if: inputs.upload_javadocs == true
+
+      - name: Trigger Plugin Repository Update
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+        run: |
+          # shellcheck disable=SC2153
+          release_version="${RELEASE_VERSION}"
+          response=$(curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${CI_MACHINE_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/dotCMS/plugin-seeds/dispatches \
+            -d "{\"event_type\": \"on-plugins-release\", \"client_payload\": {\"release_version\": \"${release_version}\"}}" \
+            -w "\n%{http_code}" \
+            -s)
+          http_code=$(echo "$response" | tail -n1)
+          if [ "${http_code}" != "204" ]; then
+            echo "Failed to dispatch workflow. HTTP code: $http_code"
+            echo "Response: $response"
+          fi
+        if: inputs.update_plugins == true
+
+  # Generate and upload SBOM to GitHub release
+  release-sbom:
+    name: Release SBOM
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/legacy-release/sbom-generator
+        id: sbom-generator
+        with:
+          dotcms_version: ${{ inputs.release_version }}
+          github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - name: Download SBOM Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+          pattern: ${{ steps.sbom-generator.outputs.sbom-artifact }}
+
+      - name: Upload SBOM to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+        run: |
+          echo "::group::Upload SBOM Asset"
+          ARTIFACT_NAME=${{ steps.sbom-generator.outputs.sbom-artifact }}
+          SBOM="./artifacts/${ARTIFACT_NAME}/${ARTIFACT_NAME}.json"
+
+          if [ -f "${SBOM}" ]; then
+            echo "SBOM: ${SBOM}"
+            cat "${SBOM}"
+
+            zip "${ARTIFACT_NAME}.zip" "${SBOM}"
+            gh release upload "${{ inputs.release_tag }}" "${ARTIFACT_NAME}.zip"
+          else
+            echo "SBOM artifact not found."
+          fi
+          echo "::endgroup::"
+
+  # Update GitHub labels for release tracking
+  # CRITICAL SAFETY: Only updates labels if BOTH deployment phase (Docker Hub) AND
+  # release-artifacts (Artifactory/Javadocs) succeeded. This prevents partial releases
+  # from being marked as complete.
+  release-labeling:
+    name: Release Labeling
+    needs: [ release-artifacts ]
+    if: success() && inputs.deployment_succeeded && inputs.update_github_labels == true
+    uses: ./.github/workflows/issue_comp_release-labeling.yml
+    with:
+      new_label: 'Release : ${{ inputs.release_version }}'
+      rename_label: 'Next Release'
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
