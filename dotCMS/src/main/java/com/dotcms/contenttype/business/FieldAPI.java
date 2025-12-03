@@ -169,7 +169,7 @@ public interface FieldAPI {
 	FieldVariable save(final FieldVariable fieldVar, final User user) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Save the list of {@link FieldVariable} objects to the specified {@link Field}.
+	 * Saves the list of {@link FieldVariable} objects to the specified {@link Field}.
 	 *
 	 * @param fieldVariables The list of new or existing Field Variables.
 	 * @param field          The field that the Field Variables belong to.
