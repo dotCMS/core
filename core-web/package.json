@@ -126,7 +126,7 @@
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "regenerator-runtime": "^0.13.9",
-        "rxjs": "~6.6.3",
+        "rxjs": "~7.8.2",
         "shade-generator": "^1.2.7",
         "superstruct": "^1.0.3",
         "terser": "^5.28.1",

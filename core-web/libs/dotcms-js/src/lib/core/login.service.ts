@@ -3,9 +3,13 @@ import { Observable, of, Subject } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
-import { DotLoginInformation, SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
+import {
+    DotLoginInformation,
+    DotLoginUserSystemInformation,
+    SESSION_STORAGE_VARIATION_KEY
+} from '@dotcms/dotcms-models';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -71,9 +75,9 @@ export class LoginService {
         return this._auth$.asObservable();
     }
 
-    private _logout$: Subject<any> = new Subject<any>();
+    private _logout$: Subject<void> = new Subject<void>();
 
-    get logout$(): Observable<any> {
+    get logout$(): Observable<void> {
         return this._logout$.asObservable();
     }
 
@@ -125,7 +129,7 @@ export class LoginService {
                 url: this.urls.getAuth
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 tap((auth: Auth) => {
                     if (auth.user) {
                         this.setAuth(auth);
@@ -152,7 +156,7 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.changePassword
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -167,7 +171,7 @@ export class LoginService {
         this.setLanguage(language);
 
         return this.coreWebService
-            .requestView<DotLoginInformation>({
+            .requestView<DotLoginUserSystemInformation>({
                 body: {
                     messagesKey: i18nKeys,
                     language: this.lang,
@@ -176,7 +180,12 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.serverInfo
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(
+                map((responseView) => ({
+                    i18nMessagesMap: responseView.i18nMessagesMap,
+                    entity: responseView.entity
+                }))
+            );
     }
 
     /**
@@ -209,7 +218,7 @@ export class LoginService {
 
                     return res;
                 }),
-                pluck('entity', 'loginAs')
+                map((x) => x?.entity?.loginAs)
             );
     }
 
@@ -305,7 +314,7 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.recoverPassword
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
