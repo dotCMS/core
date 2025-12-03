@@ -43,7 +43,7 @@ public interface AdminSiteAPI {
     // default header added to all admin requests
     String[] ADMIN_SITE_REQUEST_HEADERS_DEFAULT = new String[]{"x-robots-tag", "noindex, nofollow"};
 
-    String ADMIN_SITE_REQUEST_VALIDATED = "ADMIN_SITE_REQUEST_VALIDATED";
+    String ADMIN_SITE_HOST_REQUESTED = "ADMIN_SITE_HOST_REQUESTED";
 
 
     // Default list of "admin" paths

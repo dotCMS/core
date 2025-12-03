@@ -89,22 +89,34 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         return false;
     }
 
+
     @Override
     public boolean isAdminSite(@Nonnull HttpServletRequest request) {
-
-        if (request.getAttribute(ADMIN_SITE_REQUEST_HEADERS) != null) {
+        if (request == null) {
             return true;
         }
 
-        String host =
-                request.getHeader("host") != null ? request.getHeader("host").toLowerCase() : "local.dotcms.site";
+        if (request.getAttribute(ADMIN_SITE_HOST_REQUESTED) != null) {
+            return (boolean) request.getAttribute(ADMIN_SITE_HOST_REQUESTED);
+        }
+
+        // if the admin site functionality is not enabled,
+        // anything can go
+        if (!isAdminSiteEnabled()) {
+            request.setAttribute(ADMIN_SITE_HOST_REQUESTED, true);
+            return true;
+        }
+
+        String host = request.getHeader("host") != null
+                ? request.getHeader("host").toLowerCase()
+                : "local.dotcms.site";
 
         host = host.contains(":") ? host.substring(0, host.indexOf(":")) : host;
         if (isAdminSite(host)) {
-            request.setAttribute(ADMIN_SITE_REQUEST_VALIDATED, true);
+            request.setAttribute(ADMIN_SITE_HOST_REQUESTED, true);
             return true;
         }
-
+        request.setAttribute(ADMIN_SITE_HOST_REQUESTED, false);
         return false;
     }
 
@@ -128,7 +140,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     @Override
     public boolean isAdminSiteEnabled() {
         return (boolean) getConfig().computeIfAbsent(ADMIN_SITE_ENABLED,
-                k -> Config.getBooleanProperty(ADMIN_SITE_ENABLED, true));
+                k -> Config.getBooleanProperty(ADMIN_SITE_ENABLED, false));
     }
 
 
@@ -142,7 +154,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     @Override
     public boolean allowInsecureRequests() {
-        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_ALLOW_INSECURE, false);
+        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_ALLOW_INSECURE, true);
     }
 
     @Override

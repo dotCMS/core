@@ -10,6 +10,7 @@ import com.dotmarketing.util.Config;
 import java.util.Arrays;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,11 +22,29 @@ public class AdminSiteAPITest extends IntegrationTestBase {
 
     private static AdminSiteAPI adminSiteAPI;
 
+    static boolean originalAdminSiteEnabled = false;
+
+
+
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         adminSiteAPI = APILocator.getAdminSiteAPI();
+
+        originalAdminSiteEnabled = Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, false);
+        Config.setProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, true);
+
+
     }
+
+    @AfterClass
+    public static void cleanup() throws Exception {
+        Config.setProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, originalAdminSiteEnabled);
+
+    }
+
+
 
     /**
      * Method to test: {@link AdminSiteAPI#getAdminSiteUrl()} Given Scenario: No ADMIN_SITE_URL is configured
@@ -196,6 +215,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_isAdminSite_with_request() {
+
         // Given: Request with admin domain
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getHeader("host")).thenReturn("admin.dotcms.com:8080");
@@ -251,7 +271,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
      * default) ExpectedResult: Returns true
      */
     @Test
-    public void test_isAdminSiteEnabled_returns_true_by_default() {
+    public void test_isAdminSiteEnabled_returns_false_by_default() {
         // Given
         final Boolean originalValue = Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, true);
         try {
@@ -259,7 +279,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
             adminSiteAPI.invalidateCache();
 
             // When/Then
-            Assert.assertTrue(adminSiteAPI.isAdminSiteEnabled());
+            Assert.assertFalse(adminSiteAPI.isAdminSiteEnabled());
         } finally {
             Config.setProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, originalValue);
             adminSiteAPI.invalidateCache();
@@ -358,14 +378,14 @@ public class AdminSiteAPITest extends IntegrationTestBase {
      * ExpectedResult: Returns false (insecure requests not allowed by default)
      */
     @Test
-    public void test_allowInsecureRequests_returns_false_by_default() {
+    public void test_allowInsecureRequests_returns_true_by_default() {
         // Given
-        final Boolean originalValue = Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, false);
+        final Boolean originalValue = Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, true);
         try {
             Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, null);
 
             // When/Then
-            Assert.assertFalse(adminSiteAPI.allowInsecureRequests());
+            Assert.assertTrue(adminSiteAPI.allowInsecureRequests());
         } finally {
             Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, originalValue);
         }

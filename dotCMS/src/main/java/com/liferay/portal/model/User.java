@@ -22,6 +22,7 @@
 
 package com.liferay.portal.model;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.util.DotCloneable;
@@ -41,14 +42,13 @@ import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 import io.vavr.control.Try;
-import org.apache.commons.codec.digest.DigestUtils;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  * <a href="User.java.html"><b><i>View Source</i></b></a>
@@ -324,11 +324,24 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			if (isAnonymousUser()) {
 				return false;
 			}
+            if (!isBackendAllowed()) {
+                return false;
+            }
 			return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadCMSAdminRole()));
 
 		}).getOrElse(false);
 
 	}
+
+    private boolean isBackendAllowed() {
+        // if we have no request (like running in a threadpool).
+        if (HttpServletRequestThreadLocal.INSTANCE.getRequest() == null) {
+            return true;
+        }
+        return APILocator.getAdminSiteAPI()
+                .isAdminSite(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+
+    }
 
 	@JsonIgnore
 	public boolean isBackendUser() {
@@ -336,6 +349,10 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		  if (isAnonymousUser()) {
 			return false;
 		  }
+            if (!isBackendAllowed()) {
+                return false;
+            }
+
 		  return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadBackEndUserRole()));
 
 		}).getOrElse(false);
@@ -365,6 +382,9 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
       if (isAnonymousUser() || UserAPI.SYSTEM_USER_ID.equals(this.getUserId()) ) {
         return false;
       }
+        if (!isBackendAllowed()) {
+            return false;
+        }
       return isActive() && isBackendUser() && !APILocator.getLayoutAPI().loadLayoutsForUser(this).isEmpty();
 
     }).getOrElse(false);
