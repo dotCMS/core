@@ -31,13 +31,13 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
      */
     private ConcurrentHashMap<String, Object> getConfig() {
         ConcurrentHashMap<String, Object> config = (ConcurrentHashMap<String, Object>) CacheLocator.getSystemCache()
-                .get(ADMIN_SITE_CACHE_KEY);
+                .get(_ADMIN_SITE_CACHE_KEY);
         if (config == null) {
             synchronized (AdminSiteAPIImpl.class) {
-                config = (ConcurrentHashMap<String, Object>) CacheLocator.getSystemCache().get(ADMIN_SITE_CACHE_KEY);
+                config = (ConcurrentHashMap<String, Object>) CacheLocator.getSystemCache().get(_ADMIN_SITE_CACHE_KEY);
                 if (config == null) {
                     config = new ConcurrentHashMap<>();
-                    CacheLocator.getSystemCache().put(ADMIN_SITE_CACHE_KEY, config);
+                    CacheLocator.getSystemCache().put(_ADMIN_SITE_CACHE_KEY, config);
                 }
             }
         }
@@ -58,7 +58,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     private Map<String, String> _requestHeaders() {
         String[] tmpHeaders = Config.getStringArrayProperty(ADMIN_SITE_REQUEST_HEADERS,
-                ADMIN_SITE_REQUEST_HEADERS_DEFAULT);
+                _ADMIN_SITE_REQUEST_HEADERS_DEFAULT);
         if (tmpHeaders == null || tmpHeaders.length == 0) {
             tmpHeaders = new String[0];
         }
@@ -96,14 +96,14 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             return true;
         }
 
-        if (request.getAttribute(ADMIN_SITE_HOST_REQUESTED) != null) {
-            return (boolean) request.getAttribute(ADMIN_SITE_HOST_REQUESTED);
+        if (request.getAttribute(_ADMIN_SITE_HOST_REQUESTED) != null) {
+            return (boolean) request.getAttribute(_ADMIN_SITE_HOST_REQUESTED);
         }
 
         // if the admin site functionality is not enabled,
         // anything can go
         if (!isAdminSiteEnabled()) {
-            request.setAttribute(ADMIN_SITE_HOST_REQUESTED, true);
+            request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, true);
             return true;
         }
 
@@ -113,10 +113,10 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
         host = host.contains(":") ? host.substring(0, host.indexOf(":")) : host;
         if (isAdminSite(host)) {
-            request.setAttribute(ADMIN_SITE_HOST_REQUESTED, true);
+            request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, true);
             return true;
         }
-        request.setAttribute(ADMIN_SITE_HOST_REQUESTED, false);
+        request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, false);
         return false;
     }
 
@@ -140,7 +140,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     @Override
     public boolean isAdminSiteEnabled() {
         return (boolean) getConfig().computeIfAbsent(ADMIN_SITE_ENABLED,
-                k -> Config.getBooleanProperty(ADMIN_SITE_ENABLED, false));
+                k -> Config.getBooleanProperty(ADMIN_SITE_ENABLED, _ADMIN_SITE_ENABLED_DEFAULT));
     }
 
 
@@ -154,7 +154,8 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     @Override
     public boolean allowInsecureRequests() {
-        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_ALLOW_INSECURE, true);
+        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_ALLOW_INSECURE,
+                _ADMIN_SITE_REQUESTS_ALLOW_INSECURE_DEFAULT);
     }
 
     @Override
@@ -188,7 +189,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             // Reset the warning flag if it becomes configured
             notConfiguredWarningLogged = false;
         }
-        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, ADMIN_SITE_URL_DEFAULT);
+        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, _ADMIN_SITE_URL_DEFAULT);
 
         while (adminSiteUrl.endsWith("/")) {
             adminSiteUrl = adminSiteUrl.substring(0, adminSiteUrl.length() - 1);
@@ -229,7 +230,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         Set<String> allowedUrls = new HashSet<>();
 
         // Add defaults (lowercased)
-        for (String uri : AdminSiteAPI.ADMIN_SITE_REQUEST_URIS_DEFAULT) {
+        for (String uri : AdminSiteAPI._ADMIN_SITE_REQUEST_URIS_DEFAULT) {
             allowedUrls.add(uri.toLowerCase());
         }
 
@@ -264,7 +265,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         }
 
         // Add defaults (lowercased)
-        for (String domain : AdminSiteAPI.ADMIN_SITE_REQUEST_DOMAINS_DEFAULT) {
+        for (String domain : AdminSiteAPI._ADMIN_SITE_REQUEST_DOMAINS_DEFAULT) {
             allowedHosts.add(domain.toLowerCase());
         }
 
@@ -284,7 +285,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     @Override
     public void invalidateCache() {
-        CacheLocator.getSystemCache().remove(ADMIN_SITE_CACHE_KEY);
+        CacheLocator.getSystemCache().remove(_ADMIN_SITE_CACHE_KEY);
     }
 
 

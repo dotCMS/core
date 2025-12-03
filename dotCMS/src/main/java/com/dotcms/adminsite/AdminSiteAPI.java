@@ -6,48 +6,31 @@ import javax.servlet.http.HttpServletRequest;
 
 public interface AdminSiteAPI {
 
-    // turns Admin site functionality on or off
-    String ADMIN_SITE_ENABLED = "ADMIN_SITE_ENABLED";
-
-    // key to store the admin site config in the dotCMS system cache.
-    String ADMIN_SITE_CACHE_KEY = "ADMIN_SITE_CACHE_KEY";
-
-    // the primary admin url that will be used to administrate your dotCMS instance.
-    String ADMIN_SITE_URL = "ADMIN_SITE_URL";
+    /**
+     * ------------------------------------------------------------------------ DEFAULTS (Not configurable)
+     * ------------------------------------------------------------------------
+     */
+    boolean _ADMIN_SITE_ENABLED_DEFAULT = false;
 
     // the default admin url if one is not set
-    String ADMIN_SITE_URL_DEFAULT = "https://local.dotcms.site:8443";
+    String _ADMIN_SITE_URL_DEFAULT = "https://local.dotcms.site:8443";
 
-    // config to for all admin requests to use SSL
-    String ADMIN_SITE_REQUESTS_ALLOW_INSECURE = "ADMIN_SITE_REQUESTS_ALLOW_INSECURE";
-
-    // comma separated list of URIs to that should be blocked on non-admin sites
-    String ADMIN_SITE_REQUEST_URIS = "ADMIN_SITE_REQUEST_URIS";
-
-    // comma separated list of URIs to exclude from being blocked (can disable the defaults)
-    String ADMIN_SITE_REQUEST_URIS_EXCLUDE = "ADMIN_SITE_REQUEST_URIS_EXCLUDE";
-
-    // comma separated list of domains that should be excluded as admin domains (can disable the defaults)
-    String ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE = "ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE";
-
-    /**
-     * comma separated list of admin domains - automatically wildcarded in the front for matches for the end of the
-     * string, e.g. `mysite.com` would match admin.mysite.com and www.mysite.com
-     */
-    String ADMIN_SITE_REQUEST_DOMAINS = "ADMIN_SITE_REQUEST_DOMAINS";
-
-
-    // comma separated list of headers to add for admin domains.  In a `key1,value1,key2,value2` format.
-    String ADMIN_SITE_REQUEST_HEADERS = "ADMIN_SITE_REQUEST_HEADERS";
+    boolean _ADMIN_SITE_REQUESTS_ALLOW_INSECURE_DEFAULT = true;
 
     // default header added to all admin requests
-    String[] ADMIN_SITE_REQUEST_HEADERS_DEFAULT = new String[]{"x-robots-tag", "noindex, nofollow"};
+    String[] _ADMIN_SITE_REQUEST_HEADERS_DEFAULT = new String[]{"x-robots-tag", "noindex, nofollow"};
 
-    String ADMIN_SITE_HOST_REQUESTED = "ADMIN_SITE_HOST_REQUESTED";
+    // request attribute added for any ADMIN_SITE request
+    String _ADMIN_SITE_HOST_REQUESTED = "_ADMIN_SITE_HOST_REQUESTED";
 
+    // key to store the admin site config in the dotCMS system cache.
+    String _ADMIN_SITE_CACHE_KEY = "_ADMIN_SITE_CACHE_KEY";
 
-    // Default list of "admin" paths
-    String[] ADMIN_SITE_REQUEST_URIS_DEFAULT = {
+    /**
+     * Default list of "admin" paths.  These can be added to or removed by setting the ADMIN_SITE_REQUEST_URIS (to add)
+     * and/or  ADMIN_SITE_REQUEST_URIS_EXCLUDE to remove. These are automatically wildcarded at the end, .e.g. /html/*
+     */
+    String[] _ADMIN_SITE_REQUEST_URIS_DEFAULT = {
             "/html/",
             "/admin/",
             "/c/",
@@ -61,11 +44,12 @@ public interface AdminSiteAPI {
             "/edit/",
             "/servlet/"};
 
-
-    // Default list of "admin" Domains.  These can be added or removed by using the
-    // ADMIN_SITE_REQUEST_DOMAINS and ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE variables
-    // automatically wildcarded in front, e.g. *dotcms.com matches any dotcms.com subdomain.
-    String[] ADMIN_SITE_REQUEST_DOMAINS_DEFAULT = {
+    /**
+     * Default list of admin Domains.  These can be added or removed by using the ADMIN_SITE_REQUEST_DOMAINS and
+     * ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE variables automatically wildcarded in front, e.g. *dotcms.com matches any
+     * dotcms.com subdomain.
+     */
+    String[] _ADMIN_SITE_REQUEST_DOMAINS_DEFAULT = {
             "dotcms.com",
             "dotcms.site",
             "dotcms.io",
@@ -73,6 +57,41 @@ public interface AdminSiteAPI {
             "dotcms.cloud",
             "dotcmscloud.com",
             "localhost"};
+
+    /**
+     * ------------------------------------------------------------------------ CONFIG VARS
+     * ------------------------------------------------------------------------
+     */
+
+    // turns Admin site functionality on or off (true|false). Defaults to false
+    String ADMIN_SITE_ENABLED = "ADMIN_SITE_ENABLED";
+
+
+    // config the primary admin url that will be used to administrate your dotCMS instance.
+    // it is protocol :// host (:optional port), e.g. https://admin.dotcms.com
+    String ADMIN_SITE_URL = "ADMIN_SITE_URL";
+
+    // config to force all admin requests to use SSL (true|false), defaults to true (allow insecure)
+    String ADMIN_SITE_REQUESTS_ALLOW_INSECURE = "ADMIN_SITE_REQUESTS_ALLOW_INSECURE";
+
+    // comma separated list of headers to add for admin domains.  In a `key1,value1,key2,value2` format.
+    String ADMIN_SITE_REQUEST_HEADERS = "ADMIN_SITE_REQUEST_HEADERS";
+
+    // comma separated list of  admin URIs to that should be blocked on non-admin sites
+    String ADMIN_SITE_REQUEST_URIS = "ADMIN_SITE_REQUEST_URIS";
+
+    // comma separated list of admin URIs to exclude from being blocked (can disable the defaults)
+    String ADMIN_SITE_REQUEST_URIS_EXCLUDE = "ADMIN_SITE_REQUEST_URIS_EXCLUDE";
+
+    /**
+     * comma separated list of admin domains - automatically wildcarded in the front for matches for the end of the
+     * string, e.g. `mysite.com` would match admin.mysite.com and www.mysite.com
+     */
+    String ADMIN_SITE_REQUEST_DOMAINS = "ADMIN_SITE_REQUEST_DOMAINS";
+
+    // comma separated list of domains that should be excluded as admin domains (can disable the defaults)
+    String ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE = "ADMIN_SITE_REQUEST_DOMAINS_EXCLUDE";
+
 
     /**
      * checks the host value to validate that it is on the "admin site" host list
@@ -125,13 +144,33 @@ public interface AdminSiteAPI {
      */
     Map<String,String> getAdminSiteHeaders();
 
+    /**
+     * returns if insecure requests are allowed to the dotCMS admin functionality
+     * @return
+     */
     boolean allowInsecureRequests();
 
+    /**
+     * returns if the ADMIN_SITE_URL has been configured
+     * @return
+     */
     boolean isAdminSiteConfigured();
 
+    /**
+     * returns a cleaned up version of the admin site url
+     * @return
+     */
     String getAdminSiteUrl();
 
+    /**
+     * clears the admin site cache and allows the config to reload
+     */
     void invalidateCache();
 
+
+    /**
+     * Returns if the admin site functionality has been enabled.
+     * @return
+     */
     boolean isAdminSiteEnabled();
 }

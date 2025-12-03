@@ -62,7 +62,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
             final String adminSiteUrl = adminSiteAPI.getAdminSiteUrl();
 
             // Then
-            Assert.assertEquals(AdminSiteAPI.ADMIN_SITE_URL_DEFAULT, adminSiteUrl);
+            Assert.assertEquals(AdminSiteAPI._ADMIN_SITE_URL_DEFAULT, adminSiteUrl);
         } finally {
             // Restore original value
             Config.setProperty(AdminSiteAPI.ADMIN_SITE_URL, originalValue);
