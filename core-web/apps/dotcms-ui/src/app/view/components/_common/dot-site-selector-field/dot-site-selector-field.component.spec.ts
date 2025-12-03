@@ -49,6 +49,8 @@ export class SiteSelectorComponent {
     @Input()
     live: boolean;
     @Input()
+    width: string;
+    @Input()
     system: boolean;
     @Input()
     asField: boolean;
@@ -64,8 +66,8 @@ describe('SiteSelectorFieldComponent', () => {
         siteServiceMock.setFakeCurrentSite();
 
         DOTTestBed.configureTestingModule({
-            declarations: [FakeFormComponent, SiteSelectorComponent, DotSiteSelectorFieldComponent],
-            imports: [],
+            declarations: [FakeFormComponent, SiteSelectorComponent],
+            imports: [DotSiteSelectorFieldComponent],
             providers: [{ provide: SiteService, useValue: siteServiceMock }]
         });
     }));
@@ -159,7 +161,10 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should not set current site when already hava a value and current site request is getting after onInit', () => {
-        spyOnProperty(siteServiceMock, 'currentSite', 'get').and.returnValue(null);
+        Object.defineProperty(siteServiceMock, 'currentSite', {
+            value: null,
+            writable: true
+        });
         component.form.get('site').setValue('1234');
         fixture.detectChanges();
 

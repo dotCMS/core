@@ -19,51 +19,73 @@ test.beforeEach("Login", async ({ page }) => {
 });
 
 test("should display correctly on the Starter page", async ({ page }) => {
-  const breadcrumb = new BreadcrumbComponent(page);
-  const breadcrumbText = breadcrumb.getBreadcrumb();
-  await expect(breadcrumbText).toHaveText("Getting Started");
+  // Wait for page to be fully loaded
+  await page.waitForLoadState("load");
 
+  const breadcrumb = new BreadcrumbComponent(page);
   const title = breadcrumb.getTitle();
+  // Wait for title to appear, which indicates page is ready
+  await title.waitFor({ state: "visible" });
   await expect(title).toHaveText("Welcome");
 });
 
 test("should display correctly on the Site Browser page", async ({ page }) => {
   await page.goto("/dotAdmin/#/c/site-browser");
+  await page.waitForLoadState("load");
+
   const breadcrumb = new BreadcrumbComponent(page);
   const breadcrumbText = breadcrumb.getBreadcrumb();
-  await expect(breadcrumbText).toHaveText("Site Manager");
+  await breadcrumbText.waitFor({ state: "visible" });
+  await expect(breadcrumbText).toContainText("Home");
+  await expect(breadcrumbText).toContainText("Site");
 
   const title = breadcrumb.getTitle();
+  await title.waitFor({ state: "visible" });
   await expect(title).toHaveText("Browser");
 });
 
 test("should display correctly on the Pages page", async ({ page }) => {
   await page.goto("/dotAdmin/#/pages");
+  await page.waitForLoadState("load");
+
   const breadcrumb = new BreadcrumbComponent(page);
   const breadcrumbText = breadcrumb.getBreadcrumb();
-  await expect(breadcrumbText).toHaveText("Site Manager");
+  await breadcrumbText.waitFor({ state: "visible" });
+  await expect(breadcrumbText).toContainText("Home");
+  await expect(breadcrumbText).toContainText("Site");
 
   const title = breadcrumb.getTitle();
+  await title.waitFor({ state: "visible" });
   await expect(title).toHaveText("Pages");
 });
 
 test("should display correctly on the Containers page", async ({ page }) => {
   await page.goto("/dotAdmin/#/containers");
+  await page.waitForLoadState("domcontentloaded");
+
   const breadcrumb = new BreadcrumbComponent(page);
   const breadcrumbText = breadcrumb.getBreadcrumb();
-  await expect(breadcrumbText).toHaveText("Site Manager");
+  await breadcrumbText.waitFor({ state: "visible" });
+  await expect(breadcrumbText).toContainText("Home");
+  await expect(breadcrumbText).toContainText("Site");
 
   const title = breadcrumb.getTitle();
+  await title.waitFor({ state: "visible" });
   await expect(title).toHaveText("Containers");
 });
 
 test("should display correctly on the Content Types page", async ({ page }) => {
   await page.goto("/dotAdmin/#/content-types-angular");
+  await page.waitForLoadState("load");
+
   const breadcrumb = new BreadcrumbComponent(page);
   const breadcrumbText = breadcrumb.getBreadcrumb();
-  await expect(breadcrumbText).toHaveText("Schema");
+  await breadcrumbText.waitFor({ state: "visible" });
+  await expect(breadcrumbText).toContainText("Home");
+  await expect(breadcrumbText).toContainText("Schema");
 
   const title = breadcrumb.getTitle();
+  await title.waitFor({ state: "visible" });
   await expect(title).toHaveText("Content Types");
 });
 
@@ -81,13 +103,18 @@ test.describe("Template page", () => {
 
   test("should display correctly on the Template page", async ({ page }) => {
     await page.goto(`/dotAdmin/#/templates/edit/${template.identifier}`);
+    await page.waitForLoadState("load");
+
     const breadcrumb = new BreadcrumbComponent(page);
+    const title = breadcrumb.getTitle();
+
+    // Wait for title to change to template title (indicates page loaded)
+    await expect(title).toHaveText(template.title, { timeout: 15000 });
 
     const breadcrumbText = breadcrumb.getBreadcrumb();
-    await expect(breadcrumbText).toHaveText("Site ManagerTemplates");
-
-    const title = breadcrumb.getTitle();
-    await expect(title).toHaveText(template.title);
+    await expect(breadcrumbText).toContainText("Home", { timeout: 10000 });
+    await expect(breadcrumbText).toContainText("Site");
+    await expect(breadcrumbText).toContainText("Templates");
   });
 
   test.afterEach(async ({ request }) => {

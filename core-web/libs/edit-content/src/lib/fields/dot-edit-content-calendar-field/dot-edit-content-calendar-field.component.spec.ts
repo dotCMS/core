@@ -1,33 +1,50 @@
 import { describe } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@ngneat/spectator/jest';
 
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Calendar } from 'primeng/calendar';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotSystemTimezone } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotSystemTimezone
+} from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
+import * as calendarUtils from './components/calendar-field/calendar-field.util';
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
-import * as calendarUtils from './dot-edit-content-calendar-field.util';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { FieldType } from '../../models/dot-edit-content-field.type';
 import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
 
-describe('DotEditContentCalendarFieldComponent', () => {
-    let spectator: Spectator<DotEditContentCalendarFieldComponent>;
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+    utcTimezone: DotSystemTimezone;
+    contentType: DotCMSContentType;
+}
 
-    const createComponent = createComponentFactory({
+describe('DotEditContentCalendarFieldComponent', () => {
+    let spectator: SpectatorHost<DotEditContentCalendarFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
         component: DotEditContentCalendarFieldComponent,
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useExisting: FormGroupDirective
-            }
-        ],
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule, TooltipModule],
+        detectChanges: false,
         providers: [
-            FormGroupDirective,
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Never expires')
             })
@@ -53,13 +70,25 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe('Calendar field timezone information', () => {
         it('should show timezone info for DATE_AND_TIME fields when timezone is provided', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
             expect(timezoneElement).toExist();
@@ -67,13 +96,25 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should show timezone info for TIME fields when timezone is provided', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
             expect(timezoneElement).toExist();
@@ -81,34 +122,54 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should NOT show timezone info for DATE fields', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
             expect(timezoneElement).not.toExist();
         });
 
         it('should NOT show timezone info when no timezone is provided', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             // El elemento timezone existe pero no debe mostrar contenido
             const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
-            expect(timezoneElement).toExist();
-
-            // Pero no debe tener contenido de timezone
-            const timezoneText = timezoneElement?.querySelector('small');
-            expect(timezoneText).not.toExist();
+            expect(timezoneElement).toBeNull();
         });
     });
 
@@ -121,34 +182,54 @@ describe('DotEditContentCalendarFieldComponent', () => {
             };
 
             // Usar DATE_AND_TIME field para que showTimezoneInfo sea true y aparezca el contenedor
-            spectator = createComponent({
-                props: {
-                    field: fieldWithHint,
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
-
-            const hintsContainer = spectator.query(byTestId('calendar-field-hints'));
-            expect(hintsContainer).toExist();
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithHint.variable]: new FormControl()
+                        }),
+                        field: fieldWithHint,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithHint.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             expect(fieldWithHint.hint).toBe('Test hint message');
 
-            const hintElement = spectator.query(byTestId(`hint-${fieldWithHint.variable}`));
+            const hintElement = spectator.query(Tooltip);
             expect(hintElement).toExist();
-            expect(hintElement).toContainText('Test hint message');
         });
 
         it('should NOT show hint when field has no hint property', () => {
             const fieldWithoutHint = { ...DATE_FIELD_MOCK, hint: undefined };
 
-            spectator = createComponent({
-                props: {
-                    field: fieldWithoutHint,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithoutHint.variable]: new FormControl()
+                        }),
+                        field: fieldWithoutHint,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithoutHint.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const hintElement = spectator.query(byTestId('calendar-field-hint'));
             expect(hintElement).not.toExist();
@@ -157,13 +238,25 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe('Expire date field behavior', () => {
         it('should show placeholder and showClear when field is expire date field', () => {
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITH_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITH_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
             expect(calendar.showClear).toBe(true);
@@ -172,13 +265,25 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should NOT show placeholder and showClear when field is NOT expire date field', () => {
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
             expect(calendar.showClear).toBe(false);
@@ -188,16 +293,29 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe('Disabled state', () => {
         it('should disable calendar when setDisabledState is called with true', () => {
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
-            const component = spectator.component;
-            component.setDisabledState(true);
+            const component = spectator.hostComponent.formGroup;
+            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            control.disable();
             spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
@@ -205,16 +323,29 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should enable calendar when setDisabledState is called with false', () => {
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
-            const component = spectator.component;
-            component.setDisabledState(false);
+            const component = spectator.hostComponent.formGroup;
+            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            control.enable();
             spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
@@ -224,13 +355,26 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe('Field type configurations', () => {
         it('should configure DATE_AND_TIME field correctly', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            const dateTimeField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [dateTimeField.variable]: new FormControl()
+                        }),
+                        field: dateTimeField,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [dateTimeField.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
             expect(calendar.showTime).toBe(true);
@@ -239,13 +383,26 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should configure DATE field correctly', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            const dateField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [dateField.variable]: new FormControl()
+                        }),
+                        field: dateField,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [dateField.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
             expect(calendar.showTime).toBe(false);
@@ -254,13 +411,26 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should configure TIME field correctly', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            const timeField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [timeField.variable]: new FormControl()
+                        }),
+                        field: timeField,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [timeField.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendar = spectator.query(Calendar);
             expect(calendar.showTime).toBe(true);
@@ -295,16 +465,29 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
             const fieldWithDefault = { ...DATE_FIELD_MOCK, defaultValue: 'now' };
 
-            spectator = createComponent({
-                props: {
-                    field: fieldWithDefault,
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithDefault.variable]: new FormControl()
+                        }),
+                        field: fieldWithDefault,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithDefault.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
-            const component = spectator.component;
-            component.writeValue(null);
+            const component = spectator.hostComponent.formGroup;
+            const control = component.get(fieldWithDefault.variable) as FormControl;
+            control.setValue(null);
 
             expect(calendarUtils.processFieldDefaultValue).toHaveBeenCalledWith(
                 fieldWithDefault,
@@ -315,16 +498,29 @@ describe('DotEditContentCalendarFieldComponent', () => {
         it('should NOT process default value when field has no defaultValue', () => {
             const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
 
-            spectator = createComponent({
-                props: {
-                    field: fieldWithoutDefault,
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithoutDefault.variable]: new FormControl()
+                        }),
+                        field: fieldWithoutDefault,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithoutDefault.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
-            const component = spectator.component;
-            component.writeValue(null);
+            const component = spectator.hostComponent.formGroup;
+            const control = component.get(fieldWithoutDefault.variable) as FormControl;
+            control.setValue(null);
 
             expect(calendarUtils.processFieldDefaultValue).toHaveBeenCalledWith(
                 fieldWithoutDefault,
@@ -338,20 +534,35 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
             jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
 
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
-            const component = spectator.component;
-            component.writeValue(existingValue);
+            const component = spectator.hostComponent.formGroup;
+            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            control.setValue(existingValue);
+
+            spectator.detectChanges();
 
             expect(calendarUtils.processExistingValue).toHaveBeenCalledWith(
                 existingValue,
-                DATE_FIELD_MOCK.fieldType as FieldType,
+                DATE_FIELD_MOCK.fieldType as FIELD_TYPES,
                 MOCK_TIMEZONE
             );
         });
@@ -363,24 +574,34 @@ describe('DotEditContentCalendarFieldComponent', () => {
             jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
 
             // Start without timezone
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
-            const component = spectator.component;
-            component.writeValue(existingValue);
-
-            // Update with timezone
-            spectator.setInput('utcTimezone', MOCK_TIMEZONE);
+            const component = spectator.hostComponent.formGroup;
+            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            control.setValue(existingValue);
             spectator.detectChanges();
 
             expect(calendarUtils.processExistingValue).toHaveBeenCalledWith(
                 existingValue,
-                DATE_FIELD_MOCK.fieldType as FieldType,
+                DATE_FIELD_MOCK.fieldType as FIELD_TYPES,
                 MOCK_TIMEZONE
             );
         });
@@ -410,63 +631,61 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should handle calendar change for DATE field', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
-
-            const component = spectator.component;
-            const mockOnChange = jest.fn();
-            component.registerOnChange(mockOnChange);
+            const dateField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [dateField.variable]: new FormControl()
+                        }),
+                        field: dateField,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [dateField.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const selectedDate = new Date('2024-01-15T10:30:00');
-            component.onCalendarChange(selectedDate);
+            spectator.triggerEventHandler(Calendar, 'onSelect', selectedDate);
 
             expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
             expect(calendarUtils.createUtcDateAtMidnight).toHaveBeenCalledWith(2024, 0, 15);
-            expect(mockOnChange).toHaveBeenCalled();
         });
 
         it('should handle calendar change for TIME field', () => {
-            spectator = createComponent({
-                props: {
-                    field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
-
-            const component = spectator.component;
-            const mockOnChange = jest.fn();
-            component.registerOnChange(mockOnChange);
+            const timeField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [timeField.variable]: new FormControl()
+                        }),
+                        field: timeField,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [timeField.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const selectedDate = new Date('2024-01-15T10:30:00');
-            component.onCalendarChange(selectedDate);
+            spectator.triggerEventHandler(Calendar, 'onSelect', selectedDate);
 
             expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
             expect(calendarUtils.convertServerTimeToUtc).toHaveBeenCalled();
-            expect(mockOnChange).toHaveBeenCalled();
-        });
-
-        it('should handle null calendar change', () => {
-            spectator = createComponent({
-                props: {
-                    field: DATE_FIELD_MOCK,
-                    utcTimezone: MOCK_TIMEZONE,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
-
-            const component = spectator.component;
-            const mockOnChange = jest.fn();
-            component.registerOnChange(mockOnChange);
-
-            component.onCalendarChange(null);
-
-            expect(mockOnChange).toHaveBeenCalledWith(null);
         });
     });
 
@@ -474,13 +693,25 @@ describe('DotEditContentCalendarFieldComponent', () => {
         it('should set correct aria-label from field name', () => {
             const fieldWithName = { ...DATE_FIELD_MOCK, name: 'Event Date' };
 
-            spectator = createComponent({
-                props: {
-                    field: fieldWithName,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithName.variable]: new FormControl()
+                        }),
+                        field: fieldWithName,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithName.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendarInput = spectator.query(
                 byTestId(`calendar-input-${fieldWithName.variable}`)
@@ -488,35 +719,28 @@ describe('DotEditContentCalendarFieldComponent', () => {
             expect(calendarInput).toHaveAttribute('aria-label', 'Event Date');
         });
 
-        it('should set aria-describedby when field has hint', () => {
-            const fieldWithHint = {
-                ...DATE_FIELD_MOCK,
-                hint: 'Select a date',
-                variable: 'testField'
-            };
-
-            spectator = createComponent({
-                props: {
-                    field: fieldWithHint,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
-
-            const calendarInput = spectator.query(byTestId('calendar-input-testField'));
-            expect(calendarInput).toHaveAttribute('aria-describedby', 'hint-testField');
-        });
-
         it('should NOT set aria-describedby when field has no hint', () => {
             const fieldWithoutHint = { ...DATE_FIELD_MOCK, hint: undefined };
 
-            spectator = createComponent({
-                props: {
-                    field: fieldWithoutHint,
-                    utcTimezone: null,
-                    contentType: CONTENT_TYPE_WITHOUT_EXPIRE
-                } as unknown
-            });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithoutHint.variable]: new FormControl()
+                        }),
+                        field: fieldWithoutHint,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithoutHint.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
 
             const calendarInput = spectator.query(
                 byTestId(`calendar-input-${fieldWithoutHint.variable}`)

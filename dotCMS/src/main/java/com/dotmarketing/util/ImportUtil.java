@@ -2471,7 +2471,11 @@ public class ImportUtil {
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
-                        .context(Map.of("errorHint","404 Not Found."))
+                        .context(Map.of(
+                                "errorHint", "The server responded with an error (e.g. 4xx or 5xx). " +
+                                   "This may indicate the resource was not found, access was denied, " +
+                                   "or the server is unavailable."
+                        ))
                         .build();
             }
         }
@@ -3090,7 +3094,17 @@ public class ImportUtil {
                             value = getURLFromFolderAndAssetName(siteAndFolder, urlValueAssetName);
                             conValue = getURLFromContentId(contentlet.getIdentifier());
                         }
-                        if (!conValue.equals(value)) {
+
+                        if (new LegacyFieldTransformer(field).from() instanceof HostFolderField) {
+                            final Pair<Host, Folder> siteOrFolder = getSiteAndFolderFromIdOrName((String) value, user);
+                            final String valueAsHostId = siteOrFolder != null ? siteOrFolder.getLeft().getIdentifier() : null;
+                            final String valueAsFolderId = siteOrFolder != null ? siteOrFolder.getRight().getIdentifier() : null;
+
+                            // Check if either host or folder matches
+                            if (!conValue.equals(valueAsHostId) && !conValue.equals(valueAsFolderId)) {
+                                match = false;
+                            }
+                        } else if (!conValue.equals(value)) {
                             match = false;
                         }
                     }

@@ -50,6 +50,17 @@ public enum ValidationErrorCode {
     /**
      * Indicates that the provided Site Key is invalid, or does not match the expected format.
      */
-    INVALID_SITE_KEY;
+    INVALID_SITE_AUTH,
+
+
+    /**
+     * Indicates that the maximum limit of custom attributes has been reached.
+     */
+    MAX_LIMIT_OF_CUSTOM_ATTRIBUTE_REACHED,
+    /**
+     * Indicates that a field expected to be a number is either empty or not a number.
+     * This error occurs when validating fields that should contain number values.
+     */
+    INVALID_NUMBER_TYPE;
 
 }

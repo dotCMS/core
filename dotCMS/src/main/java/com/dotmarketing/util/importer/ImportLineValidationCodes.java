@@ -89,6 +89,11 @@ public enum ImportLineValidationCodes {
     RELATIONSHIP_VALIDATION_ERROR,
 
     /**
+     * Relationship cardinality error
+     */
+    RELATIONSHIP_CARDINALITY_ERROR,
+
+    /**
      * User lacks required permissions
      */
     PERMISSION_ERROR,

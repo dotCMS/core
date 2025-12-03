@@ -413,6 +413,7 @@ export const getStoredUIState = (): UIState => {
 
     // Default values
     return {
+        view: 'form',
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,

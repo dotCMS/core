@@ -1,18 +1,20 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, Input, ViewChild, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { map } from 'rxjs/operators';
 
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotSafeHtmlPipe, DotDiffPipe } from '@dotcms/ui';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
 
 @Component({
     selector: 'dot-content-compare-block-editor',
     templateUrl: './dot-content-compare-block-editor.component.html',
-    standalone: false
+    imports: [CommonModule, BlockEditorModule, DotSafeHtmlPipe, DotDiffPipe]
 })
 export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     private sanitizer = inject(DomSanitizer);

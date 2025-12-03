@@ -10,7 +10,7 @@ import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
+import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item/dot-apps-configuration-item.component';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
 
 const messages = {
@@ -41,12 +41,13 @@ describe('DotAppsConfigurationListComponent', () => {
             imports: [
                 CommonModule,
                 ButtonModule,
-                DotAppsConfigurationItemModule,
+                DotAppsConfigurationItemComponent,
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe
+                DotMessagePipe,
+                DotAppsConfigurationListComponent
             ],
-            declarations: [DotAppsConfigurationListComponent],
+            declarations: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotAlertConfirmService,
@@ -72,36 +73,40 @@ describe('DotAppsConfigurationListComponent', () => {
                     .componentInstance.site
             ).toBe(component.siteConfigurations[0]);
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-list__show-more'))
-                    .nativeElement.outerText
+                fixture.debugElement
+                    .query(By.css('.dot-apps-configuration-list__show-more'))
+                    .nativeElement.textContent.trim()
             ).toBe(messageServiceMock.get('apps.configurations.show.more'));
         });
 
         it('should emit action for edit --> Site Item', () => {
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
             siteItem.edit.emit(sites[0]);
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.edit.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit action for export --> Site Item', () => {
-            spyOn(component.export, 'emit');
+            jest.spyOn(component.export, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
             siteItem.export.emit(sites[0]);
             expect(component.export.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.export.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should emit action for delete --> Site Item', () => {
-            spyOn(component.delete, 'emit');
+            jest.spyOn(component.delete, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
             siteItem.delete.emit(sites[0]);
             expect(component.delete.emit).toHaveBeenCalledWith(sites[0]);
+            expect(component.delete.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should Load More button be enabled', () => {
@@ -112,7 +117,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should Load More button emit action', () => {
-            spyOn(component.loadData, 'emit');
+            jest.spyOn(component.loadData, 'emit');
             const loadMore = fixture.debugElement.query(
                 By.css('.dot-apps-configuration-list__show-more')
             );

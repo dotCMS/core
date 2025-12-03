@@ -1,19 +1,21 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
-import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+import { WINDOW } from '@dotcms/utils';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field.component';
 
-import { CUSTOM_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { CUSTOM_FIELD_MOCK } from '../../utils/mocks';
+import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 
 const MOCK_CONTENT_TYPE_NAME = 'test';
+const MOCK_INODE = 'test-inode';
 
 describe('DotEditContentCustomFieldComponent', () => {
-    let spectator: Spectator<DotEditContentCustomFieldComponent>;
-
-    const FAKE_FORM_GROUP = new FormGroup({
-        custom: new FormControl('')
-    });
+    let spectator: SpectatorHost<DotEditContentCustomFieldComponent>;
 
     const FIELD_VARIABLES = {
         height: '300px',
@@ -31,29 +33,45 @@ describe('DotEditContentCustomFieldComponent', () => {
         }))
     };
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentCustomFieldComponent,
+        imports: [ReactiveFormsModule],
         detectChanges: false,
-        componentViewProviders: [
+        componentMocks: [DotCardFieldComponent, DotCardFieldContentComponent],
+        providers: [
             {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP)
+                provide: WINDOW,
+                useValue: window
             }
-        ],
-        providers: [FormGroupDirective]
-    });
-
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                $field: CUSTOM_FIELD_WITH_VARIABLES,
-                $contentType: MOCK_CONTENT_TYPE_NAME
-            }
-        });
-        spectator.detectChanges();
+        ]
     });
 
     describe('Component Initialization', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: CUSTOM_FIELD_WITH_VARIABLES,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should create', () => {
             expect(spectator.component).toBeTruthy();
         });
@@ -71,6 +89,31 @@ describe('DotEditContentCustomFieldComponent', () => {
     });
 
     describe('Iframe Rendering', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: CUSTOM_FIELD_WITH_VARIABLES,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should render iframe with correct attributes', () => {
             spectator.fixture.whenStable().then(() => {
                 const iframe = spectator.query(byTestId('custom-field-iframe'));
@@ -78,7 +121,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 expect(iframe).toBeTruthy();
                 expect(iframe?.getAttribute('src')).toContain('legacy-custom-field.jsp');
                 expect(iframe?.getAttribute('title')).toContain('Content Type');
-                expect(iframe?.classList.contains('legacy-custom-field')).toBe(true);
+                expect(iframe?.classList.contains('legacy-custom-field__iframe')).toBe(true);
             });
         });
 
@@ -105,15 +148,65 @@ describe('DotEditContentCustomFieldComponent', () => {
     });
 
     describe('URL Generation', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: CUSTOM_FIELD_WITH_VARIABLES,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should compute correct src url with all parameters', () => {
             spectator.fixture.whenStable().then(() => {
-                const expectedUrl = `/html/legacy_custom_field/legacy-custom-field.jsp?variable=${MOCK_CONTENT_TYPE_NAME}&field=${CUSTOM_FIELD_MOCK.variable}`;
+                const expectedUrl = `/html/legacy_custom_field/legacy-custom-field.jsp?variable=${MOCK_CONTENT_TYPE_NAME}&field=${CUSTOM_FIELD_MOCK.variable}&inode=${MOCK_INODE}`;
                 expect(spectator.component.$src()).toBe(expectedUrl);
             });
         });
     });
 
     describe('Fullscreen Functionality', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: CUSTOM_FIELD_WITH_VARIABLES,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should show close button only in fullscreen mode', () => {
             spectator.fixture.whenStable().then(() => {
                 expect(spectator.query('p-button')).toBeFalsy();
@@ -139,6 +232,31 @@ describe('DotEditContentCustomFieldComponent', () => {
     });
 
     describe('Message Handling', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: CUSTOM_FIELD_WITH_VARIABLES,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should handle window message for toggling fullscreen', () => {
             window.dispatchEvent(
                 new MessageEvent('message', {
@@ -173,6 +291,31 @@ describe('DotEditContentCustomFieldComponent', () => {
     });
 
     describe('Form Bridge Integration', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: CUSTOM_FIELD_WITH_VARIABLES,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+        });
+
         it('should send form loaded message on iframe load', () => {
             spectator.fixture.whenStable().then(() => {
                 const iframe = spectator.query(

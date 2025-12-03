@@ -41,13 +41,13 @@ import {
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
+    DotAIImagePromptComponent,
     DotDropZoneComponent,
     DotMessagePipe,
-    DotSpinnerModule,
+    DotSpinnerComponent,
     DropZoneErrorType,
     DropZoneFileEvent,
-    DropZoneFileValidity,
-    DotAIImagePromptComponent
+    DropZoneFileValidity
 } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-editor/dot-binary-field-editor.component';
@@ -84,7 +84,7 @@ type SystemOptionsType = {
         MonacoEditorModule,
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DotBinaryFieldEditorComponent,
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
@@ -97,7 +97,6 @@ type SystemOptionsType = {
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
-        DotAiService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,

@@ -2,14 +2,20 @@
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import {
+    FormGroupDirective,
+    NgControl,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
+import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
 
 import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 
@@ -67,15 +73,33 @@ describe('DotRelationshipsPropertyComponent', () => {
     });
 
     beforeEach(waitForAsync(() => {
+        const formGroupDirectiveMock = {
+            control: new UntypedFormGroup({
+                relationship: new UntypedFormControl('')
+            })
+        };
+
+        const dotEditContentTypeCacheServiceMock = {
+            get: jest.fn().mockReturnValue({ id: 'test-content-type-id' }),
+            set: jest.fn()
+        };
+
         DOTTestBed.configureTestingModule({
             declarations: [
-                DotRelationshipsPropertyComponent,
                 TestFieldValidationMessageComponent,
                 TestNewRelationshipsComponent,
                 TestEditRelationshipsComponent
             ],
-            imports: [DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            imports: [DotRelationshipsPropertyComponent, DotMessagePipe],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotContentTypeService,
+                {
+                    provide: DotEditContentTypeCacheService,
+                    useValue: dotEditContentTypeCacheServiceMock
+                },
+                { provide: FormGroupDirective, useValue: formGroupDirectiveMock }
+            ]
         });
 
         fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
@@ -101,7 +125,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         it('should have existing and new radio button', () => {
-            const radios = de.queryAll(By.css('p-radioButton'));
+            const radios = de.queryAll(By.css('p-radiobutton'));
 
             expect(radios.length).toBe(2);
             expect(radios.map((radio) => radio.componentInstance.label)).toEqual([
@@ -136,7 +160,7 @@ describe('DotRelationshipsPropertyComponent', () => {
                 })
             });
 
-            const radio = de.query(By.css('p-radioButton'));
+            const radio = de.query(By.css('p-radiobutton'));
             radio.triggerEventHandler('click', {});
 
             expect(comp.group.get('relationship').value).toEqual('');
@@ -164,7 +188,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
             fixture.detectChanges();
 
-            const radios = de.queryAll(By.css('p-radioButton'));
+            const radios = de.queryAll(By.css('p-radiobutton'));
 
             const dotNewRelationships = de.query(By.css('dot-new-relationships'));
 
@@ -182,7 +206,7 @@ describe('DotRelationshipsPropertyComponent', () => {
 
                 fixture.detectChanges();
 
-                const radios = de.queryAll(By.css('p-radioButton'));
+                const radios = de.queryAll(By.css('p-radiobutton'));
                 const dotNewRelationships = de.query(By.css('dot-new-relationships'));
 
                 expect(radios.length).toBe(0);

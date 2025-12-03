@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component';
 
@@ -15,7 +16,7 @@ import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component'
             <div class="lower-toolbar-right">4</div>
         </dot-secondary-toolbar>
     `,
-    standalone: false
+    imports: [DotSecondaryToolbarComponent]
 })
 class HostTestComponent {}
 
@@ -23,12 +24,16 @@ describe('DotSecondaryToolbarComponent', () => {
     let fixture: ComponentFixture<HostTestComponent>;
     let dotToolbarComponent: DebugElement;
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [HostTestComponent, DotSecondaryToolbarComponent],
-            imports: [CommonModule]
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [
+                HostTestComponent,
+                CommonModule,
+                RouterTestingModule,
+                DotSecondaryToolbarComponent
+            ]
         }).compileComponents();
-    }));
+    });
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostTestComponent);
@@ -37,6 +42,10 @@ describe('DotSecondaryToolbarComponent', () => {
 
     it('should have a p-avatar', () => {
         dotToolbarComponent = fixture.debugElement.query(By.css('dot-secondary-toolbar'));
+
+        // Wait for ng-content projection to complete
+        fixture.detectChanges();
+
         const primaryToolbarLeft = fixture.debugElement.query(
             By.css('dot-secondary-toolbar .dot-secondary-toolbar__main .main-toolbar-left')
         );
@@ -51,9 +60,17 @@ describe('DotSecondaryToolbarComponent', () => {
         );
 
         expect(dotToolbarComponent).not.toBeNull();
-        expect(primaryToolbarLeft.nativeElement.innerText).toBe('1');
-        expect(primaryToolbarRight.nativeElement.innerText).toBe('2');
-        expect(secondaryToolbarLeft.nativeElement.innerText).toBe('3');
-        expect(secondaryToolbarRight.nativeElement.innerText).toBe('4');
+
+        // Add null checks before accessing innerText
+        expect(primaryToolbarLeft).not.toBeNull();
+        expect(primaryToolbarRight).not.toBeNull();
+        expect(secondaryToolbarLeft).not.toBeNull();
+        expect(secondaryToolbarRight).not.toBeNull();
+
+        // Use textContent instead of innerText for Jest/JSDOM compatibility
+        expect(primaryToolbarLeft.nativeElement.textContent).toBe('1');
+        expect(primaryToolbarRight.nativeElement.textContent).toBe('2');
+        expect(secondaryToolbarLeft.nativeElement.textContent).toBe('3');
+        expect(secondaryToolbarRight.nativeElement.textContent).toBe('4');
     });
 });

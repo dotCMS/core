@@ -11,7 +11,7 @@ import { DotEventsService, DotMessageService, DotSystemConfigService } from '@do
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
 import { DotSystemConfig } from '@dotcms/dotcms-models';
 import {
-    DotDialogModule,
+    DotDialogComponent,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
@@ -20,9 +20,9 @@ import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dot
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
 
-import { DotMdIconSelectorModule } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
-import { SiteSelectorFieldModule } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotFormSelectorModule } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
+import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
+import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
+import { DotFormSelectorComponent } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -77,14 +77,15 @@ describe('DotContentTypeCloneDialogComponent', () => {
             'contenttypes.form.label.icon': 'Icon'
         });
         TestBed.configureTestingModule({
-            declarations: [DotContentTypeCopyDialogComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotFormSelectorModule,
+                DotContentTypeCopyDialogComponent,
+                DotFormSelectorComponent,
                 BrowserAnimationsModule,
                 DotFieldValidationMessageComponent,
-                DotMdIconSelectorModule,
-                SiteSelectorFieldModule,
-                DotDialogModule,
+                DotMdIconSelectorComponent,
+                DotSiteSelectorFieldComponent,
+                DotDialogComponent,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
@@ -136,11 +137,12 @@ describe('DotContentTypeCloneDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        spyOn(component.validFormFields, 'emit');
+        jest.spyOn(component.validFormFields, 'emit');
 
         acceptButton.nativeElement.click();
 
         expect(component.validFormFields.emit).toHaveBeenCalledWith(formValues);
+        expect(component.validFormFields.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call cancelBtn() on cancel button click', () => {
@@ -149,7 +151,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         );
 
         expect(cancelButton).toBeDefined();
-        spyOn(component, 'closeDialog');
+        jest.spyOn(component, 'closeDialog');
         cancelButton.nativeElement.click();
 
         expect(component.closeDialog).toHaveBeenCalledTimes(1);
@@ -168,7 +170,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        spyOn(component, 'submitForm');
+        jest.spyOn(component, 'submitForm');
 
         acceptButton.nativeElement.click();
 
@@ -182,7 +184,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
         expect(copyButton).toBeDefined();
 
         expect(component.form.valid).toEqual(false);
-        spyOn(component, 'submitForm');
+        jest.spyOn(component, 'submitForm');
 
         fixture.detectChanges();
         copyButton.nativeElement.click();

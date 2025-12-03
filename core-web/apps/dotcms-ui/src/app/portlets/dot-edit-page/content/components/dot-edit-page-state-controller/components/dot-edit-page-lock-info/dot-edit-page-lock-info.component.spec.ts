@@ -21,8 +21,7 @@ describe('DotEditPageLockInfoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [DotSafeHtmlPipe, DotMessagePipe],
-            declarations: [DotEditPageLockInfoComponent],
+            imports: [DotSafeHtmlPipe, DotMessagePipe, DotEditPageLockInfoComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -83,8 +82,8 @@ describe('DotEditPageLockInfoComponent', () => {
             });
 
             it('should blink', fakeAsync(() => {
-                spyOn(lockedMessage.nativeElement.classList, 'add');
-                spyOn(lockedMessage.nativeElement.classList, 'remove');
+                jest.spyOn(lockedMessage.nativeElement.classList, 'add');
+                jest.spyOn(lockedMessage.nativeElement.classList, 'remove');
                 component.blinkLockMessage();
 
                 expect(lockedMessage.nativeElement.classList.add).toHaveBeenCalledWith(

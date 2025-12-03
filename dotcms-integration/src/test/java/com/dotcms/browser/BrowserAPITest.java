@@ -1,7 +1,24 @@
 package com.dotcms.browser;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.datagen.*;
+import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.DotAssetDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -31,21 +48,22 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import io.vavr.control.Try;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Oscar Arrieta on 6/8/17.
@@ -64,8 +82,6 @@ public class BrowserAPITest extends IntegrationTestBase {
     static FileAsset testFileAsset, testFileAsset2, testFileAsset3Archived, testFileAsset2MultiLingual;
 
     static Link testlink;
-
-    private static BrowserAPIImpl browserAPIImpl;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -871,12 +887,730 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse(contentletList.isEmpty());
         assertEquals(1, contentletList.size());
         assertEquals(contentletList.get(0).getInode(),dotAsset.getInode());
+    }
 
 
+    /**
+     * Test for BrowserAPI with multiple language IDs using List.
+     * Verifies that BrowserAPI filters content for multiple specified languages from a List.
+     */
+    @Test
+    public void test_BrowserAPI_withMultipleLanguageIds_List() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create additional languages
+        final Language lang1 = new LanguageDataGen().nextPersisted();
+        final Language lang2 = new LanguageDataGen().nextPersisted();
+        final Language lang3 = new LanguageDataGen().nextPersisted();
+
+        final long timeMillis = System.currentTimeMillis();
+        // Create content in different languages
+        final File tempFile1 = FileUtil.createTemporaryFile("test1"+timeMillis, ".txt", "test content 1");
+        final File tempFile2 = FileUtil.createTemporaryFile("test2"+timeMillis, ".txt", "test content 2");
+        final File tempFile3 = FileUtil.createTemporaryFile("test3"+timeMillis, ".txt", "test content 3");
+
+        // Content in each language
+        new FileAssetDataGen(tempFile1)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile2)
+                .languageId(lang2.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile3)
+                .languageId(lang3.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Query with multiple language IDs using List
+        final List<Long> languageIds = List.of(lang1.getId(), lang2.getId());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withLanguageIds(languageIds)
+                .showFiles(true)
+                .showWorking(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertTrue("Should find content in exactly 2 languages", (Integer) results.get("total") == 2);
+
+        // Verify that results contain content from specified languages only
+        final Set<Long> foundLanguages = contentList.stream()
+                .map(content -> ((Number) content.get("languageId")).longValue())
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain content from lang1", foundLanguages.contains(lang1.getId()));
+        assertTrue("Should contain content from lang2", foundLanguages.contains(lang2.getId()));
+        assertFalse("Should not contain content from lang3", foundLanguages.contains(lang3.getId()));
+    }
 
 
+    /**
+     * Test for BrowserAPI with multiple content type IDs using Set.
+     * Verifies that BrowserAPI filters content for multiple specified content types.
+     */
+    @Test
+    public void test_BrowserAPI_withMultipleContentTypes_Set() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
+        // Create different types of content
+        final File tempFile = FileUtil.createTemporaryFile("test", ".txt", "test content");
 
+        // Create a FileAsset
+        final Contentlet fileAsset = new FileAssetDataGen(tempFile)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Create a DotAsset
+        final File tempFile2 = FileUtil.createTemporaryFile("dotasset", ".txt", "dotasset content");
+        final Contentlet dotAsset = new DotAssetDataGen(host, folder, tempFile2)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Create a custom content type and content
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .nextPersisted();
+
+        final Contentlet customContent = new ContentletDataGen(customContentType)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        // Query with multiple content type IDs using Set - filter for FileAsset and DotAsset only
+        final Set<String> contentTypeIds = Set.of("fileAsset", "dotAsset")
+                .stream().map(s -> Try.of(() -> contentTypeAPI.find(s).id()).getOrNull())
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withContentTypes(contentTypeIds)
+                .showFiles(true)
+                .showContent(true)
+                .showDotAssets(true)
+                .showWorking(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertEquals("Should find exactly 2 pieces of content (FileAsset + DotAsset)", 2, results.get("total"));
+
+        // Verify that results contain content from specified content types only
+        final Set<String> foundContentTypes = contentList.stream()
+                .map(content -> (String) content.get("baseType"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain FileAsset content", foundContentTypes.contains("FILEASSET"));
+        assertTrue("Should contain DotAsset content", foundContentTypes.contains("DOTASSET"));
+
+        // Verify specific contentlets are found
+        final Set<String> foundINodes = contentList.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain file asset", foundINodes.contains(fileAsset.getInode()));
+        assertTrue("Should contain dot asset", foundINodes.contains(dotAsset.getInode()));
+        assertFalse("Should not contain custom content", foundINodes.contains(customContent.getInode()));
+    }
+
+    /**
+     * Test for BrowserAPI combining multiple languages and multiple content types.
+     * Verifies that both filters work together correctly.
+     */
+    @Test
+    public void test_BrowserAPI_withMultipleLanguagesAndContentTypes() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create languages
+        final Language lang1 = new LanguageDataGen().nextPersisted();
+        final Language lang2 = new LanguageDataGen().nextPersisted();
+        final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+        // Create FileAssets in different languages
+        final File tempFile1 = FileUtil.createTemporaryFile("file1", ".txt", "file content 1");
+        final Contentlet fileAsset_defaultLang = new FileAssetDataGen(tempFile1)
+                .languageId(defaultLangId)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final File tempFile2 = FileUtil.createTemporaryFile("file2", ".txt", "file content 2");
+        final Contentlet fileAsset_lang1 = new FileAssetDataGen(tempFile2)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final File tempFile3 = FileUtil.createTemporaryFile("file3", ".txt", "file content 3");
+        final Contentlet fileAsset_lang2 = new FileAssetDataGen(tempFile3)
+                .languageId(lang2.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Create custom content type and content in different languages
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .nextPersisted();
+
+        new ContentletDataGen(customContentType)
+                .languageId(defaultLangId)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new ContentletDataGen(customContentType)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final String fileAssetTypeId = Try.of(() -> contentTypeAPI.find("fileAsset").id()).getOrNull();
+
+        // Query for FileAssets in lang1 only
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withLanguageIds(Set.of(lang1.getId()))
+                .withContentTypes(Set.of(fileAssetTypeId))
+                .showFiles(true)
+                .showContent(true)
+                .showWorking(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertEquals("Should find exactly 1 FileAsset in lang1", Integer.valueOf(1), results.get("total"));
+
+        // Verify that result is the correct contentlet
+        final Map<String, Object> foundContent = contentList.get(0);
+        assertEquals("Should be the FileAsset in lang1", fileAsset_lang1.getInode(), foundContent.get("inode"));
+        assertEquals("Should be lang1", lang1.getId(), ((Number) foundContent.get("languageId")).longValue());
+        assertEquals("Should be FileAsset base type", "FILEASSET", foundContent.get("baseType"));
+
+        // Verify other contentlets are not found
+        final Set<String> foundINodes = contentList.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain file asset lang1", foundINodes.contains(fileAsset_lang1.getInode()));
+        assertFalse("Should not contain file asset default lang", foundINodes.contains(fileAsset_defaultLang.getInode()));
+        assertFalse("Should not contain file asset lang2", foundINodes.contains(fileAsset_lang2.getInode()));
+    }
+
+    @Test
+    public void test_BrowserAPI_Filter_Folders() throws Exception {
+        final long timeMillis = System.currentTimeMillis();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().name("parentFolder"+timeMillis).site(host).nextPersisted();
+
+        // Create additional languages
+        final Language lang1 = new LanguageDataGen().nextPersisted();
+        final Language lang2 = new LanguageDataGen().nextPersisted();
+        final Language lang3 = new LanguageDataGen().nextPersisted();
+
+        // Create content in different languages
+        final File tempFile1 = FileUtil.createTemporaryFile("test1"+timeMillis, ".txt", "test content 1");
+        final File tempFile2 = FileUtil.createTemporaryFile("test2"+timeMillis, ".txt", "test content 2");
+        final File tempFile3 = FileUtil.createTemporaryFile("test3"+timeMillis, ".txt", "test content 3");
+
+        // Content in each language
+        new FileAssetDataGen(tempFile1)
+                .languageId(lang1.getId())
+                .host(host)
+                .folder(parentFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile2)
+                .languageId(lang2.getId())
+                .host(host)
+                .folder(parentFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        new FileAssetDataGen(tempFile3)
+                .languageId(lang3.getId())
+                .host(host)
+                .folder(parentFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Query with multiple language IDs using List
+        final List<Long> languageIds = List.of(lang1.getId(), lang2.getId());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .withLanguageIds(languageIds)
+                .showContent(true)
+                .build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+
+        assertNotNull(results);
+        assertTrue("Should find content in exactly 2 languages", (Integer) results.get("total") == 2);
+
+        // Verify that results contain content from specified languages only
+        final Set<Long> foundLanguages = contentList.stream()
+                .map(content -> ((Number) content.get("languageId")).longValue())
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain content from lang1", foundLanguages.contains(lang1.getId()));
+        assertTrue("Should contain content from lang2", foundLanguages.contains(lang2.getId()));
+        assertFalse("Should not contain content from lang3", foundLanguages.contains(lang3.getId()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Test the method with various combinations of filter and fileName parameters.</li>
+     *     <li><b>Expected Result:</b> The method should generate proper Lucene query strings based on the input parameters.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_withDifferentFilterCombinations() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+
+        // Test Case 1: No filter, no fileName - should return empty
+        BrowserQuery queryEmpty = BrowserQuery.builder().build();
+        String result = browserAPIImpl.buildBaseESQuery(queryEmpty);
+        assertEquals("Empty query should return blank string", "", result);
+
+        // Test Case 2: Only filter provided
+        BrowserQuery queryWithFilter = BrowserQuery.builder()
+                .withFilter("test")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryWithFilter);
+        assertNotNull("Result should not be null", result);
+        assertTrue("Should contain title search", result.contains("title:test*"));
+        assertTrue("Should contain quoted title search", result.contains("title:'test'^15"));
+        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*^5"));
+        assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
+        assertFalse("Should not contain metadata search", result.contains("metadata.name"));
+
+        // Test Case 3: Only fileName provided with metadata enabled
+        try {
+            // Mock the static method calls for metadata availability
+            BrowserQuery queryWithFileName = BrowserQuery.builder()
+                    .withFileName("document.pdf")
+                    .build();
+            result = browserAPIImpl.buildBaseESQuery(queryWithFileName);
+            assertNotNull("Result should not be null", result);
+
+            // The result will depend on whether metadata indexing is enabled
+            // If metadata is enabled, it should contain metadata searches
+            // If not, it should warn and not include metadata searches
+            if (result.contains("metadata.name")) {
+                assertTrue("Should contain metadata name search", result.contains("metadata.name:document.pdf*"));
+                assertTrue("Should contain quoted metadata search", result.contains("metadata.name:'document.pdf'^15"));
+                assertTrue("Should contain dotraw metadata search", result.contains("metadata.name_dotraw:*document.pdf*^5"));
+            }
+        } catch (Exception e) {
+            // Expected if metadata is not configured
+        }
+
+        // Test Case 4: Both filter and fileName provided
+        BrowserQuery queryWithBoth = BrowserQuery.builder()
+                .withFilter("test")
+                .withFileName("document.pdf")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryWithBoth);
+        assertNotNull("Result should not be null", result);
+        assertTrue("Should contain title search", result.contains("title:test*"));
+        assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
+
+        // Should contain AND operator between filter and fileName if both are present and fileName is processed
+        if (result.contains("metadata.name")) {
+            assertTrue("Should contain AND operator", result.contains(" AND "));
+        }
+
+        // Test Case 5: Filter with special characters
+        BrowserQuery querySpecialChars = BrowserQuery.builder()
+                .withFilter("test & special")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(querySpecialChars);
+        assertNotNull("Result should not be null", result);
+        assertTrue("Should handle special characters in filter", result.contains("test & special"));
+
+        // Test Case 6: Empty string filter
+        BrowserQuery queryEmptyFilter = BrowserQuery.builder()
+                .withFilter("")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryEmptyFilter);
+        assertEquals("Empty filter should return blank string", "", result);
+
+        // Test Case 7: Null filter (using UtilMethods.isSet check)
+        BrowserQuery queryNullFilter = BrowserQuery.builder()
+                .withFilter(null)
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryNullFilter);
+        assertEquals("Null filter should return blank string", "", result);
+
+        // Test Case 8: Empty fileName
+        BrowserQuery queryEmptyFileName = BrowserQuery.builder()
+                .withFileName("")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryEmptyFileName);
+        assertEquals("Empty fileName should return blank string", "", result);
+
+        // Test Case 9: Whitespace-only filter
+        BrowserQuery queryWhitespaceFilter = BrowserQuery.builder()
+                .withFilter("   ")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(queryWhitespaceFilter);
+        assertNotNull("Result should not be null for whitespace filter", result);
+        // The method should handle whitespace in the filter parameter
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Test query structure and Lucene syntax compliance.</li>
+     *     <li><b>Expected Result:</b> Generated queries should follow proper Lucene query syntax.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_luceneSyntaxCompliance() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+
+        // Test proper Lucene field:value syntax
+        BrowserQuery query = BrowserQuery.builder()
+                .withFilter("searchterm")
+                .build();
+        String result = browserAPIImpl.buildBaseESQuery(query);
+
+        assertNotNull("Result should not be null", result);
+
+        // Verify Lucene syntax elements
+        assertTrue("Should use field:value syntax", result.contains("title:searchterm*"));
+        assertTrue("Should use wildcard correctly", result.contains("*"));
+        assertTrue("Should use boost factor", result.contains("^15") || result.contains("^5"));
+        assertTrue("Should use quoted phrases", result.contains("'searchterm'"));
+        assertTrue("Should be wrapped in mandatory group syntax", result.startsWith(" +(") && result.endsWith(")"));
+
+        // Test multiple word filter
+        BrowserQuery multiWordQuery = BrowserQuery.builder()
+                .withFilter("multiple words")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(multiWordQuery);
+
+        assertNotNull("Result should not be null for multi-word query", result);
+        assertTrue("Should handle multi-word filters", result.contains("multiple words"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Test edge cases and boundary conditions.</li>
+     *     <li><b>Expected Result:</b> Method should handle edge cases gracefully.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_edgeCases() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+
+        // Test a very long filter string
+        final String longFilter = "a".repeat(1000);
+        BrowserQuery longQuery = BrowserQuery.builder()
+                .withFilter(longFilter)
+                .build();
+        String result = browserAPIImpl.buildBaseESQuery(longQuery);
+        assertNotNull("Should handle long filter strings", result);
+        assertTrue("Should contain the long filter", result.contains(longFilter));
+
+        // Test filter with numbers
+        BrowserQuery numericQuery = BrowserQuery.builder()
+                .withFilter("test123")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(numericQuery);
+        assertNotNull("Should handle numeric characters", result);
+        assertTrue("Should contain numeric filter", result.contains("test123"));
+
+        // Test fileName with extension
+        BrowserQuery fileExtQuery = BrowserQuery.builder()
+                .withFileName("document.pdf")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(fileExtQuery);
+        assertNotNull("Should handle file extensions", result);
+        // Result depends on metadata configuration
+
+        // Test single character filter
+        BrowserQuery singleCharQuery = BrowserQuery.builder()
+                .withFilter("a")
+                .build();
+        result = browserAPIImpl.buildBaseESQuery(singleCharQuery);
+        assertNotNull("Should handle single character filter", result);
+        assertTrue("Should process single character", result.contains("a"));
+    }
+
+    /**
+     * Test Case: Smart Pagination - Page 1 with 25 folders and 100 contentlets, page size 26
+     * Expected: 25 folders + 1 contentlet
+     *
+     * Tests the intelligent pagination system that handles elements from different sources:
+     * - Folders (loaded in memory)
+     * - Links (loaded in memory)
+     * - Contentlets (database-paginated)
+     *
+     * The goal is to avoid loading all contentlets from DB and use counts of folders/links
+     * to calculate the offset within the database pagination.
+     */
+    @Test
+    public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 25 folders
+        final List<Folder> subFolders = new ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            final Folder subFolder = new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+            subFolders.add(subFolder);
+        }
+
+        // Create 100 contentlets
+        for (int i = 0; i < 100; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 1 with page size 26
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false) // Simplify test by disabling links
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(0)
+                .maxResults(26)
+                .build();
+
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", paginatedContents);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> list = paginatedContents.list;
+
+        assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
+        assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
+        assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
+        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
+
+        // Verify first 25 items are folders
+        for (int i = 0; i < 25; i++) {
+            final Map<String, Object> item = list.get(i);
+            assertNotNull("Item should have name", item.get("name"));
+            assertTrue("First 25 items should be folders",
+                item.get("name").toString().startsWith("folder_"));
+        }
+
+        // Verify the last item is a contentlet
+        final Map<String, Object> lastItem = list.get(25);
+        assertNotNull("Last item should have extension", lastItem.get("extension"));
+        assertEquals("Last item should be a file", "txt", lastItem.get("extension"));
+    }
+
+    /**
+     * Test Case: Smart Pagination - Page 2 with the same data (offset=11, still 11 items per page)
+     * Expected: 11 contentlets (all folders were shown on page 1)
+     */
+    @Test
+    public void test_SmartPaginationPage2_10Contentlets() throws Exception {
+        // Create test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 10 folders
+        for (int i = 0; i < 10; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 100 contentlets
+        for (int i = 0; i < 25; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 2 (offset=10)
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(11) // Second page
+                .maxResults(20)
+                .build();
+
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", paginatedContents);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> list = paginatedContents.list;
+
+        assertEquals("Should return exactly 20 items (20 contentlets, no folders)", 20, list.size());
+        assertEquals("Folder count should be 10", 10, paginatedContents.folderCount);
+        assertEquals("Content count should be 20", 20, paginatedContents.contentCount);
+        assertEquals("Content total count should be 25", 25, paginatedContents.contentTotalCount);
+
+        // Verify all items are contentlets
+        for (Map<String, Object> item : list) {
+            assertNotNull("Item should have extension", item.get("extension"));
+            assertEquals("All items should be files", "txt", item.get("extension"));
+        }
+    }
+
+    /**
+     * Test Case: Smart Pagination - Page 3 (offset=52)
+     * Expected: 26 more contentlets
+     */
+    @Test
+    public void test_SmartPaginationPage3_26MoreContentlets() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 25 folders
+        for (int i = 0; i < 25; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 100 contentlets
+        for (int i = 0; i < 100; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 3 (offset=52)
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(52) // Third page (26*2)
+                .maxResults(26)
+                .build();
+
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
+
+        // Verify results
+        assertNotNull("Result should not be null", paginatedContents);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> list = paginatedContents.list;
+
+        assertEquals("Should return exactly 26 items (26 contentlets)", 26, list.size());
+        assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
+        assertEquals("Content count should be 26", 26, paginatedContents.contentCount);
+        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
+
+        // Verify all items are contentlets
+        for (Map<String, Object> item : list) {
+            assertNotNull("Item should have extension", item.get("extension"));
+            assertEquals("All items should be files", "txt", item.get("extension"));
+        }
+    }
+
+    /**
+     * Test Case: Smart Pagination - Only folders, no contentlets
+     * Expected: Only folders returned, no database query for contentlets should be performed
+     */
+    @Test
+    public void test_SmartPaginationOnlyFolders() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create 15 folders
+        for (int i = 0; i < 15; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Execute pagination query - Page 1 with only folders enabled
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(false) // Disable content
+                .showFiles(false)
+                .showDotAssets(false)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .offset(0)
+                .maxResults(10)
+                .build();
+
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
+        // Verify results
+        assertNotNull("Result should not be null", paginatedContents);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> list = paginatedContents.list;
+
+        assertEquals("Should return exactly 10 folders", 10, list.size());
+        assertEquals("Folder count should be 15", 15, paginatedContents.folderCount);
+
+        // Verify all items are folders
+        for (Map<String, Object> item : list) {
+            assertNotNull("Item should have name", item.get("name"));
+            assertTrue("All items should be folders",
+                item.get("name").toString().startsWith("folder_"));
+        }
     }
 
 }

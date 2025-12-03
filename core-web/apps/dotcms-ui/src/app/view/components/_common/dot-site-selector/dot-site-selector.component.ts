@@ -14,6 +14,7 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -39,7 +40,7 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     styleUrls: ['./dot-site-selector.component.scss'],
     templateUrl: 'dot-site-selector.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [FormsModule, SearchableDropdownComponent]
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     #globalStore = inject(GlobalStore);
@@ -88,9 +89,9 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
                 });
         });
 
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.siteService.currentSite$.pipe(takeUntil(this.destroy$)).subscribe((site) => {
             setTimeout(() => {
-                this.updateCurrentSite(this.siteService.currentSite);
+                this.updateCurrentSite(site);
             }, 200);
         });
     }

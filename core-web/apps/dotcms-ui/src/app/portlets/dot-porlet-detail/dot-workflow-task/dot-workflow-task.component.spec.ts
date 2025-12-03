@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -17,19 +18,21 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPropertiesService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -43,6 +46,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -54,19 +58,24 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotWorkflowTaskDetailModule } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
+import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
-    view = jasmine.createSpy('view');
+    view = jest.fn();
 }
 
 const messageServiceMock = new MockDotMessageService({
     'workflow.task.dialog.header': 'Task Detail'
+});
+
+const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
+    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
 });
 
 describe('DotWorkflowTaskComponent', () => {
@@ -81,12 +90,12 @@ describe('DotWorkflowTaskComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotWorkflowTaskComponent],
             imports: [
-                DotWorkflowTaskDetailModule,
+                DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotWorkflowTaskComponent
             ],
             providers: [
                 DotWorkflowTaskDetailService,
@@ -114,6 +123,8 @@ describe('DotWorkflowTaskComponent', () => {
                 },
                 DotCustomEventHandlerService,
                 DotLicenseService,
+                DotMenuService,
+                IframeOverlayService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotIframeService,
                 DotContentletEditorService,
@@ -141,7 +152,13 @@ describe('DotWorkflowTaskComponent', () => {
                 DotGlobalMessageService,
                 DotGenerateSecurePasswordService,
                 DotEventsService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKeys: () => of(createFeatureFlagResponse())
+                    }
+                }
             ]
         });
 
@@ -152,7 +169,7 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
@@ -164,16 +181,19 @@ describe('DotWorkflowTaskComponent', () => {
         };
 
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
+        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
     });
 
     it('should redirect to /workflow and refresh data when modal closed', () => {
         taskDetail.triggerEventHandler('shutdown', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
-        spyOn(component, 'onCloseWorkflowTaskEditor');
+        jest.spyOn(component, 'onCloseWorkflowTaskEditor');
         taskDetail.triggerEventHandler('custom', {
             detail: {
                 name: 'edit-task-executed-workflow'
@@ -189,28 +209,27 @@ describe('DotWorkflowTaskComponent', () => {
             }
         });
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should call to dotCustomEventHandlerService with the correct callbaack', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle');
         const mockEvent = {
             detail: {
                 name: 'workflow-wizard',
                 data: {
-                    callback: 'test'
+                    workflow: {
+                        actionInputs: []
+                    },
+                    callback: 'test',
+                    inode: '123'
                 }
             }
         };
 
-        taskDetail.triggerEventHandler('custom', {
-            detail: {
-                name: 'workflow-wizard',
-                data: {
-                    callback: 'test'
-                }
-            }
-        });
+        taskDetail.triggerEventHandler('custom', mockEvent);
         expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

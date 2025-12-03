@@ -18,7 +18,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
 
 @Injectable()
 class MockLoginPageStateService {
-    get = jasmine.createSpy('get').and.returnValue(of(mockLoginFormResponse));
+    get = jest.fn().mockReturnValue(of(mockLoginFormResponse));
 }
 
 describe('DotLoginPageComponent', () => {
@@ -26,8 +26,8 @@ describe('DotLoginPageComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLoginPageComponent],
             imports: [
+                DotLoginPageComponent,
                 BrowserAnimationsModule,
                 FormsModule,
                 ButtonModule,
@@ -50,7 +50,7 @@ describe('DotLoginPageComponent', () => {
     it('should set the background Image and background color', () => {
         expect(document.body.style.backgroundColor).toEqual('rgb(58, 56, 71)');
         expect(document.body.style.backgroundImage).toEqual(
-            'url("/html/images/backgrounds/bg-11.jpg")'
+            'url(/html/images/backgrounds/bg-11.jpg)'
         );
     });
 });

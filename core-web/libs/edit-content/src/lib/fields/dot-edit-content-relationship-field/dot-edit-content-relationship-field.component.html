@@ -1,176 +1,20 @@
-@let pagination = store.pagination();
-@let showPagination = store.totalPages() > 1;
-@let data = store.data();
-@let hitText = $field()?.hint || null;
-@let isDisabled = $isDisabled();
-@let isEmpty = data.length === 0;
+@let field = $field();
+@let contentlet = $contentlet();
+@let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-<p-table
-    [value]="data"
-    [columns]="store.columns()"
-    data-testid="relationship-field-table"
-    styleClass="dotTable p-datatable-relationship"
-    [paginator]="data.length > pagination.rowsPerPage"
-    [first]="pagination.offset"
-    [rows]="pagination.rowsPerPage"
-    [scrollable]="true"
-    [reorderableColumns]="false"
-    (onRowReorder)="onRowReorder($event)">
-    <ng-template pTemplate="header" styleClass="relative" let-columns>
-        <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
-
-        <tr class="relationship-field__table_header">
-            <!-- Drag handle column - fixed width -->
-            <th scope="col" class="drag-handle-column"></th>
-
-            @for (column of columns; track $index) {
-                @switch (column.type) {
-                    @case ('title') {
-                        <th scope="col" [class.title-column]="!isEmpty">
-                            {{ 'dot.file.relationship.field.table.title' | dm }}
-                        </th>
-                    }
-                    @case ('language') {
-                        <th scope="col" [class.dynamic-column]="!isEmpty">
-                            {{ 'dot.file.relationship.field.table.language' | dm }}
-                        </th>
-                    }
-                    @case ('status') {
-                        <th scope="col" [class.dynamic-column]="!isEmpty">
-                            {{ 'dot.file.relationship.field.table.status' | dm }}
-                        </th>
-                    }
-                    @case ('image') {
-                        <th scope="col" [class.image-column]="!isEmpty">
-                            <p class="truncate-text capitalize">{{ column.header }}</p>
-                        </th>
-                    }
-                    @default {
-                        <th scope="col" [class.dynamic-column]="!isEmpty">
-                            <span class="capitalize">{{ column.header }}</span>
-                        </th>
-                    }
-                }
-            }
-
-            <!-- Add button column - fixed width -->
-            <th
-                scope="col"
-                class="actions-column"
-                alignFrozen="right"
-                pFrozenColumn
-                [frozen]="true">
-                <p-button
-                    (onClick)="menu.toggle($event)"
-                    size="small"
-                    icon="pi pi-plus"
-                    [text]="true"
-                    [disabled]="isDisabled" />
-            </th>
-        </tr>
-    </ng-template>
-
-    <ng-template pTemplate="emptymessage">
-        <tr>
-            <td [colSpan]="$totalColumns()">
-                <div class="flex p-2 gap-2 justify-content-center">
-                    <i class="pi pi-folder-open"></i>
-                    <p class="text-500">{{ 'dot.file.relationship.field.empty.message' | dm }}</p>
-                </div>
-            </td>
-        </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-item let-index="rowIndex" let-columns="columns">
-        <tr
-            [pReorderableRow]="index"
-            [class.opacity-50]="isDisabled"
-            [class.cursor-not-allowed]="isDisabled">
-            <!-- Drag handle column - fixed width -->
-
-            <td class="drag-handle-column">
-                @if (!isDisabled) {
-                    <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
-                } @else {
-                    <span class="pi pi-bars text-gray-500 cursor-not-allowed"></span>
-                }
-            </td>
-
-            @for (column of columns; track $index) {
-                @switch (column.type) {
-                    @case ('title') {
-                        <td class="title-column" [class.cursor-not-allowed]="isDisabled">
-                            <p class="truncate-text">{{ item.title }}</p>
-                        </td>
-                    }
-                    @case ('language') {
-                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
-                            {{ item.language | language }}
-                        </td>
-                    }
-                    @case ('status') {
-                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
-                            @let status = item | contentletStatus;
-                            <p-chip
-                                [styleClass]="'p-chip-sm ' + status.classes"
-                                [label]="status.label" />
-                        </td>
-                    }
-                    @case ('image') {
-                        <td class="image-column" [class.cursor-not-allowed]="isDisabled">
-                            <div class="container-thumbnail">
-                                <dot-contentlet-thumbnail
-                                    [iconSize]="'30px'"
-                                    [contentlet]="item"
-                                    [playableVideo]="false"
-                                    data-testId="contentlet-thumbnail" />
-                            </div>
-                        </td>
-                    }
-                    @default {
-                        <td class="dynamic-column">
-                            <p class="truncate-text">{{ item[column.nameField] }}</p>
-                        </td>
-                    }
-                }
-            }
-
-            <!-- Delete button column - fixed width -->
-            <td
-                class="actions-column"
-                pFrozenColumn
-                alignFrozen="right"
-                [frozen]="true"
-                [class.cursor-not-allowed]="isDisabled">
-                <p-button
-                    size="small"
-                    icon="pi pi-times"
-                    severity="secondary"
-                    [text]="true"
-                    [disabled]="isDisabled"
-                    (onClick)="deleteItem(item.inode)" />
-            </td>
-        </tr>
-    </ng-template>
-
-    <ng-template pTemplate="summary">
-        @if (hitText || showPagination) {
-            <div
-                class="flex align-items-center"
-                [class.justify-content-between]="hitText"
-                [class.justify-content-center]="!hitText">
-                @if (hitText) {
-                    <small class="text-gray-700">{{ hitText }}</small>
-                }
-                @if (showPagination) {
-                    <dot-pagination
-                        [currentPageReportLayout]="'center'"
-                        (nextPage)="store.nextPage()"
-                        (previousPage)="store.previousPage()"
-                        [totalPages]="store.totalPages()"
-                        [currentPage]="pagination.currentPage" />
-                }
-            </div>
-        }
-    </ng-template>
-</p-table>
+<dot-card-field [hasError]="fieldHasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
+    <dot-card-field-content>
+        <dot-relationship-field
+            [field]="field"
+            [formControlName]="field.variable"
+            [contentlet]="contentlet"
+            [hasError]="fieldHasError"
+            [isRequired]="isRequired" />
+    </dot-card-field-content>
+</dot-card-field>

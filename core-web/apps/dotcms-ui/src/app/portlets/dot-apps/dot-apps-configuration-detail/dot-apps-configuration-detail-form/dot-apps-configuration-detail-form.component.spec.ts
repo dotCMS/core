@@ -1,9 +1,8 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { MarkdownService } from 'ngx-markdown';
+import { MarkdownComponent } from 'ngx-markdown';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -13,7 +12,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -121,16 +120,6 @@ const formState = {
     generatedString: secrets[5].value
 };
 
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'markdown',
-    template: `
-        <ng-content></ng-content>
-    `,
-    standalone: false
-})
-class MockMarkdownComponent {}
-
 describe('DotAppsConfigurationDetailFormComponent', () => {
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
     const createComponent = createComponentFactory({
@@ -143,13 +132,13 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             DropdownModule,
             InputTextModule,
             InputTextareaModule,
-            DotIconModule,
             DotFieldRequiredDirective,
             TooltipModule,
-            MockComponent(DotAppsConfigurationDetailGeneratedStringFieldComponent)
+            MockComponent(DotAppsConfigurationDetailGeneratedStringFieldComponent),
+            MockComponent(MarkdownComponent)
         ],
-        providers: [MarkdownService, FormGroupDirective],
-        declarations: [MockMarkdownComponent]
+        providers: [FormGroupDirective],
+        declarations: []
     });
 
     describe('Without warnings', () => {
@@ -293,13 +282,14 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const field = secrets[4];
 
-            const openMock = jasmine.createSpy();
+            const openMock = jest.fn();
             window.open = openMock;
             const row = spectator.query(byTestId('integration'));
             const buttonElement = row.querySelector('button');
 
             buttonElement.click();
             expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
+            expect(openMock).toHaveBeenCalledTimes(1);
         });
 
         it('should emit form state when loaded', async () => {
@@ -316,8 +306,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state when value changed', () => {
-            const spyDataOutput = spyOn(spectator.component.data, 'emit');
-            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+            const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
+            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('Test2');
             spectator.component.myFormGroup.get('password').setValue('Password2');
@@ -328,10 +318,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state disabled when required field empty', () => {
-            const spyValidOutput = spyOn(spectator.component.valid, 'emit');
+            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);
+            expect(spyValidOutput).toHaveBeenCalledTimes(1);
         });
     });
 

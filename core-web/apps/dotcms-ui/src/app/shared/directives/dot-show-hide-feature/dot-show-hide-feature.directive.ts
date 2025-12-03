@@ -46,8 +46,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
  * @implements {OnInit}
  */
 @Directive({
-    selector: '[dotShowHideFeature]',
-    standalone: true
+    selector: '[dotShowHideFeature]'
 })
 export class DotShowHideFeatureDirective implements OnInit {
     private templateRef = inject<TemplateRef<Component>>(TemplateRef);

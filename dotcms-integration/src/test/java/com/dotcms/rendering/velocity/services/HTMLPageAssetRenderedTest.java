@@ -1831,12 +1831,19 @@ public class HTMLPageAssetRenderedTest {
         };
     }
 
-    private static class WidgetPreExecuteCodeTestCase {
+    public static class WidgetPreExecuteCodeTestCase {
 
         final PageMode pageMode;
 
         public WidgetPreExecuteCodeTestCase(final PageMode pageMode) {
             this.pageMode = pageMode;
+        }
+
+        @Override
+        public String toString() {
+            return "WidgetPreExecuteCodeTestCase{" +
+                    "pageMode=" + pageMode +
+                    '}';
         }
     }
 
@@ -1896,7 +1903,7 @@ public class HTMLPageAssetRenderedTest {
                             .build(),
                     mockRequest, mockResponse);
 
-            //Page html must contains the pre-execute code
+            //Page HTML must contain the pre-execute code
             assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,
                     html.contains(preExecuteCode));
         } finally {
@@ -2282,7 +2289,7 @@ public class HTMLPageAssetRenderedTest {
         }
     }
 
-    private enum TestContainerType {
+    public enum TestContainerType {
         DEFAULT, FILE
     }
     private static class TestContainerFactory {

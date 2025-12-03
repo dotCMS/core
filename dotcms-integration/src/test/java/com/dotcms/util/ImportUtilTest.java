@@ -95,7 +95,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -2362,7 +2362,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request());
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER,user);
         request.setAttribute(WebKeys.USER_ID,user.getUserId());
@@ -2789,6 +2789,98 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertEquals(results.get("errors").size(), 0);
+        }finally {
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Given Scenario: A parent content type related to a child content type with a one-to-one relationship,
+     * where both the parent and child have two versions in two different languages
+     * ExpectedResult: The importer should return without errors, so content will be ready to be imported.
+     */
+    @Test
+    public void importPreviewRelationshipLanguageOneToOneTest() throws DotDataException, DotSecurityException, IOException {
+        //Creates content types
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        HashMap<String, List<String>> results;
+        CsvReader csvreader;
+        Reader reader;
+        String[] csvHeaders;
+        final int cardinality = RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+
+        try {
+            final Relationship relationship;
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
+
+
+            com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(childContentType.variable()).build();
+
+            field = fieldAPI.save(field, user);
+            relationship = relationshipAPI.byTypeValue(
+                    parentContentType.variable() + StringPool.PERIOD + field.variable());
+
+
+            //Creates child contentlet with 2 language versions
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(language_1.getId())
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            ContentletDataGen.createNewVersion(childContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
+
+            //Creates parent contentlet with 2 language versions
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(language_1.getId())
+                    .setProperty(TITLE_FIELD_NAME, "parent contentlet")
+                    .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
+
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    Map.of(relationship, list(childContentlet)),
+                    user, false);
+
+            //Create second language version of parent
+            ContentletDataGen.createNewVersion(parentContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
+
+            reader = createTempFile(
+                    "identifier, languageCode, countryCode, " + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME
+                            + "\r\n"
+                            + parentContentlet.getIdentifier() + ",en, US, Test1_edited, " + "\r\n" );
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+
+
+            results = ImportUtil.importFile(0L, defaultSite.getInode(), parentContentType.inode(),
+                    new String[]{}, true, true, user, language_1.getId(), csvHeaders,
+                    csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
+
+            validate(results, true, false, true);
+
+            assertEquals(0, results.get("errors").size());
         }finally {
             try {
                 if (parentContentType != null) {
@@ -5035,6 +5127,204 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
         } catch (Exception e) {
             Logger.error("Error cleaning up test data", e);
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given Scenario:
+     * - ContentType with a text field (slug) and a HostFolderField (site)
+     * - Single multilingual CSV file with 2 languages (default language + Spanish) using site NAME (not identifier) as key field
+     * - Both "slug" and "site" fields are set as key fields
+     * - Both CSV rows have the same slug value and same site name
+     * Expected result:
+     * - Create only ONE contentlet with the same identifier (2 language versions of same content)
+     * - Create 2 different inodes (one per language version)
+     * - Both versions should be published
+     *
+     * This test validates that the HostFolderField comparison works correctly when comparing
+     * site names (from CSV) with site identifiers (stored in contentlets) during multilingual import.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void testImportMultilingualWithSiteNameAsKeyField() throws DotSecurityException, DotDataException, IOException {
+        ContentType contentType = null;
+        Host testSite = null;
+        Language lang1 = null;
+        Language lang2 = null;
+
+        try {
+            // Create a test site with a name
+            String siteName = "testsite" + System.currentTimeMillis();
+            testSite = new SiteDataGen()
+                    .name(siteName)
+                    .nextPersisted();
+
+            lang1 = defaultLanguage;
+
+
+
+            lang2 = APILocator.getLanguageAPI().getLanguage("es", "ES");
+            if (lang2 == null) {
+                lang2 = new LanguageDataGen().languageCode("es").countryCode("ES")
+                        .languageName("Spanish").country("Spain").nextPersisted();
+            }
+
+            // Create ContentType with slug and site fields
+            com.dotcms.contenttype.model.field.Field slugField = new FieldDataGen()
+                    .name("slug")
+                    .velocityVarName("slug")
+                    .type(TextField.class)
+                    .next();
+
+            com.dotcms.contenttype.model.field.Field siteField = new FieldDataGen()
+                    .name("site")
+                    .velocityVarName("site")
+                    .type(HostFolderField.class)
+                    .next();
+
+            contentType = new ContentTypeDataGen()
+                    .field(slugField)
+                    .field(siteField)
+                    .nextPersisted();
+
+            slugField = fieldAPI.byContentTypeAndVar(contentType, slugField.variable());
+            siteField = fieldAPI.byContentTypeAndVar(contentType, siteField.variable());
+
+            String csvContent = "languageCode,countryCode,slug,site\r\n" +
+                    lang1.getLanguageCode().trim() + "," + lang1.getCountryCode().trim() + ",test-article," + testSite.getHostname().trim() + "\r\n" +
+                    lang2.getLanguageCode().trim() + "," + lang2.getCountryCode().trim() + ",test-article," + testSite.getHostname().trim() + "\r\n";
+
+            Logger.info(this, "CSV Content:\n" + csvContent);
+
+            final Reader reader = createTempFile(csvContent);
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            final HashMap<String, List<String>> imported = ImportUtil.importFile(
+                    0L,
+                    testSite.getIdentifier(),
+                    contentType.inode(),
+                    new String[]{slugField.id(), siteField.id()}, // Key fields: slug + site
+                    false,
+                    true,
+                    user,
+                    -1,
+                    csvHeaders,
+                    csvreader,
+                    0,
+                    1,
+                    reader,
+                    schemeStepActionResult1.getAction().getId(),
+                    getHttpRequest()
+            );
+
+            // Validate import results
+            final List<String> results = imported.get("results");
+            assertNotNull("Import results should not be null", results);
+            assertFalse("Import results should not be empty", results.isEmpty());
+
+            final List<String> errors = imported.get("errors");
+            assertTrue("Import should have no errors: " + errors, errors == null || errors.isEmpty());
+
+
+            final List<Contentlet> contentlets = contentletAPI.findByStructure(
+                    contentType.inode(),
+                    user,
+                    false,
+                    0,
+                    -1
+            );
+
+            assertEquals("Should have 2 language versions", 2, contentlets.size());
+
+            final String firstIdentifier = contentlets.get(0).getIdentifier();
+
+            for (Contentlet contentlet : contentlets) {
+                assertEquals("All contentlets should have the same identifier",
+                        firstIdentifier,
+                        contentlet.getIdentifier());
+                
+                assertEquals("Slug should be 'test-article'",
+                        "test-article",
+                        contentlet.getStringProperty(slugField.variable()));
+            }
+
+
+            final List<Long> languageIds = contentlets.stream()
+                    .map(Contentlet::getLanguageId)
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            assertTrue("Should have default language version", languageIds.contains(lang1.getId()));
+            assertTrue("Should have Spanish version", languageIds.contains(lang2.getId()));
+
+
+            final List<String> inodes = contentlets.stream()
+                    .map(Contentlet::getInode)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            assertEquals("Both versions should have unique inodes", 2, inodes.size());
+
+        } finally {
+            // Cleanup
+            if (contentType != null) {
+                try {
+                    List<Contentlet> contentlets = contentletAPI.findByStructure(
+                            contentType.inode(),
+                            user,
+                            false,
+                            0,
+                            -1
+                    );
+                    for (Contentlet contentlet : contentlets) {
+                        contentletAPI.archive(contentlet, user, false);
+                        contentletAPI.delete(contentlet, user, false);
+                    }
+                    contentTypeApi.delete(contentType);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up content type", e);
+                }
+            }
+
+            if (testSite != null) {
+                try {
+                    APILocator.getHostAPI().archive(testSite, user, false);
+                    APILocator.getHostAPI().delete(testSite, user, false);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up test site", e);
+                }
+            }
+
+            // Clean up languages if we created them (only if they didn't exist before)
+            if (lang1 != null) {
+                try {
+                    // Check if this language has ID > 1 (meaning we created it, not a default language)
+                    if (lang1.getId() > 1) {
+                        APILocator.getLanguageAPI().deleteLanguage(lang1);
+                    }
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 1", e);
+                }
+            }
+
+            if (lang2 != null) {
+                try {
+                    // Spanish is typically ID 2, but if we created it, clean it up
+                    // Check if this is not a system default language
+                    if (lang2.getId() > 2) {
+                        APILocator.getLanguageAPI().deleteLanguage(lang2);
+                    }
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up language 2", e);
+                }
+            }
         }
     }
 

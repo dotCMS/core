@@ -1,4 +1,10 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@ngneat/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -6,6 +12,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+
+import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
 
@@ -22,7 +30,9 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
-                getFilterValue: jest.fn()
+                getFilterValue: jest.fn(),
+                setGlobalSearch: jest.fn(),
+                setSelectedNode: jest.fn()
             })
         ],
         detectChanges: false
@@ -80,7 +90,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         });
     });
 
-    describe('Search Action', () => {
+    describe('Global Search Action', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
@@ -91,7 +101,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('search term', input);
             tick(500);
 
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: 'search term' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should call removeFilter when input is empty', fakeAsync(() => {
@@ -100,7 +111,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('   ', input);
             tick(500);
 
-            expect(mockStore.removeFilter).toHaveBeenCalledWith('title');
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should debounce input changes by 500ms', fakeAsync(() => {
@@ -114,7 +126,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(mockStore.patchFilters).not.toHaveBeenCalled();
 
             tick(1);
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: 'test' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should trim whitespace from input values', fakeAsync(() => {
@@ -123,7 +136,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement('  trimmed value  ', input);
             tick(500);
 
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: 'trimmed value' });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should handle special characters correctly', fakeAsync(() => {
@@ -133,7 +147,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.typeInElement(specialChars, input);
             tick(500);
 
-            expect(mockStore.patchFilters).toHaveBeenCalledWith({ title: specialChars });
+            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
     });
 
@@ -148,5 +163,30 @@ describe('DotContentDriveSearchInputComponent', () => {
 
             expect(mockStore.patchFilters).not.toHaveBeenCalled();
         }));
+    });
+
+    describe('Clear Icon', () => {
+        it('should appear when input has value', () => {
+            spectator.component.searchControl.setValue('test value');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-icon-clear'))).toBeTruthy();
+        });
+
+        it('should not appear when input is empty', () => {
+            spectator.component.searchControl.setValue('');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-icon-clear'))).not.toBeTruthy();
+        });
+
+        it('should clear input when clear icon is clicked', () => {
+            spectator.component.searchControl.setValue('test value');
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('search-icon-clear')));
+
+            expect(spectator.component.searchControl.value).toBe(null);
+        });
     });
 });

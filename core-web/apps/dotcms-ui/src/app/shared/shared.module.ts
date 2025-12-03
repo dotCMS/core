@@ -13,12 +13,11 @@ import {
     DotEventsSocketURL,
     LoggerService,
     LoginService,
-    SiteService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
 
-import { MainNavigationModule } from '../view/components/dot-navigation/dot-navigation.module';
+import { DotNavigationComponent } from '../view/components/dot-navigation/dot-navigation.component';
 import { DotNavigationService } from '../view/components/dot-navigation/services/dot-navigation.service';
 
 const dotEventSocketURLFactory = () => {
@@ -30,11 +29,11 @@ const dotEventSocketURLFactory = () => {
 
 @NgModule({
     declarations: [],
-    imports: [CommonModule, MainNavigationModule],
+    imports: [CommonModule, DotNavigationComponent],
     exports: [
         CommonModule,
         // Common Modules
-        MainNavigationModule
+        DotNavigationComponent
     ]
 })
 export class SharedModule {
@@ -51,7 +50,6 @@ export class SharedModule {
                 DotcmsEventsService,
                 LoggerService,
                 LoginService,
-                SiteService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotEventsSocket,
                 StringUtils,

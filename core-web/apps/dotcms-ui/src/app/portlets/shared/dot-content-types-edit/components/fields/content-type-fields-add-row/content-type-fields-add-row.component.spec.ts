@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -34,14 +35,14 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsAddRowComponent],
             imports: [
                 TooltipModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 SplitButtonModule,
                 RouterTestingModule,
-                DotMessagePipe
+                DotMessagePipe,
+                ContentTypeFieldsAddRowComponent
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
@@ -82,8 +83,8 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         fixture.detectChanges();
         const splitOptionsBtn = de.queryAll(By.css('p-splitbutton .p-menuitem-text'));
         expect(splitOptionsBtn.length).toBe(2);
-        expect(splitOptionsBtn[0].nativeElement.innerText).toBe('Add Row');
-        expect(splitOptionsBtn[1].nativeElement.innerText).toBe('Add Tab');
+        expect(splitOptionsBtn[0].nativeElement.textContent).toBe('Add Row');
+        expect(splitOptionsBtn[1].nativeElement.textContent).toBe('Add Tab');
     });
 
     it('should display row selection after click on Add Rows button and focus the first column selection', () => {
@@ -99,13 +100,14 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should bind send notification after click on Add Tab button', () => {
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(dotEventsService, 'notify');
         fixture.detectChanges();
         de.queryAll(By.css('button'))[1].nativeElement.click();
         fixture.detectChanges();
         de.queryAll(By.css('p-splitbutton .p-menuitem-link'))[1].nativeElement.click();
         fixture.detectChanges();
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
+        expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
     });
 
     it('should select columns number after click on li', () => {
@@ -131,10 +133,38 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should call setColumnSelect when "add-row" event received', fakeAsync(() => {
+        // Set up the component to show the select state so ViewChild is available
+        comp.rowState = 'select';
         fixture.detectChanges();
-        spyOn(comp, 'setColumnSelect');
+
+        jest.spyOn(comp, 'setColumnSelect');
         dotEventsService.notify('add-row');
-        tick();
+        tick(201); // Wait for the setTimeout in setColumnSelect
+
         expect(comp.setColumnSelect).toHaveBeenCalled();
+    }));
+
+    it('should handle ViewChild properly when in select state', fakeAsync(() => {
+        // Mock HTMLElement methods to avoid DOM issues in tests
+        const mockFocus = jest.fn();
+        const mockElement = {
+            focus: mockFocus,
+            blur: jest.fn()
+        };
+
+        comp.rowState = 'select';
+        fixture.detectChanges();
+
+        // Mock the ViewChild element
+        comp.colContainerElem = {
+            nativeElement: {
+                children: [mockElement, mockElement, mockElement, mockElement]
+            }
+        } as any;
+
+        comp.setColumnSelect();
+        tick(201);
+
+        expect(mockFocus).toHaveBeenCalledWith({ preventScroll: true });
     }));
 });

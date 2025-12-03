@@ -104,6 +104,9 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("canEdit", new TypeFetcher(GraphQLBoolean));
         pageFields.put("canLock", new TypeFetcher(GraphQLBoolean));
         pageFields.put("canRead", new TypeFetcher(GraphQLBoolean));
+        pageFields.put("lockedBy", new TypeFetcher(GraphQLString));
+        pageFields.put("lockedByName", new TypeFetcher(GraphQLString));
+        pageFields.put("canSeeRules", new TypeFetcher(GraphQLBoolean));
         pageFields.put("deleted", new TypeFetcher(GraphQLBoolean));
         pageFields.put("description", new TypeFetcher(GraphQLString));
         pageFields.put("extension", new TypeFetcher(GraphQLString));

@@ -11,6 +11,7 @@ import {
     DotLicenseService,
     DotPropertiesService,
     DotRouterService,
+    DotUiColorsService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
@@ -21,7 +22,6 @@ import { DotCMSEditPageEvent } from '../../../view/components/dot-contentlet-edi
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '../dot-nav-logo/dot-nav-logo.service';
-import { DotUiColorsService } from '../dot-ui-colors/dot-ui-colors.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
@@ -31,7 +31,9 @@ export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
  * @export
  * @class DotCustomEventHandlerService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotCustomEventHandlerService {
     private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
     private dotRouterService = inject(DotRouterService);
@@ -94,7 +96,7 @@ export class DotCustomEventHandlerService {
      * @memberof DotCustomEventHandlerService
      */
     handle(event: CustomEvent): void {
-        if (event && this.handlers[event.detail.name]) {
+        if (event?.detail?.name && this.handlers?.[event.detail.name]) {
             this.handlers[event.detail.name](event);
         }
     }

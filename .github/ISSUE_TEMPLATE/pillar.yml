@@ -1,0 +1,47 @@
+name: Pillar
+description: High-level strategic initiative that groups related EPICs
+title: "[PILLAR] "
+labels: []
+type: pillar
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Note: This template is intended for Product team use only.**
+        
+        ## Pillar Overview
+        Pillars represent broad strategic initiatives that align with product vision and encompass multiple EPICs.
+
+  - type: textarea
+    id: vision
+    attributes:
+      label: Vision
+      description: Explain in detail how this pillar will benefit our customers
+      placeholder: "Describe the strategic value and customer impact..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: personas
+    attributes:
+      label: Target Personas
+      description: Select the personas this pillar primarily affects
+      options:
+        - label: Developer teams
+        - label: Content teams
+        - label: DevOps teams
+        - label: System administrators (dotCMS)
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Related resources (design docs, research, etc.)
+      placeholder: |
+        - [Kickoff deck](url)
+        - [Research document](url)
+        - [Design files](url)
+    validations:
+      required: false

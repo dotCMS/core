@@ -4,30 +4,32 @@ import {
     Component,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     NgZone,
     OnDestroy,
     OnInit,
     Output,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
-import { DotRouterService, DotIframeService } from '@dotcms/data-access';
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
-import { DotUiColorsService } from '../../../../../api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotOverlayMaskComponent } from '../../dot-overlay-mask/dot-overlay-mask.component';
+import { DotLoadingIndicatorComponent } from '../dot-loading-indicator/dot-loading-indicator.component';
+import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html',
-    standalone: false
+    imports: [DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {
     private dotIframeService = inject(DotIframeService);
@@ -253,10 +255,8 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private isIframeHaveContent(): boolean {
-        return (
-            this.iframeElement &&
-            this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
-        );
+        return !!this.iframeElement?.nativeElement?.contentWindow?.document?.body?.innerHTML
+            ?.length;
     }
 
     private setArgs(args: unknown[]): unknown[] {

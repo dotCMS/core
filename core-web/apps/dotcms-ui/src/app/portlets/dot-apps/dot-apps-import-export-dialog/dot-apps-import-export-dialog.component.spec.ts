@@ -8,6 +8,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -18,7 +19,8 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogModule,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -79,14 +81,17 @@ describe('DotAppsImportExportDialogComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAppsImportExportDialogComponent, HostTestComponent],
+            declarations: [HostTestComponent],
             imports: [
+                DotAppsImportExportDialogComponent,
                 InputTextModule,
+                PasswordModule,
                 DotAutofocusDirective,
-                DotDialogModule,
+                DotDialogComponent,
                 CommonModule,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
+                DotFieldRequiredDirective,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],
@@ -145,9 +150,9 @@ describe('DotAppsImportExportDialogComponent', () => {
 
         it(`should send configuration to import apps and close dialog`, async () => {
             hostFixture.detectChanges();
-            spyOn(dotAppsService, 'importConfiguration').and.returnValue(of(''));
-            spyOn(comp, 'closeExportDialog').and.callThrough();
-            spyOn(comp.resolved, 'emit').and.callThrough();
+            jest.spyOn(dotAppsService, 'importConfiguration').mockReturnValue(of(''));
+            jest.spyOn(comp, 'closeExportDialog');
+            jest.spyOn(comp.resolved, 'emit');
             const expectedConfiguration: DotAppsImportConfiguration = {
                 file: undefined,
                 json: { password: 'test' }
@@ -164,6 +169,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.importConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.importConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
             expect(comp.resolved.emit).toHaveBeenCalledTimes(1);
         });
@@ -201,7 +207,7 @@ describe('DotAppsImportExportDialogComponent', () => {
 
         it(`should clear values when dialog closed`, async () => {
             hostFixture.detectChanges();
-            spyOn(comp.form, 'reset');
+            jest.spyOn(comp.form, 'reset');
             await hostFixture.whenStable();
             comp.form.setValue({
                 password: 'test'
@@ -219,8 +225,8 @@ describe('DotAppsImportExportDialogComponent', () => {
 
         it(`should send configuration to export all apps and close dialog`, async () => {
             hostFixture.detectChanges();
-            spyOn(dotAppsService, 'exportConfiguration').and.returnValue(Promise.resolve(''));
-            spyOn(comp, 'closeExportDialog').and.callThrough();
+            jest.spyOn(dotAppsService, 'exportConfiguration').mockReturnValue(Promise.resolve(''));
+            jest.spyOn(comp, 'closeExportDialog');
             const expectedConfiguration: DotAppsExportConfiguration = {
                 password: 'test',
                 exportAll: true,
@@ -237,13 +243,16 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.exportConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
         });
 
         it(`should send configuration to export all apps and not close dialog on Error`, async () => {
             hostFixture.detectChanges();
-            spyOn(dotAppsService, 'exportConfiguration').and.returnValue(Promise.resolve('error'));
-            spyOn(comp, 'closeExportDialog').and.callThrough();
+            jest.spyOn(dotAppsService, 'exportConfiguration').mockReturnValue(
+                Promise.resolve('error')
+            );
+            jest.spyOn(comp, 'closeExportDialog');
 
             await hostFixture.whenStable();
             comp.form.setValue({
@@ -276,8 +285,8 @@ describe('DotAppsImportExportDialogComponent', () => {
                 ]
             };
             hostFixture.detectChanges();
-            spyOn(dotAppsService, 'exportConfiguration').and.returnValue(Promise.resolve(''));
-            spyOn(comp, 'closeExportDialog').and.callThrough();
+            jest.spyOn(dotAppsService, 'exportConfiguration').mockReturnValue(Promise.resolve(''));
+            jest.spyOn(comp, 'closeExportDialog');
             const expectedConfiguration: DotAppsExportConfiguration = {
                 password: 'test',
                 exportAll: false,
@@ -297,6 +306,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.exportConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
         });
 
@@ -324,8 +334,8 @@ describe('DotAppsImportExportDialogComponent', () => {
                 configured: true
             };
             hostFixture.detectChanges();
-            spyOn(dotAppsService, 'exportConfiguration').and.returnValue(Promise.resolve(''));
-            spyOn(comp, 'closeExportDialog').and.callThrough();
+            jest.spyOn(dotAppsService, 'exportConfiguration').mockReturnValue(Promise.resolve(''));
+            jest.spyOn(comp, 'closeExportDialog');
             const expectedConfiguration: DotAppsExportConfiguration = {
                 password: 'test',
                 exportAll: false,
@@ -344,6 +354,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             acceptBtn.nativeElement.click();
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
+            expect(dotAppsService.exportConfiguration).toHaveBeenCalledTimes(1);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
         });
     });

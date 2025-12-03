@@ -6,6 +6,8 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -158,5 +160,21 @@ public enum BaseContentType {
 					BaseContentType.VANITY_URL,"format_strikethrough",
 					BaseContentType.KEY_VALUE,"public"
 			);
+
+
+    public static Set<BaseContentType> fromNames(List<String> names) {
+        if (names == null || names.isEmpty()) {
+            return Set.of(BaseContentType.ANY);
+        }
+
+        return names.stream()
+                .filter(name -> name != null && !name.isBlank())
+                .map(name -> BaseContentType.getBaseContentType(name.trim()))
+                .collect(Collectors.toSet());
+    }
+
+    public static List<BaseContentType> allBaseTypes() {
+        return Arrays.asList(BaseContentType.values());
+    }
 
 }

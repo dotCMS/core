@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotDialogModule } from '@dotcms/ui';
+import { DotDialogComponent } from '@dotcms/ui';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
@@ -26,8 +26,8 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     beforeEach(waitForAsync(() =>
         TestBed.configureTestingModule({
-            imports: [DotDialogModule],
-            declarations: [DotLargeMessageDisplayComponent, TestHostComponent],
+            imports: [DotLargeMessageDisplayComponent, DotDialogComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotcmsEventsService,
@@ -40,7 +40,7 @@ describe('DotLargeMessageDisplayComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(TestHostComponent);
         dotcmsEventsServiceMock = fixture.debugElement.injector.get(DotcmsEventsService);
-        spyOn(dotcmsEventsServiceMock, 'subscribeTo').and.callThrough();
+        jest.spyOn(dotcmsEventsServiceMock, 'subscribeTo');
 
         fixture.detectChanges();
     });
@@ -83,7 +83,7 @@ describe('DotLargeMessageDisplayComponent', () => {
             const bodyElem = fixture.debugElement.query(By.css('.dialog-message__body'));
             const h1 = bodyElem.nativeElement.querySelector('h1');
             const script = bodyElem.nativeElement.querySelector('script');
-            expect(h1.innerText).toBe('Hello World');
+            expect(h1.textContent).toBe('Hello World');
             expect(script.getAttribute('type')).toBe('text/javascript');
             expect(script.innerHTML).toBe('console.log("abc")');
             done();

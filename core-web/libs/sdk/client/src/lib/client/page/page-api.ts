@@ -2,45 +2,32 @@ import { consola } from 'consola';
 
 import {
     DotCMSClientConfig,
-    DotCMSComposedPageResponse,
-    DotCMSExtendedPageResponse,
-    DotCMSPageResponse,
     DotCMSPageRequestParams,
-    RequestOptions
+    DotCMSPageResponse,
+    DotCMSExtendedPageResponse,
+    DotCMSComposedPageResponse,
+    DotHttpClient,
+    DotRequestOptions,
+    DotHttpError,
+    DotErrorPage
 } from '@dotcms/types';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
+import { BaseApiClient } from '../base/base-api';
 
 /**
  * Client for interacting with the DotCMS Page API.
  * Provides methods to retrieve and manipulate pages.
  */
-export class PageClient {
-    /**
-     * Request options including authorization headers.
-     * @private
-     */
-    private requestOptions: RequestOptions;
-
-    /**
-     * Site ID for page requests.
-     * @private
-     */
-    private siteId: string;
-
-    /**
-     * DotCMS URL for page requests.
-     * @private
-     */
-    private dotcmsUrl: string;
-
+export class PageClient extends BaseApiClient {
     /**
      * Creates a new PageClient instance.
      *
      * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
-     * @param {RequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {DotRequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @param {DotHttpClient} httpClient - HTTP client for making requests
      * @example
      * ```typescript
      * const pageClient = new PageClient(
@@ -53,14 +40,17 @@ export class PageClient {
      *     headers: {
      *       Authorization: 'Bearer your-auth-token'
      *     }
-     *   }
+     *   },
+     *   httpClient
      * );
      * ```
      */
-    constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
-        this.requestOptions = requestOptions;
-        this.siteId = config.siteId || '';
-        this.dotcmsUrl = config.dotcmsUrl;
+    constructor(
+        config: DotCMSClientConfig,
+        requestOptions: DotRequestOptions,
+        httpClient: DotHttpClient
+    ) {
+        super(config, requestOptions, httpClient);
     }
 
     /**
@@ -70,6 +60,7 @@ export class PageClient {
      * @param {DotCMSPageRequestParams} [options] - Options for the request
      * @template T - The type of the page and content, defaults to DotCMSBasicPage and Record<string, unknown> | unknown
      * @returns {Promise<DotCMSComposedPageResponse<T>>} A Promise that resolves to the page data
+     * @throws {DotErrorPage} - Throws a page-specific error if the request fails or page is not found
      *
      * @example Using GraphQL
      * ```typescript
@@ -149,29 +140,50 @@ export class PageClient {
             ...variables
         };
 
-        const requestHeaders = this.requestOptions.headers as Record<string, string>;
+        const requestHeaders = this.requestOptions.headers;
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
 
         try {
-            const { data, errors } = await fetchGraphQL({
+            const response = await fetchGraphQL({
                 baseURL: this.dotcmsUrl,
                 body: requestBody,
-                headers: requestHeaders
+                headers: requestHeaders,
+                httpClient: this.httpClient
             });
-
-            if (errors) {
-                errors.forEach((error: { message: string }) => {
+            // The GQL endpoint can return errors and data, we need to handle both
+            if (response.errors) {
+                response.errors.forEach((error: { message: string }) => {
                     consola.error('[DotCMS GraphQL Error]: ', error.message);
+                });
+
+                const pageError = response.errors.find((error: { message: string }) =>
+                    error.message.includes('DotPage')
+                );
+
+                if (pageError) {
+                    // Throw HTTP error - will be caught and wrapped in DotErrorPage below
+                    throw new DotHttpError({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        message: `GraphQL query failed for URL '${url}': ${pageError.message}`,
+                        data: response.errors
+                    });
+                }
+            }
+
+            const pageResponse = graphqlToPageEntity(response.data.page);
+
+            if (!pageResponse) {
+                // Throw HTTP error - will be caught and wrapped in DotErrorPage below
+                throw new DotHttpError({
+                    status: 404,
+                    statusText: 'Not Found',
+                    message: `Page ${url} not found. Check the page URL and permissions.`,
+                    data: response.errors
                 });
             }
 
-            const pageResponse = graphqlToPageEntity(data);
-
-            if (!pageResponse) {
-                throw new Error('No page data found');
-            }
-
-            const contentResponse = mapResponseData(data, Object.keys(content));
+            const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
                 pageAsset: pageResponse,
@@ -182,16 +194,27 @@ export class PageClient {
                 }
             };
         } catch (error) {
-            const errorMessage = {
-                error,
-                message: 'Failed to retrieve page data',
-                graphql: {
+            // Handle DotHttpError instances
+            if (error instanceof DotHttpError) {
+                throw new DotErrorPage(
+                    `Page request failed for URL '${url}': ${error.message}`,
+                    error,
+                    {
+                        query: completeQuery,
+                        variables: requestVariables
+                    }
+                );
+            }
+
+            // Handle other errors (GraphQL errors, validation errors, etc.)
+            throw new DotErrorPage(
+                `Page request failed for URL '${url}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                undefined,
+                {
                     query: completeQuery,
                     variables: requestVariables
                 }
-            };
-
-            throw errorMessage;
+            );
         }
     }
 }

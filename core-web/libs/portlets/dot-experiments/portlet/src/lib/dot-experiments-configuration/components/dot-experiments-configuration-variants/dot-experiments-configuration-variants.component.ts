@@ -30,7 +30,7 @@ import {
 import {
     DotCopyButtonComponent,
     DotDynamicDirective,
-    DotIconModule,
+    DotIconComponent,
     DotMessagePipe
 } from '@dotcms/ui';
 
@@ -47,7 +47,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     imports: [
         CommonModule,
         DotMessagePipe,
-        DotIconModule,
+        DotIconComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
@@ -218,8 +218,11 @@ export class DotExperimentsConfigurationVariantsComponent {
             );
         } catch {
             // Fallback to relative URL using window.location.origin
+            const cleanProcessedUrl = processedUrl.startsWith('/')
+                ? processedUrl.substring(1)
+                : processedUrl;
             url = new URL(
-                `${window.location.origin}/${processedUrl}${
+                `${window.location.origin}/${cleanProcessedUrl}${
                     processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );

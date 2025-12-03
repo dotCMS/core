@@ -1,11 +1,15 @@
 package com.dotcms.jitsu;
 
 
-import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -91,6 +95,9 @@ public enum ValidAnalyticsEventPayloadTransformer {
         final Serializable sessionId = newRootContext.get(SESSION_ID_ATTRIBUTE_NAME);
         newRootContext.remove(SESSION_ID_ATTRIBUTE_NAME);
 
+        final Map<String, Object> deviceAttributes = (Map<String, Object> ) newRootContext.get(DEVICE_ATTRIBUTE_NAME);
+        newRootContext.remove(DEVICE_ATTRIBUTE_NAME);
+
         final List<Map<String, Serializable>> events =
                 (List<Map<String, Serializable>>) payload.get(EVENTS_ATTRIBUTE_NAME);
 
@@ -99,10 +106,52 @@ public enum ValidAnalyticsEventPayloadTransformer {
                 .map(ValidAnalyticsEventPayloadTransformer::transformDate)
                 .map(jsonObject -> ValidAnalyticsEventPayloadTransformer.setRootValues(jsonObject, payload))
                 .map(jsonObject -> putContent(jsonObject, newRootContext, sessionId))
-                .map(this::putEventAttributes)
+                .map(eventPayload -> putEventAttributes(eventPayload, deviceAttributes))
+                .map(this::transformCustom)
                 .map(ValidAnalyticsEventPayloadTransformer::removeData)
                 .map(EventsPayload.EventPayload::new)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Translates the "custom" section inside the event's data into top-level database-ready fields.
+     * <p>
+     * If the event contains data.custom, this method will:
+     * - Parse the custom object into a Map
+     * - Use the Analytics Custom Attribute API to translate human-friendly keys to database column names
+     * - Merge the translated key/value pairs into the event JSON at the root level
+     *
+     * Any I/O parsing issues are wrapped in a RuntimeException.
+     *
+     * @param event The event JSON object that may contain data.custom
+     * @return The same event JSON object with translated custom attributes merged at the root level
+     */
+    private JSONObject transformCustom(final JSONObject event) {
+        final String eventType = event.optString(EVENT_TYPE_ATTRIBUTE_NAME);
+        final JSONObject data = event.getJSONObject(DATA_ATTRIBUTE_NAME);
+
+        Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "transformCustom invoked for eventType='" + eventType + "' - has 'custom': " + data.has(CUSTOM_ATTRIBUTE_NAME));
+
+        try {
+            if (data.has(CUSTOM_ATTRIBUTE_NAME)) {
+                final JSONObject customJson = data.getJSONObject(ValidAnalyticsEventPayloadAttributes.CUSTOM_ATTRIBUTE_NAME);
+                final Map<String, Object> jsonAsMap = JsonUtil.getJsonFromString(customJson.toString());
+                Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "Parsed 'custom' map for eventType='" + eventType + "' with " + (jsonAsMap != null ? jsonAsMap.size() : 0) + " attribute(s)");
+
+                Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "Translating 'custom' attributes to DB columns for eventType='" + eventType + "'");
+                Map<String, Object> customTranslated = APILocator.getAnalyticsCustomAttribute()
+                        .translateToDatabase(eventType, jsonAsMap);
+
+                Logger.debug(ValidAnalyticsEventPayloadTransformer.class, () -> "Translation complete for eventType='" + eventType + "'. Translated " + (customTranslated != null ? customTranslated.size() : 0) + " attribute(s): " + (customTranslated != null ? customTranslated.keySet() : java.util.Collections.emptySet()));
+
+                event.putAll(customTranslated);
+            }
+        } catch (IOException e) {
+            Logger.error(ValidAnalyticsEventPayloadTransformer.class, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+
+        return event;
     }
 
     /**
@@ -133,13 +182,20 @@ public enum ValidAnalyticsEventPayloadTransformer {
      * @return
      */
     private static JSONObject removeData(final JSONObject payload) {
+        final Map<String, Object> dataAttributes  = (Map<String, Object>) payload.get(DATA_ATTRIBUTE_NAME);
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(payload, dataAttributes, Map.of());
+
         payload.remove(DATA_ATTRIBUTE_NAME);
+        payload.remove(CUSTOM_ATTRIBUTE_NAME);
         return payload;
     }
 
     private static JSONObject transformDate(final JSONObject payload) {
         final String eventType = payload.get(EVENT_TYPE_ATTRIBUTE_NAME).toString();
-        final List<String> dateFields = AnalyticsValidatorUtil.INSTANCE.getDateField(EventType.get(eventType));
+        final List<String> dateFields = AnalyticsValidatorUtil.INSTANCE.getDateField(eventType);
 
         for (String dateField : dateFields) {
             final Object dateValue = getValueFromPath(payload, dateField);
@@ -224,26 +280,36 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
     /**
      * This method is in charge of:
-     *
+     * <p>
      * - Move sessionId out of context
      * - Move each attribute in the page section out pf page and data
      * - Move each attribute in the device section out pf device and data
      * - Move utm section out of data
      *
      * @param jsonObject
+     * @param deviceAttributes
      * @return
      */
-    private JSONObject putEventAttributes(final JSONObject jsonObject) {
+    private JSONObject putEventAttributes(final JSONObject jsonObject,
+                                          final Map<String, Object> deviceAttributes) {
+
         final Map<String, Object> dataAttributes = (Map<String, Object> ) jsonObject.get(DATA_ATTRIBUTE_NAME);
         final Map<String, Object> pageAttributes = (Map<String, Object> ) dataAttributes.get(PAGE_ATTRIBUTE_NAME);
-        final Map<String, Object> deviceAttributes = (Map<String, Object> ) dataAttributes.get(DEVICE_ATTRIBUTE_NAME);
 
         moveToRoot(jsonObject, pageAttributes,
                 Map.of("title", "page_title", "language_id", "userlanguage"));
+
         moveToRoot(jsonObject, deviceAttributes, Map.of("language", "user_language"));
 
-        final Map<String, Object> utmAttributes = (Map<String, Object> ) dataAttributes.get(UTM_ATTRIBUTE_NAME);
-        jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
+        if (dataAttributes.containsKey(UTM_ATTRIBUTE_NAME)) {
+            final Map<String, Object> utmAttributes = (Map<String, Object>) dataAttributes.get(UTM_ATTRIBUTE_NAME);
+            dataAttributes.remove(UTM_ATTRIBUTE_NAME);
+            jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
+        }
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(jsonObject, dataAttributes, Map.of());
 
         final String localTimeAttributes = (String) jsonObject.get(LOCAL_TIME_ATTRIBUTE_NAME);
         jsonObject.put("utc_time", localTimeAttributes);
@@ -302,11 +368,15 @@ public enum ValidAnalyticsEventPayloadTransformer {
      *
      * @param jsonObject Json Object
      * @param attributes attributes to move to the root
-     * @param replacementsKeys Key that you want to replace when theay are move.
+     * @param replacementsKeys Key that you want to replace when they are move.
      */
     private static void moveToRoot(final JSONObject jsonObject,
                                    final Map<String, Object> attributes,
                                    final Map<String, String> replacementsKeys) {
+
+        if (!UtilMethods.isSet(attributes)) {
+            return;
+        }
 
         for (Map.Entry<String, Object> attributeEntry : attributes.entrySet()) {
             final String attributeKey = replacementsKeys.containsKey(attributeEntry.getKey()) ?

@@ -20,15 +20,15 @@ import { DialogModule } from 'primeng/dialog';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUiColorsService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSWorkflowActionEvent,
     DotContentCompareEvent
 } from '@dotcms/dotcms-models';
-import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotSpinnerComponent, SafeUrlPipe } from '@dotcms/ui';
 
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
@@ -52,8 +52,8 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         SafeUrlPipe,
         EmaFormSelectorComponent,
         DialogModule,
-        DotSpinnerModule,
-        DotContentCompareModule
+        DotSpinnerComponent,
+        DotContentCompareComponent
     ],
     providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
 })
@@ -73,6 +73,7 @@ export class DotEmaDialogComponent {
     private readonly ngZone = inject(NgZone);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
+    private readonly dotUiColorsService = inject(DotUiColorsService);
 
     protected readonly dialogState = toSignal(this.store.dialogState$);
     protected readonly dialogStatus = DialogStatus;
@@ -312,11 +313,17 @@ export class DotEmaDialogComponent {
      */
     protected onIframeLoad() {
         this.store.setStatus(this.dialogStatus.INIT);
-        // This event is destroyed when you close the dialog
 
+        // Inject CSS variables into iframe
+        const iframeDoc = this.getIframeDocument();
+        if (iframeDoc) {
+            this.dotUiColorsService.setColors(iframeDoc.querySelector('html'));
+        }
+
+        // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
-            this.iframe.nativeElement.contentWindow.document,
+            iframeDoc,
             'ng-event'
         )
             .pipe(takeUntilDestroyed(this.destroyRef$))
@@ -414,5 +421,16 @@ export class DotEmaDialogComponent {
         const { actionPayload, form, clientAction } = this.dialogState();
 
         this.action.emit({ event, actionPayload, form, clientAction });
+    }
+
+    /**
+     * Get iframe document
+     *
+     * @protected
+     * @returns {Document | null}
+     * @memberof DotEmaDialogComponent
+     */
+    protected getIframeDocument(): Document | null {
+        return this.iframe?.nativeElement?.contentWindow?.document || null;
     }
 }

@@ -1,23 +1,26 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, UrlSegment } from '@angular/router';
+import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
-import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
+import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
 
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { IframeComponent } from '../iframe-component/iframe.component';
 
 @Component({
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html',
-    standalone: false
+    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);
@@ -47,7 +50,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
          *  skip first - to avoid subscription when page loads due login user subscription:
          *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
          */
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             if (this.url.getValue() !== '') {
                 this.reloadIframePortlet();
             }

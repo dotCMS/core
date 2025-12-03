@@ -1,6 +1,8 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Subject, of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -14,11 +16,15 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
@@ -67,7 +73,13 @@ describe('DotEditContentDialogComponent', () => {
             mockProvider(DotLanguagesService, {
                 getDefault: jest.fn(() => of({}))
             }),
-            mockProvider(DialogService)
+            mockProvider(DialogService),
+            mockProvider(DotVersionableService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         schemas: [NO_ERRORS_SCHEMA]
     });

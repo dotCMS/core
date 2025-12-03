@@ -35,9 +35,6 @@
  * ```
  *
  */
-
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
 import { AvailableEditorTextArea } from '../../dot-edit-content-text-area/dot-edit-content-text-area.constants';
 import { AvailableEditor } from '../../dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 
@@ -192,20 +189,4 @@ export const updateDisabledWYSIWYGOnEditorSwitch = (
         // TinyMCE doesn't need an entry
         return filteredEntries;
     }
-};
-
-/**
- * Gets the disabledWYSIWYG array from a contentlet, ensuring it's always an array
- *
- * @param contentlet - The DotCMS contentlet
- * @returns The disabledWYSIWYG array, or empty array if not present
- */
-export const getDisabledWYSIWYGFromContentlet = (
-    contentlet: DotCMSContentlet | Partial<DotCMSContentlet> | null
-): string[] => {
-    if (!contentlet) {
-        return [];
-    }
-    // disabledWYSIWYG is always an array of strings
-    return contentlet.disabledWYSIWYG || [];
 };

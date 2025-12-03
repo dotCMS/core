@@ -1,5 +1,6 @@
 @let ogTagsResults = ogTagsResults$;
 @let showSEOTool = $editorProps().seoResults && ogTagsResults;
+@let dropzone = $editorProps().dropzone;
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
@@ -11,6 +12,15 @@
         [seoOGTags]="$editorProps().seoResults.ogTags"
         [seoOGTagsResults]="ogTagsResults"
         data-testId="results-seo-tool"></dot-results-seo-tool>
+}
+
+@if ($editorProps().palette; as palette) {
+    <dot-uve-palette
+        [ngClass]="palette.paletteClass"
+        [languageId]="palette.languageId"
+        [pagePath]="palette.pagePath"
+        [variantId]="palette.variantId"
+        data-testId="palette" />
 }
 
 <div
@@ -65,26 +75,19 @@
                 [disableDeleteButton]="contentletTools.disableDeleteButton"
                 data-testId="contentlet-tools" />
         }
-        @if ($editorProps().dropzone; as dropzone) {
+        @if (!$toggleLockOptions()?.showOverlay && dropzone) {
             <dot-ema-page-dropzone
                 [containers]="dropzone.bounds"
                 [dragItem]="dropzone.dragItem"
                 data-testId="dropzone" />
         }
+
+        @if ($toggleLockOptions()?.showOverlay) {
+            <dot-uve-lock-overlay />
+        }
     </div>
 </div>
 
-@if ($editorProps().palette; as palette) {
-    <!-- This is to hold the place for the button that is on the nav bar -->
-    <div class="toggle-palette-placeholder" data-testId="toggle-palette-placeholder"></div>
-
-    <dot-edit-ema-palette
-        [ngClass]="palette.paletteClass"
-        [languageId]="palette.languageId"
-        [containers]="palette.containers"
-        [variantId]="palette.variantId"
-        data-testId="palette" />
-}
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"

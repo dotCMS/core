@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -5,10 +6,10 @@ import { By } from '@angular/platform-browser';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
@@ -18,8 +19,7 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `,
-    standalone: false
+    `
 })
 class MockMarkdownComponent {}
 
@@ -35,19 +35,25 @@ describe('DotAppsCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                CardModule,
-                AvatarModule,
-                DotAvatarDirective,
-                BadgeModule,
-                DotIconModule,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ],
-            declarations: [DotAppsCardComponent, MockMarkdownComponent],
+            imports: [DotAppsCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+        })
+            .overrideComponent(DotAppsCardComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        CardModule,
+                        AvatarModule,
+                        BadgeModule,
+                        DotIconComponent,
+                        MockMarkdownComponent,
+                        TooltipModule,
+                        DotAvatarDirective,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {
@@ -87,12 +93,15 @@ describe('DotAppsCardComponent', () => {
 
             expect(image).toBe(component.app.iconUrl);
             expect(size).toBe('large');
-            expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
+
+            // Access DotAvatarDirective to verify text property
+            const dotAvatarDirective = avatar.injector.get(DotAvatarDirective);
+            expect(dotAvatarDirective.text).toBe(component.app.name);
         });
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-card__name')).nativeElement.innerText
+                fixture.debugElement.query(By.css('.dot-apps-card__name')).nativeElement.textContent
             ).toBe(component.app.name);
 
             expect(
@@ -129,11 +138,14 @@ describe('DotAppsCardComponent', () => {
             expect(warningIcon).toBeTruthy();
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-content']).toBe(
-                `${component.app.sitesWithWarnings} ${messageServiceMock.get(
-                    'apps.invalid.configurations'
-                )}`
-            );
+
+            // Access Tooltip directive to verify tooltip content
+            const tooltipDirective = warningIcon.injector.get(Tooltip);
+            const expectedTooltipText = `${component.app.sitesWithWarnings} ${messageServiceMock.get(
+                'apps.invalid.configurations'
+            )}`;
+            // PrimeNG Tooltip directive stores the value when using pTooltip with interpolation
+            expect(tooltipDirective.content).toBe(expectedTooltipText);
         });
 
         it('should have disabled css class', () => {

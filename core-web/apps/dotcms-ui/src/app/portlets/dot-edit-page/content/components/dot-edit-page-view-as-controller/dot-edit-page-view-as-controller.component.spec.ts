@@ -4,17 +4,24 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import {
+    DotAlertConfirmService,
     DotDevicesService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPageStateService,
     DotPersonalizeService,
-    DotPersonasService
+    DotPersonasService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -125,14 +132,26 @@ describe('DotEditPageViewAsControllerComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotTestHostComponent,
-                DotEditPageViewAsControllerComponent,
                 MockDotPersonaSelectorComponent,
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
             ],
-            imports: [BrowserAnimationsModule, TooltipModule, DotSafeHtmlPipe, DotMessagePipe],
+            imports: [
+                BrowserAnimationsModule,
+                DotEditPageViewAsControllerComponent,
+                TooltipModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe
+            ],
             providers: [
+                provideRouter([]),
                 DotLicenseService,
+                DotSessionStorageService,
+                DotWorkflowActionsFireService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                DotMessageDisplayService,
+                DotRouterService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -175,8 +194,8 @@ describe('DotEditPageViewAsControllerComponent', () => {
 
     describe('community license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
-            // spyOn(component.changeViewAs, 'emit');
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+            // jest.spyOn(component.changeViewAs, 'emit');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -193,10 +212,10 @@ describe('DotEditPageViewAsControllerComponent', () => {
 
     describe('enterprise license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            spyOn(component, 'changePersonaHandler').and.callThrough();
-            spyOn(component, 'changeDeviceHandler').and.callThrough();
-            spyOn(component, 'changeLanguageHandler').and.callThrough();
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(component, 'changePersonaHandler');
+            jest.spyOn(component, 'changeDeviceHandler');
+            jest.spyOn(component, 'changeLanguageHandler');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -235,14 +254,18 @@ describe('DotEditPageViewAsControllerComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.changePersonaHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Device selector with tooltip', () => {
             const deviceSelectorDe = de.query(By.css('dot-device-selector'));
             expect(deviceSelector).not.toBeNull();
             expect(deviceSelectorDe.attributes.appendTo).toBe('body');
-            expect(deviceSelectorDe.attributes['ng-reflect-content']).toBe('Default Device');
-            expect(deviceSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+
+            // Access PrimeNG Tooltip directive to verify content and position
+            const tooltipDirective = deviceSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.content).toBe('Default Device');
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Device', () => {
@@ -250,13 +273,17 @@ describe('DotEditPageViewAsControllerComponent', () => {
             deviceSelector.selected.emit(mockDotDevices[0]);
 
             expect(component.changeDeviceHandler).toHaveBeenCalledWith(mockDotDevices[0]);
+            expect(component.changeDeviceHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Language selector', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('body');
-            expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+
+            // Access PrimeNG Tooltip directive to verify position
+            const tooltipDirective = languageSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Language', () => {
@@ -271,6 +298,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
+            expect(component.changeLanguageHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should propagate the values to the selector components on init', () => {

@@ -6,18 +6,21 @@ import * as consola from 'consola';
 import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
-    RequestOptions,
-    DotCMSGraphQLPageResponse,
-    DotCMSPageResponse
+    DotRequestOptions,
+    DotHttpError,
+    DotErrorPage
 } from '@dotcms/types';
 
 import { PageClient } from './page-api';
-import * as utils from './utils';
 
-import { graphqlToPageEntity } from '../../utils';
+import { FetchHttpClient } from '../adapters/fetch-http-client';
+
+// Mock the FetchHttpClient
+jest.mock('../adapters/fetch-http-client');
 
 describe('PageClient', () => {
-    const mockFetchGraphQL = jest.fn();
+    const mockRequest = jest.fn();
+    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
 
     const validConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
@@ -25,7 +28,7 @@ describe('PageClient', () => {
         siteId: 'test-site'
     };
 
-    const requestOptions: RequestOptions = {
+    const requestOptions: DotRequestOptions = {
         headers: {
             Authorization: 'Bearer test-token'
         }
@@ -35,12 +38,33 @@ describe('PageClient', () => {
         data: {
             page: {
                 title: 'GraphQL Page',
-                url: '/graphql-page'
+                url: '/graphql-page',
+                layout: {
+                    header: {
+                        title: 'Header'
+                    }
+                },
+                viewAs: {
+                    visitor: {
+                        persona: {
+                            title: 'Visitor Persona'
+                        }
+                    }
+                },
+                containers: [
+                    {
+                        path: 'demo.dotcms.com',
+                        identifier: 'test-container',
+                        maxContentlets: 10,
+                        containerStructures: [],
+                        containerContentlets: []
+                    }
+                ]
             },
-            testContent: {
+            content: {
                 items: [{ title: 'Content Item' }]
             },
-            testNav: {
+            nav: {
                 items: [{ label: 'Nav Item', url: '/nav' }]
             }
         },
@@ -48,23 +72,17 @@ describe('PageClient', () => {
     };
 
     beforeEach(() => {
-        mockFetchGraphQL.mockReset();
+        mockRequest.mockReset();
         global.console.error = jest.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
 
-        jest.spyOn(utils, 'fetchGraphQL').mockImplementation(mockFetchGraphQL);
-        mockFetchGraphQL.mockResolvedValue(mockGraphQLResponse);
+        MockedFetchHttpClient.mockImplementation(
+            () =>
+                ({
+                    request: mockRequest
+                }) as Partial<FetchHttpClient> as FetchHttpClient
+        );
 
-        jest.spyOn(utils, 'buildPageQuery').mockReturnValue('mock-page-query');
-        jest.spyOn(utils, 'buildQuery').mockReturnValue('mock-query');
-        jest.spyOn(utils, 'mapResponseData').mockImplementation((data, keys) => {
-            const result: Record<string, any> = {};
-
-            keys.forEach((key) => {
-                result[key] = data[`test${key.charAt(0).toUpperCase() + key.slice(1)}`];
-            });
-
-            return result;
-        });
+        mockRequest.mockResolvedValue(mockGraphQLResponse);
     });
 
     afterEach(() => {
@@ -73,7 +91,7 @@ describe('PageClient', () => {
 
     describe('GraphQL API', () => {
         it('should fetch page using GraphQL when query option is provided', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             const graphQLOptions: DotCMSPageRequestParams = {
                 graphql: {
@@ -94,47 +112,75 @@ describe('PageClient', () => {
 
             const result = await pageClient.get('/graphql-page', graphQLOptions);
 
-            expect(utils.buildPageQuery).toHaveBeenCalled();
-            expect(utils.buildQuery).toHaveBeenCalledTimes(1);
-            expect(utils.fetchGraphQL).toHaveBeenCalledWith({
-                body: expect.any(String),
-                headers: requestOptions.headers,
-                baseURL: 'https://demo.dotcms.com'
+            expect(mockRequest).toHaveBeenCalledWith('https://demo.dotcms.com/api/v1/graphql', {
+                method: 'POST',
+                headers: {
+                    Authorization: 'Bearer test-token'
+                },
+                body: expect.stringContaining(`... on Banner`)
             });
 
             expect(result).toEqual({
-                pageAsset: graphqlToPageEntity(
-                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
-                ),
-                content: { content: mockGraphQLResponse.data.testContent },
+                pageAsset: {
+                    layout: {
+                        header: {
+                            title: 'Header'
+                        }
+                    },
+                    viewAs: {
+                        visitor: {
+                            persona: {
+                                title: 'Visitor Persona'
+                            }
+                        }
+                    },
+                    containers: {
+                        'demo.dotcms.com': {
+                            containerStructures: [],
+                            container: {
+                                path: 'demo.dotcms.com',
+                                identifier: 'test-container',
+                                maxContentlets: 10
+                            },
+                            contentlets: {}
+                        }
+                    },
+                    page: {
+                        title: 'GraphQL Page',
+                        url: '/graphql-page'
+                    },
+                    site: undefined,
+                    template: undefined,
+                    runningExperimentId: undefined,
+                    urlContentMap: {},
+                    vanityUrl: undefined
+                },
+                content: {
+                    content: {
+                        items: [{ title: 'Content Item' }]
+                    }
+                },
                 graphql: {
                     query: expect.any(String),
-                    variables: expect.any(Object)
-                },
-                vanityUrl: undefined,
-                runningExperimentId: undefined
+                    variables: {
+                        url: '/graphql-page',
+                        mode: 'LIVE',
+                        languageId: '1',
+                        fireRules: false,
+                        siteId: 'test-site',
+                        personaId: undefined,
+                        publishDate: undefined,
+                        variantName: undefined
+                    }
+                }
             });
         });
 
-        it('should print graphql errors ', async () => {
+        it('should print graphql errors', async () => {
             const consolaSpy = jest.spyOn(consola, 'error');
-            const pageClient = new PageClient(validConfig, requestOptions);
-            const graphQLOptions = {
-                graphql: {
-                    page: `containers {
-                        containerContentlets {
-                            contentlets {
-                                ... on Banner {
-                                    title
-                                }
-                            }
-                        }
-                    }`,
-                    content: { content: 'query Content { items { title } }' }
-                }
-            };
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
-            mockFetchGraphQL.mockResolvedValue({
+            mockRequest.mockResolvedValue({
                 data: {
                     page: {
                         title: 'GraphQL Page'
@@ -143,7 +189,7 @@ describe('PageClient', () => {
                 errors: [{ message: 'Some internal server error' }]
             });
 
-            await pageClient.get('/graphql-page', graphQLOptions);
+            await pageClient.get('/graphql-page');
 
             expect(consolaSpy).toHaveBeenCalledWith(
                 '[DotCMS GraphQL Error]: ',
@@ -152,7 +198,7 @@ describe('PageClient', () => {
         });
 
         it('should return an error if the page is not found', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
                 graphql: {
                     page: `containers {
@@ -168,7 +214,7 @@ describe('PageClient', () => {
                 }
             };
 
-            mockFetchGraphQL.mockResolvedValue({
+            mockRequest.mockResolvedValue({
                 data: {
                     page: null
                 },
@@ -177,51 +223,29 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/graphql-page', graphQLOptions);
-            } catch (response: unknown) {
-                const responseData = response as DotCMSPageResponse;
-
-                expect(responseData.error?.message).toBe('No page data found');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/graphql-page': Page /graphql-page not found. Check the page URL and permissions."
+                    );
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toContain('containers');
+                }
             }
         });
 
         it('should add leading slash to url if it does not have it', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-            const graphQLOptions = {
-                graphql: {
-                    page: `containers {
-                        containerContentlets {
-                            contentlets {
-                                ... on Banner {
-                                    title
-                                }
-                            }
-                        }
-                    }`,
-                    content: { content: 'query Content { items { title } }' }
-                }
-            };
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             // No leading slash
-            const result = await pageClient.get('graphql-page', graphQLOptions as any);
+            const result = await pageClient.get('graphql-page', {});
 
-            expect(result).toEqual({
-                pageAsset: graphqlToPageEntity(
-                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
-                ),
-                content: { content: mockGraphQLResponse.data.testContent },
-                graphql: {
-                    query: expect.any(String),
-                    variables: expect.objectContaining({
-                        url: '/graphql-page'
-                    })
-                },
-                vanityUrl: undefined,
-                runningExperimentId: undefined
-            });
+            expect(result.graphql.variables['url']).toEqual('/graphql-page');
         });
 
         it('should pass correct variables to GraphQL query', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
                 graphql: {
                     page: `containers {
@@ -241,7 +265,7 @@ describe('PageClient', () => {
 
             await pageClient.get('/custom-page', graphQLOptions as any);
 
-            const requestBody = JSON.parse(mockFetchGraphQL.mock.calls[0][0].body);
+            const requestBody = JSON.parse(mockRequest.mock.calls[0][1].body);
             expect(requestBody.variables).toEqual({
                 url: '/custom-page',
                 mode: 'PREVIEW_MODE',
@@ -251,37 +275,12 @@ describe('PageClient', () => {
             });
         });
 
-        it('should handle GraphQL errors', async () => {
-            mockFetchGraphQL.mockRejectedValue(new Error('GraphQL error'));
-
-            const pageClient = new PageClient(validConfig, requestOptions);
-            const graphQLOptions = {
-                graphql: {
-                    page: `containers {
-      containerContentlets {
-        contentlets {
-         ... on Banner {
-            title
-          }
-        }
-      }
-    }`,
-                    content: { content: 'query Content { items { title } }' }
-                }
-            };
-            try {
-                await pageClient.get('/page', graphQLOptions);
-            } catch (error: any) {
-                expect(error.message).toBe('Failed to retrieve page data');
-            }
-        });
-
         it('should throw errors from GraphQL', async () => {
-            mockFetchGraphQL.mockResolvedValue({
+            mockRequest.mockResolvedValue({
                 errors: [{ message: 'GraphQL error' }]
             });
 
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
                 graphql: {
                     page: `containers {
@@ -296,13 +295,241 @@ describe('PageClient', () => {
             };
             try {
                 await pageClient.get('/page', graphQLOptions);
-            } catch (error: any) {
-                expect(error.message).toBe('Failed to retrieve page data');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/page': Cannot read properties of undefined (reading 'page')"
+                    );
+                    expect(error.graphql).toBeDefined();
+                }
+            }
+        });
+
+        it('should handle HTTP errors', async () => {
+            const httpError = new DotHttpError({
+                status: 404,
+                statusText: 'Not Found',
+                message: 'Page not found',
+                data: { error: 'Page not found' }
+            });
+            mockRequest.mockRejectedValue(httpError);
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            try {
+                await pageClient.get('/page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/page': Page not found"
+                    );
+                    expect(error.httpError).toBe(httpError);
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                    expect(error.graphql?.variables).toEqual({
+                        url: '/page',
+                        mode: 'LIVE',
+                        languageId: '1',
+                        fireRules: false,
+                        siteId: 'test-site',
+                        personaId: undefined,
+                        publishDate: undefined,
+                        variantName: undefined
+                    });
+                }
+            }
+        });
+
+        it('should throw Bad Request error when GraphQL returns DotPage errors', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'Some Page'
+                    }
+                },
+                errors: [
+                    { message: 'Some other error' },
+                    { message: 'DotPage entity error: Invalid page configuration' }
+                ]
+            });
+
+            try {
+                await pageClient.get('/bad-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/bad-page': GraphQL query failed for URL '/bad-page': DotPage entity error: Invalid page configuration"
+                    );
+                    // The httpError should be set from the thrown DotHttpError
+                    expect(error.httpError).toBeInstanceOf(DotHttpError);
+                    if (error.httpError) {
+                        expect(error.httpError.status).toBe(400);
+                        expect(error.httpError.statusText).toBe('Bad Request');
+                        expect(error.httpError.message).toBe(
+                            "GraphQL query failed for URL '/bad-page': DotPage entity error: Invalid page configuration"
+                        );
+                    }
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                }
+            }
+        });
+
+        it('should throw 404 error with httpError when page is not found', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: []
+            });
+
+            try {
+                await pageClient.get('/missing-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/missing-page': Page /missing-page not found. Check the page URL and permissions."
+                    );
+                    // The httpError should be set from the thrown DotHttpError
+                    expect(error.httpError).toBeInstanceOf(DotHttpError);
+                    if (error.httpError) {
+                        expect(error.httpError.status).toBe(404);
+                        expect(error.httpError.statusText).toBe('Not Found');
+                        expect(error.httpError.message).toBe(
+                            'Page /missing-page not found. Check the page URL and permissions.'
+                        );
+                    }
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                    expect(error.graphql?.variables['url']).toBe('/missing-page');
+                }
+            }
+        });
+
+        it('should handle generic non-HTTP errors', async () => {
+            const genericError = new Error('Network timeout');
+            mockRequest.mockRejectedValue(genericError);
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            try {
+                await pageClient.get('/error-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/error-page': Network timeout"
+                    );
+                    expect(error.httpError).toBeUndefined();
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toBeDefined();
+                    expect(error.graphql?.variables['url']).toBe('/error-page');
+                }
+            }
+        });
+
+        it('should handle unknown errors (non-Error instances)', async () => {
+            mockRequest.mockRejectedValue('Some string error');
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            try {
+                await pageClient.get('/unknown-error-page');
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe(
+                        "Page request failed for URL '/unknown-error-page': Unknown error"
+                    );
+                    expect(error.httpError).toBeUndefined();
+                    expect(error.graphql).toBeDefined();
+                }
+            }
+        });
+
+        it('should include graphql query and variables in all error scenarios', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers { title }`,
+                    content: { blogPosts: 'query BlogPosts { items { title } }' },
+                    variables: {
+                        customVar: 'customValue'
+                    }
+                },
+                languageId: '2',
+                personaId: 'test-persona',
+                variantName: 'test-variant'
+            };
+
+            mockRequest.mockResolvedValue({
+                data: { page: null },
+                errors: []
+            });
+
+            try {
+                await pageClient.get('/test-page', graphQLOptions);
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.graphql).toBeDefined();
+                    expect(error.graphql?.query).toContain('containers');
+                    expect(error.graphql?.query).toContain('BlogPosts');
+                    expect(error.graphql?.variables).toEqual({
+                        url: '/test-page',
+                        mode: 'LIVE',
+                        languageId: '2',
+                        fireRules: false,
+                        siteId: 'test-site',
+                        personaId: 'test-persona',
+                        publishDate: undefined,
+                        variantName: 'test-variant',
+                        customVar: 'customValue'
+                    });
+                }
             }
         });
 
         it('should use default values for languageId and mode if not provided', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
                 graphql: {
                     page: `containers {
@@ -317,7 +544,7 @@ describe('PageClient', () => {
             };
             await pageClient.get('/default-page', graphQLOptions);
 
-            const requestBody = JSON.parse(mockFetchGraphQL.mock.calls[0][0].body);
+            const requestBody = JSON.parse(mockRequest.mock.calls[0][1].body);
             expect(requestBody.variables).toEqual({
                 url: '/default-page',
                 mode: 'LIVE',
@@ -328,32 +555,39 @@ describe('PageClient', () => {
         });
 
         it('should fetch using graphQL even if there is no graphql option', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             await pageClient.get('/why-obi-wan-had-the-high-ground');
 
-            expect(mockFetchGraphQL).toHaveBeenCalled();
-            expect(utils.buildPageQuery).toHaveBeenCalled();
-            expect(utils.buildQuery).toHaveBeenCalledTimes(1);
-            expect(utils.fetchGraphQL).toHaveBeenCalledWith({
-                body: expect.stringContaining('"url":"/why-obi-wan-had-the-high-ground"'),
-                headers: requestOptions.headers,
-                baseURL: 'https://demo.dotcms.com'
-            });
+            expect(mockRequest).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/graphql',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        Authorization: 'Bearer test-token'
+                    }),
+                    body: expect.stringContaining(`"url":"/why-obi-wan-had-the-high-ground"`)
+                })
+            );
         });
     });
 
     describe('Client initialization', () => {
         it('should use siteId from config when not provided in params', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             await pageClient.get('/test-page');
 
-            expect(mockFetchGraphQL).toHaveBeenCalledWith({
-                baseURL: 'https://demo.dotcms.com',
-                body: expect.stringContaining('"siteId":"test-site"'),
-                headers: requestOptions.headers
-            });
+            expect(mockRequest).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/graphql',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        Authorization: 'Bearer test-token'
+                    }),
+                    body: expect.stringContaining('"siteId":"test-site"')
+                })
+            );
         });
     });
 });

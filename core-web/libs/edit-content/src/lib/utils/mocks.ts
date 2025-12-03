@@ -20,6 +20,7 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
+import { DISABLED_WYSIWYG_FIELD } from '../models/disabledWYSIWYG.constant';
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { DotFormData } from '../models/dot-edit-content-form.interface';
 import {
@@ -890,7 +891,10 @@ export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME
 /* LAYOUT/FORM MOCKS */
 
 // This creates a mock FormGroup from an array of fielda
-export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
+export const FORM_GROUP_MOCK = new FormGroup({
+    ...createFormControlObjectMock(),
+    [DISABLED_WYSIWYG_FIELD]: new FormControl([])
+});
 
 export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     {
@@ -1339,21 +1343,6 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     nEntries: 0,
     metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
 };
-
-/**
- * Mock for ResizeObserver
- */
-export class MockResizeObserver {
-    observe() {
-        //
-    }
-    unobserve() {
-        //
-    }
-    disconnect() {
-        //
-    }
-}
 
 export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
     {

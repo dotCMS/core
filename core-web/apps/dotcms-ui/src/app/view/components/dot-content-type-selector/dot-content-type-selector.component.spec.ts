@@ -15,7 +15,7 @@ import { DotContentTypeSelectorComponent } from './dot-content-type-selector.com
 
 @Injectable()
 class MockDotContentTypeService {
-    getContentTypes = jasmine.createSpy('getContentTypes').and.returnValue(
+    getContentTypes = jest.fn().mockReturnValue(
         observableOf([
             { name: 'FORM', variable: 'Form' },
             { name: 'WIDGET', variable: 'Widget' }
@@ -34,8 +34,7 @@ describe('DotContentTypeSelectorComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentTypeSelectorComponent],
-            imports: [BrowserAnimationsModule, DropdownModule],
+            imports: [DotContentTypeSelectorComponent, BrowserAnimationsModule, DropdownModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -55,12 +54,14 @@ describe('DotContentTypeSelectorComponent', () => {
 
     it('should emit the selected content type', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change').and.callThrough();
+        jest.spyOn(component.selected, 'emit');
+        jest.spyOn(component, 'change');
         pDropDown.triggerEventHandler('onChange', allContentTypesItem);
 
         expect(component.change).toHaveBeenCalledWith(allContentTypesItem);
+        expect(component.change).toHaveBeenCalledTimes(1);
         expect(component.selected.emit).toHaveBeenCalledWith(allContentTypesItem.value);
+        expect(component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should add All Content Types option as first position', () => {

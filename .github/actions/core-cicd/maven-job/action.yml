@@ -200,6 +200,7 @@ runs:
       name: Run Maven Build
       shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: |
+        set -e  # Exit on any command failure
         DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dprod=true"
         MAVEN_ARGS="${{ inputs.maven-args }}"
         if [[ "${{ inputs.generate-docker }}" == "true" ]]; then

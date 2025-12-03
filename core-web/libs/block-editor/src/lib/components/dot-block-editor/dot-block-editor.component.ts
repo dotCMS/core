@@ -10,9 +10,11 @@ import {
     inject,
     Injector,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
+    SimpleChanges,
     ViewContainerRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -83,7 +85,7 @@ import {
     ],
     standalone: false
 })
-export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
+export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
 
     @Input() field: DotCMSContentTypeField;
@@ -201,6 +203,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
                 this.subscribeToEditorEvents();
             });
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        // Update DotConfig extension when languageId changes
+        if (changes['languageId'] && this.editor && !changes['languageId'].firstChange) {
+            const newLanguageId = this.contentlet?.languageId || this.languageId;
+            this.editor.storage.dotConfig.lang = newLanguageId;
+        }
     }
 
     ngOnDestroy() {
@@ -445,7 +455,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private getEditorExtensions(isAIPluginInstalled: boolean) {
         const extensions = [
             DotConfigExtension({
-                lang: this.languageId || this.contentlet?.languageId,
+                lang: this.contentlet?.languageId || this.languageId,
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this.allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier

@@ -4,7 +4,12 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotIconComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
@@ -45,8 +50,14 @@ describe('DotRelationshipTreeComponent', () => {
 
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotSafeHtmlPipe, DotMessagePipe, DotCopyButtonComponent],
+                declarations: [TestHostComponent],
+                imports: [
+                    DotRelationshipTreeComponent,
+                    DotIconComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe,
+                    DotCopyButtonComponent
+                ],
                 providers: [
                     {
                         provide: DotMessageService,
@@ -78,8 +89,8 @@ describe('DotRelationshipTreeComponent', () => {
         it('should set child correctly', () => {
             const children = de.query(By.css('[data-testId="dot-tree-nested-text"]'));
             const parent = de.query(By.css('[data-testId="dot-tree-upper-text"]'));
-            expect(children.nativeElement.innerText).toBe('ContentTypeName');
-            expect(parent.nativeElement.innerText).toBe('Parent');
+            expect(children.nativeElement.textContent).toBe('ContentTypeName');
+            expect(parent.nativeElement.textContent).toBe('Parent');
         });
     });
 
@@ -90,8 +101,14 @@ describe('DotRelationshipTreeComponent', () => {
 
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotRelationshipTreeComponent],
-                imports: [DotIconModule, DotSafeHtmlPipe, DotMessagePipe, DotCopyButtonComponent],
+                declarations: [TestHostComponent],
+                imports: [
+                    DotRelationshipTreeComponent,
+                    DotIconComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe,
+                    DotCopyButtonComponent
+                ],
                 providers: [
                     {
                         provide: DotMessageService,
@@ -120,8 +137,8 @@ describe('DotRelationshipTreeComponent', () => {
             const child = de.query(By.css('[data-testId="dot-tree-upper-text"]'));
             const currentContentType = de.query(By.css('[data-testId="dot-tree-nested-text"]'));
 
-            expect(child.nativeElement.innerText).toBe('ContentTypeName');
-            expect(currentContentType.nativeElement.innerText).toBe('Parent');
+            expect(child.nativeElement.textContent).toBe('ContentTypeName');
+            expect(currentContentType.nativeElement.textContent).toBe('Parent');
         });
 
         it('should have dot-icon and its active class', () => {

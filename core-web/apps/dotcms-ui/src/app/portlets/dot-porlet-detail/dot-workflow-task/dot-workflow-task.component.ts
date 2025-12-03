@@ -4,14 +4,14 @@ import { ActivatedRoute } from '@angular/router';
 import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/data-access';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 @Component({
-    providers: [],
     selector: 'dot-workflow-task',
     template:
         '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>',
-    standalone: false
+    imports: [DotWorkflowTaskDetailComponent]
 })
 export class DotWorkflowTaskComponent implements OnInit {
     private dotWorkflowTaskDetailService = inject(DotWorkflowTaskDetailService);

@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
           ref: ${{ inputs.ref }}
-          npm-token: ${{ secrets.NPM_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           npm-package-tag: 'latest'
           version-type: ${{ inputs.version-type }}
           custom-version: ${{ inputs.custom-version }}

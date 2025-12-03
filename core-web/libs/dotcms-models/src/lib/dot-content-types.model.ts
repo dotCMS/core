@@ -38,7 +38,16 @@ export const DotCMSClazzes = {
     TEXT: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     TEXTAREA: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
     TIME: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
-    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+    FIELD_VARIABLE: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+} as const;
+
+/**
+ * Constants defining the render modes available in DotCMS content type fields
+ */
+export const DotRenderModes = {
+    IFRAME: 'iframe',
+    COMPONENTS: 'components'
 } as const;
 
 /**
@@ -587,6 +596,12 @@ export interface DotCMSContentTypeFieldVariable {
     value: string;
 }
 
+export interface DotCMSContentTypeFieldVariableRenderMode extends DotCMSContentTypeFieldVariable {
+    clazz: typeof DotCMSClazzes.FIELD_VARIABLE;
+    key: 'newRenderMode';
+    value: (typeof DotRenderModes)[keyof typeof DotRenderModes];
+}
+
 export interface DotCMSAssetDialogFields {
     title: string;
     assetIdentifier: string;
@@ -622,4 +637,15 @@ interface Relationships {
     cardinality: number;
     isParentField: boolean;
     velocityVar: string;
+}
+
+/**
+ * Interface for pagination parameters when retrieving content types
+ * Used for filtering and pagination of content types
+ */
+export interface DotContentTypePaginationOptions {
+    filter?: string;
+    page?: number;
+    type?: string;
+    ensure?: string;
 }

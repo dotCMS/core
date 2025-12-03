@@ -6,6 +6,7 @@ import { By } from '@angular/platform-browser';
 import { MultiSelect, MultiSelectChangeEvent } from 'primeng/multiselect';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveBaseTypeSelectorComponent } from './dot-content-drive-base-type-selector.component';
 
@@ -21,9 +22,6 @@ describe('DotContentDriveBaseTypeSelectorComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveBaseTypeSelectorComponent,
         providers: [
-            mockProvider(DotMessageService, {
-                get: jest.fn()
-            }),
             mockProvider(DotContentDriveStore, {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
@@ -31,7 +29,13 @@ describe('DotContentDriveBaseTypeSelectorComponent', () => {
             }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
-            })
+            }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'content-drive.base-type.placeholder': 'Base Type'
+                })
+            }
         ],
         detectChanges: false
     });
@@ -97,5 +101,24 @@ describe('DotContentDriveBaseTypeSelectorComponent', () => {
         spectator.triggerEventHandler(MultiSelect, 'onChange', {} as MultiSelectChangeEvent);
 
         expect(store.removeFilter).toHaveBeenCalledWith('baseType');
+    });
+
+    describe('MultiSelect', () => {
+        it('should have correct properties configured', () => {
+            spectator.detectChanges();
+
+            const multiSelectDebugElement = spectator.fixture.debugElement.query(
+                By.directive(MultiSelect)
+            );
+            const multiSelectComponent = multiSelectDebugElement.componentInstance;
+
+            expect(multiSelectComponent.scrollHeight).toBe('25rem');
+            expect(multiSelectComponent.resetFilterOnHide).toBe(true);
+            expect(multiSelectComponent.showToggleAll).toBe(true);
+
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the placeholder property directly on the MultiSelect component instance
+            expect(multiSelectComponent.placeholder()).toBe('Base Type');
+        });
     });
 });

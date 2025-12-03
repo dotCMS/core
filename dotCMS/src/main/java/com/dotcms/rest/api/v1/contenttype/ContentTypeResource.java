@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -23,20 +24,26 @@ import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.IdentifierValidator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -45,17 +52,20 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterStyle;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -81,10 +91,18 @@ import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
@@ -113,6 +131,8 @@ public class ContentTypeResource implements Serializable {
 	private final PaginationUtil 	paginationUtil;
 	private final WorkflowHelper 	workflowHelper;
 	private final PermissionAPI     permissionAPI;
+
+	private final Lazy<Set<String>> contentPaletteHiddenTypes = Lazy.of(()->Set.of(Config.getStringArrayProperty("CONTENT_PALETTE_HIDDEN_CONTENT_TYPES", new String[]{})));
 
 	public ContentTypeResource() {
 		this(ContentTypeHelper.getInstance(), new WebResource(),
@@ -1024,11 +1044,11 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	@Operation(
 			operationId = "getContentTypeIdVar",
-			summary = "Retrieves a single content type",
-			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			summary = "Retrieves a single Content Type",
+			description = "Returns a Content Type based on the provided ID or Velocity variable name.",
 			tags = {"Content Type"},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
+					@ApiResponse(responseCode = "200", description = "Content Type retrieved successfully",
 							content = @Content(mediaType = "application/json",
 									examples = {
 											@ExampleObject(
@@ -1084,70 +1104,168 @@ public class ContentTypeResource implements Serializable {
 	public Response getType(
 			@PathParam("idOrVar") @Parameter(
 					required = true,
-					description = "The ID or Velocity variable name of the content type to retrieve.\n\n" +
-									"Example: `htmlpageasset` (Default page content type)",
-					schema = @Schema(type = "string")
-			) final String idOrVar,
+					description = "The ID or Velocity variable name of the Content Type to retrieve.\n\n" +
+								  "Variable name example: `htmlpageasset` (Default page Content Type)",
+					schema = @Schema(type = "string")) final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
 			@QueryParam("languageId") @Parameter(
 					description = "The language ID for localization.",
-					schema = @Schema(type = "integer")
-			) final Long languageId,
+					schema = @Schema(type = "integer")) final Long languageId,
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
-					schema = @Schema(type = "boolean")
-			) final Boolean paramLive)
-			throws DotDataException {
+					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false);
+	}
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+	@GET
+	@Path("/render/id/{idOrVar}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getContentTypeIdVar",
+			summary = "Retrieves a single Content Type with their rendered Custom Fields",
+			description = "Returns a Content Type based on the provided ID or Velocity variable " +
+					"name. Additionally, the Velocity code in all of its Custom Fields will be parsed.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content Type retrieved successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fields\": [],\n" +
+															"      \"fixed\": false,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"systemActionMappings\": {},\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response getTypeWithRenderedCustomFields(
+			@PathParam("idOrVar") @Parameter(
+					required = true,
+					description = "The ID or Velocity variable name of the Content Type to retrieve.\n\n" +
+								  "Variable name example: `htmlpageasset` (Default page Content Type)",
+					schema = @Schema(type = "string")) final String idOrVar,
+			@Context final HttpServletRequest req,
+			@Context final HttpServletResponse res,
+			@QueryParam("languageId") @Parameter(
+					description = "The language ID for localization.",
+					schema = @Schema(type = "integer")) final Long languageId,
+			@QueryParam("live") @Parameter(
+					description = "Determines whether live versions of language variables are used in the returned object.",
+					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
+	}
+
+	/**
+	 * Retrieves a content type based on the provided ID or Velocity variable name.
+	 *
+	 * @param idOrVar            The ID or Velocity variable name of the {@link ContentType} to
+	 *                           retrieve.
+	 * @param httpRequest                The current instance of the {@link HttpServletRequest}.
+	 * @param httpResponse                The current instance of the {@link HttpServletResponse}.
+	 * @param languageId         The Language ID, used for internationalization purposes.
+	 * @param paramLive          Determines whether live versions of language variables are used in
+	 *                           the returned object.
+	 * @param renderCustomFields If the Velocity code in all Custom Fields must be parsed, set this
+	 *                           to {@code true}.
+	 *
+	 * @return The specified {@link ContentType} in its JSON format.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the database.
+	 */
+	private Response retrieveContentType(final HttpServletRequest httpRequest,
+										 final HttpServletResponse httpResponse, final String idOrVar,
+										 final Long languageId, final Boolean paramLive,
+										 final boolean renderCustomFields) throws DotDataException {
+		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
-		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
-        final HttpSession session = req.getSession(false);
+		final HttpSession session = httpRequest.getSession(false);
 		try {
-
-			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
-
+			Logger.debug(this, () -> "Getting the Type: " + idOrVar);
 			final ContentType type = tapi.find(idOrVar);
 			if (null == type) {
 				// Humoring sonarlint, this block should never be reached as the find method will
 				// throw an exception if the type is not found.
 				throw new NotFoundInDbException(
-						String.format("Content Type with ID or var name '%s' was not found", idOrVar
-						));
+						String.format("Content Type with ID or var name '%s' was not found", idOrVar));
 			}
-
 			if (null != session) {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
-
 			final boolean live = paramLive == null ?
 					(PageMode.get(Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull())).showLive
 					: paramLive;
 
-			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
+			final ContentTypeInternationalization contentTypeInternationalization =
+					languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
 			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
-							contentTypeInternationalization, user))
+							contentTypeInternationalization, renderCustomFields, user))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
 							type.id(), initData.getUser()))
 					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
 							this.workflowHelper.findSystemActionsByContentType(
-									type, initData.getUser()).stream()
-							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
-									mapping -> mapping))).build();
+											type, initData.getUser()).stream()
+									.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction,
+											mapping -> mapping))).build();
 
-			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
-					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+			response = ("true".equalsIgnoreCase(httpRequest.getParameter("include_permissions"))) ?
+					Response.ok(new ResponseEntityView<>(resultMap,
+							PermissionsUtil.getInstance().getPermissionsArray(type,
+									initData.getUser()))).build() :
 					Response.ok(new ResponseEntityView<>(resultMap)).build();
 		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
-		} catch (final NotFoundInDbException nfdb2) {
+		} catch (final NotFoundInDbException e) {
 			// nothing to do here, will throw a 404
 		}
-
 		return response;
 	}
 
@@ -1345,6 +1463,7 @@ public class ContentTypeResource implements Serializable {
 													value = "{\n" +
 															"  \"entity\": [\n" +
 															"    {\n" +
+															"      \"index\": \"int\",\n" +
 															"      \"label\": \"string\",\n" +
 															"      \"name\": \"string\",\n" +
 															"      \"types\": null\n" +
@@ -1369,7 +1488,6 @@ public class ContentTypeResource implements Serializable {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
 			response = Response.ok(new ResponseEntityView<>(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
-
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -1402,7 +1520,9 @@ public class ContentTypeResource implements Serializable {
 	 * @param siteId       The identifier of the Site where the requested Content Types live.
 	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
 	 *                     requested Content Types live.
-	 *
+     * @param ensureContentTypesParam
+     *                     A comma-separated list of Content Types guaranteed to be included in the
+     *                     Content Type list response if they exist and are valid.
 	 * @return A JSON response with the paginated list of Content Types.
 	 *
 	 * @throws DotDataException An error occurred when retrieving information from the database.
@@ -1468,66 +1588,80 @@ public class ContentTypeResource implements Serializable {
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
-	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
-										  @Context final HttpServletResponse httpResponse,
-										  @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
-												  description = "String to filter/search for specific content types; leave blank to return all."
-										  ) final String filter,
-										  @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
-												  description = "Page number in response pagination.\n\nDefault: `1`"
-										  ) final int page,
-										  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
-												  description = "Number of results per page for pagination.\n\nDefault: `10`"
-										  ) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
-												  schema = @Schema(type = "string"),
-												  description = "Column(s) to sort the results. Multiple columns can be " +
-														  "combined in a comma-separated list. Column names can also be set " +
-														  "within a SQL string function, such as `upper()`.\n\n" +
-														  "Some possible values:\n\n" +
-														  "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
-														  "`description`, `structuretype`, `category`, `inode`"
-										  ) String orderByParam,
-										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
-												  schema = @Schema(
-														  type = "string",
-														  allowableValues = {"ASC", "DESC"},
-														  defaultValue = "ASC",
-														  required = true
-												  ),
-												  description = "Sort direction: choose between ascending or descending."
-										  ) String direction,
-										  @QueryParam("type") @Parameter(
-												  schema = @Schema(
-														  type = "string",
-														  allowableValues = {
-																  "ANY", "CONTENT", "WIDGET",
-																  "FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
-																  "VANITY_URL", "KEY_VALUE", "DOTASSET"
-														  }
-												  ),
-												  description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
-										  ) String type,
-										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
-												  description = "Filter by site identifier."
-										  ) final String siteId,
-										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) @Parameter(schema = @Schema(type = "string"),
-												  description = "Multi-site filter: Takes comma-separated list of site identifiers or keys."
-										  ) final String sites) throws DotDataException {
+    public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
+                    description = "String to filter/search for specific content types; leave blank to return all."
+            ) final String filter,
+            @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
+                    description = "Page number in response pagination.\n\nDefault: `1`"
+            ) final int page,
+            @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
+                    description = "Number of results per page for pagination.\n\nDefault: `10`"
+            ) final int perPage,
+            @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
+                    schema = @Schema(type = "string"),
+                    description = "Column(s) to sort the results. Multiple columns can be " +
+                            "combined in a comma-separated list. Column names can also be set " +
+                            "within a SQL string function, such as `upper()`.\n\n" +
+                            "Some possible values:\n\n" +
+                            "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
+                            "`description`, `structuretype`, `category`, `inode`"
+            ) String orderByParam,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {"ASC", "DESC"},
+                            defaultValue = "ASC",
+                            required = true
+                    ),
+                    description = "Sort direction: choose between ascending or descending."
+            ) String direction,
+            @QueryParam("type") @Parameter(
+                    schema = @Schema(
+                            type = "array",
+                            allowableValues = {
+                                    "ANY", "CONTENT", "WIDGET",
+                                    "FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
+                                    "VANITY_URL", "KEY_VALUE", "DOTASSET"
+                            }
+                    ),
+                    style = ParameterStyle.FORM,
+                    description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+            ) List<String> type,
+            @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
+                    description = "Filter by site identifier."
+            ) final String siteId,
+            @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) @Parameter(schema = @Schema(type = "string"),
+                    description = "Multi-site filter: Takes comma-separated list of site identifiers or keys."
+            ) final String sites,
+            @QueryParam(ContentTypesPaginator.ENSURE) @Parameter(schema = @Schema(type = "string"),
+                    description = "Guarantee Content Types to be included in the response: " +
+                            "Comma-separated content type keys (e.g. `activity, blog, product`)."
+            ) String ensureContentTypesParam) throws DotDataException {
 
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(httpRequest, httpResponse)
 				.rejectWhenNoUser(true)
 				.init().getUser();
 		final String orderBy = this.getOrderByRealName(orderByParam);
+
 		try {
 			final Map<String, Object> extraParams = new HashMap<>();
 			if (null != type) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
+                //Remove empty strings and duplicates, preserve order
+				final List<String> filteredTypes = type.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+				if (!filteredTypes.isEmpty()) {
+					extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+				}
 			}
+
 			if (null != siteId) {
 				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 			}
+
 			if (UtilMethods.isSet(sites)) {
 				// SECURITY: Validate sites parameter to prevent SQL injection
 				List<String> siteList = Arrays.asList(sites.split(COMMA));
@@ -1547,6 +1681,12 @@ public class ContentTypeResource implements Serializable {
 				}
 				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME, siteList);
 			}
+
+            if (ensureContentTypesParam != null) {
+                extraParams.put(ContentTypesPaginator.ENSURE,
+                        contentTypeHelper.getEnsuredContentTypes(ensureContentTypesParam));
+            }
+
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
 			return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
@@ -1564,13 +1704,7 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	private String getOrderByRealName(final String orderbyParam) {
-		if ("modDate".equals(orderbyParam)){
-			return "mod_date";
-		}else if ("variable".equals(orderbyParam)) {
-			return "velocity_var_name";
-		} else {
-			return orderbyParam;
-		}
+		return com.dotcms.contenttype.util.ContentTypeFieldNames.normalize(orderbyParam);
 	}
 
 
@@ -1593,4 +1727,342 @@ public class ContentTypeResource implements Serializable {
 		return UtilMethods.isSet(form.getFilter().get(param)) ? (T) form.getFilter().get(param) : defaultValue;
 	}
 
+	/**
+	 * Returns a list of {@link ContentType} objects based on the page containers/types on the layout
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype/page?pagePathOrId=48190c8c-42c4-46af-8d1a-0cd5db894797
+	 * }</pre>
+	 * <p>If you want results composed of 10 items per page and you want the third page, and you
+	 * don't have the Site's Identifier, you can call this URL:</p>
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype/page?pagePathOrId=48190c8c-42c4-46af-8d1a-0cd5db894797
+	 * }</pre>
+	 *
+	 * @param httpRequest  The current instance of the {@link HttpServletRequest}.
+	 * @param httpResponse The current instance of the {@link HttpServletResponse}.
+	 * @param filter       Filtering parameter used to pass down the Content Types name, Velocity
+	 *                     Variable Name, or Inode. You can pass down part of the characters.
+	 * @param page         The selected results page, for pagination purposes.
+	 * @param perPage      The number of results to return per page, for pagination purposes.
+	 * @param orderByParam The column name that will be used to sort the paginated results. For
+	 *                     reference, please check
+	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
+	 * @param type         The Velocity variable name of the Content Type  to retrieve.
+	 * @param siteId       The identifier of the Site where the requested Content Types live.
+	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
+	 *                     requested Content Types live.
+	 *
+	 * @return A JSON response with the paginated list of Content Types.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	@GET
+	@Path("/page")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Tag(name = "getPagesContentTypes", description = "Returns the content types valid for a page based on the container/types on the layout")
+	@Operation(
+			operationId = "getPagesContentTypes",
+			summary = "Retrieves a list of content types for a page",
+			description = "Returns a list of content type objects based on the filtering criteria.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content types retrieved successfully",
+							content = @Content(
+									mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fixed\": true,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"nEntries\": 0,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public final Response getPagesContentTypes(@Context final HttpServletRequest httpRequest,
+										  @Context final HttpServletResponse httpResponse,
+
+										   @QueryParam("pagePathOrId") @Parameter(schema = @Schema(type = "string"),
+												   description = "The URL or Identifier of the page to filter content types for the palette"
+										   ) final String pagePathOrId,
+										   @DefaultValue("-1") @QueryParam("language") @Parameter(
+												   schema = @Schema(type = "string"),
+												   description = "Optional Language id"
+										   ) String language,
+										   @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
+												   description = "String to filter/search for specific content types; leave blank to return all."
+										   ) final String filter,
+										  @DefaultValue("1") @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
+												  description = "Page number in response pagination.\n\nDefault: `1`"
+										  ) final int page,
+										  @DefaultValue("10")  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
+												  description = "Number of results per page for pagination.\n\nDefault: `10`"
+										  ) final int perPage,
+										  @DefaultValue("usage") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
+												  schema = @Schema(type = "string"),
+												  description = "Column(s) to sort the results. Multiple columns can be " +
+														  "combined in a comma-separated list. Column names can also be set " +
+														  "within a SQL string function, such as `upper()`.\n\n" +
+														  "Some possible values:\n\n" +
+														  "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
+														  "`description`, `structuretype`, `category`, `inode`"
+										  ) String orderByParam,
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
+												  schema = @Schema(
+														  type = "string",
+														  allowableValues = {"ASC", "DESC"},
+														  defaultValue = "ASC",
+														  required = true
+												  ),
+												  description = "Sort direction: choose between ascending or descending."
+										  ) String direction,
+										   @QueryParam("type") @Parameter(
+												  schema = @Schema(
+														  type = "array",
+														  allowableValues = {
+														  	"ANY", "CONTENT", "WIDGET",
+														  	"FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
+														  	"VANITY_URL", "KEY_VALUE", "DOTASSET"
+														  }
+												  ),
+												  style = ParameterStyle.FORM,
+												  description = "List of variable names of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+										  ) List<String> types,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
+												  description = "Filter by site identifier."
+										  ) final String siteId) throws DotDataException, DotSecurityException {
+
+		final User user = new WebResource.InitBuilder(this.webResource)
+				.requestAndResponse(httpRequest, httpResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		if (Objects.isNull(pagePathOrId)) {
+
+			throw new BadRequestException("The 'pagePathOrId' parameter is required.");
+		}
+
+		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId);
+
+		final Map<String, Object> extraParams = new HashMap<>();
+		final PageMode pageMode = PageMode.get(httpRequest);
+		final long languageId   = getLanguageId(language);
+		final Host site = getSite(siteId, user, pageMode.respectAnonPerms); // wondering if this should be current or default
+		final String orderBy = this.getOrderByRealName(orderByParam);
+		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrIdAndFilter(pagePathOrId, site,
+				languageId, pageMode, user, filter);
+		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
+
+		//If set, we need to consider only the content types that belong to the specific base types
+		if (null != types) {
+			//Remove empty strings and duplicates, preserve order
+			final List<String> filteredTypes = types.stream()
+					.filter(UtilMethods::isSet)
+					.collect(Collectors.toList());
+			if (!filteredTypes.isEmpty()) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
+			}
+		}
+
+		if (isUsage) {
+
+			typeVarNames = doUsage(page, siteId, perPage, direction, user, typeVarNames, extraParams);
+		}
+
+		if (null != siteId) {
+			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
+		}
+
+		if (UtilMethods.isSet(typeVarNames)) {
+
+			Logger.debug(this, "Found Content Types for page: " + pagePathOrId +
+					" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
+					" with languageId: " + languageId + " and pageMode: " + pageMode +
+					" with types: " + typeVarNames);
+			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+		}
+
+		final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+		return isUsage?
+				paginationUtil.getPage(httpRequest, user, filter, PaginationUtil.FIRST_PAGE_INDEX, // we already paginate the results, so we start at page 1.
+						perPage, SQLUtil.DOT_NOT_SORT , // if usage is set, I do not want sort on the db, so use dotNONE.
+						OrderDirection.valueOf(direction), extraParams):
+				paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+				        OrderDirection.valueOf(direction), extraParams);
+	} // getPagesContentTypes.
+
+	private static long getLanguageId(final String language) {
+
+		final long userLanguageId = LanguageUtil.getLanguageId(language);
+		final long languageId = userLanguageId > 0 ? userLanguageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		return languageId;
+	}
+
+	private static Host getSite(final String siteId, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
+		return UtilMethods.isSet(siteId) ?
+				APILocator.getHostAPI().find(siteId, user, respectAnonPerms) :
+				APILocator.getHostAPI().findDefaultHost(user, respectAnonPerms);
+	}
+
+	private List<String> doUsage(final int page,
+								 final String siteId,
+								 final int perPage,
+								 final String direction,
+								 final User user, List<String> typeVarNames,
+								 final Map<String, Object> extraParams) throws DotDataException {
+
+		final boolean isAscending =  OrderDirection.ASC.name().equalsIgnoreCase(direction);
+		final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
+				(user, true).getEntriesByContentTypes(siteId);
+		// here are filtered and sorted, but we need to paginate them.
+		this.sort(typeVarNames, isAscending, user, entriesByContentTypes);
+		typeVarNames = this.paginate(typeVarNames, page, perPage);
+		extraParams.put(ContentTypesPaginator.ENTRIES_BY_CONTENT_TYPES, entriesByContentTypes);
+		final Comparator<Map<String, Object>> comparator = Comparator
+				.comparing((Map<String, Object> contentTypeMap) ->
+						ConversionUtils.toLong(contentTypeMap.getOrDefault(ContentTypesPaginator.N_ENTRIES_FIELD_NAME, -1l),-1l));
+		extraParams.put(ContentTypesPaginator.COMPARATOR, isAscending?comparator:comparator.reversed());
+		return typeVarNames;
+	}
+
+	public List<String> paginate(final List<String> typeVarNames, final int page, final int perPage) {
+
+		if (typeVarNames == null || typeVarNames.isEmpty() || perPage <= 0 || page <= 0) {
+			return Collections.emptyList();
+		}
+
+		int total = typeVarNames.size();
+		int fromIndex = Math.min((page - 1) * perPage, total);
+		int toIndex = Math.min(fromIndex + perPage, total);
+
+		return typeVarNames.subList(fromIndex, toIndex);
+	}
+
+	private void sort(final List<String> typeVarNames, final boolean ascending,
+					  final User user, final Map<String, Long> entriesByContentTypes)  {
+
+		final Comparator<String> comparator = Comparator
+				.comparing((String contentTypeVarName) ->
+						entriesByContentTypes.getOrDefault(contentTypeVarName.toLowerCase(), -1l));
+
+		typeVarNames.sort(ascending ? comparator : comparator.reversed());
+	}
+
+	/*
+	 * This methods retrieves the page by path or ID, then extracts the content types from the containers
+	 * Matching the filter criteria and removing the repeated ones and the ones from the blacklist.
+	 */
+	private List<String> findPageContainersContentTypesVarnamesByPathOrIdAndFilter(final String pagePathOrId,
+																				   final Host site,
+																				   final long languageId,
+																				   final PageMode pageMode,
+																				   final User user,
+																				   final String filter) throws DotDataException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId +
+				" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
+				" with languageId: " + languageId + " and pageMode: " + pageMode);
+
+		IHTMLPage htmlPage = Try.of(()->APILocator.getHTMLPageAssetAPI().getPageByPath(
+				pagePathOrId, site, languageId, pageMode.showLive)).getOrNull();
+
+		if (Objects.isNull(htmlPage)) { // try fallback by identifier
+
+			final Optional<ContentletVersionInfo> contentletVersionInfoOpt = APILocator.getVersionableAPI().getContentletVersionInfo(pagePathOrId, languageId);
+			if (contentletVersionInfoOpt.isPresent()) {
+				htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pageMode.showLive?
+								contentletVersionInfoOpt.get().getLiveInode(): contentletVersionInfoOpt.get().getWorkingInode(),
+						user, pageMode.respectAnonPerms);
+			} else {
+				// try as an inode.
+				htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pagePathOrId, user, pageMode.respectAnonPerms);
+			}
+		}
+
+		if (Objects.isNull(htmlPage)) { // still null, so the page does not exist
+
+			//Let's check if it is a detail page
+			//First we get the content types whose url map match the path
+			List<ContentType> contentTypes = APILocator.getContentTypeAPI(user,
+					pageMode.respectAnonPerms).findByUrlMapPattern(pagePathOrId);
+			if (!contentTypes.isEmpty()) {
+				//Then, we get the first detail page found
+				for (ContentType contentType : contentTypes) {
+					final Optional<ContentletVersionInfo> detailPageVersionInfo = APILocator.getVersionableAPI()
+							.getContentletVersionInfo(contentType.detailPage(), languageId);
+					if (detailPageVersionInfo.isPresent()) {
+						htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pageMode.showLive ?
+										detailPageVersionInfo.get().getLiveInode()
+										: detailPageVersionInfo.get().getWorkingInode(),
+								user, pageMode.respectAnonPerms);
+
+						if (!Objects.isNull(htmlPage)) {
+							break;
+						}
+					}
+				}
+
+			}
+
+			if (Objects.isNull(htmlPage)) {
+				throw new BadRequestException(
+						String.format("Page with path or ID '%s' was not found", pagePathOrId));
+			}
+		}
+
+		final Set<String> repeatedTypes = new HashSet<>();
+
+		// Retrieves the containers associated to the page, then extracts the content types for each container filtering the ones do not allowed
+		return new PageRenderUtil(htmlPage, user, pageMode, languageId, site)
+				.getContainersRaw().stream().map(containerRaw -> containerRaw.getContainerStructures())
+				.flatMap(Collection::stream)
+				.map(ContainerStructure::getContentTypeVar)
+				.filter(Objects::nonNull)
+				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
+				.filter(repeatedTypes::add)
+				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
+				.collect(Collectors.toList());
+	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
 }

@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "dependencies": {
         "rxjs": "7.8.2",
-        "@angular/core": "19.2.9",
-        "@angular/forms": "19.2.9",
+        "@angular/core": "20.3.9",
+        "@angular/forms": "20.3.9",
         "vite": "6.3.5"
     },
     "type": "module",

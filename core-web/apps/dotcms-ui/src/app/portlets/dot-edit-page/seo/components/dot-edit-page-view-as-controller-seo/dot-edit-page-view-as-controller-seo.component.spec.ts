@@ -1,11 +1,11 @@
 import { of } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output, Injectable } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { TooltipModule } from 'primeng/tooltip';
+import { TooltipModule, Tooltip } from 'primeng/tooltip';
 
 import {
     DotDevicesService,
@@ -16,7 +16,8 @@ import {
     DotPageStateService,
     DotPersonalizeService,
     DotPersonasService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
@@ -104,6 +105,11 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.default.device': 'Default Device'
 });
 
+@Injectable()
+class MockDotWorkflowActionsFireService {
+    fireWorkflowAction = jest.fn().mockReturnValue(of({}));
+}
+
 describe('DotEditPageViewAsControllerSeoComponent', () => {
     let componentHost: DotTestHostComponent;
     let fixtureHost: ComponentFixture<DotTestHostComponent>;
@@ -162,6 +168,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: DotWorkflowActionsFireService,
+                    useClass: MockDotWorkflowActionsFireService
                 }
             ]
         });
@@ -177,7 +187,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
     describe('community license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -193,10 +203,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
 
     describe('enterprise license', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            spyOn(component, 'changePersonaHandler').and.callThrough();
-            spyOn(component, 'changeDeviceHandler').and.callThrough();
-            spyOn(component, 'changeLanguageHandler').and.callThrough();
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(component, 'changePersonaHandler');
+            jest.spyOn(component, 'changeDeviceHandler');
+            jest.spyOn(component, 'changeLanguageHandler');
 
             componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
@@ -234,13 +244,17 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             personaSelector.selected.emit(mockDotPersona);
 
             expect(component.changePersonaHandler).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.changePersonaHandler).toHaveBeenCalledTimes(1);
         });
 
         it('should have Language selector', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('body');
-            expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Access PrimeNG Tooltip directive to verify position
+            const tooltipDirective = languageSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Language', () => {
@@ -255,6 +269,7 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             languageSelector.selected.emit(testlanguage);
 
             expect(component.changeLanguageHandler).toHaveBeenCalledWith(testlanguage);
+            expect(component.changeLanguageHandler).toHaveBeenCalledTimes(1);
         });
     });
 });

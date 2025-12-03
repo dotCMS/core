@@ -18,7 +18,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotRouterService,
-    DotSystemConfigService
+    DotSystemConfigService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -41,7 +42,6 @@ import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
 import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
@@ -74,13 +74,14 @@ export class MockDotSystemConfigService {
 
 export class MockGlobalStore {
     // Mock implementation of GlobalStore methods that might be used in tests
-    select = () => of({}); // Mock select method
+    select = () => of({});
     dispatch = () => {
-        // Mock dispatch method - no operation needed for tests
+        /* no-op */
     };
 
-    // Add any other methods from GlobalStore that tests might use
-    // For now, we keep it minimal to avoid breaking existing tests
+    addNewBreadcrumb = () => {
+        /* no-op */
+    };
 }
 
 export const dotEventSocketURLFactory = () => {

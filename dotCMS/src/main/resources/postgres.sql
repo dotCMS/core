@@ -1060,6 +1060,7 @@ create table multi_tree (
    tree_order int4,
    personalization varchar(255) not null default 'dot:default',
    variant_id varchar(255) default 'DEFAULT' not null,
+   style_properties JSONB,
    primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
@@ -2573,3 +2574,8 @@ CREATE INDEX idx_job_status ON job (state);
 CREATE INDEX idx_job_created_at ON job (created_at);
 CREATE INDEX idx_job_history_job_id ON job_history (job_id);
 CREATE INDEX idx_job_history_job_id_state ON job_history (job_id, state);
+
+CREATE TABLE IF NOT EXISTS analytic_custom_attributes (
+    event_type  varchar(255) primary key,
+    custom_attribute jsonb not null
+);

@@ -85,41 +85,94 @@ runs:
         echo "::endgroup::"
       shell: bash
 
-    - name: 'Get current version from NPM'
+    - name: 'Detect SDK packages and check NPM status'
       id: current_version
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
       run: |
-        echo "::group::Get current version"
+        echo "::group::Detect SDK packages and check NPM status"
         
-        # Get the current stable version from the latest tag
-        CURRENT_STABLE=$(npm view @dotcms/client dist-tags --json 2>/dev/null | jq -r '.latest // empty')
+        # Detect all SDK packages dynamically
+        sdk_packages=($(find . -maxdepth 1 -type d -exec basename {} \; | grep -v "^\.$"))
+        echo "Found SDK packages: ${sdk_packages[*]}"
         
-        # Get the current beta version for reference
-        CURRENT_BETA=$(npm view @dotcms/client dist-tags --json 2>/dev/null | jq -r '.beta // empty')
+        # Check the status of each package and find the highest version
+        HIGHEST_VERSION="0.0.0"
+        HIGHEST_NEXT_VERSION=""
+        VERSION_SOURCE="none"
+        PACKAGES_STATUS=""
         
-        # Get the current next version
-        CURRENT_NEXT=$(npm view @dotcms/client dist-tags --json 2>/dev/null | jq -r '.next // empty')
+        for sdk in "${sdk_packages[@]}"; do
+          echo ""
+          echo "🔍 Checking @dotcms/${sdk}..."
+          
+          # Check if package exists in NPM
+          if npm view @dotcms/${sdk} >/dev/null 2>&1; then
+            # Package exists, get current versions
+            STABLE_VERSION=$(npm view @dotcms/${sdk} dist-tags --json 2>/dev/null | jq -r '.latest // empty')
+            NEXT_VERSION=$(npm view @dotcms/${sdk} dist-tags --json 2>/dev/null | jq -r '.next // empty')
+            
+            echo "  ✅ Package exists - Latest: ${STABLE_VERSION:-'none'}, Next: ${NEXT_VERSION:-'none'}"
+            
+            # Update highest version if this package has a higher stable version
+            if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "null" ] && [ "$STABLE_VERSION" != "empty" ]; then
+              if [ "$STABLE_VERSION" != "0.0.0" ]; then
+                if [ "$HIGHEST_VERSION" = "0.0.0" ] || [ "$(printf '%s\n' "$STABLE_VERSION" "$HIGHEST_VERSION" | sort -V | tail -n1)" = "$STABLE_VERSION" ]; then
+                  HIGHEST_VERSION="$STABLE_VERSION"
+                  VERSION_SOURCE="existing"
+                fi
+              fi
+            fi
+            
+            # Track highest next version across packages
+            if [ -n "$NEXT_VERSION" ] && [ "$NEXT_VERSION" != "null" ] && [ "$NEXT_VERSION" != "empty" ]; then
+              if [ -z "$HIGHEST_NEXT_VERSION" ]; then
+                HIGHEST_NEXT_VERSION="$NEXT_VERSION"
+              else
+                # Compare next versions to find the highest
+                if [ "$(printf '%s\n' "$NEXT_VERSION" "$HIGHEST_NEXT_VERSION" | sort -V | tail -n1)" = "$NEXT_VERSION" ]; then
+                  HIGHEST_NEXT_VERSION="$NEXT_VERSION"
+                fi
+              fi
+            fi
+            
+            PACKAGES_STATUS="${PACKAGES_STATUS}${sdk}:exists,"
+          else
+            echo "  📦 Package doesn't exist yet (first-time publication)"
+            PACKAGES_STATUS="${PACKAGES_STATUS}${sdk}:new,"
+          fi
+        done
         
-        # Determine the current version to use as base
-        if [ -n "$CURRENT_STABLE" ] && [ "$CURRENT_STABLE" != "null" ]; then
-          CURRENT_VERSION="$CURRENT_STABLE"
-          VERSION_SOURCE="stable"
-        elif [ -n "$CURRENT_BETA" ] && [ "$CURRENT_BETA" != "null" ]; then
-          CURRENT_VERSION="$CURRENT_BETA"
-          VERSION_SOURCE="beta"
+        # Determine the base version to use
+        if [ "$VERSION_SOURCE" = "existing" ]; then
+          CURRENT_VERSION="$HIGHEST_VERSION"
+          echo ""
+          echo "📊 Using highest existing version: $CURRENT_VERSION"
         else
           CURRENT_VERSION="0.0.0"
           VERSION_SOURCE="none"
+          echo ""
+          echo "📦 No existing packages found, starting fresh with 0.0.0 base"
         fi
-
-        echo "Current stable version: ${CURRENT_STABLE:-'none'}"
-        echo "Current beta version: ${CURRENT_BETA:-'none'}"
-        echo "Current next version: ${CURRENT_NEXT:-'none'}"
-        echo "Using version: $CURRENT_VERSION (source: $VERSION_SOURCE)"
+        
+        # For backward compatibility
+        if [ "$CURRENT_VERSION" != "0.0.0" ]; then
+          CURRENT_STABLE="$CURRENT_VERSION"
+        else
+          CURRENT_STABLE=""
+        fi
+        
+        echo ""
+        echo "=== PACKAGE STATUS SUMMARY ==="
+        echo "Base version: $CURRENT_VERSION"
+        echo "Highest next version: $HIGHEST_NEXT_VERSION"
+        echo "Version source: $VERSION_SOURCE"
+        echo "==============================="
         
         echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "version_source=$VERSION_SOURCE" >> $GITHUB_OUTPUT
         echo "current_stable=$CURRENT_STABLE" >> $GITHUB_OUTPUT
-        echo "current_next=$CURRENT_NEXT" >> $GITHUB_OUTPUT
+        echo "current_beta=" >> $GITHUB_OUTPUT
+        echo "current_next=$HIGHEST_NEXT_VERSION" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
 
@@ -177,14 +230,26 @@ runs:
           fi
         fi
         
-        # Additional check: Query NPM directly to see if this exact version exists
+        # Additional check: Query NPM directly to see if this exact version exists in any existing package
         echo "Performing direct NPM registry check for version $CUSTOM_VERSION..."
-        if npm view @dotcms/client@$CUSTOM_VERSION version >/dev/null 2>&1; then
-          echo "::error::Custom version $CUSTOM_VERSION already exists in NPM registry"
-          echo "Please choose a different version number that hasn't been published yet"
-          echo "You can check existing versions with: npm view @dotcms/client versions --json"
-          exit 1
-        fi
+        
+        # Get SDK packages dynamically and check if any existing package has this version
+        cd ${{ github.workspace }}/core-web/libs/sdk/
+        sdk_packages=($(find . -maxdepth 1 -type d -exec basename {} \; | grep -v "^\.$"))
+        
+        for sdk in "${sdk_packages[@]}"; do
+          if npm view @dotcms/${sdk} >/dev/null 2>&1; then
+            # Package exists, check if this version exists
+            if npm view @dotcms/${sdk}@$CUSTOM_VERSION version >/dev/null 2>&1; then
+              echo "::error::Custom version $CUSTOM_VERSION already exists in NPM registry for @dotcms/${sdk}"
+              echo "Please choose a different version number that hasn't been published yet"
+              echo "You can check existing versions with: npm view @dotcms/${sdk} versions --json"
+              exit 1
+            fi
+          fi
+        done
+        
+        cd - >/dev/null
         
         echo "✅ Custom version '$CUSTOM_VERSION' is valid and unique"
         echo "✅ Semantic version format check: PASSED"
@@ -297,7 +362,7 @@ runs:
           VERSION_TYPE_USED="prerelease-to-stable"
           echo "Transitioning from prerelease version ($CURRENT_VERSION) to stable 1.0.0"
           
-        elif [ "$VERSION_SOURCE" = "stable" ] && [ -n "$CURRENT_STABLE" ]; then
+        elif [ "$VERSION_SOURCE" = "existing" ] && [ -n "$CURRENT_STABLE" ]; then
           # We have a stable version, apply versioning logic
           IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_STABLE"
           MAJOR=${VERSION_PARTS[0]:-1}

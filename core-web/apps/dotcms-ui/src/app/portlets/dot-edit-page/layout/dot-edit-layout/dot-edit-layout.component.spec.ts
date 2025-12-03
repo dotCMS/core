@@ -1,10 +1,21 @@
 import { of } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    DebugElement,
+    EventEmitter,
+    Input,
+    NO_ERRORS_SCHEMA,
+    Output
+} from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotHttpErrorManagerService,
@@ -13,7 +24,8 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotGlobalMessageService,
-    DotPageStateService
+    DotPageStateService,
+    DotEventsService
 } from '@dotcms/data-access';
 import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockDotRenderedPage } from '@dotcms/utils-testing';
@@ -55,12 +67,20 @@ describe('DotEditLayoutComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotEditLayoutComponent, MockTemplateBuilderComponent],
-            imports: [DotShowHideFeatureDirective, RouterTestingModule],
+            declarations: [MockTemplateBuilderComponent],
+            imports: [
+                HttpClientTestingModule,
+                DotEditLayoutComponent,
+                DotShowHideFeatureDirective,
+                RouterTestingModule
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
             providers: [
                 RouterTestingModule,
                 DotSessionStorageService,
                 DotRouterService,
+                DotEventsService,
+                DialogService,
                 {
                     provide: DotPageStateService,
                     useValue: {
@@ -70,7 +90,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn().mockReturnValue(of({}))
                     }
                 },
                 {
@@ -80,9 +100,9 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotGlobalMessageService,
                     useValue: {
-                        loading: jasmine.createSpy(),
-                        success: jasmine.createSpy(),
-                        error: jasmine.createSpy()
+                        loading: jest.fn(),
+                        success: jest.fn(),
+                        error: jest.fn()
                     }
                 },
                 {
@@ -96,7 +116,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotTemplateContainersCacheService,
                     useValue: {
-                        set: jasmine.createSpy()
+                        set: jest.fn()
                     }
                 },
                 {
@@ -138,7 +158,7 @@ describe('DotEditLayoutComponent', () => {
                 themeId: '123'
             } as DotTemplateDesigner;
 
-            spyOn(component.updateTemplate, 'next');
+            jest.spyOn(component.updateTemplate, 'next');
 
             builder.triggerEventHandler('templateChange', template);
 

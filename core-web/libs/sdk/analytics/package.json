@@ -20,14 +20,18 @@
     },
     "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/analytics/README.md",
     "dependencies": {
-        "analytics": "^0.8.0",
         "@analytics/core": "^0.13.0",
-        "@analytics/storage-utils": "^0.4.0"
+        "@analytics/queue-utils": "^0.1.3",
+        "@analytics/router-utils": "^0.1.1",
+        "@analytics/storage-utils": "^0.4.0",
+        "@dotcms/uve": "latest",
+        "analytics": "^0.8.0"
     },
     "peerDependencies": {
         "react": "^18 || ^19"
     },
     "devDependencies": {
+        "@dotcms/types": "latest",
         "@testing-library/jest-dom": "^6.1.6",
         "@testing-library/react": "^14.0.0",
         "vite": "~5.0.0"

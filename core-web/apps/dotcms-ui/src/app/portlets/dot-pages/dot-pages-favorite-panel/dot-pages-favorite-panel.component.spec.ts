@@ -28,7 +28,6 @@ import {
     mockResponseView
 } from '@dotcms/utils-testing';
 
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
@@ -130,12 +129,12 @@ describe('DotPagesFavoritePanelComponent', () => {
     describe('Empty state', () => {
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
+                declarations: [DotPagesCardMockComponent, MockDotIconComponent],
                 imports: [
+                    DotPagesFavoritePanelComponent,
                     BrowserAnimationsModule,
                     DotMessagePipe,
                     ButtonModule,
-                    DotPagesCardModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -171,8 +170,8 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should set panel collapsed state', () => {
-            spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
-            spyOn(store, 'setFavoritePages');
+            jest.spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
+            jest.spyOn(store, 'setFavoritePages');
             component.toggleFavoritePagesPanel(
                 new Event('myevent', {
                     bubbles: true,
@@ -189,13 +188,15 @@ describe('DotPagesFavoritePanelComponent', () => {
                 de
                     .query(By.css('.dot-pages-empty__container i'))
                     .nativeElement.classList.contains('pi-star')
-            ).toBeTrue();
+            ).toBe(true);
 
-            expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
-                'favoritePage.listing.empty.header'
-            );
             expect(
-                de.query(By.css('[data-testId="dot-pages-empty__content"')).nativeElement.outerText
+                de.query(By.css('.dot-pages-empty__header')).nativeElement.textContent.trim()
+            ).toBe('favoritePage.listing.empty.header');
+            expect(
+                de
+                    .query(By.css('[data-testId="dot-pages-empty__content"'))
+                    .nativeElement.textContent.trim()
             ).toBe('favoritePage.listing.empty.content');
         });
     });
@@ -232,16 +233,20 @@ describe('DotPagesFavoritePanelComponent', () => {
             setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
                 /* */
             }
+
+            setFavoritePages() {
+                /* */
+            }
         }
 
         beforeEach(() => {
             TestBed.configureTestingModule({
-                declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
+                declarations: [DotPagesCardMockComponent, MockDotIconComponent],
                 imports: [
+                    DotPagesFavoritePanelComponent,
                     BrowserAnimationsModule,
                     DotMessagePipe,
                     ButtonModule,
-                    DotPagesCardModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -267,17 +272,17 @@ describe('DotPagesFavoritePanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getFavoritePages');
-            spyOn(dialogService, 'open');
-            spyOn(component.goToUrl, 'emit');
-            spyOn(component.showActionsMenu, 'emit');
+            jest.spyOn(store, 'getFavoritePages');
+            jest.spyOn(dialogService, 'open');
+            jest.spyOn(component.goToUrl, 'emit');
+            jest.spyOn(component.showActionsMenu, 'emit');
 
             fixture.detectChanges();
         });
 
         it('should set panel inputs and attributes', () => {
             const elem = de.query(By.css('p-panel'));
-            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeFalse();
+            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBe(false);
             expect(elem.componentInstance['iconPos']).toBe('end');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
@@ -305,7 +310,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         describe('Events', () => {
             it('should call edit method to open favorite page dialog', () => {
-                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+                jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', {
@@ -324,12 +329,13 @@ describe('DotPagesFavoritePanelComponent', () => {
                 }
 
                 expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith(urlParams);
+                expect(dotPageRenderService.checkPermission).toHaveBeenCalledTimes(1);
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 
             it('should throw error dialog when call edit method to open favorite page dialog and user does not have access', () => {
-                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(false));
-                spyOn(dotHttpErrorManagerService, 'handle');
+                jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(false));
+                jest.spyOn(dotHttpErrorManagerService, 'handle');
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', {
@@ -350,7 +356,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
             it('should allow to open Favorite Page dialog when URL checked throws a 404 Error', () => {
                 const error404 = mockResponseView(404);
-                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(
+                jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(
                     throwError(error404)
                 );
                 fixture.detectChanges();
@@ -383,7 +389,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                     }
                 });
 
-                expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
+                expect(component.goToUrl.emit).toHaveBeenCalledWith(
                     favoritePagesInitialTestData[0].url
                 );
             });
