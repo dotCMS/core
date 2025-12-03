@@ -140,30 +140,18 @@ public class UserResource implements Serializable {
 	private final ErrorResponseHelper errorHelper;
 	private final PaginationUtil paginationUtil;
 	private final RoleAPI roleAPI;
-	private final UserPermissionHelper userPermissionHelper;
 
 	/**
 	 * CDI constructor for dependency injection.
 	 */
 	@Inject
-	public UserResource(final UserPermissionHelper userPermissionHelper) {
+	public UserResource() {
 		this(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
 				new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
 																 .setUserAPI(APILocator.getUserAPI())
 																 .setHostAPI(APILocator.getHostAPI())
 																 .setRoleAPI(APILocator.getRoleAPI())
-																 .setErrorHelper(ErrorResponseHelper.INSTANCE),
-				userPermissionHelper);
-	}
-
-	/**
-	 * Backward-compatible test constructor for existing tests.
-	 * Chains to 5-parameter constructor with default UserPermissionHelper.
-	 */
-	@VisibleForTesting
-	protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
-						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider) {
-		this(webResource, userHelper, paginationUtil, instanceProvider, new UserPermissionHelper());
+																 .setErrorHelper(ErrorResponseHelper.INSTANCE));
 	}
 
 	/**
@@ -172,8 +160,7 @@ public class UserResource implements Serializable {
 	 */
 	@VisibleForTesting
 	protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
-						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider,
-						   final UserPermissionHelper userPermissionHelper) {
+						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider) {
 		this.webResource = webResource;
 		this.helper = userHelper;
 		this.paginationUtil = paginationUtil;
@@ -181,7 +168,6 @@ public class UserResource implements Serializable {
 		this.siteAPI = instanceProvider.getHostAPI();
 		this.errorHelper = instanceProvider.getErrorHelper();
 		this.roleAPI = instanceProvider.getRoleAPI();
-		this.userPermissionHelper = userPermissionHelper;
 	}
 
 	@Operation(
@@ -1480,82 +1466,5 @@ public class UserResource implements Serializable {
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
 	} // delete.
-
-
-	/**
-	 * Retrieves permissions for a user's individual role, grouped by assets.
-	 * Replicates RoleAjax.getRolePermissions() logic for a specific user.
-	 */
-	@GET
-	@Path("/{userId}/permissions")
-	@NoCache
-	@Produces(MediaType.APPLICATION_JSON)
-	@Operation(
-		summary = "Get user permissions",
-		description = "Retrieves permissions for a user's individual role, organized by asset type and permission scope"
-	)
-	@ApiResponses(value = {
-		@ApiResponse(responseCode = "200",
-					description = "User permissions retrieved successfully",
-					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
-		@ApiResponse(responseCode = "403",
-					description = "Forbidden - insufficient permissions",
-					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "400",
-					description = "Bad request - invalid user id",
-					content = @Content(mediaType = "application/json"))
-	})
-	public ResponseEntityUserPermissionsView getUserPermissions(
-		@Context HttpServletRequest request,
-		@Context HttpServletResponse response,
-		@Parameter(description = "User ID or email address", required = true)
-		@PathParam("userId") String userId
-	) throws DotDataException, DotSecurityException {
-
-		final InitDataObject initData = new WebResource.InitBuilder(webResource)
-			.requiredBackendUser(true)
-			.requestAndResponse(request, response)
-			.rejectWhenNoUser(true)
-			.init();
-
-		final User requestingUser = initData.getUser();
-
-		if (!UtilMethods.isSet(userId)) {
-			Logger.debug(this, () -> String.format("Invalid user ID request from %s",
-				requestingUser.getUserId()));
-			throw new BadRequestException("User ID is required");
-		}
-
-		final User finalTargetUser = helper.loadUserByIdOrEmail(userId, userAPI.getSystemUser(), requestingUser);
-
-		// Security validation - user can view own permissions or admin can view any
-		if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(finalTargetUser.getUserId())) {
-			throw new ForbiddenException("Insufficient permissions to view user permissions");
-		}
-
-		Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
-			finalTargetUser.getUserId(), requestingUser.getUserId()));
-
-		final Role userRole = roleAPI.getUserRole(finalTargetUser);
-		if (userRole == null) {
-			Logger.error(this, String.format("User role not found for user: %s", userId));
-			throw new DotDataException("User role not found for: " + userId);
-		}
-
-		final List<Map<String, Object>> permissions = userPermissionHelper
-			.buildUserPermissionResponse(userRole, requestingUser);
-
-		final Map<String, Object> responseData = Map.of(
-			"userId", finalTargetUser.getUserId(),
-			"roleId", userRole.getId(),
-			"assets", permissions
-		);
-
-		Logger.info(this, () -> String.format("Successfully retrieved permissions for user %s (requested by %s)",
-			finalTargetUser.getUserId(), requestingUser.getUserId()));
-		return new ResponseEntityUserPermissionsView(responseData);
-	}
-
 
 }
