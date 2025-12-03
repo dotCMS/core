@@ -154,8 +154,8 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     @Override
     public boolean allowInsecureRequests() {
-        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_ALLOW_INSECURE,
-                _ADMIN_SITE_REQUESTS_ALLOW_INSECURE_DEFAULT);
+        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_FORCE_SECURE,
+                _ADMIN_SITE_REQUESTS_FORCE_SECURE_DEFAULT);
     }
 
     @Override

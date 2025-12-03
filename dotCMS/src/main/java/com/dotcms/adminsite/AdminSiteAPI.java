@@ -16,7 +16,7 @@ public interface AdminSiteAPI {
     // the default admin url if one is not set
     String _ADMIN_SITE_URL_DEFAULT = "https://local.dotcms.site:8443";
 
-    boolean _ADMIN_SITE_REQUESTS_ALLOW_INSECURE_DEFAULT = true;
+    boolean _ADMIN_SITE_REQUESTS_FORCE_SECURE_DEFAULT = false;
 
     // default header added to all admin requests
     String[] _ADMIN_SITE_REQUEST_HEADERS_DEFAULT = new String[]{"x-robots-tag", "noindex, nofollow"};
@@ -74,7 +74,7 @@ public interface AdminSiteAPI {
     String ADMIN_SITE_URL = "ADMIN_SITE_URL";
 
     // config to force all admin requests to use SSL (true|false), defaults to true (allow insecure)
-    String ADMIN_SITE_REQUESTS_ALLOW_INSECURE = "ADMIN_SITE_REQUESTS_ALLOW_INSECURE";
+    String ADMIN_SITE_REQUESTS_FORCE_SECURE = "ADMIN_SITE_REQUESTS_FORCE_SECURE";
 
     // comma separated list of headers to add for admin domains.  In a `key1,value1,key2,value2` format.
     String ADMIN_SITE_REQUEST_HEADERS = "ADMIN_SITE_REQUEST_HEADERS";

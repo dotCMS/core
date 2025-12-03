@@ -375,19 +375,19 @@ public class AdminSiteAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link AdminSiteAPI#allowInsecureRequests()} Given Scenario: Default configuration
-     * ExpectedResult: Returns false (insecure requests not allowed by default)
+     * ExpectedResult: Returns false (insecure requests allowed by default)
      */
     @Test
     public void test_allowInsecureRequests_returns_true_by_default() {
         // Given
-        final Boolean originalValue = Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, true);
+        final Boolean originalValue = Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_FORCE_SECURE, true);
         try {
-            Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, null);
+            Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_FORCE_SECURE, null);
 
             // When/Then
-            Assert.assertTrue(adminSiteAPI.allowInsecureRequests());
+            Assert.assertFalse(adminSiteAPI.allowInsecureRequests());
         } finally {
-            Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_ALLOW_INSECURE, originalValue);
+            Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_FORCE_SECURE, originalValue);
         }
     }
 
