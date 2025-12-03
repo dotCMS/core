@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService, DotCMSResponse } from '@dotcms/dotcms-js';
 
@@ -35,7 +35,7 @@ export class NotificationsService {
             .requestView({
                 url: this.urls.getLastNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
@@ -43,7 +43,7 @@ export class NotificationsService {
             .requestView({
                 url: this.urls.getNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 
     dismissNotifications(
@@ -55,7 +55,7 @@ export class NotificationsService {
                 method: 'PUT',
                 url: this.urls.dismissNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 
     markAllAsRead(): Observable<DotCMSResponse<DotNotificationResponse>> {
@@ -64,6 +64,6 @@ export class NotificationsService {
                 method: 'PUT',
                 url: this.urls.markAsReadNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 }

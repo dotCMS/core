@@ -6,7 +6,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
-import { mergeMap, pluck, switchMapTo, tap } from 'rxjs/operators';
+import { map, mergeMap, switchMapTo, tap } from 'rxjs/operators';
 
 import {
     ChartData,
@@ -191,7 +191,10 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         );
 
         $loading
-            .pipe(switchMapTo(this.dotCdnService.purgeCacheAll()), pluck('bodyJsonObject'))
+            .pipe(
+                switchMapTo(this.dotCdnService.purgeCacheAll()),
+                map((x: any) => x?.bodyJsonObject)
+            )
             .subscribe(() => {
                 this.dispatchLoading({
                     loadingState: LoadingState.LOADED,

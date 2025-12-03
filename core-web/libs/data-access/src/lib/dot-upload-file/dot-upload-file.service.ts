@@ -3,7 +3,7 @@ import { from, Observable, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
@@ -71,7 +71,7 @@ export class DotUploadFileService {
                             'Content-Type': 'application/json;charset=UTF-8'
                         }
                     })
-                    .pipe(pluck('entity', 'results')) as Observable<DotCMSContentlet[]>;
+                    .pipe(map((x) => x?.entity?.results)) as Observable<DotCMSContentlet[]>;
             }),
             catchError((error) => throwError(error))
         );

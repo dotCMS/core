@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { formatMessage } from '@dotcms/utils';
 
@@ -66,7 +66,10 @@ export class DotMessageService {
         if (this.shouldReloadMessages(lang, newBuildDate)) {
             this.http
                 .get(this.geti18nURL(lang))
-                .pipe(take(1), pluck('entity'))
+                .pipe(
+                    take(1),
+                    map((x) => x?.entity)
+                )
                 .subscribe((messages) => {
                     this.messageMap = messages as { [key: string]: string };
                     this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, this.messageMap);

@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, map } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderParameters, DotTemplateDesigner } from '@dotcms/dotcms-models';
@@ -44,7 +44,7 @@ export class DotPageLayoutService {
         }
 
         return this.coreWebService.requestView(requestOptions).pipe(
-            pluck('entity'),
+            map((x) => x?.entity),
             map(
                 (dotPageRenderResponse: DotPageRenderParameters) =>
                     new DotPageRender(dotPageRenderResponse)

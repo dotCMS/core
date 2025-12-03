@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, pluck, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -158,7 +158,7 @@ export class SiteService {
                 method: 'PUT',
                 url: 'v1/site/switch'
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -174,7 +174,7 @@ export class SiteService {
                 url: `/api/content/render/false/query/+contentType:host%20+identifier:${id}`
             })
             .pipe(
-                pluck('contentlets'),
+                map((x) => x?.contentlets),
                 map((sites: Site[]) => sites[0])
             );
     }
@@ -238,7 +238,7 @@ export class SiteService {
             .requestView({
                 url: this.urls.currentSiteUrl
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     private setCurrentSite(site: Site): void {

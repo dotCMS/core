@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
+import { defaultIfEmpty, filter, flatMap, map, take, toArray } from 'rxjs/operators';
 
 import {
     DotCMSContentType,
@@ -46,7 +46,10 @@ export class DotContentTypeService {
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
         return this.#httpClient
             .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${idOrVar}`)
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 
     /**
@@ -93,7 +96,7 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
             }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -157,7 +160,7 @@ export class DotContentTypeService {
                 },
                 { headers }
             )
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -170,13 +173,13 @@ export class DotContentTypeService {
     getUrlById(id: string): Observable<string> {
         return this.getBaseTypes().pipe(
             flatMap((structures: StructureTypeView[]) => structures),
-            pluck('types'),
+            map((x) => x?.types),
             flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
             filter(
                 (contentTypeView: ContentTypeView) =>
                     contentTypeView.variable.toLocaleLowerCase() === id
             ),
-            pluck('action')
+            map((x) => x?.action)
         );
     }
 
@@ -213,7 +216,7 @@ export class DotContentTypeService {
             .post<{
                 entity: DotCMSContentType;
             }>(`/api/v1/contenttype/${variable}/_copy`, copyFormFields, { headers })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -230,7 +233,7 @@ export class DotContentTypeService {
 
         return this.#httpClient
             .get<{ entity: DotCMSContentType[] }>('/api/v1/contenttype', { params })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -247,7 +250,7 @@ export class DotContentTypeService {
     updateContentType(id: string, payload: unknown): Observable<DotCMSContentType> {
         return this.#httpClient
             .put<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${id}`, payload)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     private isRecentContentType(type: StructureTypeView): boolean {
@@ -257,6 +260,6 @@ export class DotContentTypeService {
     private getBaseTypes(): Observable<StructureTypeView[]> {
         return this.#httpClient
             .get<{ entity: StructureTypeView[] }>('/api/v1/contenttype/basetypes')
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

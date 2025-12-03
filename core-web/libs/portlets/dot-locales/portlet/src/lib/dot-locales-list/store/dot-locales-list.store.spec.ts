@@ -139,7 +139,7 @@ describe('DotLocalesListStore', () => {
     });
 
     it('should handle errors correctly', () => {
-        languageService.delete.mockReturnValue(throwError('test'));
+        languageService.delete.mockReturnValue(throwError(() => 'test'));
 
         spectator.service.deleteLocale(1);
 

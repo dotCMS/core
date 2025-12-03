@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
+import { map, mergeMap, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotContentTypesInfoService,
@@ -77,7 +77,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.data
-            .pipe(pluck('contentType'), takeUntil(this.destroy$))
+            .pipe(
+                map((x: any) => x?.contentType),
+                takeUntil(this.destroy$)
+            )
             .subscribe((contentType: DotCMSContentType) => {
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
@@ -211,7 +214,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     removeFields(fieldsToDelete: DotCMSContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(pluck('fields'), take(1))
+            .pipe(
+                map((x: any) => x?.fields),
+                take(1)
+            )
             .subscribe(
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -62,7 +62,7 @@ export class DotContentSearchService {
                 limit,
                 offset
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -95,6 +95,6 @@ export class DotContentSearchService {
 
         return this.#http
             .post<DotContentSearchResponse>('/api/v1/content/search', payload)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

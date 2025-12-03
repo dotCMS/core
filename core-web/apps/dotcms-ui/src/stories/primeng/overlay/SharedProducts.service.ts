@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
+import { lastValueFrom } from 'rxjs';
+
 import { Product } from './Product.interface';
 
 @Injectable()
@@ -43,33 +45,21 @@ export class ProductService {
     ];
 
     getProductsSmall() {
-        return this.http
-            .get<{ data: Product[] }>('../../assets/products-small.json')
-            .toPromise()
-            .then((res) => res.data)
-            .then((data) => {
-                return data;
-            });
+        return lastValueFrom(
+            this.http.get<{ data: Product[] }>('../../assets/products-small.json')
+        ).then((res) => res.data);
     }
 
     getProducts() {
-        return this.http
-            .get<{ data: Product[] }>('../../assets/products-small.json')
-            .toPromise()
-            .then((res) => res.data)
-            .then((data) => {
-                return data;
-            });
+        return lastValueFrom(
+            this.http.get<{ data: Product[] }>('../../assets/products-small.json')
+        ).then((res) => res.data);
     }
 
     getProductsWithOrdersSmall() {
-        return this.http
-            .get<{ data: Product[] }>('../../assets/products-small.json')
-            .toPromise()
-            .then((res) => res.data)
-            .then((data) => {
-                return data;
-            });
+        return lastValueFrom(
+            this.http.get<{ data: Product[] }>('../../assets/products-small.json')
+        ).then((res) => res.data);
     }
 
     generatePrduct(): Product {

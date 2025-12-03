@@ -49,7 +49,7 @@ describe('SelectExisingFileStore', () => {
         }));
 
         it('should set folders status to ERROR on service error', fakeAsync(() => {
-            editContentService.getSitesTreePath.mockReturnValue(throwError('error'));
+            editContentService.getSitesTreePath.mockReturnValue(throwError(() => 'error'));
 
             store.loadFolders();
 
@@ -93,7 +93,7 @@ describe('SelectExisingFileStore', () => {
         }));
 
         it('should handle error when loading children', fakeAsync(() => {
-            editContentService.getFoldersTreeNode.mockReturnValue(throwError('error'));
+            editContentService.getFoldersTreeNode.mockReturnValue(throwError(() => 'error'));
 
             const node = { ...TREE_SELECT_MOCK[0], children: [] };
 

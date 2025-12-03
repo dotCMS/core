@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, mergeMap, pluck } from 'rxjs/operators';
+import { map, mergeMap } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
@@ -34,7 +34,7 @@ export class AddToBundleService {
                     .requestView({
                         url: `${this.bundleUrl}/${user.userId}`
                     })
-                    .pipe(pluck('bodyJsonObject', 'items'));
+                    .pipe(map((x) => x?.bodyJsonObject?.items));
             })
         ) as Observable<DotBundle[]>;
     }

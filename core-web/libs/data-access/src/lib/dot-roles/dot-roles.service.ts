@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotRole } from '@dotcms/dotcms-models';
@@ -29,7 +29,10 @@ export class DotRolesService {
             .requestView({
                 url: `/api/v1/roles/${roleId}/rolehierarchyanduserroles?roleHierarchyForAssign=${roleHierarchy}`
             })
-            .pipe(pluck('entity'), map(this.processRolesResponse.bind(this)));
+            .pipe(
+                map((x) => x?.entity),
+                map(this.processRolesResponse.bind(this))
+            );
     }
 
     /**
@@ -42,7 +45,10 @@ export class DotRolesService {
             .requestView({
                 url: `/api/v1/roles/_search`
             })
-            .pipe(pluck('entity'), map(this.processRolesResponse.bind(this)));
+            .pipe(
+                map((x) => x?.entity),
+                map(this.processRolesResponse.bind(this))
+            );
     }
 
     private processRolesResponse(roles: DotRole[]): DotRole[] {

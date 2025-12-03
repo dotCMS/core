@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
@@ -50,7 +50,10 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.route.data
-            .pipe(pluck('dotAppsListResolverData'), takeUntil(this.destroy$))
+            .pipe(
+                map((x: any) => x?.dotAppsListResolverData),
+                takeUntil(this.destroy$)
+            )
             .subscribe((resolverData: DotAppsListResolverData) => {
                 if (resolverData.isEnterpriseLicense) {
                     this.getApps(resolverData.apps);

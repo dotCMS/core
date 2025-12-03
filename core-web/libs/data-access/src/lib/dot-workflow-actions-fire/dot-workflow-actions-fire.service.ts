@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotActionBulkRequestOptions,
@@ -72,7 +72,7 @@ export class DotWorkflowActionsFireService {
 
         return this.httpClient
             .put(url, data, { headers: this.defaultHeaders, params: urlParams })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -92,7 +92,7 @@ export class DotWorkflowActionsFireService {
 
         return this.httpClient
             .post(url, body, { headers: this.defaultHeaders, params: urlParams })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -107,7 +107,7 @@ export class DotWorkflowActionsFireService {
             .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data, {
                 headers: this.defaultHeaders
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -242,6 +242,9 @@ export class DotWorkflowActionsFireService {
             .put(url, formData ? formData : bodyRequest, {
                 headers: formData ? new HttpHeaders() : this.defaultHeaders
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 }

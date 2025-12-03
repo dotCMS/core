@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotCategory } from '@dotcms/dotcms-models';
@@ -56,7 +56,7 @@ export class CategoriesService {
             .get<DotCMSResponse<DotCategory[]>>(`${API_URL}/children`, {
                 params: httpParams
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -69,7 +69,7 @@ export class CategoriesService {
     getSelectedHierarchy(keys: string[]): Observable<HierarchyParent[]> {
         return this.#http
             .post<DotCMSResponse<HierarchyParent[]>>(`${API_URL}/hierarchy`, { keys })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**

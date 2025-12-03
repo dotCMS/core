@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
@@ -25,7 +25,7 @@ export class DotFieldVariablesService {
             .requestView({
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -48,7 +48,7 @@ export class DotFieldVariablesService {
                 method: 'POST',
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -68,6 +68,6 @@ export class DotFieldVariablesService {
                 method: 'DELETE',
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables/id/${variable.id}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

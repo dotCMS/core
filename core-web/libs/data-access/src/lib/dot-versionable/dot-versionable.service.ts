@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 export interface DotVersionable {
     inode: string;
@@ -23,7 +23,7 @@ export class DotVersionableService {
     bringBack(inode: string): Observable<DotVersionable> {
         return this.httpClient
             .put(`/api/v1/versionables/${inode}/_bringback`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -34,6 +34,6 @@ export class DotVersionableService {
      * @memberof DotVersionableService
      */
     deleteVersion(inode: string): Observable<unknown> {
-        return this.httpClient.delete(`/api/v1/versionables/${inode}`).pipe(pluck('entity'));
+        return this.httpClient.delete(`/api/v1/versionables/${inode}`).pipe(map((x) => x?.entity));
     }
 }

@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { TabViewModule } from 'primeng/tabview';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotContainerEntity } from '@dotcms/dotcms-models';
@@ -38,7 +38,10 @@ export class DotContainerCreateComponent implements OnInit {
 
     ngOnInit() {
         this.activatedRoute.data
-            .pipe(pluck('container'), take(1))
+            .pipe(
+                map((x: any) => x?.container),
+                take(1)
+            )
             .subscribe((container: DotContainerEntity) => {
                 if (container?.container) this.containerId = container.container.identifier;
                 else this.dotRouterService.goToCreateContainer();

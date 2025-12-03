@@ -662,7 +662,7 @@ describe('DotUveToolbarComponent', () => {
                 const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
 
                 spyPersonalized.mockReturnValue(
-                    throwError(new Error('Personalization confirmation failed'))
+                    throwError(() => new Error('Personalization confirmation failed'))
                 );
 
                 acceptFn();

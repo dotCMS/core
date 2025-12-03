@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, pluck, take } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { LoggerService } from './logger.service';
@@ -116,7 +116,7 @@ export class DotcmsConfigService {
             .requestView({
                 url: this.configUrl
             })
-            .pipe(pluck('entity'))
+            .pipe(map((x) => x?.entity))
             .subscribe((res: any) => {
                 this.loggerService.debug('Configuration Loaded!', res);
 
@@ -159,7 +159,7 @@ export class DotcmsConfigService {
                 url: this.configUrl
             })
             .pipe(
-                pluck('entity', 'config', 'timezones'),
+                map((x) => x?.entity?.config?.timezones),
                 map((timezones: DotTimeZone[]) => {
                     return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
                         if (a.label > b.label) {
@@ -187,6 +187,9 @@ export class DotcmsConfigService {
             .requestView({
                 url: this.configUrl
             })
-            .pipe(pluck('entity', 'config', 'systemTimezone'), take(1));
+            .pipe(
+                map((x) => x?.entity?.config?.systemTimezone),
+                take(1)
+            );
     }
 }

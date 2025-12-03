@@ -4,7 +4,7 @@ import { AsyncPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotNotLicenseComponent } from '@dotcms/ui';
 
@@ -22,6 +22,6 @@ export class DotFormBuilderComponent implements OnInit {
     haveLicense$: Observable<boolean>;
 
     ngOnInit() {
-        this.haveLicense$ = this.route.data.pipe(pluck('haveLicense'));
+        this.haveLicense$ = this.route.data.pipe(map((x: any) => x?.haveLicense));
     }
 }

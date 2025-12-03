@@ -138,7 +138,7 @@ describe('DotUsageShellComponent', () => {
 
     it('should handle service errors gracefully', () => {
         const errorSpy = jest.spyOn(console, 'error').mockImplementation();
-        usageService.getSummary = jest.fn().mockReturnValue(throwError('Network error'));
+        usageService.getSummary = jest.fn().mockReturnValue(throwError(() => 'Network error'));
 
         spectator.component.loadData();
 

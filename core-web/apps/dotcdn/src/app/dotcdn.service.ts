@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
-import { mergeMap, pluck } from 'rxjs/operators';
+import { map, mergeMap } from 'rxjs/operators';
 
 import { CoreWebService, ResponseView, SiteService } from '@dotcms/dotcms-js';
 
@@ -25,7 +25,7 @@ export class DotCDNService {
      */
     requestStats(period: string): Observable<DotCDNStats> {
         return this.siteService.getCurrentSite().pipe(
-            pluck('identifier'),
+            map((x) => x?.identifier),
             mergeMap((hostId: string) => {
                 const dateTo = format(new Date(), 'yyyy-MM-dd');
                 const dateFrom = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
@@ -34,7 +34,7 @@ export class DotCDNService {
                     url: `/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
                 });
             }),
-            pluck('entity')
+            map((x) => x?.entity)
         );
     }
 
@@ -47,11 +47,11 @@ export class DotCDNService {
      */
     purgeCache(urls?: string[]): Observable<PurgeReturnData> {
         return this.siteService.getCurrentSite().pipe(
-            pluck('identifier'),
+            map((x) => x?.identifier),
             mergeMap((hostId: string) => {
                 return this.purgeUrlRequest({ hostId, invalidateAll: false, urls });
             }),
-            pluck('bodyJsonObject')
+            map((x) => x?.bodyJsonObject)
         );
     }
 
@@ -63,9 +63,9 @@ export class DotCDNService {
      */
     purgeCacheAll(): Observable<PurgeReturnData> {
         return this.siteService.getCurrentSite().pipe(
-            pluck('identifier'),
+            map((x) => x?.identifier),
             mergeMap((hostId: string) => this.purgeUrlRequest({ hostId, invalidateAll: true })),
-            pluck('bodyJsonObject')
+            map((x) => x?.bodyJsonObject)
         );
     }
 

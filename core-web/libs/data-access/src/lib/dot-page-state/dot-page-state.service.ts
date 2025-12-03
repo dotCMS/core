@@ -3,7 +3,7 @@ import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { CurrentUser, HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
@@ -369,9 +369,11 @@ export class DotPageStateService {
 
     private getLockMode(workingInode: string, lock: boolean): Observable<string> {
         if (lock === true) {
-            return this.dotContentletLockerService.lock(workingInode).pipe(pluck('message'));
+            return this.dotContentletLockerService.lock(workingInode).pipe(map((x) => x?.message));
         } else if (lock === false) {
-            return this.dotContentletLockerService.unlock(workingInode).pipe(pluck('message'));
+            return this.dotContentletLockerService
+                .unlock(workingInode)
+                .pipe(map((x) => x?.message));
         }
 
         return of(null);

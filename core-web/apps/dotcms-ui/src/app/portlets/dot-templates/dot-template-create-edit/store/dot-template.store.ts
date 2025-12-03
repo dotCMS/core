@@ -11,7 +11,6 @@ import {
     debounceTime,
     filter,
     map,
-    pluck,
     switchMap,
     take,
     tap,
@@ -277,8 +276,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     constructor() {
         super(null);
 
-        const template$ = this.activatedRoute.data.pipe(pluck('template'));
-        const type$ = this.activatedRoute.params.pipe(pluck('type'));
+        const template$ = this.activatedRoute.data.pipe(map((x: any) => x?.template));
+        const type$ = this.activatedRoute.params.pipe(map((x: any) => x?.type));
 
         // If it is a system template, redirect to template
         const templateId = this.activatedRoute.snapshot.params['id'];

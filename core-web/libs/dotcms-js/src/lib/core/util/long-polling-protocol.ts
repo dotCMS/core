@@ -1,4 +1,4 @@
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { Protocol } from './protocol';
 
@@ -51,7 +51,10 @@ export class LongPollingProtocol extends Protocol {
                 url: this.url,
                 params: lastCallBack ? { lastCallBack: lastCallBack } : {}
             })
-            .pipe(pluck('entity'), take(1))
+            .pipe(
+                map((x) => x?.entity),
+                take(1)
+            )
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);

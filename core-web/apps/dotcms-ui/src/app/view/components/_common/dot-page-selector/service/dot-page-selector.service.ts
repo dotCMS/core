@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { flatMap, map, pluck } from 'rxjs/operators';
+import { flatMap, map } from 'rxjs/operators';
 
 import { CoreWebService, Site } from '@dotcms/dotcms-js';
 
@@ -58,7 +58,7 @@ export class DotPageSelectorService {
                 url: '/api/es/search'
             })
             .pipe(
-                pluck('contentlets'),
+                map((x) => x?.contentlets),
                 flatMap((pages: DotPageAsset[]) => pages),
                 map((page: DotPageAsset) => this.getPageSelectorItem(page))
             );
@@ -70,7 +70,7 @@ export class DotPageSelectorService {
                 url: `v1/page/search?path=${path}&onlyLiveSites=true&live=false`
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 map((pages: DotPageAsset[]) => {
                     return pages.map((page: DotPageAsset) => this.getPageSelectorItem(page));
                 })
@@ -85,7 +85,7 @@ export class DotPageSelectorService {
                 method: 'POST'
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 map((folder: DotFolder[]) => {
                     return folder.map((folder: DotFolder) => this.getPageSelectorItem(folder));
                 })
@@ -105,7 +105,7 @@ export class DotPageSelectorService {
                 url: '/api/es/search'
             })
             .pipe(
-                pluck('contentlets'),
+                map((x) => x?.contentlets),
                 map((sites: Site[]) => {
                     return sites.map((site) => {
                         return { payload: site, label: `//${site.hostname}/` };
