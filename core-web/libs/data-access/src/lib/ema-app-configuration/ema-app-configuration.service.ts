@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, defaultIfEmpty, map, pluck } from 'rxjs/operators';
+import { catchError, defaultIfEmpty, map } from 'rxjs/operators';
 
 interface EmaAppSecretValue {
     pattern: string;
@@ -15,6 +15,12 @@ interface EmaAppSecretValue {
 interface EmaAppOptions {
     authenticationToken: string;
     [key: string]: string;
+}
+
+interface EmaApiResponse {
+    entity: {
+        config: EmaAppSecretValue[];
+    };
 }
 
 @Injectable()
@@ -33,8 +39,8 @@ export class EmaAppConfigurationService {
         // Remove trailing and leading slashes
         url = url?.replace(/^\/+|\/+$/g, '');
 
-        return this.http.get<{ entity: { config: EmaAppSecretValue[] } }>(`/api/v1/ema`).pipe(
-            pluck('entity', 'config'),
+        return this.http.get<EmaApiResponse>(`/api/v1/ema`).pipe(
+            map((res) => res?.entity?.config),
             map((config) => {
                 for (const secret of config) {
                     try {
@@ -51,7 +57,7 @@ export class EmaAppConfigurationService {
             catchError(() => {
                 return EMPTY;
             }),
-            defaultIfEmpty<EmaAppSecretValue | null>(null)
+            defaultIfEmpty(null as EmaAppSecretValue | null)
         );
     }
 }

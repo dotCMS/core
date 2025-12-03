@@ -29,7 +29,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     private dynamicDialog = inject(DynamicDialogRef);
     private el = inject(ElementRef);
 
-    destroy = new Subject();
+    destroy = new Subject<void>();
     destroy$ = this.destroy.asObservable();
 
     @Input()

@@ -3,9 +3,14 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
+
+interface DotApiResponse<T> {
+    entity: T;
+}
+
 @Injectable()
 export class DotFolderService {
     readonly #http = inject(HttpClient);
@@ -20,8 +25,8 @@ export class DotFolderService {
         const folderPath = this.normalizePath(path);
 
         return this.#http
-            .post<{ entity: DotFolder[] }>(`/api/v1/folder/byPath`, { path: folderPath })
-            .pipe(pluck('entity'));
+            .post<DotApiResponse<DotFolder[]>>(`/api/v1/folder/byPath`, { path: folderPath })
+            .pipe(map((res) => res?.entity));
     }
 
     /**
@@ -31,7 +36,9 @@ export class DotFolderService {
      * @returns {Observable<any>} Observable that emits the created folder
      */
     createFolder(body: DotFolderEntity): Observable<DotFolder> {
-        return this.#http.post(`/api/v1/assets/folders`, body).pipe(pluck('entity'));
+        return this.#http
+            .post<DotApiResponse<DotFolder>>(`/api/v1/assets/folders`, body)
+            .pipe(map((res) => res?.entity));
     }
 
     /**

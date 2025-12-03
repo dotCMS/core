@@ -3,9 +3,13 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
+
+interface DotApiResponse<T> {
+    entity: T;
+}
 
 @Injectable({
     providedIn: 'root'
@@ -23,8 +27,13 @@ export class DotPropertiesService {
      */
     getKey(key: string): Observable<string> {
         return this.http
-            .get('/api/v1/configuration/config', { params: { keys: key } })
-            .pipe(take(1), pluck('entity', key));
+            .get<DotApiResponse<Record<string, string>>>('/api/v1/configuration/config', {
+                params: { keys: key }
+            })
+            .pipe(
+                take(1),
+                map((res) => res?.entity?.[key])
+            );
     }
 
     /**
@@ -37,8 +46,13 @@ export class DotPropertiesService {
      */
     getKeys(keys: string[]): Observable<Record<string, string>> {
         return this.http
-            .get('/api/v1/configuration/config', { params: { keys: keys.join() } })
-            .pipe(take(1), pluck('entity'));
+            .get<DotApiResponse<Record<string, string>>>('/api/v1/configuration/config', {
+                params: { keys: keys.join() }
+            })
+            .pipe(
+                take(1),
+                map((res) => res?.entity)
+            );
     }
 
     /**
@@ -51,8 +65,13 @@ export class DotPropertiesService {
      */
     getKeyAsList(key: string): Observable<string[]> {
         return this.http
-            .get('/api/v1/configuration/config', { params: { keys: `list:${key}` } })
-            .pipe(take(1), pluck('entity', key));
+            .get<DotApiResponse<Record<string, string[]>>>('/api/v1/configuration/config', {
+                params: { keys: `list:${key}` }
+            })
+            .pipe(
+                take(1),
+                map((res) => res?.entity?.[key])
+            );
     }
 
     /**

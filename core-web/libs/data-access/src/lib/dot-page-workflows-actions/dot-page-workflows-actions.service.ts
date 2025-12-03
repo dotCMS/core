@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSWorkflowAction, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -13,6 +13,11 @@ export interface DotCMSPageWorkflowState {
     actions: DotCMSWorkflowAction[];
     page: DotCMSContentlet;
 }
+
+interface DotApiResponse<T> {
+    entity: T;
+}
+
 @Injectable()
 export class DotPageWorkflowsActionsService {
     private http = inject(HttpClient);
@@ -31,12 +36,12 @@ export class DotPageWorkflowsActionsService {
         renderMode?: DotRenderMode;
     }): Observable<DotCMSPageWorkflowState> {
         return this.http
-            .post('/api/v1/page/actions', {
+            .post<DotApiResponse<DotCMSPageWorkflowState>>('/api/v1/page/actions', {
                 host_id: params.host_id,
                 language_id: params.language_id,
                 url: params.url,
                 renderMode: params.renderMode
             })
-            .pipe(pluck('entity'));
+            .pipe(map((res) => res?.entity));
     }
 }

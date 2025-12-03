@@ -3,7 +3,7 @@ import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, map, take, tap } from 'rxjs/operators';
+import { map, take, tap } from 'rxjs/operators';
 
 import { ResponseView } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
@@ -127,7 +127,7 @@ export class DotLicenseService {
             return url.indexOf(item.url) === 0;
         });
         if (urlMatch.length) {
-            this.unlicenseData.next(...urlMatch);
+            this.unlicenseData.next(urlMatch[0]);
         }
 
         return !!urlMatch.length;
@@ -137,7 +137,7 @@ export class DotLicenseService {
         if (this.license) return of(this.license);
 
         return this.http.get<ResponseView>(this.licenseURL).pipe(
-            pluck('entity', 'config', 'license'),
+            map((res) => (res as unknown as { entity: { config: { license: DotLicense } } })?.entity?.config?.license),
             tap((license) => {
                 this.setLicense(license);
             })
@@ -152,7 +152,13 @@ export class DotLicenseService {
     updateLicense(): void {
         this.http
             .get<ResponseView>(this.licenseURL)
-            .pipe(pluck('entity', 'config', 'license'))
+            .pipe(
+                map(
+                    (res) =>
+                        (res as unknown as { entity: { config: { license: DotLicense } } })?.entity
+                            ?.config?.license
+                )
+            )
             .subscribe((license) => {
                 this.setLicense(license);
             });

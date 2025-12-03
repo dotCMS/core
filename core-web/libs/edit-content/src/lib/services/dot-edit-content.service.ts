@@ -3,7 +3,7 @@ import { Observable, forkJoin } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -26,6 +26,10 @@ import {
 } from '../models/dot-edit-content-host-folder-field.interface';
 import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
 import { createPaths } from '../utils/functions.util';
+
+interface DotApiResponse<T> {
+    entity: T;
+}
 
 @Injectable()
 export class DotEditContentService {
@@ -59,8 +63,8 @@ export class DotEditContentService {
         }
 
         return this.#http
-            .get(`/api/v1/content/${id}`, { params: httpParams })
-            .pipe(pluck('entity'));
+            .get<DotApiResponse<DotCMSContentlet>>(`/api/v1/content/${id}`, { params: httpParams })
+            .pipe(map((res) => res?.entity));
     }
 
     /**
@@ -82,10 +86,12 @@ export class DotEditContentService {
     getTags(name: string): Observable<string[]> {
         const params = new HttpParams().set('name', name);
 
-        return this.#http.get<string[]>('/api/v2/tags', { params }).pipe(
-            pluck('entity'),
-            map((res) => Object.values(res).map((obj) => obj.label))
-        );
+        return this.#http
+            .get<DotApiResponse<Record<string, { label: string }>>>('/api/v2/tags', { params })
+            .pipe(
+                map((res) => res?.entity),
+                map((res) => Object.values(res).map((obj) => obj.label))
+            );
     }
     /**
      * Saves a contentlet with the provided data.
@@ -142,7 +148,9 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getFolders(path: string): Observable<DotFolder[]> {
-        return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
+        return this.#http
+            .post<DotApiResponse<DotFolder[]>>('/api/v1/folder/byPath', { path })
+            .pipe(map((res) => res?.entity));
     }
 
     /**
@@ -291,8 +299,10 @@ export class DotEditContentService {
      */
     getActivities(identifier: string): Observable<Activity[]> {
         return this.#http
-            .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
-            .pipe(pluck('entity'));
+            .get<DotApiResponse<Activity[]>>(
+                `/api/v1/workflow/tasks/history/comments/${identifier}`
+            )
+            .pipe(map((res) => res?.entity));
     }
 
     /**
@@ -303,8 +313,8 @@ export class DotEditContentService {
      */
     createActivity(identifier: string, comment: string): Observable<Activity> {
         return this.#http
-            .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
-            .pipe(pluck('entity'));
+            .post<DotApiResponse<Activity>>(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(map((res) => res?.entity));
     }
 
     /**
