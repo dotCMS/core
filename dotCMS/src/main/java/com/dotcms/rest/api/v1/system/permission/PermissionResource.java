@@ -5,13 +5,9 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
-import com.dotcms.rest.api.v1.user.UserResourceHelper;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -30,15 +26,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -65,29 +57,21 @@ public class PermissionResource {
     private final PermissionHelper permissionHelper;
     private final UserAPI userAPI;
     private final PermissionSaveHelper permissionSaveHelper;
-    private final UserResourceHelper userResourceHelper;
 
-    @Inject
-    public PermissionResource(final PermissionSaveHelper permissionSaveHelper) {
+    public PermissionResource() {
         this(new WebResource(),
              PermissionHelper.getInstance(),
-             APILocator.getUserAPI(),
-             permissionSaveHelper,
-             UserResourceHelper.getInstance());
+             APILocator.getUserAPI());
     }
 
     @VisibleForTesting
-    public PermissionResource(final WebResource webResource,
+    public PermissionResource(final WebResource      webResource,
                               final PermissionHelper permissionHelper,
-                              final UserAPI userAPI,
-                              final PermissionSaveHelper permissionSaveHelper,
-                              final UserResourceHelper userResourceHelper) {
+                              final UserAPI          userAPI) {
 
-        this.webResource = webResource;
+        this.webResource      = webResource;
         this.permissionHelper = permissionHelper;
-        this.userAPI = userAPI;
-        this.permissionSaveHelper = permissionSaveHelper;
-        this.userResourceHelper = userResourceHelper;
+        this.userAPI          = userAPI;
     }
 
     /**
@@ -320,12 +304,12 @@ public class PermissionResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final PermissionMetadataView permissionMetadata = new PermissionMetadataView(
-            permissionSaveHelper.getAvailablePermissionLevels(),
-            permissionSaveHelper.getAvailablePermissionScopes()
-        );
+        final PermissionMetadataView permissionMetadata = PermissionMetadataView.builder()
+            .levels(PermissionUtils.getAvailablePermissionLevels())
+            .scopes(PermissionUtils.getAvailablePermissionScopes())
+            .build();
 
-        Logger.info(this, "Permission metadata retrieved successfully");
+        Logger.debug(this, () -> "Permission metadata retrieved successfully");
 
         return new ResponseEntityPermissionMetadataView(permissionMetadata);
     }
