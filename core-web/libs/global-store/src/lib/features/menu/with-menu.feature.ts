@@ -283,16 +283,16 @@ export function withMenu() {
                 // Direct lookup using the composite key
                 const entityMap = store.entityMap();
                 let compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
-                let item: MenuItemEntity | undefined = entityMap[compositeKey];
+                const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
                 if (bookmark) {
-                    item = Object.values(entityMap).find((item) => {
+                    const foundItem = Object.values(entityMap).find((item) => {
                         return item.id === resolvedPortletId || item.id === portletId;
                     });
-                    if (item) {
-                        compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
-                        activateMenuItemWithParent(compositeKey, item.parentMenuId);
+                    if (foundItem) {
+                        compositeKey = `${foundItem.id}__${foundItem.parentMenuId?.substring(0, 4)}`;
+                        activateMenuItemWithParent(compositeKey, foundItem.parentMenuId);
                     }
                 }
 
