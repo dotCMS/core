@@ -2,9 +2,9 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, DotCMSResponse } from '@dotcms/dotcms-js';
 
 export interface DotContentletLockResponse {
     id: string;
@@ -32,11 +32,13 @@ export class DotContentletLockerService {
      */
     lock(inode: string): Observable<DotContentletLockResponse> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotContentletLockResponse>({
                 method: 'PUT',
                 url: `/api/content/lock/inode/${inode}`
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(
+                map((res) => res?.bodyJsonObject as unknown as DotContentletLockResponse)
+            );
     }
 
     /**
@@ -48,10 +50,12 @@ export class DotContentletLockerService {
      */
     unlock(inode: string): Observable<DotContentletLockResponse> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotContentletLockResponse>({
                 method: 'PUT',
                 url: `/api/content/unlock/inode/${inode}`
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(
+                map((res) => res?.bodyJsonObject as unknown as DotContentletLockResponse)
+            );
     }
 }

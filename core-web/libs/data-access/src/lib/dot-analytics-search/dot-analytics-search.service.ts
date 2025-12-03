@@ -4,9 +4,13 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { AnalyticsQueryType } from '@dotcms/dotcms-models';
+
+interface DotApiResponse<T> {
+    entity: T;
+}
 
 /**
  * Service for performing analytics search operations.
@@ -37,7 +41,10 @@ export class DotAnalyticsSearchService {
         type: AnalyticsQueryType = AnalyticsQueryType.DEFAULT
     ): Observable<JsonObject[]> {
         return this.#http
-            .post(type == AnalyticsQueryType.DEFAULT ? this.#BASE_URL : this.#CUBE_URL, query)
-            .pipe(pluck('entity'));
+            .post<DotApiResponse<JsonObject[]>>(
+                type == AnalyticsQueryType.DEFAULT ? this.#BASE_URL : this.#CUBE_URL,
+                query
+            )
+            .pipe(map((res) => res?.entity));
     }
 }
