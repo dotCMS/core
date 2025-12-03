@@ -68,7 +68,8 @@ export class DotCrudService {
             .pipe(
                 map((res) => {
                     // Dynamic property access for backward compatibility
-                    return (res as Record<string, unknown>)?.[pick] as T;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    return (res as any)?.[pick] as T;
                 })
             );
     }
