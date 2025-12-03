@@ -102,7 +102,9 @@ jobs:
             
             // Process each test type
             for (const [testType, testConfig] of Object.entries(config.test_types)) {
-              const shouldRun = inputs['run-all-tests'] || inputs[testConfig.condition_input];
+              // Check if explicitly disabled (false) - this overrides run-all-tests
+              const isExplicitlyDisabled = inputs[testConfig.condition_input] === false;
+              const shouldRun = !isExplicitlyDisabled && (inputs['run-all-tests'] || inputs[testConfig.condition_input]);
               
               if (!shouldRun) {
                 console.log(`Skipping ${testType} tests - not enabled`);
