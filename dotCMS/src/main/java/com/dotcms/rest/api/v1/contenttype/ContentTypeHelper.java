@@ -549,7 +549,7 @@ public class ContentTypeHelper implements Serializable {
                         .getOrElse(CustomField.RenderMode.COMPONENT);
             }
         }
-        return CustomField.RenderMode.COMPONENT;
+        return CustomField.RenderMode.IFRAME;
     }
 
     /**
