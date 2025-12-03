@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { lastValueFrom } from 'rxjs';
 
 import { Product } from './Product.interface';
 
@@ -42,34 +43,25 @@ export class ProductService {
         'Yoga Set'
     ];
 
-    getProductsSmall() {
-        return this.http
-            .get<{ data: Product[] }>('../../assets/products-small.json')
-            .toPromise()
-            .then((res) => res.data)
-            .then((data) => {
-                return data;
-            });
+    async getProductsSmall() {
+        const res = await lastValueFrom(
+            this.http.get<{ data: Product[] }>('../../assets/products-small.json')
+        );
+        return res.data;
     }
 
-    getProducts() {
-        return this.http
-            .get<{ data: Product[] }>('../../assets/products-small.json')
-            .toPromise()
-            .then((res) => res.data)
-            .then((data) => {
-                return data;
-            });
+    async getProducts() {
+        const res = await lastValueFrom(
+            this.http.get<{ data: Product[] }>('../../assets/products-small.json')
+        );
+        return res.data;
     }
 
-    getProductsWithOrdersSmall() {
-        return this.http
-            .get<{ data: Product[] }>('../../assets/products-small.json')
-            .toPromise()
-            .then((res) => res.data)
-            .then((data) => {
-                return data;
-            });
+    async getProductsWithOrdersSmall() {
+        const res = await lastValueFrom(
+            this.http.get<{ data: Product[] }>('../../assets/products-small.json')
+        );
+        return res.data;
     }
 
     generatePrduct(): Product {
