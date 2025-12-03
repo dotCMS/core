@@ -445,6 +445,29 @@ describe('withMenu Feature', () => {
                     tabIcon: 'pi pi-folder',
                     tabName: 'Content',
                     url: '/content'
+                },
+                {
+                    active: false,
+                    id: 'MARKETING',
+                    label: 'Marketing',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'analytics-dashboard',
+                            label: 'Analytics Dashboard',
+                            url: '/c/analytics-dashboard',
+                            menuLink: '/c/analytics-dashboard',
+                            parentMenuId: 'MARKETING'
+                        }
+                    ],
+                    name: 'Marketing',
+                    tabDescription: 'Marketing',
+                    tabIcon: 'pi pi-chart-bar',
+                    tabName: 'Marketing',
+                    url: '/marketing'
                 }
             ];
 
@@ -457,6 +480,14 @@ describe('withMenu Feature', () => {
             // Test current ID still works
             store.setActiveMenu('site-browser', 'CONT');
             expect(store.activeMenuItem()?.id).toBe('site-browser');
+
+            // Test legacy ID 'analytics' maps to 'analytics-dashboard'
+            store.setActiveMenu('analytics', 'MARK');
+            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
+
+            // Test current ID still works
+            store.setActiveMenu('analytics-dashboard', 'MARK');
+            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
         });
     });
 
