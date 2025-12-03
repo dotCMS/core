@@ -15,15 +15,15 @@ import { DotCMSResponse } from '../core-web.service';
  * </code>
  */
 export class ResponseView<T = any> {
-    private bodyJsonObject: DotCMSResponse<T>;
+    private _bodyJsonObject: DotCMSResponse<T>;
     private headers: HttpHeaders;
 
     public constructor(private resp: HttpResponse<DotCMSResponse<T>>) {
         try {
-            this.bodyJsonObject = resp.body;
+            this._bodyJsonObject = resp.body;
             this.headers = resp.headers;
         } catch (e) {
-            this.bodyJsonObject = null;
+            this._bodyJsonObject = null;
         }
     }
 
@@ -31,31 +31,35 @@ export class ResponseView<T = any> {
         return this.headers.get(headerName);
     }
 
+    get bodyJsonObject(): DotCMSResponse<T> {
+        return this._bodyJsonObject;
+    }
+
     get i18nMessagesMap(): { [key: string]: string } {
-        return this.bodyJsonObject.i18nMessagesMap;
+        return this._bodyJsonObject.i18nMessagesMap;
     }
 
     get contentlets(): T {
-        return this.bodyJsonObject.contentlets;
+        return this._bodyJsonObject.contentlets;
     }
 
     get entity(): T {
-        return this.bodyJsonObject.entity;
+        return this._bodyJsonObject.entity;
     }
 
     get tempFiles(): T {
-        return this.bodyJsonObject.tempFiles;
+        return this._bodyJsonObject.tempFiles;
     }
 
     get errorsMessages(): string {
         let errorMessages = '';
 
-        if (this.bodyJsonObject.errors) {
-            this.bodyJsonObject.errors.forEach((e: any) => {
+        if (this._bodyJsonObject.errors) {
+            this._bodyJsonObject.errors.forEach((e: any) => {
                 errorMessages += e.message;
             });
         } else {
-            errorMessages = this.bodyJsonObject.messages.toString();
+            errorMessages = this._bodyJsonObject.messages.toString();
         }
 
         return errorMessages;
@@ -71,8 +75,8 @@ export class ResponseView<T = any> {
 
     public existError(errorCode: string): boolean {
         return (
-            this.bodyJsonObject.errors &&
-            this.bodyJsonObject.errors.filter((e: any) => e.errorCode === errorCode).length > 0
+            this._bodyJsonObject.errors &&
+            this._bodyJsonObject.errors.filter((e: any) => e.errorCode === errorCode).length > 0
         );
     }
 }
