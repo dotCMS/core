@@ -83,9 +83,11 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
             if (fieldFromFixedLayout.isPresent()) {
                 final Field fieldToUpdateWithSortOrder = setRightSortOrder(fieldFromFixedLayout.get(), fieldToUpdate);
                 final Field savedField = fieldAPI.save(fieldToUpdateWithSortOrder, user);
-                final Optional<Field> updatedWithFieldVarsOpt = fieldAPI.save(fieldToUpdate.fieldVariables(), savedField);
-                return updatedWithFieldVarsOpt.isPresent()
-                        ? fixedFieldLayout.update(list(updatedWithFieldVarsOpt.get()))
+                fieldAPI.save(fieldToUpdate.fieldVariables(), savedField);
+                // Re-load the updated field from the database
+                final Field updatedWithFieldVars = fieldAPI.find(savedField.id());
+                return Objects.nonNull(updatedWithFieldVars)
+                        ? fixedFieldLayout.update(list(updatedWithFieldVars))
                         : fixedFieldLayout;
             } else {
                 throw new NotFoundException(String.format("Field '%s' was not found in Field Layout", fieldToUpdate.variable()));

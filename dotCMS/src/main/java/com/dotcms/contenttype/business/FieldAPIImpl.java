@@ -646,15 +646,15 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
     @Override
-    public Optional<Field> save(final List<FieldVariable> fieldVariables, final Field field) {
+    public void save(final List<FieldVariable> fieldVariables, final Field field) {
         if (null == field) {
             Logger.error(getClass(), "Failed to save Field Variables as Field is null");
-            return Optional.empty();
+            return;
         }
         if (UtilMethods.isNotSet(field.id())) {
             Logger.error(getClass(), String.format("Failed to save Field Variables as Field ID in " +
                     "'%s' is missing", field.name()));
-            return Optional.empty();
+            return;
         }
         try {
             final List<FieldVariable> existingVariables = loadVariables(field);
@@ -705,7 +705,6 @@ public class FieldAPIImpl implements FieldAPI {
                                     "'%s': %s", fieldVariable.key(), getErrorMessage(e)), e);
                         }
                     });
-            return Optional.ofNullable(find(field.id()));
         } catch (final DotDataException e) {
             throw new DotStateException(String.format("Failed to save Field Variables in Field " +
                     "'%s' [ %s ]: %s", field.name(), field.id(), getErrorMessage(e)), e);

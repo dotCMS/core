@@ -174,12 +174,9 @@ public interface FieldAPI {
 	 * @param fieldVariables The list of new or existing Field Variables.
 	 * @param field          The field that the Field Variables belong to.
 	 *
-	 * @return An Optional with the saved {@link Field} object, or an empty Optional if an error
-	 * occurred.
-	 *
 	 * @throws DotStateException An error occurred when saving a Field Variable.
 	 */
-	Optional<Field> save(final List<FieldVariable> fieldVariables, final Field field);
+	void save(final List<FieldVariable> fieldVariables, final Field field);
 
 	/**
 	 * Returns a field based on the Content Type Id and the Field Relation Type
