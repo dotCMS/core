@@ -137,31 +137,39 @@ export class NativeFieldComponent implements OnInit {
         // 1. Clear the content of the container
         hostElement.innerHTML = '';
 
-        // 2. Regex to find all <script> tags
-        const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gim;
+        // 2. Parse the template code as HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(templateCode, 'text/html');
 
-        let scriptContents = '';
-        let match;
+        // 3. Get the scripts
+        const scripts = Array.from(doc.querySelectorAll('script'));
 
-        // 3. Extract the content of ALL scripts and concatenate them
-        while ((match = scriptRegex.exec(templateCode))) {
-            scriptContents += match[1] + '\n'; // Add the content of the script
-        }
+        // 4. Remove the parsed scripts from the virtual tree to avoid duplication
+        // (The scripts parsed by DOMParser do not execute, but occupy space in the DOM if inserted as is)
+        scripts.forEach((script) => script.remove());
 
-        // 4. Get the HTML "clean" (without the <script> tags)
-        const htmlPart = templateCode.replace(scriptRegex, '');
+        // 5. Append the nodes to the host element
+        const nodes = Array.from(doc.body.childNodes);
+        nodes.forEach((node) => hostElement.appendChild(node));
 
-        // 5. Insert the HTML into the element
-        // This will render the HTML, but not execute the scripts
-        hostElement.innerHTML = htmlPart;
+        // 6. Recreate and inject all scripts to execute them
+        scripts.forEach((parsedScript) => {
+            const scriptElement = this.#window.document.createElement('script');
 
-        // 6. Create a new <script> tag and execute it
-        // This is the only way for the browser to execute JS inserted dynamically
-        if (scriptContents) {
-            const scriptElement = document.createElement('script');
-            scriptElement.textContent = scriptContents;
-            scriptElement.type = 'module';
+            // A. Copy attributes (src, type, async, defer, integrity, etc.)
+            // This is crucial for external libraries like Google Maps or Analytics
+            Array.from(parsedScript.attributes).forEach((attr) => {
+                scriptElement.setAttribute(attr.name, attr.value);
+            });
+
+            // B. Copy inline content if exists
+            if (parsedScript.textContent) {
+                scriptElement.textContent = parsedScript.textContent;
+            }
+
+            // C. Inject to execute
+            // Note: Scripts with 'src' will be loaded asynchronously by default when inserted.
             hostElement.appendChild(scriptElement);
-        }
+        });
     });
 }
