@@ -195,8 +195,8 @@ public class PermissionResourceIntegrationTest {
 
         // Verify asset in response
         UserPermissionAssetView asset = data.getAsset();
-        assertEquals(updateTestHost.getIdentifier(), asset.getId());
-        Set<String> individualPerms = asset.getPermissions().get("INDIVIDUAL");
+        assertEquals(updateTestHost.getIdentifier(), asset.id());
+        Set<String> individualPerms = asset.permissions().get("INDIVIDUAL");
         assertNotNull(individualPerms);
         assertEquals(3, individualPerms.size());
         assertTrue(individualPerms.containsAll(Set.of("READ", "WRITE", "PUBLISH")));
@@ -233,7 +233,7 @@ public class PermissionResourceIntegrationTest {
         UserPermissionAssetView asset = data.getAsset();
 
         // Verify all 3 scopes present
-        Map<String, Set<String>> permMap = asset.getPermissions();
+        Map<String, Set<String>> permMap = asset.permissions();
         assertTrue("Should have INDIVIDUAL scope", permMap.containsKey("INDIVIDUAL"));
         assertTrue("Should have HOST scope", permMap.containsKey("HOST"));
         assertTrue("Should have FOLDER scope", permMap.containsKey("FOLDER"));
@@ -278,7 +278,7 @@ public class PermissionResourceIntegrationTest {
         // Assert response successful
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        assertEquals(childFolder.getInode(), data.getAsset().getId());
+        assertEquals(childFolder.getInode(), data.getAsset().id());
 
         // VERIFY inheritance broken after PUT (critical assertion)
         assertFalse("Child folder should NOT be inheriting after PUT",
@@ -286,9 +286,9 @@ public class PermissionResourceIntegrationTest {
 
         // Verify permissions set on child
         UserPermissionAssetView childAsset = data.getAsset();
-        assertFalse("Child should not be inheriting", childAsset.isInheritsPermissions());
+        assertFalse("Child should not be inheriting", childAsset.inheritsPermissions());
         assertTrue("Child should have READ and WRITE",
-                childAsset.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
+                childAsset.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
     }
 
     /**
@@ -350,7 +350,7 @@ public class PermissionResourceIntegrationTest {
         );
         UserPermissionAssetView hostAsset1 = setupResponse.getEntity().getAsset();
         assertTrue("Setup should have all 3 permissions",
-                hostAsset1.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
+                hostAsset1.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
         // Action: Update to ONLY READ (should remove WRITE and PUBLISH)
         Map<String, Set<String>> updatePermissions = new HashMap<>();
@@ -364,7 +364,7 @@ public class PermissionResourceIntegrationTest {
         // Assert: Should have ONLY READ (replacement not merge)
         assertNotNull(response);
         UserPermissionAssetView asset = response.getEntity().getAsset();
-        Set<String> resultPerms = asset.getPermissions().get("INDIVIDUAL");
+        Set<String> resultPerms = asset.permissions().get("INDIVIDUAL");
         assertEquals("Should have only 1 permission", 1, resultPerms.size());
         assertTrue("Should have READ", resultPerms.contains("READ"));
         assertFalse("Should NOT have WRITE", resultPerms.contains("WRITE"));
