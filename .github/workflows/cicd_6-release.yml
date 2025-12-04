@@ -1,0 +1,175 @@
+#
+# Release Workflow
+#
+# This workflow handles the complete release process for dotCMS following the established
+# phase pattern: initialize -> build -> deployment -> finalize
+#
+# Key features:
+# - Release preparation (branch creation, version setting)
+# - Standard build phase for artifact generation
+# - Release-specific deployment (Artifactory, Javadocs, plugins)
+# - Docker image deployment via standard deployment phase
+# - SBOM generation
+# - GitHub label management
+# - Release notifications
+#
+# This workflow follows the modular phase pattern established in the CICD architecture
+# and replaces the legacy-release_maven-release-process.yml workflow
+#
+
+name: '-6 Release Process'
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+        required: true
+      release_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+      deploy_artifact:
+        description: 'Deploy Artifact to Artifactory'
+        type: boolean
+        default: true
+        required: false
+      update_plugins:
+        description: 'Update Plugins'
+        type: boolean
+        default: true
+        required: false
+      upload_javadocs:
+        description: 'Upload Javadocs to S3'
+        type: boolean
+        default: true
+        required: false
+      update_github_labels:
+        description: 'Update GitHub labels'
+        type: boolean
+        default: true
+        required: false
+      notify_slack:
+        description: 'Notify Slack'
+        type: boolean
+        default: true
+        required: false
+
+# No concurrency control - releases should complete without interruption
+concurrency:
+  group: release-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
+
+jobs:
+  # Initialize - standard initialization phase (always first)
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      validation-level: 'none'
+
+  # Release Prepare - validates version, creates release branch, sets version
+  release-prepare:
+    name: Release Prepare
+    needs: [ initialize ]
+    uses: ./.github/workflows/cicd_comp_release-prepare-phase.yml
+    with:
+      release_version: ${{ github.event.inputs.release_version }}
+      release_commit: ${{ github.event.inputs.release_commit }}
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+
+  # Build - standard build phase for artifact generation
+  build:
+    name: Build
+    needs: [ release-prepare, initialize ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ needs.release-prepare.outputs.release_tag }}
+      validate: false
+      version: ${{ needs.release-prepare.outputs.release_version }}
+      generate-docker: true
+    permissions:
+      contents: read
+      packages: write
+
+  # Deployment - standard deployment phase for Docker images and NPM
+  deployment:
+    name: Deployment
+    needs: [ release-prepare, initialize, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: ${{ needs.release-prepare.outputs.release_version }}
+      artifact-run-id: ${{ github.run_id }}
+      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' }}
+      deploy-dev-image: true
+      reuse-previous-build: false
+      publish-npm-cli: false
+      publish-npm-sdk-libs: false
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+
+  # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
+  # Waits for deployment to complete to safely update labels only if both succeed
+  release:
+    name: Release
+    needs: [ release-prepare, initialize, build, deployment ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_release-phase.yml
+    with:
+      release_version: ${{ needs.release-prepare.outputs.release_version }}
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      artifact_run_id: ${{ github.run_id }}
+      deploy_artifact: ${{ github.event.inputs.deploy_artifact }}
+      upload_javadocs: ${{ github.event.inputs.upload_javadocs }}
+      update_plugins: ${{ github.event.inputs.update_plugins }}
+      update_github_labels: ${{ github.event.inputs.update_github_labels }}
+      deployment_succeeded: ${{ needs.deployment.result == 'success' }}
+    secrets:
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Finalize - standard finalization phase (required for phase pattern)
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, deployment, release ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ github.run_id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report - send release notification to Slack
+  report:
+    name: Report
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: [ release-prepare, deployment, finalize ]
+    if: always()
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Important news!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]"
+        if: success() && github.event.inputs.notify_slack == 'true'

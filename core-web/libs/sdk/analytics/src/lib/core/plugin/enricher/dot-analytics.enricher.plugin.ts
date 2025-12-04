@@ -55,10 +55,11 @@ export const dotAnalyticsEnricherPlugin = () => {
             const { event } = payload;
             const local_time = getLocalTime();
 
-            // For content_impression and content_click events, add page data
+            // For content_impression, content_click, and conversion events, add page data
             if (
                 event === DotCMSPredefinedEventType.CONTENT_IMPRESSION ||
-                event === DotCMSPredefinedEventType.CONTENT_CLICK
+                event === DotCMSPredefinedEventType.CONTENT_CLICK ||
+                event === DotCMSPredefinedEventType.CONVERSION
             ) {
                 return {
                     ...payload,
