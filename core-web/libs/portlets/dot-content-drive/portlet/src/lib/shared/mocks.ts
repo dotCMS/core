@@ -13,10 +13,10 @@ export const MOCK_ITEMS: DotContentDriveItem[] = [
 ];
 
 export const MOCK_SEARCH_RESPONSE = {
-    jsonObjectView: {
-        contentlets: MOCK_ITEMS
-    },
-    resultsSize: 2
+    list: MOCK_ITEMS,
+    contentTotalCount: 2,
+    folderCount: 0,
+    contentCount: 2
 };
 
 export const MOCK_ROUTE = {
