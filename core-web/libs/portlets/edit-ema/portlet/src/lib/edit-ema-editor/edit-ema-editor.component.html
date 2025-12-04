@@ -69,9 +69,8 @@
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                [hide]="contentletTools.hide"
                 [contentletArea]="contentletTools.contentletArea"
-                [isEnterprise]="contentletTools.isEnterprise"
+                [isEnterprise]="uveStore.isEnterprise()"
                 [disableDeleteButton]="contentletTools.disableDeleteButton"
                 data-testId="contentlet-tools" />
         }

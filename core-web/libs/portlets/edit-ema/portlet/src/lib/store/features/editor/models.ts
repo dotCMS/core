@@ -64,7 +64,6 @@ export interface EditorProps {
         pointerEvents: string;
         opacity: string;
     };
-
     contentletTools?: {
         contentletArea: ContentletArea;
         hide: boolean;

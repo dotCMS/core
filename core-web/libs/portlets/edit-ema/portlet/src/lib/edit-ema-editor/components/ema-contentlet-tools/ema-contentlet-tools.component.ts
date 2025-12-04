@@ -4,7 +4,6 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    HostBinding,
     Input,
     OnChanges,
     Output,
@@ -43,8 +42,6 @@ export class EmaContentletToolsComponent implements OnChanges {
     @ViewChild('menu') menu: Menu;
     @ViewChild('menuVTL') menuVTL: Menu;
     @ViewChild('dragImage') dragImage: ElementRef;
-
-    @HostBinding('class.hide') @Input() hide = false;
 
     @Input() contentletArea: ContentletArea;
     @Input() isEnterprise: boolean;
@@ -108,7 +105,6 @@ export class EmaContentletToolsComponent implements OnChanges {
             this.items.update((items) => [...items, ...this.#enterpriseItems]);
         }
 
-        this.hideMenus(); // We need to hide the menu if the contentlet changes
         this.setVtlFiles(); // Set the VTL files for the component
 
         this.ACTIONS_CONTAINER_WIDTH = this.contentletArea.payload.vtlFiles

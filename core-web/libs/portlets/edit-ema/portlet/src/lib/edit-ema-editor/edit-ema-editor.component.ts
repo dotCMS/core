@@ -10,6 +10,7 @@ import {
     ElementRef,
     OnDestroy,
     OnInit,
+    AfterViewInit,
     ViewChild,
     WritableSignal,
     effect,
@@ -132,7 +133,7 @@ import {
         DotTempFileUploadService
     ]
 })
-export class EditEmaEditorComponent implements OnInit, OnDestroy {
+export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
@@ -156,6 +157,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
+    #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -220,6 +222,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
+    }
+
+    ngAfterViewInit(): void {
+        this.#setupContentletAreaReset();
     }
 
     /**
@@ -549,6 +555,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.#iframeResizeObserver?.disconnect();
+        this.#iframeResizeObserver = null;
         if (this.uveStore.isTraditionalPage()) {
             this.uveStore.setIsClientReady(true);
         }
@@ -911,6 +919,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.setEditorBounds(payload);
             },
             [DotCMSUVEAction.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
+                // console.log('contentletArea', contentletArea);
                 const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
 
                 this.uveStore.setEditorContentletArea({
@@ -1509,5 +1518,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             ...this.uveStore.pageAPIResponse(),
             params: this.uveStore.pageParams()
         };
+    }
+
+    #setupContentletAreaReset(): void {
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
+        if (typeof ResizeObserver !== 'undefined') {
+            this.#iframeResizeObserver = new ResizeObserver(() => {
+                this.#resetContentletArea();
+            });
+
+            this.#iframeResizeObserver.observe(iframeElement);
+        } else {
+            fromEvent(this.window, 'resize')
+                .pipe(takeUntil(this.destroy$))
+                .subscribe(() => this.#resetContentletArea());
+        }
+    }
+
+    #resetContentletArea(): void {
+        if (!this.uveStore.contentletArea()) {
+            return;
+        }
+
+        this.uveStore.setEditorContentletArea(null);
     }
 }

@@ -278,8 +278,21 @@ export function withEditor() {
                 setEditorDragItem(dragItem: EmaDragItem) {
                     patchState(store, { dragItem, state: EDITOR_STATE.DRAGGING });
                 },
-                setEditorContentletArea(contentletArea: ContentletArea) {
+                setEditorContentletArea(contentletArea: ContentletArea | null) {
                     const currentContentletArea = store.contentletArea();
+
+                    if (!contentletArea) {
+                        if (!currentContentletArea) {
+                            return;
+                        }
+
+                        patchState(store, {
+                            contentletArea: null,
+                            state: EDITOR_STATE.IDLE
+                        });
+
+                        return;
+                    }
 
                     if (
                         currentContentletArea?.x === contentletArea.x &&
