@@ -262,8 +262,16 @@ SELECT customer_id,
        context_user_id,
        context_site_id,
        toStartOfDay(utc_time) as day,
-       (CASE WHEN event_type = 'pageview' THEN url ELSE content_identifier END) as identifier,
-       (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
+       (CASE
+           WHEN event_type = 'pageview' THEN url
+           WHEN event_type = 'conversion' THEN conversion_name
+           ELSE content_identifier
+        END) as identifier,
+       (CASE
+           WHEN event_type = 'pageview' THEN page_title
+           WHEN event_type = 'conversion' THEN conversion_name
+           ELSE content_title
+        END) as title,
        count(*) as daily_total
 FROM clickhouse_test_db.events
 GROUP BY customer_id, cluster_id, context_user_id, day, identifier, title, event_type, context_site_id;
@@ -323,7 +331,7 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
 )
     ENGINE = SummingMergeTree
         PARTITION BY (customer_id)
-        ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name, identifier, title);
+        ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name, identifier, title, day);
 
 
 -- =====================================================================
@@ -378,7 +386,11 @@ WITH conversion AS (
                PARTITION BY context_user_id
                ORDER BY _timestamp
                ) AS previous_timestamp_current_batch,
-           (CASE WHEN previous_timestamp_current_batch > last_timestamp_previous_batch THEN previous_timestamp_current_batch ELSE last_timestamp_previous_batch END) as previous_conversion_timestamp
+           lag(utc_time, 1) OVER (
+               PARTITION BY context_user_id
+               ORDER BY utc_time
+               ) AS previous_utc_time_current_batch,
+           (CASE WHEN previous_utc_time_current_batch > conversion_last_time THEN previous_utc_time_current_batch ELSE conversion_last_time END) as previous_conversion_time
     FROM clickhouse_test_db.events as e
              LEFT JOIN clickhouse_test_db.conversion_time on e.customer_id = conversion_time.customer_id AND e.cluster_id = conversion_time.cluster_id AND
                                                              e.context_user_id = conversion_time.context_user_id AND e.context_site_id = conversion_time.context_site_id
@@ -394,6 +406,7 @@ SELECT
     (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
     event_type,
     context_user_id,
+    context_site_id,
     conversion.conversion_name as conversion_name,
     count(*) AS conversion_count,
     max(conversion._timestamp) as last_timestamp,
@@ -401,9 +414,9 @@ SELECT
 FROM clickhouse_test_db.events e
          INNER JOIN conversion ON e.context_user_id = conversion.context_user_id AND
                                   e.utc_time < conversion.conversion_time AND
-                                  e.utc_time > conversion.conversion_last_time AND
+                                  e.utc_time > conversion.previous_conversion_time AND
                                   event_type <> 'conversion'
-GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id, conversion.conversion_name, day;
+GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id, conversion.conversion_name, day, context_site_id;
 
 
 -- =====================================================================
