@@ -962,19 +962,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return List of chunks, each containing at most chunkSize elements
      */
     private <T> List<List<T>> createChunks(List<T> list, int chunkSize) {
-        /*
-        if (list == null || list.isEmpty() || chunkSize <= 0) {
-            return new ArrayList<>();
-        }
-
-        final List<List<T>> chunks = new ArrayList<>();
-        final int totalSize = list.size();
-
-        for (int i = 0; i < totalSize; i += chunkSize) {
-            final int endIndex = Math.min(i + chunkSize, totalSize);
-            chunks.add(list.subList(i, endIndex));
-        }*/
-
         return Lists.partition(list, chunkSize);
     }
 
@@ -1182,10 +1169,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Now the offset is adjusted (subtracting folders already seen)
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
             contentTotalCount = fromDB.totalResults;
-            contentCount = fromDB.contentlets.size();
-
             // Parallelize hydration with chunks
             hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles, list);
+            contentCount = list.size();
         }
 
         // Final sorting (optional: maybe you only need to sort within each block before slicing)
