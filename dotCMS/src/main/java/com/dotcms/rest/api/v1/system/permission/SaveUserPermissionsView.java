@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * Contains the result of saving permissions for a user on an asset.
  *
  * @author hassandotcms
- * @since 24.01
  */
 public class SaveUserPermissionsView {
 

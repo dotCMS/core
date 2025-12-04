@@ -14,7 +14,6 @@ import java.util.Set;
  * Maps modern REST API structure to legacy RoleAjax.saveRolePermission() logic.
  *
  * @author hassandotcms
- * @since 24.01
  */
 public class SaveUserPermissionsForm extends Validated {
 

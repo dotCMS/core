@@ -7,7 +7,6 @@ import com.dotcms.rest.ResponseEntityView;
  * Follows dotCMS pattern of specific ResponseEntity*View classes for REST endpoints.
  *
  * @author hassandotcms
- * @since 24.01
  */
 public class ResponseEntitySaveUserPermissionsView extends ResponseEntityView<SaveUserPermissionsView> {
 

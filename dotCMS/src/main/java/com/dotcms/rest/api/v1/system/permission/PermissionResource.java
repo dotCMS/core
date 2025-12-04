@@ -1,13 +1,16 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,9 +31,12 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -61,17 +67,28 @@ public class PermissionResource {
     public PermissionResource() {
         this(new WebResource(),
              PermissionHelper.getInstance(),
-             APILocator.getUserAPI());
+             APILocator.getUserAPI(),
+             new PermissionSaveHelper());
     }
 
     @VisibleForTesting
-    public PermissionResource(final WebResource      webResource,
-                              final PermissionHelper permissionHelper,
-                              final UserAPI          userAPI) {
+    public PermissionResource(final PermissionSaveHelper permissionSaveHelper) {
+        this(new WebResource(),
+             PermissionHelper.getInstance(),
+             APILocator.getUserAPI(),
+             permissionSaveHelper);
+    }
 
-        this.webResource      = webResource;
-        this.permissionHelper = permissionHelper;
-        this.userAPI          = userAPI;
+    @VisibleForTesting
+    public PermissionResource(final WebResource          webResource,
+                              final PermissionHelper     permissionHelper,
+                              final UserAPI              userAPI,
+                              final PermissionSaveHelper permissionSaveHelper) {
+
+        this.webResource          = webResource;
+        this.permissionHelper     = permissionHelper;
+        this.userAPI              = userAPI;
+        this.permissionSaveHelper = permissionSaveHelper;
     }
 
     /**
@@ -408,7 +425,7 @@ public class PermissionResource {
             userId, assetId, requestingUser.getUserId()));
 
         final User systemUser = APILocator.systemUser();
-        final User targetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
+        final User targetUser = loadUserByIdOrEmail(userId, systemUser);
         final Permissionable asset = permissionSaveHelper.resolveAsset(assetId, systemUser);
 
         // Security check: User must have EDIT_PERMISSIONS on the asset
@@ -442,5 +459,30 @@ public class PermissionResource {
         final PermissionView view = new PermissionView(permission.getId(), permission.getInode(), permission.getRoleId(),
                 PermissionAPI.Type.findById(permission.getPermission()), permission.isBitPermission(), permission.getType());
         return view;
+    }
+
+    /**
+     * Loads a user by ID or email.
+     * First tries to load by user ID, then falls back to email lookup.
+     *
+     * @param userIdOrEmail User ID or email address
+     * @param systemUser System user for API calls
+     * @return The found User
+     * @throws DotDataException if user lookup fails
+     * @throws DotSecurityException if security check fails
+     */
+    private User loadUserByIdOrEmail(final String userIdOrEmail, final User systemUser)
+            throws DotDataException, DotSecurityException {
+
+        try {
+            return this.userAPI.loadUserById(userIdOrEmail);
+        } catch (com.dotmarketing.business.NoSuchUserException e) {
+            try {
+                return this.userAPI.loadByUserByEmail(userIdOrEmail, systemUser, false);
+            } catch (com.dotmarketing.business.NoSuchUserException ex) {
+                Logger.warn(this, String.format("User not found: %s", userIdOrEmail));
+                throw new com.dotcms.rest.exception.NotFoundException("User not found: " + userIdOrEmail);
+            }
+        }
     }
 }
