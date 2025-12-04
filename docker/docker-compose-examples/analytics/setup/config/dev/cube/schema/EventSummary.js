@@ -1,10 +1,23 @@
 
-cube(`ConversionSummary`, {
+cube(`EventSummary`, {
   // 1) Source table in ClickHouse
-  sql_table: `content_events_counter`,
+  sql: `
+    SELECT day, cluster_id, customer_id, context_site_id, event_type, context_user_id, identifier, title, daily_total
+    FROM content_events_counter
+    WHERE ${FILTER_PARAMS.ContentAttribution.customerId.filter('customer_id')} AND (
+      ${FILTER_PARAMS.ContentAttribution.clusterId ? FILTER_PARAMS.ContentAttribution.clusterId.filter('cluster_id') : '1=1'}
+        OR (${FILTER_PARAMS.ContentAttribution.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
+      ${FILTER_PARAMS.ContentAttribution.day.filter('day')}
+  `,
 
   // 2) Measures
   measures: {
+    totalUsers: {
+      sql: `context_user_id`,
+      type: `countDistinct`,
+      title: 'Unique Users',
+      description: 'Total number of unique users across all sessions'
+    },
     // Generic measure: total events across all event types
     totalEvents: {
       sql: `daily_total`,
@@ -37,7 +50,7 @@ cube(`ConversionSummary`, {
         identifier,
         title
       ],
-      description: 'Something here'
+      description: 'Total of events'
     },
 
     // Filtered measure: Converting visitors
@@ -56,7 +69,7 @@ cube(`ConversionSummary`, {
         identifier,
         title
       ],
-      description: 'Something here'
+      description: 'Total of conversion'
     },
 
     // (optional) If you later want a generic "by event type" measure:
@@ -65,11 +78,6 @@ cube(`ConversionSummary`, {
 
   // 3) Dimensions
   dimensions: {
-    id: {
-      sql: `concat(customer_id, '-', cluster_id,  '-', context_user_id,  '-', context_site_id, '-', event_type,'-', identifier, '-', title, '-', day)`,
-      type: `string`,
-      primaryKey: true
-    },
     day: {
       sql: `day`,
       type: `time`
