@@ -152,7 +152,7 @@ describe('DotEventsSocket', () => {
                 if (firstTime) {
                     firstTime = false;
 
-                    return throwError('ERROR');
+                    return throwError(() => 'ERROR');
                 } else {
                     return of({
                         entity: {

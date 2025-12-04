@@ -451,7 +451,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 this.setSidebarStatus({
                                     status: ComponentStatus.IDLE
                                 });
-                                throwError(error);
+                                throwError(() => error);
                             }
                         )
                     )
@@ -503,7 +503,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE
                                     });
-                                    throwError(error);
+                                    throwError(() => error);
                                 }
                             )
                         )
@@ -581,7 +581,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
                                     this.setTrafficProportion(experiment.trafficProportion);
                                 },
-                                (error: HttpErrorResponse) => throwError(error)
+                                (error: HttpErrorResponse) => throwError(() => error)
                             )
                         )
                 )
@@ -654,7 +654,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
                                     this.setGoals(experiment.goals);
                                 },
-                                (error: HttpErrorResponse) => throwError(error)
+                                (error: HttpErrorResponse) => throwError(() => error)
                             )
                         )
                 )

@@ -194,7 +194,7 @@ export class CoreWebService {
             catchError((err: HttpErrorResponse) => {
                 this.emitHttpError(err.status);
 
-                return throwError(this.handleResponseHttpErrors(err));
+                return throwError(() => this.handleResponseHttpErrors(err));
             })
         );
     }

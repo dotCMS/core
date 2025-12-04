@@ -705,7 +705,7 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should throw an error if update scheduling fails', () => {
-            dotExperimentsService.setScheduling.mockReturnValue(throwError('error'));
+            dotExperimentsService.setScheduling.mockReturnValue(throwError(() => 'error'));
 
             store.setSelectedScheduling({
                 scheduling: null,
@@ -743,7 +743,7 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should throw an error if update Traffic Allocation fails', () => {
-            dotExperimentsService.setTrafficAllocation.mockReturnValue(throwError('error'));
+            dotExperimentsService.setTrafficAllocation.mockReturnValue(throwError(() => 'error'));
 
             store.setSelectedAllocation({
                 trafficAllocation: 120,
@@ -787,7 +787,7 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should throw an error if update Traffic Proportion fails', () => {
-            dotExperimentsService.setTrafficProportion.mockReturnValue(throwError('error'));
+            dotExperimentsService.setTrafficProportion.mockReturnValue(throwError(() => 'error'));
 
             store.setSelectedTrafficProportion({
                 trafficProportion: null,
@@ -848,7 +848,7 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should handle error when stopping the experiment', () => {
-            dotExperimentsService.stop.mockReturnValue(throwError('error'));
+            dotExperimentsService.stop.mockReturnValue(throwError(() => 'error'));
 
             store.stopExperiment(EXPERIMENT_MOCK_2);
 
@@ -882,7 +882,7 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should handle error when canceling the experiment', () => {
-            dotExperimentsService.cancelSchedule.mockReturnValue(throwError('error'));
+            dotExperimentsService.cancelSchedule.mockReturnValue(throwError(() => 'error'));
 
             store.cancelSchedule(EXPERIMENT_MOCK_2);
 

@@ -989,7 +989,7 @@ describe('HistoryFeature', () => {
 
         it('should handle restore errors', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Restore failed', status: 500 });
-            dotVersionableService.bringBack.mockReturnValue(throwError(error));
+            dotVersionableService.bringBack.mockReturnValue(throwError(() => error));
 
             store.restoreVersion('test-inode');
             tick();
@@ -1048,7 +1048,7 @@ describe('HistoryFeature', () => {
 
         it('should handle load errors and show error message', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Load failed', status: 500 });
-            dotContentletService.getContentletByInode.mockReturnValue(throwError(error));
+            dotContentletService.getContentletByInode.mockReturnValue(throwError(() => error));
 
             store.loadVersionContent('historical-inode');
             tick();
