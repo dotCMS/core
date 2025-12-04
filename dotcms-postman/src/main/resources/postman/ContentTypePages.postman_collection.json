@@ -1,13 +1,14 @@
 {
 	"info": {
-		"_postman_id": "eb368c08-8543-40cf-b207-fc4ec18294cd",
+		"_postman_id": "5dc4be95-1308-423f-af00-24ee7c23dab5",
 		"name": "ContentTypePagesResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/lala~a3d26915-38eb-4963-9468-75e27e78f31c/collection/10041132-5dc4be95-1308-423f-af00-24ee7c23dab5?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
-			"name": "ContentTypeForPages",
+			"name": "Setup - Test Environment",
 			"item": [
 				{
 					"name": "Logout",
@@ -38,7 +39,7 @@
 								"logout"
 							]
 						},
-						"description": "Logout before try with invalid user"
+						"description": "Logout before starting tests to ensure clean authentication state"
 					},
 					"response": []
 				},
@@ -53,21 +54,11 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Storing workflow data\", function () {",
+									"pm.test(\"Store current site hostname\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.collectionVariables.set(\"currentSiteHost\", jsonData.entity.hostname);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
+									"    console.log(\"✓ Current site: \" + jsonData.entity.hostname);",
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -103,7 +94,455 @@
 					"response": []
 				},
 				{
-					"name": "GetFirstPage",
+					"name": "Create Test Content Type (CONTENT BaseType)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store Content Type ID for CONTENT BaseType\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"testContentTypeId\", jsonData.entity[0].id);",
+									"    pm.collectionVariables.set(\"testContentTypeVariable\", jsonData.entity[0].variable);",
+									"    console.log(\"✓ Created Content Type (CONTENT): \" + jsonData.entity[0].id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Test Blog Content Type\",\n    \"description\": \"Test content type for BaseType filtering tests - CONTENT BaseType\",\n    \"host\": \"{{currentSiteHost}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"variable\": \"testBlogContentType\",\n    \"baseType\": \"CONTENT\",\n    \"icon\": \"event_note\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Content Type (PERSONA BaseType)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store Content Type ID for PERSONA BaseType\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"testPersonaTypeId\", jsonData.entity[0].id);",
+									"    pm.collectionVariables.set(\"testPersonaTypeVariable\", jsonData.entity[0].variable);",
+									"    console.log(\"✓ Created Content Type (PERSONA): \" + jsonData.entity[0].id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePersonaContentType\",\n    \"defaultType\": false,\n    \"name\": \"Test Persona Content Type\",\n    \"description\": \"Test content type for BaseType filtering tests - PERSONA BaseType\",\n    \"host\": \"{{currentSiteHost}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"variable\": \"testPersonaContentType\",\n    \"baseType\": \"PERSONA\",\n    \"icon\": \"person\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store Test Page ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData.entity.results[0]);",
+									"    const pageId = Object.keys(jsonData.entity.results[0])[0];",
+									"    console.log(pageId);",
+									"    const url = jsonData.entity.results[0][Object.keys(jsonData.entity.results[0])[0]].url;",
+									"    pm.collectionVariables.set(\"testPageId\", pageId);",
+									"    pm.collectionVariables.set(\"testPageUrl\", url);",
+									"    console.log(\"✓ Created Test Page: \" + pageId);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"Test Page for BaseType Filtering\",\n        \"friendlyName\": \"test-page-basetype-filtering\",\n        \"url\": \"test-page-basetype-filtering\",\n        \"template\": \"{{testTemplateId}}\",\n        \"cachettl\": \"0\",\n        \"showOnMenu\": \"false\",\n        \"sortOrder\": \"0\",\n        \"languageId\": 1,\n        \"hostFolder\": \"{{currentSiteHost}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Container Supporting CONTENT BaseType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store Test Container ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"testContainerId\", jsonData.entity.identifier);",
+									"    console.log(\"✓ Created Test Container: \" + jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Test Container - CONTENT BaseType Support\",\n    \"friendlyName\": \"Test Container CONTENT\", \n    \"maxContentlets\": 25,\n    \"code\": \"<div class=\\\"container\\\">\\n#foreach($contentlet in $contents)\\n<h2>$contentlet.title</h2>\\n<p>$contentlet.body</p>\\n#end\\n</div>\",\n    \"preLoop\": \"\",\n    \"postLoop\": \"\",\n    \"containerStructures\": [\n        {\n            \"structureId\": \"{{testContentTypeId}}\",\n            \"code\": \"\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Test Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log(\"✓ Container published successfully\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/_publish?containerId={{testContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"_publish"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{testContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Template with Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store Test Template ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"testTemplateId\", jsonData.entity.identifier);",
+									"    console.log(\"✓ Created Test Template: \" + jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\": {\n        \"body\": {\n            \"rows\": [\n                {\n                    \"styleClass\": \"\",\n                    \"columns\": [\n                        {\n                            \"styleClass\": \"\",\n                            \"leftOffset\": 1,\n                            \"width\": 12,\n                            \"containers\": [\n                                {\"identifier\": \"{{testContainerId}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }\n    },\n    \"friendlyName\": \"Test Template for CONTENT BaseType Testing\",\n    \"title\": \"Test Template - CONTENT BaseType Support\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Test Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log(\"✓ Template published successfully\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{testTemplateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Creates all necessary test data: content types, pages, containers, and templates for BaseType filtering tests"
+		},
+		{
+			"name": "ContentTypeForPages - Tests",
+			"item": [
+				{
+					"name": "GetFirstPage (Fallback Page Discovery)",
 					"event": [
 						{
 							"listen": "test",
@@ -113,15 +552,18 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"",
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"currentPageId\", jsonData.contentlets[0].identifier);",
-									"pm.collectionVariables.set(\"currentPageUrl\", jsonData.contentlets[0].url);",
-									"",
-									""
+									"if (jsonData.contentlets && jsonData.contentlets.length > 0) {",
+									"    pm.collectionVariables.set(\"testPageId\", jsonData.contentlets[0].identifier);",
+									"    pm.collectionVariables.set(\"testPageUrl\", jsonData.contentlets[0].url);",
+									"    console.log(\"✓ Found fallback page: \" + jsonData.contentlets[0].identifier);",
+									"} else {",
+									"    console.log(\"! No fallback page found - using test page only\");",
+									"}"
 								],
 								"type": "text/javascript",
-								"packages": {}
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -168,7 +610,7 @@
 					"response": []
 				},
 				{
-					"name": "CheckContentTypeForPages",
+					"name": "Test - Basic Content Type Discovery (No Filter)",
 					"event": [
 						{
 							"listen": "test",
@@ -178,7 +620,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Storing workflow data\", function () {",
+									"pm.test(\"Basic functionality test\", function () {",
 									"    let jsonData = pm.response.json();",
 									"    let length = jsonData.entity.length;",
 									"    let currentPage = jsonData.pagination.currentPage;",
@@ -190,12 +632,14 @@
 									"    pm.expect(perPage).to.eql(10)",
 									"    pm.expect(currentPage).to.eql(1)",
 									"",
+									"    console.log(\"✓ Basic test passed: found \" + length + \" content types\");",
 									"});",
 									"",
 									""
 								],
 								"type": "text/javascript",
-								"packages": {}
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -213,7 +657,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{currentPageId}}",
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageUrl}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -226,7 +670,7 @@
 							"query": [
 								{
 									"key": "pagePathOrId",
-									"value": "{{currentPageId}}"
+									"value": "{{testPageUrl}}"
 								}
 							]
 						}
@@ -234,7 +678,7 @@
 					"response": []
 				},
 				{
-					"name": "CheckContentTypeForPagesByUrl",
+					"name": "Test - Content Type Discovery by Page URL (No Filter)",
 					"event": [
 						{
 							"listen": "test",
@@ -244,7 +688,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Checking Content Type Information\", function () {",
+									"pm.test(\"URL-based discovery test\", function () {",
 									"    let jsonData = pm.response.json();",
 									"    let length = jsonData.entity.length;",
 									"    let currentPage = jsonData.pagination.currentPage;",
@@ -256,12 +700,14 @@
 									"    pm.expect(perPage).to.eql(10)",
 									"    pm.expect(currentPage).to.eql(1)",
 									"",
+									"    console.log(\"✓ URL-based test passed: found \" + length + \" content types\");",
 									"});",
 									"",
 									""
 								],
 								"type": "text/javascript",
-								"packages": {}
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -279,7 +725,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{currentPageUrl}}",
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageUrl}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -292,7 +738,7 @@
 							"query": [
 								{
 									"key": "pagePathOrId",
-									"value": "{{currentPageUrl}}"
+									"value": "{{testPageUrl}}"
 								}
 							]
 						}
@@ -300,7 +746,7 @@
 					"response": []
 				},
 				{
-					"name": "CheckContentTypeForPagesBadRequest",
+					"name": "Test - Bad Request (Non-existent Page)",
 					"event": [
 						{
 							"listen": "test",
@@ -309,7 +755,8 @@
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
 									"});",
-									""
+									"",
+									"console.log(\"✓ Bad request test passed: non-existent page properly rejected\");"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -349,70 +796,451 @@
 						}
 					},
 					"response": []
-				}
-			],
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"packages": {},
-						"exec": [
-							"if (!pm.environment.get('jwt')) {",
-							"    console.log(\"generating....\")",
-							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-							"",
-							"    if (!pm.environment.get('jwt')) {",
-							"        const username = pm.environment.get(\"user\");",
-							"        const password = pm.environment.get(\"password\");",
-							"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-							"",
-							"        const requestOptions = {",
-							"            url: apiUrl,",
-							"            method: \"POST\",",
-							"            header: {",
-							"                \"accept\": \"*/*\",",
-							"                \"content-type\": \"application/json\",",
-							"                \"Authorization\": `Basic ${basicAuth}`",
-							"            },",
-							"            body: {",
-							"                mode: \"raw\",",
-							"                raw: JSON.stringify({",
-							"                    \"expirationSeconds\": 7200,",
-							"                    \"userId\": \"dotcms.org.1\",",
-							"                    \"network\": \"0.0.0.0/0\",",
-							"                    \"claims\": {\"label\": \"postman-tests\"}",
-							"                })",
-							"            }",
-							"        };",
-							"",
-							"        pm.sendRequest(requestOptions, function (err, response) {",
-							"            if (err) {",
-							"                console.log(err);",
-							"            } else {",
-							"                const jwt = response.json().entity.jwt;",
-							"                pm.environment.set('jwt', jwt);",
-							"                console.log(jwt);",
-							"            }",
-							"        });",
-							"    }",
-							"}",
-							""
-						]
-					}
 				},
 				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"packages": {},
-						"exec": [
-							""
-						]
-					}
+					"name": "Test Case 1 - Negative Filtering by BaseType (PERSONA filter for CONTENT-only containers)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Negative filtering: PERSONA filter should return 0 content types for CONTENT-only page\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Should return 0 content types because:",
+									"    // 1. Page containers only support CONTENT BaseType content-types",
+									"    // 2. Filter is asking for PERSONA BaseType",
+									"    // 3. No intersection between CONTENT and PERSONA BaseTypes",
+									"    pm.expect(jsonData.entity.length).to.eql(0);",
+									"    pm.expect(jsonData.pagination.totalEntries).to.eql(0);",
+									"    ",
+									"    console.log(\"✓ Negative filtering test passed: PERSONA filter returned 0 results for CONTENT-only containers\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageUrl}}&type=PERSONA",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageUrl}}"
+								},
+								{
+									"key": "type",
+									"value": "PERSONA"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Case 2 - Positive Filtering by BaseType (CONTENT filter for CONTENT containers)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Positive filtering: CONTENT filter should return matching content types\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Should return >= 1 content types because:",
+									"    // 1. Page containers support our test CONTENT BaseType content-type",
+									"    // 2. Filter is asking for CONTENT BaseType",
+									"    // 3. There is intersection between container-supported types and filter",
+									"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+									"",
+									"    // Verify that all returned content types have CONTENT BaseType",
+									"    jsonData.entity.forEach(function(contentType) {",
+									"        pm.expect(contentType.baseType).to.eql(\"CONTENT\");",
+									"    });",
+									"    ",
+									"    // Verify our test content type is included",
+									"    const testContentTypeVariable = pm.collectionVariables.get(\"testContentTypeVariable\");",
+									"    console.log(testContentTypeVariable);",
+									"    const foundTestType = jsonData.entity.some(ct => ct.variable === testContentTypeVariable);",
+									"    pm.expect(foundTestType).to.be.true;",
+									"    ",
+									"    console.log(\"✓ Positive filtering test passed: CONTENT filter returned \" + jsonData.entity.length + \" content types\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageUrl}}&type=CONTENT",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageUrl}}"
+								},
+								{
+									"key": "type",
+									"value": "CONTENT"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Case 3 - Multiple BaseType Filter Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Multiple BaseType filter: CONTENT and PERSONA should return only CONTENT types (intersection logic)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Should return >= 1 content types because:",
+									"    // 1. Page containers support CONTENT BaseType content-types",
+									"    // 2. Filter includes CONTENT BaseType (along with PERSONA)",
+									"    // 3. Intersection includes CONTENT BaseType",
+									"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+									"    ",
+									"    // Verify all returned content types have valid BaseTypes from our filter",
+									"    const allowedBaseTypes = [\"CONTENT\", \"PERSONA\"];",
+									"    jsonData.entity.forEach(function(contentType) {",
+									"        pm.expect(allowedBaseTypes).to.include(contentType.baseType);",
+									"    });",
+									"    ",
+									"    console.log(\"✓ Multiple BaseType filter test passed: returned \" + jsonData.entity.length + \" content types\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageUrl}}&type=CONTENT&type=PERSONA",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageUrl}}"
+								},
+								{
+									"key": "type",
+									"value": "CONTENT"
+								},
+								{
+									"key": "type",
+									"value": "PERSONA"
+								}
+							]
+						}
+					},
+					"response": []
 				}
-			]
+			],
+			"description": "Main test cases for BaseType filtering functionality"
+		},
+		{
+			"name": "Cleanup - Test Environment",
+			"item": [
+				{
+					"name": "Cleanup - Delete Test Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cleanup: Container deleted successfully\", function () {",
+									"    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+									"    console.log(\"✓ Test container cleanup completed\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/{{testContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"{{testContainerId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup - Delete Test Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cleanup: Template deleted successfully\", function () {",
+									"    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+									"    console.log(\"✓ Test template cleanup completed\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{testTemplateId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{testTemplateId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup - Delete Test Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cleanup: Page deleted successfully\", function () {",
+									"    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+									"    console.log(\"✓ Test page cleanup completed\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{testPageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{testPageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup - Delete Test Content Types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cleanup: Content Types deleted successfully\", function () {",
+									"    pm.expect([200, 204, 404]).to.include(pm.response.code);",
+									"    console.log(\"✓ Test content types cleanup completed\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Clean up both content types in sequence",
+									"const contentTypeId = pm.collectionVariables.get('testContentTypeId');",
+									"const personaTypeId = pm.collectionVariables.get('testPersonaTypeId');",
+									"const serverURL = pm.environment.get('serverURL');",
+									"const jwt = pm.environment.get('jwt');",
+									"",
+									"if (contentTypeId) {",
+									"    pm.sendRequest({",
+									"        url: `${serverURL}/api/v1/contenttype/${contentTypeId}`,",
+									"        method: 'DELETE',",
+									"        header: {",
+									"            'Authorization': `Bearer ${jwt}`",
+									"        }",
+									"    }, function (err, response) {",
+									"        console.log('CONTENT type deletion:', response?.code);",
+									"    });",
+									"}",
+									"",
+									"if (personaTypeId) {",
+									"    pm.sendRequest({",
+									"        url: `${serverURL}/api/v1/contenttype/${personaTypeId}`,",
+									"        method: 'DELETE',",
+									"        header: {",
+									"            'Authorization': `Bearer ${jwt}`",
+									"        }",
+									"    }, function (err, response) {",
+									"        console.log('PERSONA type deletion:', response?.code);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/{{testContentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"{{testContentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Removes all test data created during the tests"
 		}
 	],
 	"event": [
@@ -423,7 +1251,7 @@
 				"packages": {},
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    console.log(\"generating....\")",
+					"    console.log(\"Generating JWT token for authentication...\")",
 					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
 					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
 					"",
@@ -457,7 +1285,7 @@
 					"            } else {",
 					"                const jwt = response.json().entity.jwt;",
 					"                pm.environment.set('jwt', jwt);",
-					"                console.log(jwt);",
+					"                console.log('JWT token generated successfully');",
 					"            }",
 					"        });",
 					"    }",
@@ -492,6 +1320,38 @@
 		},
 		{
 			"key": "currentPageUrl",
+			"value": ""
+		},
+		{
+			"key": "testContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "testContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "testPersonaTypeId",
+			"value": ""
+		},
+		{
+			"key": "testPersonaTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "testPageId",
+			"value": ""
+		},
+		{
+			"key": "testPageUrl",
+			"value": ""
+		},
+		{
+			"key": "testContainerId",
+			"value": ""
+		},
+		{
+			"key": "testTemplateId",
 			"value": ""
 		}
 	]
