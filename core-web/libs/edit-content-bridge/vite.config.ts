@@ -9,7 +9,7 @@ export default defineConfig(() => {
     // __dirname points to core-web/libs/edit-content-bridge
     // So ../../dist/libs/edit-content-bridge resolves to core-web/dist/libs/edit-content-bridge
     const outDir = resolve(__dirname, '../../dist/libs/edit-content-bridge');
-    
+
     return {
         build: {
             // Explicitly set outDir to prevent Vite from resolving paths incorrectly

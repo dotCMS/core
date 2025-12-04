@@ -91,10 +91,21 @@
                                 <condition property="repo.root.available">
                                     <isset property="maven.multiModuleProjectDirectory"/>
                                 </condition>
-                                <condition property="path.within.repo" if="repo.root.available">
-                                    <contains string="${core.web.basedir}" substring="${maven.multiModuleProjectDirectory}"/>
+                                <!-- Only validate if repo root is available -->
+                                <condition property="path.within.repo">
+                                    <and>
+                                        <isset property="repo.root.available"/>
+                                        <contains string="${core.web.basedir}" substring="${maven.multiModuleProjectDirectory}"/>
+                                    </and>
                                 </condition>
-                                <fail if="repo.root.available" unless="path.within.repo" message="ERROR: core-web project.basedir (${core.web.basedir}) is outside repository root (${maven.multiModuleProjectDirectory}). This indicates a path resolution issue that could cause non-reproducible builds."/>
+                                <!-- Only fail if repo root is available but path is not within repo -->
+                                <condition property="should.fail.repo.check">
+                                    <and>
+                                        <isset property="repo.root.available"/>
+                                        <not><isset property="path.within.repo"/></not>
+                                    </and>
+                                </condition>
+                                <fail if="should.fail.repo.check" message="ERROR: core-web project.basedir (${core.web.basedir}) is outside repository root (${maven.multiModuleProjectDirectory}). This indicates a path resolution issue that could cause non-reproducible builds."/>
                                 
                                 <echo message="Validated dist paths are scoped to core-web: ${core.web.basedir}"/>
                             </target>
