@@ -18238,9 +18238,8 @@ paths:
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
       description: "Moves or adds a field to a Content Type. This endpoint is called\
-        \ (1) when dragging-and-dropping a new field to a Content Type, (2) when updating\
-        \ an existing field, or (3) when moving such a field around in the Content\
-        \ Type's layout."
+        \ when dragging-and-dropping a new field to a Content Type, or when moving\
+        \ such a field around in the Content Type's layout."
       operationId: moveOrAddContentTypeField
       parameters:
       - in: path
@@ -18355,7 +18354,7 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
-          description: Field was added or updated successfully
+          description: Field was added or moved successfully
         "400":
           description: Invalid JSON body
         "401":
@@ -18371,14 +18370,19 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:
     put:
-      operationId: updateField
+      description: "Updates a field in a Content Type. The request body must have\
+        \ the follow syntax:"
+      operationId: updateContentTypeField
       parameters:
-      - in: path
+      - description: The ID or Velocity Variable Name of the Content Type that the
+          updated field belongs to.
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: The ID of the Field that is being updated.
+        in: path
         name: id
         required: true
         schema:
@@ -18388,12 +18392,135 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateFieldForm"
+        description: The object containing the updated attributes of the Field.
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example: |-
+                {
+                    "entity": [
+                        {
+                            "divider": {
+                                "clazz": "com.dotcms.contenttype.model.field.ImmutableRowField",
+                                "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                "dataType": "SYSTEM",
+                                "fieldContentTypeProperties": [],
+                                "fieldType": "Row",
+                                "fieldTypeLabel": "Row",
+                                "fieldVariables": [],
+                                "fixed": false,
+                                "forceIncludeInApi": false,
+                                "iDate": 1764268372000,
+                                "id": "1b950209ec7b1a5e6901f7fe277e0a6a",
+                                "indexed": false,
+                                "listed": false,
+                                "modDate": 1764268380000,
+                                "name": "fields-0",
+                                "readOnly": false,
+                                "required": false,
+                                "searchable": false,
+                                "sortOrder": 0,
+                                "unique": false,
+                                "variable": "fields0"
+                            },
+                            "columns": [
+                                {
+                                    "columnDivider": {
+                                        "clazz": "com.dotcms.contenttype.model.field.ImmutableColumnField",
+                                        "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                        "dataType": "SYSTEM",
+                                        "fieldContentTypeProperties": [],
+                                        "fieldType": "Column",
+                                        "fieldTypeLabel": "Column",
+                                        "fieldVariables": [],
+                                        "fixed": false,
+                                        "forceIncludeInApi": false,
+                                        "iDate": 1764268372000,
+                                        "id": "6515a7a25deb3b99711398c14bfe3062",
+                                        "indexed": false,
+                                        "listed": false,
+                                        "modDate": 1764268380000,
+                                        "name": "fields-1",
+                                        "readOnly": false,
+                                        "required": false,
+                                        "searchable": false,
+                                        "sortOrder": 1,
+                                        "unique": false,
+                                        "variable": "fields1"
+                                    },
+                                    "fields": [
+                                        {
+                                            "clazz": "com.dotcms.contenttype.model.field.ImmutableTextField",
+                                            "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                            "dataType": "TEXT",
+                                            "fieldType": "Text",
+                                            "fieldTypeLabel": "Text",
+                                            "fieldVariables": [],
+                                            "fixed": false,
+                                            "forceIncludeInApi": false,
+                                            "iDate": 1764268380000,
+                                            "id": "ba34f109c9e86793384387e2619267ea",
+                                            "indexed": true,
+                                            "listed": true,
+                                            "modDate": 1764277924000,
+                                            "name": "Title",
+                                            "readOnly": false,
+                                            "required": false,
+                                            "searchable": false,
+                                            "sortOrder": 2,
+                                            "unique": false,
+                                            "variable": "title"
+                                        },
+                                        {
+                                            "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+                                            "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                            "dataType": "LONG_TEXT",
+                                            "fieldType": "Custom-Field",
+                                            "fieldTypeLabel": "Custom Field",
+                                            "fieldVariables": [
+                                                {
+                                                    "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+                                                    "fieldId": "803d40e80721ae61196dc566a15c7ea5",
+                                                    "id": "6f96be03-6c35-4ced-b825-dd52715b9b06",
+                                                    "key": "newRenderMode",
+                                                    "value": "component"
+                                                }
+                                            ],
+                                            "fixed": false,
+                                            "forceIncludeInApi": false,
+                                            "iDate": 1764433985000,
+                                            "id": "803d40e80721ae61196dc566a15c7ea5",
+                                            "indexed": false,
+                                            "listed": false,
+                                            "modDate": 1764687322000,
+                                            "name": "My Custom Field",
+                                            "readOnly": false,
+                                            "required": false,
+                                            "searchable": false,
+                                            "sortOrder": 3,
+                                            "unique": false,
+                                            "values": "## This is a VTL comment block                            "variable": "myCustomField"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                }
+          description: The updated Content Type's layout.
+        "401":
+          description: Unauthorized access
+        "404":
+          description: The ID of the specified Field was not found
+        "500":
+          description: Internal Server Error
+      summary: Updates a field in a Content Type
       tags:
       - Content Type Field
   /vtl/dynamic:
