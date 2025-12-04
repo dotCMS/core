@@ -16,6 +16,7 @@ import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
+import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
 import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
 import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
@@ -103,8 +104,8 @@ export function withSidebar() {
             /**
              * Sets the selected node
              */
-            setSelectedNode: (node: DotFolderTreeNodeItem) => {
-                patchState(store, { selectedNode: node });
+            setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
+                patchState(store, { selectedNode });
             },
 
             /**
@@ -117,6 +118,10 @@ export function withSidebar() {
         withHooks((store) => {
             return {
                 onInit() {
+                    if (store.currentSite()?.identifier === SYSTEM_HOST.identifier) {
+                        return;
+                    }
+
                     store.loadFolders();
                 }
             };
