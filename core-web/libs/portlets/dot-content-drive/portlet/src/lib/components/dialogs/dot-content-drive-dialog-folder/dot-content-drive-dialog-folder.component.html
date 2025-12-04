@@ -100,8 +100,11 @@
         type="button"
         class="p-button-primary"
         data-testid="content-drive-dialog-folder-create"
-        [label]="'content-drive.dialog.folder.create' | dm"
+        [label]="
+            ($folder() ? 'content-drive.dialog.folder.save' : 'content-drive.dialog.folder.create')
+                | dm
+        "
         [disabled]="folderForm.invalid"
         [loading]="$isLoading()"
-        (click)="createFolder()"></button>
+        (click)="$folder() ? saveFolder() : createFolder()"></button>
 </div>

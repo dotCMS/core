@@ -12,8 +12,10 @@ import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
 import {
+    AddToBundleService,
     DotContentSearchService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotSiteService,
     DotSystemConfigService,
     DotWorkflowActionsFireService,
@@ -26,6 +28,7 @@ import {
     DotLocalstorageService,
     DotMessageService
 } from '@dotcms/data-access';
+import { LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
@@ -34,6 +37,7 @@ import {
     ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -44,8 +48,7 @@ import {
     WARNING_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
-    MINIMUM_LOADING_TIME
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import {
     MOCK_ITEMS,
@@ -55,6 +58,7 @@ import {
     MOCK_BASE_TYPES
 } from '../shared/mocks';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
@@ -65,6 +69,7 @@ describe('DotContentDriveShellComponent', () => {
     let localStorageService: SpyObject<DotLocalstorageService>;
     let messageService: SpyObject<MessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
+    let navigationService: SpyObject<DotContentDriveNavigationService>;
     let filtersSignal: ReturnType<typeof signal>;
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
 
@@ -96,6 +101,19 @@ describe('DotContentDriveShellComponent', () => {
             provideHttpClient(),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
+            }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: jest.fn()
+            }),
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            LoggerService,
+            StringUtils,
+            mockProvider(AddToBundleService, {
+                getBundles: jest.fn().mockReturnValue(of([])),
+                addToBundle: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({}))
             })
         ],
         componentProviders: [DotContentDriveStore],
@@ -115,7 +133,7 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: jest.fn().mockReturnValue(false),
                     removeFilter: jest.fn(),
                     getFilterValue: jest.fn(),
-                    $searchParams: jest.fn(),
+                    $request: jest.fn(),
                     items: jest.fn().mockReturnValue(MOCK_ITEMS),
                     pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
                     setIsTreeExpanded: jest.fn(),
@@ -141,13 +159,16 @@ describe('DotContentDriveShellComponent', () => {
                     updateFolders: jest.fn(),
                     folders: jest.fn(),
                     selectedNode: jest.fn(),
+                    setSelectedNode: jest.fn(),
                     sidebarLoading: jest.fn(),
                     closeDialog: jest.fn(),
                     patchContextMenu: jest.fn(),
                     setDragItems: jest.fn(),
                     cleanDragItems: jest.fn(),
                     dragItems: jest.fn().mockReturnValue([]),
-                    loadItems: jest.fn()
+                    loadItems: jest.fn(),
+                    setPath: jest.fn(),
+                    setShowAddToBundle: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
@@ -198,6 +219,7 @@ describe('DotContentDriveShellComponent', () => {
         localStorageService = spectator.inject(DotLocalstorageService);
         messageService = spectator.inject(MessageService);
         uploadService = spectator.inject(DotUploadFileService);
+        navigationService = spectator.inject(DotContentDriveNavigationService);
     });
 
     afterEach(() => {
@@ -1092,86 +1114,6 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('Delayed Loading', () => {
-        it('should emit loading immediately when transitioning to LOADING state', () => {
-            spectator.detectChanges();
-
-            // Should emit with delayTime 0 (immediate)
-            const delayValue = spectator.component.delayedLoading.value;
-            expect(delayValue.loading).toBe(true);
-            expect(delayValue.delayTime).toBe(0);
-        });
-
-        it('should calculate correct delay when loading finishes quickly', () => {
-            spectator.detectChanges();
-            const startTime = spectator.component.elapsedTime();
-
-            // Mock Date.now to simulate 100ms passing
-            const originalDateNow = Date.now;
-            Date.now = jest.fn(() => startTime + 100);
-
-            // Since this is mocked, it will not trigger the effect, so we need to set the status signal manually
-            statusSignal.set(DotContentDriveStatus.LOADED);
-            spectator.detectChanges();
-
-            const delayValue = spectator.component.delayedLoading.value;
-            expect(delayValue.loading).toBe(false);
-            expect(delayValue.delayTime).toBe(MINIMUM_LOADING_TIME - 100);
-            Date.now = originalDateNow;
-        });
-
-        it('should not delay if loading was shown for more than minimum time', () => {
-            spectator.detectChanges();
-            const startTime = spectator.component.elapsedTime();
-
-            const originalDateNow = Date.now;
-            Date.now = jest.fn(() => startTime + 1500);
-
-            // Change status signal to LOADED - this will trigger the effect
-            statusSignal.set(DotContentDriveStatus.LOADED);
-            spectator.detectChanges();
-
-            const delayValue = spectator.component.delayedLoading.value;
-            expect(delayValue.loading).toBe(false);
-            expect(delayValue.delayTime).toBe(0);
-            Date.now = originalDateNow;
-        });
-
-        it('should calculate delay for exactly minimum loading time', () => {
-            spectator.detectChanges();
-            const startTime = spectator.component.elapsedTime();
-
-            const originalDateNow = Date.now;
-            Date.now = jest.fn(() => startTime + MINIMUM_LOADING_TIME);
-
-            // Change status signal to LOADED - this will trigger the effect
-            statusSignal.set(DotContentDriveStatus.LOADED);
-            spectator.detectChanges();
-
-            const delayValue = spectator.component.delayedLoading.value;
-            expect(delayValue.loading).toBe(false);
-            expect(delayValue.delayTime).toBe(0);
-            Date.now = originalDateNow;
-        });
-
-        it('should use the MINIMUM_LOADING_TIME constant for delay calculation', () => {
-            spectator.detectChanges();
-            const startTime = spectator.component.elapsedTime();
-
-            const originalDateNow = Date.now;
-            Date.now = jest.fn(() => startTime + MINIMUM_LOADING_TIME / 2);
-            // Change status signal to LOADED - this will trigger the effect
-            statusSignal.set(DotContentDriveStatus.LOADED);
-            spectator.detectChanges();
-
-            const delayValue = spectator.component.delayedLoading.value;
-            expect(delayValue.loading).toBe(false);
-            expect(delayValue.delayTime).toBe(MINIMUM_LOADING_TIME / 2);
-
-            Date.now = originalDateNow;
-        });
-    });
-
     describe('Move Items', () => {
         let workflowService: SpyObject<DotWorkflowActionsFireService>;
 
@@ -1483,6 +1425,163 @@ describe('DotContentDriveShellComponent', () => {
                 });
                 expect(store.cleanDragItems).toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('setPathEffect', () => {
+        it('should set path when selectedNode changes', () => {
+            const mockNode: DotFolderTreeNodeItem = {
+                key: 'folder-1',
+                label: '/documents/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+
+            store.selectedNode.mockReturnValue(mockNode);
+            store.setPath.mockClear();
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).toHaveBeenCalledWith('/documents/');
+        });
+
+        it('should not set path when selectedNode is null', () => {
+            store.selectedNode.mockReturnValue(null);
+            store.setPath.mockClear();
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onDoubleClick', () => {
+        it('should set selectedNode when double clicking a folder', () => {
+            spectator.detectChanges();
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/documents/',
+                identifier: 'folder-123'
+            };
+
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.setSelectedNode.mockClear();
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'doubleClick', folderItem);
+
+            expect(store.setSelectedNode).toHaveBeenCalledWith({
+                data: {
+                    type: 'folder',
+                    path: '/documents/',
+                    hostname: MOCK_SITES[0].hostname,
+                    id: 'folder-123',
+                    fromTable: true
+                },
+                key: 'folder-123',
+                label: '/documents/',
+                leaf: false
+            });
+        });
+
+        it('should call navigationService.editContent when double clicking a content item', () => {
+            spectator.detectChanges();
+
+            const contentItem = {
+                ...MOCK_ITEMS[0],
+                type: 'content',
+                identifier: 'content-123'
+            };
+
+            navigationService.editContent.mockClear();
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'doubleClick', contentItem);
+
+            expect(navigationService.editContent).toHaveBeenCalledWith(contentItem);
+            expect(store.setSelectedNode).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onContextMenu', () => {
+        it('should patch context menu when right-clicking a content item', () => {
+            spectator.detectChanges();
+
+            const mockEvent = {
+                preventDefault: jest.fn()
+            } as unknown as MouseEvent;
+            const contentlet = MOCK_ITEMS[0];
+
+            store.patchContextMenu.mockClear();
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'rightClick', {
+                event: mockEvent,
+                contentlet
+            });
+
+            expect(mockEvent.preventDefault).toHaveBeenCalled();
+            expect(store.patchContextMenu).toHaveBeenCalledWith({
+                triggeredEvent: mockEvent,
+                contentlet
+            });
+        });
+    });
+
+    describe('cancelAddToBundle', () => {
+        it('should set showAddToBundle to false', () => {
+            store.contextMenu.mockReturnValue({
+                triggeredEvent: new Event('click'),
+                contentlet: MOCK_ITEMS[0],
+                showAddToBundle: true
+            });
+            store.setShowAddToBundle.mockClear();
+
+            spectator.detectChanges();
+
+            const addToBundleComponent = spectator.debugElement.query(By.css('dot-add-to-bundle'));
+
+            if (addToBundleComponent) {
+                spectator.triggerEventHandler(addToBundleComponent, 'cancel', undefined);
+            } else {
+                // Fallback: if component is conditionally rendered and not visible, test directly
+                spectator.component['cancelAddToBundle']();
+            }
+
+            expect(store.setShowAddToBundle).toHaveBeenCalledWith(false);
+        });
+    });
+
+    describe('onAddNewDotAsset', () => {
+        it('should trigger file input click', () => {
+            spectator.detectChanges();
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            const clickSpy = jest.spyOn(fileInput, 'click');
+
+            const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
+
+            spectator.triggerEventHandler(toolbar, 'addNewDotAsset', undefined);
+
+            expect(clickSpy).toHaveBeenCalled();
         });
     });
 });

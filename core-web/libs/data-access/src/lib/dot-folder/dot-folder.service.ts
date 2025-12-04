@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
 @Injectable()
@@ -21,7 +21,7 @@ export class DotFolderService {
 
         return this.#http
             .post<{ entity: DotFolder[] }>(`/api/v1/folder/byPath`, { path: folderPath })
-            .pipe(pluck('entity'));
+            .pipe(map((response: { entity: DotFolder[] }) => response.entity));
     }
 
     /**
@@ -31,7 +31,9 @@ export class DotFolderService {
      * @returns {Observable<DotFolder>} Observable that emits the created folder
      */
     createFolder(body: DotFolderEntity): Observable<DotFolder> {
-        return this.#http.post(`/api/v1/assets/folders`, body).pipe(pluck('entity'));
+        return this.#http
+            .post<{ entity: DotFolder }>(`/api/v1/assets/folders`, body)
+            .pipe(map((response: { entity: DotFolder }) => response.entity));
     }
 
     /**
@@ -41,7 +43,9 @@ export class DotFolderService {
      * @returns {Observable<DotFolder>} Observable that emits the saved folder
      */
     saveFolder(body: DotFolderEntity): Observable<DotFolder> {
-        return this.#http.put(`/api/v1/assets/folders`, body).pipe(pluck('entity'));
+        return this.#http
+            .put<{ entity: DotFolder }>(`/api/v1/assets/folders`, body)
+            .pipe(map((response: { entity: DotFolder }) => response.entity));
     }
 
     /**

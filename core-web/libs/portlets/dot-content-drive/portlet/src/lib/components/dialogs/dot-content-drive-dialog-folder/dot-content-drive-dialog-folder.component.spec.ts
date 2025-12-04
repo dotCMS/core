@@ -41,7 +41,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
             mockProvider(DotContentDriveStore, {
                 currentSite: jest.fn().mockReturnValue(mockSite),
                 path: jest.fn().mockReturnValue('/documents'),
-                loadFolders: jest.fn(),
+                reloadContentDrive: jest.fn(),
+                loadItems: jest.fn(),
                 closeDialog: jest.fn()
             }),
             mockProvider(DotFolderService, {
@@ -322,13 +323,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
             });
         });
 
-        it('should reload folders and close dialog on success', () => {
+        it('should reload content drive, load items and close dialog on success', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
             spectator.click(createButton);
 
-            expect(store.loadFolders).toHaveBeenCalled();
+            expect(store.reloadContentDrive).toHaveBeenCalled();
+            expect(store.loadItems).toHaveBeenCalled();
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
@@ -336,7 +338,12 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
+
+            expect(createButton).toBeTruthy();
+            expect(component.folderForm.valid).toBe(true);
+
             spectator.click(createButton);
+            spectator.detectChanges();
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
