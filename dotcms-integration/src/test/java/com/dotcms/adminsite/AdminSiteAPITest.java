@@ -440,18 +440,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
                 Arrays.asList(adminUris).contains("/html/"));
     }
 
-    /**
-     * Method to test: {@link AdminSiteAPI#isAdminAllowed(HttpServletRequest)} Given Scenario: Any request
-     * ExpectedResult: Returns false (currently always returns false)
-     */
-    @Test
-    public void test_isAdminAllowed_returns_false() {
-        // Given
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
 
-        // When/Then
-        Assert.assertFalse(adminSiteAPI.isAdminAllowed(mockRequest));
-    }
 
     /**
      * Method to test: Multiple calls to getAdminSiteUrl after cache invalidation Given Scenario: Cache is invalidated,

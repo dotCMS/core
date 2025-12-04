@@ -411,7 +411,7 @@ public class CompanyModel extends BaseModel {
 	}
 
 	public String getAuthType() {
-		return _authType;
+        return (Company.AUTH_TYPE_EA.equalsIgnoreCase(this._authType)) ? Company.AUTH_TYPE_EA : Company.AUTH_TYPE_ID;
 	}
 
 	public void setAuthType(String authType) {

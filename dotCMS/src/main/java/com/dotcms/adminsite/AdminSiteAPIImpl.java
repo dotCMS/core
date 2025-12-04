@@ -131,19 +131,6 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         return false;
     }
 
-    @Override
-    public boolean isAdminAllowed(@Nonnull HttpServletRequest request) {
-        return false;
-    }
-
-
-    @Override
-    public boolean isAdminSiteEnabled() {
-        return (boolean) getConfig().computeIfAbsent(ADMIN_SITE_ENABLED,
-                k -> Config.getBooleanProperty(ADMIN_SITE_ENABLED, _ADMIN_SITE_ENABLED_DEFAULT));
-    }
-
-
 
     @Override
     public Map<String, String> getAdminSiteHeaders() {
@@ -151,17 +138,6 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     }
 
-
-    @Override
-    public boolean allowInsecureRequests() {
-        return Config.getBooleanProperty(ADMIN_SITE_REQUESTS_FORCE_SECURE,
-                _ADMIN_SITE_REQUESTS_FORCE_SECURE_DEFAULT);
-    }
-
-    @Override
-    public boolean isAdminSiteConfigured() {
-        return Config.getStringProperty(ADMIN_SITE_URL, null) != null;
-    }
 
 
     @Override
@@ -281,11 +257,6 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         }
 
         return allowedHosts.toArray(new String[0]);
-    }
-
-    @Override
-    public void invalidateCache() {
-        CacheLocator.getSystemCache().remove(_ADMIN_SITE_CACHE_KEY);
     }
 
 

@@ -334,6 +334,16 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 	}
 
     private boolean isBackendAllowed() {
+
+        if (UserAPI.SYSTEM_USER_ID.equals(this.getUserId())) {
+            return true;
+        }
+        if (!APILocator.getAdminSiteAPI().isAdminSiteEnabled()) {
+            return true;
+        }
+        if (APILocator.getAdminSiteAPI().allowBackendLoginsOnNonAdminSites()) {
+            return true;
+        }
         // if we have no request (like running in a threadpool).
         if (HttpServletRequestThreadLocal.INSTANCE.getRequest() == null) {
             return true;
