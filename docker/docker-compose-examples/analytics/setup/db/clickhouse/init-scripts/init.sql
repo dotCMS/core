@@ -374,7 +374,7 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
 -- Inserts rows summarizing content presence before the conversion.
 -- =====================================================================
 CREATE MATERIALIZED VIEW content_presents_in_conversion_mv
-    REFRESH EVERY 1 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
+    REFRESH EVERY 15 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
     SELECT context_user_id,
            utc_time AS conversion_time,
