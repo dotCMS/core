@@ -276,8 +276,8 @@ public class LoginServiceAPIFactory implements Serializable {
             final Company company = PortalUtil.getCompany(request);
 
             //Verify that the System User is not being used to log in inside the system
-            if (APILocator.systemUser().getEmailAddress().equalsIgnoreCase(emailOrUserId) || APILocator.systemUser()
-                    .getUserId().equalsIgnoreCase(emailOrUserId)) {
+            if (APILocator.systemUser().getEmailAddress().equalsIgnoreCase(emailOrUserId) ||
+                    APILocator.systemUser().getUserId().equalsIgnoreCase(emailOrUserId)) {
                 SecurityLogger.logInfo(this.getClass(),
                         "1. An invalid attempt to login as a System User has been made  - you cannot login as the System User");
                 throw new AuthException("Unable to login as System User - you cannot login as the System User.");
