@@ -42,16 +42,11 @@ export function withActiveContent() {
             contentArea: null
         }),
         withComputed((store) => {
-            const pageEntity = computed(() => store.pageAPIResponse());
+            const pageEntity = store.pageAPIResponse;
             // This can general computed as well
-            const $isDragging = computed(() => store.state() === EDITOR_STATE.DRAGGING);
-            const $isScrolling = computed(
-                () =>
-                    store.state() === EDITOR_STATE.SCROLL_DRAG ||
-                    store.state() === EDITOR_STATE.SCROLLING
-            );
+            const $isIdle = computed(() => store.state() === EDITOR_STATE.IDLE);
             const $isEditMode = computed(() => store.pageParams()?.mode === UVE_MODE.EDIT);
-            const $isPageLocked = computed(() => pageEntity()?.page?.locked);
+            const $isPageLocked = computed(() => pageEntity()?.page?.locked ?? false);
             const $isLockedByCurrentUser = computed(() => {
                 return pageEntity()?.page?.lockedBy === store.currentUser()?.userId;
             });
@@ -64,17 +59,15 @@ export function withActiveContent() {
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.contentArea();
                     const canEditPage = store.canEditPage();
-                    const isDragging = $isDragging();
-                    const isScrolling = $isScrolling();
                     const isEditMode = $isEditMode();
+                    const isIdle = $isIdle();
                     // MISSING: const canEditDueToLock = !isLockFeatureEnabled || isPageLockedByUser;
                     const canEditLockedPage = $isPageLocked() && $isLockedByCurrentUser();
 
                     return (
                         !!contentletPosition &&
                         canEditPage &&
-                        !isDragging &&
-                        !isScrolling &&
+                        isIdle &&
                         isEditMode &&
                         canEditLockedPage
                     );
@@ -83,6 +76,19 @@ export function withActiveContent() {
         }),
         withMethods((store) => ({
             setActiveContentArea(contentArea: ContentletArea) {
+                const currentArea = store.contentArea();
+                const isSameX = currentArea?.x === contentArea.x;
+                const isSameY = currentArea?.y === contentArea.y;
+
+                if (isSameX && isSameY) {
+                    // Prevent updating the state if the contentlet area is the same
+                    // This is because in inline editing, when we select to not copy the content and edit global
+                    // The contentlet area is updated on focus with the same values and IDLE
+                    // Losing the INLINE_EDITING state and making the user to open the dialog for checking whether to copy the content or not
+                    // Which is an awful UX
+
+                    return;
+                }
                 patchState(store, {
                     contentArea,
                     state: EDITOR_STATE.IDLE

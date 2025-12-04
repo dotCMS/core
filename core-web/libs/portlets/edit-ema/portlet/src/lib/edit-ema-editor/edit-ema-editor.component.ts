@@ -16,7 +16,8 @@ import {
     effect,
     inject,
     signal,
-    untracked
+    untracked,
+    computed
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -76,7 +77,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
     ClientData,
@@ -173,6 +174,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $contentArea = this.uveStore.contentArea;
     readonly $allowContentDelete = this.uveStore.$allowContentDelete;
     readonly UVE_STATUS = UVE_STATUS;
+
+    readonly $paletteClass = computed(() => {
+        return this.uveStore.paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
+    });
 
     get contentWindow(): Window | null {
         return this.iframe?.nativeElement?.contentWindow || null;
@@ -934,8 +939,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [DotCMSUVEAction.IFRAME_SCROLL]: () => {
                 this.uveStore.updateEditorScrollState();
+                this.uveStore.unsetActiveContentArea();
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
+                // TODO: Maybe add a small debounce to avoid multiple calls
                 this.uveStore.updateEditorOnScrollEnd();
             },
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {

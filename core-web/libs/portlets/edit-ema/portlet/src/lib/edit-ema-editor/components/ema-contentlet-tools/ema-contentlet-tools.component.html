@@ -1,22 +1,26 @@
-@if (contentletArea.payload.container) {
+@let contentletArea = $contentletArea();
+@let contentletPayload = $contentletPayload();
+@let dragPayload = $dragPayload();
+
+@if ($hasContainer()) {
     <p-button
         (click)="setPositionFlag('before'); menu.toggle($event)"
         [ngStyle]="styles.topButton"
         data-testId="add-top-button"
-        icon="pi pi-plus"></p-button>
-    @if (!isContainerEmpty) {
+        icon="pi pi-plus" />
+    @if (!$isContainerEmpty()) {
         <p-button
             (click)="setPositionFlag('after'); menu.toggle($event)"
             [ngStyle]="styles.bottomButton"
             data-testId="add-bottom-button"
-            icon="pi pi-plus"></p-button>
+            icon="pi pi-plus" />
     }
-    <p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add"></p-menu>
+    <p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
 }
 
-@if (!isContainerEmpty) {
+@if (!$isContainerEmpty()) {
     <div [ngStyle]="styles.actions" class="actions" data-testId="actions">
-        @if (contentletArea.payload.vtlFiles?.length) {
+        @if ($hasVtlFiles()) {
             <p-menu
                 [model]="vtlFiles"
                 [popup]="true"
@@ -29,25 +33,19 @@
                 styleClass="p-button-rounded p-button-raised"
                 icon="pi pi-code" />
         }
-        @if (contentletArea.payload.container) {
+        @if ($hasContainer()) {
             <p-button
                 (dragstart)="dragStart($event)"
-                [attr.data-item]="
-                    {
-                        container: contentletArea.payload.container,
-                        contentlet: contentletArea.payload.contentlet,
-                        move: true
-                    } | json
-                "
+                [attr.data-item]="dragPayload ? (dragPayload | json) : null"
                 data-type="contentlet"
                 draggable="true"
                 data-testId="drag-button"
                 styleClass="p-button-rounded p-button-raised"
                 icon="pi pi-arrows-alt" />
             <p-button
-                (click)="delete.emit(contentletArea.payload)"
-                [disabled]="!!disableDeleteButton"
-                [pTooltip]="disableDeleteButton | dm"
+                (click)="delete.emit(contentletPayload)"
+                [disabled]="!$allowContentDelete()"
+                [pTooltip]="deleteButtonTooltip() | dm"
                 tooltipPosition="bottom"
                 [escape]="false"
                 data-testId="delete-button"
@@ -56,7 +54,7 @@
         }
 
         <p-button
-            (click)="edit.emit(contentletArea.payload)"
+            (click)="edit.emit(contentletPayload)"
             data-testId="edit-button"
             styleClass="p-button-rounded p-button-raised"
             icon="pi pi-pencil" />
@@ -67,6 +65,6 @@
 
 @if (contentletArea) {
     <div class="drag-image" #dragImage data-testId="drag-image">
-        {{ contentletArea.payload.contentlet.contentType }}
+        {{ contentletPayload?.contentlet.contentType }}
     </div>
 }

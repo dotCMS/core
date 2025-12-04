@@ -14,12 +14,12 @@
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
 
-@if ($editorProps().palette; as palette) {
+@if (uveStore.$canEditPage()) {
     <dot-uve-palette
-        [ngClass]="palette.paletteClass"
-        [languageId]="palette.languageId"
-        [pagePath]="palette.pagePath"
-        [variantId]="palette.variantId"
+        [ngClass]="$paletteClass()"
+        [languageId]="uveStore.$languageId()"
+        [pagePath]="uveStore.$pageURI()"
+        [variantId]="uveStore.$variantId()"
         data-testId="palette" />
 }
 
@@ -71,9 +71,7 @@
                 (addContent)="dialog.addContentlet($event)"
                 [contentletArea]="$contentArea()"
                 [isEnterprise]="uveStore.isEnterprise()"
-                [disableDeleteButton]="
-                    $allowContentDelete() ? null : 'uve.disable.delete.button.on.personalization'
-                "
+                [allowContentDelete]="$allowContentDelete()"
                 data-testId="contentlet-tools" />
         }
         @if (!$toggleLockOptions()?.showOverlay && dropzone) {

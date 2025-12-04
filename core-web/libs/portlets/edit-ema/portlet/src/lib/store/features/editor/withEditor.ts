@@ -24,11 +24,10 @@ import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
-    ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { UVE_FEATURE_FLAGS } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -59,7 +58,6 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 const initialState: EditorState = {
     bounds: [],
     state: EDITOR_STATE.IDLE,
-    contentletArea: null,
     dragItem: null,
     ogTags: null,
     paletteOpen: true
@@ -117,7 +115,9 @@ export function withEditor() {
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
                 $editorProps: computed<EditorProps>(() => {
-                    const pageAPIResponse = store.pageAPIResponse();
+                    // Use it to create depdencies to the pageAPIResponse
+                    // I did a refactor but need more testing before removing this dependency
+                    store.pageAPIResponse();
                     const socialMedia = store.socialMedia();
                     const ogTags = store.ogTags();
                     const device = store.device();
@@ -130,7 +130,6 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const paletteOpen = store.paletteOpen();
 
                     const isEditMode = params?.mode === UVE_MODE.EDIT;
 
@@ -143,7 +142,6 @@ export function withEditor() {
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-                    const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
@@ -166,17 +164,6 @@ export function withEditor() {
                                   dragItem
                               }
                             : null,
-                        palette: showPalette
-                            ? {
-                                  languageId: pageAPIResponse?.viewAs.language.id,
-                                  pagePath: pageAPIResponse?.page.pageURI,
-                                  variantId: params?.variantName,
-                                  paletteClass: paletteOpen
-                                      ? PALETTE_CLASSES.OPEN
-                                      : PALETTE_CLASSES.CLOSED
-                              }
-                            : null,
-
                         seoResults: shouldShowSeoResults
                             ? {
                                   ogTags,
@@ -231,7 +218,6 @@ export function withEditor() {
                 updateEditorScrollState() {
                     patchState(store, {
                         bounds: [],
-                        contentletArea: null,
                         state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
@@ -248,40 +234,6 @@ export function withEditor() {
                 },
                 setEditorDragItem(dragItem: EmaDragItem) {
                     patchState(store, { dragItem, state: EDITOR_STATE.DRAGGING });
-                },
-                setEditorContentletArea(contentletArea: ContentletArea | null) {
-                    const currentContentletArea = store.contentletArea();
-
-                    if (!contentletArea) {
-                        if (!currentContentletArea) {
-                            return;
-                        }
-
-                        patchState(store, {
-                            contentletArea: null,
-                            state: EDITOR_STATE.IDLE
-                        });
-
-                        return;
-                    }
-
-                    if (
-                        currentContentletArea?.x === contentletArea.x &&
-                        currentContentletArea?.y === contentletArea.y
-                    ) {
-                        // Prevent updating the state if the contentlet area is the same
-                        // This is because in inline editing, when we select to not copy the content and edit global
-                        // The contentlet area is updated on focus with the same values and IDLE
-                        // Losing the INLINE_EDITING state and making the user to open the dialog for checking whether to copy the content or not
-                        // Which is an awful UX
-
-                        return;
-                    }
-
-                    patchState(store, {
-                        contentletArea: contentletArea,
-                        state: EDITOR_STATE.IDLE
-                    });
                 },
                 setEditorBounds(bounds: Container[]) {
                     patchState(store, { bounds });

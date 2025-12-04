@@ -72,12 +72,16 @@ export const UVEStore = signalStore(
             pageParams,
             viewParams,
             languages,
+            canEditPage,
             errorCode: error,
             status,
             isEnterprise,
             flags
         }) => {
+            const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
+
             return {
+                $isEditMode,
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
                     const languageId = response?.viewAs.language?.id;
@@ -172,15 +176,17 @@ export const UVEStore = signalStore(
                 $languageId: computed<number>(() => {
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
-                $isEditMode: computed<boolean>(() => {
-                    return pageParams()?.mode === UVE_MODE.EDIT;
-                }),
                 $isPreviewMode: computed<boolean>(() => {
                     return pageParams()?.mode === UVE_MODE.PREVIEW;
                 }),
                 $isLiveMode: computed<boolean>(() => {
                     return pageParams()?.mode === UVE_MODE.LIVE;
                 }),
+                $canEditPage: computed<boolean>(() => {
+                    return isEnterprise() && canEditPage() && $isEditMode();
+                }),
+                $pageURI: computed(() => pageAPIResponse()?.page?.pageURI ?? ''),
+                $variantId: computed(() => pageParams()?.variantId ?? ''),
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(pageParams() ?? {}),
