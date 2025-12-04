@@ -233,7 +233,7 @@ cube('request', {
       title: 'Site ID',
       description: 'dotCMS site identifier'
     },
-    siteKey: {
+    siteAuth: {
       sql: `context_site_auth`,
       type: `string`,
       title: 'Site Auth',
