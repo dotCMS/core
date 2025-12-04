@@ -17,10 +17,14 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public interface PermissionAPI {
 
@@ -49,6 +53,10 @@ public interface PermissionAPI {
 		PUBLISH(PERMISSION_PUBLISH),EDIT_PERMISSIONS(PERMISSION_EDIT_PERMISSIONS),
 		CAN_ADD_CHILDREN(PERMISSION_CAN_ADD_CHILDREN);
 
+		// Canonical types (excluding aliases USE, EDIT)
+		private static final EnumSet<Type> CANONICAL_TYPES =
+			EnumSet.of(READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN);
+
 		private final int type;
 		Type(final int type) {
 			this.type = type;
@@ -65,6 +73,36 @@ public interface PermissionAPI {
 				}
 			}
 			return null;
+		}
+
+		/**
+		 * Returns the canonical permission types, excluding aliases (USE, EDIT).
+		 * @return Unmodifiable set of canonical permission types
+		 */
+		public static Set<Type> getCanonicalTypes() {
+			return Collections.unmodifiableSet(CANONICAL_TYPES);
+		}
+
+		/**
+		 * Returns canonical permission level names as strings.
+		 * @return Set of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+		 */
+		public static Set<String> getCanonicalLevelNames() {
+			return CANONICAL_TYPES.stream()
+				.map(Enum::name)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		}
+
+		/**
+		 * Converts a permission bit mask to canonical type names.
+		 * @param bits Permission bit mask (e.g., 7 = READ|WRITE|PUBLISH)
+		 * @return List of permission names present in the bit mask
+		 */
+		public static List<String> fromBitsAsNames(int bits) {
+			return CANONICAL_TYPES.stream()
+				.filter(t -> (bits & t.getType()) > 0)
+				.map(Enum::name)
+				.collect(Collectors.toList());
 		}
 	}
 

@@ -10581,6 +10581,29 @@ paths:
           description: default response
       tags:
       - Page
+  /v1/permissions:
+    get:
+      description: Returns available permission levels and scopes that can be assigned
+        to users and roles
+      operationId: getPermissionMetadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPermissionMetadataView"
+          description: Permission metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - frontend user attempted access (backend user required)
+      summary: Get permission metadata
+      tags:
+      - Permissions
   /v1/permissions/_bycontent:
     get:
       description: "Retrieves permissions for a specific contentlet by its identifier.\
@@ -22243,6 +22266,28 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableSetString:
+      type: array
+      description: Available permission scopes (asset types) that support permissions
+      example:
+      - INDIVIDUAL
+      - HOST
+      - FOLDER
+      - CONTENT
+      - TEMPLATE
+      - PAGE
+      - CONTAINER
+      - CONTENT_TYPE
+      - CATEGORY
+      items:
+        type: string
+        description: Available permission scopes (asset types) that support permissions
+        example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\",\"\
+          PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+      properties:
+        empty:
+          type: boolean
+      uniqueItems: true
     JSONObject:
       type: object
       additionalProperties:
@@ -23112,6 +23157,54 @@ components:
           type: string
         type:
           type: string
+    PermissionMetadataView:
+      type: object
+      properties:
+        levels:
+          type: array
+          description: Available permission levels that can be assigned to users and
+            roles
+          example:
+          - READ
+          - WRITE
+          - PUBLISH
+          - EDIT_PERMISSIONS
+          - CAN_ADD_CHILDREN
+          items:
+            type: string
+            description: Available permission levels that can be assigned to users
+              and roles
+            example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
+              ]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+        scopes:
+          type: array
+          description: Available permission scopes (asset types) that support permissions
+          example:
+          - INDIVIDUAL
+          - HOST
+          - FOLDER
+          - CONTENT
+          - TEMPLATE
+          - PAGE
+          - CONTAINER
+          - CONTENT_TYPE
+          - CATEGORY
+          items:
+            type: string
+            description: Available permission scopes (asset types) that support permissions
+            example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
+              ,\"PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+      required:
+      - levels
+      - scopes
     PermissionTabField:
       type: object
       allOf:
@@ -24491,6 +24584,29 @@ components:
       properties:
         entity:
           type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPermissionMetadataView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PermissionMetadataView"
         errors:
           type: array
           items:
