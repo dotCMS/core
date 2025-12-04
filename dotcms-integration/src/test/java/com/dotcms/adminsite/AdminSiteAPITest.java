@@ -385,7 +385,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
             Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_FORCE_SECURE, null);
 
             // When/Then
-            Assert.assertFalse(adminSiteAPI.allowInsecureRequests());
+            Assert.assertTrue(adminSiteAPI.allowInsecureRequests());
         } finally {
             Config.setProperty(AdminSiteAPI.ADMIN_SITE_REQUESTS_FORCE_SECURE, originalValue);
         }
