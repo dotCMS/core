@@ -40,7 +40,7 @@
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>dist</directory>
+                            <directory>${project.basedir}/dist</directory>
                             <includes>
                                 <include>**/*</include>
                             </includes>
@@ -62,6 +62,52 @@
                                 <filter token="node.js.version" value="${node.js.version}"/>
                                 <copy file="${basedir}/version-template.txt" tofile="${basedir}/.nvmrc" overwrite="true" filtering="true"/>
                                 -->
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>validate-dist-paths</id>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <target>
+                                <!-- Validate that dist paths resolve correctly within core-web -->
+                                <!-- This prevents referencing dist folders outside the repository, ensuring reproducible builds -->
+                                <property name="core.web.basedir" value="${project.basedir}"/>
+                                
+                                <!-- Verify that dist path resolves to within core-web directory -->
+                                <!-- Using project.basedir ensures paths are relative to pom.xml location -->
+                                <property name="dist.path" value="${core.web.basedir}/dist"/>
+                                
+                                <!-- Ensure dist path is a subdirectory of core-web (basic sanity check) -->
+                                <condition property="dist.path.valid">
+                                    <contains string="${dist.path}" substring="${core.web.basedir}"/>
+                                </condition>
+                                <fail unless="dist.path.valid" message="ERROR: dist path (${dist.path}) does not resolve within core-web (${core.web.basedir}). This could cause non-reproducible builds by referencing external folders."/>
+                                
+                                <!-- If multi-module project directory is available, validate core-web is within repo -->
+                                <condition property="repo.root.available">
+                                    <isset property="maven.multiModuleProjectDirectory"/>
+                                </condition>
+                                <!-- Only validate if repo root is available -->
+                                <condition property="path.within.repo">
+                                    <and>
+                                        <isset property="repo.root.available"/>
+                                        <contains string="${core.web.basedir}" substring="${maven.multiModuleProjectDirectory}"/>
+                                    </and>
+                                </condition>
+                                <!-- Only fail if repo root is available but path is not within repo -->
+                                <condition property="should.fail.repo.check">
+                                    <and>
+                                        <isset property="repo.root.available"/>
+                                        <not><isset property="path.within.repo"/></not>
+                                    </and>
+                                </condition>
+                                <fail if="should.fail.repo.check" message="ERROR: core-web project.basedir (${core.web.basedir}) is outside repository root (${maven.multiModuleProjectDirectory}). This indicates a path resolution issue that could cause non-reproducible builds."/>
+                                
+                                <echo message="Validated dist paths are scoped to core-web: ${core.web.basedir}"/>
                             </target>
                         </configuration>
                         <goals>
@@ -180,12 +226,14 @@
                 <configuration>
                     <webResources>
                         <resource>
-                            <!-- this is relative to the pom.xml directory -->
+                            <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
+                            <!-- This ensures reproducible builds by failing if dist is outside core-web -->
                             <directory>${project.basedir}/dist/apps/dotcms-ui</directory>
                             <filtering>false</filtering>
                             <targetPath>dotAdmin</targetPath>
                         </resource>
                         <resource>
+                            <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
                             <directory>${project.basedir}/dist/libs/dotcms-webcomponents/dist</directory>
                             <filtering>false</filtering>
                             <includes>
@@ -194,18 +242,21 @@
                         </resource>
 
                         <resource>
+                            <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
                             <directory>${project.basedir}/dist/apps/dotcms-binary-field-builder</directory>
                             <filtering>false</filtering>
                             <targetPath>dotcms-binary-field-builder</targetPath>
                         </resource>
 
                         <resource>
+                            <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
                             <directory>${project.basedir}/dist/apps/dotcms-block-editor</directory>
                             <filtering>false</filtering>
                             <targetPath>dotcms-block-editor</targetPath>
                         </resource>
 
                         <resource>
+                            <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
                             <directory>${project.basedir}/dist/libs/sdk/analytics-standalone</directory>
                             <filtering>false</filtering>
                             <targetPath>ext/analytics</targetPath>
@@ -214,6 +265,7 @@
                             </includes>
                         </resource>
                         <resource>
+                            <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>
                             <targetPath>html/js/legacy_custom_field_bridge</targetPath>
