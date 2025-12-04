@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     doc_hash String,
     doc_protocol String,
     user_language String,
-    context_site_key String,
+    context_site_auth String,
     context_user_id String,
     screen_resolution String,
     viewport_height String,
