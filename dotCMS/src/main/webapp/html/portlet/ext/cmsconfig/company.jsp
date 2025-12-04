@@ -365,7 +365,7 @@
                        <%} else {%>
                        <b><%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>
                        </b>
-                       <div style="padding-top:4px;"><small><%=LanguageUtil.get(pageContext,
+                       <div style="padding-top:4px;max-width:400px;"><small><%=LanguageUtil.get(pageContext,
                                "admin.site.url.set.to.default")%>
                        </small></div>
                        <%} %>
