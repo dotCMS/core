@@ -3,14 +3,15 @@ import {
     signalStoreFeature,
     type,
     withComputed,
-    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
 
-import { computed, effect, Signal } from '@angular/core';
+import { computed } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/types';
+
+import { EditorState } from './editor/models';
 
 import { ContentletArea } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../shared/consts';
@@ -20,7 +21,7 @@ import { UVEState } from '../models';
 
 interface ActiveContentState {
     identifier?: string;
-    contentletArea?: ContentletArea;
+    contentArea?: ContentletArea;
 }
 
 const isDefaultPersona = (persona) => persona?.identifier === DEFAULT_PERSONA.identifier;
@@ -34,30 +35,25 @@ const isDefaultPersona = (persona) => persona?.identifier === DEFAULT_PERSONA.id
 export function withActiveContent() {
     return signalStoreFeature(
         {
-            state: type<UVEState>(),
-            props: type<{
-                state: Signal<EDITOR_STATE>;
-            }>()
+            state: type<UVEState & Pick<EditorState, 'state'>>()
         },
         withState<ActiveContentState>({
             identifier: '',
-            contentletArea: null
+            contentArea: null
         }),
         withComputed((store) => {
             const pageEntity = computed(() => store.pageAPIResponse());
-            // This can be props as well
-            const isDragging = computed(() => store.state() === EDITOR_STATE.DRAGGING);
-            const isScrolling = computed(
+            // This can general computed as well
+            const $isDragging = computed(() => store.state() === EDITOR_STATE.DRAGGING);
+            const $isScrolling = computed(
                 () =>
                     store.state() === EDITOR_STATE.SCROLL_DRAG ||
                     store.state() === EDITOR_STATE.SCROLLING
             );
-            const isEditMode = computed(() => store.pageParams()?.mode === UVE_MODE.EDIT);
-            const isLockedByCurrentUser = computed(() => {
-                const isLocked = pageEntity()?.page?.locked;
-                const isLockedByCurrentUser =
-                    pageEntity()?.page?.lockedBy === store.currentUser()?.userId;
-                return isLocked && isLockedByCurrentUser;
+            const $isEditMode = computed(() => store.pageParams()?.mode === UVE_MODE.EDIT);
+            const $isPageLocked = computed(() => pageEntity()?.page?.locked);
+            const $isLockedByCurrentUser = computed(() => {
+                return pageEntity()?.page?.lockedBy === store.currentUser()?.userId;
             });
             return {
                 $allowContentDelete: computed<boolean>(() => {
@@ -65,38 +61,39 @@ export function withActiveContent() {
                     const persona = pageEntity()?.viewAs?.persona;
                     return numberContents > 1 || !persona || isDefaultPersona(persona);
                 }),
-                showContentletControls: computed<boolean>(() => {
+                $showContentletControls: computed<boolean>(() => {
+                    const contentletPosition = store.contentArea();
+                    const canEditPage = store.canEditPage();
+                    const isDragging = $isDragging();
+                    const isScrolling = $isScrolling();
+                    const isEditMode = $isEditMode();
+                    // MISSING: const canEditDueToLock = !isLockFeatureEnabled || isPageLockedByUser;
+                    const canEditLockedPage = $isPageLocked() && $isLockedByCurrentUser();
+
                     return (
-                        !!store.contentletArea() &&
-                        store.canEditPage() &&
-                        !isDragging() &&
-                        !isScrolling() &&
-                        isEditMode() &&
-                        !isLockedByCurrentUser()
+                        !!contentletPosition &&
+                        canEditPage &&
+                        !isDragging &&
+                        !isScrolling &&
+                        isEditMode &&
+                        canEditLockedPage
                     );
                 })
             };
         }),
         withMethods((store) => ({
-            setActiveContentArea(_contentletArea: ContentletArea) {
+            setActiveContentArea(contentArea: ContentletArea) {
                 patchState(store, {
-                    // contentletArea,
-                    // state: EDITOR_STATE.IDLE
+                    contentArea,
+                    state: EDITOR_STATE.IDLE
                 });
             },
             unsetActiveContentArea() {
                 patchState(store, {
-                    // contentletArea: null,
-                    // state: EDITOR_STATE.IDLE
+                    contentArea: null,
+                    state: EDITOR_STATE.IDLE
                 });
             }
-        })),
-        withHooks({
-            onInit(_store) {
-                effect(() => {
-                    // console.log('State', store.state());
-                });
-            }
-        })
+        }))
     );
 }

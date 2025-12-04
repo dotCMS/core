@@ -61,7 +61,7 @@
                 data-testId="progress-bar"
                 mode="indeterminate" />
         }
-        @if ($editorProps()?.contentletTools; as contentletTools) {
+        @if ($showContentletControls()) {
             <dot-ema-contentlet-tools
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
@@ -69,9 +69,11 @@
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                [contentletArea]="contentletTools.contentletArea"
+                [contentletArea]="$contentArea()"
                 [isEnterprise]="uveStore.isEnterprise()"
-                [disableDeleteButton]="contentletTools.disableDeleteButton"
+                [disableDeleteButton]="
+                    $allowContentDelete() ? null : 'uve.disable.delete.button.on.personalization'
+                "
                 data-testId="contentlet-tools" />
         }
         @if (!$toggleLockOptions()?.showOverlay && dropzone) {

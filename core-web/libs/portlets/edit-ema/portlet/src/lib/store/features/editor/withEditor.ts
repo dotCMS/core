@@ -27,7 +27,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../shared/consts';
+import { UVE_FEATURE_FLAGS } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -46,6 +46,7 @@ import {
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withFlags } from '../flags/withFlags';
+import { withActiveContent } from '../withContentlet';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
@@ -77,6 +78,7 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
+        withActiveContent(),
         withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
@@ -125,7 +127,6 @@ export function withEditor() {
                     const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
-                    const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
@@ -136,23 +137,10 @@ export function withEditor() {
                     const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
-                    const { dragIsActive, isScrolling } = getEditorStates(state);
+                    const { dragIsActive } = getEditorStates(state);
 
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
-
-                    const isLockFeatureEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
-                    const isPageLockedByUser =
-                        pageAPIResponse?.page.lockedBy === store.currentUser()?.userId;
-                    const canEditDueToLock = !isLockFeatureEnabled || isPageLockedByUser;
-
-                    const canUserHaveContentletTools =
-                        !!contentletArea &&
-                        canEditPage &&
-                        isEditState &&
-                        !isScrolling &&
-                        isEditMode &&
-                        canEditDueToLock;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
                     const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
@@ -163,15 +151,6 @@ export function withEditor() {
 
                     const wrapper = getWrapperMeasures(device, store.orientation());
 
-                    const shouldDisableDeleteButton =
-                        pageAPIResponse?.numberContents === 1 && // If there is only one content, we should disable the delete button
-                        pageAPIResponse?.viewAs?.persona && // If there is a persona, we should disable the delete button
-                        pageAPIResponse?.viewAs?.persona?.identifier !== DEFAULT_PERSONA.identifier; // If the persona is not the default persona, we should disable the delete button
-
-                    const message = 'uve.disable.delete.button.on.personalization';
-
-                    const disableDeleteButton = shouldDisableDeleteButton ? message : null;
-
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
@@ -181,14 +160,6 @@ export function withEditor() {
                             wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
-                        contentletTools: canUserHaveContentletTools
-                            ? {
-                                  isEnterprise,
-                                  contentletArea,
-                                  hide: dragIsActive,
-                                  disableDeleteButton
-                              }
-                            : null,
                         dropzone: showDropzone
                             ? {
                                   bounds,

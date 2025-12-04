@@ -169,6 +169,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $paletteOpen = this.uveStore.paletteOpen;
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    readonly $showContentletControls = this.uveStore.$showContentletControls;
+    readonly $contentArea = this.uveStore.contentArea;
+    readonly $allowContentDelete = this.uveStore.$allowContentDelete;
     readonly UVE_STATUS = UVE_STATUS;
 
     get contentWindow(): Window | null {
@@ -918,12 +921,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
                 this.uveStore.setEditorBounds(payload);
             },
-            [DotCMSUVEAction.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
-                // console.log('contentletArea', contentletArea);
-                const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
+            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
+                const payload = this.uveStore.getPageSavePayload(coords.payload);
 
-                this.uveStore.setEditorContentletArea({
-                    ...contentletArea,
+                this.uveStore.setActiveContentArea({
+                    x: coords.x,
+                    y: coords.y,
+                    width: coords.width,
+                    height: coords.height,
                     payload
                 });
             },
@@ -1541,10 +1546,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     #resetContentletArea(): void {
-        if (!this.uveStore.contentletArea()) {
-            return;
-        }
-
-        this.uveStore.setEditorContentletArea(null);
+        this.uveStore.unsetActiveContentArea();
     }
 }
