@@ -43,7 +43,7 @@ export function withSidebar() {
              */
             loadFolders: () => {
                 const currentSite = store.currentSite();
-                if (!currentSite) {
+                if (!currentSite || currentSite.identifier === SYSTEM_HOST.identifier) {
                     return;
                 }
 
@@ -118,10 +118,6 @@ export function withSidebar() {
         withHooks((store) => {
             return {
                 onInit() {
-                    if (store.currentSite()?.identifier === SYSTEM_HOST.identifier) {
-                        return;
-                    }
-
                     store.loadFolders();
                 }
             };
