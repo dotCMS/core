@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "5dc4be95-1308-423f-af00-24ee7c23dab5",
+		"_postman_id": "85c5e84a-65d0-4435-be30-770210d944ed",
 		"name": "ContentTypePagesResource",
+		"description": "# ContentTypePagesResource API Tests\n\n## Overview\nThis collection tests the `/v1/contenttype/page` endpoint which returns content types supported by containers that live on a specified page.\n\n## Key Changes Made\n✅ **Fixed container-template-page association chain**  \n✅ **Added unique timestamps to prevent conflicts**  \n✅ **Removed GetFirstPage dependency**  \n✅ **Corrected creation sequence: ContentTypes → Containers → Templates → Pages**  \n✅ **All elements properly published before use**  \n✅ **Page created AFTER all dependencies exist**\n\n## Setup Sequence (CORRECTED)\n**CRITICAL**: Page is created LAST, after all components exist:\n\n1. **Content Types** → Create CONTENT and PERSONA BaseType content types\n2. **Container** → Create container and associate it with CONTENT content type (`structureId`)\n3. **🔄 Publish Container** → Make container available for templates\n4. **Template** → Create template and include the published container (`containers[].identifier`)\n5. **🔄 Publish Template** → Make template available for pages\n6. **Page (Final Step)** → Create page using the published template (`template`)\n\n## Test Architecture\n```\nContent Type (CONTENT BaseType)\n    ↓ (structureId association)\nContainer (accepts only CONTENT types)\n    ↓ (published)\nTemplate (includes the container)\n    ↓ (published)\nPage (uses the custom template)\n    ↓ (pagePathOrId parameter)\nEndpoint Test (/v1/contenttype/page)\n```\n\n## Expected Results\n- **PERSONA Filter**: 0 results (container only supports CONTENT)\n- **CONTENT Filter**: ≥1 results (includes test content type)\n- **Multiple BaseType**: Only CONTENT types returned\n\n## Unique Elements\nAll test elements include `{{$timestamp}}` for uniqueness:\n- Content Types: `Test [Type] Content Type {{$timestamp}}`\n- Container: `Test Container - CONTENT BaseType Support {{$timestamp}}`\n- Template: `Test Template - CONTENT BaseType Support {{$timestamp}}`\n- Page: `test-page-basetype-filtering-{{$timestamp}}`",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/lala~a3d26915-38eb-4963-9468-75e27e78f31c/collection/10041132-5dc4be95-1308-423f-af00-24ee7c23dab5?action=share&source=collection_link&creator=10041132"
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/So~c49d0f2c-97d7-41b5-88aa-e97e08adb2ad/collection/10041132-85c5e84a-65d0-4435-be30-770210d944ed?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -135,7 +136,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Test Blog Content Type\",\n    \"description\": \"Test content type for BaseType filtering tests - CONTENT BaseType\",\n    \"host\": \"{{currentSiteHost}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"variable\": \"testBlogContentType\",\n    \"baseType\": \"CONTENT\",\n    \"icon\": \"event_note\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\"\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Test Blog Content Type {{$timestamp}}\",\n    \"description\": \"Test content type for BaseType filtering tests - CONTENT BaseType\",\n    \"host\": \"{{currentSiteHost}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"variable\": \"testBlogContentType{{$timestamp}}\",\n    \"baseType\": \"CONTENT\",\n    \"icon\": \"event_note\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -198,7 +199,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePersonaContentType\",\n    \"defaultType\": false,\n    \"name\": \"Test Persona Content Type\",\n    \"description\": \"Test content type for BaseType filtering tests - PERSONA BaseType\",\n    \"host\": \"{{currentSiteHost}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"variable\": \"testPersonaContentType\",\n    \"baseType\": \"PERSONA\",\n    \"icon\": \"person\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\"\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePersonaContentType\",\n    \"defaultType\": false,\n    \"name\": \"Test Persona Content Type {{$timestamp}}\",\n    \"description\": \"Test content type for BaseType filtering tests - PERSONA BaseType\",\n    \"host\": \"{{currentSiteHost}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"variable\": \"testPersonaContentType{{$timestamp}}\",\n    \"baseType\": \"PERSONA\",\n    \"icon\": \"person\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -214,79 +215,6 @@
 								"api",
 								"v1",
 								"contenttype"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Test Page",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Store Test Page ID\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData.entity.results[0]);",
-									"    const pageId = Object.keys(jsonData.entity.results[0])[0];",
-									"    console.log(pageId);",
-									"    const url = jsonData.entity.results[0][Object.keys(jsonData.entity.results[0])[0]].url;",
-									"    pm.collectionVariables.set(\"testPageId\", pageId);",
-									"    pm.collectionVariables.set(\"testPageUrl\", url);",
-									"    console.log(\"✓ Created Test Page: \" + pageId);",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"Test Page for BaseType Filtering\",\n        \"friendlyName\": \"test-page-basetype-filtering\",\n        \"url\": \"test-page-basetype-filtering\",\n        \"template\": \"{{testTemplateId}}\",\n        \"cachettl\": \"0\",\n        \"showOnMenu\": \"false\",\n        \"sortOrder\": \"0\",\n        \"languageId\": 1,\n        \"hostFolder\": \"{{currentSiteHost}}\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
 							]
 						}
 					},
@@ -335,7 +263,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Test Container - CONTENT BaseType Support\",\n    \"friendlyName\": \"Test Container CONTENT\", \n    \"maxContentlets\": 25,\n    \"code\": \"<div class=\\\"container\\\">\\n#foreach($contentlet in $contents)\\n<h2>$contentlet.title</h2>\\n<p>$contentlet.body</p>\\n#end\\n</div>\",\n    \"preLoop\": \"\",\n    \"postLoop\": \"\",\n    \"containerStructures\": [\n        {\n            \"structureId\": \"{{testContentTypeId}}\",\n            \"code\": \"\"\n        }\n    ]\n}",
+							"raw": "{\n    \"title\": \"Test Container - CONTENT BaseType Support {{$timestamp}}\",\n    \"friendlyName\": \"Test Container CONTENT {{$timestamp}}\", \n    \"maxContentlets\": 25,\n    \"code\": \"<div class=\\\"container\\\">\\n#foreach($contentlet in $contents)\\n<h2>$contentlet.title</h2>\\n<p>$contentlet.body</p>\\n#end\\n</div>\",\n    \"preLoop\": \"\",\n    \"postLoop\": \"\",\n    \"containerStructures\": [\n        {\n            \"structureId\": \"{{testContentTypeId}}\",\n            \"code\": \"\"\n        }\n    ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -455,7 +383,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"layout\": {\n        \"body\": {\n            \"rows\": [\n                {\n                    \"styleClass\": \"\",\n                    \"columns\": [\n                        {\n                            \"styleClass\": \"\",\n                            \"leftOffset\": 1,\n                            \"width\": 12,\n                            \"containers\": [\n                                {\"identifier\": \"{{testContainerId}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }\n    },\n    \"friendlyName\": \"Test Template for CONTENT BaseType Testing\",\n    \"title\": \"Test Template - CONTENT BaseType Support\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+							"raw": "{\n    \"layout\": {\n        \"body\": {\n            \"rows\": [\n                {\n                    \"styleClass\": \"\",\n                    \"columns\": [\n                        {\n                            \"styleClass\": \"\",\n                            \"leftOffset\": 1,\n                            \"width\": 12,\n                            \"containers\": [\n                                {\"identifier\": \"{{testContainerId}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }\n    },\n    \"friendlyName\": \"Test Template for CONTENT BaseType Testing {{$timestamp}}\",\n    \"title\": \"Test Template - CONTENT BaseType Support {{$timestamp}}\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -534,32 +462,28 @@
 						}
 					},
 					"response": []
-				}
-			],
-			"description": "Creates all necessary test data: content types, pages, containers, and templates for BaseType filtering tests"
-		},
-		{
-			"name": "ContentTypeForPages - Tests",
-			"item": [
+				},
 				{
-					"name": "GetFirstPage (Fallback Page Discovery)",
+					"name": "Create Test Page (Final Step)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
+									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"var jsonData = pm.response.json();",
-									"if (jsonData.contentlets && jsonData.contentlets.length > 0) {",
-									"    pm.collectionVariables.set(\"testPageId\", jsonData.contentlets[0].identifier);",
-									"    pm.collectionVariables.set(\"testPageUrl\", jsonData.contentlets[0].url);",
-									"    console.log(\"✓ Found fallback page: \" + jsonData.contentlets[0].identifier);",
-									"} else {",
-									"    console.log(\"! No fallback page found - using test page only\");",
-									"}"
+									"pm.test(\"Store Test Page ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData.entity.results[0]);",
+									"    const pageId = Object.keys(jsonData.entity.results[0])[0];",
+									"    console.log(pageId);",
+									"    const url = jsonData.entity.results[0][Object.keys(jsonData.entity.results[0])[0]].url;",
+									"    pm.collectionVariables.set(\"testPageId\", pageId);",
+									"    pm.collectionVariables.set(\"testPageUrl\", url);",
+									"    console.log(\"✓ Created Test Page: \" + pageId);",
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {},
@@ -567,9 +491,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -581,11 +502,16 @@
 								}
 							]
 						},
-						"method": "GET",
-						"header": [],
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "",
+							"raw": "{\n    \"contentlet\": {\n        \"stName\": \"htmlpageasset\",\n        \"title\": \"Test Page for BaseType Filtering {{$timestamp}}\",\n        \"friendlyName\": \"test-page-basetype-filtering-{{$timestamp}}\",\n        \"url\": \"test-page-basetype-filtering-{{$timestamp}}\",\n        \"template\": \"{{testTemplateId}}\",\n        \"cachettl\": \"0\",\n        \"showOnMenu\": \"false\",\n        \"sortOrder\": \"0\",\n        \"languageId\": 1,\n        \"hostFolder\": \"{{currentSiteHost}}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -593,22 +519,29 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:htmlpageasset",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"content",
-								"render",
-								"false",
-								"query",
-								"+contentType:htmlpageasset"
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
 							]
 						}
 					},
 					"response": []
-				},
+				}
+			],
+			"description": "Creates all necessary test data in the correct order: content types → containers → templates → pages for BaseType filtering tests"
+		},
+		{
+			"name": "ContentTypeForPages - Tests",
+			"item": [
 				{
 					"name": "Test - Basic Content Type Discovery (No Filter)",
 					"event": [
