@@ -1,0 +1,13 @@
+<p-select
+    optionLabel="name"
+    [appendTo]="'body'"
+    (onChange)="onContentTypeChange($event.value)"
+    [ngModel]="value()"
+    (ngModelChange)="value.set($event)"
+    [disabled]="disabled()"
+    [filter]="true"
+    [loading]="loading()"
+    [options]="contentTypes()"
+    [placeholder]="placeholder()"
+    filterBy="name"
+    class="w-full" />
