@@ -67,10 +67,25 @@ export class DotWorkflowComponent implements OnInit, ControlValueAccessor {
             const currentValue = this.value();
             this.onChangeCallback(currentValue);
         });
+
+        // Watch for disabled state changes - if field becomes enabled, load all content types
+        effect(() => {
+            const isDisabled = this.$disabled();
+            const hasContentTypes = this.contentTypes().length > 0;
+
+            // If field becomes enabled and we don't have content types loaded, load them
+            if (!isDisabled && !hasContentTypes && !this.loading()) {
+                this.loadContentTypes();
+            }
+        });
     }
 
     ngOnInit(): void {
-        this.loadContentTypes();
+        // Only load all content types on init if not disabled
+        // If disabled, we'll load them when the field becomes enabled (via effect)
+        if (!this.$disabled()) {
+            this.loadContentTypes();
+        }
     }
 
     onContentTypeChange(contentType: DotCMSContentType | null): void {
@@ -82,6 +97,31 @@ export class DotWorkflowComponent implements OnInit, ControlValueAccessor {
     // ControlValueAccessor implementation
     writeValue(value: DotCMSContentType | null): void {
         this.value.set(value);
+
+        // If we have a value, ensure it's in the contentTypes array
+        // This is especially important when the field is disabled
+        if (value) {
+            this.ensureContentTypeInList(value);
+        }
+    }
+
+    /**
+     * Ensures the given content type is in the contentTypes list.
+     * Since writeValue receives the full DotCMSContentType object, we can just add it directly.
+     *
+     * @private
+     * @param contentType The content type to ensure is in the list
+     */
+    private ensureContentTypeInList(contentType: DotCMSContentType): void {
+        const currentContentTypes = this.contentTypes();
+        const exists = currentContentTypes.some(
+            (ct) => ct.id === contentType.id || ct.variable === contentType.variable
+        );
+
+        if (!exists) {
+            // We have the full object, so just add it directly to the list
+            this.contentTypes.set([...currentContentTypes, contentType]);
+        }
     }
 
     registerOnChange(fn: (value: DotCMSContentType | null) => void): void {
@@ -110,6 +150,12 @@ export class DotWorkflowComponent implements OnInit, ControlValueAccessor {
                 next: (contentTypes) => {
                     this.contentTypes.set(contentTypes);
                     this.loading.set(false);
+
+                    // After loading, ensure current value is in the list
+                    const currentValue = this.value();
+                    if (currentValue) {
+                        this.ensureContentTypeInList(currentValue);
+                    }
                 },
                 error: () => {
                     this.loading.set(false);
