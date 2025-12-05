@@ -4,13 +4,13 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v23</version>
         <relativePath>parent</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>dotcms-root</artifactId>
-    <version>24.04.24</version>
+    <version>24.04.24_lts_v23</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <modules>

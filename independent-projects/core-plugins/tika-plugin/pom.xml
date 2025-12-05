@@ -3,11 +3,11 @@
     <parent>
         <groupId>com.dotcms.core.plugins</groupId>
         <artifactId>dotcms-core-plugins-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v23</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>com.dotcms.tika</artifactId>
-    <version>24.04.24</version>
+    <version>24.04.24_lts_v23</version>
     <packaging>bundle</packaging>
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -18,7 +18,7 @@
         <osgi.compendium.version>7.0.0</osgi.compendium.version>
         <tika.version>2.8.0</tika.version>
         <skip.rewrite>true</skip.rewrite>
-        <tika.api.version>24.04.24</tika.api.version>
+        <tika.api.version>24.04.24_lts_v23</tika.api.version>
     </properties>
     <dependencies>
 

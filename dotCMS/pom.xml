@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v23</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dotcms-core</artifactId>

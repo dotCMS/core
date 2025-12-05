@@ -4,13 +4,13 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-nodejs-parent</artifactId>
-        <version>24.04.24</version>
+        <version>24.04.24_lts_v23</version>
         <relativePath>../nodejs-parent/pom.xml</relativePath>
     </parent>
 
     <packaging>jar</packaging>
     <artifactId>dotcms-postman</artifactId>
-    <version>24.04.24</version>
+    <version>24.04.24_lts_v23</version>
 
     <properties>
         <!--suppress UnresolvedMavenProperty -->
