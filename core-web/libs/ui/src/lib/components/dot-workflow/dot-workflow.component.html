@@ -4,7 +4,7 @@
     (onChange)="onContentTypeChange($event.value)"
     [ngModel]="value()"
     (ngModelChange)="value.set($event)"
-    [disabled]="disabled()"
+    [disabled]="$isDisabled()"
     [filter]="true"
     [loading]="loading()"
     [options]="contentTypes()"
