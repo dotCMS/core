@@ -1,5 +1,7 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     align-items: center;
@@ -7,9 +9,9 @@
 }
 
 h2 {
-    margin: 0 $spacing-3 0 0;
+    margin: 0 spacing.$spacing-3 0 0;
     align-self: center;
-    color: $font-color-base;
-    font-size: $font-size-xl;
+    color: fonts.$font-color-base;
+    font-size: fonts.$font-size-xl;
     font-weight: normal;
 }

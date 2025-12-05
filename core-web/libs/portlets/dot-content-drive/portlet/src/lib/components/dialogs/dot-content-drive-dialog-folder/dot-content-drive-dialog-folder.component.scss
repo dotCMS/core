@@ -1,3 +1,7 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -18,8 +22,8 @@
             max-height: 0;
             opacity: 0;
             display: none;
-            transition: max-height $content-drive-animation-speed $content-drive-animation-ease;
-            padding: 0 $spacing-4;
+            transition: max-height common.$content-drive-animation-speed common.$content-drive-animation-ease;
+            padding: 0 spacing.$spacing-4;
         }
 
         .p-tabview-panel[aria-hidden="false"] {
@@ -41,15 +45,15 @@
 .folder-dialog-tab-content {
     display: flex;
     flex-direction: column;
-    gap: $spacing-3;
-    margin-top: $spacing-3;
+    gap: spacing.$spacing-3;
+    margin-top: spacing.$spacing-3;
 }
 
 .folder-dialog-path {
-    background-color: $color-palette-gray-100;
-    height: $spacing-5;
+    background-color: colors.$color-palette-gray-100;
+    height: spacing.$spacing-5;
     border-radius: 0.375rem; //6px
-    padding: 0 $spacing-1;
+    padding: 0 spacing.$spacing-1;
     display: flex;
     align-items: center;
     margin: 0;
@@ -58,14 +62,14 @@
 .folder-dialog-field {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
-    margin-bottom: $spacing-3;
+    gap: spacing.$spacing-1;
+    margin-bottom: spacing.$spacing-3;
 }
 
 .folder-dialog-footer {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-3;
-    margin-top: $spacing-3;
-    padding: 0 $spacing-4;
+    gap: spacing.$spacing-3;
+    margin-top: spacing.$spacing-3;
+    padding: 0 spacing.$spacing-4;
 }

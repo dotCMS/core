@@ -1,6 +1,7 @@
 @use "variables" as *;
-@import "mixins";
-@import "dotcms-theme/utils/_mixins.scss";
+@use "mixins";
+@use "dotcms-theme/utils/_mixins.scss" as mixins2;
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
 
 .layout {
     display: flex;
@@ -10,7 +11,7 @@
 }
 
 .layout__navigation {
-    background-color: $brand-background;
+    background-color: colors.$brand-background;
     flex-shrink: 0;
 }
 

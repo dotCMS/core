@@ -1,3 +1,5 @@
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -8,7 +10,7 @@
     ::ng-deep {
         p-table {
             flex-grow: 1;
-            padding-bottom: $spacing-3;
+            padding-bottom: spacing.$spacing-3;
 
             .dotTable.p-datatable.p-component {
                 height: 100%;
@@ -24,7 +26,7 @@
 .locales-list__header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: $spacing-1;
+    margin-bottom: spacing.$spacing-1;
 }
 
 .locales-list__search {

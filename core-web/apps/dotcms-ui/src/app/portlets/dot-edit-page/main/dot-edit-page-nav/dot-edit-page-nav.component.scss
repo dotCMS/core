@@ -1,11 +1,14 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 $nav-size: 80px;
 
 :host {
-    background-color: $color-palette-gray-200;
-    border-left: solid 1px $color-palette-gray-300;
+    background-color: colors.$color-palette-gray-200;
+    border-left: solid 1px colors.$color-palette-gray-300;
     display: flex;
     flex-shrink: 0;
     order: 2;
@@ -20,25 +23,25 @@ $nav-size: 80px;
     }
 
     &.edit-page-variant-mode {
-        background-color: $color-palette-primary-200;
+        background-color: colors.$color-palette-primary-200;
 
         a:hover {
-            background-color: $color-palette-primary-100;
+            background-color: colors.$color-palette-primary-100;
         }
     }
 }
 
 .edit-page-nav {
-    @include naked-list;
+    @include mixins.naked-list;
     width: 100%;
 }
 
 .edit-page-nav__item {
     align-items: center;
-    color: $color-palette-gray-800;
+    color: colors.$color-palette-gray-800;
     display: flex;
     flex-direction: column;
-    font-size: $font-size-xs;
+    font-size: fonts.$font-size-xs;
     height: $nav-size;
     justify-content: center;
     text-decoration: none;
@@ -46,15 +49,15 @@ $nav-size: 80px;
     transition: background-color $basic-speed ease-in;
 
     dot-icon {
-        margin-bottom: $spacing-1;
+        margin-bottom: spacing.$spacing-1;
     }
 
     &:hover {
-        background-color: $color-palette-gray-200;
+        background-color: colors.$color-palette-gray-200;
     }
 
     & > .fa {
-        font-size: $font-size-sm;
+        font-size: fonts.$font-size-sm;
         margin-bottom: 8px;
     }
 
@@ -67,13 +70,13 @@ $nav-size: 80px;
 }
 
 .edit-page-nav__item--active {
-    background-color: $white;
-    color: $black;
+    background-color: colors.$white;
+    color: colors.$black;
     pointer-events: none;
-    border-bottom: 1px solid $color-palette-gray-300;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
     border-top: 1px solid transparent;
 }
 
 .edit-page-nav li:not(:first-child) .edit-page-nav__item--active {
-    border-color: $color-palette-gray-300;
+    border-color: colors.$color-palette-gray-300;
 }

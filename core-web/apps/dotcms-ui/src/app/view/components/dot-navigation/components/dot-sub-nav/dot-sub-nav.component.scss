@@ -1,34 +1,37 @@
 @use "variables" as *;
-@import "mixins";
-@import "dotcms-theme/utils/theme-variables";
+@use "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: block;
 }
 
 ul {
-    @include naked-list;
+    @include mixins.naked-list;
     position: relative;
 }
 
 a {
-    color: $white;
+    color: colors.$white;
     text-decoration: none;
 }
 
 .dot-nav-sub__link {
     display: block;
-    padding: $spacing-1 $spacing-1 $spacing-1 56px;
+    padding: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 56px;
     transition: background-color $basic-speed ease;
     width: $navigation-width;
 
     &:hover {
-        background-color: $color-palette-white-op-10;
+        background-color: colors.$color-palette-white-op-10;
     }
 
     &--active,
     &--active:hover {
-        background-color: $color-palette-primary;
+        background-color: colors.$color-palette-primary;
     }
 }
 
@@ -39,26 +42,26 @@ a {
 }
 
 .dot-nav-sub__collapsed {
-    background-color: $color-palette-white-op-10;
-    padding: 0 0 $spacing-1 0;
+    background-color: colors.$color-palette-white-op-10;
+    padding: 0 0 spacing.$spacing-1 0;
     min-width: $navigation-width;
 
     .dot-nav-sub__link {
-        padding: $spacing-1 $spacing-4;
+        padding: spacing.$spacing-1 spacing.$spacing-4;
     }
 }
 
 .dot-nav-sub__group-header {
-    padding: $spacing-3 $spacing-4;
-    border-bottom: 1px solid $color-palette-white-op-20;
-    margin-bottom: $spacing-1;
+    padding: spacing.$spacing-3 spacing.$spacing-4;
+    border-bottom: 1px solid colors.$color-palette-white-op-20;
+    margin-bottom: spacing.$spacing-1;
     cursor: default;
 }
 
 .dot-nav-sub__group-name {
-    color: $white;
-    font-weight: $font-weight-medium-bold;
-    font-size: $font-size-md;
+    color: colors.$white;
+    font-weight: fonts.$font-weight-medium-bold;
+    font-size: fonts.$font-size-md;
     display: block;
     user-select: none;
     line-height: 1.1;

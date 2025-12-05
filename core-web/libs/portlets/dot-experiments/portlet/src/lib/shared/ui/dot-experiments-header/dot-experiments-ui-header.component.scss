@@ -1,17 +1,21 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 @use "mixins" as *;
 
 .wrapper {
-    padding: 0 $spacing-4 0 $spacing-4;
+    padding: 0 spacing.$spacing-4 0 spacing.$spacing-4;
     min-height: $dot-secondary-toolbar-main-height;
-    background-color: $white;
-    color: $black;
-    font-size: $font-size-lg;
-    border-bottom: 1px solid $color-palette-gray-300;
+    background-color: colors.$white;
+    color: colors.$black;
+    font-size: fonts.$font-size-lg;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
 
     a {
-        color: $color-accessible-text-blue;
-        font-weight: $font-weight-regular-bold;
+        color: colors.$color-accessible-text-blue;
+        font-weight: fonts.$font-weight-regular-bold;
 
         i {
             font-size: $md-icon-size-big;
@@ -22,28 +26,28 @@
 ::ng-deep {
     p-chip .p-chip {
         &.running {
-            color: $color-accessible-text-green;
-            background-color: $color-accessible-text-green-bg;
+            color: colors.$color-accessible-text-green;
+            background-color: colors.$color-accessible-text-green-bg;
         }
 
         &.draft {
-            color: $color-accessible-text-yellow;
-            background-color: $color-accessible-text-yellow-bg;
+            color: colors.$color-accessible-text-yellow;
+            background-color: colors.$color-accessible-text-yellow-bg;
         }
 
         &.scheduled {
-            color: $color-accessible-text-purple;
-            background-color: $color-accessible-text-purple-bg;
+            color: colors.$color-accessible-text-purple;
+            background-color: colors.$color-accessible-text-purple-bg;
         }
 
         &.ended {
-            color: $color-accessible-text-blue;
-            background-color: $color-accessible-text-blue-bg;
+            color: colors.$color-accessible-text-blue;
+            background-color: colors.$color-accessible-text-blue-bg;
         }
 
         &.archived {
-            color: $color-accessible-text-gray;
-            background-color: $color-accessible-text-gray-bg;
+            color: colors.$color-accessible-text-gray;
+            background-color: colors.$color-accessible-text-gray-bg;
         }
     }
 }

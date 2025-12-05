@@ -1,3 +1,7 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -9,9 +13,9 @@
     padding: 0;
     margin: 0;
     right: 0;
-    top: $spacing-4;
-    box-shadow: $shadow-xs;
-    background: $white;
+    top: spacing.$spacing-4;
+    box-shadow: shadows.$shadow-xs;
+    background: colors.$white;
     z-index: 1003;
     min-width: 160px;
 }
@@ -22,13 +26,13 @@
     .dot-menu-item__link,
     .dot-menu-item__link:visited {
         cursor: pointer;
-        color: $black;
+        color: colors.$black;
         display: block;
-        padding: $spacing-1;
+        padding: spacing.$spacing-1;
         text-decoration: none;
     }
 }
 
 .dot-menu-item:hover {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
 }

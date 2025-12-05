@@ -1,5 +1,10 @@
 @use "variables" as *;
-@import "styles/prosemirror";
+@use "sass:meta";
+@use "styles/prosemirror";
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
 
 ::ng-deep {
     div[data-tippy-root]:has(.tippy-box[data-reference-hidden]) {
@@ -10,27 +15,27 @@
 
 :host {
     position: relative;
-    font-family: $font-default;
+    font-family: fonts.$font-default;
     height: 100%;
     display: block;
 
     // If a child is focused, set this style to the parent
     &:focus-within {
-        outline-color: $color-palette-primary;
+        outline-color: colors.$color-palette-primary;
     }
 
     // Disabled state - prevent focus styling when disabled
     &.editor-disabled:focus-within {
-        outline-color: $color-palette-gray-300;
+        outline-color: colors.$color-palette-gray-300;
     }
 
     .editor-wrapper {
         display: block;
-        border-radius: $border-radius-sm;
+        border-radius: common.$border-radius-sm;
         overflow-y: hidden;
         position: relative;
         resize: vertical;
-        outline: $color-palette-gray-500 solid 1px;
+        outline: colors.$color-palette-gray-500 solid 1px;
     }
 
     .editor-wrapper--default {
@@ -43,25 +48,25 @@
 
     .editor-wrapper--disabled {
         opacity: $field-disabled-opacity;
-        background-color: $color-palette-gray-100;
+        background-color: colors.$color-palette-gray-100;
         cursor: not-allowed;
         pointer-events: none;
     }
 
     .dot-drag-handle {
         cursor: grab;
-        color: $color-palette-gray-500;
+        color: colors.$color-palette-gray-500;
         display: flex;
 
         .pi:first-child {
-            margin-right: -$spacing-2;
+            margin-right: -(spacing.$spacing-2);
         }
     }
 
     .ai-content-container {
         &.ProseMirror-selectednode {
-            background-color: $color-palette-primary-op-20;
-            border: 1px solid $color-palette-primary-300;
+            background-color: colors.$color-palette-primary-op-20;
+            border: 1px solid colors.$color-palette-primary-300;
         }
     }
 
@@ -76,13 +81,13 @@
         height: 17.375rem;
         padding: 0.5rem;
         border-radius: 0.5rem;
-        border: 1.5px solid $color-palette-gray-400;
+        border: 1.5px solid colors.$color-palette-gray-400;
     }
 
     .p-progress-spinner {
-        border: 5px solid $color-palette-gray-300;
+        border: 5px solid colors.$color-palette-gray-300;
         border-radius: 50%;
-        border-top: 5px solid $color-palette-primary;
+        border-top: 5px solid colors.$color-palette-primary;
         width: 2.4rem;
         height: 2.4rem;
         animation: spin 1s linear infinite;
@@ -100,7 +105,7 @@
 }
 
 tiptap-editor::ng-deep .ProseMirror {
-    @import "styles/typography";
+    @include meta.load-css("styles/typography");
 }
 
 .overflow-hidden {

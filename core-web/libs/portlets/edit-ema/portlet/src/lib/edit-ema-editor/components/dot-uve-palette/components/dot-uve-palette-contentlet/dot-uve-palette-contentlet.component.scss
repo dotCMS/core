@@ -1,3 +1,9 @@
+@use "../../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "sass:math";
 @use "variables" as *;
 
@@ -5,21 +11,21 @@
     display: flex;
     width: 100%;
     align-items: center;
-    border: 1px solid $color-palette-border-light;
-    border-radius: $border-radius-md;
-    background: $white;
+    border: 1px solid colors.$color-palette-border-light;
+    border-radius: common.$border-radius-md;
+    background: colors.$white;
     cursor: pointer;
     transition: all $basic-speed ease-in-out;
     height: 4rem;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     justify-content: space-between;
-    padding: 0 $spacing-1;
+    padding: 0 spacing.$spacing-1;
     overflow: hidden;
 
     &:hover {
-        border-color: $color-palette-primary;
-        background: $color-palette-primary-100;
-        box-shadow: $shadow-s;
+        border-color: colors.$color-palette-primary;
+        background: colors.$color-palette-primary-100;
+        box-shadow: shadows.$shadow-s;
 
         .drag-handle,
         .chevron {
@@ -34,7 +40,7 @@
         align-items: center;
         justify-content: flex-start;
         flex: 1;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
         min-width: 0;
     }
 
@@ -42,7 +48,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-800;
+        color: colors.$color-palette-gray-800;
         max-width: 3.375rem; // 54px
         min-width: 3.375rem;
         height: 2.25rem; // 36px - fixed height for consistency
@@ -60,9 +66,9 @@
     }
 
     .name {
-        font-size: $font-size-md;
-        color: $color-palette-bluegray-800;
-        font-weight: $font-weight-semi-bold;
+        font-size: fonts.$font-size-md;
+        color: colors.$color-palette-bluegray-800;
+        font-weight: fonts.$font-weight-semi-bold;
         line-height: 1.2;
         flex: 1;
         text-align: left;
@@ -76,7 +82,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-bluegray-300;
+        color: colors.$color-palette-bluegray-300;
         width: 0.875rem;
         height: 0.875rem;
         cursor: grab;
@@ -84,7 +90,7 @@
         transition: opacity $basic-speed ease-in-out;
 
         .pi:first-child {
-            margin-right: -$spacing-1;
+            margin-right: -(spacing.$spacing-1);
         }
 
         &:active {
@@ -96,13 +102,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-palette-gray-300;
+        color: colors.$color-palette-gray-300;
         width: 0.875rem;
         height: 0.875rem;
         opacity: 0;
         transition: opacity $basic-speed ease-in-out;
         .pi {
-            color: $color-palette-bluegray-300;
+            color: colors.$color-palette-bluegray-300;
         }
     }
 }

@@ -1,23 +1,27 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     width: auto;
     min-height: $dot-secondary-toolbar-height;
     display: block;
-    border-bottom: 1px solid $color-palette-gray-300;
-    margin-left: -$spacing-3;
-    margin-right: -$spacing-3;
-    margin-top: -$spacing-3;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
+    margin-left: -(spacing.$spacing-3);
+    margin-right: -(spacing.$spacing-3);
+    margin-top: -(spacing.$spacing-3);
 
     h2 {
-        font-size: $font-size-lmd;
+        font-size: fonts.$font-size-lmd;
         margin: 0;
-        margin-left: $spacing-1;
+        margin-left: spacing.$spacing-1;
     }
 
     .dot-sidebar-header-wrapper {
-        margin-left: $spacing-1;
-        margin-right: $spacing-1;
+        margin-left: spacing.$spacing-1;
+        margin-right: spacing.$spacing-1;
         height: 100%;
     }
 
@@ -29,6 +33,6 @@
     .col-fixed {
         width: 150px;
         text-align: right;
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
     }
 }

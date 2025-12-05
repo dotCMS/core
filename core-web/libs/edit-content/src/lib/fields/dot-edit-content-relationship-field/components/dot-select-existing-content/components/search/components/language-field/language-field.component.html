@@ -1,14 +1,9 @@
 <label for="language-field" class="mb-2 inline-block">
     {{ 'dot.file.relationship.dialog.search.language.label' | dm }}
 </label>
-<p-select
-    inputId="language-field"
-    [options]="store.languages()"
-    [formControl]="languageControl"
-    [loading]="store.isLoading()"
-    styleClass="w-full h-8"
-    [placeholder]="'dot.file.relationship.dialog.search.language.placeholder' | dm"
-    (onChange)="handleLanguageChange()">
+<p-select inputId="language-field" [options]="store.languages()" [formControl]="languageControl"
+    [loading]="store.isLoading()" class="w-full"
+    [placeholder]="'dot.file.relationship.dialog.search.language.placeholder' | dm" (onChange)="handleLanguageChange()">
     <ng-template let-item pTemplate="item">
         {{ item | language }}
     </ng-template>
@@ -19,7 +14,7 @@
 
 @let error = store.error();
 @if (error) {
-    <div class="text-red-500 text-sm mt-2">
-        {{ error | dm }}
-    </div>
+<div class="text-red-500 text-sm mt-2">
+    {{ error | dm }}
+</div>
 }

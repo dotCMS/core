@@ -1,33 +1,39 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    box-shadow: $shadow-m;
+    box-shadow: shadows.$shadow-m;
     display: block;
     transition: box-shadow $basic-speed ease-in;
-    border-radius: $border-radius-sm;
+    border-radius: common.$border-radius-sm;
 
     &:hover {
-        box-shadow: $shadow-s;
+        box-shadow: shadows.$shadow-s;
         cursor: pointer;
     }
 
     ::ng-deep {
         p-card {
-            border-radius: $border-radius-sm;
+            border-radius: common.$border-radius-sm;
         }
 
         .p-card {
-            background: $white;
+            background: colors.$white;
             height: 100%;
 
             .p-card-body {
-                color: $color-palette-gray-700;
+                color: colors.$color-palette-gray-700;
 
                 .p-card-content > p {
                     line-height: 1.5rem;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    margin: 0 $spacing-3;
+                    margin: 0 spacing.$spacing-3;
                 }
             }
         }
@@ -35,63 +41,63 @@
 }
 
 .dot-apps-card__disabled {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
     display: block;
     height: 100%;
 
     &:hover {
-        background-color: $white;
+        background-color: colors.$white;
 
         ::ng-deep {
             .p-card {
-                background: $white;
+                background: colors.$white;
             }
 
             .p-widget-content {
-                background-color: $white;
+                background-color: colors.$white;
             }
             img {
                 filter: unset;
             }
         }
         .dot-apps-card__name {
-            color: $black;
+            color: colors.$black;
         }
     }
 
     ::ng-deep {
         .p-card {
-            background: $color-palette-gray-200;
+            background: colors.$color-palette-gray-200;
         }
         img {
             filter: grayscale(1);
         }
         .p-widget-content {
-            background-color: $color-palette-gray-200;
+            background-color: colors.$color-palette-gray-200;
         }
         .dot-apps-card__name {
-            color: $color-palette-gray-700;
+            color: colors.$color-palette-gray-700;
         }
     }
 }
 
 p-header {
     display: flex;
-    padding-top: $spacing-4;
+    padding-top: spacing.$spacing-4;
     align-items: flex-start;
 }
 
 p-avatar {
     border-radius: 50%;
-    box-shadow: $shadow-l;
-    margin: 0 $spacing-3 0;
+    box-shadow: shadows.$shadow-l;
+    margin: 0 spacing.$spacing-3 0;
 }
 
 .dot-apps-card__name {
-    color: $black;
+    color: colors.$black;
     display: block;
     flex: 1;
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
     font-weight: bold;
     text-overflow: ellipsis;
     transition: color $basic-speed ease;
@@ -102,17 +108,17 @@ p-avatar {
 
     dot-icon {
         bottom: 0;
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
         position: absolute;
         right: 0;
     }
 }
 
 .dot-apps-card__configurations {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     display: block;
-    font-size: $font-size-md;
-    line-height: $spacing-3;
-    margin-top: $spacing-1;
-    margin-right: $spacing-4;
+    font-size: fonts.$font-size-md;
+    line-height: spacing.$spacing-3;
+    margin-top: spacing.$spacing-1;
+    margin-right: spacing.$spacing-4;
 }

@@ -1,15 +1,19 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 ::ng-deep {
     .add-button {
-        border: solid 1px $color-palette-gray-500;
-        width: $spacing-4;
-        height: $spacing-4;
-        color: $color-palette-gray-500;
-        background: $white;
-        border-radius: $border-radius-sm;
+        border: solid 1px colors.$color-palette-gray-500;
+        width: spacing.$spacing-4;
+        height: spacing.$spacing-4;
+        color: colors.$color-palette-gray-500;
+        background: colors.$white;
+        border-radius: common.$border-radius-sm;
         .pi {
-            font-size: $icon-sm;
+            font-size: common.$icon-sm;
         }
     }
 }

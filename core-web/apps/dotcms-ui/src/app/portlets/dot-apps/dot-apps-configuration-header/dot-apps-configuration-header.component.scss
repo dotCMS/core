@@ -1,10 +1,15 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    background-color: $white;
-    border-bottom: 1px solid $color-palette-gray-300;
+    background-color: colors.$white;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
     display: flex;
-    padding: $spacing-4 $spacing-4 $spacing-4 0;
+    padding: spacing.$spacing-4 spacing.$spacing-4 spacing.$spacing-4 0;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -12,9 +17,9 @@
     p-avatar {
         align-self: baseline;
         border-radius: 50%;
-        box-shadow: $shadow-s;
+        box-shadow: shadows.$shadow-s;
         cursor: pointer;
-        margin: 0 $spacing-4 0 $spacing-4;
+        margin: 0 spacing.$spacing-4 0 spacing.$spacing-4;
     }
 }
 
@@ -28,32 +33,32 @@
 }
 
 .dot-apps-configuration__service-name {
-    color: $black;
+    color: colors.$black;
     cursor: pointer;
     display: inline-block;
-    font-size: $font-size-xl;
+    font-size: fonts.$font-size-xl;
     font-weight: bold;
     margin: 0;
 }
 
 .dot-apps-configuration__service-key {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     display: inline-block;
-    font-size: $font-size-lmd;
-    margin-left: $spacing-3;
+    font-size: fonts.$font-size-lmd;
+    margin-left: spacing.$spacing-3;
     display: flex;
     align-items: center;
 
     dot-copy-link {
-        margin-left: $spacing-1;
+        margin-left: spacing.$spacing-1;
     }
 }
 
 .dot-apps-configuration__configurations {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     display: block;
-    margin-bottom: $spacing-3;
-    margin-top: $spacing-1;
+    margin-bottom: spacing.$spacing-3;
+    margin-top: spacing.$spacing-1;
 }
 
 ::ng-deep {
@@ -69,10 +74,10 @@
     }
 
     .dot-apps-configuration__description__link_show-more {
-        background-color: $white;
+        background-color: colors.$white;
         cursor: pointer;
-        font-size: $font-size-lmd;
-        padding-left: $spacing-1;
+        font-size: fonts.$font-size-lmd;
+        padding-left: spacing.$spacing-1;
         position: absolute;
         bottom: 0;
         right: 0;

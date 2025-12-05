@@ -1,3 +1,8 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -60,7 +65,7 @@
                         }
 
                         &:focus:not(.p-highlight) {
-                            background-color: $white;
+                            background-color: colors.$white;
                         }
                     }
                 }
@@ -90,7 +95,7 @@
     display: grid;
     grid-template-columns: 4.5rem minmax(0, 1fr) min-content;
     align-items: center;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     width: 100%;
 
     .truncate-text {
@@ -99,12 +104,12 @@
     }
 
     .pi {
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
     }
 }
 
 .empty-state {
-    padding: $spacing-6 $spacing-4;
+    padding: spacing.$spacing-6 spacing.$spacing-4;
     text-align: center;
     height: 100%;
     border: none;
@@ -113,7 +118,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: $spacing-4;
+        gap: spacing.$spacing-4;
         max-width: 400px;
         margin: 0 auto;
     }
@@ -127,7 +132,7 @@
         border-radius: 50%;
 
         i {
-            color: $color-palette-surface-500;
+            color: colors.$color-palette-surface-500;
             font-size: 5.75rem;
         }
     }
@@ -139,16 +144,16 @@
 
     .empty-state-title {
         margin: 0;
-        font-size: $font-size-lmd;
-        font-weight: $font-weight-medium-bold;
+        font-size: fonts.$font-size-lmd;
+        font-weight: fonts.$font-weight-medium-bold;
         text-align: center;
-        color: $color-palette-gray-800;
+        color: colors.$color-palette-gray-800;
     }
 
     .empty-state-description {
         margin: 0;
-        color: $black;
-        font-size: $font-size-md;
+        color: colors.$black;
+        font-size: fonts.$font-size-md;
         line-height: 1.5;
     }
 }
@@ -168,10 +173,10 @@
         position: absolute;
         top: 0;
         left: 0;
-        background: $white;
-        border: 2px solid $color-palette-primary-500;
-        border-radius: $border-radius-lg;
-        padding: $spacing-1;
+        background: colors.$white;
+        border: 2px solid colors.$color-palette-primary-500;
+        border-radius: common.$border-radius-lg;
+        padding: spacing.$spacing-1;
         box-shadow:
             0 8px 24px rgba(0, 0, 0, 0.3),
             0 2px 8px rgba(0, 0, 0, 0.2);
@@ -217,17 +222,17 @@
         position: absolute;
         top: -10px;
         right: 0;
-        background: $color-palette-primary-500;
-        color: $white;
+        background: colors.$color-palette-primary-500;
+        color: colors.$white;
         border-radius: 50%;
         width: 2rem;
         height: 2rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: $font-size-sm;
-        font-weight: $font-weight-bold;
-        border: 3px solid $white;
+        font-size: fonts.$font-size-sm;
+        font-weight: fonts.$font-weight-bold;
+        border: 3px solid colors.$white;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         z-index: 10;
     }

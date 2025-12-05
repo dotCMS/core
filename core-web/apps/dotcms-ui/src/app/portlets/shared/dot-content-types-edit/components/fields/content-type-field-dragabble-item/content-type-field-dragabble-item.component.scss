@@ -1,21 +1,26 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
-    background: $white;
+    background: colors.$white;
     cursor: move;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     height: $content-type-field-height;
     transition: box-shadow $basic-speed;
-    border-radius: $border-radius-md;
-    border: 1px solid $color-palette-gray-400;
-    margin-bottom: $spacing-1;
+    border-radius: common.$border-radius-md;
+    border: 1px solid colors.$color-palette-gray-400;
+    margin-bottom: spacing.$spacing-1;
 
     &:hover {
-        box-shadow: $shadow-m;
+        box-shadow: shadows.$shadow-m;
         z-index: 1;
     }
 
@@ -24,20 +29,20 @@
     }
 
     .field-drag {
-        color: $color-palette-gray-400;
+        color: colors.$color-palette-gray-400;
     }
 
     .field-icon {
-        height: $spacing-7;
-        min-width: $spacing-7;
-        background-color: $color-palette-secondary-200;
+        height: spacing.$spacing-7;
+        min-width: spacing.$spacing-7;
+        background-color: colors.$color-palette-secondary-200;
         display: flex;
         justify-content: center;
         align-items: center;
         border-radius: 50%;
         ::ng-deep {
             i {
-                color: $color-palette-secondary-500;
+                color: colors.$color-palette-secondary-500;
             }
         }
     }
@@ -47,12 +52,12 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding-right: $spacing-1;
+    padding-right: spacing.$spacing-1;
     flex-grow: 1;
 
     .field-properties__info-container,
     .field-properties__actions-container {
-        height: $spacing-4;
+        height: spacing.$spacing-4;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -60,37 +65,29 @@
 
     .field-properties__info-container {
         .info-container__name {
-            @include truncate-text;
+            @include mixins.truncate-text;
             color: #000;
-            font-size: $font-size-md;
+            font-size: fonts.$font-size-md;
         }
     }
 
     .field-properties__actions-container {
-        dot-copy-link {
-            ::ng-deep {
-                .p-button {
-                    padding-left: 0px;
-                }
-            }
-        }
-
         p-button.open {
             ::ng-deep .p-button {
-                background-color: $color-palette-primary-200;
+                background-color: colors.$color-palette-primary-200;
             }
         }
 
         .field-properties__attributes-container {
             display: flex;
-            gap: $spacing-3;
-            font-size: $font-size-sm;
+            gap: spacing.$spacing-3;
+            font-size: fonts.$font-size-sm;
 
             .attributes-container__field-name {
-                color: $color-palette-gray-900;
+                color: colors.$color-palette-gray-900;
             }
             .attributes-container__attribute {
-                color: $color-palette-gray-700;
+                color: colors.$color-palette-gray-700;
             }
         }
     }
@@ -100,16 +97,16 @@
     height: fit-content;
     width: fit-content;
     max-height: 3.875rem;
-    border-radius: $border-radius-md;
-    box-shadow: $shadow-s;
+    border-radius: common.$border-radius-md;
+    box-shadow: shadows.$shadow-s;
 
     .p-overlaypanel-content {
-        padding: $spacing-1 $spacing-3;
+        padding: spacing.$spacing-1 spacing.$spacing-3;
 
         .field-properties__overlay-attributes-container {
             display: flex;
             flex-direction: column;
-            color: $black;
+            color: colors.$black;
 
             p {
                 margin: 0;
@@ -121,7 +118,7 @@
             }
 
             .overlay-attributes-container__attributes-text {
-                margin-top: $spacing-1;
+                margin-top: spacing.$spacing-1;
             }
         }
     }

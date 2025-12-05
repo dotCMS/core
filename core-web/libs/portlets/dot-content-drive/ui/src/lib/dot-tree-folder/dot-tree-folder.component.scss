@@ -1,3 +1,8 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -15,16 +20,16 @@
 
     .p-treenode-content:has(span.active) {
         pointer-events: none;
-        background-color: $color-palette-primary-200;
+        background-color: colors.$color-palette-primary-200;
     }
 
     .p-treenode-content .p-tree-toggler {
         .arrow-icon {
-            color: $color-palette-gray-600;
+            color: colors.$color-palette-gray-600;
         }
 
         .folder-icon {
-            color: $color-palette-gray-800;
+            color: colors.$color-palette-gray-800;
         }
     }
 
@@ -78,19 +83,19 @@
 }
 
 .loading-container {
-    gap: $spacing-4;
+    gap: spacing.$spacing-4;
     font-weight: normal;
     user-select: none;
     pointer-events: none;
 
     .loading-icon {
-        font-size: $icon-xxl;
-        color: $color-palette-gray-400;
+        font-size: common.$icon-xxl;
+        color: colors.$color-palette-gray-400;
         z-index: 1;
     }
 
     .loading-text {
-        font-size: $font-size-md;
+        font-size: fonts.$font-size-md;
     }
 }
 
@@ -108,7 +113,7 @@
     width: 6.5rem;
     height: 6.5rem;
     border-radius: 50%;
-    background-color: $color-palette-secondary-300;
+    background-color: colors.$color-palette-secondary-300;
     animation: pulse 2s infinite cubic-bezier(0.66, 0, 0.34, 1);
 }
 

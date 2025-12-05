@@ -1,3 +1,5 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host,
@@ -32,7 +34,7 @@
 
         .dot-template-builder__new-template-builder {
             .p-tabview-nav {
-                padding: 0 $spacing-5;
+                padding: 0 spacing.$spacing-5;
             }
         }
     }
@@ -40,5 +42,5 @@
 
 dot-portlet-box {
     height: 100%;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 }

@@ -14,7 +14,7 @@
         [message]="'contenttypes.field.properties.name.error.required' | dm"
         [field]="group.controls[property.name]"></dot-field-validation-message>
     @if (property.field.variable) {
-        <div class="form__field-variable">
+        <div class="flex gap-2 items-center">
             <b>{{ 'contenttypes.field.properties.name.variable' | dm }}:</b>
             <dot-copy-link
                 [label]="property.field.variable"

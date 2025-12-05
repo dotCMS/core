@@ -1,11 +1,15 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
 
 .template-builder-box,
 .template-builder-box--small {
     ::ng-deep {
         .pi.pi-trash {
-            color: $color-palette-primary-400;
+            color: colors.$color-palette-primary-400;
         }
 
         .p-dropdown {
@@ -17,16 +21,16 @@
 .template-builder-box--medium {
     ::ng-deep {
         .p-button-text {
-            margin: $spacing-3 0;
+            margin: spacing.$spacing-3 0;
         }
 
         .p-dropdown-label {
-            @include visually-hidden;
+            @include mixins.visually-hidden;
         }
 
         .p-dropdown-trigger-icon {
-            font-size: $font-size-sm;
-            margin: $spacing-3;
+            font-size: fonts.$font-size-sm;
+            margin: spacing.$spacing-3;
         }
         .p-dropdown .p-dropdown-trigger {
             width: 0.875rem; // 14px
@@ -50,13 +54,13 @@
             border: none;
 
             &:not(.p-disabled):hover {
-                background-color: $color-palette-primary-op-10;
+                background-color: colors.$color-palette-primary-op-10;
             }
 
             &:not(.p-disabled).p-focus,
             &.p-dropdown-open {
                 background-color: transparent;
-                @include field-focus;
+                @include mixins.field-focus;
             }
         }
     }
@@ -68,51 +72,51 @@ p-dropdown {
             display: flex;
             flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
             background: none;
-            margin-left: $spacing-4;
+            margin-left: spacing.$spacing-4;
             border-color: transparent;
 
             .p-dropdown-label {
-                padding-right: $spacing-2;
-                color: $black;
+                padding-right: spacing.$spacing-2;
+                color: colors.$black;
             }
         }
     }
 }
 
 .template-builder-box {
-    border: 1px solid $color-palette-gray-400;
-    border-radius: $border-radius-sm;
+    border: 1px solid colors.$color-palette-gray-400;
+    border-radius: common.$border-radius-sm;
     height: 100%;
     width: 100%;
-    background-color: $white;
+    background-color: colors.$white;
     overflow: hidden;
 }
 
 .template-builder-box__header-container {
     height: 3.5rem;
-    background-color: $color-palette-gray-200;
-    padding: $spacing-1 $spacing-4 $spacing-1 $spacing-2;
+    background-color: colors.$color-palette-gray-200;
+    padding: spacing.$spacing-1 spacing.$spacing-4 spacing.$spacing-1 spacing.$spacing-2;
     display: flex;
     justify-content: space-between;
     align-items: center;
 
     .header-container__last-buttons {
         display: flex;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
     }
 }
 
 .template-builder-box__item {
-    padding: 0px $spacing-1 0px $spacing-3;
-    margin: $spacing-1 $spacing-3;
-    height: $spacing-6;
+    padding: 0px spacing.$spacing-1 0px spacing.$spacing-3;
+    margin: spacing.$spacing-1 spacing.$spacing-3;
+    height: spacing.$spacing-6;
 
     &:first-child {
-        margin-top: $spacing-2;
+        margin-top: spacing.$spacing-2;
     }
 
     &:last-child {
-        margin-bottom: $spacing-3;
+        margin-bottom: spacing.$spacing-3;
     }
 
     display: flex;
@@ -120,7 +124,7 @@ p-dropdown {
     justify-content: space-between;
 
     p {
-        @include truncate-text;
+        @include mixins.truncate-text;
     }
 }
 
@@ -132,7 +136,7 @@ p-dropdown {
 
     ::ng-deep {
         .p-button-text {
-            margin: $spacing-3 0;
+            margin: spacing.$spacing-3 0;
         }
     }
 }

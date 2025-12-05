@@ -1,3 +1,7 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -54,19 +58,19 @@ dot-results-seo-tool {
 }
 
 .editor-content {
-    padding: $spacing-4 $spacing-3;
+    padding: spacing.$spacing-4 spacing.$spacing-3;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     overflow: auto;
 
     grid-column: 2 / -1;
 }
 
 .editor-content-preview {
-    padding: $spacing-4;
+    padding: spacing.$spacing-4;
 }
 
 .iframe-wrapper {
@@ -74,7 +78,7 @@ dot-results-seo-tool {
     overflow: hidden;
     flex-grow: 1;
     margin: 0 auto;
-    border: solid 1px $color-palette-gray-300;
+    border: solid 1px colors.$color-palette-gray-300;
     height: 100%;
     width: 100%;
     transition: all 0.3s ease-in-out;
@@ -99,8 +103,8 @@ dot-results-seo-tool {
 }
 
 .iframe-wrapper--device {
-    box-shadow: $shadow-l;
-    background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
+    box-shadow: shadows.$shadow-l;
+    background: linear-gradient(135deg, colors.$white 0%, rgba(240, 240, 240, 1) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
 }
 

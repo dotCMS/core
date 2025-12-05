@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 .category-field__search-input.p-inputtext.p-element {
@@ -6,5 +8,5 @@
 
 p-inputgroup > .p-inputgroup .p-inputgroup-addon {
     border: 0;
-    color: $color-palette-primary;
+    color: colors.$color-palette-primary;
 }

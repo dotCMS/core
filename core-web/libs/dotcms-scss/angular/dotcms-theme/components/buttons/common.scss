@@ -1,10 +1,14 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../shared/colors";
+@use "../../../../shared/common";
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 #large {
-    height: $field-height-lg;
-    border-radius: $border-radius-lg;
-    font-size: $font-size-lmd;
+    height: common.$field-height-lg;
+    border-radius: common.$border-radius-lg;
+    font-size: fonts.$font-size-lmd;
 
     .p-button-label {
         font-size: inherit;
@@ -12,16 +16,16 @@
 
     .p-button-icon,
     .pi {
-        font-size: $icon-lg;
+        font-size: common.$icon-lg;
     }
 }
 
 #small {
-    border-radius: $border-radius-sm;
-    font-size: $font-size-sm;
-    gap: $spacing-0;
-    height: $field-height-sm;
-    padding: 0 $spacing-1;
+    border-radius: common.$border-radius-sm;
+    font-size: fonts.$font-size-sm;
+    gap: spacing.$spacing-0;
+    height: common.$field-height-sm;
+    padding: 0 spacing.$spacing-1;
 
     .p-button-label {
         font-size: inherit;
@@ -29,264 +33,264 @@
 }
 
 #main-primary-severity {
-    background-color: $color-palette-primary;
+    background-color: colors.$color-palette-primary;
 
     &:hover {
-        background-color: $color-palette-primary-600;
+        background-color: colors.$color-palette-primary-600;
     }
 
     &:active {
-        background-color: $color-palette-primary-700;
+        background-color: colors.$color-palette-primary-700;
     }
 
     &:focus {
-        background-color: $color-palette-primary;
-        @include field-focus;
+        background-color: colors.$color-palette-primary;
+        @include mixins.field-focus;
     }
 }
 
 #main-secondary-severity {
-    background-color: $color-palette-secondary;
+    background-color: colors.$color-palette-secondary;
 
     &:hover {
-        background-color: $color-palette-secondary-600;
+        background-color: colors.$color-palette-secondary-600;
     }
 
     &:active {
-        background-color: $color-palette-secondary-700;
+        background-color: colors.$color-palette-secondary-700;
     }
 
     &:focus {
-        background-color: $color-palette-secondary;
-        @include field-focus;
+        background-color: colors.$color-palette-secondary;
+        @include mixins.field-focus;
     }
 }
 
 #main-tertiary-severity {
-    background-color: $color-palette-primary-200;
+    background-color: colors.$color-palette-primary-200;
 
     &:hover {
-        background-color: $color-palette-primary-300;
+        background-color: colors.$color-palette-primary-300;
     }
 
     &:active {
-        background-color: $color-palette-primary-400;
+        background-color: colors.$color-palette-primary-400;
     }
 
     &:focus {
-        background-color: $color-palette-primary-200;
-        @include field-focus;
+        background-color: colors.$color-palette-primary-200;
+        @include mixins.field-focus;
     }
 }
 
 #outlined-primary-severity {
     background-color: transparent;
-    border: $field-border-size solid $color-palette-primary;
+    border: common.$field-border-size solid colors.$color-palette-primary;
     white-space: nowrap;
 
     .p-button-label,
     .p-button-icon,
     .pi {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 
     &:hover {
-        background-color: $color-palette-primary-op-10;
+        background-color: colors.$color-palette-primary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-primary-op-20;
+        background-color: colors.$color-palette-primary-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 }
 
 #outlined-primary-severity-sm {
-    border: 1px solid $color-palette-primary;
+    border: 1px solid colors.$color-palette-primary;
 }
 
 #outlined-secondary-severity {
     background-color: transparent;
-    border: $field-border-size solid $color-palette-secondary;
+    border: common.$field-border-size solid colors.$color-palette-secondary;
 
     .p-button-label,
     .p-button-icon,
     .pi {
-        color: $color-palette-secondary;
+        color: colors.$color-palette-secondary;
     }
 
     &:hover {
-        background-color: $color-palette-secondary-op-10;
+        background-color: colors.$color-palette-secondary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-secondary-op-20;
+        background-color: colors.$color-palette-secondary-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 }
 
 #outlined-secondary-severity-sm {
-    border: 1px solid $color-palette-secondary;
+    border: 1px solid colors.$color-palette-secondary;
 }
 
 // outlined only apply to icon-only
 #outlined-tertiary-severity.p-button-icon-only {
-    border: $field-border-size solid $color-palette-primary-300;
+    border: common.$field-border-size solid colors.$color-palette-primary-300;
     white-space: nowrap;
 
     .p-button-label,
     .p-button-icon,
     .pi {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 
     &:active {
-        background-color: $color-palette-primary-200;
+        background-color: colors.$color-palette-primary-200;
     }
 
     &:focus {
-        background-color: $white;
-        @include field-focus;
+        background-color: colors.$white;
+        @include mixins.field-focus;
     }
 }
 
 #outlined-tertiary-severity-sm {
-    border: 1px solid $color-palette-primary-300;
+    border: 1px solid colors.$color-palette-primary-300;
 }
 
 #text-primary-severity {
     background-color: transparent;
-    color: $black;
+    color: colors.$black;
     overflow: hidden;
     max-width: 100%;
 
     .p-button-label {
-        color: $color-palette-primary;
-        @include truncate-text;
+        color: colors.$color-palette-primary;
+        @include mixins.truncate-text;
     }
 
     .p-button-icon,
     .pi {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 
     &:hover {
-        background-color: $color-palette-primary-op-10;
+        background-color: colors.$color-palette-primary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-primary-op-20;
+        background-color: colors.$color-palette-primary-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 }
 
 #text-secondary-severity {
     background-color: transparent;
-    color: $black;
+    color: colors.$black;
 
     &.p-button-semi-transparent {
         background-color: rgba(255, 255, 255, 0.65);
     }
 
     .p-button-label {
-        color: $color-palette-secondary;
+        color: colors.$color-palette-secondary;
     }
 
     .p-button-icon,
     .pi {
-        color: $color-palette-secondary;
+        color: colors.$color-palette-secondary;
     }
 
     &.p-button-icon-only {
         .p-button-icon,
         .pi {
-            color: $black;
+            color: colors.$black;
         }
     }
 
     &:hover {
-        background-color: $color-palette-secondary-op-10;
+        background-color: colors.$color-palette-secondary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-secondary-op-20;
+        background-color: colors.$color-palette-secondary-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 }
 
 // Apply for icon only and button
 #text-tertiary-severity {
-    background-color: $white;
-    color: $color-palette-primary-500;
+    background-color: colors.$white;
+    color: colors.$color-palette-primary-500;
     overflow: hidden;
     max-width: 100%;
 
     .p-button-label {
-        color: $color-palette-primary-500;
-        @include truncate-text;
+        color: colors.$color-palette-primary-500;
+        @include mixins.truncate-text;
     }
 
     .p-button-icon,
     .pi {
-        color: $color-palette-primary-500;
+        color: colors.$color-palette-primary-500;
     }
 
     &.p-button-icon-only {
         .p-button-icon,
         .pi {
-            color: $color-palette-gray-800;
+            color: colors.$color-palette-gray-800;
         }
     }
 
     &:hover {
-        background-color: $white;
+        background-color: colors.$white;
     }
 
     &:active {
-        background-color: $white;
+        background-color: colors.$white;
     }
 
     &:focus {
-        background-color: $color-palette-primary-200;
+        background-color: colors.$color-palette-primary-200;
 
-        @include field-focus;
+        @include mixins.field-focus;
     }
 }
 
 #text-danger-severity {
     background-color: transparent;
-    color: $color-accessible-text-red;
+    color: colors.$color-accessible-text-red;
 
     &:hover {
-        background-color: $color-palette-red-op-10;
+        background-color: colors.$color-palette-red-op-10;
     }
 
     &:active {
-        background-color: $color-palette-red-op-20;
+        background-color: colors.$color-palette-red-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 
     .p-button-icon,
@@ -297,118 +301,118 @@
 
 // Success button styles
 #main-success-severity {
-    background-color: $color-palette-green;
-    color: $white;
+    background-color: colors.$color-palette-green;
+    color: colors.$white;
 
     .p-button-icon,
     .pi {
-        color: $white;
+        color: colors.$white;
     }
 
     &:hover {
-        background-color: $color-palette-green-shade;
+        background-color: colors.$color-palette-green-shade;
     }
 
     &:active {
-        background-color: $color-palette-green-shade;
+        background-color: colors.$color-palette-green-shade;
     }
 
     &:focus {
-        background-color: $color-palette-green;
-        @include field-focus;
-        outline-color: $color-palette-green-op-20;
+        background-color: colors.$color-palette-green;
+        @include mixins.field-focus;
+        outline-color: colors.$color-palette-green-op-20;
     }
 }
 
 #outlined-success-severity {
     background-color: transparent;
-    border: $field-border-size solid $color-palette-green;
+    border: common.$field-border-size solid colors.$color-palette-green;
     white-space: nowrap;
 
     .p-button-label,
     .p-button-icon,
     .pi {
-        color: $color-palette-green;
+        color: colors.$color-palette-green;
     }
 
     &:hover {
-        background-color: $color-palette-green-op-10;
+        background-color: colors.$color-palette-green-op-10;
     }
 
     &:active {
-        background-color: $color-palette-green-op-20;
+        background-color: colors.$color-palette-green-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
-        outline-color: $color-palette-green-op-20;
+        @include mixins.field-focus;
+        outline-color: colors.$color-palette-green-op-20;
     }
 }
 
 #outlined-success-severity-sm {
-    border: 1px solid $color-palette-green;
+    border: 1px solid colors.$color-palette-green;
 }
 
 #text-success-severity {
     background-color: transparent;
-    color: $black;
+    color: colors.$black;
 
     .p-button-label {
-        color: $color-palette-green;
+        color: colors.$color-palette-green;
     }
 
     .p-button-icon,
     .pi {
-        color: $color-palette-green;
+        color: colors.$color-palette-green;
     }
 
     &:hover {
-        background-color: $color-palette-green-op-10;
+        background-color: colors.$color-palette-green-op-10;
     }
 
     &:active {
-        background-color: $color-palette-green-op-20;
+        background-color: colors.$color-palette-green-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
-        outline-color: $color-palette-green-op-20;
+        @include mixins.field-focus;
+        outline-color: colors.$color-palette-green-op-20;
     }
 }
 
 #text-warning-severity {
     background-color: transparent;
-    color: $black;
+    color: colors.$black;
 
     .p-button-label {
-        color: $color-palette-yellow;
+        color: colors.$color-palette-yellow;
     }
 
     .p-button-icon,
     .pi {
-        color: $color-palette-yellow;
+        color: colors.$color-palette-yellow;
     }
 
     &:hover {
-        background-color: $color-palette-yellow-op-10;
+        background-color: colors.$color-palette-yellow-op-10;
     }
 
     &:active {
-        background-color: $color-palette-yellow-op-20;
+        background-color: colors.$color-palette-yellow-op-20;
     }
 
     &:focus {
         background-color: transparent;
-        @include field-focus;
-        outline-color: $color-palette-yellow-op-20;
+        @include mixins.field-focus;
+        outline-color: colors.$color-palette-yellow-op-20;
     }
 }
 
 #button-disabled {
-    background-color: $color-palette-gray-200;
-    color: $color-palette-gray-500;
+    background-color: colors.$color-palette-gray-200;
+    color: colors.$color-palette-gray-500;
 
     .p-button-label,
     .p-button-icon,
@@ -418,18 +422,18 @@
 
     svg,
     path {
-        fill: $color-palette-gray-500;
+        fill: colors.$color-palette-gray-500;
     }
 }
 
 #button-disabled-outlined {
-    border: $field-border-size solid $color-palette-gray-300;
-    background-color: $color-palette-gray-200;
+    border: common.$field-border-size solid colors.$color-palette-gray-300;
+    background-color: colors.$color-palette-gray-200;
 
     &.p-button-icon-only {
         .p-button-icon,
         .pi {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 }

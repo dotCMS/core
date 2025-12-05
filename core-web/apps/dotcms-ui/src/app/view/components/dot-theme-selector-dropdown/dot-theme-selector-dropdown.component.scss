@@ -1,3 +1,8 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -8,7 +13,7 @@
     cursor: pointer;
     display: flex;
     line-height: normal;
-    padding: $spacing-3 $spacing-3;
+    padding: spacing.$spacing-3 spacing.$spacing-3;
     transition: background-color 150ms ease-in;
     width: 100%;
     overflow: hidden;
@@ -24,7 +29,7 @@
 
     .dot-theme-item__image,
     .dot-theme-item__image--fallback {
-        border-radius: $border-radius-xs;
+        border-radius: common.$border-radius-xs;
         width: 3.43rem;
         height: 3.43rem;
     }
@@ -32,8 +37,8 @@
         background: $bg-highlight;
         width: 3.43rem;
         height: 3.43rem;
-        font-size: $font-size-xl;
-        color: $color-palette-primary-400;
+        font-size: fonts.$font-size-xl;
+        color: colors.$color-palette-primary-400;
         text-transform: uppercase;
         text-align: center;
         line-height: 3.21rem;
@@ -46,14 +51,14 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        margin-left: $spacing-2;
+        margin-left: spacing.$spacing-2;
         .dot-theme-item__label {
             display: inline-block;
-            margin-bottom: $spacing-1;
+            margin-bottom: spacing.$spacing-1;
         }
         .dot-theme-item__date {
-            color: $color-palette-gray-800;
-            font-size: $font-size-sm;
+            color: colors.$color-palette-gray-800;
+            font-size: fonts.$font-size-sm;
         }
         & > span {
             display: block;
@@ -68,23 +73,23 @@ dot-searchable-dropdown {
 
 .theme-selector__filters {
     display: flex;
-    margin: 0 $spacing-2;
+    margin: 0 spacing.$spacing-2;
     position: relative;
 
     dot-site-selector {
-        margin-right: $spacing-2;
+        margin-right: spacing.$spacing-2;
         display: block;
 
         // Required for shadow piercing. Required to force a style down to child components
         ::ng-deep {
             .site-selector__title {
                 display: block;
-                background: $color-palette-gray-300;
-                border: 1px solid $color-palette-gray-500;
-                border-radius: $border-radius-xs;
-                padding: $spacing-2;
-                font-size: $font-size-md;
-                color: $color-palette-gray-800;
+                background: colors.$color-palette-gray-300;
+                border: 1px solid colors.$color-palette-gray-500;
+                border-radius: common.$border-radius-xs;
+                padding: spacing.$spacing-2;
+                font-size: fonts.$font-size-md;
+                color: colors.$color-palette-gray-800;
                 text-overflow: ellipsis;
                 min-width: 10rem;
                 white-space: nowrap;
@@ -104,8 +109,8 @@ dot-searchable-dropdown {
 }
 
 .searchable-dropdown__search-icon {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     position: absolute;
-    right: $spacing-1;
+    right: spacing.$spacing-1;
     top: 9px;
 }

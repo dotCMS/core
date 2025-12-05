@@ -1,41 +1,46 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../shared/colors";
+@use "../../../../shared/common";
+@use "../../../../shared/fonts";
+@use "../../../../shared/shadows";
+@use "../../../../shared/spacing";
 
 $select-border-size: 2px;
 
 #form-field-base {
-    background-color: $white;
-    height: $field-height-md;
-    border-radius: $field-border-radius;
-    border: $field-border-size solid $color-palette-gray-400;
-    padding: 0 $spacing-1;
-    color: $color-palette-gray-700;
-    font-size: $font-size-md;
+    background-color: colors.$white;
+    height: common.$field-height-md;
+    border-radius: common.$field-border-radius;
+    border: common.$field-border-size solid colors.$color-palette-gray-400;
+    padding: 0 spacing.$spacing-1;
+    color: colors.$color-palette-gray-700;
+    font-size: fonts.$font-size-md;
 
     &.p-filled {
-        color: $black;
+        color: colors.$black;
     }
 }
 
 #form-field-sm {
-    height: $field-height-sm;
-    font-size: $font-size-sm;
-    border-radius: $border-radius-sm;
+    height: common.$field-height-sm;
+    font-size: fonts.$font-size-sm;
+    border-radius: common.$border-radius-sm;
 }
 
 #form-field-hover {
-    border-color: $color-palette-primary-400;
+    border-color: colors.$color-palette-primary-400;
 }
 
 #form-field-focus {
-    border-color: $color-palette-primary-400;
-    @include field-focus;
+    border-color: colors.$color-palette-primary-400;
+    @include mixins.field-focus;
 }
 
 #form-field-disabled {
-    border-color: $color-palette-gray-200;
-    background: $color-palette-gray-100;
-    color: $color-palette-gray-500;
+    border-color: colors.$color-palette-gray-200;
+    background: colors.$color-palette-gray-100;
+    color: colors.$color-palette-gray-500;
 }
 
 #form-field-states {
@@ -62,66 +67,66 @@ $select-border-size: 2px;
 }
 
 #field-trigger {
-    background: $color-palette-gray-200;
-    color: $color-palette-primary;
-    width: $field-height-md;
-    border-top-right-radius: $border-radius-md;
-    border-bottom-right-radius: $border-radius-md;
+    background: colors.$color-palette-gray-200;
+    color: colors.$color-palette-primary;
+    width: common.$field-height-md;
+    border-top-right-radius: common.$border-radius-md;
+    border-bottom-right-radius: common.$border-radius-md;
     height: 100%;
 }
 
 #field-trigger-sm {
-    width: $field-height-sm;
-    border-top-right-radius: $border-radius-sm;
-    border-bottom-right-radius: $border-radius-sm;
+    width: common.$field-height-sm;
+    border-top-right-radius: common.$border-radius-sm;
+    border-bottom-right-radius: common.$border-radius-sm;
 }
 
 #field-trigger-icon {
-    font-size: $icon-sm;
+    font-size: common.$icon-sm;
 }
 
 #field-panel {
-    background: $white;
-    color: $black;
+    background: colors.$white;
+    color: colors.$black;
     border: 0 none;
-    border-radius: $border-radius-md;
-    box-shadow: $shadow-l;
-    padding: $spacing-1;
-    margin-top: $spacing-1;
+    border-radius: common.$border-radius-md;
+    box-shadow: shadows.$shadow-l;
+    padding: spacing.$spacing-1;
+    margin-top: spacing.$spacing-1;
 }
 
 #field-panel-header {
-    padding: $spacing-2;
-    border-bottom: $field-border-size solid $color-palette-black-op-10;
-    color: $black;
-    background: $white;
+    padding: spacing.$spacing-2;
+    border-bottom: common.$field-border-size solid colors.$color-palette-black-op-10;
+    color: colors.$black;
+    background: colors.$white;
     margin: 0;
-    border-top-right-radius: $border-radius-xs;
-    border-top-left-radius: $border-radius-xs;
-    gap: $spacing-1;
+    border-top-right-radius: common.$border-radius-xs;
+    border-top-left-radius: common.$border-radius-xs;
+    gap: spacing.$spacing-1;
 }
 
 #field-panel-empty-message {
-    padding: $spacing-2 $spacing-2;
-    color: $black;
+    padding: spacing.$spacing-2 spacing.$spacing-2;
+    color: colors.$black;
     background: transparent;
 }
 
 #field-panel-filter {
-    padding-right: $spacing-7;
-    color: $black;
+    padding-right: spacing.$spacing-7;
+    color: colors.$black;
 }
 
 #field-panel-filter-icon {
-    right: $spacing-2;
-    color: $color-palette-primary;
+    right: spacing.$spacing-2;
+    color: colors.$color-palette-primary;
 }
 
 #field-panel-icon-close {
-    color: $color-palette-primary;
-    width: $spacing-6;
-    height: $spacing-6;
-    border-radius: $border-radius-circular;
+    color: colors.$color-palette-primary;
+    width: spacing.$spacing-6;
+    height: spacing.$spacing-6;
+    border-radius: common.$border-radius-circular;
     border: 0 none;
     background: transparent;
     transition:
@@ -129,18 +134,18 @@ $select-border-size: 2px;
         box-shadow 0.15s;
 
     &:hover {
-        background-color: $color-palette-primary-op-10;
+        background-color: colors.$color-palette-primary-op-10;
     }
 
     &:active {
-        background-color: $color-palette-primary-op-20;
+        background-color: colors.$color-palette-primary-op-20;
     }
 
     &:focus {
         outline: 0 none;
         outline-offset: 0;
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 }
 
@@ -152,18 +157,18 @@ $select-border-size: 2px;
 #field-panel-item {
     display: flex;
     align-items: center;
-    padding: 0 $spacing-2;
-    color: $black;
-    height: $field-height-md;
-    gap: $spacing-1;
+    padding: 0 spacing.$spacing-2;
+    color: colors.$black;
+    height: common.$field-height-md;
+    gap: spacing.$spacing-1;
 }
 
 #field-panel-item-highlight {
-    background: $color-palette-primary-200;
+    background: colors.$color-palette-primary-200;
 }
 
 #field-panel-item-hover {
-    background: $color-palette-primary-100;
+    background: colors.$color-palette-primary-100;
 }
 
 #field-panel-item-disabled {
@@ -172,31 +177,31 @@ $select-border-size: 2px;
 }
 
 #field-chip {
-    height: $spacing-4;
-    padding: $spacing-1;
-    background: $color-palette-primary-op-10;
-    border-radius: $border-radius-sm;
-    color: $color-palette-primary;
-    font-size: $font-size-sm;
+    height: spacing.$spacing-4;
+    padding: spacing.$spacing-1;
+    background: colors.$color-palette-primary-op-10;
+    border-radius: common.$border-radius-sm;
+    color: colors.$color-palette-primary;
+    font-size: fonts.$font-size-sm;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
     flex-direction: row-reverse;
-    margin-right: $spacing-0;
+    margin-right: spacing.$spacing-0;
 }
 
 #field-chip-sm {
-    height: $spacing-3;
-    padding: $spacing-0;
-    font-size: $font-size-xs;
+    height: spacing.$spacing-3;
+    padding: spacing.$spacing-0;
+    font-size: fonts.$font-size-xs;
 }
 
 #field-chip-token {
-    padding: 0.375rem $spacing-2;
-    margin-right: $spacing-1;
+    padding: 0.375rem spacing.$spacing-2;
+    margin-right: spacing.$spacing-1;
     background: $bg-highlight;
-    color: $color-palette-primary;
-    border-radius: $border-radius-xs;
-    font-size: $font-size-sm;
+    color: colors.$color-palette-primary;
+    border-radius: common.$border-radius-xs;
+    font-size: fonts.$font-size-sm;
 }

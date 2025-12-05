@@ -1,7 +1,11 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .experiment-traffic-split__form-wrapper {
-    padding: $spacing-5;
+    padding: spacing.$spacing-5;
 
     form {
         display: flex;
@@ -9,31 +13,31 @@
     }
 
     label {
-        font-weight: $font-weight-bold;
-        font-size: $font-size-lmd;
+        font-weight: fonts.$font-weight-bold;
+        font-size: fonts.$font-size-lmd;
     }
 
     .experiment-traffic-split__radio {
         display: flex;
         flex-direction: column;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
     }
 
     .experiment-traffic-split__variants {
-        margin-top: $spacing-5;
+        margin-top: spacing.$spacing-5;
 
         > * {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: $spacing-2;
+            margin-bottom: spacing.$spacing-2;
             min-height: 2.7rem;
 
             &.experiment-traffic-split__variants-header {
-                font-size: $font-size-lmd;
-                color: $color-palette-gray-700;
+                font-size: fonts.$font-size-lmd;
+                color: colors.$color-palette-gray-700;
                 text-transform: uppercase;
-                font-weight: $font-weight-bold;
+                font-weight: fonts.$font-weight-bold;
             }
         }
 
@@ -45,7 +49,7 @@
         }
 
         span.experiment-traffic-split__variants-weight {
-            padding: $spacing-2 $spacing-2;
+            padding: spacing.$spacing-2 spacing.$spacing-2;
         }
 
         .experiment-traffic-split__variants-weight,

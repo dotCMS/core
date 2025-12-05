@@ -1,3 +1,7 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -10,13 +14,13 @@
     display: flex;
     align-items: center;
     flex-direction: row;
-    gap: $spacing-1;
-    margin: $spacing-4 $spacing-5 0;
+    gap: spacing.$spacing-1;
+    margin: spacing.$spacing-4 spacing.$spacing-5 0;
 }
 
 .dot-select-seo-tool__icon {
-    font-size: $font-size-lmd;
-    color: $color-palette-primary-500;
+    font-size: fonts.$font-size-lmd;
+    color: colors.$color-palette-primary-500;
 }
 
 .dot-select-seo-tool__title {
@@ -24,6 +28,6 @@
 }
 
 .dot-select-seo-tool__details {
-    font-size: $font-size-lmd;
-    color: $color-palette-gray-700;
+    font-size: fonts.$font-size-lmd;
+    color: colors.$color-palette-gray-700;
 }

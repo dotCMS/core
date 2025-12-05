@@ -1,5 +1,8 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 $row-height: 70px;
 
@@ -7,7 +10,7 @@ $row-height: 70px;
     display: flex;
     flex-grow: 1;
     flex-direction: column;
-    margin-bottom: $spacing-1;
+    margin-bottom: spacing.$spacing-1;
 }
 
 .dot-add-rows__container {
@@ -33,31 +36,31 @@ $row-height: 70px;
 }
 
 .dot-add-rows-columns-list__container {
-    background-color: $white;
+    background-color: colors.$white;
     display: block;
     height: 198px;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
     position: relative;
 
     .dot-add-rows-columns-list__title {
-        font-size: $font-size-lmd;
+        font-size: fonts.$font-size-lmd;
     }
 
     p-button {
         position: absolute;
-        right: $spacing-1;
-        top: $spacing-1;
+        right: spacing.$spacing-1;
+        top: spacing.$spacing-1;
     }
 }
 
 .dot-add-rows-columns-list__item {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
     cursor: pointer;
     display: block;
     flex-grow: 1;
-    margin-right: $spacing-3;
+    margin-right: spacing.$spacing-3;
     outline: none;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 
     &:last-child {
         border-right: none;
@@ -65,26 +68,26 @@ $row-height: 70px;
     }
 
     &.active {
-        background-color: $color-palette-primary-op-30;
+        background-color: colors.$color-palette-primary-op-30;
 
         .dot-add-rows-columns-list__item-col {
-            background-color: $color-palette-gray-200;
+            background-color: colors.$color-palette-gray-200;
         }
     }
 
     .dot-add-rows-columns-list__item-title {
-        color: $color-palette-gray-700;
-        font-size: $font-size-sm;
+        color: colors.$color-palette-gray-700;
+        font-size: fonts.$font-size-sm;
     }
 
     .dot-add-rows-columns-list__item-container {
         display: flex;
 
         .dot-add-rows-columns-list__item-col {
-            background-color: $color-palette-gray-800;
+            background-color: colors.$color-palette-gray-800;
             flex-grow: 1;
             height: 60px;
-            margin: 0 $spacing-1;
+            margin: 0 spacing.$spacing-1;
 
             &:first-child {
                 margin-left: 0;

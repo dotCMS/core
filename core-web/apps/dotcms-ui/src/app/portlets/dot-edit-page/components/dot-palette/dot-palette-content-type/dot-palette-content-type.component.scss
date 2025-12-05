@@ -1,3 +1,7 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,9 +9,9 @@
     min-width: $content-palette-width;
     display: flex;
     flex-direction: column;
-    padding: $spacing-1;
-    border-left: 1px solid $color-palette-gray-300;
-    background: $white;
+    padding: spacing.$spacing-1;
+    border-left: 1px solid colors.$color-palette-gray-300;
+    background: colors.$white;
     transition: all $basic-speed ease-in-out;
     height: 100%;
     text-align: center;
@@ -16,26 +20,26 @@
 .dot-content-palette__items {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-gap: $spacing-1;
+    grid-gap: spacing.$spacing-1;
     grid-auto-rows: 6rem;
     overflow: hidden auto;
 
     div {
-        border: 1px solid $color-palette-gray-300;
-        color: $black;
+        border: 1px solid colors.$color-palette-gray-300;
+        color: colors.$black;
         cursor: grab;
         overflow: hidden;
-        padding: 1rem $spacing-1;
+        padding: 1rem spacing.$spacing-1;
         position: relative;
         text-align: center;
 
         &:hover {
-            background: $color-palette-gray-200;
+            background: colors.$color-palette-gray-200;
         }
 
         p {
-            font-size: $font-size-sm;
-            margin: $spacing-1 0 0;
+            font-size: fonts.$font-size-sm;
+            margin: spacing.$spacing-1 0 0;
             overflow: hidden;
             text-align: center;
             text-overflow: ellipsis;
@@ -46,7 +50,7 @@
         .arrow {
             background-color: transparent;
             border: none;
-            color: $color-palette-gray-700;
+            color: colors.$color-palette-gray-700;
             cursor: pointer;
             padding: 0;
             position: absolute;
@@ -63,6 +67,6 @@
 
 .dot-content-palette__empty {
     text-align: center;
-    padding: $spacing-1 0;
-    margin: $spacing-4;
+    padding: spacing.$spacing-1 0;
+    margin: spacing.$spacing-4;
 }

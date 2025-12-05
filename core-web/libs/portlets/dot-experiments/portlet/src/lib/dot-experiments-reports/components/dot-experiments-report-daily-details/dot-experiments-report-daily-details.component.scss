@@ -1,21 +1,24 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 .pi-arrow-circle-down {
-    color: $color-alert-red;
+    color: colors.$color-alert-red;
 }
 
 .pi-arrow-circle-up {
-    color: $color-alert-green;
+    color: colors.$color-alert-green;
 }
 
 .trophy {
-    fill: $color-accessible-text-green;
+    fill: colors.$color-accessible-text-green;
     height: 20px;
     min-width: 20px;
 }
 
 .prospect-winner {
-    font-weight: $font-weight-bold;
+    font-weight: fonts.$font-weight-bold;
 }
 
 ::ng-deep {

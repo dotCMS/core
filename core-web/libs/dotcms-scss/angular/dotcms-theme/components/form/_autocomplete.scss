@@ -1,5 +1,9 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 p-autocomplete.p-inputwrapper-focus {
     .p-autocomplete {
@@ -21,8 +25,8 @@ p-autocomplete.p-inputwrapper-focus {
     .p-autocomplete-loader,
     .p-autocomplete-clear-icon {
         position: unset;
-        color: $color-palette-primary;
-        margin: 0 $spacing-0;
+        color: colors.$color-palette-primary;
+        margin: 0 spacing.$spacing-0;
     }
 
     .p-autocomplete-clear-icon {
@@ -37,21 +41,21 @@ p-autocomplete.p-inputwrapper-focus {
     .p-autocomplete-input.p-component {
         all: unset;
         border: none;
-        font-family: $font-default;
-        font-size: $font-size-md;
-        color: $black;
+        font-family: fonts.$font-default;
+        font-size: fonts.$font-size-md;
+        color: colors.$black;
         padding: 0;
         margin: 0;
         width: 100%;
         height: calc(
-            $field-height-md - (2 * $field-border-size)
+            common2.$field-height-md - (2 * common2.$field-border-size)
         ); // This input height is to match the 40px height, 40px - 3px of horizontal borders, because this input does not have borders
     }
 
     &.p-autocomplete-dd {
         .p-autocomplete-loader,
         .p-autocomplete-clear-icon {
-            right: $spacing-7;
+            right: spacing.$spacing-7;
         }
     }
 
@@ -60,7 +64,7 @@ p-autocomplete.p-inputwrapper-focus {
         &:focus,
         &:active {
             outline: none;
-            background-color: $color-palette-gray-200;
+            background-color: colors.$color-palette-gray-200;
         }
     }
 
@@ -72,27 +76,27 @@ p-autocomplete.p-inputwrapper-focus {
 
         .p-autocomplete-input.p-component,
         .p-autocomplete-input.p-component:disabled {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
             cursor: not-allowed;
             background: transparent;
         }
 
         .p-autocomplete-dropdown.p-button.p-element {
-            background-color: $color-palette-gray-200;
-            color: $color-palette-gray-500;
+            background-color: colors.$color-palette-gray-200;
+            color: colors.$color-palette-gray-500;
             cursor: not-allowed;
 
             &:hover,
             &:focus,
             &:active {
-                background-color: $color-palette-gray-200;
-                color: $color-palette-gray-500;
+                background-color: colors.$color-palette-gray-200;
+                color: colors.$color-palette-gray-500;
             }
         }
 
         .p-autocomplete-loader,
         .p-autocomplete-clear-icon {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 
@@ -102,7 +106,7 @@ p-autocomplete.p-inputwrapper-focus {
             align-items: center;
             max-height: 13rem; // 208px
             overflow: auto; // Make it scrollable
-            gap: $spacing-0;
+            gap: spacing.$spacing-0;
             padding: 7px 0 6px; // Specific padding for the tokens in multiple lines
 
             &:hover,
@@ -123,16 +127,16 @@ p-autocomplete.p-inputwrapper-focus {
 
             .p-autocomplete-token-icon {
                 .pi {
-                    width: $icon-sm-box;
-                    font-size: $icon-sm;
+                    width: common2.$icon-sm-box;
+                    font-size: common2.$icon-sm;
                 }
             }
 
             .p-autocomplete-input-token {
                 input {
-                    font-family: $font-default;
-                    font-size: $font-size-md;
-                    color: $black;
+                    font-family: fonts.$font-default;
+                    font-size: fonts.$font-size-md;
+                    color: colors.$black;
                     padding: 0;
                     margin: 0;
                     height: 1.5rem;
@@ -144,20 +148,20 @@ p-autocomplete.p-inputwrapper-focus {
         &.p-disabled,
         &:disabled {
             .p-autocomplete-multiple-container {
-                background: $color-palette-gray-100;
+                background: colors.$color-palette-gray-100;
                 cursor: not-allowed;
 
                 .p-autocomplete-token {
-                    background: $color-palette-gray-200;
-                    color: $color-palette-gray-500;
+                    background: colors.$color-palette-gray-200;
+                    color: colors.$color-palette-gray-500;
 
                     .p-autocomplete-token-icon {
-                        color: $color-palette-gray-500;
+                        color: colors.$color-palette-gray-500;
                     }
                 }
 
                 .p-autocomplete-input-token input {
-                    color: $color-palette-gray-500;
+                    color: colors.$color-palette-gray-500;
                     cursor: not-allowed;
                 }
             }
@@ -166,12 +170,12 @@ p-autocomplete.p-inputwrapper-focus {
 
     &.p-error > .p-inputtext,
     &.p-invalid > .p-inputtext {
-        border-color: $error;
+        border-color: colors.$error;
     }
 }
 
 p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
-    border-color: $error;
+    border-color: colors.$error;
 }
 
 .p-autocomplete-panel {
@@ -192,7 +196,7 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
             }
 
             &.p-focus {
-                background-color: $color-palette-primary-300;
+                background-color: colors.$color-palette-primary-300;
             }
         }
     }

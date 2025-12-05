@@ -1,25 +1,30 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/shadows";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-tieredmenu {
-    padding: $spacing-1 0;
-    background: $white;
+    padding: spacing.$spacing-1 0;
+    background: colors.$white;
     border: 0 none;
-    border-radius: $border-radius-xs;
+    border-radius: common.$border-radius-xs;
     width: 100%;
 
     .p-menuitem-link {
-        padding: $spacing-2;
-        color: $brand-background;
+        padding: spacing.$spacing-2;
+        color: colors.$brand-background;
         border-radius: 0;
         transition: none;
         user-select: none;
 
         &:not(.p-disabled):hover {
-            background: $color-palette-gray-200;
+            background: colors.$color-palette-gray-200;
         }
     }
 
     &.p-tieredmenu-overlay {
-        box-shadow: $shadow-s;
+        box-shadow: shadows.$shadow-s;
     }
 }

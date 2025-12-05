@@ -1,3 +1,5 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -28,5 +30,5 @@
 .dot-wizard__footer {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }

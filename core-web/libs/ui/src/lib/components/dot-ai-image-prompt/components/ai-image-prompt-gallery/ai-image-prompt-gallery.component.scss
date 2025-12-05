@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 $max-galleria-dimension: 28.75rem;
@@ -8,12 +12,12 @@ $max-galleria-dimension: 28.75rem;
 }
 
 .ai-image-gallery__placeholder {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
     width: calc(100% - 3rem);
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: $border-radius-md;
+    border-radius: common.$border-radius-md;
     align-self: center;
 
     &.s1024x1792 {
@@ -33,20 +37,20 @@ p-galleria {
     height: 34rem;
     display: flex;
     align-items: center;
-    padding: $spacing-3;
-    border-radius: $border-radius-md;
-    background-color: $color-palette-gray-100;
+    padding: spacing.$spacing-3;
+    border-radius: common.$border-radius-md;
+    background-color: colors.$color-palette-gray-100;
 }
 
 .ai-image-gallery__count {
-    margin-top: $spacing-1;
+    margin-top: spacing.$spacing-1;
 }
 
 :host ::ng-deep {
     .ai-image-gallery__img {
         width: 100%;
         max-height: 32rem;
-        border-radius: $border-radius-md;
+        border-radius: common.$border-radius-md;
     }
 
     p-galleriacontent {
@@ -54,7 +58,7 @@ p-galleria {
     }
 
     dot-empty-container .message__icon {
-        color: $red;
+        color: colors.$red;
     }
 
     .message__principal-wrapper {
@@ -78,6 +82,6 @@ p-galleria {
 }
 
 .ai-image-gallery__count-skeleton {
-    margin-top: $spacing-1;
+    margin-top: spacing.$spacing-1;
     align-self: center;
 }

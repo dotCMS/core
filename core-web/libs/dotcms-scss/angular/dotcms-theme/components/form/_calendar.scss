@@ -1,23 +1,28 @@
 @use "variables" as *;
-@import "mixins";
-@import "common";
-@import "../buttons/common";
+@use "mixins";
+@use "common";
+@use "../buttons/common" as common2;
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common3;
+@use "../../../../shared/fonts";
+@use "../../../../shared/shadows";
+@use "../../../../shared/spacing";
 
 // Input with Button
 .p-calendar.p-calendar-w-btn {
-    border-radius: $border-radius-md;
-    height: $field-height-md;
+    border-radius: common3.$border-radius-md;
+    height: common3.$field-height-md;
     box-sizing: border-box;
-    border: $field-border-size solid $color-palette-gray-400;
+    border: common3.$field-border-size solid colors.$color-palette-gray-400;
 
     input {
         height: auto;
-        @include truncate-text;
+        @include mixins.truncate-text;
     }
 
     &:focus-within {
         background-color: transparent;
-        @include field-focus;
+        @include mixins.field-focus;
     }
 
     &:hover {
@@ -25,7 +30,7 @@
     }
 
     &.p-calendar-disabled {
-        border-color: $color-palette-gray-200;
+        border-color: colors.$color-palette-gray-200;
     }
 
     input.p-inputtext,
@@ -41,38 +46,38 @@
     .p-button:enabled.p-datepicker-trigger {
         height: auto;
         aspect-ratio: 1/1;
-        background-color: $color-palette-gray-200;
-        color: $color-palette-primary;
-        border-radius: 0 $border-radius-sm $border-radius-sm 0;
+        background-color: colors.$color-palette-gray-200;
+        color: colors.$color-palette-primary;
+        border-radius: 0 common3.$border-radius-sm common3.$border-radius-sm 0;
 
         .pi {
-            width: $icon-lg-box;
-            font-size: $icon-lg;
+            width: common3.$icon-lg-box;
+            font-size: common3.$icon-lg;
         }
 
         .p-icon-wrapper {
-            color: $color-palette-primary-500;
+            color: colors.$color-palette-primary-500;
         }
     }
 
     .p-button:enabled.p-datepicker-trigger .pi {
-        color: $color-palette-primary-500;
+        color: colors.$color-palette-primary-500;
     }
 }
 
 .p-datepicker {
-    padding: $spacing-3;
-    background: $white;
-    color: $black;
-    border-radius: $border-radius-md;
+    padding: spacing.$spacing-3;
+    background: colors.$white;
+    color: colors.$black;
+    border-radius: common3.$border-radius-md;
 
     &:not(.p-datepicker-inline) {
-        margin-top: $spacing-3;
-        box-shadow: $shadow-l;
+        margin-top: spacing.$spacing-3;
+        box-shadow: shadows.$shadow-l;
         min-width: auto;
         display: flex;
         flex-direction: column;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
     }
 
     // Days/Month/Year containers
@@ -85,21 +90,21 @@
 
         border-radius: 50%;
         transition: background-color $basic-speed;
-        color: $black;
+        color: colors.$black;
 
         &:hover {
             cursor: pointer;
-            background: $color-palette-primary-op-10;
+            background: colors.$color-palette-primary-op-10;
         }
 
         &.p-disabled {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
 
         &.p-highlight:not(.p-disabled) {
             // Selected
-            background: $color-palette-primary-op-10;
-            color: $color-accessible-text-blue;
+            background: colors.$color-palette-primary-op-10;
+            color: colors.$color-accessible-text-blue;
         }
     }
 
@@ -107,41 +112,41 @@
     .p-datepicker-group {
         display: flex;
         flex-direction: column;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
 
         // Header
         .p-datepicker-header {
-            color: $black;
-            background: $white;
+            color: colors.$black;
+            background: colors.$white;
             margin: 0;
             min-height: 40px;
 
             .p-datepicker-title {
-                line-height: $spacing-5;
+                line-height: spacing.$spacing-5;
                 display: flex;
-                gap: $spacing-1;
+                gap: spacing.$spacing-1;
 
                 // Header Buttons
                 .p-datepicker-year,
                 .p-datepicker-month,
                 .p-datepicker-decade {
-                    font-size: $font-size-lmd;
-                    font-family: $font-default;
-                    font-weight: $font-weight-regular-bold;
+                    font-size: fonts.$font-size-lmd;
+                    font-family: fonts.$font-default;
+                    font-weight: fonts.$font-weight-regular-bold;
                     color: inherit;
 
                     &:hover {
-                        color: $color-palette-primary-500;
+                        color: colors.$color-palette-primary-500;
                     }
                 }
             }
 
             .p-datepicker-prev,
             .p-datepicker-next {
-                height: $field-height-md;
-                width: $field-height-md;
+                height: common3.$field-height-md;
+                width: common3.$field-height-md;
                 border-radius: 50%;
-                color: $color-palette-primary-500;
+                color: colors.$color-palette-primary-500;
 
                 @extend #outlined-primary-severity;
             }
@@ -150,14 +155,14 @@
         // Calendar
         table.p-datepicker-calendar {
             tbody {
-                gap: $spacing-1;
+                gap: spacing.$spacing-1;
                 display: flex;
                 flex-direction: column;
             }
 
             tr {
                 display: flex;
-                gap: $spacing-1;
+                gap: spacing.$spacing-1;
             }
 
             td,
@@ -165,49 +170,49 @@
                 border-spacing: 0;
                 padding: 0;
                 margin: 0;
-                color: $black;
+                color: colors.$black;
             }
 
             th {
-                font-size: $font-size-md;
-                font-weight: $font-weight-semi-bold;
+                font-size: fonts.$font-size-md;
+                font-weight: fonts.$font-weight-semi-bold;
             }
 
             span {
-                width: $spacing-6;
-                height: $spacing-6;
+                width: spacing.$spacing-6;
+                height: spacing.$spacing-6;
             }
 
             th > span {
-                width: $spacing-6;
+                width: spacing.$spacing-6;
                 height: 22px;
             }
 
             td.p-datepicker-today > span:not(.p-highlight) {
-                background: $color-palette-gray-300;
+                background: colors.$color-palette-gray-300;
                 border-color: transparent;
             }
         }
     }
 
     .p-timepicker {
-        gap: $spacing-0;
-        border-top: 1px solid $color-palette-gray-300;
-        padding: $spacing-3;
+        gap: spacing.$spacing-0;
+        border-top: 1px solid colors.$color-palette-gray-300;
+        padding: spacing.$spacing-3;
 
         button {
-            width: $icon-lg-box;
+            width: common3.$icon-lg-box;
             height: auto;
             aspect-ratio: 1/1;
-            font-size: $icon-lg;
-            color: $color-palette-primary-500;
+            font-size: common3.$icon-lg;
+            color: colors.$color-palette-primary-500;
         }
 
         span {
-            font-size: $font-size-md;
-            font-weight: $font-weight-regular-bold;
-            width: $spacing-5;
-            height: $spacing-5;
+            font-size: fonts.$font-size-md;
+            font-weight: fonts.$font-weight-regular-bold;
+            width: spacing.$spacing-5;
+            height: spacing.$spacing-5;
             display: flex;
             justify-content: center;
             align-content: center;
@@ -215,7 +220,7 @@
         }
 
         button {
-            border-radius: $border-radius-sm;
+            border-radius: common3.$border-radius-sm;
 
             @extend #text-primary-severity;
         }
@@ -231,12 +236,12 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         justify-items: center;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
         width: 328px;
 
         span {
-            width: $spacing-9;
-            height: $spacing-6;
+            width: spacing.$spacing-9;
+            height: spacing.$spacing-6;
             border-radius: 100px;
         }
     }
@@ -244,18 +249,18 @@
 
 p-calendar.p-calendar-clearable {
     .p-inputtext {
-        padding-right: $spacing-6;
+        padding-right: spacing.$spacing-6;
     }
 
     .p-calendar-clear-icon {
         margin-top: -0.438rem;
-        color: $color-palette-primary;
-        width: $icon-lg-box;
-        font-size: $icon-lg;
+        color: colors.$color-palette-primary;
+        width: common3.$icon-lg-box;
+        font-size: common3.$icon-lg;
         right: 44px;
 
         &:hover {
-            color: $color-palette-primary-600;
+            color: colors.$color-palette-primary-600;
         }
     }
 }

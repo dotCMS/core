@@ -1,9 +1,11 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep {
     .p-autocomplete-token {
         flex-direction: row-reverse;
-        max-width: $spacing-10;
+        max-width: spacing.$spacing-10;
     }
 
     .p-autocomplete-loader {

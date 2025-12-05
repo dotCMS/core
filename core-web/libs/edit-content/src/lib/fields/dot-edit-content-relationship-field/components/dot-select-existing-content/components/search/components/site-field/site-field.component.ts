@@ -38,7 +38,6 @@ import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pi
             useExisting: forwardRef(() => SiteFieldComponent)
         }
     ],
-    styleUrls: ['./site-field.component.scss'],
     templateUrl: './site-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

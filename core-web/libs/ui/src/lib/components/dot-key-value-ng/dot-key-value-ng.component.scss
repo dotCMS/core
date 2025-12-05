@@ -1,10 +1,14 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 ::ng-deep {
     p-table {
         .dotTable.p-datatable.p-datatable-key-value {
             .p-datatable-header {
-                background-color: $color-palette-gray-100;
+                background-color: colors.$color-palette-gray-100;
                 th {
                     border: 0;
                 }
@@ -14,8 +18,8 @@
                 padding-right: 0;
             }
             .p-datatable-wrapper {
-                border: 1px solid $color-palette-gray-300;
-                border-radius: $border-radius-md;
+                border: 1px solid colors.$color-palette-gray-300;
+                border-radius: common.$border-radius-md;
             }
             .p-datatable-footer {
                 border: 0;
@@ -29,7 +33,7 @@
 
 .dot-key-value__header {
     th {
-        font-weight: $font-weight-bold;
-        background-color: $color-palette-gray-100;
+        font-weight: fonts.$font-weight-bold;
+        background-color: colors.$color-palette-gray-100;
     }
 }

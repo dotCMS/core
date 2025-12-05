@@ -1,8 +1,10 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 :host {
     width: 100%;
     min-height: 100%;
-    background: $white;
+    background: colors.$white;
     display: flex;
 }

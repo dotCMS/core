@@ -1,3 +1,5 @@
+@use "../../../shared/colors";
+
 @use "variables" as *;
 
 p-progressspinner .p-progress-spinner {
@@ -6,6 +8,6 @@ p-progressspinner .p-progress-spinner {
 }
 
 p-progressspinner .p-progress-spinner-circle {
-    stroke: $color-palette-primary-500 !important;
+    stroke: colors.$color-palette-primary-500 !important;
     stroke-width: 6px;
 }

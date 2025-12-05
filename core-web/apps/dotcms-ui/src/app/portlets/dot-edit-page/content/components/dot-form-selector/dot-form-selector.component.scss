@@ -1,5 +1,6 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     dot-dialog ::ng-deep {
@@ -21,12 +22,12 @@
             justify-content: space-between;
 
             button {
-                margin-left: $spacing-5;
+                margin-left: spacing.$spacing-5;
             }
         }
 
         .p-paginator-bottom {
-            @include paginator-bottom-absolute;
+            @include mixins.paginator-bottom-absolute;
         }
     }
 }

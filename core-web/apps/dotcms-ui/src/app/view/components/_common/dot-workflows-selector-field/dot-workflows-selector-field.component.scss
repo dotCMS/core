@@ -1,13 +1,16 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 .workflow__archive-label {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     text-decoration: line-through;
 }
 
 .workflow__archive-message {
-    color: $color-palette-gray-700;
-    font-size: $font-size-sm;
-    margin-left: $spacing-1;
+    color: colors.$color-palette-gray-700;
+    font-size: fonts.$font-size-sm;
+    margin-left: spacing.$spacing-1;
 }

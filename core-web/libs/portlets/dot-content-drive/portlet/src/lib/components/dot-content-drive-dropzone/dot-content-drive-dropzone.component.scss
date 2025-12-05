@@ -1,3 +1,8 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -20,12 +25,12 @@
         position: absolute;
         inset: 0;
         z-index: 1000;
-        border: 1px dashed $color-palette-primary-500;
-        border-radius: $border-radius-xl;
+        border: 1px dashed colors.$color-palette-primary-500;
+        border-radius: common.$border-radius-xl;
         background-color: rgba(246, 249, 252, 0.8);
         opacity: 0;
         visibility: visible;
-        transition: all $content-drive-animation-speed $content-drive-animation-ease;
+        transition: all common.$content-drive-animation-speed common.$content-drive-animation-ease;
         pointer-events: none;
     }
 
@@ -38,7 +43,7 @@
         position: absolute;
         inset: 0;
         z-index: 1001;
-        transition: all $content-drive-animation-speed $content-drive-animation-ease;
+        transition: all common.$content-drive-animation-speed common.$content-drive-animation-ease;
         opacity: 0;
         visibility: visible;
         pointer-events: none;
@@ -49,20 +54,20 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
 
         .pi {
-            height: calc($icon-xl + $spacing-4);
-            width: calc($icon-xl + $spacing-4);
-            font-size: $font-size-xxxxl;
-            color: $color-palette-primary-500;
-            background-color: $color-palette-primary-200;
-            border-radius: $border-radius-circular;
+            height: calc(common.$icon-xl + spacing.$spacing-4);
+            width: calc(common.$icon-xl + spacing.$spacing-4);
+            font-size: fonts.$font-size-xxxxl;
+            color: colors.$color-palette-primary-500;
+            background-color: colors.$color-palette-primary-200;
+            border-radius: common.$border-radius-circular;
         }
     }
 
     .message__content-text {
-        font-size: $font-size-slg;
+        font-size: fonts.$font-size-slg;
         line-height: 140%;
     }
 }

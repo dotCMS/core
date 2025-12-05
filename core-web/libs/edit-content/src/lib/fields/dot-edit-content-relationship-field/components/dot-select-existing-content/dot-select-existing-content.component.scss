@@ -1,3 +1,8 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 ::ng-deep {
@@ -7,24 +12,24 @@
                 height: 36rem;
             }
             .p-datatable-header {
-                background-color: $white;
+                background-color: colors.$white;
                 border: 0px;
-                padding: $spacing-1 0;
+                padding: spacing.$spacing-1 0;
             }
             .p-datatable-table {
-                border-radius: $border-radius-md;
+                border-radius: common.$border-radius-md;
             }
             .p-datatable-thead {
                 th {
-                    font-weight: $font-weight-bold;
-                    background-color: $color-palette-gray-100;
+                    font-weight: fonts.$font-weight-bold;
+                    background-color: colors.$color-palette-gray-100;
                 }
             }
             .p-inputtext {
                 height: auto;
             }
             .p-datatable-tbody > tr > td:first-child:has(p-tableCheckbox) + td {
-                padding: $spacing-0 $spacing-1;
+                padding: spacing.$spacing-0 spacing.$spacing-1;
             }
             .column-thumbnail {
                 width: 4.5rem;

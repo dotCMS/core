@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -17,25 +21,25 @@
 
 .theme__item {
     align-items: center;
-    background: $color-palette-gray-200;
-    border-radius: $border-radius-sm;
+    background: colors.$color-palette-gray-200;
+    border-radius: common.$border-radius-sm;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     height: 15rem;
     width: 15rem;
-    margin: $spacing-3 $spacing-1 0;
-    padding: $spacing-4 $spacing-3;
+    margin: spacing.$spacing-3 spacing.$spacing-1 0;
+    padding: spacing.$spacing-4 spacing.$spacing-3;
     transition: background-color 0.15s ease-in;
     justify-content: space-between;
 
     &.theme__item--active {
         box-shadow: 0 10px 10px #0003;
-        background: $white;
+        background: colors.$white;
     }
 
     .item__image {
-        border-radius: $border-radius-sm;
+        border-radius: common.$border-radius-sm;
         width: 9.28rem; // 148px
         height: 9.28rem; // 148px
     }
@@ -47,9 +51,9 @@
 
 .theme__footer {
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     justify-content: flex-end;
-    margin: $spacing-6 0 0;
+    margin: spacing.$spacing-6 0 0;
 }
 
 ::ng-deep {

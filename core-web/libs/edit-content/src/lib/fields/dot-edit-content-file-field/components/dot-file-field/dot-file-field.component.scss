@@ -1,3 +1,9 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -11,9 +17,9 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    border-radius: $border-radius-md;
-    border: $field-border-size solid $color-palette-gray-400;
-    padding: $spacing-1;
+    border-radius: common.$border-radius-md;
+    border: common.$field-border-size solid colors.$color-palette-gray-400;
+    padding: spacing.$spacing-1;
     height: 14.4rem;
     min-width: 12.5rem;
 
@@ -23,13 +29,13 @@
 }
 
 .file-field__container--uploading {
-    border: $field-border-size dashed $color-palette-gray-400;
+    border: common.$field-border-size dashed colors.$color-palette-gray-400;
 }
 
 .file-field__actions {
     display: flex;
     flex-direction: column;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     justify-content: center;
     align-items: flex-start;
 
@@ -39,7 +45,7 @@
 
     .label-ai {
         text-transform: none;
-        font-size: $font-size-sm;
+        font-size: fonts.$font-size-sm;
     }
 
     .p-button {
@@ -52,21 +58,21 @@
 }
 
 .file-field__drop-zone {
-    border: $field-border-size dashed $input-border-color;
-    border-radius: $border-radius-md;
+    border: common.$field-border-size dashed $input-border-color;
+    border-radius: common.$border-radius-md;
     height: 100%;
     flex: 1;
     overflow: auto;
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 
 .file-field__drop-zone-btn {
     border: none;
     background: none;
-    color: $color-palette-primary-500;
+    color: colors.$color-palette-primary-500;
     text-decoration: underline;
-    font-size: $font-size-md;
-    font-family: $font-default;
+    font-size: fonts.$font-size-md;
+    font-family: fonts.$font-default;
     padding: revert;
     cursor: pointer;
 
@@ -76,10 +82,10 @@
 }
 
 .file-field__drop-zone--active {
-    border-radius: $border-radius-md;
-    border-color: $color-palette-secondary-500;
-    background: $white;
-    box-shadow: $shadow-l;
+    border-radius: common.$border-radius-md;
+    border-color: colors.$color-palette-secondary-500;
+    background: colors.$white;
+    box-shadow: shadows.$shadow-l;
 }
 
 input[type="file"] {
@@ -100,6 +106,6 @@ input[type="file"] {
     .file-field__drop-zone {
         width: 100%;
         margin: 0;
-        margin-bottom: $spacing-1;
+        margin-bottom: spacing.$spacing-1;
     }
 }

@@ -1,13 +1,17 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     /* Default height according to figma */
     height: 7.125rem; //114px
-    transition: height $content-drive-animation-speed $content-drive-animation-ease;
+    transition: height common.$content-drive-animation-speed common.$content-drive-animation-ease;
 
     ::ng-deep {
         .p-toolbar {
-            padding: $spacing-1 $spacing-3;
+            padding: spacing.$spacing-1 spacing.$spacing-3;
             justify-content: normal;
 
             dot-content-drive-tree-toggler {
@@ -15,7 +19,7 @@
                 visibility: visible;
                 width: inherit;
                 grid-area: tree-toogler;
-                transition: all $content-drive-animation-speed $content-drive-animation-ease;
+                transition: all common.$content-drive-animation-speed common.$content-drive-animation-ease;
 
                 &.sidebar-expanded {
                     visibility: hidden;
@@ -26,18 +30,18 @@
         }
 
         .dot-content-drive-toolbar {
-            background-color: $color-palette-gray-100;
+            background-color: colors.$color-palette-gray-100;
             border: none;
-            border-bottom: 1px solid $color-palette-gray-300;
-            gap: $spacing-1;
+            border-bottom: 1px solid colors.$color-palette-gray-300;
+            gap: spacing.$spacing-1;
             height: 100%;
         }
     }
 }
 
 .p-toolbar-group {
-    row-gap: $spacing-1;
-    column-gap: $spacing-1;
+    row-gap: spacing.$spacing-1;
+    column-gap: spacing.$spacing-1;
     display: grid;
     width: 100%;
     grid-template-columns: min-content 1fr;
@@ -46,7 +50,7 @@
         ". toolbar-group-bottom";
 
     place-items: center;
-    transition: column-gap $content-drive-animation-speed $content-drive-animation-ease;
+    transition: column-gap common.$content-drive-animation-speed common.$content-drive-animation-ease;
 
     &:has(dot-content-drive-tree-toggler.sidebar-expanded) {
         column-gap: 0;
@@ -80,5 +84,5 @@
 
 .p-toolbar-group-top,
 .p-toolbar-group-bottom {
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }

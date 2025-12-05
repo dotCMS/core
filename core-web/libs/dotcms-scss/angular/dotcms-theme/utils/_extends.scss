@@ -1,50 +1,53 @@
-@import "theme-variables";
+@use "theme-variables";
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
 
 #inputtext-normal-border {
-    box-shadow: 0 $field-normal-border-size 0 $field-normal-border-color;
+    box-shadow: 0 theme-variables.$field-normal-border-size 0 theme-variables.$field-normal-border-color;
 }
 
 #inputtext-hover-border {
-    box-shadow: 0 $field-hover-border-size 0 $field-hover-border-color;
+    box-shadow: 0 theme-variables.$field-hover-border-size 0 theme-variables.$field-hover-border-color;
 }
 
 #inputtext-active-border {
-    box-shadow: 0 $field-active-border-size 0 $field-active-border-color;
+    box-shadow: 0 theme-variables.$field-active-border-size 0 theme-variables.$field-active-border-color;
 }
 
 #inputtext-disabled-border {
-    box-shadow: 0 $field-disabled-border-size 0 $field-disabled-border-color;
+    box-shadow: 0 theme-variables.$field-disabled-border-size 0 theme-variables.$field-disabled-border-color;
 }
 
 #inputtext-error-border {
-    box-shadow: 0 $field-active-border-size 0 $red;
+    box-shadow: 0 theme-variables.$field-active-border-size 0 colors.$red;
 }
 
 #field-default-state {
-    background: $field-normal-bgcolor;
+    background: theme-variables.$field-normal-bgcolor;
     border: none;
-    color: $field-normal-color;
+    color: theme-variables.$field-normal-color;
     font-weight: normal;
 }
 
 #field-hover-state {
-    background: $field-hover-bgcolor;
-    color: $field-hover-color;
+    background: theme-variables.$field-hover-bgcolor;
+    color: theme-variables.$field-hover-color;
 }
 
 #field-active-state {
-    background: $field-active-bgcolor;
-    color: $field-active-color;
+    background: theme-variables.$field-active-bgcolor;
+    color: theme-variables.$field-active-color;
 }
 
 #field-disabled-state {
-    background: $field-disabled-bgcolor none;
-    color: $field-disabled-color;
+    background: theme-variables.$field-disabled-bgcolor none;
+    color: theme-variables.$field-disabled-color;
 }
 
 #ui-hover-state {
-    background: $color-palette-gray-200;
-    color: $field-hover-color;
+    background: colors.$color-palette-gray-200;
+    color: theme-variables.$field-hover-color;
 }
 
 #ui-trigger {
@@ -52,7 +55,7 @@
     display: flex;
     justify-content: flex-end;
     padding: 0;
-    width: $ui-trigger-width;
+    width: theme-variables.$ui-trigger-width;
 }
 
 #ui-trigger-icon {
@@ -62,16 +65,16 @@
 
 #ui-field-selectable-label {
     border: 0;
-    line-height: $field-height-md;
-    max-height: $field-height-md;
-    padding: 0 $ui-trigger-width 0 0;
+    line-height: common.$field-height-md;
+    max-height: common.$field-height-md;
+    padding: 0 theme-variables.$ui-trigger-width 0 0;
 }
 
 // EDIT PAGE
 
 #edit-page-selector-label {
-    color: $color-palette-gray-700;
-    font-size: $font-size-sm;
+    color: colors.$color-palette-gray-700;
+    font-size: fonts.$font-size-sm;
     position: absolute;
     top: 0;
 }

@@ -1,33 +1,38 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/shadows";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-overlaypanel {
-    background: $white;
-    color: $black;
+    background: colors.$white;
+    color: colors.$black;
     border: 0 none;
-    border-radius: $border-radius-md;
-    box-shadow: $shadow-m;
+    border-radius: common.$border-radius-md;
+    box-shadow: shadows.$shadow-m;
 }
 
 .p-overlaypanel .p-overlaypanel-content {
-    padding: $spacing-4;
+    padding: spacing.$spacing-4;
 }
 
 .p-overlaypanel .p-overlaypanel-close {
-    background: $color-palette-primary;
-    color: $white;
-    width: $spacing-5;
-    height: $spacing-5;
+    background: colors.$color-palette-primary;
+    color: colors.$white;
+    width: spacing.$spacing-5;
+    height: spacing.$spacing-5;
     transition:
         background-color 0.2s,
         color 0.2s,
         box-shadow 0.2s;
     border-radius: 50%;
     position: absolute;
-    top: -$spacing-3;
-    right: -$spacing-3;
+    top: -(spacing.$spacing-3);
+    right: -(spacing.$spacing-3);
 }
 
 .p-overlaypanel .p-overlaypanel-close:enabled:hover {
     background: $bg-hover;
-    color: $white;
+    color: colors.$white;
 }

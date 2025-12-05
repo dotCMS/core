@@ -1,15 +1,18 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 :host {
     flex: 1;
 }
 i {
-    color: $color-palette-gray-500;
+    color: colors.$color-palette-gray-500;
 }
 
 .state-message {
-    font-size: $font-size-md;
-    color: $color-palette-gray-800;
-    font-weight: $font-weight-regular-bold;
+    font-size: fonts.$font-size-md;
+    color: colors.$color-palette-gray-800;
+    font-weight: fonts.$font-weight-regular-bold;
     text-align: center;
     margin: 0;
 }

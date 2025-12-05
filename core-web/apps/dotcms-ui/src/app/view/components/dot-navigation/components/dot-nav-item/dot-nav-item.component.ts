@@ -11,7 +11,6 @@ import {
 
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotIconComponent } from '@dotcms/ui';
 
 import {
     LABEL_IMPORTANT_ICON,
@@ -26,7 +25,6 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     styleUrls: ['./dot-nav-item.component.scss'],
     imports: [
         CommonModule,
-        DotIconComponent,
         DotSubNavComponent,
         DotNavIconComponent,
         DotRandomIconPipe

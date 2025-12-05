@@ -1,3 +1,7 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -8,7 +12,7 @@
     position: relative;
 
     .text-muted {
-        color: $color-palette-gray-600;
+        color: colors.$color-palette-gray-600;
     }
 
     dot-field-validation-message {
@@ -30,13 +34,13 @@
                 white-space: pre-wrap;
 
                 i {
-                    margin-left: $spacing-1;
-                    margin-right: $spacing-1;
-                    font-size: $font-size-sm;
+                    margin-left: spacing.$spacing-1;
+                    margin-right: spacing.$spacing-1;
+                    font-size: fonts.$font-size-sm;
                 }
 
                 &.p-disabled {
-                    color: $color-palette-gray-800;
+                    color: colors.$color-palette-gray-800;
                 }
 
                 &:not(.p-disabled):hover {

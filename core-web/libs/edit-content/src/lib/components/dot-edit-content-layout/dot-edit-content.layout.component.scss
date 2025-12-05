@@ -1,3 +1,7 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 @keyframes slideIn {
@@ -36,17 +40,17 @@
     flex-direction: column;
 
     &--beta-message-visible {
-        border-bottom: solid 1px $color-palette-gray-300;
+        border-bottom: solid 1px colors.$color-palette-gray-300;
     }
 
     .pi {
-        font-size: $icon-sm-box;
-        margin-right: $spacing-1;
+        font-size: common.$icon-sm-box;
+        margin-right: spacing.$spacing-1;
     }
 
     :host ::ng-deep .p-messages {
         animation: slideIn $basic-speed ease-out;
-        margin-bottom: $spacing-2;
+        margin-bottom: spacing.$spacing-2;
     }
 
     .edit-content-layout__beta-message,

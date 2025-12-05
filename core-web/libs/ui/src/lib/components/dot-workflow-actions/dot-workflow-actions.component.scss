@@ -1,8 +1,10 @@
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     justify-content: flex-start;
     flex-direction: row-reverse; // Make the order of the buttons to be from right to left
 }

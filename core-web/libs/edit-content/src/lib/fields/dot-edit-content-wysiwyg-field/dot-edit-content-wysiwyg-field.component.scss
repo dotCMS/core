@@ -1,8 +1,11 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 :host {
     .dot-wysiwyg__wrapper {
         display: flex;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
         flex-direction: column;
     }
 
@@ -28,7 +31,7 @@
         }
 
         .tox .tox-statusbar {
-            border-top: 1px solid $color-palette-gray-400;
+            border-top: 1px solid colors.$color-palette-gray-400;
         }
 
         .tox-tinymce {

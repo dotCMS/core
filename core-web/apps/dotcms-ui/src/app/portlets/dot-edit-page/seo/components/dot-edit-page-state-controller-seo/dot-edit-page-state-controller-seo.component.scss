@@ -1,5 +1,8 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: flex;
@@ -10,7 +13,7 @@
         .p-button-tabbed {
             box-shadow: none;
             height: 100%;
-            margin-right: $spacing-4;
+            margin-right: spacing.$spacing-4;
         }
 
         .p-selectbutton {
@@ -18,23 +21,23 @@
             display: flex;
 
             .p-button-label {
-                color: $black;
+                color: colors.$black;
             }
         }
     }
 }
 
 dot-edit-page-lock-info {
-    margin-left: $spacing-1;
+    margin-left: spacing.$spacing-1;
 }
 
 p-inputSwitch {
     ::ng-deep {
         .p-inputswitch-slider:after {
-            @include md-icon;
-            color: $color-palette-primary;
+            @include mixins.md-icon;
+            color: colors.$color-palette-primary;
             content: "lock_open";
-            font-size: $font-size-sm; // 14px
+            font-size: fonts.$font-size-sm; // 14px
             left: 4px;
             position: absolute;
             text-rendering: auto;
@@ -45,13 +48,13 @@ p-inputSwitch {
         }
 
         .p-inputswitch-checked .p-inputswitch-slider:after {
-            color: $white;
+            color: colors.$white;
             content: "lock";
             transform: translateX(1.5rem);
         }
 
         .p-state-disabled .p-inputswitch-slider:after {
-            color: $white;
+            color: colors.$white;
         }
 
         .p-tooltip {
@@ -60,7 +63,7 @@ p-inputSwitch {
     }
 
     &.warn ::ng-deep .p-inputswitch-slider:after {
-        color: $white;
+        color: colors.$white;
     }
 }
 

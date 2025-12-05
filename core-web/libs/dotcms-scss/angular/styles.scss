@@ -1,9 +1,9 @@
 @use "variables" as *;
 
 // @import "forms";
-@import "mixins";
+@use "mixins";
 // @import "typography";
-@import "dotcms-theme/utils/theme-variables"; /* temporary */
+@use "dotcms-theme/utils/theme-variables"; /* temporary */
 // @import "dotcms-theme/theme"; /* prime-ng */
 
 // INCLUDE FONT FACES

@@ -1,3 +1,6 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -16,7 +19,7 @@
 
     .whats-changed__empty-state {
         text-align: center;
-        margin-top: $spacing-9;
-        font-size: $font-size-xl;
+        margin-top: spacing.$spacing-9;
+        font-size: fonts.$font-size-xl;
     }
 }

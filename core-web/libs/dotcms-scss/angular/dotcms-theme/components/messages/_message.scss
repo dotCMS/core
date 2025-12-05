@@ -1,10 +1,15 @@
+@use "../../../../shared/colors";
+@use "../../../../shared/common";
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
+
 @use "variables" as *;
 
 /* Base styles for inline messages */
 .p-inline-message {
-    padding: $spacing-2 $spacing-2;
+    padding: spacing.$spacing-2 spacing.$spacing-2;
     margin: 0;
-    border-radius: $border-radius-md;
+    border-radius: common.$border-radius-md;
     background: transparent;
     border: 1px solid;
 }
@@ -12,26 +17,26 @@
 /* Styles for each type of inline message */
 .p-inline-message.p-inline-message-info {
     background: transparent;
-    border-color: $color-palette-blue;
-    color: $black;
+    border-color: colors.$color-palette-blue;
+    color: colors.$black;
 }
 
 .p-inline-message.p-inline-message-success {
     background: transparent;
-    border-color: $color-palette-green;
-    color: $black;
+    border-color: colors.$color-palette-green;
+    color: colors.$black;
 }
 
 .p-inline-message.p-inline-message-warn {
     background: transparent;
-    border-color: $color-palette-yellow;
-    color: $black;
+    border-color: colors.$color-palette-yellow;
+    color: colors.$black;
 }
 
 .p-inline-message.p-inline-message-error {
     background: transparent;
-    border-color: $color-palette-red;
-    color: $black;
+    border-color: colors.$color-palette-red;
+    color: colors.$black;
 }
 
 /* Base styles for regular messages */
@@ -46,72 +51,72 @@
     flex-wrap: wrap;
 
     .p-message-wrapper {
-        padding: 0 $spacing-4;
+        padding: 0 spacing.$spacing-4;
         height: 100%;
         width: 100%;
     }
 
     .p-message-text {
-        font-size: $font-size-md;
-        font-weight: $font-weight-semi-bold;
+        font-size: fonts.$font-size-md;
+        font-weight: fonts.$font-weight-semi-bold;
     }
 
     .p-message-icon {
-        font-size: $font-size-lg;
-        margin-right: $spacing-1;
+        font-size: fonts.$font-size-lg;
+        margin-right: spacing.$spacing-1;
     }
 }
 
 /* Specific styles for each message type */
 .p-message.p-message-info {
-    background: $color-palette-blue-tint;
+    background: colors.$color-palette-blue-tint;
     border: none;
-    color: $color-palette-blue-shade;
+    color: colors.$color-palette-blue-shade;
 
     .p-message-icon {
-        color: $color-palette-blue-shade;
+        color: colors.$color-palette-blue-shade;
     }
 }
 
 .p-message.p-message-success {
-    background: $color-palette-green-op-07;
+    background: colors.$color-palette-green-op-07;
     border: none;
-    color: $color-palette-green;
+    color: colors.$color-palette-green;
 
     .p-message-icon {
-        color: $color-palette-green;
+        color: colors.$color-palette-green;
     }
 }
 
 .p-message.p-message-warning {
-    background: $color-accessible-text-yellow-bg;
+    background: colors.$color-accessible-text-yellow-bg;
     border: none;
-    color: $color-accessible-text-yellow;
+    color: colors.$color-accessible-text-yellow;
 
     .p-message-icon,
     .p-message-text {
-        color: $color-accessible-text-yellow;
+        color: colors.$color-accessible-text-yellow;
     }
 
     .p-button-icon {
-        color: $color-accessible-text-yellow !important;
+        color: colors.$color-accessible-text-yellow !important;
     }
 }
 
 .p-message.p-message-error {
-    background: $color-palette-red-op-07;
+    background: colors.$color-palette-red-op-07;
     border: none;
-    color: $color-palette-red;
+    color: colors.$color-palette-red;
 
     .p-message-icon {
-        color: $color-palette-red;
+        color: colors.$color-palette-red;
     }
 }
 
 /* Styles for close button */
 .p-message .p-message-close {
-    width: $spacing-5;
-    height: $spacing-5;
+    width: spacing.$spacing-5;
+    height: spacing.$spacing-5;
     border-radius: 50%;
     background: transparent;
     transition:
@@ -120,7 +125,7 @@
         box-shadow $basic-speed;
 
     &:hover {
-        background: $color-palette-white-op-30;
+        background: colors.$color-palette-white-op-30;
     }
 
     &:focus {
@@ -138,25 +143,25 @@
 /* Text and details */
 .p-message {
     .p-message-summary {
-        font-weight: $font-weight-bold;
+        font-weight: fonts.$font-weight-bold;
     }
 
     .p-message-detail {
-        margin-left: $spacing-1;
+        margin-left: spacing.$spacing-1;
     }
 }
 
 /* Styles for Warning text */
 .p-message.p-message-warn .p-message-text:has(> span)::before {
     content: "Warning ";
-    font-weight: $font-weight-semi-bold;
+    font-weight: fonts.$font-weight-semi-bold;
 }
 
 /* Styles for links inside messages */
 .p-message .p-message-text a {
     color: var(--primary-color);
     text-decoration: none;
-    margin-left: $spacing-0;
+    margin-left: spacing.$spacing-0;
 
     &:hover {
         text-decoration: underline;

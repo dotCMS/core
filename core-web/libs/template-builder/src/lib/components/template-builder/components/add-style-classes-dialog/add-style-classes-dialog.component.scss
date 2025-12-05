@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -11,7 +15,7 @@
 }
 
 :host ::ng-deep p-autocomplete {
-    margin-bottom: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
     display: block;
     .p-autocomplete-dropdown.p-element.p-button {
         border-top-left-radius: 0;
@@ -20,11 +24,11 @@
 }
 
 ul {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     display: flex;
     flex-direction: column;
-    font-size: $font-size-sm;
-    gap: $spacing-1;
+    font-size: fonts.$font-size-sm;
+    gap: spacing.$spacing-1;
     list-style: none;
     margin: 0;
     padding: 0;
@@ -33,9 +37,9 @@ ul {
 li {
     display: flex;
     align-items: center;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
 }
 
 .pi {
-    color: $color-palette-gray;
+    color: colors.$color-palette-gray;
 }

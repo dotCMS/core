@@ -1,21 +1,26 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    margin-top: $spacing-6;
+    margin-top: spacing.$spacing-6;
     display: block;
-    border: solid 1px $color-palette-gray-500;
-    padding: $spacing-2 $spacing-4;
-    border-radius: $border-radius-xs;
+    border: solid 1px colors.$color-palette-gray-500;
+    padding: spacing.$spacing-2 spacing.$spacing-4;
+    border-radius: common.$border-radius-xs;
 }
 
 h3 {
-    font-size: $font-size-lg;
-    margin: $spacing-2 0;
+    font-size: fonts.$font-size-lg;
+    margin: spacing.$spacing-2 0;
 }
 
 h4 {
-    font-size: $font-size-lmd;
-    margin: $spacing-2 0;
+    font-size: fonts.$font-size-lmd;
+    margin: spacing.$spacing-2 0;
 }
 
 p {

@@ -1,15 +1,18 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 :host {
     display: flex;
     justify-content: flex-end;
     align-items: flex-end;
-    color: $color-palette-gray-500;
+    color: colors.$color-palette-gray-500;
     margin-top: 1rem;
     gap: 0.65rem;
-    font-size: $font-size-md;
+    font-size: fonts.$font-size-md;
 
     .error-message {
-        color: $error;
+        color: colors.$error;
     }
 }

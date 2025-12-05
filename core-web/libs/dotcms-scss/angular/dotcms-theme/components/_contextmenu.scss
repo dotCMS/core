@@ -1,37 +1,42 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-contextmenu {
-    padding: $spacing-0;
-    background: $white;
-    color: $black;
+    padding: spacing.$spacing-0;
+    background: colors.$white;
+    color: colors.$black;
     border: 0 none;
-    border-radius: $border-radius-md;
+    border-radius: common.$border-radius-md;
     box-shadow:
-        0 2px 4px -1px $color-palette-black-op-20,
-        0 4px 5px 0 $color-palette-black-op-10,
-        0 1px 10px 0 $color-palette-black-op-10;
+        0 2px 4px -1px colors.$color-palette-black-op-20,
+        0 4px 5px 0 colors.$color-palette-black-op-10,
+        0 1px 10px 0 colors.$color-palette-black-op-10;
     width: 12.5rem;
 }
 
 .p-contextmenu .p-menuitem-link {
-    padding: $spacing-2 $spacing-2;
-    color: $black;
+    padding: spacing.$spacing-2 spacing.$spacing-2;
+    color: colors.$black;
     border-radius: 0;
     transition: none;
     user-select: none;
 }
 
 .p-contextmenu .p-menuitem-link .p-menuitem-text {
-    color: $black;
+    color: colors.$black;
 }
 
 .p-contextmenu .p-menuitem-link .p-menuitem-icon {
-    color: $black;
-    margin-right: $spacing-1;
+    color: colors.$black;
+    margin-right: spacing.$spacing-1;
 }
 
 .p-contextmenu .p-menuitem-link .p-submenu-icon {
-    color: $black;
+    color: colors.$black;
 }
 
 .p-contextmenu .p-menuitem-link:not(.p-disabled):hover {
@@ -52,7 +57,7 @@
 
 .p-contextmenu .p-menuitem-link:focus {
     background: $bg-highlight;
-    outline: 2px solid $color-palette-primary;
+    outline: 2px solid colors.$color-palette-primary;
     outline-offset: -2px;
 }
 
@@ -74,13 +79,13 @@
 }
 
 .p-contextmenu .p-submenu-list {
-    padding: $spacing-1 0;
-    background: $white;
+    padding: spacing.$spacing-1 0;
+    background: colors.$white;
     border: 0 none;
     box-shadow:
-        0 2px 4px -1px $color-palette-black-op-20,
-        0 4px 5px 0 $color-palette-black-op-10,
-        0 1px 10px 0 $color-palette-black-op-10;
+        0 2px 4px -1px colors.$color-palette-black-op-20,
+        0 4px 5px 0 colors.$color-palette-black-op-10,
+        0 1px 10px 0 colors.$color-palette-black-op-10;
 }
 
 .p-contextmenu .p-menuitem.p-menuitem-active > .p-menuitem-link {
@@ -88,21 +93,21 @@
 }
 
 .p-contextmenu .p-menuitem.p-menuitem-active > .p-menuitem-link .p-menuitem-text {
-    color: $black;
+    color: colors.$black;
 }
 
 .p-contextmenu .p-menuitem.p-menuitem-active > .p-menuitem-link .p-menuitem-icon,
 .p-contextmenu .p-menuitem.p-menuitem-active > .p-menuitem-link .p-submenu-icon {
-    color: $black;
+    color: colors.$black;
 }
 
 .p-contextmenu .p-menu-separator {
-    border-top: 1px solid $color-palette-black-op-10;
-    margin: $spacing-1 0;
+    border-top: 1px solid colors.$color-palette-black-op-10;
+    margin: spacing.$spacing-1 0;
 }
 
 .p-contextmenu .p-submenu-icon {
-    font-size: $font-size-sm;
+    font-size: fonts.$font-size-sm;
 }
 
 .p-contextmenu ul {

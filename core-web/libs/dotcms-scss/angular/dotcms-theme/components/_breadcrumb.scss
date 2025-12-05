@@ -1,27 +1,31 @@
+@use "../../../shared/colors";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-breadcrumb {
     border: 0 none;
-    padding: $spacing-3 0;
+    padding: spacing.$spacing-3 0;
 
     .p-breadcrumb-list {
         li {
             .p-menuitem-link {
                 transition: none;
                 .p-menuitem-text {
-                    color: $color-palette-gray-700;
-                    font-size: $font-size-default;
+                    color: colors.$color-palette-gray-700;
+                    font-size: fonts.$font-size-default;
                     cursor: pointer;
                     &[href] {
-                        color: $black;
+                        color: colors.$black;
                         &:hover {
-                            color: $color-palette-primary;
+                            color: colors.$color-palette-primary;
                             text-decoration: underline;
                         }
                     }
                 }
                 .p-menuitem-icon {
-                    color: $black;
+                    color: colors.$black;
                 }
                 &:focus {
                     outline: 0 none;
@@ -30,16 +34,16 @@
                 }
             }
             &.p-menuitem-separator {
-                margin: 0 $spacing-1;
-                color: $black;
+                margin: 0 spacing.$spacing-1;
+                color: colors.$black;
             }
 
             &:last-child {
                 .p-menuitem-text {
-                    color: $color-palette-gray-700;
+                    color: colors.$color-palette-gray-700;
                 }
                 .p-menuitem-icon {
-                    color: $color-palette-gray-700;
+                    color: colors.$color-palette-gray-700;
                 }
             }
         }

@@ -1,3 +1,7 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -6,7 +10,7 @@
     }
 
     textarea {
-        font-family: $font-code;
+        font-family: fonts.$font-code;
         max-height: 21.5rem;
         overflow: auto !important;
     }
@@ -14,8 +18,8 @@
     ::ng-deep {
         .p-field-hint {
             markdown pre {
-                background-color: $color-palette-secondary-100;
-                padding: $spacing-0 $spacing-1;
+                background-color: colors.$color-palette-secondary-100;
+                padding: spacing.$spacing-0 spacing.$spacing-1;
 
                 // This padding prevents the code to overlap between lines
                 code {
@@ -27,7 +31,7 @@
 }
 
 .p-field {
-    margin-bottom: $spacing-4;
+    margin-bottom: spacing.$spacing-4;
 
     label {
         display: block;
@@ -35,29 +39,29 @@
 
     input,
     textarea {
-        font-size: $font-size-lmd;
+        font-size: fonts.$font-size-lmd;
         width: 100%;
     }
 
     dot-icon {
-        color: $color-palette-primary;
-        margin-left: $spacing-1;
+        color: colors.$color-palette-primary;
+        margin-left: spacing.$spacing-1;
         vertical-align: middle;
     }
 
     ::ng-deep {
         p-dropdown .p-dropdown {
             min-width: 14.28rem;
-            margin-bottom: $spacing-1;
+            margin-bottom: spacing.$spacing-1;
         }
 
         p-checkbox label {
-            font-size: $font-size-lmd;
+            font-size: fonts.$font-size-lmd;
         }
 
         p-checkbox.required label:before,
         label.required:before {
-            color: $red;
+            color: colors.$red;
             content: "* ";
         }
 

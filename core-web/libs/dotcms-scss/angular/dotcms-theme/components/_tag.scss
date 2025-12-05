@@ -1,51 +1,55 @@
+@use "../../../shared/colors";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-tag {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: $color-palette-primary;
-    color: $white;
-    font-size: $font-size-md;
-    font-weight: $font-weight-regular-bold;
-    padding: $spacing-1 $spacing-3;
+    background: colors.$color-palette-primary;
+    color: colors.$white;
+    font-size: fonts.$font-size-md;
+    font-weight: fonts.$font-weight-regular-bold;
+    padding: spacing.$spacing-1 spacing.$spacing-3;
     border-radius: $tag-radius-md;
 }
 
 p-tag.sm {
     .p-tag {
-        font-size: $font-size-xs;
-        padding: $spacing-0 $spacing-1;
+        font-size: fonts.$font-size-xs;
+        padding: spacing.$spacing-0 spacing.$spacing-1;
 
         .p-tag-value {
-            line-height: $spacing-3;
+            line-height: spacing.$spacing-3;
         }
     }
 }
 
 .p-tag .p-tag-icon {
-    margin-right: $spacing-1;
-    font-size: $font-size-xs;
+    margin-right: spacing.$spacing-1;
+    font-size: fonts.$font-size-xs;
 }
 
 p-tag {
     &.p-tag-success .p-tag {
-        background-color: $color-alert-green-light;
-        color: $color-accessible-text-green;
+        background-color: colors.$color-alert-green-light;
+        color: colors.$color-accessible-text-green;
     }
 
     &.p-tag-info .p-tag {
-        background-color: $color-accessible-text-blue-bg;
-        color: $color-accessible-text-blue;
+        background-color: colors.$color-accessible-text-blue-bg;
+        color: colors.$color-accessible-text-blue;
     }
 
     &.p-tag-warning .p-tag {
-        background-color: $color-alert-yellow-light;
-        color: $color-alert-yellow;
+        background-color: colors.$color-alert-yellow-light;
+        color: colors.$color-alert-yellow;
     }
 
     &.p-tag-error .p-tag {
-        background-color: $color-alert-red-light;
-        color: $color-alert-red;
+        background-color: colors.$color-alert-red-light;
+        color: colors.$color-alert-red;
     }
 }

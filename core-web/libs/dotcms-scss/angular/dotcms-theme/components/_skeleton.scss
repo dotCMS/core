@@ -1,3 +1,5 @@
+@use "../../../shared/colors";
+
 @use "variables" as *;
 
 p-skeleton {
@@ -8,14 +10,14 @@ p-skeleton {
 }
 
 .p-skeleton {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
     border-radius: 3px;
 }
 .p-skeleton:after {
     background: linear-gradient(
         90deg,
-        $color-palette-gray-200,
-        $color-palette-white-op-60,
-        $color-palette-gray-200
+        colors.$color-palette-gray-200,
+        colors.$color-palette-white-op-60,
+        colors.$color-palette-gray-200
     );
 }

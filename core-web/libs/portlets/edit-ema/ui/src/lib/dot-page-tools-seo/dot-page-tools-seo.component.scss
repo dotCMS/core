@@ -1,3 +1,8 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .page-tools {
@@ -7,17 +12,17 @@
 .page-tools-list {
     list-style: none;
     padding: 0;
-    margin-top: $spacing-0;
+    margin-top: spacing.$spacing-0;
 }
 
 .page-tools-list__item {
     display: flex;
     flex-direction: row;
-    padding: $spacing-3;
-    border-radius: $border-radius-md;
+    padding: spacing.$spacing-3;
+    border-radius: common.$border-radius-md;
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
@@ -25,14 +30,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-left: $spacing-3;
+    padding-left: spacing.$spacing-3;
 }
 
 .page-tools-list__title {
-    font-size: $font-size-md;
-    font-weight: $font-weight-semi-bold;
+    font-size: fonts.$font-size-md;
+    font-weight: fonts.$font-weight-semi-bold;
     line-height: $line-height;
-    margin-bottom: $spacing-1;
+    margin-bottom: spacing.$spacing-1;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -40,12 +45,12 @@
 
 .page-tools-list__chips {
     display: flex;
-    gap: $spacing-1;
-    margin-top: $spacing-1;
+    gap: spacing.$spacing-1;
+    margin-top: spacing.$spacing-1;
 }
 
 .page-tools-list__link {
-    color: $black;
+    color: colors.$black;
     text-decoration: none;
     display: flex;
 }
@@ -57,21 +62,21 @@
 }
 
 .page-tools-external-link {
-    color: $color-palette-primary-500;
+    color: colors.$color-palette-primary-500;
 }
 
 ::ng-deep {
     .page-tools-dialog {
         &.p-dialog-right {
             .p-dialog {
-                margin-right: $spacing-9;
+                margin-right: spacing.$spacing-9;
             }
         }
 
         .p-dialog {
             .p-dialog-header {
-                padding: $spacing-4;
-                border-bottom: 1px solid $color-palette-gray-300;
+                padding: spacing.$spacing-4;
+                border-bottom: 1px solid colors.$color-palette-gray-300;
 
                 .p-dialog-header-icon {
                     opacity: 0;
@@ -79,7 +84,7 @@
             }
 
             .p-dialog-content {
-                padding: 0 $spacing-3;
+                padding: 0 spacing.$spacing-3;
             }
         }
 

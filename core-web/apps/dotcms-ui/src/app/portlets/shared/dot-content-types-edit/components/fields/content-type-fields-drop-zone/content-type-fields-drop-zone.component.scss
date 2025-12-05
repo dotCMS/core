@@ -1,5 +1,7 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: flex;
@@ -7,8 +9,8 @@
     flex-direction: column;
 
     ::ng-deep .p-tabview {
-        margin-left: -$spacing-6;
-        margin-right: -$spacing-6;
+        margin-left: -(spacing.$spacing-6);
+        margin-right: -(spacing.$spacing-6);
     }
 
     dot-content-type-fields-row {
@@ -16,12 +18,8 @@
     }
 
     dot-add-rows {
-        margin-top: $spacing-3;
+        margin-top: spacing.$spacing-3;
     }
-}
-
-.wrapper {
-    padding: $spacing-6;
 }
 
 .content-type-fields-drop-zone {
@@ -34,6 +32,6 @@
 
 .content-type-fields-drop-zone__hint-icon {
     width: 15px;
-    font-size: $font-size-sm;
+    font-size: fonts.$font-size-sm;
     margin-left: 5px;
 }

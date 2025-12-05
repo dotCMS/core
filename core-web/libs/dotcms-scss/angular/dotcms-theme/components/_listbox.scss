@@ -1,33 +1,37 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-listbox {
-    background: $white;
-    color: $black;
+    background: colors.$white;
+    color: colors.$black;
     border: none;
-    border-radius: $border-radius-sm;
+    border-radius: common.$border-radius-sm;
 }
 
 .p-listbox.p-component .p-listbox-header {
-    padding: $spacing-2;
-    border-bottom: 1px solid $color-palette-black-op-10;
-    color: $black;
-    background: $white;
+    padding: spacing.$spacing-2;
+    border-bottom: 1px solid colors.$color-palette-black-op-10;
+    color: colors.$black;
+    background: colors.$white;
     margin: 0;
-    border-top-right-radius: $border-radius-sm;
-    border-top-left-radius: $border-radius-sm;
+    border-top-right-radius: common.$border-radius-sm;
+    border-top-left-radius: common.$border-radius-sm;
 }
 
 .p-listbox .p-listbox-header .p-listbox-filter {
-    padding-right: $spacing-6;
+    padding-right: spacing.$spacing-6;
 }
 
 .p-listbox .p-listbox-header .p-listbox-filter-icon {
-    right: $spacing-2;
-    color: $black;
+    right: spacing.$spacing-2;
+    color: colors.$black;
 }
 
 .p-listbox .p-listbox-header .p-checkbox {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 
 .p-listbox .p-listbox-list {
@@ -36,9 +40,9 @@
 
 .p-listbox .p-listbox-list .p-listbox-item {
     margin: 0;
-    padding: $spacing-1 $spacing-2;
+    padding: spacing.$spacing-1 spacing.$spacing-2;
     border: 0 none;
-    color: $black;
+    color: colors.$black;
     transition: none;
     border-radius: 0;
 }
@@ -55,7 +59,7 @@
 }
 
 .p-listbox .p-listbox-list .p-listbox-item .p-checkbox {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 
 .p-listbox:not(.p-disabled) .p-listbox-item:not(.p-highlight):not(.p-disabled):hover {

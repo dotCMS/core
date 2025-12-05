@@ -1,3 +1,6 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+
 @use "variables" as *;
 
 .file-selector {
@@ -6,7 +9,7 @@
         flex: 0 0 auto;
         min-width: 16rem;
         width: 25%;
-        border-right: $field-border-size solid $color-palette-gray-400;
+        border-right: common.$field-border-size solid colors.$color-palette-gray-400;
         ::ng-deep {
             .p-tree {
                 border: 0px;
@@ -16,7 +19,7 @@
     }
     .file-selector__main {
         margin-top: 1px;
-        border-radius: $border-radius-md;
-        border: $field-border-size solid $color-palette-gray-400;
+        border-radius: common.$border-radius-md;
+        border: common.$field-border-size solid colors.$color-palette-gray-400;
     }
 }

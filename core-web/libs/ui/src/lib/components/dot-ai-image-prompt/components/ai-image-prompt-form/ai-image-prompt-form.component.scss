@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep {
@@ -34,9 +38,9 @@ form {
 
     > span {
         display: flex;
-        margin: $spacing-0 0 $spacing-1 $spacing-5;
-        font-size: $font-size-sm;
-        color: $color-palette-gray-700;
+        margin: spacing.$spacing-0 0 spacing.$spacing-1 spacing.$spacing-5;
+        font-size: fonts.$font-size-sm;
+        color: colors.$color-palette-gray-700;
         word-break: break-word;
     }
 }
@@ -67,14 +71,14 @@ form {
     position: relative;
 
     .p-inputtext.p-inputtextarea {
-        padding: $spacing-1 $spacing-5 $spacing-1 $spacing-4;
-        min-height: $spacing-8;
+        padding: spacing.$spacing-1 spacing.$spacing-5 spacing.$spacing-1 spacing.$spacing-4;
+        min-height: spacing.$spacing-8;
     }
 
     dot-copy-button {
         position: absolute;
-        right: $spacing-3;
-        bottom: $spacing-0;
+        right: spacing.$spacing-3;
+        bottom: spacing.$spacing-0;
     }
 }
 
@@ -84,7 +88,7 @@ form {
 
 .ai-image-prompt__rewritten-label {
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     align-items: center;
 }
 

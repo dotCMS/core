@@ -28,14 +28,15 @@ This selector needs work, I don't want to have to specify every single component
 */
 .form
     *:not(
-        input,
-        textarea,
-        button,
-        .p-toggleswitch-handle,
-        path,
-        .p-radiobutton-icon,
         .p-checkbox-box,
-        img
+        .p-radiobutton-icon,
+        .p-select-loading-icon,
+        .p-toggleswitch-handle,
+        button,
+        img,
+        input,
+        path,
+        textarea
     ):empty {
     @apply hidden;
 }

@@ -1,5 +1,7 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 .dot-push-publish-dialog__error {
-    color: $error;
+    color: colors.$error;
 }

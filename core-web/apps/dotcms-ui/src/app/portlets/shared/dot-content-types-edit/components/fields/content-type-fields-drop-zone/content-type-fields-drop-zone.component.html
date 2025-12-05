@@ -58,23 +58,21 @@
                         [currentFieldType]="currentFieldType"
                         [currentField]="currentField"></dot-convert-to-block-info>
                 }
-                <div class="wrapper">
-                    <dot-content-type-fields-properties-form
-                        (saveField)="saveFieldsHandler($event)"
-                        (valid)="setDialogOkButtonState($event)"
-                        [formFieldData]="currentField"
-                        [contentType]="contentType"
-                        #fieldPropertiesForm></dot-content-type-fields-properties-form>
-                    @if (
-                        !!currentField?.id &&
-                        currentFieldType?.clazz ===
-                            'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
-                    ) {
-                        <dot-convert-wysiwyg-to-block
-                            (convert)="convertWysiwygToBlock($event)"
-                            [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
-                    }
-                </div>
+                <dot-content-type-fields-properties-form
+                    (saveField)="saveFieldsHandler($event)"
+                    (valid)="setDialogOkButtonState($event)"
+                    [formFieldData]="currentField"
+                    [contentType]="contentType"
+                    #fieldPropertiesForm></dot-content-type-fields-properties-form>
+                @if (
+                    !!currentField?.id &&
+                    currentFieldType?.clazz ===
+                        'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                ) {
+                    <dot-convert-wysiwyg-to-block
+                        (convert)="convertWysiwygToBlock($event)"
+                        [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                }
             </p-tabpanel>
             @if (!!currentField?.id && isFieldWithSettings) {
                 <p-tabpanel [value]="1">

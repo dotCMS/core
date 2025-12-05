@@ -1,18 +1,19 @@
 @use "variables" as *;
 
-@import "../styles/experiment";
+@use "../styles/experiment";
+@use "../../../../../../dotcms-scss/shared/spacing";
 
 :host {
     height: 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
-    padding-bottom: $spacing-7;
+    padding-bottom: spacing.$spacing-7;
 
     .dot-experiment {
-        padding: $spacing-3 calc($spacing-5 + $nav-size) $spacing-5 $spacing-5;
+        padding: spacing.$spacing-3 calc(spacing.$spacing-5 + experiment.$nav-size) spacing.$spacing-5 spacing.$spacing-5;
         display: flex;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
         flex-direction: column;
         width: 100%;
         overflow-y: scroll;

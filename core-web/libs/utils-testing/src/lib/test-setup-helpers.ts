@@ -122,7 +122,7 @@ export const MOCK_PRIMENG_COMPONENTS = [
     MockPTabList,
     MockPTab,
     MockPTabPanels,
-    MockPSelect,
+    MockPDropdown,
     MockPButton
 ];
 

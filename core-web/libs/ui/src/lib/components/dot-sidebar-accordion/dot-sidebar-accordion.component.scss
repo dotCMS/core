@@ -1,3 +1,7 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 // Host component takes full height
@@ -43,11 +47,11 @@
 
             &__left {
                 i {
-                    color: $color-palette-gray-400; // Muted icon color
+                    color: colors.$color-palette-gray-400; // Muted icon color
                 }
 
                 span {
-                    color: $color-palette-gray-500; // Muted text color
+                    color: colors.$color-palette-gray-500; // Muted text color
                 }
             }
         }
@@ -89,8 +93,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: $spacing-3;
-    border-bottom: 1px solid $color-palette-gray-400;
+    padding: spacing.$spacing-3;
+    border-bottom: 1px solid colors.$color-palette-gray-400;
     cursor: pointer;
     user-select: none;
     min-height: 56px;
@@ -101,7 +105,7 @@
     will-change: background-color, opacity; // GPU optimization
 
     &:hover:not(&--disabled) {
-        background: $color-palette-gray-100;
+        background: colors.$color-palette-gray-100;
     }
 
     &--disabled {
@@ -117,17 +121,17 @@
         min-width: 0; // Allow text truncation if needed
 
         span {
-            font-size: $font-size-lmd;
-            font-weight: $font-weight-medium-bold;
-            color: $black;
+            font-size: fonts.$font-size-lmd;
+            font-weight: fonts.$font-weight-medium-bold;
+            color: colors.$black;
             flex: 1;
             min-width: 0; // Allow text truncation
         }
 
         i {
-            font-size: $font-size-sm;
-            color: $color-palette-primary;
-            margin-right: $spacing-2;
+            font-size: fonts.$font-size-sm;
+            color: colors.$color-palette-primary;
+            margin-right: spacing.$spacing-2;
             flex-shrink: 0; // Prevent icon from shrinking
             transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
             will-change: transform; // GPU optimization
@@ -137,7 +141,7 @@
     &__right {
         display: flex;
         align-items: center;
-        margin-left: $spacing-2;
+        margin-left: spacing.$spacing-2;
         flex-shrink: 0; // Prevent right content from shrinking
 
         // Ensure right content doesn't interfere with accordion toggle
@@ -153,7 +157,7 @@
 }
 
 .accordion-content {
-    border-bottom: 1px solid $color-palette-gray-400;
+    border-bottom: 1px solid colors.$color-palette-gray-400;
     overflow: hidden;
     contain: layout style; // CSS containment for animation performance
 
@@ -184,7 +188,7 @@
 
     // When there's an expanded tab, last collapsed header should not have border-bottom
     &:last-child .accordion-header {
-        border-bottom: 1px solid $color-palette-gray-400;
+        border-bottom: 1px solid colors.$color-palette-gray-400;
         transition:
             background-color 0.2s ease,
             border-bottom 0.1s ease; // No delay for normal state

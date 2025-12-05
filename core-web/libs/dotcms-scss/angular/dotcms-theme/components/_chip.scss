@@ -1,132 +1,136 @@
 @use "sass:map";
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
 
 $colors: (
     primary: (
         shade: (
-            color: $color-palette-primary-shade,
-            contrast: $white
+            color: colors.$color-palette-primary-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-primary,
-            contrast: $white
+            color: colors.$color-palette-primary,
+            contrast: colors.$white
         ),
         tint: (
-            color: $color-palette-primary-tint,
-            contrast: $color-palette-primary-shade
+            color: colors.$color-palette-primary-tint,
+            contrast: colors.$color-palette-primary-shade
         )
     ),
     blue: (
         shade: (
-            color: $color-palette-primary-shade,
-            contrast: $white
+            color: colors.$color-palette-primary-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-primary,
-            contrast: $white
+            color: colors.$color-palette-primary,
+            contrast: colors.$white
         ),
         tint: (
-            color: $color-palette-primary-tint,
-            contrast: $color-palette-primary-shade
+            color: colors.$color-palette-primary-tint,
+            contrast: colors.$color-palette-primary-shade
         )
     ),
     secondary: (
         shade: (
-            color: $color-palette-purple-shade,
-            contrast: $white
+            color: colors.$color-palette-purple-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-purple,
-            contrast: $white
+            color: colors.$color-palette-purple,
+            contrast: colors.$white
         ),
         tint: (
-            color: $color-palette-purple-tint,
-            contrast: $color-palette-purple-shade
+            color: colors.$color-palette-purple-tint,
+            contrast: colors.$color-palette-purple-shade
         )
     ),
     success: (
         shade: (
-            color: $color-palette-green-shade,
-            contrast: $white
+            color: colors.$color-palette-green-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-green,
-            contrast: $color-palette-gray-900
+            color: colors.$color-palette-green,
+            contrast: colors.$color-palette-gray-900
         ),
         tint: (
-            color: $color-palette-green-tint,
-            contrast: $color-palette-green-shade
+            color: colors.$color-palette-green-tint,
+            contrast: colors.$color-palette-green-shade
         )
     ),
     warning: (
         shade: (
-            color: $color-palette-yellow-shade,
-            contrast: $white
+            color: colors.$color-palette-yellow-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-yellow,
-            contrast: $color-palette-gray-900
+            color: colors.$color-palette-yellow,
+            contrast: colors.$color-palette-gray-900
         ),
         tint: (
-            color: $color-palette-yellow-tint,
-            contrast: $color-palette-yellow-shade
+            color: colors.$color-palette-yellow-tint,
+            contrast: colors.$color-palette-yellow-shade
         )
     ),
     error: (
         shade: (
-            color: $color-palette-red-shade,
-            contrast: $white
+            color: colors.$color-palette-red-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-red,
-            contrast: $white
+            color: colors.$color-palette-red,
+            contrast: colors.$white
         ),
         tint: (
-            color: $color-palette-red-tint,
-            contrast: $color-palette-red-shade
+            color: colors.$color-palette-red-tint,
+            contrast: colors.$color-palette-red-shade
         )
     ),
     gray: (
         shade: (
-            color: $color-palette-gray-shade,
-            contrast: $color-palette-gray-900
+            color: colors.$color-palette-gray-shade,
+            contrast: colors.$color-palette-gray-900
         ),
         base: (
-            color: $color-palette-gray-300,
-            contrast: $color-palette-gray-900
+            color: colors.$color-palette-gray-300,
+            contrast: colors.$color-palette-gray-900
         ),
         tint: (
-            color: $color-palette-gray-op-15,
-            contrast: $color-palette-gray-900
+            color: colors.$color-palette-gray-op-15,
+            contrast: colors.$color-palette-gray-900
         )
     ),
     pink: (
         shade: (
-            color: $color-palette-fuchsia-shade,
-            contrast: $white
+            color: colors.$color-palette-fuchsia-shade,
+            contrast: colors.$white
         ),
         base: (
-            color: $color-palette-fuchsia,
-            contrast: $white
+            color: colors.$color-palette-fuchsia,
+            contrast: colors.$white
         ),
         tint: (
-            color: $color-palette-fuchsia-tint,
-            contrast: $color-palette-fuchsia-shade
+            color: colors.$color-palette-fuchsia-tint,
+            contrast: colors.$color-palette-fuchsia-shade
         )
     )
 );
 
 p-chip .p-chip {
-    border-color: $color-palette-primary-tint;
-    background-color: $color-palette-primary-tint;
-    color: $color-palette-primary-shade;
-    border-radius: $border-radius-md;
+    border-color: colors.$color-palette-primary-tint;
+    background-color: colors.$color-palette-primary-tint;
+    color: colors.$color-palette-primary-shade;
+    border-radius: common.$border-radius-md;
     border-width: 1px;
     border-style: solid;
-    padding: 0 $spacing-1;
-    gap: $spacing-1;
-    height: $field-height-md;
+    padding: 0 spacing.$spacing-1;
+    gap: spacing.$spacing-1;
+    height: common.$field-height-md;
 
     .p-chip-icon,
     .pi-chip-remove-icon {
@@ -134,29 +138,29 @@ p-chip .p-chip {
     }
 
     .pi-chip-remove-icon {
-        border-radius: $border-radius-sm;
+        border-radius: common.$border-radius-sm;
         &:focus {
-            @include field-focus;
+            @include mixins.field-focus;
         }
     }
 
     &.p-chip-outlined {
-        border-color: $color-palette-primary-shade;
-        background-color: $white;
-        color: $color-palette-primary-shade;
+        border-color: colors.$color-palette-primary-shade;
+        background-color: colors.$white;
+        color: colors.$color-palette-primary-shade;
     }
 
     &.p-chip-filled {
-        border-color: $color-palette-primary;
-        background-color: $color-palette-primary;
-        color: $white;
+        border-color: colors.$color-palette-primary;
+        background-color: colors.$color-palette-primary;
+        color: colors.$white;
     }
 
     &.p-chip-dashed {
         border-style: dashed;
-        background-color: $white;
-        border-color: $color-palette-primary-shade;
-        color: $color-palette-primary-shade;
+        background-color: colors.$white;
+        border-color: colors.$color-palette-primary-shade;
+        color: colors.$color-palette-primary-shade;
     }
 
     // Severity
@@ -167,13 +171,13 @@ p-chip .p-chip {
             color: #{map.get($value, tint, contrast)};
             border-color: #{map.get($value, tint, color)};
             &.p-chip-outlined {
-                background-color: $white;
+                background-color: colors.$white;
                 color: #{map.get($value, shade, color)};
                 border-color: #{map.get($value, shade, color)};
             }
             &.p-chip-dashed {
                 border-style: dashed;
-                background-color: $white;
+                background-color: colors.$white;
                 border-color: #{map.get($value, shade, color)};
             }
             &.p-chip-filled {
@@ -188,45 +192,45 @@ p-chip .p-chip {
 
     &.p-chip-gray {
         &.p-chip-outlined {
-            color: $color-palette-gray-900;
+            color: colors.$color-palette-gray-900;
         }
 
         &.p-chip-dashed {
-            border-color: $color-palette-gray-500;
+            border-color: colors.$color-palette-gray-500;
         }
     }
 
     &.p-chip-white {
-        border-color: $white;
-        background-color: $white;
-        color: $color-palette-gray-900;
+        border-color: colors.$white;
+        background-color: colors.$white;
+        color: colors.$color-palette-gray-900;
     }
 
     // Sizes
 
     &.p-chip-sm {
-        gap: $spacing-0;
-        padding: 0 $spacing-1;
-        border-radius: $border-radius-sm;
-        font-size: $font-size-sm;
-        height: $font-size-xl;
+        gap: spacing.$spacing-0;
+        padding: 0 spacing.$spacing-1;
+        border-radius: common.$border-radius-sm;
+        font-size: fonts.$font-size-sm;
+        height: fonts.$font-size-xl;
 
         .p-chip-text {
-            font-size: $font-size-sm;
+            font-size: fonts.$font-size-sm;
         }
     }
 
     &.p-chip-lg {
-        height: $field-height-lg;
-        border-radius: $border-radius-lg;
-        font-size: $font-size-lmd;
+        height: common.$field-height-lg;
+        border-radius: common.$border-radius-lg;
+        font-size: fonts.$font-size-lmd;
 
         .p-chip-text {
-            font-size: $font-size-lmd;
+            font-size: fonts.$font-size-lmd;
         }
     }
 
     &.p-chip-rounded {
-        border-radius: $border-radius-xl;
+        border-radius: common.$border-radius-xl;
     }
 }

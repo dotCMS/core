@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -6,8 +8,8 @@
 }
 
 .activities__skeleton-item {
-    padding: $spacing-2 0;
-    margin-bottom: $spacing-1;
+    padding: spacing.$spacing-2 0;
+    margin-bottom: spacing.$spacing-1;
 }
 
 .activities__skeleton-item:last-child {

@@ -1,3 +1,6 @@
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -16,14 +19,14 @@
 .tree-header {
     display: flex;
     align-items: center;
-    padding: $spacing-4 $spacing-3;
-    gap: $spacing-1;
+    padding: spacing.$spacing-4 spacing.$spacing-3;
+    gap: spacing.$spacing-1;
     height: 4.375rem;
     padding-top: 1.75rem;
 
     h3 {
-        font-size: $font-size-default;
+        font-size: fonts.$font-size-default;
         margin: 0;
-        font-weight: $font-weight-semi-bold;
+        font-weight: fonts.$font-weight-semi-bold;
     }
 }

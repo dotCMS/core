@@ -1,3 +1,8 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .binary-field__editor-container {
@@ -7,21 +12,21 @@
     flex-direction: column;
     flex: 1;
     width: 100%;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }
 
 .binary-field__code-editor {
-    border: 1px solid $color-palette-gray-400; // Input
+    border: 1px solid colors.$color-palette-gray-400; // Input
     display: block;
     flex-grow: 1;
     width: 100%;
     min-height: 20rem;
-    border-radius: $border-radius-md;
+    border-radius: common.$border-radius-md;
     overflow: auto;
 }
 
 .binary-field__code-editor--disabled {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
     opacity: 0.5;
 
     &::ng-deep {
@@ -43,7 +48,7 @@
 .editor-mode__input-container {
     width: 100%;
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     flex-direction: column;
 }
 
@@ -56,7 +61,7 @@
 .editor-mode__actions {
     width: 100%;
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     align-items: center;
     justify-content: flex-end;
 }
@@ -65,9 +70,9 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    gap: $spacing-1;
-    color: $color-palette-gray-700;
-    font-weight: $font-size-sm;
+    gap: spacing.$spacing-1;
+    color: colors.$color-palette-gray-700;
+    font-weight: fonts.$font-size-sm;
     visibility: hidden;
 }
 
@@ -76,7 +81,7 @@
 }
 
 .error-message {
-    min-height: $spacing-4; // Fix height to avoid jumping
+    min-height: spacing.$spacing-4; // Fix height to avoid jumping
     justify-content: flex-start;
     display: flex;
 }

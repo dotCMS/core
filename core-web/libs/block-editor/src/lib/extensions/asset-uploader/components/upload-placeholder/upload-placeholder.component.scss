@@ -1,3 +1,6 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 .placeholder-container {
@@ -25,9 +28,9 @@
 }
 
 .default-message {
-    background-color: $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-200;
     display: block;
     padding: $dot-editor-size;
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
     width: 100%;
 }

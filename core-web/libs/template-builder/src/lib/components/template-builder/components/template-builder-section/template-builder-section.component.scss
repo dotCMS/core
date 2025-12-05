@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,12 +9,12 @@
     position: relative;
     align-items: center;
     justify-content: center;
-    background: $color-palette-primary-200;
+    background: colors.$color-palette-primary-200;
     height: 5rem;
-    color: $color-palette-primary;
-    font-size: $font-size-lg;
-    border-radius: $spacing-1;
-    padding: 0 $spacing-0;
+    color: colors.$color-palette-primary;
+    font-size: fonts.$font-size-lg;
+    border-radius: spacing.$spacing-1;
+    padding: 0 spacing.$spacing-0;
 
     p-button {
         position: absolute;
@@ -18,6 +22,6 @@
         height: 100%;
         display: flex;
         align-items: center;
-        padding-right: $spacing-0;
+        padding-right: spacing.$spacing-0;
     }
 }

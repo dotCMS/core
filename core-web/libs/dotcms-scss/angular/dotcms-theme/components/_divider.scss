@@ -1,11 +1,14 @@
+@use "../../../shared/colors";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-divider-horizontal {
-    margin: $spacing-1 0;
+    margin: spacing.$spacing-1 0;
 }
 
 .p-divider.p-divider-horizontal:before {
-    border-top: 1px $color-palette-gray-300;
+    border-top: 1px colors.$color-palette-gray-300;
 }
 
 .p-divider-horizontal:before {
@@ -26,5 +29,5 @@
 }
 
 .p-divider.p-component {
-    color: $color-palette-gray-300;
+    color: colors.$color-palette-gray-300;
 }

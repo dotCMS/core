@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -7,13 +11,13 @@
 .calendar-field {
     display: flex;
     flex-direction: column;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
 }
 
 .server-time {
-    color: $color-palette-primary;
-    font-weight: $font-weight-semi-bold;
-    margin-left: $spacing-1;
-    border-left: 2px solid $color-palette-primary;
-    padding-left: $spacing-1;
+    color: colors.$color-palette-primary;
+    font-weight: fonts.$font-weight-semi-bold;
+    margin-left: spacing.$spacing-1;
+    border-left: 2px solid colors.$color-palette-primary;
+    padding-left: spacing.$spacing-1;
 }

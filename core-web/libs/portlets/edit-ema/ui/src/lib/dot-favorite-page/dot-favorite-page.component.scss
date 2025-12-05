@@ -1,3 +1,6 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,7 +8,7 @@
     min-height: 353px;
 
     form {
-        column-gap: $spacing-4;
+        column-gap: spacing.$spacing-4;
         display: grid;
         grid-template-columns: minmax(0, 1fr) 45%;
     }
@@ -23,14 +26,14 @@
     }
 
     .dot-favorite-dialog__image-reload {
-        background-color: $white;
+        background-color: colors.$white;
         position: absolute;
-        bottom: $spacing-3;
-        right: $spacing-3;
+        bottom: spacing.$spacing-3;
+        right: spacing.$spacing-3;
     }
 
     .dot-favorite-dialog__image-container {
-        border: 1px solid $color-palette-gray-300;
+        border: 1px solid colors.$color-palette-gray-300;
         display: block;
         text-align: center;
 
@@ -46,8 +49,8 @@
         height: 353px;
 
         img {
-            background-color: $white;
-            border: 1px solid $color-palette-gray-300;
+            background-color: colors.$white;
+            border: 1px solid colors.$color-palette-gray-300;
             height: 353px;
             object-fit: contain;
             width: 100%;

@@ -1,15 +1,18 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/spacing";
 
 // Split Button Sizes
 .p-splitbutton {
     .p-splitbutton-menubutton {
-        border-radius: 0 $border-radius-md $border-radius-md 0;
-        padding: 0 $spacing-1;
+        border-radius: 0 common2.$border-radius-md common2.$border-radius-md 0;
+        padding: 0 spacing.$spacing-1;
     }
 
     .p-splitbutton-defaultbutton {
-        border-radius: $border-radius-md 0 0 $border-radius-md;
+        border-radius: common2.$border-radius-md 0 0 common2.$border-radius-md;
     }
 
     &.p-button-lg {
@@ -19,11 +22,11 @@
         }
 
         .p-splitbutton-menubutton {
-            border-radius: 0 $border-radius-lg $border-radius-lg 0;
+            border-radius: 0 common2.$border-radius-lg common2.$border-radius-lg 0;
         }
 
         .p-splitbutton-defaultbutton {
-            border-radius: $border-radius-lg 0 0 $border-radius-lg;
+            border-radius: common2.$border-radius-lg 0 0 common2.$border-radius-lg;
         }
     }
 
@@ -33,12 +36,12 @@
             @extend #small;
         }
         .p-splitbutton-menubutton {
-            border-radius: 0 $border-radius-sm $border-radius-sm 0;
-            padding: 0 $spacing-0;
+            border-radius: 0 common2.$border-radius-sm common2.$border-radius-sm 0;
+            padding: 0 spacing.$spacing-0;
         }
 
         .p-splitbutton-defaultbutton {
-            border-radius: $border-radius-sm 0 0 $border-radius-sm;
+            border-radius: common2.$border-radius-sm 0 0 common2.$border-radius-sm;
         }
     }
 
@@ -67,7 +70,7 @@
     .p-splitbutton-defaultbutton:enabled,
     .p-splitbutton-menubutton:enabled {
         @extend #outlined-primary-severity;
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 
     &.p-button-sm {
@@ -85,7 +88,7 @@
         .p-splitbutton-defaultbutton:enabled,
         .p-splitbutton-menubutton:enabled {
             @extend #outlined-secondary-severity;
-            color: $color-palette-secondary;
+            color: colors.$color-palette-secondary;
         }
 
         &.p-button-sm {
@@ -120,7 +123,7 @@
         &,
         &:hover,
         &:focus {
-            color: $color-palette-primary;
+            color: colors.$color-palette-primary;
             background-color: transparent;
             border: transparent;
         }

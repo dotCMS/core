@@ -1,13 +1,16 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 $dot-secondary-toolbar-height: 3.75rem;
 
 .edit-page-toolbar__cancel {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 
 .dot-edit__what-changed-button {
-    margin-right: $spacing-3;
+    margin-right: spacing.$spacing-3;
 }
 
 .main-toolbar-right {
@@ -21,7 +24,7 @@ $dot-secondary-toolbar-height: 3.75rem;
 
 ::ng-deep {
     .dot-favorite-page-highlight i {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 
     .dot-secondary-toolbar__lower {

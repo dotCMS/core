@@ -1,3 +1,6 @@
+@use "../../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 ::ng-deep {
@@ -8,7 +11,7 @@
         flex-shrink: 0;
 
         .p-avatar-text {
-            font-size: $font-size-md;
+            font-size: fonts.$font-size-md;
         }
     }
 
@@ -19,10 +22,10 @@
 }
 
 .p-button-text.selected:enabled {
-    background-color: $color-palette-primary-200;
-    color: $color-palette-primary-800;
+    background-color: colors.$color-palette-primary-200;
+    color: colors.$color-palette-primary-800;
 }
 .pi-tag {
-    color: $color-palette-primary-500;
-    font-size: $font-size-sm;
+    color: colors.$color-palette-primary-500;
+    font-size: fonts.$font-size-sm;
 }

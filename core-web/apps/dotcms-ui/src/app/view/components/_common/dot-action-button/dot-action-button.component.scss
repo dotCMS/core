@@ -1,27 +1,29 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/shadows";
 
 :host(.action-button--no-label) ::ng-deep {
     display: inline-block;
 
     dot-icon-button button {
         .material-icons {
-            color: $white;
+            color: colors.$white;
         }
 
         &:not([disabled]) {
-            background-color: $color-palette-primary;
-            box-shadow: $shadow-xs;
+            background-color: colors.$color-palette-primary;
+            box-shadow: shadows.$shadow-xs;
             opacity: 1;
 
             &:hover {
-                background: $color-palette-primary-400;
-                box-shadow: $shadow-s;
+                background: colors.$color-palette-primary-400;
+                box-shadow: shadows.$shadow-s;
             }
 
             &:active,
             &:focus {
-                background: $color-palette-primary-400;
+                background: colors.$color-palette-primary-400;
             }
         }
     }
@@ -33,7 +35,7 @@
     flex-direction: column;
 
     .p-button.p-button-icon-only.action-button--selected {
-        background: $color-palette-black-op-10;
+        background: colors.$color-palette-black-op-10;
     }
 }
 
@@ -43,5 +45,5 @@
 }
 
 .action-button__label--disabled {
-    color: $field-disabled-color;
+    color: theme-variables.$field-disabled-color;
 }

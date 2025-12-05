@@ -1,44 +1,48 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dot-pages-create-page-dialog__search-container {
-    margin-bottom: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
     width: 100%;
 
     input {
-        border-radius: $border-radius-sm;
+        border-radius: common.$border-radius-sm;
         width: 100%;
     }
 
     dot-icon {
         position: absolute;
-        right: $spacing-1;
-        top: $spacing-1;
+        right: spacing.$spacing-1;
+        top: spacing.$spacing-1;
     }
 }
 
 .dot-pages-create-page-dialog__page-types-container {
-    border: 1px solid $color-palette-gray-300;
-    border-radius: $border-radius-sm;
+    border: 1px solid colors.$color-palette-gray-300;
+    border-radius: common.$border-radius-sm;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     overflow: hidden;
 
     ::ng-deep dot-icon i {
-        color: $color-palette-primary-500;
+        color: colors.$color-palette-primary-500;
     }
 
     dot-icon {
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
     }
 
     .dot-pages-create-page-dialog__page-item {
-        box-shadow: 1px 0 0 0 $color-palette-gray-300;
+        box-shadow: 1px 0 0 0 colors.$color-palette-gray-300;
         cursor: pointer;
         display: flex;
-        padding: $spacing-3;
+        padding: spacing.$spacing-3;
 
         &:hover {
-            background-color: $color-palette-gray-200;
+            background-color: colors.$color-palette-gray-200;
         }
     }
 }

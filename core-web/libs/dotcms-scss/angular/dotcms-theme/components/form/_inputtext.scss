@@ -1,5 +1,8 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 .p-inputtext:not(.p-dropdown-label, .p-autocomplete-multiple-container, .p-autocomplete-input) {
     @extend #form-field-extend;
@@ -10,20 +13,20 @@
     }
 
     &.p-inputtextarea {
-        padding: $spacing-1;
+        padding: spacing.$spacing-1;
         min-height: 4rem;
     }
 
     &:disabled::placeholder {
-        color: $color-palette-gray-500;
+        color: colors.$color-palette-gray-500;
     }
 }
 
 .p-input-icon-right {
     i.pi {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
         cursor: pointer;
-        right: $spacing-1;
+        right: spacing.$spacing-1;
         margin-top: 0;
         transform: translateY(-50%);
         -moz-transform: translateY(-50%);
@@ -31,19 +34,19 @@
 
     &:has(.p-inputtext.p-inputtext-sm) {
         i {
-            font-size: $font-size-sm;
+            font-size: fonts.$font-size-sm;
         }
     }
 
     i.pi:nth-of-type(1) {
-        right: $spacing-1;
+        right: spacing.$spacing-1;
     }
 
     i.pi:nth-of-type(2) {
-        right: $spacing-5;
+        right: spacing.$spacing-5;
     }
 
     .p-inputtext {
-        padding-right: $spacing-6;
+        padding-right: spacing.$spacing-6;
     }
 }

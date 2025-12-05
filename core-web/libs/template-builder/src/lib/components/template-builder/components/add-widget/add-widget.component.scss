@@ -1,52 +1,58 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: flex;
     align-items: center;
-    gap: $spacing-3;
-    padding: $spacing-1 $spacing-3;
-    padding-left: $spacing-0;
+    gap: spacing.$spacing-3;
+    padding: spacing.$spacing-1 spacing.$spacing-3;
+    padding-left: spacing.$spacing-0;
     width: fit-content;
-    background: $white;
-    border: $field-border-size solid $color-palette-primary-500;
-    border-radius: $border-radius-md;
+    background: colors.$white;
+    border: common.$field-border-size solid colors.$color-palette-primary-500;
+    border-radius: common.$border-radius-md;
     transition: transform 100ms ease-in;
 
     .material-icons {
-        font-size: $font-size-lmd;
-        color: $color-palette-gray-500;
+        font-size: fonts.$font-size-lmd;
+        color: colors.$color-palette-gray-500;
     }
 
     &:hover:not(.ui-draggable-dragging) {
         transform: rotate(-3.66deg) translate(0, -0.5rem);
-        box-shadow: $shadow-l;
+        box-shadow: shadows.$shadow-l;
     }
 
     // Class added by the gridstack library when the widget is being dragged
     &.ui-draggable-dragging {
         transition: none;
         transform: rotate(-3.66deg);
-        box-shadow: $shadow-l;
+        box-shadow: shadows.$shadow-l;
     }
 
     .add-widget-container {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: $spacing-2;
+        gap: spacing.$spacing-2;
 
         .add-widget-container__label {
-            font-size: $font-size-md;
+            font-size: fonts.$font-size-md;
             line-height: 140%;
-            color: $black;
+            color: colors.$black;
         }
 
         .add-widget-container__icon {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-width: $spacing-4;
-            min-height: $spacing-4;
+            min-width: spacing.$spacing-4;
+            min-height: spacing.$spacing-4;
         }
     }
 }

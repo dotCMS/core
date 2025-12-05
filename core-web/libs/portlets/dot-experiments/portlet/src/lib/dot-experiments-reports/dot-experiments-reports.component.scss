@@ -1,28 +1,31 @@
 @use "variables" as *;
 
-@import "../styles/experiment";
+@use "../styles/experiment";
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/spacing";
 
 :host {
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding-bottom: $spacing-7;
+    padding-bottom: spacing.$spacing-7;
 }
 
 .dot-experiment-report__wrapper {
-    padding: $spacing-3 calc($spacing-5 + $nav-size) $spacing-5 $spacing-5;
-    row-gap: $spacing-3;
+    padding: spacing.$spacing-3 calc(spacing.$spacing-5 + experiment.$nav-size) spacing.$spacing-5 spacing.$spacing-5;
+    row-gap: spacing.$spacing-3;
     width: 100%;
     overflow-y: scroll;
     height: 100%;
-    background-color: $color-palette-gray-100;
+    background-color: colors.$color-palette-gray-100;
 }
 
 .dot-experiment-report__container {
-    background-color: $white;
-    padding: $spacing-5;
-    border-radius: $border-radius-xl;
+    background-color: colors.$white;
+    padding: spacing.$spacing-5;
+    border-radius: common.$border-radius-xl;
 }
 
 .dot-experiment-report__tabview {
@@ -37,6 +40,6 @@
 
 @media only screen and (min-width: $screen-xl-min) {
     .dot-experiment-report__tabview {
-        width: $max-container-width;
+        width: experiment.$max-container-width;
     }
 }

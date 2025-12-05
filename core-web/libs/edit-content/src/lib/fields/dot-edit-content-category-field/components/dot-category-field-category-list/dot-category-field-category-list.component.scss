@@ -1,3 +1,8 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -8,17 +13,17 @@
 }
 
 .category-list__wrapper {
-    border-radius: $border-radius-md;
+    border-radius: common.$border-radius-md;
     display: flex;
     flex-direction: column;
     height: 100%;
 }
 
 .category-list__header {
-    padding: $spacing-1 $spacing-4;
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-medium-bold;
-    border-bottom: 1px solid $color-palette-gray-400;
+    padding: spacing.$spacing-1 spacing.$spacing-4;
+    font-size: fonts.$font-size-lmd;
+    font-weight: fonts.$font-weight-medium-bold;
+    border-bottom: 1px solid colors.$color-palette-gray-400;
 }
 
 .category-list__category-list {
@@ -34,10 +39,10 @@
 
 .category-list__category-column {
     flex: 0 0 38%;
-    border-right: 1px solid $color-palette-gray-400;
+    border-right: 1px solid colors.$color-palette-gray-400;
     overflow-y: auto;
     height: 100%;
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     &:last-child {
         border-right: none;
     }
@@ -51,22 +56,22 @@
     animation: fadeIn $basic-speed forwards;
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
 .category-list__item-wrapper {
-    padding-left: $spacing-3;
-    padding-right: $spacing-1;
+    padding-left: spacing.$spacing-3;
+    padding-right: spacing.$spacing-1;
     overflow: hidden;
 }
 
 .category-list__item-checkbox {
-    padding-left: $spacing-1;
+    padding-left: spacing.$spacing-1;
 }
 
 .category-list__item--selected {
-    background-color: $color-palette-primary-200;
+    background-color: colors.$color-palette-primary-200;
 }
 
 .category-list__item-label {
@@ -76,7 +81,7 @@
 }
 
 .category-list__item-icon {
-    color: $color-palette-primary;
+    color: colors.$color-palette-primary;
     cursor: pointer;
 }
 

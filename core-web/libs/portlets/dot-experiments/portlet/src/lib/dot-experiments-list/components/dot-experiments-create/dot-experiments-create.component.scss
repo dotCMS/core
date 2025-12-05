@@ -1,7 +1,9 @@
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .experiment-create__form-wrapper {
-    padding: $spacing-5;
+    padding: spacing.$spacing-5;
 }
 
 textarea {

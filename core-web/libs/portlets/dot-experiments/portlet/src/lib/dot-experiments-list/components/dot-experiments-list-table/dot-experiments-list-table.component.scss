@@ -1,3 +1,8 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,7 +10,7 @@
     .dot-experiment-list-table {
         display: flex;
         flex-direction: column;
-        margin-bottom: $spacing-5;
+        margin-bottom: spacing.$spacing-5;
         height: 100%;
     }
 
@@ -19,44 +24,44 @@
             tr:not(:last-child) td,
             tr:only-child td {
                 &:first-child {
-                    border-left: 1px solid $color-palette-gray-300;
+                    border-left: 1px solid colors.$color-palette-gray-300;
                 }
 
                 &:last-child {
-                    border-right: 1px solid $color-palette-gray-300;
+                    border-right: 1px solid colors.$color-palette-gray-300;
                 }
             }
 
             tr:last-child td {
                 &:first-child {
-                    border-bottom-left-radius: $border-radius-sm;
+                    border-bottom-left-radius: common.$border-radius-sm;
                 }
 
                 &:last-child {
-                    border-bottom-right-radius: $border-radius-sm;
+                    border-bottom-right-radius: common.$border-radius-sm;
                 }
             }
 
             .p-datatable-thead {
                 tr > th {
-                    color: $color-palette-gray-900;
-                    font-size: $font-size-sm;
-                    font-weight: $font-weight-semi-bold;
-                    background: $color-palette-gray-200;
+                    color: colors.$color-palette-gray-900;
+                    font-size: fonts.$font-size-sm;
+                    font-weight: fonts.$font-weight-semi-bold;
+                    background: colors.$color-palette-gray-200;
                 }
 
                 th:first-child {
-                    border-top-left-radius: $border-radius-sm;
+                    border-top-left-radius: common.$border-radius-sm;
                 }
 
                 th:last-child {
-                    border-top-right-radius: $border-radius-sm;
+                    border-top-right-radius: common.$border-radius-sm;
                 }
             }
 
             .p-datatable-header {
                 border: none;
-                color: $color-palette-gray-700;
+                color: colors.$color-palette-gray-700;
             }
         }
     }

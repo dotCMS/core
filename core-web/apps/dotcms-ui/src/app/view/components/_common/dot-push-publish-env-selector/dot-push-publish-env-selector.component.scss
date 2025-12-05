@@ -1,5 +1,7 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 .p-multiselect {
     width: 100%;
@@ -7,16 +9,16 @@
 
 .environment-selector__list {
     height: 140px;
-    margin: $spacing-1 0;
+    margin: spacing.$spacing-1 0;
     overflow-x: hidden;
-    border: 1px solid $color-palette-gray-700;
+    border: 1px solid colors.$color-palette-gray-700;
     padding: 0;
 }
 
 .environment-selector__list-item {
-    @include naked-list;
-    border-top: 1px solid $color-palette-gray-200;
-    padding: $spacing-1 0;
+    @include mixins.naked-list;
+    border-top: 1px solid colors.$color-palette-gray-200;
+    padding: spacing.$spacing-1 0;
 
     &:first-child {
         border-top: none;

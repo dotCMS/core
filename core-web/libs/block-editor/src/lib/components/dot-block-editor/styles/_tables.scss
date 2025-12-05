@@ -1,3 +1,8 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 // =============================================================================
@@ -7,25 +12,25 @@
 table {
     border-collapse: separate;
     border-spacing: 0;
-    margin: $spacing-4 0;
+    margin: spacing.$spacing-4 0;
     table-layout: fixed;
     width: 100%;
-    border: 1px solid $color-palette-gray-400;
-    border-radius: $spacing-1;
+    border: 1px solid colors.$color-palette-gray-400;
+    border-radius: spacing.$spacing-1;
     overflow: hidden;
-    background: $white;
+    background: colors.$white;
 
     // Base cell styling
     td,
     th {
         border: none;
-        border-right: 1px solid $color-palette-gray-400;
-        border-bottom: 1px solid $color-palette-gray-400;
+        border-right: 1px solid colors.$color-palette-gray-400;
+        border-bottom: 1px solid colors.$color-palette-gray-400;
         box-sizing: border-box;
-        padding: $spacing-2 $spacing-4;
+        padding: spacing.$spacing-2 spacing.$spacing-4;
         position: relative;
         vertical-align: top;
-        background: $white;
+        background: colors.$white;
         transition: all 0.15s ease;
 
         // Remove borders from last column and row
@@ -48,12 +53,12 @@ table {
 
     // Header styling - modern and clean
     th {
-        background: $color-palette-gray-200;
+        background: colors.$color-palette-gray-200;
         font-weight: 600;
-        font-size: $font-size-sm;
-        color: $color-palette-gray-700;
+        font-size: fonts.$font-size-sm;
+        color: colors.$color-palette-gray-700;
         text-align: left;
-        border-bottom: 1px solid $color-palette-gray-400;
+        border-bottom: 1px solid colors.$color-palette-gray-400;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -68,11 +73,11 @@ table {
     // Hover effects for better UX
     tr:hover {
         td {
-            background: $color-palette-gray-100;
+            background: colors.$color-palette-gray-100;
         }
 
         th {
-            background: $color-palette-gray-300;
+            background: colors.$color-palette-gray-300;
         }
     }
 
@@ -80,13 +85,13 @@ table {
     td:focus,
     th:focus {
         outline: none;
-        background: $color-palette-primary-op-10;
-        box-shadow: inset 0 0 0 2px $color-palette-primary-300;
+        background: colors.$color-palette-primary-op-10;
+        box-shadow: inset 0 0 0 2px colors.$color-palette-primary-300;
     }
 
     // Selection states - modern blue highlight
     .selectedCell {
-        background: $color-palette-primary-op-20 !important;
+        background: colors.$color-palette-primary-op-20 !important;
         position: relative;
 
         &::after {
@@ -96,7 +101,7 @@ table {
             left: 0;
             right: 0;
             bottom: 0;
-            border: 1px solid $color-palette-primary;
+            border: 1px solid colors.$color-palette-primary;
             pointer-events: none;
             z-index: 1;
         }
@@ -114,7 +119,7 @@ table {
         z-index: 20;
 
         &:hover {
-            background: $color-palette-primary-300;
+            background: colors.$color-palette-primary-300;
         }
     }
 
@@ -127,13 +132,13 @@ table {
     .dot-cell-arrow {
         position: absolute;
         display: none;
-        top: $spacing-2;
-        right: $spacing-xxs;
-        width: $icon-md-box;
-        height: $icon-md-box;
-        background: $color-palette-gray-100;
-        border: 1px solid $color-palette-gray-500;
-        border-radius: $border-radius-sm;
+        top: spacing.$spacing-2;
+        right: spacing.$spacing-xxs;
+        width: common.$icon-md-box;
+        height: common.$icon-md-box;
+        background: colors.$color-palette-gray-100;
+        border: 1px solid colors.$color-palette-gray-500;
+        border-radius: common.$border-radius-sm;
         cursor: pointer;
         z-index: 15;
         transition: all 0.15s ease;
@@ -144,14 +149,14 @@ table {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: $font-size-lg;
-            color: $color-palette-gray-600;
+            font-size: fonts.$font-size-lg;
+            color: colors.$color-palette-gray-600;
             line-height: 1;
         }
 
         &:hover {
-            background: $color-palette-gray-200;
-            border-color: $color-palette-gray-400;
+            background: colors.$color-palette-gray-200;
+            border-color: colors.$color-palette-gray-400;
         }
     }
 

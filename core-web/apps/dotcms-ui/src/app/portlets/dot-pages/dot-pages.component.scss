@@ -1,3 +1,7 @@
+@use "../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -8,9 +12,9 @@
 }
 
 .dot-pages__container {
-    background-color: $white;
-    box-shadow: $shadow-m;
-    padding: $spacing-4 $spacing-5 0;
+    background-color: colors.$white;
+    box-shadow: shadows.$shadow-m;
+    padding: spacing.$spacing-4 spacing.$spacing-5 0;
     width: 100%;
 }
 
@@ -28,11 +32,11 @@
 
 .dot-pages__spinner-overlay {
     align-content: center;
-    background-color: $white;
+    background-color: colors.$white;
     display: flex;
     flex-wrap: wrap;
-    height: calc(100% - $spacing-7);
+    height: calc(100% - spacing.$spacing-7);
     justify-content: center;
     position: absolute;
-    width: calc(100% - $spacing-8);
+    width: calc(100% - spacing.$spacing-8);
 }
