@@ -83,4 +83,5 @@ This maintenance release includes the following code fixes:
 77. https://github.com/dotCMS/core/issues/33617 : [FEATURE] Ability to update user email via REST API (PUT /api/v1/users/{id}) #33617
 78. https://github.com/dotCMS/core/issues/33096 : Content Editor: References tab #33096
 79. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
+80. https://github.com/dotCMS/core/issues/33768 : [TASK] Backport security issue 482 #33768
 

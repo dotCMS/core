@@ -712,6 +712,9 @@ public class RoleAjax {
 	 */
 	public List<Map<String, Object>> getRolePermissions(String roleId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -798,6 +801,10 @@ public class RoleAjax {
 	}
 
 	public void saveRolePermission(String roleId, String folderHostId, Map<String, String> permissions, boolean cascade) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		Logger.info(this, "Applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 
 		UserAPI userAPI = APILocator.getUserAPI();
@@ -900,7 +907,10 @@ public class RoleAjax {
 		Logger.info(this, "Done applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 	}
 
-	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException {
+	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException, PortalException, SystemException {
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		HostAPI hostAPI = APILocator.getHostAPI();
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -935,12 +945,18 @@ public class RoleAjax {
 
 	public Map<String, Object> getRole(String roleId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		return roleAPI.loadRoleById(roleId).toMap();
 
 	}
 
 	public Map<String, Object> getUserRole(String userId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		Map<String, Object> toReturn = new HashMap<>();
 
@@ -974,6 +990,9 @@ public class RoleAjax {
 
 	@CloseDBIfOpened
 	public Map<String, Object>  isPermissionableInheriting(String assetId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException{
+
+		//Validate if this logged in user has the required permissions to access the roles portlet
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
