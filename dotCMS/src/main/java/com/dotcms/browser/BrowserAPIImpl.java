@@ -52,9 +52,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,7 +64,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -1163,7 +1160,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         // 1. Folders
         if (browserQuery.showFolders) {
-            final List<Map<String, Object>> folders = getFolders(browserQuery, roles);
+            final List<Map<String, Object>> folders = foldersDefaultView(browserQuery, roles);
             folderCount = folders.size();
 
             // Calculate if the offset still falls within folders
@@ -1756,38 +1753,74 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
 
-
-    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) throws DotDataException, DotSecurityException {
+    /**
+     * Retrieves a list of folders transformed into a list of maps based on the specified browser query
+     * and roles. If the `directParent` property of the browser query is not null, it processes the folders
+     * using a transformer. If `directParent` is null, it returns an empty list.
+     *
+     * @param browserQuery an instance of BrowserQuery containing query details and user information.
+     *                      The `directParent` field is checked to determine whether to process folders.
+     * @param roles an array of Role instances associated with the user, used in the folder transformation process.
+     * @return a list of maps where each map represents a folder and its attributes, or an empty list
+     *         if `directParent` is null.
+     */
+    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) {
 
         if (browserQuery.directParent != null) {
-
-            List<Folder> folders = Collections.emptyList();
-            try {
-
-                folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
-                        .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
-
-            } catch (Exception e1) {
-
-                Logger.error(this, "Could not load folders : ", e1);
-            }
-
-
-            if(browserQuery.showMenuItemsOnly) {
-                folders.removeIf(f->!f.isShowOnMenu());
-            }
-
-            if(browserQuery.filterFolderNames){
-                folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
-            }
-
+            final List<Folder> folders = getFolders(browserQuery);
             final DotMapViewTransformer transformer = new DotFolderTransformerBuilder().withFolders(folders)
                     .withUserAndRoles(browserQuery.user, roles).build();
             return transformer.toMaps();
-
         }
         return List.of();
     } // getFolders.
+
+    /**
+     * Generates a default view of folders based on the given browser query and roles.
+     *
+     * @param browserQuery an object containing the query parameters related to folders
+     * @param roles an array of roles associated with the user to determine access and visibility
+     * @return a list of maps representing the default view of folders; returns an empty list if no direct parent exists in the browser query
+     */
+    private List<Map<String, Object>> foldersDefaultView(final BrowserQuery browserQuery, final Role[] roles) {
+        if (browserQuery.directParent != null) {
+            final List<Folder> folders = getFolders(browserQuery);
+            final DotMapViewTransformer transformer = new DotFolderTransformerBuilder()
+                    .withFolders(folders)
+                    .withDefaultView(browserQuery.user, roles).build();
+            return transformer.toMaps();
+        }
+        return List.of();
+    }
+
+    /**
+     * Retrieves the list of subfolders based on the specified browser query parameters.
+     *
+     * @param browserQuery the query object containing filtering parameters, parent folder information,
+     *                     and other flags used to retrieve and filter the subfolders
+     * @return a list of folders that match the filtering criteria specified in the browser query
+     */
+    private List<Folder> getFolders(BrowserQuery browserQuery) {
+        List<Folder> folders = Collections.emptyList();
+        try {
+
+            folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
+                    .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
+
+        } catch (Exception e1) {
+
+            Logger.error(this, "Could not load folders : ", e1);
+        }
+
+        if(browserQuery.showMenuItemsOnly) {
+            folders.removeIf(f->!f.isShowOnMenu());
+        }
+
+        if(browserQuery.filterFolderNames){
+            folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
+        }
+        return folders;
+    }
 
     private Map<String,Object> htmlPageMap(final HTMLPageAsset page) throws DotStateException {
         return new DotTransformerBuilder().webAssetOptions().content(page).build().toMaps().get(0);
