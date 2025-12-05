@@ -58,9 +58,11 @@ public class PermissionResource {
     private final UserAPI          userAPI;
 
     public PermissionResource() {
-
-        this(new WebResource(), PermissionHelper.getInstance(), APILocator.getUserAPI());
+        this(new WebResource(),
+             PermissionHelper.getInstance(),
+             APILocator.getUserAPI());
     }
+
     @VisibleForTesting
     public PermissionResource(final WebResource      webResource,
                               final PermissionHelper permissionHelper,
@@ -266,6 +268,49 @@ public class PermissionResource {
         }
 
         return Response.ok(new ResponseEntityPermissionGroupByTypeView(permissionsRoleGroupByTypeMap)).build();
+    }
+
+    @Operation(
+        summary = "Get permission metadata",
+        description = "Returns available permission levels and scopes that can be assigned to users and roles"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Permission metadata retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = ResponseEntityPermissionMetadataView.class))),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - frontend user attempted access (backend user required)",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityPermissionMetadataView getPermissionMetadata(
+            @Parameter(hidden = true) @Context HttpServletRequest request,
+            @Parameter(hidden = true) @Context HttpServletResponse response) {
+
+        Logger.debug(this, () -> "Retrieving permission metadata");
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final PermissionMetadataView permissionMetadata = PermissionMetadataView.builder()
+            .levels(PermissionUtils.getAvailablePermissionLevels())
+            .scopes(PermissionUtils.getAvailablePermissionScopes())
+            .build();
+
+        Logger.debug(this, () -> "Permission metadata retrieved successfully");
+
+        return new ResponseEntityPermissionMetadataView(permissionMetadata);
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {
