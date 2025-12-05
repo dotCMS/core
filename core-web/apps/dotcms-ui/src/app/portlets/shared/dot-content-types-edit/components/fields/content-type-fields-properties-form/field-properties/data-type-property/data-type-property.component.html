@@ -3,21 +3,19 @@
         <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
             {{ 'contenttypes.field.properties.data_type.label' | dm }}
         </label>
-        <div class="formgroup-inline">
-            @for (radio of radioInputs; track radio) {
-                <div class="field-checkbox">
-                    <div class="flex items-center">
-                        <p-radioButton
-                            [inputId]="property.name + '_' + radio.value"
-                            [name]="property.name"
-                            [value]="radio.value"
-                            [formControlName]="property.name"></p-radioButton>
-                        <label [for]="property.name + '_' + radio.value">
-                            {{ radio.text | dm }}
-                        </label>
-                    </div>
+        @for (radio of radioInputs; track radio) {
+            <div class="flex gap-2 items-center">
+                <div class="flex items-center">
+                    <p-radioButton
+                        [inputId]="property.name + '_' + radio.value"
+                        [name]="property.name"
+                        [value]="radio.value"
+                        [formControlName]="property.name"></p-radioButton>
+                    <label [for]="property.name + '_' + radio.value">
+                        {{ radio.text | dm }}
+                    </label>
                 </div>
-            }
-        </div>
+            </div>
+        }
     </div>
 }

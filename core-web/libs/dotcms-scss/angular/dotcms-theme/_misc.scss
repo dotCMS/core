@@ -48,12 +48,6 @@ a.p-button {
     font-size: $font-size-sm;
 }
 
-.formgroup-inline {
-    .field-checkbox {
-        margin-bottom: 0;
-    }
-}
-
 .p-label-input-required::after {
     content: "*";
     color: red;

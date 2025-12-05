@@ -1,36 +1,36 @@
 @if (!editing) {
-    <div class="field relationship__type">
-        <div class="flex items-center">
+    <div class="field mb-2">
+        <div class="flex gap-2 items-center">
             <p-radioButton
                 (click)="clean()"
                 [(ngModel)]="status"
                 [inputId]="'relationship-new'"
                 [value]="STATUS_NEW" />
-            <label [for]="'relationship-new'">
+            <label class="font-medium" [for]="'relationship-new'">
                 {{ 'contenttypes.field.properties.relationship.new.label' | dm }}
             </label>
         </div>
-        <div class="flex items-center">
+        <div class="flex gap-2 items-center">
             <p-radioButton
                 (click)="clean()"
                 [(ngModel)]="status"
                 [inputId]="'relationship-existing'"
                 [value]="STATUS_EXISTING" />
-            <label [for]="'relationship-existing'">
+            <label class="font-medium" [for]="'relationship-existing'">
                 {{ 'contenttypes.field.properties.relationship.existing.label' | dm }}
             </label>
         </div>
     </div>
 }
 
-<div class="relationship__config">
+<div class="flex flex-col gap-2">
     @if (status === STATUS_NEW) {
         <dot-new-relationships
+            class="contents"
             (switch)="handleChange($event)"
             [velocityVar]="group.get(property.name).value.velocityVar"
             [cardinality]="group.get(property.name).value.cardinality"
-            [editing]="editing"
-            class="relationships__new" />
+            [editing]="editing" />
     } @else {
         <div class="field">
             <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
@@ -38,8 +38,7 @@
             </label>
             <dot-edit-relationships
                 (switch)="handleChange($event)"
-                [id]="property.name"
-                class="relationships__existing" />
+                [id]="property.name" />
         </div>
     }
 

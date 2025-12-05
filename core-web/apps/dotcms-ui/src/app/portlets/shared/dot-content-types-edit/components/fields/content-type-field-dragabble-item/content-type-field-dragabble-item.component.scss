@@ -67,14 +67,6 @@
     }
 
     .field-properties__actions-container {
-        dot-copy-link {
-            ::ng-deep {
-                .p-button {
-                    padding-left: 0px;
-                }
-            }
-        }
-
         p-button.open {
             ::ng-deep .p-button {
                 background-color: $color-palette-primary-200;
