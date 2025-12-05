@@ -25,3 +25,4 @@ Release-25.07.10 LTS
 19. https://github.com/dotCMS/core/issues/33096 : Content Editor: References tab #33096
 20. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
 21. https://github.com/dotCMS/core/issues/33768 : [TASK] Backport security issue 482 #33768
+22. https://github.com/dotCMS/core/issues/33767 : [TASK] Backport security fix #33767

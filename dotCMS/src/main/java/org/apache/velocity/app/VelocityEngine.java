@@ -28,6 +28,9 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.dotmarketing.util.SecurityUtils;
 import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
@@ -58,6 +61,8 @@ public class VelocityEngine implements RuntimeConstants
 {
     private RuntimeInstance ri = new RuntimeInstance();
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+
     /**
      *  Init-less CTOR
      */
@@ -72,7 +77,9 @@ public class VelocityEngine implements RuntimeConstants
      */
     public VelocityEngine(String propsFilename)
     {
-        ri.setProperties(propsFilename);
+        if(!initialized.get()) {
+            ri.setProperties(propsFilename);
+        }
     }
 
     /**
@@ -80,7 +87,9 @@ public class VelocityEngine implements RuntimeConstants
      */
     public VelocityEngine(Properties p)
     {
-        ri.setProperties(p);
+        if(!initialized.get()) {
+            ri.setProperties(p);
+        }
     }
 
     /**
@@ -89,7 +98,9 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void init()
     {
-        ri.init();
+        if(initialized.compareAndSet(false, true)){
+            ri.init();
+        }
     }
 
     /**
@@ -101,7 +112,9 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void init(String propsFilename)
     {
-        ri.init(propsFilename);
+        if(initialized.compareAndSet(false, true)){
+            ri.init(propsFilename);
+        }
     }
 
     /**
@@ -112,7 +125,9 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void init(Properties p)
     {
-        ri.init(p);
+        if(initialized.compareAndSet(false, true)){
+            ri.init(p);
+        }
     }
 
     /**
@@ -123,7 +138,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void setProperty(String key, Object value)
     {
-        ri.setProperty(key,value);
+        if(!initialized.get()) {
+            ri.setProperty(key,value);
+        } else {
+            Logger.warn(this, "Cannot set property '" + SecurityUtils.sanitizeForLogging(key) + "' - VelocityEngine already initialized");
+        }
     }
 
     /**
@@ -134,7 +153,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void addProperty(String key, Object value)
     {
-        ri.addProperty(key,value);
+        if(!initialized.get()) {
+            ri.addProperty(key,value);
+        } else {
+            Logger.warn(this, "Cannot add property '" + SecurityUtils.sanitizeForLogging(key) + "' - VelocityEngine already initialized");
+        }
     }
 
     /**
@@ -144,7 +167,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void clearProperty(String key)
     {
-        ri.clearProperty(key);
+        if(!initialized.get()) {
+            ri.clearProperty(key);
+        } else {
+            Logger.warn(this, "Cannot clear property '" + SecurityUtils.sanitizeForLogging(key) + "' - VelocityEngine already initialized");
+        }
     }
 
     /**
@@ -158,7 +185,11 @@ public class VelocityEngine implements RuntimeConstants
      */
     public void setExtendedProperties( ExtendedProperties configuration)
     {
-        ri.setConfiguration( configuration );
+        if(!initialized.get()) {
+            ri.setConfiguration(configuration);
+        } else {
+            Logger.warn(this, "Cannot set extended properties - VelocityEngine already initialized");
+        }
     }
 
     /**
@@ -474,18 +505,26 @@ public class VelocityEngine implements RuntimeConstants
       */
      public void removeDirective(String name)
      {
-        ri.removeDirective(name);
+         if(!initialized.get()) {
+             ri.removeDirective(name);
+         } else {
+             Logger.warn(this, "Cannot remove directive '" + SecurityUtils.sanitizeForLogging(name) + "' - VelocityEngine already initialized");
+         }
      }
 
-     /**
-      * Instantiates and loads the directive with some basic checks.
-      *
-      * @param directiveClass classname of directive to load
-      */
-     public void loadDirective(String directiveClass)
-     {
-        ri.loadDirective(directiveClass);
-     }
+    /**
+     * Instantiates and loads the directive with some basic checks.
+     *
+     * @param directiveClass classname of directive to load
+     */
+    public void loadDirective(String directiveClass)
+    {
+        if(!initialized.get()) {
+            ri.loadDirective(directiveClass);
+        } else {
+            Logger.warn(this, "Cannot load directive '" + SecurityUtils.sanitizeForLogging(directiveClass) + "' - VelocityEngine already initialized");
+        }
+    }
      
      public RuntimeInstance getRuntimeServices() {
          return ri;
