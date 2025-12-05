@@ -13,6 +13,8 @@ import java.util.Set;
  * This interface represents the permission configuration options available in the dotCMS system.
  * It provides information about what permission levels can be assigned (READ, WRITE, PUBLISH, etc.)
  * and what asset types support permissions (HOST, FOLDER, CONTENT, etc.).
+ *
+ * @author hassandotcms
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
@@ -24,7 +26,7 @@ public interface AbstractPermissionMetadataView {
     /**
      * Gets the available permission levels.
      *
-     * @return Set of permission level names
+     * @return Set of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
      */
     @JsonProperty("levels")
     @Schema(
