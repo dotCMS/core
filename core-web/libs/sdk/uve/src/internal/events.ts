@@ -129,26 +129,10 @@ export function onIframeScroll(callback: UVEEventHandler) {
  * @internal
  */
 export function onContentletHovered(callback: UVEEventHandler) {
-    let lastElement: HTMLElement | null = null;
-    let scrollVersion = 0;
-    let lastHandledScrollVersion = 0;
-
-    const scrollListener = () => {
-        scrollVersion += 1;
-    };
-
     const pointerMoveCallback = (event: PointerEvent) => {
         const foundElement = findDotCMSElement(event.target as HTMLElement);
 
-        if (!foundElement) {
-            lastElement = null;
-            return;
-        }
-
-        const sameElement = lastElement === foundElement;
-        const scrolledSinceLastCallback = scrollVersion !== lastHandledScrollVersion;
-
-        if (sameElement && !scrolledSinceLastCallback) return;
+        if (!foundElement) return;
 
         const { x, y, width, height } = foundElement.getBoundingClientRect();
 
@@ -195,17 +179,12 @@ export function onContentletHovered(callback: UVEEventHandler) {
         };
 
         callback(contentletHoveredPayload);
-
-        lastElement = foundElement;
-        lastHandledScrollVersion = scrollVersion;
     };
 
-    document.addEventListener('scroll', scrollListener, true);
     document.addEventListener('pointermove', pointerMoveCallback);
 
     return {
         unsubscribe: () => {
-            document.removeEventListener('scroll', scrollListener, true);
             document.removeEventListener('pointermove', pointerMoveCallback);
         },
         event: UVEEventType.CONTENTLET_HOVERED
