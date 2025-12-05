@@ -128,14 +128,28 @@ export class DotContentletIcon {
 
     componentWillRender() {
         /*
-            If it doesn't contain "Icon" (with uppercase) we're assuming that is coming to a material icon name,
-            which is the only way we have to differentiate between new and legacy icons without passing an extra attribute.
+            If it contains "Icon" (with uppercase) we extract the extension by removing "Icon",
+            otherwise we're assuming that is coming as a material icon name.
+            This is the only way we have to differentiate between new and legacy icons without passing an extra attribute.
         */
-        this.ext = this.icon.match('Icon') ? this.icon.replace('Icon', '') : '';
+        this.ext =
+            this.icon && this.icon.includes('Icon') && this.icon !== 'Icon'
+                ? this.icon.replace('Icon', '')
+                : '';
     }
 
     render() {
-        const { icon } = this.ext ? this.getIconName() : { icon: this.icon };
+        let icon: string;
+        if (this.ext) {
+            // Icon has "Icon" suffix, look it up in the map
+            icon = this.getIconName().icon;
+        } else if (this.icon) {
+            // Icon is a direct material icon name
+            icon = this.icon;
+        } else {
+            // No icon provided, use fallback
+            icon = 'insert_drive_file';
+        }
 
         return (
             <Host>
