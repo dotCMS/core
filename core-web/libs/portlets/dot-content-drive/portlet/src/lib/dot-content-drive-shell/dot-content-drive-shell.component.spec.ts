@@ -29,7 +29,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentDriveFolder } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
     DotFolderTreeNodeItem,
@@ -165,7 +165,7 @@ describe('DotContentDriveShellComponent', () => {
                     patchContextMenu: jest.fn(),
                     setDragItems: jest.fn(),
                     cleanDragItems: jest.fn(),
-                    dragItems: jest.fn().mockReturnValue([]),
+                    dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: jest.fn(),
                     setPath: jest.fn(),
                     setShowAddToBundle: jest.fn()
@@ -1125,7 +1125,10 @@ describe('DotContentDriveShellComponent', () => {
 
         describe('onMoveItems', () => {
             it('should handle move with single item', () => {
-                const mockDragItems = [MOCK_ITEMS[0]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({ successCount: 1, skippedCount: 0, fails: [] })
@@ -1160,13 +1163,19 @@ describe('DotContentDriveShellComponent', () => {
                             _path_to_move: '//demo.dotcms.com/documents/'
                         }
                     },
-                    contentletIds: [mockDragItems[0].inode],
+                    contentletIds: [mockDragItems.contentlets[0].inode],
                     workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
                 });
             });
 
             it('should handle move with multiple items', () => {
-                const mockDragItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [
+                        MOCK_ITEMS[0] as DotCMSContentlet,
+                        MOCK_ITEMS[1] as DotCMSContentlet
+                    ]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({ successCount: 2, skippedCount: 0, fails: [] })
@@ -1195,13 +1204,19 @@ describe('DotContentDriveShellComponent', () => {
                             _path_to_move: '//demo.dotcms.com/images/'
                         }
                     },
-                    contentletIds: [mockDragItems[0].inode, mockDragItems[1].inode],
+                    contentletIds: [
+                        mockDragItems.contentlets[0].inode,
+                        mockDragItems.contentlets[1].inode
+                    ],
                     workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
                 });
             });
 
             it('should show success message after successful move', () => {
-                const mockDragItems = [MOCK_ITEMS[0]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({ successCount: 1, skippedCount: 0, fails: [] })
@@ -1227,8 +1242,81 @@ describe('DotContentDriveShellComponent', () => {
                 });
             });
 
+            it('should show message with folders when dragging folders and contentlets', () => {
+                const mockFolder: DotContentDriveFolder = {
+                    __icon__: 'folderIcon',
+                    defaultFileType: '',
+                    description: '',
+                    extension: 'folder',
+                    filesMasks: '',
+                    hasTitleImage: false,
+                    hostId: 'host-1',
+                    iDate: 1234567890,
+                    identifier: 'folder-1',
+                    inode: 'inode-folder-1',
+                    mimeType: 'folder',
+                    modDate: 1234567890,
+                    name: 'Test Folder',
+                    owner: 'admin',
+                    parent: '/',
+                    path: '/test-folder/',
+                    permissions: [],
+                    showOnMenu: true,
+                    sortOrder: 0,
+                    title: 'Test Folder',
+                    type: 'folder'
+                };
+
+                const mockDragItems = {
+                    folders: [mockFolder],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
+                store.dragItems.mockReturnValue(mockDragItems);
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                const mockMoveEvent: DotContentDriveMoveItems = {
+                    targetFolder: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    }
+                };
+
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
+
+                // Should show the message with folders (different message when folders are included)
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'info',
+                    summary: 'content-drive.move-to-folder-in-progress-with-folders',
+                    detail: expect.any(String)
+                });
+
+                // Should still call workflow service with contentlet inodes (not folders)
+                expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                    additionalParams: {
+                        assignComment: {
+                            assign: '',
+                            comment: ''
+                        },
+                        pushPublish: {},
+                        additionalParamsMap: {
+                            _path_to_move: '//demo.dotcms.com/documents/'
+                        }
+                    },
+                    contentletIds: [mockDragItems.contentlets[0].inode],
+                    workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+                });
+            });
+
             it('should clean drag items and reload items after successful move', () => {
-                const mockDragItems = [MOCK_ITEMS[0]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({ successCount: 1, skippedCount: 0, fails: [] })
@@ -1251,7 +1339,10 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should handle move to root folder (empty path)', () => {
-                const mockDragItems = [MOCK_ITEMS[0]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({ successCount: 1, skippedCount: 0, fails: [] })
@@ -1280,13 +1371,16 @@ describe('DotContentDriveShellComponent', () => {
                             _path_to_move: '//demo.dotcms.com/'
                         }
                     },
-                    contentletIds: [mockDragItems[0].inode],
+                    contentletIds: [mockDragItems.contentlets[0].inode],
                     workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
                 });
             });
 
             it('should not show success message when successCount is 0', () => {
-                const mockDragItems = [MOCK_ITEMS[0]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({ successCount: 0, skippedCount: 0, fails: [] })
@@ -1313,15 +1407,27 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should show individual error messages for each failed item', () => {
-                const mockDragItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [
+                        MOCK_ITEMS[0] as DotCMSContentlet,
+                        MOCK_ITEMS[1] as DotCMSContentlet
+                    ]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({
                         successCount: 0,
                         skippedCount: 0,
                         fails: [
-                            { inode: MOCK_ITEMS[0].inode, errorMessage: 'Error moving item 1' },
-                            { inode: MOCK_ITEMS[1].inode, errorMessage: 'Error moving item 2' }
+                            {
+                                inode: mockDragItems.contentlets[0].inode,
+                                errorMessage: 'Error moving item 1'
+                            },
+                            {
+                                inode: mockDragItems.contentlets[1].inode,
+                                errorMessage: 'Error moving item 2'
+                            }
                         ]
                     })
                 );
@@ -1358,13 +1464,24 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should handle partial success with some fails', () => {
-                const mockDragItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [
+                        MOCK_ITEMS[0] as DotCMSContentlet,
+                        MOCK_ITEMS[1] as DotCMSContentlet
+                    ]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     of({
                         successCount: 1,
                         skippedCount: 0,
-                        fails: [{ inode: MOCK_ITEMS[1].inode, errorMessage: 'Error moving item' }]
+                        fails: [
+                            {
+                                inode: mockDragItems.contentlets[1].inode,
+                                errorMessage: 'Error moving item'
+                            }
+                        ]
                     })
                 );
 
@@ -1394,7 +1511,10 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should handle workflow service error', () => {
-                const mockDragItems = [MOCK_ITEMS[0]];
+                const mockDragItems = {
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                };
                 store.dragItems.mockReturnValue(mockDragItems);
                 workflowService.bulkFire.mockReturnValue(
                     throwError(() => new Error('Workflow error'))

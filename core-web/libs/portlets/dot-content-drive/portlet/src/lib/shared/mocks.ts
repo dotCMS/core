@@ -8,8 +8,8 @@ import {
 import { createFakeContentType } from '@dotcms/utils-testing';
 
 export const MOCK_ITEMS: DotContentDriveItem[] = [
-    { identifier: '123', title: 'Test Content 1' } as DotContentDriveItem,
-    { identifier: '456', title: 'Test Content 2' } as DotContentDriveItem
+    { identifier: '123', title: 'Test Content 1', inode: 'inode-123' } as DotContentDriveItem,
+    { identifier: '456', title: 'Test Content 2', inode: 'inode-456' } as DotContentDriveItem
 ];
 
 export const MOCK_SEARCH_RESPONSE = {

@@ -363,23 +363,37 @@ export class DotContentDriveShellComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected onMoveItems(event: DotContentDriveMoveItems): void {
-        const { folderName, assetCount, pathToMove, dragItems } = this.getMoveMetadata(event);
+        const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
 
-        const dragItemsInodes = dragItems.map((item) => item.inode);
+        const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
+        const assetContentletsCount = dragItems.contentlets.length;
 
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get(
-                'content-drive.move-to-folder-in-progress',
-                folderName
-            ),
-            detail: this.#dotMessageService.get(
-                'content-drive.move-to-folder-in-progress-detail',
-                assetCount.toString(),
-                `${assetCount > 1 ? 's ' : ' '}`
-            )
-        });
-
+        if (dragItems.folders.length > 0) {
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-with-folders'
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-detail-with-folders',
+                    assetContentletsCount.toString(),
+                    `${assetContentletsCount > 1 ? 's ' : ' '}`
+                )
+            });
+        } else {
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress',
+                    folderName
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-detail',
+                    assetContentletsCount.toString(),
+                    `${assetContentletsCount > 1 ? 's ' : ' '}`
+                )
+            });
+        }
         this.#dotWorkflowActionsFireService
             .bulkFire({
                 additionalParams: {
@@ -428,7 +442,7 @@ export class DotContentDriveShellComponent {
                 }
 
                 fails.forEach(({ errorMessage, inode }) => {
-                    const item = dragItems.find((item) => item.inode === inode);
+                    const item = dragItems.contentlets.find((item) => item.inode === inode);
 
                     const title = item?.title ?? inode;
 
@@ -461,7 +475,7 @@ export class DotContentDriveShellComponent {
         return {
             pathToMove: pathToMove,
             folderName: folderName,
-            assetCount: dragItems.length,
+            assetCount: dragItems.contentlets.length + dragItems.folders.length,
             dragItems
         };
     }
