@@ -18,7 +18,9 @@ import {
     EditorState,
     PageData,
     PageDataContainer,
-    ReloadEditorContent
+    ReloadEditorContent,
+    StyleSchema,
+    UVE_PALETTE_TABS
 } from './models';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
@@ -26,7 +28,6 @@ import {
     Container,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { UVE_FEATURE_FLAGS } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -44,7 +45,6 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withFlags } from '../flags/withFlags';
 import { withActiveContent } from '../withContentlet';
 import { PageContextComputed } from '../withPageContext';
 
@@ -61,7 +61,11 @@ const initialState: EditorState = {
     state: EDITOR_STATE.IDLE,
     dragItem: null,
     ogTags: null,
-    paletteOpen: true
+    styleSchemas: [],
+    palette: {
+        open: true,
+        currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+    }
 };
 
 /**
@@ -79,7 +83,6 @@ export function withEditor() {
         withState<EditorState>(initialState),
         withUVEToolbar(),
         withActiveContent(),
-        withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
@@ -240,6 +243,9 @@ export function withEditor() {
                 setEditorBounds(bounds: Container[]) {
                     patchState(store, { bounds });
                 },
+                setStyleSchemas(styleSchemas: StyleSchema[]) {
+                    patchState(store, { styleSchemas });
+                },
                 resetEditorProperties() {
                     patchState(store, {
                         dragItem: null,
@@ -300,8 +306,10 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
-                setPaletteOpen(paletteOpen: boolean) {
-                    patchState(store, { paletteOpen });
+                setPaletteOpen(open: boolean) {
+                    patchState(store, {
+                        palette: { open, currentTab: store.palette().currentTab }
+                    });
                 }
             };
         })

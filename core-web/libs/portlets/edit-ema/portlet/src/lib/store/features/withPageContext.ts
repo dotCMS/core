@@ -15,6 +15,7 @@ export interface PageContextComputed {
     $isEditMode: Signal<boolean>;
     $pageIsLocked: Signal<boolean>;
     $isLockFeatureEnabled: Signal<boolean>;
+    $isStyleEditorEnabled: Signal<boolean>;
     $hasAccessToEditMode: Signal<boolean>;
     $languageId: Signal<number>;
     $isPreviewMode: Signal<boolean>;
@@ -35,20 +36,19 @@ export interface PageContextComputed {
  */
 export function withPageContext() {
     return signalStoreFeature(
-        {
-            state: type<UVEState>(),
-            props: type<PageContextComputed>()
-        },
+        { state: type<UVEState>() },
         withFlags(UVE_FEATURE_FLAGS),
-        withComputed((store) => {
-            const pageEntity = store.pageAPIResponse;
-            const params = store.pageParams;
-            const experiment = store.experiment;
-            const page = computed(() => pageEntity()?.page);
-            const $isEditMode = computed(() => store.pageParams()?.mode === UVE_MODE.EDIT);
-            const $isLockFeatureEnabled = computed(
-                () => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
-            );
+        withComputed(({ pageAPIResponse, pageParams, flags, experiment, currentUser }) => {
+            const page = computed(() => pageAPIResponse()?.page);
+            const viewAs = computed(() => pageAPIResponse()?.viewAs);
+            const $isPreviewMode = computed(() => pageParams()?.mode === UVE_MODE.PREVIEW);
+            const $isLiveMode = computed(() => pageParams()?.mode === UVE_MODE.LIVE);
+            const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
+            const $isLockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+            const $isStyleEditorEnabled = computed(() => flags().FEATURE_FLAG_UVE_STYLE_EDITOR);
+            const $pageIsLocked = computed(() => {
+                return computePageIsLocked(page(), currentUser(), $isLockFeatureEnabled());
+            });
             const $hasAccessToEditMode = computed(() => {
                 const isPageEditable = page()?.canEdit;
                 const isExperimentRunning = [
@@ -57,19 +57,18 @@ export function withPageContext() {
                 ].includes(experiment()?.status);
                 return isPageEditable && !isExperimentRunning && !$pageIsLocked();
             });
-            const $pageIsLocked = computed(() => {
-                return computePageIsLocked(page(), store.currentUser(), $isLockFeatureEnabled());
-            });
+
             return {
+                $isLiveMode,
                 $isEditMode,
+                $isPreviewMode,
                 $pageIsLocked,
                 $isLockFeatureEnabled,
+                $isStyleEditorEnabled,
                 $hasAccessToEditMode,
-                $languageId: computed<number>(() => pageEntity()?.viewAs.language?.id || 1),
-                $isPreviewMode: computed<boolean>(() => params()?.mode === UVE_MODE.PREVIEW),
-                $isLiveMode: computed<boolean>(() => params()?.mode === UVE_MODE.LIVE),
+                $languageId: computed(() => viewAs()?.language?.id || 1),
                 $pageURI: computed(() => page()?.pageURI ?? ''),
-                $variantId: computed(() => params()?.variantId ?? ''),
+                $variantId: computed(() => pageParams()?.variantId ?? ''),
                 $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
             } satisfies PageContextComputed;
         })

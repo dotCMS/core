@@ -7,7 +7,7 @@
         </ng-template>
         <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
         creating triple renders and triple requests to the server. -->
-        @if ($currentIndex() === 0) {
+        @if ($currentIndex() === TABS_MAP.CONTENT_TYPES) {
             <dot-uve-palette-list
                 [listType]="DotUVEPaletteListTypes.CONTENT"
                 [languageId]="$languageId()"
@@ -20,7 +20,7 @@
                 <i class="pi pi-th-large"></i>
             </div>
         </ng-template>
-        @if ($currentIndex() === 1) {
+        @if ($currentIndex() === TABS_MAP.WIDGETS) {
             <dot-uve-palette-list
                 [listType]="DotUVEPaletteListTypes.WIDGET"
                 [languageId]="$languageId()"
@@ -33,11 +33,23 @@
                 <i class="pi pi-star"></i>
             </div>
         </ng-template>
-        @if ($currentIndex() === 2) {
+        @if ($currentIndex() === TABS_MAP.FAVORITES) {
             <dot-uve-palette-list
                 [listType]="DotUVEPaletteListTypes.FAVORITES"
                 [languageId]="$languageId()"
                 [pagePath]="$pagePath()" />
         }
     </p-tabPanel>
+    @if ($isStyleEditorEnabled()) {
+        <p-tabPanel>
+            <ng-template pTemplate="header">
+                <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
+                    <i class="pi pi-palette"></i>
+                </div>
+            </ng-template>
+            @if ($currentIndex() === TABS_MAP.STYLE_EDITOR) {
+                <pre>TESTING {{ $isStyleEditorEnabled() }}</pre>
+            }
+        </p-tabPanel>
+    }
 </p-tabView>

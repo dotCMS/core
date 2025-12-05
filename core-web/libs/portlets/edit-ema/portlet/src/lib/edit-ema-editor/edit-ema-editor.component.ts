@@ -91,6 +91,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { StyleSchema } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -168,7 +169,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
-    readonly $paletteOpen = this.uveStore.paletteOpen;
+    readonly $paletteOpen = this.uveStore.palette.open;
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     readonly $contentArea = this.uveStore.contentArea;
@@ -176,7 +177,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly UVE_STATUS = UVE_STATUS;
 
     readonly $paletteClass = computed(() => {
-        return this.uveStore.paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
+        return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });
 
     get contentWindow(): Window | null {
@@ -1086,6 +1087,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
+            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: { schemas: StyleSchema[] }) => {
+                const { schemas } = payload;
+                this.uveStore.setStyleSchemas(schemas);
+            },
             [DotCMSUVEAction.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
