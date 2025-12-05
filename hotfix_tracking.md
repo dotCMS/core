@@ -24,3 +24,4 @@ Release-25.07.10 LTS
 18. https://github.com/dotCMS/core/issues/33617 : [FEATURE] Ability to update user email via REST API (PUT /api/v1/users/{id}) #33617
 19. https://github.com/dotCMS/core/issues/33096 : Content Editor: References tab #33096
 20. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
+21. https://github.com/dotCMS/core/issues/33768 : [TASK] Backport security issue 482 #33768
