@@ -645,7 +645,8 @@ interface Relationships {
  */
 export interface DotContentTypePaginationOptions {
     filter?: string;
-    page?: number;
+    page?: number; // Page number (1-indexed)
+    per_page?: number; // Number of results per page
     type?: string;
     ensure?: string;
 }
