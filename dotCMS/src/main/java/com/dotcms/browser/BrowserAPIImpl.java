@@ -914,12 +914,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param contentlets List of contentlets to hydrate
      * @param browserQuery Browser query parameters for hydration
      * @param roles User roles for permission checking
-     * @param resultList Output list to add hydrated results to
      */
-    private void hydrateContentletsInParallel(final List<Contentlet> contentlets,
+    private List<Map<String, Object>> hydrateContentletsInParallel(final List<Contentlet> contentlets,
                                               final BrowserQuery browserQuery,
-                                              final Role[] roles,
-                                              final List<Map<String, Object>> resultList) {
+                                              final Role[] roles) {
+        final List<Map<String, Object>> resultList = new ArrayList<>();
         final int totalContentlets = contentlets.size();
         final int chunkSize = Math.max(1, Math.min(10, totalContentlets / 4));
         final List<List<Contentlet>> chunks = createChunks(contentlets, chunkSize);
@@ -952,6 +951,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 throw new DotRuntimeException("Failed to hydrate contentlets in parallel", e);
             }
         }
+        return resultList;
     }
 
     /**
@@ -1169,9 +1169,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Now the offset is adjusted (subtracting folders already seen)
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
             contentTotalCount = fromDB.totalResults;
+
             // Parallelize hydration with chunks
-            hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles, list);
-            contentCount = list.size();
+            final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
+            // Extract the size of the contentlets loaded and filtered
+            contentCount = contentlets.size();
+            // And finally add them all into the result list
+            list.addAll(contentlets);
         }
 
         // Final sorting (optional: maybe you only need to sort within each block before slicing)

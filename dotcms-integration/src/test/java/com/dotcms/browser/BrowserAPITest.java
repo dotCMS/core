@@ -1402,7 +1402,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         }
 
         // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 30; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1433,7 +1433,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
         assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
         assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
-        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
+        assertEquals("Content total count should be 30", 30, paginatedContents.contentTotalCount);
 
         // Verify first 25 items are folders
         for (int i = 0; i < 25; i++) {
