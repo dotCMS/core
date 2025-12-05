@@ -64,7 +64,7 @@ export class CoreWebService {
     private router = inject(Router);
     private http = inject(HttpClient);
 
-    private httpErrosSubjects: Subject<any>[] = [];
+    private httpErrosSubjects: Record<number, Subject<void>> = {};
 
     /**
      *
@@ -162,7 +162,7 @@ export class CoreWebService {
      * @RequestOptionsArgs options
      * @returns Observable<ResponseView>
      */
-    requestView<T = any>(options: DotRequestOptionsArgs): Observable<ResponseView<T>> {
+    requestView<T>(options: DotRequestOptionsArgs): Observable<ResponseView<T>> {
         if (!options.method) {
             options.method = 'GET';
         }
@@ -173,7 +173,7 @@ export class CoreWebService {
             if (typeof options.body === 'string') {
                 request = this.getRequestOpts<string>(options);
             } else {
-                request = this.getRequestOpts<{ [key: string]: any }>(options);
+                request = this.getRequestOpts<Record<string, unknown>>(options);
             }
         } else {
             request = this.getRequestOpts(options);
@@ -181,7 +181,7 @@ export class CoreWebService {
 
         return this.http.request(request).pipe(
             filter(
-                (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | any>) =>
+                (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | unknown>) =>
                     event.type === HttpEventType.Response
             ),
             map((resp: HttpResponse<DotCMSResponse<T>>) => {
