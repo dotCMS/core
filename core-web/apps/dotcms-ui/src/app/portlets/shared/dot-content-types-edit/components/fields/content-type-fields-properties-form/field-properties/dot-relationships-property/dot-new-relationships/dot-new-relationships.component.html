@@ -3,6 +3,7 @@
         {{ 'contenttypes.field.properties.relationships.contentType.label' | dm }}
     </label>
     <p-select
+        optionLabel="name"
         [appendTo]="'body'"
         (onChange)="triggerChanged()"
         [(ngModel)]="contentType"
@@ -15,8 +16,7 @@
         "
         filterBy="name"
         id="contentType"
-        optionLabel="name"
-        styleClass="w-full" />
+        class="w-full" />
 </div>
 <div class="field">
     <label for="cardinality">{{ 'contenttypes.field.properties.relationships.label' | dm }}</label>

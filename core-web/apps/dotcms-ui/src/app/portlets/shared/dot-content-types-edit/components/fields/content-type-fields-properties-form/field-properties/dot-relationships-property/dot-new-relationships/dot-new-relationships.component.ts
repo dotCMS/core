@@ -121,8 +121,12 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
                 velocityVar = velocityVar.split('.')[0];
             }
 
+            this.loading = true;
+
             this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
                 this.contentType = contentType;
+                this.contentTypes = [contentType];
+                this.loading = false;
             });
         } else {
             this.contentType = null;
