@@ -1,3 +1,5 @@
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -10,7 +12,7 @@
 }
 
 .search-box {
-    padding: 0 $spacing-5;
+    padding: 0 spacing.$spacing-5;
     flex-grow: 1;
     display: flex;
     align-items: center;

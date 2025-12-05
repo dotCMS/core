@@ -1,10 +1,13 @@
+@use "../../../shared/colors";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-toolbar {
-    background-color: $white;
-    border-bottom: solid 1px $color-palette-gray-200;
+    background-color: colors.$white;
+    border-bottom: solid 1px colors.$color-palette-gray-200;
     display: flex;
-    padding: $spacing-1 $spacing-4;
+    padding: spacing.$spacing-1 spacing.$spacing-4;
 
     &.p-corner-all {
         border-radius: 0;
@@ -24,5 +27,5 @@
 
 .p-toolbar-group-right {
     justify-content: flex-end;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 }

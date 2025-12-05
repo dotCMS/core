@@ -1,11 +1,13 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .edit-page-toolbar__cancel {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 
 .dot-edit__what-changed-button {
-    margin-left: $spacing-3;
+    margin-left: spacing.$spacing-3;
 }
 
 .main-toolbar-right {

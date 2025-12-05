@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 @keyframes fadeIn {
@@ -25,7 +29,7 @@
 .activities__content {
     flex: 1;
     overflow-y: auto;
-    padding: $spacing-3 $spacing-4;
+    padding: spacing.$spacing-3 spacing.$spacing-4;
 
     ::ng-deep .p-dataview {
         background: none;
@@ -37,7 +41,7 @@
             display: flex;
             flex-direction: column;
             background: none;
-            gap: $spacing-4;
+            gap: spacing.$spacing-4;
         }
 
         .p-dataview-emptymessage {
@@ -52,17 +56,17 @@
     &:not(:last-child)::after {
         content: "";
         position: absolute;
-        bottom: calc(($spacing-4 / 2) * -1);
+        bottom: calc((spacing.$spacing-4 / 2) * -1);
         left: 0;
         width: 100%;
         height: 1px;
-        background-color: $color-palette-gray-300;
+        background-color: colors.$color-palette-gray-300;
     }
 }
 
 .activities__item {
-    background: $color-palette-gray-100;
-    padding: $spacing-1;
+    background: colors.$color-palette-gray-100;
+    padding: spacing.$spacing-1;
 }
 
 .activities__control {
@@ -70,7 +74,7 @@
     // TODO: Implement this in dot-field-validation-message
     ::ng-deep dot-field-validation-message {
         position: absolute;
-        bottom: calc($spacing-3 * -1);
+        bottom: calc(spacing.$spacing-3 * -1);
         left: 0;
         small {
             animation: fadeIn $basic-speed ease-out;
@@ -81,33 +85,33 @@
 .activities__header {
     display: flex;
     align-items: center;
-    margin-bottom: $spacing-1;
-    gap: $spacing-1;
+    margin-bottom: spacing.$spacing-1;
+    gap: spacing.$spacing-1;
 }
 
 .activities__avatar {
-    width: $spacing-4;
-    height: $spacing-4;
-    margin-right: $spacing-2;
+    width: spacing.$spacing-4;
+    height: spacing.$spacing-4;
+    margin-right: spacing.$spacing-2;
 }
 
 .activities__user {
-    font-size: $font-size-md;
-    font-weight: $font-weight-semi-bold;
-    color: $black;
-    margin-right: $spacing-2;
+    font-size: fonts.$font-size-md;
+    font-weight: fonts.$font-weight-semi-bold;
+    color: colors.$black;
+    margin-right: spacing.$spacing-2;
 }
 
 .activities__date {
-    font-size: $font-size-sm;
-    color: $black;
+    font-size: fonts.$font-size-sm;
+    color: colors.$black;
     margin-left: auto;
 }
 
 .activities__description {
     display: block;
-    color: $color-palette-gray-800;
-    font-size: $font-size-md;
+    color: colors.$color-palette-gray-800;
+    font-size: fonts.$font-size-md;
     line-height: 1.4;
     word-wrap: break-word;
     white-space: pre-line;
@@ -115,9 +119,9 @@
 
 .activities__empty {
     display: block;
-    color: $color-palette-gray-800;
-    font-size: $font-size-md;
-    background-color: $color-palette-gray-100;
+    color: colors.$color-palette-gray-800;
+    font-size: fonts.$font-size-md;
+    background-color: colors.$color-palette-gray-100;
 }
 
 .activities__footer {
@@ -125,40 +129,40 @@
     bottom: 0;
     z-index: 1;
     width: 100%;
-    background-color: $color-palette-gray-100;
-    padding: $spacing-3;
-    border-top: 1px solid $color-palette-gray-200;
+    background-color: colors.$color-palette-gray-100;
+    padding: spacing.$spacing-3;
+    border-top: 1px solid colors.$color-palette-gray-200;
 }
 
 .activities__form {
     display: flex;
     flex-direction: column;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 }
 
 .activities__input {
     height: auto;
     width: 100%;
     resize: none;
-    font-size: $font-size-md;
+    font-size: fonts.$font-size-md;
     line-height: 1.4;
 }
 
 .activities__actions {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-2;
+    gap: spacing.$spacing-2;
 }
 
 .activities__char-counter {
-    margin-top: $spacing-1;
-    font-size: $font-size-sm;
-    color: $color-palette-gray-600;
+    margin-top: spacing.$spacing-1;
+    font-size: fonts.$font-size-sm;
+    color: colors.$color-palette-gray-600;
     text-align: left;
     transition: color $basic-speed;
 
     &--limit {
-        color: $color-palette-red;
+        color: colors.$color-palette-red;
     }
 }
 
@@ -167,14 +171,14 @@
     .p-avatar.activities__avatar {
         width: 21px;
         height: 21px;
-        font-size: $font-size-xs;
+        font-size: fonts.$font-size-xs;
         line-height: 21px;
         display: flex;
         align-items: center;
         justify-content: center;
 
         .p-avatar-text {
-            font-size: $font-size-xs;
+            font-size: fonts.$font-size-xs;
             line-height: 1;
         }
     }

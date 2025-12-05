@@ -1,3 +1,7 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+
 @use "variables" as *;
 
 .p-dataview .p-paginator-top {
@@ -11,39 +15,39 @@
 }
 
 .p-dataview .p-dataview-header {
-    background: $white;
+    background: colors.$white;
     color: #000001;
-    border: 1px solid $color-palette-gray-300;
+    border: 1px solid colors.$color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: 0.75rem 0.75rem;
-    font-weight: $font-weight-semi-bold;
+    font-weight: fonts.$font-weight-semi-bold;
 }
 
 .p-dataview .p-dataview-content {
-    background: $white;
+    background: colors.$white;
     color: #000001;
     border: 0 none;
     padding: 0.75rem;
 }
 
 .p-dataview.p-dataview-list .p-dataview-content > .grid > div {
-    border: solid $color-palette-black-op-10;
+    border: solid colors.$color-palette-black-op-10;
     border-width: 0 0 1px 0;
 }
 
 .p-dataview .p-dataview-footer {
-    background: $white;
+    background: colors.$white;
     color: #000001;
-    border: 1px solid $color-palette-gray-300;
+    border: 1px solid colors.$color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: 0.75rem 0.75rem;
-    font-weight: $font-weight-semi-bold;
-    border-bottom-left-radius: $border-radius-xs;
-    border-bottom-right-radius: $border-radius-xs;
+    font-weight: fonts.$font-weight-semi-bold;
+    border-bottom-left-radius: common.$border-radius-xs;
+    border-bottom-right-radius: common.$border-radius-xs;
 }
 
 .p-dataview .p-dataview-loading-icon {
-    font-size: $font-size-xxl;
+    font-size: fonts.$font-size-xxl;
 }
 
 .p-dataview .p-dataview-emptymessage {

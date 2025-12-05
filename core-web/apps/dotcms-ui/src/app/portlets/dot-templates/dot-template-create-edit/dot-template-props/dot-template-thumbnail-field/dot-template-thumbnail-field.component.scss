@@ -1,6 +1,10 @@
 @use "variables" as *;
-@import "dotcms-theme/components/form/common";
-@import "dotcms-theme/components/buttons/common";
+@use "dotcms-theme/components/form/common";
+@use "dotcms-theme/components/buttons/common" as common2;
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/common" as common3;
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 dot-binary-file {
     display: block;
@@ -22,19 +26,19 @@ dot-binary-file {
         button {
             all: unset;
             @extend #main-primary-severity;
-            background-color: $color-palette-primary;
+            background-color: colors.$color-palette-primary;
             display: block;
-            height: $field-height-md;
-            font-size: $font-size-md;
-            color: $white;
-            border-radius: $border-radius-md;
-            padding: 0 $spacing-3;
+            height: common3.$field-height-md;
+            font-size: fonts.$font-size-md;
+            color: colors.$white;
+            border-radius: common3.$border-radius-md;
+            padding: 0 spacing.$spacing-3;
             text-transform: capitalize;
-            margin-left: $spacing-0;
+            margin-left: spacing.$spacing-0;
         }
 
         .dot-file-preview__info {
-            border-radius: $border-radius-xs;
+            border-radius: common3.$border-radius-xs;
         }
     }
 }

@@ -1,3 +1,9 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/shadows";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 // dotTable class is a wrapper for PrimeNG DataTable to apply the new
@@ -11,34 +17,34 @@
         position: absolute;
         width: fit-content;
         z-index: 1;
-        background-color: $white;
-        color: $black;
-        font-size: $font-size-xs;
+        background-color: colors.$white;
+        color: colors.$black;
+        font-size: fonts.$font-size-xs;
         transition: opacity 0.3s ease-in-out;
-        border-radius: $border-radius-sm;
-        padding: $spacing-1;
+        border-radius: common.$border-radius-sm;
+        padding: spacing.$spacing-1;
         text-align: center;
-        box-shadow: $shadow-l;
+        box-shadow: shadows.$shadow-l;
     }
     &:hover:after {
         display: block;
     }
 }
 
-$dot-table-cell-padding: 0.625rem $spacing-1;
-$dot-table-cell-padding-first-child: 0.625rem $spacing-1 $spacing-1 $spacing-3;
-$dot-table-cell-with-tag-padding: $spacing-1;
-$dot-table-cell-with-tag-padding-first-child: $spacing-1 $spacing-1 $spacing-1 $spacing-3;
+$dot-table-cell-padding: 0.625rem spacing.$spacing-1;
+$dot-table-cell-padding-first-child: 0.625rem spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-3;
+$dot-table-cell-with-tag-padding: spacing.$spacing-1;
+$dot-table-cell-with-tag-padding-first-child: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-3;
 $dot-table-header-cell-height: 1.5rem;
 $dot-table-cell-height: 1.25rem;
 
 .dotTable {
     &.p-datatable {
-        border-radius: $border-radius-md;
+        border-radius: common.$border-radius-md;
 
         > .p-datatable-wrapper {
-            border-radius: $border-radius-md;
-            border: 1px solid $color-palette-gray-400;
+            border-radius: common.$border-radius-md;
+            border: 1px solid colors.$color-palette-gray-400;
             border-width: 1px;
         }
 
@@ -51,17 +57,17 @@ $dot-table-cell-height: 1.25rem;
         .p-datatable-header,
         .p-datatable-footer {
             border: none;
-            padding: $spacing-3;
+            padding: spacing.$spacing-3;
         }
 
         .p-datatable-thead tr > th {
-            background-color: $color-palette-gray-100;
-            border: 1px solid $color-palette-gray-300;
+            background-color: colors.$color-palette-gray-100;
+            border: 1px solid colors.$color-palette-gray-300;
             border-width: 0 0 1px 0;
-            color: $black;
-            font-size: $font-size-sm;
-            font-weight: $font-weight-bold;
-            padding: $spacing-1;
+            color: colors.$black;
+            font-size: fonts.$font-size-sm;
+            font-weight: fonts.$font-weight-bold;
+            padding: spacing.$spacing-1;
             text-align: left;
             transition: none;
             text-wrap: nowrap;
@@ -72,16 +78,16 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &:first-child {
-                padding-left: $spacing-3;
+                padding-left: spacing.$spacing-3;
             }
 
             &:last-child {
-                padding-right: $spacing-3;
+                padding-right: spacing.$spacing-3;
             }
 
             .error-message {
-                font-weight: $font-weight-regular-bold;
-                color: $color-accessible-text-red;
+                font-weight: fonts.$font-weight-regular-bold;
+                color: colors.$color-accessible-text-red;
             }
 
             p-button {
@@ -91,12 +97,12 @@ $dot-table-cell-height: 1.25rem;
 
         .p-datatable-tfoot > tr > td {
             text-align: left;
-            padding: $spacing-2;
-            border: 1px solid $color-palette-gray-300;
+            padding: spacing.$spacing-2;
+            border: 1px solid colors.$color-palette-gray-300;
             border-width: 0 0 1px 0;
-            font-weight: $font-weight-semi-bold;
-            color: $black;
-            background: $white;
+            font-weight: fonts.$font-weight-semi-bold;
+            color: colors.$black;
+            background: colors.$white;
         }
 
         .p-sortable-column {
@@ -104,8 +110,8 @@ $dot-table-cell-height: 1.25rem;
 
             .p-sortable-column-icon {
                 display: inline-block;
-                color: $color-palette-gray-700;
-                margin-left: $spacing-1;
+                color: colors.$color-palette-gray-700;
+                margin-left: spacing.$spacing-1;
             }
 
             .p-sortable-column-badge {
@@ -113,31 +119,31 @@ $dot-table-cell-height: 1.25rem;
                 height: 1.143rem;
                 min-width: 1.143rem;
                 line-height: 1.143rem;
-                color: $color-palette-primary;
+                color: colors.$color-palette-primary;
                 background: $bg-highlight;
-                margin-left: $spacing-1;
+                margin-left: spacing.$spacing-1;
             }
 
             &:not(.p-highlight):hover {
                 color: $text-color-hover;
 
                 .p-sortable-column-icon {
-                    color: $black;
+                    color: colors.$black;
                 }
             }
 
             &.p-highlight {
-                color: $color-palette-primary-500;
+                color: colors.$color-palette-primary-500;
 
                 .p-sortable-column-icon {
-                    color: $color-palette-primary-500;
+                    color: colors.$color-palette-primary-500;
                 }
             }
         }
 
         .p-datatable-tbody tr {
-            background: $white;
-            color: $black;
+            background: colors.$white;
+            color: colors.$black;
             height: 4rem;
             transition: none;
             outline: 0 none;
@@ -146,9 +152,9 @@ $dot-table-cell-height: 1.25rem;
 
             > td {
                 text-align: left;
-                border-bottom: 1px solid $color-palette-gray-300;
-                padding: 0 $spacing-1;
-                font-size: $font-size-md;
+                border-bottom: 1px solid colors.$color-palette-gray-300;
+                padding: 0 spacing.$spacing-1;
+                font-size: fonts.$font-size-md;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -173,11 +179,11 @@ $dot-table-cell-height: 1.25rem;
                 }
 
                 &:first-child {
-                    padding-left: $spacing-3;
+                    padding-left: spacing.$spacing-3;
                 }
 
                 &:last-child {
-                    padding-right: $spacing-3;
+                    padding-right: spacing.$spacing-3;
                 }
 
                 .container-thumbnail {
@@ -186,7 +192,7 @@ $dot-table-cell-height: 1.25rem;
                     max-height: 3rem;
                     overflow: hidden;
                     position: relative;
-                    padding: $spacing-0;
+                    padding: spacing.$spacing-0;
                 }
 
                 .p-row-toggler,
@@ -195,7 +201,7 @@ $dot-table-cell-height: 1.25rem;
                 .p-row-editor-cancel {
                     width: 2rem;
                     height: 2rem;
-                    color: $black;
+                    color: colors.$black;
                     border: 0 none;
                     background: transparent;
                     border-radius: 50%;
@@ -207,7 +213,7 @@ $dot-table-cell-height: 1.25rem;
                     &:enabled:hover {
                         color: $text-color-hover;
                         border-color: transparent;
-                        background: $color-palette-primary-100;
+                        background: colors.$color-palette-primary-100;
                     }
 
                     &:focus {
@@ -218,11 +224,11 @@ $dot-table-cell-height: 1.25rem;
                 }
 
                 .p-row-editor-save {
-                    margin-right: $spacing-1;
+                    margin-right: spacing.$spacing-1;
                 }
 
                 .pi.pi-ellipsis-v {
-                    color: $color-palette-primary-500;
+                    color: colors.$color-palette-primary-500;
                 }
 
                 p-button {
@@ -231,22 +237,22 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &.p-highlight {
-                background: $color-palette-primary-100;
-                color: $black;
+                background: colors.$color-palette-primary-100;
+                color: colors.$black;
             }
 
             &.disabled-row {
-                background: $color-palette-gray-200;
-                color: $color-palette-gray-700;
+                background: colors.$color-palette-gray-200;
+                color: colors.$color-palette-gray-700;
                 cursor: default;
             }
 
             &.p-datatable-dragpoint-top > td {
-                box-shadow: inset 0 2px 0 0 $color-palette-primary-100;
+                box-shadow: inset 0 2px 0 0 colors.$color-palette-primary-100;
             }
 
             &.p-datatable-dragpoint-bottom > td {
-                box-shadow: inset 0 -2px 0 0 $color-palette-primary-100;
+                box-shadow: inset 0 -2px 0 0 colors.$color-palette-primary-100;
             }
 
             &:not(.p-highlight):hover {
@@ -256,23 +262,23 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &.disabled-row:hover {
-                background: $color-palette-gray-200;
-                color: $color-palette-gray-700;
+                background: colors.$color-palette-gray-200;
+                color: colors.$color-palette-gray-700;
             }
         }
 
         .p-column-resizer-helper {
-            background: $color-palette-primary;
+            background: colors.$color-palette-primary;
         }
 
         .p-datatable-scrollable-header,
         .p-datatable-scrollable-footer {
-            background: $white;
+            background: colors.$white;
         }
 
         .p-datatable-loading-icon {
-            font-size: $icon-xl;
-            color: $color-palette-secondary;
+            font-size: common.$icon-xl;
+            color: colors.$color-palette-secondary;
         }
 
         &.p-datatable-gridlines {
@@ -304,7 +310,7 @@ $dot-table-cell-height: 1.25rem;
                 background: rgba(0, 0, 0, 0.02);
 
                 &.p-highlight {
-                    background: $color-palette-primary-100;
+                    background: colors.$color-palette-primary-100;
                     color: $text-color-highlight;
 
                     .p-row-toggler {
@@ -347,7 +353,7 @@ $dot-table-cell-height: 1.25rem;
         }
 
         .p-datatable-tbody > tr:not(.p-highlight):focus {
-            background-color: $color-palette-primary-100;
+            background-color: colors.$color-palette-primary-100;
         }
     }
 }

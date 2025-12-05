@@ -1,12 +1,16 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 p-checkbox.p-element {
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 
     &.ng-dirty.ng-invalid {
         .p-checkbox {
-            border-color: $color-alert-red;
+            border-color: colors.$color-alert-red;
         }
     }
 
@@ -20,8 +24,8 @@ p-checkbox.p-element {
         }
 
         .p-checkbox-icon {
-            width: $font-size-sm;
-            height: $font-size-sm;
+            width: fonts.$font-size-sm;
+            height: fonts.$font-size-sm;
         }
     }
 }
@@ -29,22 +33,22 @@ p-checkbox.p-element {
 .p-checkbox {
     height: 1.5rem;
     aspect-ratio: 1/1;
-    border-radius: $border-radius-sm;
-    border: $select-border-size solid $color-palette-gray-400;
-    background-color: $white;
+    border-radius: common2.$border-radius-sm;
+    border: common.$select-border-size solid colors.$color-palette-gray-400;
+    background-color: colors.$white;
 
     &.p-checkbox-checked,
     &:has(.p-highlight) {
-        border-color: $color-palette-primary-500;
+        border-color: colors.$color-palette-primary-500;
     }
 
     &.p-checkbox-disabled {
-        border-color: $color-palette-gray-400;
-        background-color: $color-palette-gray-200;
+        border-color: colors.$color-palette-gray-400;
+        background-color: colors.$color-palette-gray-200;
 
         .p-checkbox-box.p-highlight {
             .p-checkbox-icon {
-                color: $color-palette-gray-400;
+                color: colors.$color-palette-gray-400;
             }
         }
     }
@@ -56,7 +60,7 @@ p-checkbox.p-element {
 
     & + .p-checkbox-label {
         &.p-disabled {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
         &:hover {
             cursor: pointer;
@@ -65,10 +69,10 @@ p-checkbox.p-element {
 
     &:hover:not(:has(.p-checkbox-disabled)) {
         cursor: pointer;
-        border-color: $color-palette-primary-400;
+        border-color: colors.$color-palette-primary-400;
     }
 
     &.p-checkbox-focused {
-        outline: $field-border-size solid $color-palette-primary-op-20;
+        outline: common2.$field-border-size solid colors.$color-palette-primary-op-20;
     }
 }

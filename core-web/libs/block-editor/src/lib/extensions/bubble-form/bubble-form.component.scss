@@ -1,8 +1,12 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 :host {
-    background: $white;
-    border-radius: $border-radius-xs;
+    background: colors.$white;
+    border-radius: common.$border-radius-xs;
     box-shadow: 0px 4px 10px rgba(10, 7, 37, 0.1);
     display: flex;
     flex-direction: column;
@@ -48,7 +52,7 @@ form {
 }
 
 .error-message {
-    color: $red;
-    font-size: $font-size-xs;
+    color: colors.$red;
+    font-size: fonts.$font-size-xs;
     text-align: left;
 }

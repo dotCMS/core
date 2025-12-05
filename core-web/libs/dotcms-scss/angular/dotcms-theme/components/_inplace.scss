@@ -1,8 +1,11 @@
+@use "../../../shared/common";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-inplace .p-inplace-display {
-    padding: $spacing-3 $spacing-3;
-    border-radius: $border-radius-xs;
+    padding: spacing.$spacing-3 spacing.$spacing-3;
+    border-radius: common.$border-radius-xs;
     transition:
         background-color 0.2s,
         border-color 0.2s,

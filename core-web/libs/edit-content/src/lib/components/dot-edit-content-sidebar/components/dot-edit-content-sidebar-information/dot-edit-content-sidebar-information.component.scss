@@ -1,5 +1,9 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
 
 $information-min-height: 60px;
 $information-row-min-height: 76px;
@@ -8,13 +12,13 @@ $skeleton-min-height: 14px;
 :host {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }
 
 .content-aside__information {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }
 
 .content-aside__status {
@@ -27,7 +31,7 @@ $skeleton-min-height: 14px;
 .content-aside__metadata {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     width: 100%;
 }
 
@@ -40,35 +44,35 @@ a.sidebar-card {
     min-height: $information-min-height;
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
 .sidebar-card {
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     display: flex;
     flex-direction: column;
-    gap: $spacing-0;
-    background: $white;
-    border-radius: $border-radius-lg;
+    gap: spacing.$spacing-0;
+    background: colors.$white;
+    border-radius: common.$border-radius-lg;
     width: 100%;
 
     &__title {
-        font-size: $font-size-md;
-        font-weight: $font-weight-bold;
-        color: $black;
+        font-size: fonts.$font-size-md;
+        font-weight: fonts.$font-weight-bold;
+        color: colors.$black;
         line-height: $line-height-relative;
     }
 
     &__subtitle {
-        font-size: $font-size-md;
-        color: $color-palette-gray-800;
+        font-size: fonts.$font-size-md;
+        color: colors.$color-palette-gray-800;
         line-height: $line-height-relative;
     }
 
     &__date {
-        font-size: $font-size-sm;
-        color: $color-palette-gray-700;
+        font-size: fonts.$font-size-sm;
+        color: colors.$color-palette-gray-700;
         line-height: $line-height-relative;
     }
 
@@ -82,11 +86,11 @@ a.sidebar-card {
         flex-direction: column;
         flex: 1;
         position: relative;
-        padding: $spacing-1;
+        padding: spacing.$spacing-1;
         min-height: $information-row-min-height;
 
         .sidebar-card__title {
-            margin-bottom: $spacing-0;
+            margin-bottom: spacing.$spacing-0;
         }
 
         &:not(:last-child)::after {
@@ -97,7 +101,7 @@ a.sidebar-card {
             transform: translateY(-50%);
             height: 50%;
             width: 1px;
-            background-color: $color-palette-gray-200;
+            background-color: colors.$color-palette-gray-200;
         }
     }
 }

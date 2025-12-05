@@ -1,3 +1,5 @@
+@use "../../../../../dotcms-scss/shared/common";
+
 @use "variables" as *;
 
 :host {
@@ -10,7 +12,7 @@
 }
 
 dot-edit-content-monaco-editor-control {
-    border-radius: $border-radius-md;
+    border-radius: common.$border-radius-md;
     display: block;
     height: 100%;
     min-height: 9.375rem;

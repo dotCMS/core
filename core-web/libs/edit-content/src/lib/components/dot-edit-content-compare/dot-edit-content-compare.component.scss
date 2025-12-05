@@ -1,3 +1,6 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 $tab-min-height: 52px;
@@ -14,16 +17,16 @@ $tab-min-height: 52px;
 }
 
 .dot-edit-content-actions__left {
-    gap: $spacing-4;
+    gap: spacing.$spacing-4;
 }
 
 .dot-edit-content-actions__right {
-    gap: $spacing-4;
+    gap: spacing.$spacing-4;
     margin-left: auto;
 }
 
 .dot-edit-content-actions__sidebar-toggle {
-    border-left: solid 1px $color-palette-gray-300;
+    border-left: solid 1px colors.$color-palette-gray-300;
     transition: all $basic-speed ease-in-out;
     opacity: 1;
     transform: translateX(0);
@@ -45,11 +48,11 @@ $tab-min-height: 52px;
 
 .dot-edit-content-actions__sidebar-btn {
     rect {
-        stroke: $color-palette-primary;
+        stroke: colors.$color-palette-primary;
     }
 
     path {
-        fill: $color-palette-primary;
+        fill: colors.$color-palette-primary;
     }
     transition: all $basic-speed ease-in-out;
 }

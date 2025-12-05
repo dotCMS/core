@@ -1,3 +1,5 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 :host {
@@ -5,7 +7,7 @@
     display: flex;
     gap: $dot-editor-size;
     padding: (0.25 * $dot-editor-size) (0.5 * $dot-editor-size);
-    background-color: $white;
+    background-color: colors.$white;
     cursor: pointer;
     align-items: center;
 
@@ -14,7 +16,7 @@
     }
 
     &[disabled="true"] {
-        color: $color-palette-gray-500;
+        color: colors.$color-palette-gray-500;
         cursor: not-allowed;
     }
 }
@@ -65,7 +67,7 @@
     }
 
     .url {
-        color: $color-palette-gray-500;
+        color: colors.$color-palette-gray-500;
         font-size: 0.9 * $dot-editor-size;
     }
 

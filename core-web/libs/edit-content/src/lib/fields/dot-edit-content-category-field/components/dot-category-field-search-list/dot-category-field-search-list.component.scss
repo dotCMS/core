@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 .category-field__search-list {
@@ -23,7 +25,7 @@
             height: 100%;
 
             tr:not(.p-highlight):hover {
-                background: $white;
+                background: colors.$white;
                 cursor: auto;
             }
         }

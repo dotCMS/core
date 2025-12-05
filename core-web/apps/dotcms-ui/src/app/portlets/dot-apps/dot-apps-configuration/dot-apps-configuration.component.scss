@@ -1,23 +1,28 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    background: $color-palette-gray-200;
-    box-shadow: $shadow-m;
+    background: colors.$color-palette-gray-200;
+    box-shadow: shadows.$shadow-m;
     display: flex;
     height: 100%;
-    padding: $spacing-4;
+    padding: spacing.$spacing-4;
 }
 
 .dot-apps-configuration__body {
     align-content: flex-start;
     flex-wrap: wrap;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 }
 
 .dot-apps-configuration__action_header {
     display: flex;
     flex-wrap: wrap;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     justify-content: space-between;
     width: 100%;
 
@@ -27,7 +32,7 @@
 
     button {
         &:first-child {
-            margin-right: $spacing-1;
+            margin-right: spacing.$spacing-1;
         }
     }
 }
@@ -39,20 +44,20 @@
 }
 
 .dot-apps-configuration__add-configurations-title {
-    font-size: $font-size-xl;
+    font-size: fonts.$font-size-xl;
     font-weight: bold;
 }
 
 .dot-apps-configuration__add-configurations-description {
-    font-size: $font-size-lmd;
-    margin-bottom: $spacing-9;
-    margin-top: $spacing-4;
+    font-size: fonts.$font-size-lmd;
+    margin-bottom: spacing.$spacing-9;
+    margin-top: spacing.$spacing-4;
 }
 
 .dot-apps-configuration__container {
-    background-color: $white;
-    box-shadow: $shadow-m;
+    background-color: colors.$white;
+    box-shadow: shadows.$shadow-m;
     overflow-y: auto;
     width: 100%;
-    font-size: $font-size-md;
+    font-size: fonts.$font-size-md;
 }

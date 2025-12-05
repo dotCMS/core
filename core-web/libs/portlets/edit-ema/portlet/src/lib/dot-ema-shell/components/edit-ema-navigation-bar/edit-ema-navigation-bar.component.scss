@@ -1,3 +1,8 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -10,8 +15,8 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    background-color: $color-palette-primary-100;
-    border-left: 1px solid $color-palette-primary-300;
+    background-color: colors.$color-palette-primary-100;
+    border-left: 1px solid colors.$color-palette-primary-300;
 }
 
 .edit-ema-nav-bar__item-container {
@@ -22,10 +27,10 @@
     cursor: pointer;
     height: 5.5rem;
     width: 100%;
-    gap: $spacing-0;
-    padding: 0 $spacing-0;
+    gap: spacing.$spacing-0;
+    padding: 0 spacing.$spacing-0;
     text-decoration: none;
-    color: $black;
+    color: colors.$black;
     position: relative;
 
     &:not(:has(.edit-ema-nav-bar__item--active)) {
@@ -38,8 +43,8 @@
 .p-button.p-button-outlined.toggle-palette {
     display: none;
     align-self: flex-start;
-    border: 1px solid $color-palette-primary-300;
-    background-color: $white;
+    border: 1px solid colors.$color-palette-primary-300;
+    background-color: colors.$white;
     border-radius: 0;
     height: 5.5rem;
     z-index: 10;
@@ -52,7 +57,7 @@
     }
 
     &:hover {
-        background-color: $color-palette-primary-200;
+        background-color: colors.$color-palette-primary-200;
     }
 
     ::ng-deep {
@@ -74,8 +79,8 @@
 
     &.open {
         left: -23.875rem;
-        border: 1px solid $color-palette-gray-200; // Same as the border of the palette to create a blending illusion
-        border-right: 1px solid $white;
+        border: 1px solid colors.$color-palette-gray-200; // Same as the border of the palette to create a blending illusion
+        border-right: 1px solid colors.$white;
         ::ng-deep {
             .p-button-icon,
             .pi {
@@ -93,15 +98,15 @@
     cursor: pointer;
     height: 5.5rem;
     width: 100%;
-    gap: $spacing-0;
-    padding: 0 $spacing-0;
+    gap: spacing.$spacing-0;
+    padding: 0 spacing.$spacing-0;
     text-decoration: none;
-    color: $black;
+    color: colors.$black;
     position: relative;
 
     .pi {
-        font-size: $font-size-lg;
-        color: $color-palette-primary-800;
+        font-size: fonts.$font-size-lg;
+        color: colors.$color-palette-primary-800;
     }
 
     &::before {
@@ -121,7 +126,7 @@
 use {
     user-select: none;
     -webkit-user-drag: none;
-    color: $color-palette-primary-800;
+    color: colors.$color-palette-primary-800;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,12 +135,12 @@ use {
 .item__label {
     text-align: center;
     text-wrap: wrap;
-    font-size: $font-size-sm;
+    font-size: fonts.$font-size-sm;
 }
 
 .edit-ema-nav-bar__item-container:has(.edit-ema-nav-bar__item--active) {
-    background-color: $white;
-    border: 1px solid $color-palette-primary-300;
+    background-color: colors.$white;
+    border: 1px solid colors.$color-palette-primary-300;
     border-left: none;
     position: relative;
 
@@ -146,13 +151,13 @@ use {
         margin-left: -1px;
         width: 1px;
         height: 100%;
-        background-color: $white;
+        background-color: colors.$white;
     }
 
     .pi,
     .item__label,
     .item__image use {
-        color: $color-palette-primary-500;
+        color: colors.$color-palette-primary-500;
     }
 }
 
@@ -167,9 +172,9 @@ use {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background-color: $color-palette-primary-200;
+        background-color: colors.$color-palette-primary-200;
         z-index: 1;
-        border-radius: $border-radius-sm;
+        border-radius: common.$border-radius-sm;
         height: 64px;
         width: 64px;
         transition-property: height, width;
@@ -191,6 +196,6 @@ use {
     .pi,
     .item__label,
     .item__image use {
-        color: $color-palette-primary-400;
+        color: colors.$color-palette-primary-400;
     }
 }

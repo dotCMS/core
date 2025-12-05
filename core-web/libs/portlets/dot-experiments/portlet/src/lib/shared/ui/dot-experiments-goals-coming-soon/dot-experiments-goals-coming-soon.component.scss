@@ -1,15 +1,20 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: flex;
-    background: $color-palette-gray-100;
+    background: colors.$color-palette-gray-100;
     flex-direction: column;
     align-items: center;
-    border-radius: $border-radius-sm;
-    padding: $spacing-1;
+    border-radius: common.$border-radius-sm;
+    padding: spacing.$spacing-1;
 
     h5 {
-        margin: $spacing-1 0 $spacing-4;
+        margin: spacing.$spacing-1 0 spacing.$spacing-4;
     }
 
     .col-3 {
@@ -18,28 +23,28 @@
 
     ::ng-deep {
         .p-card {
-            border-radius: $border-radius-sm;
+            border-radius: common.$border-radius-sm;
 
             .p-card-body {
                 min-height: 9rem;
 
                 .p-card-title {
-                    font-size: $font-size-md;
+                    font-size: fonts.$font-size-md;
                 }
             }
 
             .p-card-header {
                 min-height: 5rem;
                 padding: 0;
-                background-color: $color-palette-primary-100;
+                background-color: colors.$color-palette-primary-100;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border-radius: $border-radius-sm $border-radius-sm 0 0;
+                border-radius: common.$border-radius-sm common.$border-radius-sm 0 0;
 
                 i {
-                    font-size: $font-size-lg;
-                    color: $color-palette-primary-500;
+                    font-size: fonts.$font-size-lg;
+                    color: colors.$color-palette-primary-500;
                 }
             }
 

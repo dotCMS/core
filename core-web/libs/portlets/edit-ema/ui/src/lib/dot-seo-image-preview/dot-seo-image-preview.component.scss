@@ -1,3 +1,6 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+
 @use "variables" as *;
 
 $image-width: 45.61706rem;
@@ -16,15 +19,15 @@ $image-height: 23.875rem;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    color: $black;
-    background-color: $color-palette-gray-100;
+    color: colors.$black;
+    background-color: colors.$color-palette-gray-100;
 }
 
 :host ::ng-deep {
     .dot-seo-image-preview__default {
         .pi {
-            font-size: $icon-xl;
-            color: $color-alert-red;
+            font-size: common.$icon-xl;
+            color: colors.$color-alert-red;
         }
     }
 }

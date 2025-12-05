@@ -1,12 +1,15 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
-    border-color: $error;
+    border-color: colors.$error;
 }
 
 .p-chips .p-chips-multiple-container {
-    padding: 0.375rem $spacing-2;
+    padding: 0.375rem spacing.$spacing-2;
 }
 
 .p-chips .p-chips-multiple-container:not(.p-disabled):hover {
@@ -16,7 +19,7 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 .p-chips .p-chips-multiple-container:not(.p-disabled).p-focus {
     outline: 0 none;
     outline-offset: 0;
-    border-color: $color-palette-primary;
+    border-color: colors.$color-palette-primary;
     box-shadow: $input-inset-shadow;
 }
 
@@ -25,7 +28,7 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 }
 
 .p-chips .p-chips-multiple-container .p-chips-token .p-chips-token-icon {
-    margin-left: $spacing-1;
+    margin-left: spacing.$spacing-1;
 }
 
 .p-chips .p-chips-multiple-container .p-chips-input-token {
@@ -33,14 +36,14 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 }
 
 .p-chips .p-chips-multiple-container .p-chips-input-token input {
-    font-family: $font-default;
-    font-size: $font-size-md;
-    color: $black;
+    font-family: fonts.$font-default;
+    font-size: fonts.$font-size-md;
+    color: colors.$black;
     padding: 0;
     margin: 0;
 }
 
 .p-chips.p-error > .p-inputtext,
 .p-chips.p-invalid > .p-inputtext {
-    border-color: $error;
+    border-color: colors.$error;
 }

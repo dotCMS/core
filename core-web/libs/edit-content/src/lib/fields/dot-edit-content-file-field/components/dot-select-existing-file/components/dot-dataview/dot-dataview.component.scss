@@ -1,3 +1,6 @@
+@use "../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 :host {
@@ -8,7 +11,7 @@
     p-table {
         .p-datatable {
             .p-datatable-header {
-                background-color: $color-palette-gray-100;
+                background-color: colors.$color-palette-gray-100;
             }
             .p-datatable-wrapper {
                 height: 100%;
@@ -26,8 +29,8 @@
 
 .file-selector__table_header {
     th {
-        font-weight: $font-weight-bold;
-        background-color: $color-palette-gray-100;
+        font-weight: fonts.$font-weight-bold;
+        background-color: colors.$color-palette-gray-100;
     }
 }
 .img {

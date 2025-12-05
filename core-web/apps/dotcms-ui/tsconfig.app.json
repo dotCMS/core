@@ -5,10 +5,11 @@
         "types": [],
         "target": "ES2022",
         "useDefineForClassFields": false,
-        "module": "NodeNext",
-        "moduleResolution": "nodenext",
+        "module": "es2022",
+        "moduleResolution": "bundler",
         "resolvePackageJsonExports": true,
-        "incremental": true
+        "incremental": true,
+        "esModuleInterop": true
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
     "exclude": ["**/*.stories.ts", "**/*.stories.js"]

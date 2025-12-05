@@ -1,3 +1,7 @@
+@use "../../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -9,25 +13,25 @@
     min-height: 0;
 
     .dot-uve-palette-list__empty-title {
-        color: $color-palette-surface-900;
-        font-weight: $font-weight-bold;
+        color: colors.$color-palette-surface-900;
+        font-weight: fonts.$font-weight-bold;
         line-height: 150%;
     }
 
     .dot-uve-palette-list__empty-text {
-        color: $color-palette-surface-800;
+        color: colors.$color-palette-surface-800;
         margin: 0;
         line-height: 1.5;
 
         ::ng-deep {
             span {
-                color: $color-palette-primary-500;
+                color: colors.$color-palette-primary-500;
                 text-decoration: underline;
                 cursor: pointer;
-                font-weight: $font-weight-semi-bold;
+                font-weight: fonts.$font-weight-semi-bold;
 
                 &:hover {
-                    color: $color-palette-primary-600;
+                    color: colors.$color-palette-primary-600;
                 }
             }
         }
@@ -36,8 +40,8 @@
     // Search and options controls bar
     .dot-uve-palette-list__controls {
         display: flex;
-        gap: $spacing-1;
-        padding: $spacing-width-m;
+        gap: spacing.$spacing-1;
+        padding: spacing.$spacing-width-m;
         flex-shrink: 0;
     }
 
@@ -46,11 +50,11 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         grid-auto-rows: 6.875rem;
-        gap: $spacing-width-m;
-        padding: 0 $spacing-width-m;
+        gap: spacing.$spacing-width-m;
+        padding: 0 spacing.$spacing-width-m;
         overflow-y: auto;
         overflow-x: hidden;
-        padding-bottom: $spacing-1;
+        padding-bottom: spacing.$spacing-1;
         flex: 1;
         min-height: 0; // Allows flex items to shrink properly
 
@@ -83,18 +87,18 @@
             justify-content: center;
             grid-column: 1 / -1;
             grid-row: 1 / -1;
-            padding: $spacing-4;
+            padding: spacing.$spacing-4;
             text-align: center;
             min-height: 100%;
             width: 100%;
-            gap: $spacing-3;
+            gap: spacing.$spacing-3;
 
             .dot-uve-palette-list__empty-icon {
-                padding: $spacing-4;
+                padding: spacing.$spacing-4;
 
                 i {
                     font-size: 4.375rem;
-                    color: $color-palette-gray-600;
+                    color: colors.$color-palette-gray-600;
                     font-weight: 400;
                 }
             }
@@ -119,7 +123,7 @@
                 width: 0.875rem;
                 height: 0.875rem;
                 font-size: 0.875rem;
-                color: $color-palette-gray-800;
+                color: colors.$color-palette-gray-800;
 
                 &.pi-arrow-right-arrow-left {
                     transform: rotate(90deg);
@@ -143,7 +147,7 @@
         // Active menu item styling
         .p-menu-list {
             .active-menu-item {
-                background-color: $color-palette-primary-200;
+                background-color: colors.$color-palette-primary-200;
             }
         }
     }

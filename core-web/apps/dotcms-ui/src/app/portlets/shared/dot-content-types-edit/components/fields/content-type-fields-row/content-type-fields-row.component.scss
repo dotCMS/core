@@ -1,8 +1,13 @@
+@use "../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: block;
-    margin-bottom: $spacing-1;
+    margin-bottom: spacing.$spacing-1;
     position: relative;
     transition: box-shadow $basic-speed;
 
@@ -13,41 +18,41 @@
 
 .row-columns {
     display: flex;
-    background: $white;
-    padding: $spacing-1;
-    border-radius: 0 0 $border-radius-xl $border-radius-xl;
+    background: colors.$white;
+    padding: spacing.$spacing-1;
+    border-radius: 0 0 common.$border-radius-xl common.$border-radius-xl;
 }
 
 .row-columns__item {
     display: flex;
     flex-direction: column;
     flex: 1;
-    margin: 0 $spacing-1;
+    margin: 0 spacing.$spacing-1;
     padding-bottom: 0;
     position: relative;
     // we need to make the width: 0 to give every item the same start point to grow.
     width: 0;
 
     &:after {
-        background: $white;
-        border: dashed 1px $color-palette-gray-600;
+        background: colors.$white;
+        border: dashed 1px colors.$color-palette-gray-600;
         bottom: 0;
-        color: $color-palette-gray-600;
+        color: colors.$color-palette-gray-600;
         content: var(--empty-message);
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        font-size: $font-size-xs;
+        font-size: fonts.$font-size-xs;
         justify-content: center;
         min-height: $content-type-field-height;
         pointer-events: none;
         text-align: center;
-        border-radius: $border-radius-md;
+        border-radius: common.$border-radius-md;
     }
 
     &::ng-deep {
         li {
-            background-color: $white;
+            background-color: colors.$white;
             height: $content-type-field-height;
             margin: 0;
         }
@@ -62,7 +67,7 @@
     }
 
     &.empty {
-        background: $color-palette-gray-200;
+        background: colors.$color-palette-gray-200;
         min-height: $content-type-field-height * 2;
 
         dot-content-type-field-dragabble-item {
@@ -84,7 +89,7 @@
 
 .row-header {
     background: #ffffff;
-    border-radius: $border-radius-xl $border-radius-xl 0 0;
+    border-radius: common.$border-radius-xl common.$border-radius-xl 0 0;
     display: flex;
     justify-content: center;
 }
@@ -92,12 +97,12 @@
 .row-header__drag {
     cursor: move;
     display: block;
-    color: $color-palette-gray-400;
+    color: colors.$color-palette-gray-400;
 }
 
 .row-header__remove {
     cursor: pointer;
     position: absolute;
-    right: $spacing-1;
-    top: $spacing-1;
+    right: spacing.$spacing-1;
+    top: spacing.$spacing-1;
 }

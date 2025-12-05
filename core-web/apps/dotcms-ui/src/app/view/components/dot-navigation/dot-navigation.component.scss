@@ -1,9 +1,10 @@
 @use "variables" as *;
-@import "mixins";
-@import "dotcms-theme/utils/theme-variables";
+@use "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
 
 :host {
-    color: $white;
+    color: colors.$white;
     text-decoration: none;
     display: block;
     height: 100%;
@@ -19,7 +20,7 @@ nav {
     width: $navigation-width;
 
     .dot-nav__list-item--active {
-        background-color: $color-palette-white-op-10;
+        background-color: colors.$color-palette-white-op-10;
     }
 
     &.collapsed {
@@ -28,5 +29,5 @@ nav {
 }
 
 ul {
-    @include naked-list;
+    @include mixins.naked-list;
 }
