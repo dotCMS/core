@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "d1e460bd-5b8f-40b6-9bfd-20a784629378",
+		"_postman_id": "0922d296-d544-486d-ac4b-d03ce17c15b3",
 		"name": "WebAssets",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132"
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/So~062b8b1a-9a26-4f9b-80d1-2732b31d951f/collection/10041132-0922d296-d544-486d-ac4b-d03ce17c15b3?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -253,7 +254,6 @@
 				"header": [
 					{
 						"key": "Content-Type",
-						"name": "Content-Type",
 						"value": "application/json",
 						"type": "text"
 					}
@@ -1170,7 +1170,9 @@
 							"    pm.expect(jsonData.entity.path).to.include('level1/level2');",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
@@ -1200,7 +1202,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"assetPath\": \"//default/level1/\",\n    \"data\": {\n        \"title\": \"Level 1 Folder\",\n        \"showOnMenu\": false,\n        \"sortOrder\": 50\n    }\n}",
+					"raw": "{\n    \"assetPath\": \"//default/level1/level2/\",\n    \"data\": {\n        \"title\": \"Level 2 Folder\",\n        \"showOnMenu\": false,\n        \"sortOrder\": 50\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1653,7 +1655,9 @@
 							"    pm.expect(jsonData.message).to.include('already exists');",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
@@ -1683,7 +1687,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"assetPath\": \"//default/level1/level2/\",\n    \"data\": {\n        \"name\": \"test-folder-api\"\n    }\n}",
+					"raw": "{\n    \"assetPath\": \"//default/level1/\",\n    \"data\": {\n        \"name\": \"test-folder-api\"\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
