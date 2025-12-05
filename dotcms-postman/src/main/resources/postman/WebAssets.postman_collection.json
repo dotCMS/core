@@ -1200,7 +1200,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"assetPath\": \"//default/level1/level2/\",\n    \"data\": {\n        \"title\": \"Level 2 Folder\",\n        \"showOnMenu\": false,\n        \"sortOrder\": 50\n    }\n}",
+					"raw": "{\n    \"assetPath\": \"//default/level1/\",\n    \"data\": {\n        \"title\": \"Level 1 Folder\",\n        \"showOnMenu\": false,\n        \"sortOrder\": 50\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
