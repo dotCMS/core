@@ -23,3 +23,4 @@ Release-25.07.10 LTS
 17. https://github.com/dotCMS/core/issues/32802 : Long file names in the list view are clipped instead of being truncated gracefully #32802
 18. https://github.com/dotCMS/core/issues/33617 : [FEATURE] Ability to update user email via REST API (PUT /api/v1/users/{id}) #33617
 19. https://github.com/dotCMS/core/issues/33096 : Content Editor: References tab #33096
+20. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
