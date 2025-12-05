@@ -9,15 +9,13 @@ import {
 
 import { computed } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/types';
-
 import { EditorState } from './editor/models';
+import { PageContextComputed } from './withPageContext';
 
 import { ContentletArea } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { UVEState } from '../models';
-// import { EDITOR_STATE } from '../../shared/enums';
 
 interface ActiveContentState {
     identifier?: string;
@@ -35,7 +33,8 @@ const isDefaultPersona = (persona) => persona?.identifier === DEFAULT_PERSONA.id
 export function withActiveContent() {
     return signalStoreFeature(
         {
-            state: type<UVEState & Pick<EditorState, 'state'>>()
+            state: type<UVEState & EditorState>(),
+            props: type<PageContextComputed>()
         },
         withState<ActiveContentState>({
             identifier: '',
@@ -43,13 +42,8 @@ export function withActiveContent() {
         }),
         withComputed((store) => {
             const pageEntity = store.pageAPIResponse;
-            // This can general computed as well
+            // This can general computed as well I think
             const $isIdle = computed(() => store.state() === EDITOR_STATE.IDLE);
-            const $isEditMode = computed(() => store.pageParams()?.mode === UVE_MODE.EDIT);
-            const $isPageLocked = computed(() => pageEntity()?.page?.locked ?? false);
-            const $isLockedByCurrentUser = computed(() => {
-                return pageEntity()?.page?.lockedBy === store.currentUser()?.userId;
-            });
             return {
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = pageEntity()?.numberContents;
@@ -58,19 +52,10 @@ export function withActiveContent() {
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.contentArea();
-                    const canEditPage = store.canEditPage();
-                    const isEditMode = $isEditMode();
+                    const canEditPage = store.$canEditPage();
                     const isIdle = $isIdle();
-                    // MISSING: const canEditDueToLock = !isLockFeatureEnabled || isPageLockedByUser;
-                    const canEditLockedPage = $isPageLocked() && $isLockedByCurrentUser();
 
-                    return (
-                        !!contentletPosition &&
-                        canEditPage &&
-                        isIdle &&
-                        isEditMode &&
-                        canEditLockedPage
-                    );
+                    return !!contentletPosition && canEditPage && isIdle;
                 })
             };
         }),

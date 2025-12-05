@@ -46,6 +46,7 @@ import {
 import { UVEState } from '../../models';
 import { withFlags } from '../flags/withFlags';
 import { withActiveContent } from '../withContentlet';
+import { PageContextComputed } from '../withPageContext';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
@@ -72,7 +73,8 @@ const initialState: EditorState = {
 export function withEditor() {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState>(),
+            props: type<PageContextComputed>()
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
@@ -121,7 +123,7 @@ export function withEditor() {
                     const socialMedia = store.socialMedia();
                     const ogTags = store.ogTags();
                     const device = store.device();
-                    const canEditPage = store.canEditPage();
+                    const canEditPage = store.$canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
                     const params = store.pageParams();
