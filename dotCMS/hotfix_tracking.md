@@ -84,4 +84,5 @@ This maintenance release includes the following code fixes:
 78. https://github.com/dotCMS/core/issues/33096 : Content Editor: References tab #33096
 79. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
 80. https://github.com/dotCMS/core/issues/33768 : [TASK] Backport security issue 482 #33768
+81. https://github.com/dotCMS/core/issues/33767 : [TASK] Backport security fix #33767
 
