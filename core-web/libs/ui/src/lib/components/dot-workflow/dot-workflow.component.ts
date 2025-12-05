@@ -9,7 +9,8 @@ import {
     inject,
     signal,
     effect,
-    forwardRef
+    forwardRef,
+    computed
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
@@ -36,10 +37,14 @@ export class DotWorkflowComponent implements OnInit, ControlValueAccessor {
     private contentTypeService = inject(DotContentTypeService);
 
     placeholder = input<string>('');
+    disabled = input<boolean>(false);
     value = model<DotCMSContentType | null>(null);
 
     // ControlValueAccessor disabled state (can be set by form control)
     $isDisabled = signal<boolean>(false);
+
+    // Combined disabled state (input disabled OR form control disabled)
+    $disabled = computed(() => this.disabled() || this.$isDisabled());
 
     // Custom output for explicit change events
     onChange = output<DotCMSContentType | null>();

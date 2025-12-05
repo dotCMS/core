@@ -2,19 +2,11 @@
     <label dotFieldRequired for="contentType">
         {{ 'contenttypes.field.properties.relationships.contentType.label' | dm }}
     </label>
-    <p-select
-        optionLabel="name"
-        [appendTo]="'body'"
-        (onChange)="triggerChanged()"
+    <dot-workflow
         [(ngModel)]="contentType"
         [disabled]="editing"
-        [filter]="true"
-        [loading]="loading"
-        [options]="contentTypes"
-        [placeholder]="
-            'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm
-        "
-        filterBy="name"
+        [placeholder]="'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm"
+        (onChange)="onContentTypeChange($event)"
         id="contentType"
         class="w-full" />
 </div>

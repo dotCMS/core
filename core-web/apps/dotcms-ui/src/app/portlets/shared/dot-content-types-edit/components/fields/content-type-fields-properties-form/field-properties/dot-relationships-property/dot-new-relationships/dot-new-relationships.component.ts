@@ -3,18 +3,15 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
     SimpleChanges,
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { SelectModule } from 'primeng/select';
-
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe, DotWorkflowComponent } from '@dotcms/ui';
 
 import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
@@ -24,14 +21,14 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
     templateUrl: './dot-new-relationships.component.html',
     styleUrls: ['./dot-new-relationships.component.scss'],
     imports: [
-        SelectModule,
+        DotWorkflowComponent,
         DotCardinalitySelectorComponent,
         FormsModule,
         DotMessagePipe,
         DotFieldRequiredDirective
     ]
 })
-export class DotNewRelationshipsComponent implements OnInit, OnChanges {
+export class DotNewRelationshipsComponent implements OnChanges {
     private contentTypeService = inject(DotContentTypeService);
 
     @Input() cardinality: number;
@@ -42,16 +39,8 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentTypes: DotCMSContentType[] = [];
     contentType: DotCMSContentType;
     currentCardinalityIndex: number;
-    loading = false;
-
-    ngOnInit(): void {
-        if (!this.editing) {
-            this.loadContentTypes();
-        }
-    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.velocityVar) {
@@ -61,6 +50,17 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
         if (changes.cardinality) {
             this.currentCardinalityIndex = changes.cardinality.currentValue;
         }
+    }
+
+    /**
+     * Handle content type change from dot-workflow component
+     *
+     * @param contentType The selected content type
+     * @memberof DotNewRelationshipsComponent
+     */
+    onContentTypeChange(contentType: DotCMSContentType | null): void {
+        this.contentType = contentType;
+        this.triggerChanged();
     }
 
     /**
@@ -88,45 +88,14 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
         this.triggerChanged();
     }
 
-    /**
-     * Load all content types
-     *
-     * @private
-     * @memberof DotNewRelationshipsComponent
-     */
-    private loadContentTypes(): void {
-        if (this.loading) {
-            return;
-        }
-
-        this.loading = true;
-        this.contentTypeService
-            .getContentTypes({
-                page: 100 // Request a large page size to get all content types
-            })
-            .subscribe({
-                next: (contentTypes) => {
-                    this.contentTypes = contentTypes;
-                    this.loading = false;
-                },
-                error: () => {
-                    this.loading = false;
-                }
-            });
-    }
-
     private loadContentType(velocityVar: string) {
         if (velocityVar) {
             if (velocityVar.includes('.')) {
                 velocityVar = velocityVar.split('.')[0];
             }
 
-            this.loading = true;
-
             this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
                 this.contentType = contentType;
-                this.contentTypes = [contentType];
-                this.loading = false;
             });
         } else {
             this.contentType = null;
