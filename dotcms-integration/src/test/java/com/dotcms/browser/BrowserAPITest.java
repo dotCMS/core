@@ -1401,7 +1401,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             subFolders.add(subFolder);
         }
 
-        // Create 100 contentlets
+        // Create 30 contentlets
         for (int i = 0; i < 30; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
