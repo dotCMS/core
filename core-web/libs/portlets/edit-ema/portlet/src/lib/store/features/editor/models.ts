@@ -13,15 +13,16 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
+import { ContentletPayload } from '../../../shared/models';
 import { Orientation } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
-    contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
     styleSchemas: StyleSchema[];
+    activeContentlet?: ContentletPayload;
     palette: {
         open: boolean;
         currentTab: UVE_PALETTE_TABS;

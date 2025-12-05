@@ -62,6 +62,7 @@ const initialState: EditorState = {
     dragItem: null,
     ogTags: null,
     styleSchemas: [],
+    activeContentlet: null,
     palette: {
         open: true,
         currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
@@ -87,6 +88,11 @@ export function withEditor() {
             const dotWindow = inject(WINDOW);
 
             return {
+                $isDragging: computed<boolean>(
+                    () =>
+                        store.state() === EDITOR_STATE.DRAGGING ||
+                        store.state() === EDITOR_STATE.SCROLL_DRAG
+                ),
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.pageAPIResponse();
 
@@ -223,6 +229,7 @@ export function withEditor() {
                 updateEditorScrollState() {
                     patchState(store, {
                         bounds: [],
+                        contentArea: null,
                         state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
@@ -249,7 +256,7 @@ export function withEditor() {
                 resetEditorProperties() {
                     patchState(store, {
                         dragItem: null,
-                        contentletArea: null,
+                        contentArea: null,
                         bounds: [],
                         state: EDITOR_STATE.IDLE
                     });

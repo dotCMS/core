@@ -174,6 +174,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     readonly $contentArea = this.uveStore.contentArea;
     readonly $allowContentDelete = this.uveStore.$allowContentDelete;
+    readonly $isDragging = this.uveStore.$isDragging;
+
     readonly UVE_STATUS = UVE_STATUS;
 
     readonly $paletteClass = computed(() => {
@@ -940,7 +942,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [DotCMSUVEAction.IFRAME_SCROLL]: () => {
                 this.uveStore.updateEditorScrollState();
-                this.uveStore.unsetActiveContentArea();
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
                 // TODO: Maybe add a small debounce to avoid multiple calls
@@ -956,7 +957,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                const { contentlet, container } = this.uveStore.contentletArea().payload;
+                const { contentlet, container } = this.uveStore.contentArea().payload;
 
                 const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
 
