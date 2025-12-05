@@ -154,6 +154,7 @@ This maintenance release includes the following code fixes:
 148. https://github.com/dotCMS/core/issues/33138 : Add Step Id to GET /api/v1/workflow/tasks/history/comments/{contentletIdentifier} endpoint #33138
 149. https://github.com/dotCMS/core/issues/32860 : dotcms.log file stops receiving log data #32860
 150. https://github.com/dotCMS/core/issues/27794 : Update User Rest API #27794
+151. https://github.com/dotCMS/core/issues/33617 : [FEATURE] Ability to update user email via REST API (PUT /api/v1/users/{id}) #33617
 
 
 

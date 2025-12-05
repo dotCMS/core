@@ -880,11 +880,18 @@ public class UserResource implements Serializable {
 		validateMaximumLength(updateUserForm.getFirstName(),updateUserForm.getLastName(),updateUserForm.getEmail(),
 				updateUserForm.getMiddleName(),updateUserForm.getNickName(),updateUserForm.getBirthday());
 
-		userToSave.setFirstName(updateUserForm.getFirstName());
+		if (UtilMethods.isSet(updateUserForm.getFirstName())) {
+			userToSave.setFirstName(updateUserForm.getFirstName());
+		}
 
 		if (UtilMethods.isSet(updateUserForm.getLastName())) {
 			userToSave.setLastName(updateUserForm.getLastName());
 		}
+		
+		if (UtilMethods.isSet(updateUserForm.getEmail())) {
+			userToSave.setEmailAddress(updateUserForm.getEmail());
+		}
+
 
 		if (UtilMethods.isSet(updateUserForm.getBirthday())) {
 			userToSave.setBirthday(DateUtil.parseISO(updateUserForm.getBirthday()));
