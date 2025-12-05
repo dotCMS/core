@@ -22,8 +22,7 @@ import java.util.Set;
  * Provides static methods for converting between permission representations
  * used by REST API endpoints.
  *
- * @author dotCMS
- * @since 24.01
+ * @author hassandotcms
  */
 public final class PermissionUtils {
 
