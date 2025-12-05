@@ -82,4 +82,5 @@ This maintenance release includes the following code fixes:
 76. https://github.com/dotCMS/core/issues/31348 : OSGI Rest Resource fails upon Redeploy with message: IllegalArgumentException: object is not an instance of declaring class #31348
 77. https://github.com/dotCMS/core/issues/33617 : [FEATURE] Ability to update user email via REST API (PUT /api/v1/users/{id}) #33617
 78. https://github.com/dotCMS/core/issues/33096 : Content Editor: References tab #33096
+79. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
 
