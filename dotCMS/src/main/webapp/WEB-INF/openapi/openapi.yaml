@@ -10791,6 +10791,64 @@ paths:
       summary: Get permissions by permission type
       tags:
       - Permissions
+  /v1/permissions/user/{userId}/asset/{assetId}:
+    put:
+      description: "Saves permissions for a user's individual role on a specific asset\
+        \ (host or folder). This endpoint assigns permissions directly to the user's\
+        \ individual role. If the asset inherits permissions, inheritance will be\
+        \ broken automatically before saving. Optionally cascade permissions to descendants\
+        \ (removes their individual permissions). Only admin users can update permissions."
+      operationId: updateUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Asset identifier (host ID or folder inode)
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveUserPermissionsForm"
+        description: Permission updates to apply. Use empty arrays to remove all permissions
+          for a scope.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySaveUserPermissionsView"
+          description: User permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid input (see error message for details)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required or user lacks EDIT_PERMISSIONS
+            on asset
+        "404":
+          content:
+            application/json: {}
+          description: User or asset not found
+      summary: Update user permissions on asset
+      tags:
+      - Permissions
   /v1/personalization/pagepersonas:
     post:
       description: Copies the current content associated to page containers with default
@@ -22360,6 +22418,40 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableMapStringSetString:
+      type: object
+      additionalProperties:
+        type: array
+        description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+          \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+          \ CAN_ADD_CHILDREN)"
+        example:
+          INDIVIDUAL:
+          - READ
+          - WRITE
+          - PUBLISH
+          HOST:
+          - READ
+        items:
+          type: string
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\":[\"\
+            READ\"]}"
+        uniqueItems: true
+      description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to sets\
+        \ of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)"
+      example:
+        INDIVIDUAL:
+        - READ
+        - WRITE
+        - PUBLISH
+        HOST:
+        - READ
+      properties:
+        empty:
+          type: boolean
     ImmutableMapStringString:
       type: object
       additionalProperties:
@@ -24974,6 +25066,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySaveUserPermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SaveUserPermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySingleExperimentView:
       type: object
       properties:
@@ -26340,6 +26455,66 @@ components:
           properties:
             empty:
               type: boolean
+    SaveUserPermissionsForm:
+      type: object
+      properties:
+        cascade:
+          type: boolean
+          default: false
+          description: Whether to cascade permissions to all children assets
+          example: false
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+              \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+            items:
+              type: string
+              description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+                \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"HOST\":[\"READ\"]}"
+            uniqueItems: true
+          description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+            \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+      required:
+      - permissions
+    SaveUserPermissionsView:
+      type: object
+      properties:
+        asset:
+          $ref: "#/components/schemas/UserPermissionAssetView"
+        cascadeInitiated:
+          type: boolean
+          description: Whether permission cascade to children was initiated
+        roleId:
+          type: string
+          description: User's individual role identifier
+          example: abc-123-def-456
+        userId:
+          type: string
+          description: User identifier
+          example: admin@dotcms.com
+      required:
+      - asset
+      - cascadeInitiated
+      - roleId
+      - userId
     Scheduling:
       type: object
       properties:
@@ -27797,6 +27972,87 @@ components:
         totalUsers:
           type: integer
           format: int64
+    UserPermissionAssetView:
+      type: object
+      description: The updated asset with new permission assignments
+      properties:
+        canEditPermissions:
+          type: boolean
+          description: Whether the requesting user can edit permissions on this asset
+          example: true
+        hostId:
+          type: string
+          description: "Host identifier (same as id for HOST type, parent host for\
+            \ FOLDER type)"
+          example: abc-123-def-456
+        id:
+          type: string
+          description: "Asset identifier (host identifier for HOST type, folder inode\
+            \ for FOLDER type)"
+          example: abc-123-def-456
+        inheritsPermissions:
+          type: boolean
+          description: Whether this asset inherits permissions from its parent
+          example: false
+        name:
+          type: string
+          description: "Asset name (hostname for HOST, folder name for FOLDER)"
+          example: demo.dotcms.com
+        path:
+          type: string
+          description: Full path to the asset
+          example: /demo.dotcms.com/application
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+              \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+              - PUBLISH
+            items:
+              type: string
+              description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+                \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\"\
+                :[\"READ\"]}"
+            uniqueItems: true
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+            - PUBLISH
+          properties:
+            empty:
+              type: boolean
+        type:
+          type: string
+          description: Asset type
+          enum:
+          - HOST
+          - FOLDER
+          example: HOST
+      required:
+      - canEditPermissions
+      - hostId
+      - id
+      - inheritsPermissions
+      - name
+      - path
+      - permissions
+      - type
     VanityUrlContentType:
       type: object
       allOf:
