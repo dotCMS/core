@@ -17,12 +17,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 type ButtonSize = 'normal' | 'small' | 'large';
 
-const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
-    normal: '', // default
-    small: 'p-button-sm',
-    large: 'p-button-lg'
-};
-
 interface WorkflowActionsGroup {
     mainAction: MenuItem;
     subActions: MenuItem[];
@@ -76,11 +70,21 @@ export class DotWorkflowActionsComponent implements OnChanges {
     actionFired = output<DotCMSWorkflowAction>();
 
     protected $groupedActions = signal<WorkflowActionsGroup[]>([]);
-    protected sizeClass!: string;
+
+    /**
+     * Get the size for PrimeNG button component
+     * PrimeNG only accepts 'small' | 'large', not 'normal'
+     *
+     * @protected
+     * @return {*}  {('small' | 'large' | undefined)}
+     * @memberof DotWorkflowActionsComponent
+     */
+    protected getButtonSize(): 'small' | 'large' | undefined {
+        const currentSize = this.size();
+        return currentSize === 'normal' ? undefined : currentSize;
+    }
 
     ngOnChanges(): void {
-        this.sizeClass = InplaceButtonSizePrimeNg[this.size()];
-
         if (!this.actions().length) {
             this.$groupedActions.set([]);
 

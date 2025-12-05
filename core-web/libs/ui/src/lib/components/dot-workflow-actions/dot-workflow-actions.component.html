@@ -5,7 +5,7 @@
         <p-splitButton
             (onClick)="mainAction?.command({ originalEvent: $event })"
             [disabled]="loading() || disabled()"
-            [styleClass]="sizeClass"
+            [size]="getButtonSize()"
             [model]="subActions"
             [outlined]="!$first"
             [label]="mainAction.label" />
@@ -14,14 +14,15 @@
             (onClick)="mainAction?.command({ originalEvent: $event })"
             [loading]="loading()"
             [disabled]="disabled()"
-            [styleClass]="sizeClass + (!$first ? ' p-button-outlined' : '')"
+            [size]="getButtonSize()"
+            [variant]="!$first ? 'outlined' : undefined"
             [label]="mainAction.label" />
     }
 } @empty {
     <p-button
         [loading]="loading()"
         [disabled]="!loading()"
-        [styleClass]="sizeClass"
+        [size]="getButtonSize()"
         [label]="(loading() ? 'Loading' : 'edit.ema.page.no.workflow.action') | dm"
         data-testId="empty-button" />
 }
