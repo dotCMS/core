@@ -21,3 +21,4 @@ Release-25.07.10 LTS
 15. https://github.com/dotCMS/core/issues/33265 : [FEATURE] disregard common query params as Page Cache keys #33265
 16. https://github.com/dotCMS/core/issues/33255 : Stackoverflow error during startup when trying to migrate from earlier version to later ones because of contentlets living on System Host #33255
 17. https://github.com/dotCMS/core/issues/32802 : Long file names in the list view are clipped instead of being truncated gracefully #32802
+18. https://github.com/dotCMS/core/issues/33617 : [FEATURE] Ability to update user email via REST API (PUT /api/v1/users/{id}) #33617
