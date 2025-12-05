@@ -2,24 +2,24 @@
     {{ 'dot.file.relationship.dialog.search.site.label' | dm }}
 </label>
 
+<!-- TODO: (migration): When you expand an item in the tree the scroll go up, this is happening before migration. -->
 <p-treeSelect
     (onNodeSelect)="store.chooseNode($event)"
     (onNodeUnselect)="store.clearSelection()"
     (onNodeExpand)="store.loadChildren($event)"
     [formControl]="siteControl"
     data-testid="site-field-search"
-    containerStyleClass="w-full h-8"
+    class="w-full"
     [filter]="true"
     [options]="store.tree()"
     [virtualScroll]="true"
-    [virtualScrollItemSize]="50"
+    [virtualScrollItemSize]="35"
     [scrollHeight]="'450px'"
     [placeholder]="'dot.file.relationship.dialog.search.site.placeholder' | dm"
     [virtualScrollOptions]="{
         autoSize: true,
         style: {
             width: '100%',
-            height: '450px',
             minHeight: '200px'
         }
     }"

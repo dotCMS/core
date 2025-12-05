@@ -1,4 +1,4 @@
-import { Component, inject, input, output, viewChild, signal, computed } from '@angular/core';
+import { Component, inject, input, output, viewChild, signal, computed, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
@@ -52,7 +52,6 @@ interface ActiveFilter {
         InputGroupAddonModule,
         ChipModule
     ],
-    styleUrls: ['./search.component.scss'],
     templateUrl: './search.component.html'
 })
 export class SearchComponent {
@@ -137,6 +136,18 @@ export class SearchComponent {
     readonly #formBuilder = inject(FormBuilder);
 
     /**
+     * DestroyRef instance to track component lifecycle.
+     * @private
+     */
+    readonly #destroyRef = inject(DestroyRef);
+
+    /**
+     * Flag to track if the component has been destroyed.
+     * @private
+     */
+    #isDestroyed = false;
+
+    /**
      * Reactive form group containing search parameters:
      * - query: The search text
      * - languageId: Selected language ID (-1 for all languages)
@@ -151,6 +162,11 @@ export class SearchComponent {
     });
 
     constructor() {
+        // Mark component as destroyed when cleanup happens
+        this.#destroyRef.onDestroy(() => {
+            this.#isDestroyed = true;
+        });
+
         // debounced search.
         this.form
             .get('query')
@@ -170,6 +186,10 @@ export class SearchComponent {
      * @param event - Optional mouse event that triggered the clear action
      */
     clearForm() {
+        if (this.#isDestroyed) {
+            return;
+        }
+
         this.form.reset();
         this.$overlayPanel().hide();
 
@@ -185,6 +205,10 @@ export class SearchComponent {
      * This method is triggered when the user submits the search form.
      */
     doSearch() {
+        if (this.#isDestroyed) {
+            return;
+        }
+
         this.$overlayPanel().hide();
         const values = this.getValues();
 

@@ -1,29 +1,35 @@
 <form [formGroup]="form" #formElement>
-    <p-inputGroup styleClass="flex items-center">
-        <i class="pi pi-search ml-1 mr-1 search-icon"></i>
+    <p-inputgroup class="flex items-center">
+        <p-inputgroup-addon>
+            <i class="pi pi-search search-icon"></i>
+        </p-inputgroup-addon>
+
+        <!-- TODO: (migration): Check with design, this chips here not good, actually we don't need them if you ask me. -->
         @for (filter of $activeFilters(); track filter.value) {
             <p-chip
                 [label]="filter.label"
                 [removable]="true"
                 (onRemove)="removeFilter(filter.type)"
-                [styleClass]="'mr-2 p-chip-sm flex align-items-center'" />
+                class="mr-2 p-chip-sm flex align-items-center" />
         }
         <input
             pInputText
             type="text"
-            class="content-search__input w-[22rem] h-auto"
+            class="w-88"
             [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
             formControlName="query" />
-        <p-button
-            (onClick)="popover.toggle($event, formElement)"
-            data-testid="open-filters-button"
-            size="small"
-            type="button"
-            icon="pi pi-sliders-h"
-            [text]="true" />
-    </p-inputGroup>
+        <p-inputgroup-addon>
+            <p-button
+                (onClick)="popover.toggle($event, formElement)"
+                data-testid="open-filters-button"
+                size="small"
+                type="button"
+                icon="pi pi-sliders-h"
+                [text]="true" />
+        </p-inputgroup-addon>
+    </p-inputgroup>
 
-    <p-popover #popover styleClass="w-96">
+    <p-popover #popover class="w-96">
         <div class="flex flex-col gap-6">
             <div class="flex flex-col gap-6" formGroupName="systemSearchableFields">
                 <dot-language-field formControlName="languageId" />

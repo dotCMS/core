@@ -7,7 +7,8 @@
         "useDefineForClassFields": false,
         "module": "NodeNext",
         "moduleResolution": "nodenext",
-        "resolvePackageJsonExports": true
+        "resolvePackageJsonExports": true,
+        "incremental": true
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
     "exclude": ["**/*.stories.ts", "**/*.stories.js"]
