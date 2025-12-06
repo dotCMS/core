@@ -5,7 +5,7 @@ import { getUVEState } from '@dotcms/uve';
 import { DotCMSImpressionTracker } from './dot-analytics.impression-tracker';
 
 import {
-    ANALYTICS_CONTENTLET_CLASS,
+    CONTENTLET_CLASS,
     DEFAULT_IMPRESSION_CONFIG,
     IMPRESSION_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
@@ -41,12 +41,12 @@ describe('DotCMSImpressionTracker', () => {
         } = {}
     ): HTMLElement => {
         const element = document.createElement('div');
-        element.className = ANALYTICS_CONTENTLET_CLASS;
-        element.dataset.dotAnalyticsIdentifier = identifier;
-        element.dataset.dotAnalyticsInode = options.inode || 'inode-123';
-        element.dataset.dotAnalyticsContenttype = options.contentType || 'Blog';
-        element.dataset.dotAnalyticsTitle = options.title || 'Test Content';
-        element.dataset.dotAnalyticsBasetype = options.baseType || 'CONTENT';
+        element.className = CONTENTLET_CLASS;
+        element.dataset.dotIdentifier = identifier;
+        element.dataset.dotInode = options.inode || 'inode-123';
+        element.dataset.dotType = options.contentType || 'Blog';
+        element.dataset.dotTitle = options.title || 'Test Content';
+        element.dataset.dotBasetype = options.baseType || 'CONTENT';
 
         // Mock getBoundingClientRect
         element.getBoundingClientRect = jest.fn(() => ({
@@ -304,8 +304,8 @@ describe('DotCMSImpressionTracker', () => {
 
         it('should skip elements without identifier', () => {
             const element = document.createElement('div');
-            element.className = ANALYTICS_CONTENTLET_CLASS;
-            // No data-dot-analytics-identifier
+            element.className = CONTENTLET_CLASS;
+            // No data-dot-identifier
             document.body.appendChild(element);
 
             tracker = new DotCMSImpressionTracker(mockConfig);
