@@ -346,13 +346,30 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
 
     const tabs = transformLayoutToTabs('Content', contentType.layout);
 
+    const renderedMap = new Map<string, string>();
+    contentType.fields.forEach((field) => {
+        if (field.rendered) {
+            renderedMap.set(field.id, field.rendered);
+        }
+    });
+
     return tabs.map((tab) => ({
         ...tab,
         layout: tab.layout.map((row) => ({
             ...row,
             columns: row.columns.map((column) => ({
                 ...column,
-                fields: column.fields.filter((field) => !isFilteredType(field))
+                fields: column.fields
+                    .filter((field) => !isFilteredType(field))
+                    .map((field) => {
+                        if (renderedMap.has(field.id)) {
+                            return {
+                                ...field,
+                                rendered: renderedMap.get(field.id)
+                            };
+                        }
+                        return field;
+                    })
             }))
         }))
     }));

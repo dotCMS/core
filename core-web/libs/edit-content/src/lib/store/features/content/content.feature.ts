@@ -151,7 +151,8 @@ export function withContent() {
                             patchState(store, { state: ComponentStatus.LOADING });
 
                             return forkJoin({
-                                contentType: dotContentTypeService.getContentType(contentType),
+                                contentType:
+                                    dotContentTypeService.getContentTypeWithRender(contentType),
                                 schemes: workflowActionService.getDefaultActions(contentType)
                             }).pipe(
                                 tapResponse({
@@ -230,7 +231,9 @@ export function withContent() {
 
                                     return forkJoin({
                                         contentType:
-                                            dotContentTypeService.getContentType(contentType),
+                                            dotContentTypeService.getContentTypeWithRender(
+                                                contentType
+                                            ),
                                         // Allowed actions for this inode
                                         currentContentActions: workflowActionService.getByInode(
                                             inode,
