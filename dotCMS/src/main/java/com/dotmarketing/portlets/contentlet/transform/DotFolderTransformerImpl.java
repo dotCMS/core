@@ -6,6 +6,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotmarketing.beans.IconType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.Type;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,11 +16,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Folder Transformers Class
@@ -33,29 +37,23 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
 
     private enum TargetView {
         BROWSE_VIEW,
-        GRAPHQL_VIEW
+        GRAPHQL_VIEW,
+        CONTENT_DRIVE
     }
-    private PermissionAPI permissionAPI;
-
     private final User user;
     private final Role[] roles;
     private final List<Folder> folders;
     private final TargetView targetView;
 
     /**
-     * Test friendly "private" constructor
-     * @param permissionAPI
      * @param user
      * @param folders
      */
-    @VisibleForTesting
     DotFolderTransformerImpl(
-            final PermissionAPI permissionAPI,
             final User user,
             final Role[] roles,
             final List<Folder> folders,
             final TargetView targetView) {
-        this.permissionAPI = permissionAPI;
         this.user = user;
         this.roles =   isSet(roles) ? Arrays.copyOf(roles, roles.length) : new Role[]{} ;
         this.folders = folders;
@@ -68,7 +66,7 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
      * @param folders
      */
     public DotFolderTransformerImpl(final User user, final Role[] roles, final List<Folder> folders) {
-        this(APILocator.getPermissionAPI(), user, roles, folders , TargetView.BROWSE_VIEW);
+        this(user, roles, folders , TargetView.BROWSE_VIEW);
     }
 
     /**
@@ -76,14 +74,34 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
      * @param folders
      */
     public DotFolderTransformerImpl(final List<Folder> folders) {
-        this(APILocator.getPermissionAPI(), null, null, folders, TargetView.GRAPHQL_VIEW);
+        this(null, null, folders, TargetView.GRAPHQL_VIEW);
+    }
+
+    /**
+     * Returns a default instance of the {@code DotMapViewTransformer} configured with the provided user, roles,
+     * and folders for processing views, specifically targeted at the Content Drive API.
+     * This factory method simplifies creation and initialization of the transformer object.
+     *
+     * @param user the user to be associated with the transformer
+     * @param roles an array of roles related to the user
+     * @param folders a list of folders to be processed by the transformer
+     * @return an instance of {@code DotMapViewTransformer} configured for the provided inputs
+     */
+    public static DotMapViewTransformer defaultInstance(final User user, final Role[] roles, final List<Folder> folders) {
+        return new DotFolderTransformerImpl(user, roles, folders, TargetView.CONTENT_DRIVE);
+    }
+
+    @VisibleForTesting
+    DotFolderTransformerImpl(final List<Folder> folders, final TargetView targetView) {
+        this(null, null, folders, targetView);
     }
 
     List<Map<String,Object>> transform() {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final List<Map<String,Object>> maps = new ArrayList<>();
         switch (targetView){
             case BROWSE_VIEW:{
-              for(final Folder folder:folders) {
+                for(final Folder folder:folders) {
                  try {
                      final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, user);
                      if(permissions.contains(PERMISSION_READ)){
@@ -100,13 +118,24 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
                     try {
                         maps.add(buildFolderToMapTransformerView(folder));
                     } catch (Exception e){
-                        Logger.error(DotFolderTransformerImpl.class,String.format("Error building Map view of folder with id `%s`", folder.getIdentifier()),e);
+                        Logger.error(DotFolderTransformerImpl.class,String.format("Error building Map view for GraphQL of folder with id `%s`", folder.getIdentifier()),e);
                     }
                 }
              break;
             }
-            default:
-                throw new IllegalStateException("Unexpected value: " + targetView);
+            default: {
+                for(final Folder folder:folders) {
+                    try {
+                        final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, user);
+                        if(permissions.contains(PERMISSION_READ)){
+                            maps.add(contentDriveView(folder, permissions));
+                        }
+                    } catch (Exception e){
+                        Logger.error(DotFolderTransformerImpl.class,String.format("Error building Map view for ContentDRive of folder with id `%s`", folder.getIdentifier()),e);
+                    }
+                }
+            }
+
         }
         return maps;
     }
@@ -133,6 +162,26 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
         map.put("hasTitleImage", StringPool.BLANK);
         map.put("__icon__", IconType.FOLDER.iconName());
 
+        return map;
+
+    }
+
+    /**
+     * This method builds the view expected by Content Drive API
+     * @param folder folder domain object
+     * @param permissions set of user permissions
+     * @return MapView of the folder
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Map<String, Object> contentDriveView(final Folder folder, final List<Integer> permissions)
+            throws DotSecurityException, DotDataException {
+        final List<String> stringPermissions = permissions.stream()
+                .map(integer -> Try.of(() -> Type.findById(integer).name())
+                        .getOrNull()).filter(Objects::nonNull).collect(Collectors.toList());
+        final Map<String, Object> map = new HashMap<>(folder.getMap());
+        map.put("permissions", stringPermissions);
+        map.remove("inode");
         return map;
 
     }
