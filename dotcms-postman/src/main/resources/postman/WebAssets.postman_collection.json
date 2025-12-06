@@ -1683,7 +1683,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"assetPath\": \"//default/level1/level2/\",\n    \"data\": {\n        \"name\": \"test-folder-api\"\n    }\n}",
+					"raw": "{\n    \"assetPath\": \"//default/level1/\",\n    \"data\": {\n        \"name\": \"test-folder-api\"\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
