@@ -293,7 +293,7 @@ export class DotFolderListViewComponent implements OnInit {
             // Note: Using querySelector here as Renderer2 doesn't provide query methods
             // This is acceptable since drag operations are client-side only
             const thumbnail = document.querySelector(
-                `[data-id="${item.identifier}"]`
+                `[data-table-id="${item.identifier}"]`
             ) as HTMLElement;
 
             if (!thumbnail) {

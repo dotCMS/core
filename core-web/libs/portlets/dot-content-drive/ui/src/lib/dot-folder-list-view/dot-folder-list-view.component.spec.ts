@@ -7,7 +7,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
 import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFolderListViewComponent } from './dot-folder-list-view.component';
@@ -67,7 +67,12 @@ describe('DotFolderListViewComponent', () => {
         component: DotFolderListViewComponent,
         imports: [],
         providers: [
-            mockProvider(DotMessageService, new MockDotMessageService({})),
+            mockProvider(
+                DotMessageService,
+                new MockDotMessageService({
+                    Folder: 'Folder'
+                })
+            ),
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
             mockProvider(DotLanguagesService, {
@@ -339,8 +344,9 @@ describe('DotFolderListViewComponent', () => {
 
         it('should have a mod user name column', () => {
             const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+            const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
 
-            expect(modUserNameColumn.textContent.trim()).toBe(firstItem.modUserName);
+            expect(modUserNameColumn.textContent.trim()).toBe(modUserName);
         });
 
         it('should have a mod date column', () => {
@@ -439,6 +445,119 @@ describe('DotFolderListViewComponent', () => {
                 const statusColumn = spectator.query(byTestId('item-status'));
 
                 expect(statusColumn.textContent.trim()).toBe('Draft');
+            });
+        });
+
+        describe('Folder-specific rendering', () => {
+            const mockFolder: DotContentDriveItem = {
+                __icon__: 'folderIcon',
+                defaultFileType: 'FileAsset',
+                description: 'Test folder',
+                extension: 'folder',
+                filesMasks: '*',
+                hasTitleImage: false,
+                hostId: 'host-123',
+                iDate: Date.now(),
+                identifier: 'folder-123',
+                inode: 'folder-inode-123',
+                mimeType: 'folder',
+                modDate: Date.now(),
+                name: 'Test Folder',
+                owner: 'admin',
+                parent: '/',
+                path: '/documents/',
+                permissions: [],
+                showOnMenu: true,
+                sortOrder: 0,
+                title: 'Test Folder',
+                type: 'folder'
+            };
+
+            beforeEach(() => {
+                spectator.setInput('items', [mockFolder]);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+            });
+
+            it('should not show lock icon for folders', () => {
+                const lockIcon = spectator.query(byTestId('lock-icon'));
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+
+                expect(lockIcon).toBeFalsy();
+                expect(lockOpenIcon).toBeFalsy();
+            });
+
+            it('should not show status chip for folders', () => {
+                const statusColumn = spectator.query(byTestId('item-status'));
+                const statusChip = statusColumn?.querySelector('p-chip');
+
+                expect(statusChip).toBeFalsy();
+                expect(statusColumn?.textContent?.trim()).toBe('');
+            });
+
+            it('should not show language chip for folders', () => {
+                const languageColumn = spectator.query(byTestId('item-language'));
+                const languageChip = languageColumn?.querySelector('p-chip');
+
+                expect(languageChip).toBeFalsy();
+                expect(languageColumn?.textContent?.trim()).toBe('');
+            });
+
+            it('should have a content type column for folders', () => {
+                // Query the content type column (same pattern as regular items test)
+                const contentTypeColumn = spectator.query(byTestId('item-content-type'));
+
+                expect(contentTypeColumn).toBeTruthy();
+            });
+
+            it('should show owner instead of modUserName for folders', () => {
+                const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+
+                expect(modUserNameColumn?.textContent?.trim()).toBe('admin');
+            });
+
+            it('should show folder title', () => {
+                const titleColumn = spectator.query(byTestId('item-title'));
+
+                expect(titleColumn?.textContent?.trim()).toContain('Test Folder');
+            });
+
+            it('should have contentlet thumbnail for folders', () => {
+                const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+                expect(contentletThumbnail).toBeTruthy();
+            });
+
+            it('should have kebab menu button for folders', () => {
+                const kebabButton = spectator.query(byTestId('kebab-menu-button'));
+
+                expect(kebabButton).toBeTruthy();
+            });
+
+            it('should emit rightClick when folder row is right clicked', () => {
+                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const row = spectator.query(byTestId('item-row'));
+
+                spectator.dispatchFakeEvent(row, 'contextmenu');
+
+                expect(rightClickSpy).toHaveBeenCalledWith({
+                    event: expect.any(Event),
+                    contentlet: mockFolder
+                });
+            });
+
+            it('should emit rightClick when folder kebab menu button is clicked', () => {
+                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const kebabButton = spectator.debugElement.query(
+                    By.css('[data-testId="kebab-menu-button"]')
+                );
+
+                spectator.triggerEventHandler(kebabButton, 'onClick', new Event('click'));
+
+                expect(rightClickSpy).toHaveBeenCalledWith({
+                    event: expect.any(Event),
+                    contentlet: mockFolder
+                });
             });
         });
     });
@@ -706,6 +825,74 @@ describe('DotFolderListViewComponent', () => {
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(false);
                 expect(row.classList.contains('is-dragging')).toBe(false);
+            });
+        });
+    });
+
+    describe('Context Menu Events', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        it('should emit rightClick event when row is right clicked', () => {
+            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            spectator.dispatchFakeEvent(row, 'contextmenu');
+
+            expect(rightClickSpy).toHaveBeenCalledWith({
+                event: expect.any(Event),
+                contentlet: mockItems[0]
+            });
+        });
+
+        it('should prevent default when context menu is triggered', () => {
+            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+
+            spectator.component.onContextMenu(mockEvent, mockItems[0]);
+
+            expect(mockEvent.preventDefault).toHaveBeenCalled();
+        });
+
+        it('should emit rightClick event when kebab menu button is clicked', () => {
+            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const kebabButton = spectator.debugElement.query(
+                By.css('[data-testId="kebab-menu-button"]')
+            );
+
+            // PrimeNG button uses onClick event, not click
+            spectator.triggerEventHandler(kebabButton, 'onClick', new Event('click'));
+
+            expect(rightClickSpy).toHaveBeenCalledWith({
+                event: expect.any(Event),
+                contentlet: mockItems[0]
+            });
+        });
+
+        it('should call onContextMenu with correct item when kebab menu button is clicked', () => {
+            const onContextMenuSpy = jest.spyOn(spectator.component, 'onContextMenu');
+            const kebabButton = spectator.debugElement.query(
+                By.css('[data-testId="kebab-menu-button"]')
+            );
+
+            // PrimeNG button uses onClick event, not click
+            spectator.triggerEventHandler(kebabButton, 'onClick', new Event('click'));
+
+            expect(onContextMenuSpy).toHaveBeenCalledWith(expect.any(Event), mockItems[0]);
+        });
+
+        it('should emit rightClick with correct item for different rows', () => {
+            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rows = spectator.queryAll(byTestId('item-row'));
+
+            // Right click on second row
+            spectator.dispatchFakeEvent(rows[1], 'contextmenu');
+
+            expect(rightClickSpy).toHaveBeenCalledWith({
+                event: expect.any(Event),
+                contentlet: mockItems[1]
             });
         });
     });

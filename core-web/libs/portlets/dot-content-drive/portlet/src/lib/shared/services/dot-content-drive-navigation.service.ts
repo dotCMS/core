@@ -7,7 +7,7 @@ import { take } from 'rxjs/operators';
 import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
-    DotContentDriveItem,
+    DotCMSContentlet,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { mapQueryParamsToCDParams } from '@dotcms/utils';
@@ -26,7 +26,7 @@ export class DotContentDriveNavigationService {
      *
      * @param contentlet - The content item to edit
      */
-    editContent(contentlet: DotContentDriveItem) {
+    editContent(contentlet: DotCMSContentlet) {
         if (contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE) {
             this.editPage(contentlet);
         } else {
@@ -40,7 +40,7 @@ export class DotContentDriveNavigationService {
      *
      * @param contentlet - The page content item to edit
      */
-    editPage(contentlet: DotContentDriveItem) {
+    editPage(contentlet: DotCMSContentlet) {
         const url = contentlet.urlMap || contentlet.url;
 
         this.#dotRouterService.goToEditPage({ url, language_id: contentlet.languageId });
@@ -53,7 +53,7 @@ export class DotContentDriveNavigationService {
      *
      * @param contentlet - The contentlet to edit
      */
-    #editContentlet(contentlet: DotContentDriveItem) {
+    #editContentlet(contentlet: DotCMSContentlet) {
         const currentPath = this.#location.path(true);
         const currentQueryParams = new URL(currentPath, window.location.origin).searchParams;
 

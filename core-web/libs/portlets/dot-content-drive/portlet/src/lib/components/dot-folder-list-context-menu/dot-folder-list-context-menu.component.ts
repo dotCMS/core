@@ -30,10 +30,15 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 
-import { ERROR_MESSAGE_LIFE, MOVE_TO_FOLDER_WORKFLOW_ACTION_ID } from '../../shared/constants';
+import {
+    DIALOG_TYPE,
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+} from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { isFolder } from '../../utils/functions';
 
 @Component({
     selector: 'dot-folder-list-context-menu',
@@ -119,9 +124,6 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         this.$items.set([]);
-
-        const canLockData = await this.#dotContentletService.canLock(contentlet.inode).toPromise();
-
         const memoizedMenuItems = this.$memoizedMenuItems();
 
         if (memoizedMenuItems[contentlet.inode]) {
@@ -129,6 +131,32 @@ export class DotFolderListViewContextMenuComponent {
             this.contextMenu()?.show(triggeredEvent);
             return;
         }
+
+        if (isFolder(contentlet)) {
+            const folderMenuItems = [
+                {
+                    label: this.#dotMessageService.get('content-drive.context-menu.edit-folder'),
+                    command: () => {
+                        this.#store.setDialog({
+                            type: DIALOG_TYPE.FOLDER,
+                            header: this.#dotMessageService.get(
+                                'content-drive.dialog.folder.header.edit'
+                            ),
+                            payload: contentlet
+                        });
+                    }
+                }
+            ];
+            this.$items.set(folderMenuItems);
+            this.$memoizedMenuItems.set({
+                ...this.$memoizedMenuItems(),
+                [contentlet.inode]: folderMenuItems
+            });
+            this.contextMenu()?.show(triggeredEvent);
+            return;
+        }
+
+        const canLockData = await this.#dotContentletService.canLock(contentlet.inode).toPromise();
 
         const workflowActions = await this.#workflowsActionsService
             .getByInode(contentlet.inode, DotRenderMode.LISTING)
