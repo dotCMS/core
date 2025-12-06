@@ -3,16 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import {
-    defaultIfEmpty,
-    filter,
-    find,
-    map,
-    mergeMap,
-    pluck,
-    publishLast,
-    refCount
-} from 'rxjs/operators';
+import { defaultIfEmpty, filter, find, map, mergeMap, pluck, shareReplay } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
@@ -72,7 +63,7 @@ export class DotMenuService {
         if (!this.menu$ || force) {
             this.menu$ = this.http
                 .get<DotCMSResponse<DotMenu>>(this.urlMenus)
-                .pipe(publishLast(), refCount(), pluck('entity'));
+                .pipe(shareReplay({ bufferSize: 1, refCount: true }), pluck('entity'));
         }
 
         return this.menu$;

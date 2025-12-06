@@ -468,7 +468,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             const mockError = new Error('Something went wrong');
 
             jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(
-                throwError(mockError)
+                throwError(() => mockError)
             );
 
             const mockItems = [
@@ -501,7 +501,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             const mockError = new Error('Something went wrong');
 
             jest.spyOn(dotWorkflowActionsFireService, 'fireDefaultAction').mockReturnValue(
-                throwError(mockError)
+                throwError(() => mockError)
             );
 
             const mockItems = [

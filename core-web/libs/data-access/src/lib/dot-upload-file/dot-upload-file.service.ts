@@ -73,7 +73,7 @@ export class DotUploadFileService {
                     })
                     .pipe(pluck('entity', 'results')) as Observable<DotCMSContentlet[]>;
             }),
-            catchError((error) => throwError(error))
+            catchError((error) => throwError(() => error))
         );
     }
 
