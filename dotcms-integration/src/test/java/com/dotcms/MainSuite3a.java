@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.adminsite.AdminSiteAPITest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
@@ -32,6 +33,7 @@ import org.junit.runners.Suite;
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
     RuleAPITest.class,
+        AdminSiteAPITest.class,
         DeterministicIdentifierAPITest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,

@@ -30,6 +30,13 @@
         <div id="licenseTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER")%>" >
             <div id="licenseTabContentDiv"></div>
         </div>
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <!-- START System Info TAB -->
+        <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+        <div id="systemProps" dojoType="dijit.layout.ContentPane"
+             title="<%= LanguageUtil.get(pageContext, "System-Properties") %>">
+            <%@ include file="/html/portlet/ext/cmsconfig/system_config.jsp" %>
+        </div>
 
         <%  if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { %>
             <div id="networkTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "Network")%>" >
@@ -49,7 +56,9 @@
 
 <script type="text/javascript">
 
+
     dojo.ready(function () {
+        const hashValue = window.location + "";
 
         var tab = dijit.byId("mainTabContainer");
         dojo.connect(tab, 'selectChild', function (evt) {
@@ -63,13 +72,18 @@
                 loadNetworkTab();
             } else if (selectedTab.id == "licenseTab") {
                 loadLicenseTab();
+            } else if (selectedTab.id == "systemProps") {
+                initLoadConfigsAPI();
             }
         });
+        if (hashValue && hashValue.indexOf("systemProps") > -1) {
+            dijit.byId("mainTabContainer").selectChild("systemProps", true);
+        } else {
 
+            loadCompanyTab();
+        }
         <%if (loadLicense) {%>
             dijit.byId("mainTabContainer").selectChild("licenseTab", true);
-        <%}else{%>
-            loadCompanyTab();
         <%}%>
 
     });
