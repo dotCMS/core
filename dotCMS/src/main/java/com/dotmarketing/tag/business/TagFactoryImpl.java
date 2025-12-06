@@ -533,6 +533,39 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     @Override
+    public void deleteTagsInBatch(java.util.Collection<String> tagIds) throws DotDataException {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+
+        // Clear cache for each tag (same as single delete does)
+        for (String tagId : tagIds) {
+            List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tagId);
+            if (cachedTagInodes != null && !cachedTagInodes.isEmpty()) {
+                for (TagInode cachedTagInode : cachedTagInodes) {
+                    tagCache.removeByInode(cachedTagInode.getInode());
+                }
+            }
+            Tag tag = tagCache.get(tagId);
+            if (tag != null) {
+                tagCache.remove(tag);
+            }
+            tagInodeCache.removeByTagId(tagId);
+        }
+
+        // Prepare batch parameters
+        List<com.dotmarketing.common.db.Params> params = tagIds.stream()
+            .map(com.dotmarketing.common.db.Params::new)
+            .collect(java.util.stream.Collectors.toList());
+
+        // Batch delete operations
+        new com.dotmarketing.common.db.DotConnect()
+            .executeBatch("DELETE FROM tag_inode WHERE tag_id = ?", params);
+        new com.dotmarketing.common.db.DotConnect()
+            .executeBatch("DELETE FROM tag WHERE tag_id = ?", params);
+    }
+
+    @Override
     public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
 
         List<TagInode> tagInodes = tagInodeCache.getByInode(inode);
