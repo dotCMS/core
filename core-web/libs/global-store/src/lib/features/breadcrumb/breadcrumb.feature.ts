@@ -186,6 +186,7 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                 const item = menu.find((item) => {
                     const pathMatches = item.menuLink === urlPath;
+
                     const hasQueryParams = queryString && queryString.length > 0;
 
                     // If we have query params but no mId, it's likely an old bookmark - don't match
