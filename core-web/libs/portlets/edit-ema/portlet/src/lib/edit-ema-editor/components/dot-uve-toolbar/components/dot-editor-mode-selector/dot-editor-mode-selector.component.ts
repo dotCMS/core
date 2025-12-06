@@ -12,7 +12,6 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAnalyticsTrackerService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -27,7 +26,6 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 })
 export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
-    readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
 
     /**
      * Determines whether to show the "Draft" mode option in the mode selector.
@@ -45,7 +43,7 @@ export class DotEditorModeSelectorComponent {
         }
 
         // Legacy behavior: only show if user can edit
-        return this.#store.canEditPage();
+        return this.#store.$hasAccessToEditMode();
     });
 
     readonly $menuItems = computed(() => {
@@ -92,7 +90,7 @@ export class DotEditorModeSelectorComponent {
      */
     readonly $modeGuardEffect = effect(() => {
         const currentMode = untracked(() => this.$currentMode());
-        const canEditPage = this.#store.canEditPage();
+        const hasAccessToEditMode = this.#store.$hasAccessToEditMode();
 
         const isToggleUnlockEnabled = this.#store.$isLockFeatureEnabled();
 
@@ -101,7 +99,7 @@ export class DotEditorModeSelectorComponent {
         }
 
         // If the user is in edit mode and does not have edit permission, change to preview mode
-        if (currentMode === UVE_MODE.EDIT && !canEditPage) {
+        if (currentMode === UVE_MODE.EDIT && !hasAccessToEditMode) {
             this.onModeChange(UVE_MODE.PREVIEW);
         }
     });

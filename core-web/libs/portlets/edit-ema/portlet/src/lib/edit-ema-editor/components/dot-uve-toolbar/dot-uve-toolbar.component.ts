@@ -98,7 +98,7 @@ export class DotUveToolbarComponent {
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
-    readonly $isPaletteOpen = this.#store.paletteOpen;
+    readonly $isPaletteOpen = this.#store.palette.open;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),

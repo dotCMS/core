@@ -10,12 +10,14 @@ import {
     ElementRef,
     OnDestroy,
     OnInit,
+    AfterViewInit,
     ViewChild,
     WritableSignal,
     effect,
     inject,
     signal,
-    untracked
+    untracked,
+    computed
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -75,7 +77,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
     ClientData,
@@ -89,6 +91,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { StyleSchema } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -132,7 +135,7 @@ import {
         DotTempFileUploadService
     ]
 })
-export class EditEmaEditorComponent implements OnInit, OnDestroy {
+export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
@@ -156,6 +159,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
+    #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -165,9 +169,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
-    readonly $paletteOpen = this.uveStore.paletteOpen;
+    readonly $paletteOpen = this.uveStore.palette.open;
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    readonly $showContentletControls = this.uveStore.$showContentletControls;
+    readonly $contentArea = this.uveStore.contentArea;
+    readonly $allowContentDelete = this.uveStore.$allowContentDelete;
+    readonly $isDragging = this.uveStore.$isDragging;
+
     readonly UVE_STATUS = UVE_STATUS;
+
+    readonly $paletteClass = computed(() => {
+        return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
+    });
 
     get contentWindow(): Window | null {
         return this.iframe?.nativeElement?.contentWindow || null;
@@ -220,6 +233,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
+    }
+
+    ngAfterViewInit(): void {
+        this.#setupContentletAreaReset();
     }
 
     /**
@@ -549,6 +566,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.#iframeResizeObserver?.disconnect();
+        this.#iframeResizeObserver = null;
         if (this.uveStore.isTraditionalPage()) {
             this.uveStore.setIsClientReady(true);
         }
@@ -910,11 +929,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
                 this.uveStore.setEditorBounds(payload);
             },
-            [DotCMSUVEAction.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
-                const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
+            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
+                const payload = this.uveStore.getPageSavePayload(coords.payload);
 
-                this.uveStore.setEditorContentletArea({
-                    ...contentletArea,
+                this.uveStore.setActiveContentArea({
+                    x: coords.x,
+                    y: coords.y,
+                    width: coords.width,
+                    height: coords.height,
                     payload
                 });
             },
@@ -922,6 +944,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.updateEditorScrollState();
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
+                // TODO: Maybe add a small debounce to avoid multiple calls
                 this.uveStore.updateEditorOnScrollEnd();
             },
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
@@ -934,7 +957,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                const { contentlet, container } = this.uveStore.contentletArea().payload;
+                const { contentlet, container } = this.uveStore.contentArea().payload;
 
                 const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
 
@@ -1065,6 +1088,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
+            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: { schemas: StyleSchema[] }) => {
+                const { schemas } = payload;
+                this.uveStore.setStyleSchemas(schemas);
+            },
             [DotCMSUVEAction.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
@@ -1509,5 +1536,29 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             ...this.uveStore.pageAPIResponse(),
             params: this.uveStore.pageParams()
         };
+    }
+
+    #setupContentletAreaReset(): void {
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
+        if (typeof ResizeObserver !== 'undefined') {
+            this.#iframeResizeObserver = new ResizeObserver(() => {
+                this.#resetContentletArea();
+            });
+
+            this.#iframeResizeObserver.observe(iframeElement);
+        } else {
+            fromEvent(this.window, 'resize')
+                .pipe(takeUntil(this.destroy$))
+                .subscribe(() => this.#resetContentletArea());
+        }
+    }
+
+    #resetContentletArea(): void {
+        this.uveStore.unsetActiveContentArea();
     }
 }

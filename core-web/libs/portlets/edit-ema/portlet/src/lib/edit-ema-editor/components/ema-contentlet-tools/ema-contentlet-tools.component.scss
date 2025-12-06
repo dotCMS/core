@@ -48,8 +48,37 @@
 
 .bounds {
     position: absolute;
+    // cursor: pointer;
     pointer-events: none;
     outline: solid 2px $color-palette-primary-500;
+    background-color: transparent;
+
+    .add-button-top,
+    .add-button-bottom {
+        position: absolute;
+        left: 50%;
+        pointer-events: all;
+        z-index: 1;
+    }
+
+    .add-button-top {
+        top: 0px;
+        transform: translate(-50%, -50%);
+    }
+
+    .add-button-bottom {
+        bottom: 0px;
+        transform: translate(-50%, 50%);
+    }
+
+    .actions {
+        position: absolute;
+        right: $spacing-1;
+        top: 0px;
+        transform: translate(0, -50%);
+        pointer-events: all;
+        z-index: 1;
+    }
 }
 
 .actions {

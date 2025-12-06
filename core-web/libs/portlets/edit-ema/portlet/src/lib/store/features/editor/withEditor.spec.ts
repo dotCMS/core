@@ -717,6 +717,21 @@ describe('withEditor', () => {
                 // State should not change
                 expect(store.state()).toEqual(EDITOR_STATE.INLINE_EDITING);
             });
+
+            it('should clear the contentlet area when null is provided', () => {
+                store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+
+                store.setEditorContentletArea(null);
+
+                expect(store.contentletArea()).toBe(null);
+                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
+            });
+
+            it('should do nothing when contentlet area is already empty', () => {
+                store.setEditorContentletArea(null);
+
+                expect(store.contentletArea()).toBe(null);
+            });
         });
 
         describe('setEditorBounds', () => {

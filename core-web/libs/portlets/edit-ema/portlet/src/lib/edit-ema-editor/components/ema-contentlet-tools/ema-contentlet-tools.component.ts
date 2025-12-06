@@ -4,13 +4,12 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    HostBinding,
-    Input,
-    OnChanges,
     Output,
-    SimpleChanges,
     ViewChild,
+    computed,
+    effect,
     inject,
+    input,
     signal
 } from '@angular/core';
 
@@ -25,30 +24,24 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { ActionPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
-const BUTTON_WIDTH = 40;
-const BUTTON_HEIGHT = 40;
-const ACTIONS_CONTAINER_HEIGHT = 40;
-
-const ACTIONS_CONTAINER_WIDTH_WITH_VTL = 178;
-const INITIAL_ACTIONS_CONTAINER_WIDTH = 128;
+// TODO: Add the CSS for this
+// const MIN_WIDTH_FOR_CENTERED_BUTTON = 250;
 
 @Component({
     selector: 'dot-ema-contentlet-tools',
     imports: [NgStyle, ButtonModule, MenuModule, JsonPipe, TooltipModule, DotMessagePipe],
     templateUrl: './ema-contentlet-tools.component.html',
     styleUrls: ['./ema-contentlet-tools.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '[class.hide]': 'hide()'
+    }
 })
-export class EmaContentletToolsComponent implements OnChanges {
-    @ViewChild('menu') menu: Menu;
-    @ViewChild('menuVTL') menuVTL: Menu;
-    @ViewChild('dragImage') dragImage: ElementRef;
-
-    @HostBinding('class.hide') @Input() hide = false;
-
-    @Input() contentletArea: ContentletArea;
-    @Input() isEnterprise: boolean;
-    @Input() disableDeleteButton: string;
+export class EmaContentletToolsComponent {
+    readonly contentletArea = input.required<ContentletArea>({ alias: 'contentletArea' });
+    readonly isEnterprise = input<boolean>(false, { alias: 'isEnterprise' });
+    readonly allowContentDelete = input<boolean>(true, { alias: 'allowContentDelete' });
+    readonly hide = input<boolean>(false, { alias: 'hide' });
 
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
@@ -57,195 +50,116 @@ export class EmaContentletToolsComponent implements OnChanges {
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
 
-    #dotMessageService = inject(DotMessageService);
-    ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
-    vtlFiles: MenuItem[] = [];
-    #buttonPosition: 'after' | 'before' = 'after';
+    @ViewChild('menu') menu?: Menu;
+    @ViewChild('menuVTL') menuVTL?: Menu;
+    @ViewChild('dragImage') dragImage?: ElementRef<HTMLDivElement>;
 
-    readonly #comunityItems: MenuItem[] = [
-        {
-            label: this.#dotMessageService.get('content'),
-            command: () => {
-                this.addContent.emit({
-                    ...this.contentletArea.payload,
-                    position: this.#buttonPosition
-                });
+    readonly #dotMessageService = inject(DotMessageService);
+
+    readonly contentletPayload = computed(() => this.contentletArea()?.payload);
+    readonly hasContainer = computed(() => !!this.contentletPayload()?.container);
+    readonly hasVtlFiles = computed(() => !!this.contentletPayload()?.vtlFiles?.length);
+    readonly isContainerEmpty = computed(
+        () => this.contentletPayload()?.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
+    );
+
+    protected readonly deleteButtonTooltip = computed(() => {
+        return this.allowContentDelete()
+            ? null
+            : this.#dotMessageService.get('uve.disable.delete.button.on.personalization');
+    });
+
+    protected readonly menuItems = computed<MenuItem[]>(() => {
+        const items = [
+            {
+                label: this.#dotMessageService.get('content'),
+                command: () => this.emitAddAction(this.addContent)
+            },
+            {
+                label: this.#dotMessageService.get('Widget'),
+                command: () => this.emitAddAction(this.addWidget)
             }
-        },
-        {
-            label: this.#dotMessageService.get('Widget'),
-            command: () => {
-                this.addWidget.emit({
-                    ...this.contentletArea.payload,
-                    position: this.#buttonPosition
-                });
-            }
+        ];
+
+        if (this.isEnterprise()) {
+            items.push({
+                label: this.#dotMessageService.get('form'),
+                command: () => this.emitAddAction(this.addForm)
+            });
         }
-    ];
-    readonly #enterpriseItems: MenuItem[] = [
-        {
-            label: this.#dotMessageService.get('form'),
-            command: () => {
-                this.addForm.emit({
-                    ...this.contentletArea.payload,
-                    position: this.#buttonPosition
-                });
-            }
+
+        return items;
+    });
+
+    protected readonly vtlMenuItems = computed<MenuItem[]>(() => {
+        const payload = this.contentletPayload();
+        return payload.vtlFiles.map((file) => ({
+            label: file.name,
+            command: () => this.editVTL.emit(file)
+        }));
+    });
+
+    protected readonly buttonPosition = signal<'after' | 'before'>('after');
+
+    protected readonly boundsStyles = computed(() => {
+        const contentletArea = this.contentletArea();
+        return {
+            left: `${contentletArea?.x ?? 0}px`,
+            top: `${contentletArea?.y ?? 0}px`,
+            width: `${contentletArea?.width ?? 0}px`,
+            height: `${contentletArea?.height ?? 0}px`
+        };
+    });
+
+    readonly dragPayload = computed(() => {
+        const { container, contentlet } = this.contentletPayload() ?? {};
+
+        if (!container || !contentlet) {
+            return null;
         }
-    ];
 
-    readonly items = signal<MenuItem[]>(this.#comunityItems);
+        return {
+            container,
+            contentlet,
+            move: true
+        };
+    });
 
-    protected styles: Record<string, { [klass: string]: unknown }> = {};
+    constructor() {
+        effect(() => {
+            // If this changes, we need to hide the menus
+            this.contentletArea();
+            this.hideMenus();
+        });
+    }
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!changes.contentletArea) {
+    protected dragStart(event: DragEvent): void {
+        if (!this.dragImage?.nativeElement || !event.dataTransfer) {
             return;
         }
 
-        // If the contentlet is enterprise, we need to add the form option
-        if (changes.isEnterprise?.currentValue) {
-            this.items.update((items) => [...items, ...this.#enterpriseItems]);
-        }
-
-        this.hideMenus(); // We need to hide the menu if the contentlet changes
-        this.setVtlFiles(); // Set the VTL files for the component
-
-        this.ACTIONS_CONTAINER_WIDTH = this.contentletArea.payload.vtlFiles
-            ? ACTIONS_CONTAINER_WIDTH_WITH_VTL
-            : INITIAL_ACTIONS_CONTAINER_WIDTH; // Set the width of the actions container
-
-        // If the contentlet changed, we need to update the styles
-        this.styles = {
-            bounds: this.getBoundsPosition(),
-            topButton: this.getTopButtonPosition(),
-            bottomButton: this.getBottomButtonPosition(),
-            actions: this.getActionPosition()
-        };
-    }
-
-    /**
-     * Sets the VTL files for the component.
-     *
-     * @memberof EmaContentletToolsComponent
-     */
-    setVtlFiles() {
-        this.vtlFiles = this.contentletArea.payload.vtlFiles?.map((file) => ({
-            label: file.name,
-            command: () => {
-                this.editVTL.emit(file);
-            }
-        }));
-    }
-
-    dragStart(event: DragEvent): void {
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
     }
 
-    /**
-     * Set the position flag to add the contentlet before or after the current one
-     *
-     * @param {('before' | 'after')} position
-     * @memberof EmaContentletToolsComponent
-     */
-    setPositionFlag(position: 'before' | 'after'): void {
-        this.#buttonPosition = position;
+    protected setPositionFlag(position: 'before' | 'after'): void {
+        this.buttonPosition.set(position);
     }
 
-    /**
-     * Set the position for the bounds div
-     *
-     * @return {*}  {Record<string, string>}
-     * @memberof EmaContentletToolsComponent
-     */
-    private getBoundsPosition(): Record<string, string> {
-        return {
-            left: `${this.contentletArea.x}px`,
-            top: `${this.contentletArea.y}px`,
-            width: `${this.contentletArea.width}px`,
-            height: `${this.contentletArea.height}px`
-        };
-    }
-
-    /**
-     * Set the position for the top add button
-     *
-     * @return {*}  {Record<string, string>}
-     * @memberof EmaContentletToolsComponent
-     */
-    private getTopButtonPosition(): Record<string, string> {
-        const contentletCenterX = this.contentletArea.x + this.contentletArea.width / 2;
-        const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
-        const buttonTop = this.contentletArea.y - BUTTON_HEIGHT / 2;
-
-        return {
-            position: 'absolute',
-            left:
-                this.contentletArea.width < 250
-                    ? `${this.contentletArea.x + 8}px`
-                    : `${buttonLeft}px`,
-            top: `${buttonTop}px`,
-            zIndex: '1'
-        };
-    }
-
-    /**
-     * Set the position for the bottom add button
-     *
-     * @return {*}  {Record<string, string>}
-     * @memberof EmaContentletToolsComponent
-     */
-    private getBottomButtonPosition(): Record<string, string> {
-        const contentletCenterX = this.contentletArea.x + this.contentletArea.width / 2;
-        const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
-        const buttonTop = this.contentletArea.y + this.contentletArea.height - BUTTON_HEIGHT / 2;
-
-        return {
-            position: 'absolute',
-            top: `${buttonTop}px`,
-            left: `${buttonLeft}px`,
-            zIndex: '1'
-        };
-    }
-
-    /**
-     * Set the position for the action buttons
-     *
-     * @return {*}  {Record<string, string>}
-     * @memberof EmaContentletToolsComponent
-     */
-    private getActionPosition(): Record<string, string> {
-        const contentletCenterX = this.contentletArea.x + this.contentletArea.width;
-        const left = contentletCenterX - this.ACTIONS_CONTAINER_WIDTH - 8;
-        const top = this.contentletArea.y - ACTIONS_CONTAINER_HEIGHT / 2;
-
-        return {
-            position: 'absolute',
-            left: `${left}px`,
-            top: `${top}px`,
-            zIndex: '1',
-            width: `${this.ACTIONS_CONTAINER_WIDTH}px`
-        };
-    }
-
-    /**
-     * Hide all context menus when the contentlet changes
-     *
-     * @memberof EmaContentletToolsComponent
-     */
-    hideMenus() {
+    protected hideMenus(): void {
         this.menu?.hide();
         this.menuVTL?.hide();
     }
 
-    /**
-     *
-     * Checks if the container is empty, based on the identifier
-     * @readonly
-     * @type {boolean}
-     * @memberof EmaContentletToolsComponent
-     */
-    get isContainerEmpty(): boolean {
-        return this.contentletArea.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
+    private emitAddAction(emitter: EventEmitter<ActionPayload>): void {
+        const payload = this.contentletPayload();
+
+        if (!payload) {
+            return;
+        }
+
+        emitter.emit({
+            ...payload,
+            position: this.buttonPosition()
+        });
     }
 }

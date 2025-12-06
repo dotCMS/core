@@ -13,15 +13,20 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
+import { ContentletPayload } from '../../../shared/models';
 import { Orientation } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
-    contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    paletteOpen: boolean;
+    styleSchemas: StyleSchema[];
+    activeContentlet?: ContentletPayload;
+    palette: {
+        open: boolean;
+        currentTab: UVE_PALETTE_TABS;
+    };
 }
 
 export interface EditorToolbarState {
@@ -64,7 +69,6 @@ export interface EditorProps {
         pointerEvents: string;
         opacity: string;
     };
-
     contentletTools?: {
         contentletArea: ContentletArea;
         hide: boolean;
@@ -117,4 +121,16 @@ export interface UVEToolbarProps {
 export interface PersonaSelectorProps {
     pageId: string;
     value: DotCMSViewAsPersona;
+}
+
+export interface StyleSchema {
+    contentType: string;
+    [key: string]: unknown; // I need to Sync with Kevin's PR to add the specific type
+}
+
+export enum UVE_PALETTE_TABS {
+    CONTENT_TYPES = 0,
+    WIDGETS = 1,
+    FAVORITES = 2,
+    STYLE_EDITOR = 3
 }

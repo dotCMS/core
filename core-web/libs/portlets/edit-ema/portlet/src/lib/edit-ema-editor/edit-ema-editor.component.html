@@ -14,12 +14,12 @@
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
 
-@if ($editorProps().palette; as palette) {
+@if (uveStore.$canEditPage()) {
     <dot-uve-palette
-        [ngClass]="palette.paletteClass"
-        [languageId]="palette.languageId"
-        [pagePath]="palette.pagePath"
-        [variantId]="palette.variantId"
+        [ngClass]="$paletteClass()"
+        [languageId]="uveStore.$languageId()"
+        [pagePath]="uveStore.$pageURI()"
+        [variantId]="uveStore.$variantId()"
         data-testId="palette" />
 }
 
@@ -61,7 +61,7 @@
                 data-testId="progress-bar"
                 mode="indeterminate" />
         }
-        @if ($editorProps()?.contentletTools; as contentletTools) {
+        @if ($showContentletControls()) {
             <dot-ema-contentlet-tools
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
@@ -69,10 +69,10 @@
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
-                [hide]="contentletTools.hide"
-                [contentletArea]="contentletTools.contentletArea"
-                [isEnterprise]="contentletTools.isEnterprise"
-                [disableDeleteButton]="contentletTools.disableDeleteButton"
+                [contentletArea]="$contentArea()"
+                [isEnterprise]="uveStore.isEnterprise()"
+                [allowContentDelete]="$allowContentDelete()"
+                [hide]="$isDragging()"
                 data-testId="contentlet-tools" />
         }
         @if (!$toggleLockOptions()?.showOverlay && dropzone) {
