@@ -2,33 +2,28 @@
     <label [for]="property.name" dotFieldRequired>
         {{ 'contenttypes.field.properties.newRenderMode.label' | dm }}
     </label>
-    <div class="flex flex-wrap gap-3">
-        <div class="flex align-items-center">
-            <p-radioButton
-                name="newRenderMode"
-                value="iframe"
-                [formControlName]="property.name"
-                inputId="iframe" />
-            <label
-                for="iframe"
-                class="ml-2"
-                [pTooltip]="'contenttypes.field.properties.newRenderMode.component.tooltip' | dm">
-                {{ 'contenttypes.field.properties.newRenderMode.component.label' | dm }}
-            </label>
-        </div>
-
-        <div class="flex align-items-center">
-            <p-radioButton
-                name="newRenderMode"
-                value="components"
-                [formControlName]="property.name"
-                inputId="components" />
-            <label
-                for="components"
-                class="ml-2"
-                [pTooltip]="'contenttypes.field.properties.newRenderMode.iframe.tooltip' | dm">
-                {{ 'contenttypes.field.properties.newRenderMode.iframe.label' | dm }}
-            </label>
-        </div>
+    <div class="flex flex-wrap gap-3 align-items-stretch">
+        @for (renderMode of $renderModes(); track renderMode.value) {
+            <p-card
+                class="render-mode-card flex-1 min-w-12rem cursor-pointer h-full"
+                [class.selected]="value === renderMode.value"
+                (click)="choose(renderMode.value)">
+                <div class="flex align-content-center gap-3 h-full">
+                    <p-radioButton
+                        name="newRenderMode"
+                        [value]="renderMode.value"
+                        [formControlName]="property.name"
+                        [inputId]="renderMode.value" />
+                    <div class="flex flex-column gap-1 flex-1">
+                        <div class="font-bold">
+                            {{ renderMode.label | dm }}
+                        </div>
+                        <div class="text-sm">
+                            {{ renderMode.tooltip | dm }}
+                        </div>
+                    </div>
+                </div>
+            </p-card>
+        }
     </div>
 </div>

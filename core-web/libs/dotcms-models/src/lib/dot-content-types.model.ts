@@ -47,7 +47,7 @@ export const DotCMSClazzes = {
  */
 export const DotRenderModes = {
     IFRAME: 'iframe',
-    COMPONENTS: 'components'
+    COMPONENT: 'component'
 } as const;
 
 /**
