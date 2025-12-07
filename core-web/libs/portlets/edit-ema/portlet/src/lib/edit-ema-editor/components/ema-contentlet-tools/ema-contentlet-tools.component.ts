@@ -21,7 +21,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { ActionPayload, VTLFile } from '../../../shared/models';
+import { ActionPayload, ContentletPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 // TODO: Add the CSS for this
@@ -42,6 +42,7 @@ export class EmaContentletToolsComponent {
     readonly isEnterprise = input<boolean>(false, { alias: 'isEnterprise' });
     readonly allowContentDelete = input<boolean>(true, { alias: 'allowContentDelete' });
     readonly hide = input<boolean>(false, { alias: 'hide' });
+    readonly activeContentlet = input<ContentletPayload | null>(null, { alias: 'activeContentlet' });
 
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
@@ -49,6 +50,7 @@ export class EmaContentletToolsComponent {
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() selectContentlet = new EventEmitter<ContentletPayload>();
 
     @ViewChild('menu') menu?: Menu;
     @ViewChild('menuVTL') menuVTL?: Menu;
@@ -56,11 +58,12 @@ export class EmaContentletToolsComponent {
 
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly contentletPayload = computed(() => this.contentletArea()?.payload);
-    readonly hasContainer = computed(() => !!this.contentletPayload()?.container);
-    readonly hasVtlFiles = computed(() => !!this.contentletPayload()?.vtlFiles?.length);
+    readonly clientPayload = computed(() => this.contentletArea()?.payload);
+    readonly hasContainer = computed(() => !!this.clientPayload()?.container);
+    readonly hasVtlFiles = computed(() => !!this.clientPayload()?.vtlFiles?.length);
+    readonly isActive = computed(() => this.clientPayload()?.contentlet?.identifier === this.activeContentlet()?.identifier);
     readonly isContainerEmpty = computed(
-        () => this.contentletPayload()?.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
+        () => this.clientPayload()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET'
     );
 
     protected readonly deleteButtonTooltip = computed(() => {
@@ -92,9 +95,9 @@ export class EmaContentletToolsComponent {
     });
 
     protected readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const payload = this.contentletPayload();
-        return payload.vtlFiles.map((file) => ({
-            label: file.name,
+        const payload = this.clientPayload();
+        return payload?.vtlFiles?.map((file) => ({
+            label: file?.name,
             command: () => this.editVTL.emit(file)
         }));
     });
@@ -112,7 +115,7 @@ export class EmaContentletToolsComponent {
     });
 
     readonly dragPayload = computed(() => {
-        const { container, contentlet } = this.contentletPayload() ?? {};
+        const { container, contentlet } = this.clientPayload() ?? {};
 
         if (!container || !contentlet) {
             return null;
@@ -151,7 +154,7 @@ export class EmaContentletToolsComponent {
     }
 
     private emitAddAction(emitter: EventEmitter<ActionPayload>): void {
-        const payload = this.contentletPayload();
+        const payload = this.clientPayload();
 
         if (!payload) {
             return;

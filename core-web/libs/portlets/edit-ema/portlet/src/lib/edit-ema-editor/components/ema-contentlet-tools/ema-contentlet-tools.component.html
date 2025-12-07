@@ -1,9 +1,9 @@
 @let contentArea = contentletArea();
-@let currentContentletPayload = contentletPayload();
+@let payload = clientPayload();
 @let dragItem = dragPayload();
 @let isEmpty = isContainerEmpty();
 
-<div [ngStyle]="boundsStyles()" class="bounds" data-testId="bounds">
+<div [ngStyle]="boundsStyles()" class="bounds" [class.active]="isActive()" data-testId="bounds" (click)="selectContentlet.emit(payload?.contentlet)">
     @if (hasContainer()) {
         <p-button
             (click)="setPositionFlag('before'); menu.toggle($event)"
@@ -45,7 +45,7 @@
                     styleClass="p-button-rounded p-button-raised"
                     icon="pi pi-arrows-alt" />
                 <p-button
-                    (click)="delete.emit(currentContentletPayload)"
+                    (click)="delete.emit(payload)"
                     [disabled]="!allowContentDelete()"
                     [pTooltip]="deleteButtonTooltip() | dm"
                     tooltipPosition="bottom"
@@ -56,7 +56,7 @@
             }
 
             <p-button
-                (click)="edit.emit(currentContentletPayload)"
+                (click)="edit.emit(payload)"
                 data-testId="edit-button"
                 styleClass="p-button-rounded p-button-raised"
                 icon="pi pi-pencil" />
@@ -69,6 +69,6 @@
 -->
 @if (contentArea) {
     <div class="drag-image" #dragImage data-testId="drag-image">
-        {{ currentContentletPayload?.contentlet.contentType }}
+        {{ payload?.contentlet.contentType }}
     </div>
 }

@@ -81,6 +81,7 @@ import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../
 import {
     ActionPayload,
     ClientData,
+    ContentletPayload,
     DeletePayload,
     DialogAction,
     InsertPayloadFromDelete,
@@ -1560,5 +1561,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     #resetContentletArea(): void {
         this.uveStore.unsetActiveContentArea();
+    }
+
+    protected handleSelectContentlet(contentlet: ContentletPayload): void {
+        this.uveStore.setActiveContentlet(contentlet);
     }
 }

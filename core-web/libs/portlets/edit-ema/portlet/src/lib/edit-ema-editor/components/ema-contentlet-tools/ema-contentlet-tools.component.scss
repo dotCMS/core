@@ -48,10 +48,14 @@
 
 .bounds {
     position: absolute;
-    // cursor: pointer;
-    pointer-events: none;
+    cursor: pointer;
     outline: solid 2px $color-palette-primary-500;
     background-color: transparent;
+
+    &.active {
+        pointer-events: none;
+        cursor: default;
+    }
 
     .add-button-top,
     .add-button-bottom {

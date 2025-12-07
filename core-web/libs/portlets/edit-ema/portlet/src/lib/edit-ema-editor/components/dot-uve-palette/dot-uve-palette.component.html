@@ -1,4 +1,4 @@
-<p-tabView (activeIndexChange)="$currentIndex.set($event)">
+<p-tabView [activeIndex]="$currentIndex()" (onChange)="onTabChange($event)">
     <p-tabPanel>
         <ng-template pTemplate="header">
             <div class="tab-header" pTooltip="Content types" tooltipPosition="bottom">
@@ -40,7 +40,7 @@
                 [pagePath]="$pagePath()" />
         }
     </p-tabPanel>
-    @if ($isStyleEditorEnabled()) {
+    <!-- @if ($isStyleEditorEnabled()) { -->
         <p-tabPanel>
             <ng-template pTemplate="header">
                 <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
@@ -51,5 +51,5 @@
                 <pre>TESTING {{ $isStyleEditorEnabled() }}</pre>
             }
         </p-tabPanel>
-    }
+    <!-- } -->
 </p-tabView>

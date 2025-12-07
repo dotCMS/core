@@ -69,6 +69,8 @@
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
+                [activeContentlet]="uveStore.activeContentlet()"
+                (selectContentlet)="handleSelectContentlet($event)"
                 [contentletArea]="$contentArea()"
                 [isEnterprise]="uveStore.isEnterprise()"
                 [allowContentDelete]="$allowContentDelete()"

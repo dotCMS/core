@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
@@ -30,4 +30,19 @@ export class DotUvePaletteComponent {
     readonly $currentIndex = signal(0);
     // readonly PALETTE_TABS = PALETTE_TABS;
     readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
+
+    constructor() {
+        // Temporal
+        effect(() => {
+            this.$currentIndex.set(this.uveStore.palette.currentTab());
+        });
+    }
+
+    /*
+    *  Only trigged when the user changes the tab manually.
+    * @memberof DotUvePaletteComponent
+    */
+    onTabChange(event: TabViewChangeEvent) {
+        this.$currentIndex.set(event.index);
+    }
 }

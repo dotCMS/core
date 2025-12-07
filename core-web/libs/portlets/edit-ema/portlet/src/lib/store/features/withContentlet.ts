@@ -9,16 +9,17 @@ import {
 
 import { computed } from '@angular/core';
 
-import { EditorState } from './editor/models';
+import { EditorState, UVE_PALETTE_TABS } from './editor/models';
 import { PageContextComputed } from './withPageContext';
 
 import { ContentletArea } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
+import { ContentletPayload } from '../../shared/models';
 import { UVEState } from '../models';
 
 interface ActiveContentState {
-    identifier?: string;
+    activeContentlet?: ContentletPayload;
     contentArea?: ContentletArea;
 }
 
@@ -37,7 +38,7 @@ export function withActiveContent() {
             props: type<PageContextComputed>()
         },
         withState<ActiveContentState>({
-            identifier: '',
+            activeContentlet: null,
             contentArea: null
         }),
         withComputed((store) => {
@@ -81,6 +82,15 @@ export function withActiveContent() {
                 patchState(store, {
                     contentArea,
                     state: EDITOR_STATE.IDLE
+                });
+            },
+            setActiveContentlet(contentlet: ContentletPayload) {
+                patchState(store, {
+                    activeContentlet: contentlet,
+                    palette: {
+                        open: true,
+                        currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
+                    }
                 });
             },
             unsetActiveContentArea() {
