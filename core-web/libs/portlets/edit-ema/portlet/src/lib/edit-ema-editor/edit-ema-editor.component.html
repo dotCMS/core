@@ -62,15 +62,13 @@
                 mode="indeterminate" />
         }
         @if ($showContentletControls()) {
-            <dot-ema-contentlet-tools
-                (edit)="handleEditContentlet($event)"
+            <dot-uve-contentlet-tools
                 (editVTL)="handleEditVTL($event)"
-                (delete)="deleteContentlet($event)"
-                (addWidget)="dialog.addWidget($event)"
-                (addForm)="dialog.addForm($event)"
-                (addContent)="dialog.addContentlet($event)"
+                (editContent)="handleEditContentlet($event)"
+                (deleteContent)="deleteContent($event)"
+                (addContent)="handleAddContent($event)"
                 [activeContentlet]="uveStore.activeContentlet()"
-                (selectContentlet)="handleSelectContentlet($event)"
+                (selectContent)="handleSelectContent($event)"
                 [contentletArea]="$contentArea()"
                 [isEnterprise]="uveStore.isEnterprise()"
                 [allowContentDelete]="$allowContentDelete()"

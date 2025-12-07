@@ -8,7 +8,7 @@ import { MenuModule } from 'primeng/menu';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { EmaContentletToolsComponent } from './ema-contentlet-tools.component';
+import { DotUVEContentToolsComponent } from './dot-uve-content-tools.component';
 
 import { ActionPayload } from '../../../shared/models';
 
@@ -41,10 +41,10 @@ const payload: ActionPayload = {
 
 const contentletAreaMock = { x: 100, y: 100, width: 500, height: 100, payload };
 
-describe('EmaContentletToolsComponent', () => {
-    let spectator: Spectator<EmaContentletToolsComponent>;
+describe('DotUVEContentToolsComponent', () => {
+    let spectator: Spectator<DotUVEContentToolsComponent>;
     const createComponent = createComponentFactory({
-        component: EmaContentletToolsComponent,
+        component: DotUVEContentToolsComponent,
         imports: [ButtonModule, MenuModule],
         providers: [
             {

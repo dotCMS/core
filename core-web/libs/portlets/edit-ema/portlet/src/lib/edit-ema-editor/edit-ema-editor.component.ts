@@ -58,11 +58,11 @@ import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
+import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
     ClientContentletArea,
@@ -119,12 +119,12 @@ import {
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
-        EmaContentletToolsComponent,
         ProgressBarModule,
         DotResultsSeoToolComponent,
         DotUveToolbarComponent,
         DotBlockEditorSidebarComponent,
         DotUvePageVersionNotFoundComponent,
+        DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent
     ],
@@ -667,7 +667,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @param {ActionPayload} payload
      * @memberof EditEmaEditorComponent
      */
-    deleteContentlet(payload: ActionPayload) {
+    deleteContent(payload: ActionPayload) {
         const { pageContainers } = deleteContentletFromContainer(payload);
 
         this.confirmationService.confirm({
@@ -1563,7 +1563,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.unsetActiveContentArea();
     }
 
-    protected handleSelectContentlet(contentlet: ContentletPayload): void {
+    protected handleSelectContent(contentlet: ContentletPayload): void {
         this.uveStore.setActiveContentlet(contentlet);
+    }
+
+    protected handleAddContent(event: {
+        type: 'content' | 'form' | 'widget';
+        payload: ActionPayload;
+    }): void {
+        switch (event.type) {
+            case 'content':
+                this.dialog.addContentlet(event.payload);
+                break;
+            case 'form':
+                this.dialog.addForm(event.payload);
+                break;
+            case 'widget':
+                this.dialog.addWidget(event.payload);
+                break;
+        }
     }
 }

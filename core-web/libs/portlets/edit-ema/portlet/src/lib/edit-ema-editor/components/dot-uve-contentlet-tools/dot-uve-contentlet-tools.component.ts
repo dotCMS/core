@@ -28,29 +28,33 @@ import { ContentletArea } from '../ema-page-dropzone/types';
 // const MIN_WIDTH_FOR_CENTERED_BUTTON = 250;
 
 @Component({
-    selector: 'dot-ema-contentlet-tools',
+    selector: 'dot-uve-contentlet-tools',
     imports: [NgStyle, ButtonModule, MenuModule, JsonPipe, TooltipModule, DotMessagePipe],
-    templateUrl: './ema-contentlet-tools.component.html',
-    styleUrls: ['./ema-contentlet-tools.component.scss'],
+    templateUrl: './dot-uve-contentlet-tools.component.html',
+    styleUrls: ['./dot-uve-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[class.hide]': 'hide()'
     }
 })
-export class EmaContentletToolsComponent {
+export class DotUveContentletToolsComponent {
     readonly contentletArea = input.required<ContentletArea>({ alias: 'contentletArea' });
     readonly isEnterprise = input<boolean>(false, { alias: 'isEnterprise' });
     readonly allowContentDelete = input<boolean>(true, { alias: 'allowContentDelete' });
     readonly hide = input<boolean>(false, { alias: 'hide' });
-    readonly activeContentlet = input<ContentletPayload | null>(null, { alias: 'activeContentlet' });
+    readonly activeContentlet = input<ContentletPayload | null>(null, {
+        alias: 'activeContentlet'
+    });
 
-    @Output() addContent = new EventEmitter<ActionPayload>();
-    @Output() addForm = new EventEmitter<ActionPayload>();
-    @Output() addWidget = new EventEmitter<ActionPayload>();
-    @Output() edit = new EventEmitter<ActionPayload>();
+    // @Output() actions = new
     @Output() editVTL = new EventEmitter<VTLFile>();
-    @Output() delete = new EventEmitter<ActionPayload>();
-    @Output() selectContentlet = new EventEmitter<ContentletPayload>();
+    @Output() editContent = new EventEmitter<ActionPayload>();
+    @Output() deleteContent = new EventEmitter<ActionPayload>();
+    @Output() addContent = new EventEmitter<{
+        type: 'content' | 'form' | 'widget';
+        payload: ActionPayload;
+    }>();
+    @Output() selectContent = new EventEmitter<ContentletPayload>();
 
     @ViewChild('menu') menu?: Menu;
     @ViewChild('menuVTL') menuVTL?: Menu;
@@ -58,36 +62,45 @@ export class EmaContentletToolsComponent {
 
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly clientPayload = computed(() => this.contentletArea()?.payload);
-    readonly hasContainer = computed(() => !!this.clientPayload()?.container);
-    readonly hasVtlFiles = computed(() => !!this.clientPayload()?.vtlFiles?.length);
-    readonly isActive = computed(() => this.clientPayload()?.contentlet?.identifier === this.activeContentlet()?.identifier);
+    readonly contentContext = computed<ActionPayload>(() => ({
+        ...this.contentletArea()?.payload,
+        position: this.buttonPosition()
+    }));
+    readonly hasVtlFiles = computed(() => !!this.contentContext()?.vtlFiles?.length);
+    readonly isActive = computed(
+        () => this.contentContext()?.contentlet?.identifier === this.activeContentlet()?.identifier
+    );
     readonly isContainerEmpty = computed(
-        () => this.clientPayload()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET'
+        () => this.contentContext()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET'
     );
 
     protected readonly deleteButtonTooltip = computed(() => {
-        return this.allowContentDelete()
-            ? null
-            : this.#dotMessageService.get('uve.disable.delete.button.on.personalization');
+        if (!this.allowContentDelete()) {
+            return 'uve.disable.delete.button.on.personalization';
+        }
+
+        return null;
     });
 
     protected readonly menuItems = computed<MenuItem[]>(() => {
         const items = [
             {
                 label: this.#dotMessageService.get('content'),
-                command: () => this.emitAddAction(this.addContent)
+                command: () =>
+                    this.addContent.emit({ type: 'content', payload: this.contentContext() })
             },
             {
                 label: this.#dotMessageService.get('Widget'),
-                command: () => this.emitAddAction(this.addWidget)
+                command: () =>
+                    this.addContent.emit({ type: 'widget', payload: this.contentContext() })
             }
         ];
 
         if (this.isEnterprise()) {
             items.push({
                 label: this.#dotMessageService.get('form'),
-                command: () => this.emitAddAction(this.addForm)
+                command: () =>
+                    this.addContent.emit({ type: 'form', payload: this.contentContext() })
             });
         }
 
@@ -95,7 +108,7 @@ export class EmaContentletToolsComponent {
     });
 
     protected readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const payload = this.clientPayload();
+        const payload = this.contentContext();
         return payload?.vtlFiles?.map((file) => ({
             label: file?.name,
             command: () => this.editVTL.emit(file)
@@ -115,7 +128,7 @@ export class EmaContentletToolsComponent {
     });
 
     readonly dragPayload = computed(() => {
-        const { container, contentlet } = this.clientPayload() ?? {};
+        const { container, contentlet } = this.contentContext() ?? {};
 
         if (!container || !contentlet) {
             return null;
@@ -151,18 +164,5 @@ export class EmaContentletToolsComponent {
     protected hideMenus(): void {
         this.menu?.hide();
         this.menuVTL?.hide();
-    }
-
-    private emitAddAction(emitter: EventEmitter<ActionPayload>): void {
-        const payload = this.clientPayload();
-
-        if (!payload) {
-            return;
-        }
-
-        emitter.emit({
-            ...payload,
-            position: this.buttonPosition()
-        });
     }
 }

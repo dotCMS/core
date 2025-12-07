@@ -41,15 +41,15 @@
         }
     </p-tabPanel>
     <!-- @if ($isStyleEditorEnabled()) { -->
-        <p-tabPanel>
-            <ng-template pTemplate="header">
-                <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
-                    <i class="pi pi-palette"></i>
-                </div>
-            </ng-template>
-            @if ($currentIndex() === TABS_MAP.STYLE_EDITOR) {
-                <pre>TESTING {{ $isStyleEditorEnabled() }}</pre>
-            }
-        </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
+                <i class="pi pi-palette"></i>
+            </div>
+        </ng-template>
+        @if ($currentIndex() === TABS_MAP.STYLE_EDITOR) {
+            <pre>TESTING {{ $isStyleEditorEnabled() }}</pre>
+        }
+    </p-tabPanel>
     <!-- } -->
 </p-tabView>

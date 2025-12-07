@@ -39,9 +39,9 @@ export class DotUvePaletteComponent {
     }
 
     /*
-    *  Only trigged when the user changes the tab manually.
-    * @memberof DotUvePaletteComponent
-    */
+     *  Only trigged when the user changes the tab manually.
+     * @memberof DotUvePaletteComponent
+     */
     onTabChange(event: TabViewChangeEvent) {
         this.$currentIndex.set(event.index);
     }
