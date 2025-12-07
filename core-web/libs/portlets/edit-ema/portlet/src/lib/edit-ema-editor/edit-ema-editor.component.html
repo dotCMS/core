@@ -67,12 +67,10 @@
                 (editContent)="handleEditContentlet($event)"
                 (deleteContent)="deleteContent($event)"
                 (addContent)="handleAddContent($event)"
-                [activeContentlet]="uveStore.activeContentlet()"
                 (selectContent)="handleSelectContent($event)"
                 [contentletArea]="$contentArea()"
                 [isEnterprise]="uveStore.isEnterprise()"
                 [allowContentDelete]="$allowContentDelete()"
-                [hide]="$isDragging()"
                 data-testId="contentlet-tools" />
         }
         @if (!$toggleLockOptions()?.showOverlay && dropzone) {
@@ -107,3 +105,7 @@
 @if ($editorProps().showBlockEditorSidebar) {
     <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }
+
+<div class="drag-image" #dragImage data-testId="drag-image">
+    {{ $contentArea()?.payload?.contentlet?.contentType }}
+</div>

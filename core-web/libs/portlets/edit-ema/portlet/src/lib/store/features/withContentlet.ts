@@ -43,12 +43,6 @@ export function withActiveContent() {
         }),
         withComputed((store) => {
             const pageEntity = store.pageAPIResponse;
-            // This can general computed as well I think
-            const $isScrolling = computed(
-                () =>
-                    store.state() === EDITOR_STATE.SCROLLING ||
-                    store.state() === EDITOR_STATE.SCROLL_DRAG
-            );
             return {
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = pageEntity()?.numberContents;
@@ -58,9 +52,9 @@ export function withActiveContent() {
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.contentArea();
                     const canEditPage = store.$canEditPage();
-                    // const isIdle = $isIdle();
+                    const isIdle = store.state() === EDITOR_STATE.IDLE;
 
-                    return !!contentletPosition && canEditPage && !$isScrolling();
+                    return !!contentletPosition && canEditPage && isIdle;
                 })
             };
         }),

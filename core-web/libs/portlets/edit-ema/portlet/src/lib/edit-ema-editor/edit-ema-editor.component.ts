@@ -76,7 +76,12 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
+import {
+    CONTENTLET_CONTROLS_DRAG_ORIGIN,
+    DEFAULT_PERSONA,
+    IFRAME_SCROLL_ZONE,
+    PERSONA_KEY
+} from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -140,6 +145,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
+    @ViewChild('dragImage') dragImage: ElementRef<HTMLDivElement>;
 
     protected readonly uveStore = inject(UVEStore);
     private readonly dotMessageService = inject(DotMessageService);
@@ -293,6 +299,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             .subscribe((event: DragEvent) => {
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
+
+                const dragOrigin = dataset.dragOrigin;
+                const isContentletControlDrag = dragOrigin === CONTENTLET_CONTROLS_DRAG_ORIGIN;
+
+                if (isContentletControlDrag) {
+                    this.setDragImage(event);
+                    return;
+                }
 
                 // Needed to identify if a dotcms dragItem from the window left and came back
                 // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
@@ -1565,6 +1579,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected handleSelectContent(contentlet: ContentletPayload): void {
         this.uveStore.setActiveContentlet(contentlet);
+    }
+
+    /**
+     * Applies the custom drag preview used when the drag originates from the
+     * contentlet controls (identified via `data-drag-origin="contentlet-controls"`).
+     * Keeping this logic here ensures future contributors know where the drag
+     * control trigger lives.
+     *
+     * @param event - The drag event.
+     */
+    protected setDragImage(event: DragEvent): void {
+        if (!event.dataTransfer) {
+            return;
+        }
+
+        event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
     }
 
     protected handleAddContent(event: {

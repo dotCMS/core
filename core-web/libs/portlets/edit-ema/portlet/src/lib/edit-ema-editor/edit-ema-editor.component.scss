@@ -7,6 +7,19 @@
 
     // Default state (no palette)
     grid-template-columns: min-content 1fr;
+
+    .drag-image {
+        position: absolute;
+        top: -1000px;
+        left: -1000px;
+        padding: $spacing-3;
+        width: fit-content;
+        background-color: white;
+        border: 1px solid $color-palette-gray-400;
+        border-radius: $border-radius-lg;
+        z-index: 1;
+        visibility: visible;
+    }
 }
 
 // To generate the space for the palette toggle button

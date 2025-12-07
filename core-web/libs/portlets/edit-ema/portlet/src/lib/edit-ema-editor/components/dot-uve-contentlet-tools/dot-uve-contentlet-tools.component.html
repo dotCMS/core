@@ -1,14 +1,12 @@
-@let contentArea = contentletArea();
 @let context = contentContext();
 @let dragItem = dragPayload();
 @let isEmpty = isContainerEmpty();
 
 <div
     [ngStyle]="boundsStyles()"
+    (click)="selectContent.emit(context.contentlet)"
     class="bounds"
-    [class.active]="isActive()"
-    data-testId="bounds"
-    (click)="selectContent.emit(context.contentlet)">
+    data-testId="bounds">
     <p-button
         (click)="setPositionFlag('before'); menu.toggle($event)"
         class="add-button-top"
@@ -21,26 +19,25 @@
             data-testId="add-bottom-button"
             icon="pi pi-plus" />
     }
-    <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
 
     @if (!isEmpty) {
         <div class="actions" data-testId="actions">
             @if (hasVtlFiles()) {
+                <p-button
+                    (click)="menuVTL.toggle($event)"
+                    data-testId="edit-vtl-button"
+                    styleClass="p-button-rounded p-button-raised"
+                    icon="pi pi-code" />
                 <p-menu
                     [model]="vtlMenuItems()"
                     [popup]="true"
                     #menuVTL
                     appendTo="body"
                     data-testId="menu-vtl" />
-                <p-button
-                    (click)="menuVTL.toggle($event)"
-                    data-testId="edit-vtl-button"
-                    styleClass="p-button-rounded p-button-raised"
-                    icon="pi pi-code" />
             }
             <p-button
-                (dragstart)="dragStart($event)"
-                [attr.data-item]="dragItem ? (dragItem | json) : null"
+                [attr.data-item]="dragItem | json"
+                [attr.data-drag-origin]="controlsDragOrigin"
                 data-type="contentlet"
                 draggable="true"
                 data-testId="drag-button"
@@ -63,13 +60,6 @@
                 icon="pi pi-pencil" />
         </div>
     }
-</div>
 
-<!-- TODO: MOVE THIS OUTSIDE SO WE DON'T HAVE TO `HIDE` THE WHOLE COMPONENT AND WE CAN USE THE CONDITIONAL
- THIS CAN LEAVE IN THE EDITOR COMPONENT
--->
-@if (contentArea) {
-    <div class="drag-image" #dragImage data-testId="drag-image">
-        {{ context.contentlet?.contentType | dm }}
-    </div>
-}
+    <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
+</div>
