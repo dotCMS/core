@@ -21,6 +21,8 @@
         [pagePath]="uveStore.$pageURI()"
         [variantId]="uveStore.$variantId()"
         [activeTab]="uveStore.palette.currentTab()"
+        [showStyleEditorTab]="uveStore.$isStyleEditorEnabled()"
+        [styleSchema]="uveStore.$styleSchema()"
         (onTabChange)="handleTabChange($event)"
         data-testId="palette" />
 }
@@ -73,6 +75,7 @@
                 [contentletArea]="$contentArea()"
                 [isEnterprise]="uveStore.isEnterprise()"
                 [allowContentDelete]="$allowContentDelete()"
+                [showStyleEditorOption]="uveStore.$isStyleEditorEnabled()"
                 data-testId="contentlet-tools" />
         }
         @if (!$toggleLockOptions()?.showOverlay && dropzone) {

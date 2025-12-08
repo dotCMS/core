@@ -55,6 +55,14 @@ export function withActiveContent() {
                     const isIdle = store.state() === EDITOR_STATE.IDLE;
 
                     return !!contentletPosition && canEditPage && isIdle;
+                }),
+                $styleSchema: computed<unknown>(() => {
+                    const contentlet = store.activeContentlet();
+                    const styleSchemas = store.styleSchemas();
+                    const contentSchema = styleSchemas.find(
+                        (schema) => schema.contentType === contentlet?.contentType
+                    );
+                    return contentSchema;
                 })
             };
         }),

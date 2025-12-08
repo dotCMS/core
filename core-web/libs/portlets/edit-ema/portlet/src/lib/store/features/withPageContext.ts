@@ -8,12 +8,12 @@ import { UVE_MODE } from '@dotcms/types';
 import { withFlags } from './flags/withFlags';
 
 import { UVE_FEATURE_FLAGS } from '../../shared/consts';
-import { computePageIsLocked } from '../../utils';
+import { computeIsPageLocked } from '../../utils';
 import { UVEState } from '../models';
 
 export interface PageContextComputed {
     $isEditMode: Signal<boolean>;
-    $pageIsLocked: Signal<boolean>;
+    $isPageLocked: Signal<boolean>;
     $isLockFeatureEnabled: Signal<boolean>;
     $isStyleEditorEnabled: Signal<boolean>;
     $hasAccessToEditMode: Signal<boolean>;
@@ -46,8 +46,8 @@ export function withPageContext() {
             const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
             const $isLockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
             const $isStyleEditorEnabled = computed(() => flags().FEATURE_FLAG_UVE_STYLE_EDITOR);
-            const $pageIsLocked = computed(() => {
-                return computePageIsLocked(page(), currentUser(), $isLockFeatureEnabled());
+            const $isPageLocked = computed(() => {
+                return computeIsPageLocked(page(), currentUser(), $isLockFeatureEnabled());
             });
             const $hasAccessToEditMode = computed(() => {
                 const isPageEditable = page()?.canEdit;
@@ -55,14 +55,14 @@ export function withPageContext() {
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
                 ].includes(experiment()?.status);
-                return isPageEditable && !isExperimentRunning && !$pageIsLocked();
+                return isPageEditable && !isExperimentRunning && !$isPageLocked();
             });
 
             return {
                 $isLiveMode,
                 $isEditMode,
                 $isPreviewMode,
-                $pageIsLocked,
+                $isPageLocked,
                 $isLockFeatureEnabled,
                 $isStyleEditorEnabled,
                 $hasAccessToEditMode,

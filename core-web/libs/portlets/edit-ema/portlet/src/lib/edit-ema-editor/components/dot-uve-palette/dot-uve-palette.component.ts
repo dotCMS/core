@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
 
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
@@ -12,7 +13,7 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
 @Component({
     selector: 'dot-uve-palette',
-    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule],
+    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule, JsonPipe],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -22,11 +23,17 @@ export class DotUvePaletteComponent {
     $languageId = input.required<number>({ alias: 'languageId' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
     $activeTab = input<UVE_PALETTE_TABS>(UVE_PALETTE_TABS.CONTENT_TYPES, { alias: 'activeTab' });
+    $showStyleEditorTab = input<boolean>(false, { alias: 'showStyleEditorTab' });
+
+    /**
+     * The Style Schema to use for the current selected contentlet.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $styleSchema = input<any>(undefined, { alias: 'styleSchema' });
 
     @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
 
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
-    // protected readonly $isStyleEditorEnabled = this.uveStore.$isStyleEditorEnabled;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
 
     /*

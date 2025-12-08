@@ -61,6 +61,13 @@ export class DotUveContentletToolsComponent {
     readonly allowContentDelete = input<boolean>(true, { alias: 'allowContentDelete' });
 
     /**
+     * FEATURE UNDER DEVELOPMENT HIDEN BEHIND A FEATURE FLAG
+     * Controls whether the style editor option is shown.
+     * When `true`, the style editor option is shown.
+     */
+    readonly showStyleEditorOption = input<boolean>(false, { alias: 'showStyleEditorOption' });
+
+    /**
      * Emitted when the user chooses to edit a VTL file associated with the current contentlet.
      */
     @Output() editVTL = new EventEmitter<VTLFile>();
