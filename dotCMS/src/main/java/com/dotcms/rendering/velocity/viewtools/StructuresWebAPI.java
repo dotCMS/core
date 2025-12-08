@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -300,15 +301,20 @@ public class StructuresWebAPI implements ViewTool {
 	}
 
 	/**
+	 * Determines whether the Content Type whose ID is present in the HTTP Request data has the new
+	 * edit mode enabled or not. Such an ID must be available either as a request attribute or
+	 * parameter, and must be called {@code "contentTypeId"}.
 	 *
-	 * @param contentTypeId
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @return If the new edit mode is enabled in the present Content Type, returns {@code true}.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The {@link User} calling this method does not have the required
+	 *                              permissions to perform this action.
 	 */
 	public boolean isNewEditModeEnabled() throws DotDataException,
 			DotSecurityException {
-		final String contentTypeId = this.request.getParameter("contentTypeId");
+		final String contentTypeId = HttpRequestDataUtil
+				.getFromRequest(request, "contentTypeId", null);
 		if (UtilMethods.isNotSet(contentTypeId)) {
 			return false;
 		}
