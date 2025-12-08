@@ -135,7 +135,7 @@ export class DotUveContentletToolsComponent {
      * Menu items used for adding new content to the layout (content, widget, and optionally form).
      * Items are localized and wired so that selecting them emits `addContent`.
      */
-    protected readonly menuItems = computed<MenuItem[]>(() => {
+    readonly menuItems = computed<MenuItem[]>(() => {
         const items = [
             {
                 label: this.#dotMessageService.get('content'),
@@ -164,7 +164,7 @@ export class DotUveContentletToolsComponent {
      * Menu items corresponding to the VTL files of the current contentlet.
      * Each item represents a file and triggers the `editVTL` output when clicked.
      */
-    protected readonly vtlMenuItems = computed<MenuItem[]>(() => {
+    readonly vtlMenuItems = computed<MenuItem[]>(() => {
         const { vtlFiles } = this.contentContext() ?? {};
         return vtlFiles?.map((file) => ({
             label: file?.name,

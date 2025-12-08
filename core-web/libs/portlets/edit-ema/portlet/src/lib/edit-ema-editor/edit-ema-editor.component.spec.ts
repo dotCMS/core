@@ -83,11 +83,11 @@ import {
     seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
+import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
@@ -437,7 +437,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide components when the store changes', () => {
-                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools', 'dialog']; // Test id of components that should hide when entering preview modes
+                const componentsToHide = ['dropzone', 'dialog']; // Test id of components that should hide when entering preview modes
 
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
@@ -572,7 +572,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -586,7 +586,11 @@ describe('EditEmaEditorComponent', () => {
                     const saveMock = jest.spyOn(store, 'savePage');
                     const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'delete', payload);
+                    spectator.triggerEventHandler(
+                        DotUveContentletToolsComponent,
+                        'deleteContent',
+                        payload
+                    );
 
                     spectator.detectComponentChanges();
 
@@ -640,13 +644,13 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    store.setEditorContentletArea(baseContentletPayload);
+                    store.setActiveContentArea(baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
                     spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'edit',
+                        DotUveContentletToolsComponent,
+                        'editContent',
                         EDIT_ACTION_PAYLOAD_MOCK
                     );
 
@@ -917,7 +921,7 @@ describe('EditEmaEditorComponent', () => {
                             By.css('[data-testId="ema-dialog"]')
                         );
 
-                        store.setEditorContentletArea(baseContentletPayload);
+                        store.setActiveContentArea(baseContentletPayload);
 
                         editURLContentButton.triggerEventHandler('onClick', {});
 
@@ -1059,13 +1063,13 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
                         spectator.triggerEventHandler(
-                            EmaContentletToolsComponent,
-                            'edit',
+                            DotUveContentletToolsComponent,
+                            'editContent',
                             EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
                         );
 
@@ -1087,13 +1091,13 @@ describe('EditEmaEditorComponent', () => {
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
                         spectator.triggerEventHandler(
-                            EmaContentletToolsComponent,
-                            'edit',
+                            DotUveContentletToolsComponent,
+                            'editContent',
                             EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
                         );
 
@@ -1114,13 +1118,13 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
                         spectator.triggerEventHandler(
-                            EmaContentletToolsComponent,
-                            'edit',
+                            DotUveContentletToolsComponent,
+                            'editContent',
                             EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
                         );
 
@@ -1136,7 +1140,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should trigger copy contentlet dialog', () => {
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentArea(CONTENTLET_MOCK);
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
@@ -1168,7 +1172,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1178,11 +1182,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1228,7 +1231,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1238,11 +1241,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1319,7 +1321,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1329,11 +1331,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1400,7 +1401,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1410,11 +1411,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1478,7 +1478,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1488,11 +1488,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addWidget',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'widget',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1559,7 +1558,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setActiveContentArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1569,11 +1568,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addWidget',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'widget',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -3067,8 +3065,8 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectComponentChanges();
 
                     spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'edit',
+                        DotUveContentletToolsComponent,
+                        'editContent',
                         EDIT_ACTION_PAYLOAD_MOCK
                     );
 

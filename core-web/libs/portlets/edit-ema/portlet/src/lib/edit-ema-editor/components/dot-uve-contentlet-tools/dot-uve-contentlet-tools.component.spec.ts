@@ -1,470 +1,662 @@
-import { Spectator, byTestId, byText, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { MockProvider } from 'ng-mocks';
 
-import { By } from '@angular/platform-browser';
-
-import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
+import { Component } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUveContentletToolsComponent } from './dot-uve-contentlet-tools.component';
 
-import { ActionPayload } from '../../../shared/models';
+import { ContentletPayload, VTLFile } from '../../../shared/models';
+import { ContentletArea } from '../ema-page-dropzone/types';
 
-const payload: ActionPayload = {
-    language_id: '1',
-    pageContainers: [
-        {
-            identifier: 'test',
-            uuid: 'test',
-            contentletsId: []
-        }
-    ],
-    contentlet: {
-        identifier: 'contentlet-identifier-123',
-        inode: 'contentlet-inode-123',
-        title: 'Hello World',
-        contentType: 'test'
-    },
-    container: {
-        identifier: 'test',
-        acceptTypes: 'test',
-        uuid: 'test',
-        maxContentlets: 1,
-        contentletsId: [],
-        variantId: '123'
-    },
-    pageId: 'test',
-    position: 'after'
+const MOCK_CONTENTLET_AREA: ContentletArea = {
+    x: 100,
+    y: 200,
+    width: 300,
+    height: 400,
+    payload: {
+        contentlet: {
+            identifier: 'contentlet-identifier-123',
+            inode: 'inode-123',
+            title: 'Test Contentlet',
+            contentType: 'test-content-type',
+            baseType: 'CONTENT'
+        },
+        container: {
+            acceptTypes: 'test',
+            identifier: 'container-identifier-123',
+            maxContentlets: 5,
+            variantId: 'variant-123',
+            uuid: 'uuid-123',
+            contentletsId: ['contentlet-identifier-123']
+        },
+        language_id: '1',
+        pageContainers: [],
+        pageId: 'page-123',
+        vtlFiles: [
+            { inode: 'vtl-inode-1', name: 'template1.vtl' },
+            { inode: 'vtl-inode-2', name: 'template2.vtl' }
+        ]
+    }
 };
 
-const contentletAreaMock = { x: 100, y: 100, width: 500, height: 100, payload };
+const MOCK_EMPTY_CONTENTLET_AREA: ContentletArea = {
+    x: 100,
+    y: 200,
+    width: 300,
+    height: 400,
+    payload: {
+        contentlet: {
+            identifier: 'TEMP_EMPTY_CONTENTLET',
+            inode: 'temp-inode',
+            title: 'Empty',
+            contentType: 'test'
+        },
+        container: {
+            acceptTypes: 'test',
+            identifier: 'container-identifier-123',
+            maxContentlets: 5,
+            variantId: 'variant-123',
+            uuid: 'uuid-123'
+        },
+        language_id: '1',
+        pageContainers: [],
+        pageId: 'page-123'
+    }
+};
 
-describe('DotUVEContentletToolsComponent', () => {
-    let spectator: Spectator<DotUveContentletToolsComponent>;
+@Component({
+    selector: 'dot-test-host',
+    template: `
+        <div style="position: relative;">
+            <dot-uve-contentlet-tools
+                [isEnterprise]="isEnterprise"
+                [contentletArea]="contentletArea"
+                [allowContentDelete]="allowContentDelete"
+                (editVTL)="onEditVTL($event)"
+                (editContent)="onEditContent($event)"
+                (deleteContent)="onDeleteContent($event)"
+                (addContent)="onAddContent($event)"
+                (selectContent)="onSelectContent($event)" />
+        </div>
+    `,
+    standalone: true,
+    imports: [DotUveContentletToolsComponent]
+})
+class TestHostComponent {
+    isEnterprise = false;
+    contentletArea: ContentletArea = MOCK_CONTENTLET_AREA;
+    allowContentDelete = true;
+
+    onEditVTL = jest.fn();
+    onEditContent = jest.fn();
+    onDeleteContent = jest.fn();
+    onAddContent = jest.fn();
+    onSelectContent = jest.fn();
+}
+
+describe('DotUveContentletToolsComponent', () => {
+    let spectator: Spectator<TestHostComponent>;
+    let component: DotUveContentletToolsComponent;
+
     const createComponent = createComponentFactory({
-        component: DotUveContentletToolsComponent,
-        imports: [ButtonModule, MenuModule],
+        component: TestHostComponent,
         providers: [
-            {
-                provide: DotMessageService,
-                useValue: new MockDotMessageService({
-                    content: 'Content',
-                    Widget: 'Widget',
-                    form: 'Form'
-                })
-            }
-        ]
-    });
+            MockProvider(DotMessageService, {
+                get: (key: string) => {
+                    const messages: Record<string, string> = {
+                        content: 'Content',
+                        Widget: 'Widget',
+                        form: 'Form',
+                        'uve.disable.delete.button.on.personalization':
+                            'Cannot delete on personalization'
+                    };
 
-    describe('default', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
-                        contentletArea: contentletAreaMock,
-                        isEnterprise: false
-                    }
-                }))
-        );
-
-        it("should have a drag image with the contentlet's contentType", () => {
-            expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
-        });
-
-        it('should close menus when contentlet @input was changed', () => {
-            const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
-
-            const hideMenu = jest.spyOn(spectator.component.menu, 'hide');
-            // Open menu
-            spectator.click(byTestId('menu-add'));
-
-            //Change contentlet hover
-            spectator.setInput('contentletArea', {
-                ...contentletAreaMock,
-                payload: {
-                    ...contentletAreaMock.payload,
-                    contentlet: {
-                        ...contentletAreaMock.payload.contentlet,
-                        identifier: 'new-identifier'
-                    }
+                    return messages[key] || key;
                 }
-            });
+            })
+        ],
+        detectChanges: false
+    });
 
-            expect(spyHideMenus).toHaveBeenCalled();
-            expect(hideMenu).toHaveBeenCalled();
+    beforeEach(() => {
+        spectator = createComponent();
+        component = spectator.query(DotUveContentletToolsComponent);
+        spectator.detectChanges();
+    });
+
+    describe('Rendering', () => {
+        it('should create the component', () => {
+            expect(component).toBeTruthy();
         });
 
-        describe('events', () => {
-            it('should emit delete on delete button click', () => {
-                const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-                spectator.click(byTestId('delete-button'));
-                expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
-            });
+        it('should render bounds container with correct styles', () => {
+            const bounds = spectator.query(byTestId('bounds'));
+            expect(bounds).toBeTruthy();
 
-            it('should emit edit on edit button click', () => {
-                const deleteSpy = jest.spyOn(spectator.component.edit, 'emit');
-                spectator.click(byTestId('edit-button'));
-                expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
-            });
+            const styles = (bounds as HTMLElement).style;
+            expect(styles.left).toBe('100px');
+            expect(styles.top).toBe('200px');
+            expect(styles.width).toBe('300px');
+            expect(styles.height).toBe('400px');
+        });
 
-            it('should set drag image', () => {
-                const dragButton = spectator.debugElement.query(
-                    By.css('[data-testId="drag-button"]')
+        it('should render add buttons', () => {
+            const addTopButton = spectator.query(byTestId('add-top-button'));
+            const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+
+            expect(addTopButton).toBeTruthy();
+            expect(addBottomButton).toBeTruthy();
+        });
+
+        it('should render actions container when not empty', () => {
+            const actions = spectator.query(byTestId('actions'));
+            expect(actions).toBeTruthy();
+        });
+
+        it('should NOT render actions container when container is empty', () => {
+            spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+            spectator.detectChanges();
+
+            const actions = spectator.query(byTestId('actions'));
+            expect(actions).toBeFalsy();
+        });
+
+        it('should NOT render bottom add button when container is empty', () => {
+            spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+            spectator.detectChanges();
+
+            const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+            expect(addBottomButton).toBeFalsy();
+        });
+    });
+
+    describe('Actions buttons', () => {
+        it('should render edit VTL button when vtl files exist', () => {
+            const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+            expect(editVtlButton).toBeTruthy();
+        });
+
+        it('should NOT render edit VTL button when no vtl files', () => {
+            const areaWithoutVtl = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
+            };
+            spectator.component.contentletArea = areaWithoutVtl;
+            spectator.detectChanges();
+
+            const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+            expect(editVtlButton).toBeFalsy();
+        });
+
+        it('should render drag button', () => {
+            const dragButton = spectator.query(byTestId('drag-button'));
+            expect(dragButton).toBeTruthy();
+        });
+
+        it('should render delete button', () => {
+            const deleteButton = spectator.query(byTestId('delete-button'));
+            expect(deleteButton).toBeTruthy();
+        });
+
+        it('should render edit button', () => {
+            const editButton = spectator.query(byTestId('edit-button'));
+            expect(editButton).toBeTruthy();
+        });
+
+        it('should disable delete button when allowContentDelete is false', () => {
+            spectator.component.allowContentDelete = false;
+            spectator.detectChanges();
+
+            const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+            const button = deleteButton.querySelector('button');
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should enable delete button when allowContentDelete is true', () => {
+            spectator.component.allowContentDelete = true;
+            spectator.detectChanges();
+
+            const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+            const button = deleteButton.querySelector('button');
+            expect(button?.disabled).toBe(false);
+        });
+    });
+
+    describe('Outputs', () => {
+        describe('selectContent', () => {
+            it('should emit selectContent when clicking bounds', () => {
+                const bounds = spectator.query(byTestId('bounds')) as Element;
+                spectator.click(bounds);
+
+                expect(spectator.component.onSelectContent).toHaveBeenCalledWith(
+                    MOCK_CONTENTLET_AREA.payload.contentlet
                 );
-
-                const dragImageSpy = jest.fn();
-
-                spectator.triggerEventHandler(dragButton, 'dragstart', {
-                    dataTransfer: {
-                        setDragImage: dragImageSpy
-                    }
-                });
-
-                expect(dragImageSpy).toHaveBeenCalled();
             });
 
-            describe('top button', () => {
-                it('should open menu on add button click', () => {
-                    spectator.click(byTestId('add-top-button'));
-                    expect(spectator.query('.p-menu-overlay')).not.toBeNull();
-                });
+            it('should emit selectContent when clicking palette button', () => {
+                const paletteButton = spectator.query(byTestId('palette-button')) as Element;
+                spectator.click(paletteButton);
 
-                it('should call addContent on Content option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addContent, 'emit');
-                    spectator.click(byTestId('add-top-button'));
-                    spectator.click(byText('Content'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'before'
-                    } as ActionPayload);
-                });
-
-                it('should not call addForm on Form option click', () => {
-                    spectator.click(byTestId('add-bottom-button'));
-                    const formOption = spectator.query(byText('Form'));
-                    expect(formOption).toBeNull();
-                });
-
-                it('should call addWidget on Widget option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
-                    spectator.click(byTestId('add-top-button'));
-                    spectator.click(byText('Widget'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'before'
-                    } as ActionPayload);
-                });
-
-                describe('isEnterprise', () => {
-                    beforeEach(
-                        () =>
-                            (spectator = createComponent({
-                                props: {
-                                    contentletArea: contentletAreaMock,
-                                    isEnterprise: true
-                                }
-                            }))
-                    );
-
-                    it('should render form option', () => {
-                        spectator.click(byTestId('add-top-button'));
-                        expect(spectator.query(byText('Form'))).toBeDefined();
-                    });
-
-                    it('should call addForm on Form option click', () => {
-                        const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
-                        spectator.click(byTestId('add-top-button'));
-                        spectator.click(byText('Form'));
-                        expect(addSpy).toHaveBeenCalledWith({
-                            ...contentletAreaMock.payload,
-                            position: 'before'
-                        } as ActionPayload);
-                    });
-                });
+                expect(spectator.component.onSelectContent).toHaveBeenCalledWith(
+                    MOCK_CONTENTLET_AREA.payload.contentlet
+                );
             });
+        });
 
-            describe('bottom button', () => {
-                it('should open menu on button click', () => {
-                    spectator.click(byTestId('add-bottom-button'));
-                    expect(spectator.query('.p-menu-overlay')).not.toBeNull();
-                });
+        describe('editContent', () => {
+            it('should emit editContent with context when clicking edit button', () => {
+                const editButton = spectator.query(byTestId('edit-button')) as Element;
+                spectator.click(editButton);
 
-                it('should call addContent on Content option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addContent, 'emit');
-                    spectator.click(byTestId('add-bottom-button'));
-                    spectator.click(byText('Content'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'after'
-                    } as ActionPayload);
-                });
-
-                it('should not call addForm on Form option click', () => {
-                    spectator.click(byTestId('add-bottom-button'));
-                    const formOption = spectator.query(byText('Form'));
-                    expect(formOption).toBeNull();
-                });
-
-                it('should call addWidget on Widget option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
-                    spectator.click(byTestId('add-bottom-button'));
-                    spectator.click(byText('Widget'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'after'
-                    } as ActionPayload);
-                });
-
-                describe('isEnterprise', () => {
-                    beforeEach(
-                        () =>
-                            (spectator = createComponent({
-                                props: {
-                                    contentletArea: contentletAreaMock,
-                                    isEnterprise: true
-                                }
-                            }))
-                    );
-
-                    it('should render form option', () => {
-                        spectator.click(byTestId('add-bottom-button'));
-                        expect(spectator.query(byText('Form'))).toBeDefined();
-                    });
-
-                    it('should call addForm on Form option click', () => {
-                        const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
-                        spectator.click(byTestId('add-bottom-button'));
-                        spectator.click(byText('Form'));
-                        expect(addSpy).toHaveBeenCalledWith({
-                            ...contentletAreaMock.payload,
-                            position: 'after'
-                        } as ActionPayload);
-                    });
+                expect(spectator.component.onEditContent).toHaveBeenCalledWith({
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    position: 'after'
                 });
             });
         });
 
-        describe('position', () => {
-            it('should set position for bounds div', () => {
-                const bounds = spectator.query(byTestId('bounds'));
-                expect(bounds).toHaveStyle({
-                    left: '100px',
-                    top: '100px',
-                    width: '500px',
-                    height: '100px'
-                });
-            });
+        describe('deleteContent', () => {
+            it('should emit deleteContent with context when clicking delete button', () => {
+                const deleteButton = spectator.query(byTestId('delete-button')) as Element;
+                spectator.click(deleteButton);
 
-            it('should set center position for top button', () => {
-                const topButton = spectator.query(byTestId('add-top-button'));
-                expect(topButton).toHaveStyle({
-                    position: 'absolute',
-                    left: '330px',
-                    top: '80px',
-                    zIndex: '1'
-                });
-            });
-
-            it('should set center position for bottom button', () => {
-                const topButton = spectator.query(byTestId('add-bottom-button'));
-                expect(topButton).toHaveStyle({
-                    position: 'absolute',
-                    top: '180px',
-                    left: '330px',
-                    zIndex: '1'
-                });
-            });
-
-            it('should set right position for actions', () => {
-                const topButton = spectator.query(byTestId('actions'));
-                expect(topButton).toHaveStyle({
-                    position: 'absolute',
-                    left: '464px',
-                    top: '80px',
-                    zIndex: '1',
-                    width: '128px'
+                expect(spectator.component.onDeleteContent).toHaveBeenCalledWith({
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    position: 'after'
                 });
             });
         });
 
-        describe('delete button', () => {
-            it('should enable delete button when disableDeleteButton is false', () => {
-                spectator.setInput('disableDeleteButton', null);
+        describe('addContent', () => {
+            it('should emit addContent with type "content" when selecting content from menu', () => {
+                const addTopButton = spectator.query(byTestId('add-top-button'));
+                const button = addTopButton?.querySelector('button');
+                spectator.click(button as Element);
                 spectator.detectChanges();
-                // In Angular 20, ng-reflect-* attributes are not available
-                // Verify the disabled property on the p-button component instance
-                const deleteButtonDebugElement = spectator.debugElement.query(
-                    By.css('[data-testId="delete-button"]')
-                );
-                const deleteButtonComponent = deleteButtonDebugElement?.componentInstance;
-                expect(deleteButtonComponent?.disabled).toBe(false);
+
+                // Get the menu items and trigger the first command
+                const menuItems = component.menuItems();
+                menuItems[0].command?.({});
+
+                expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                    type: 'content',
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        position: 'before'
+                    }
+                });
             });
 
-            it('should disable delete button when disableDeleteButton is true', () => {
-                spectator.setInput('disableDeleteButton', 'Cannot delete this contentlet');
+            it('should emit addContent with type "widget" when selecting widget from menu', () => {
+                const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+                const button = addBottomButton?.querySelector('button');
+                spectator.click(button as Element);
                 spectator.detectChanges();
-                // In Angular 20, ng-reflect-* attributes are not available
-                // Verify the disabled property on the p-button component instance
-                const deleteButtonDebugElement = spectator.debugElement.query(
-                    By.css('[data-testId="delete-button"]')
-                );
-                const deleteButtonComponent = deleteButtonDebugElement?.componentInstance;
-                expect(deleteButtonComponent?.disabled).toBe(true);
-            });
-        });
-    });
 
-    describe('small contentlet', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
-                        contentletArea: {
-                            ...contentletAreaMock,
-                            width: 180
-                        }
+                // Get the menu items and trigger the second command
+                const menuItems = component.menuItems();
+                menuItems[1].command?.({});
+
+                expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                    type: 'widget',
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        position: 'after'
                     }
-                }))
-        );
-
-        describe('position', () => {
-            it('should set left position for top button', () => {
-                const topButton = spectator.query(byTestId('add-top-button'));
-                expect(topButton).toHaveStyle({
-                    position: 'absolute',
-                    left: '108px',
-                    top: '80px',
-                    zIndex: '1'
                 });
             });
 
-            it('should set center position for bottom button', () => {
-                const topButton = spectator.query(byTestId('add-bottom-button'));
-                expect(topButton).toHaveStyle({
-                    position: 'absolute',
-                    top: '180px',
-                    left: '170px',
-                    zIndex: '1'
+            it('should emit addContent with type "form" when enterprise and selecting form from menu', () => {
+                spectator.component.isEnterprise = true;
+                spectator.detectChanges();
+
+                const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+                const button = addBottomButton?.querySelector('button');
+                spectator.click(button as Element);
+                spectator.detectChanges();
+
+                // Get the menu items and trigger the third command (form)
+                const menuItems = component.menuItems();
+                menuItems[2].command?.({});
+
+                expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                    type: 'form',
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        position: 'after'
+                    }
+                });
+            });
+        });
+
+        describe('editVTL', () => {
+            it('should emit editVTL with file when clicking VTL menu item', () => {
+                const expectedFile: VTLFile = {
+                    inode: 'vtl-inode-1',
+                    name: 'template1.vtl'
+                };
+
+                const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+                const button = editVtlButton?.querySelector('button');
+                spectator.click(button as Element);
+                spectator.detectChanges();
+
+                // Get the VTL menu items and trigger the first command
+                const vtlMenuItems = component.vtlMenuItems();
+                vtlMenuItems[0].command?.({});
+
+                expect(spectator.component.onEditVTL).toHaveBeenCalledWith(expectedFile);
+            });
+
+            it('should emit editVTL with second file when clicking second VTL menu item', () => {
+                const expectedFile: VTLFile = {
+                    inode: 'vtl-inode-2',
+                    name: 'template2.vtl'
+                };
+
+                const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+                const button = editVtlButton?.querySelector('button');
+                spectator.click(button as Element);
+                spectator.detectChanges();
+
+                // Get the VTL menu items and trigger the second command
+                const vtlMenuItems = component.vtlMenuItems();
+                vtlMenuItems[1].command?.({});
+
+                expect(spectator.component.onEditVTL).toHaveBeenCalledWith(expectedFile);
+            });
+        });
+    });
+
+    describe('Computed signals', () => {
+        describe('contentContext', () => {
+            it('should combine contentletArea payload with buttonPosition', () => {
+                expect(component.contentContext()).toEqual({
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    position: 'after'
+                });
+            });
+
+            it('should update position to "before" when clicking top add button', () => {
+                const addTopButton = spectator.query(byTestId('add-top-button'));
+                const button = addTopButton?.querySelector('button');
+                spectator.click(button as Element);
+                spectator.detectChanges();
+
+                expect(component.contentContext().position).toBe('before');
+            });
+
+            it('should update position to "after" when clicking bottom add button', () => {
+                const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+                const button = addBottomButton?.querySelector('button');
+                spectator.click(button as Element);
+                spectator.detectChanges();
+
+                expect(component.contentContext().position).toBe('after');
+            });
+        });
+
+        describe('hasVtlFiles', () => {
+            it('should return true when vtl files exist', () => {
+                expect(component.hasVtlFiles()).toBe(true);
+            });
+
+            it('should return false when no vtl files', () => {
+                const areaWithoutVtl = {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
+                };
+                spectator.component.contentletArea = areaWithoutVtl;
+                spectator.detectChanges();
+
+                expect(component.hasVtlFiles()).toBe(false);
+            });
+
+            it('should return false when vtl files is empty array', () => {
+                const areaWithEmptyVtl = {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: [] }
+                };
+                spectator.component.contentletArea = areaWithEmptyVtl;
+                spectator.detectChanges();
+
+                expect(component.hasVtlFiles()).toBe(false);
+            });
+        });
+
+        describe('isContainerEmpty', () => {
+            it('should return false for regular contentlet', () => {
+                expect(component.isContainerEmpty()).toBe(false);
+            });
+
+            it('should return true when contentlet identifier is TEMP_EMPTY_CONTENTLET', () => {
+                spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+                spectator.detectChanges();
+
+                expect(component.isContainerEmpty()).toBe(true);
+            });
+        });
+
+        describe('delete button behavior', () => {
+            it('should enable delete button when delete is allowed', () => {
+                spectator.component.allowContentDelete = true;
+                spectator.detectChanges();
+
+                const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+                const button = deleteButton?.querySelector('button');
+
+                expect(button?.disabled).toBe(false);
+            });
+
+            it('should disable delete button when delete is not allowed', () => {
+                spectator.component.allowContentDelete = false;
+                spectator.detectChanges();
+
+                const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+                const button = deleteButton?.querySelector('button');
+
+                expect(button?.disabled).toBe(true);
+            });
+        });
+
+        describe('menuItems', () => {
+            it('should have 2 items (content, widget) when not enterprise', () => {
+                spectator.component.isEnterprise = false;
+                spectator.detectChanges();
+
+                const items = component.menuItems();
+                expect(items).toHaveLength(2);
+                expect(items[0].label).toBe('Content');
+                expect(items[1].label).toBe('Widget');
+            });
+
+            it('should have 3 items (content, widget, form) when enterprise', () => {
+                spectator.component.isEnterprise = true;
+                spectator.detectChanges();
+
+                const items = component.menuItems();
+                expect(items).toHaveLength(3);
+                expect(items[0].label).toBe('Content');
+                expect(items[1].label).toBe('Widget');
+                expect(items[2].label).toBe('Form');
+            });
+        });
+
+        describe('vtlMenuItems', () => {
+            it('should create menu items from vtl files', () => {
+                const items = component.vtlMenuItems();
+                expect(items).toHaveLength(2);
+                expect(items[0].label).toBe('template1.vtl');
+                expect(items[1].label).toBe('template2.vtl');
+            });
+
+            it('should return undefined when no vtl files', () => {
+                const areaWithoutVtl = {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
+                };
+                spectator.component.contentletArea = areaWithoutVtl;
+                spectator.detectChanges();
+
+                expect(component.vtlMenuItems()).toBeUndefined();
+            });
+        });
+
+        describe('boundsStyles', () => {
+            it('should apply correct inline styles from contentletArea dimensions', () => {
+                const bounds = spectator.query(byTestId('bounds')) as HTMLElement;
+
+                expect(bounds.style.left).toBe('100px');
+                expect(bounds.style.top).toBe('200px');
+                expect(bounds.style.width).toBe('300px');
+                expect(bounds.style.height).toBe('400px');
+            });
+
+            it('should default to 0px when contentletArea values are undefined', () => {
+                const areaWithUndefined = { ...MOCK_CONTENTLET_AREA, x: undefined };
+                spectator.component.contentletArea = areaWithUndefined as ContentletArea;
+                spectator.detectChanges();
+
+                const bounds = spectator.query(byTestId('bounds')) as HTMLElement;
+                expect(bounds.style.left).toBe('0px');
+            });
+        });
+
+        describe('dragPayload', () => {
+            it('should return valid drag payload when contentlet exists', () => {
+                const payload = component.dragPayload();
+                expect(payload).toEqual({
+                    container: MOCK_CONTENTLET_AREA.payload.container,
+                    contentlet: MOCK_CONTENTLET_AREA.payload.contentlet,
+                    showLabelImage: true,
+                    move: true
+                });
+            });
+
+            it('should return null values when contentlet does not exist', () => {
+                const areaWithoutContentlet = {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        contentlet: undefined as unknown as ContentletPayload
+                    }
+                };
+                spectator.component.contentletArea = areaWithoutContentlet;
+                spectator.detectChanges();
+
+                const payload = component.dragPayload();
+                expect(payload).toEqual({
+                    container: null,
+                    contentlet: null,
+                    showLabelImage: false,
+                    move: false
                 });
             });
         });
     });
 
-    describe('empty container', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
-                        contentletArea: {
-                            ...contentletAreaMock,
-                            width: 180,
-                            payload: {
-                                contentlet: {
-                                    identifier: 'TEMP_EMPTY_CONTENTLET',
-                                    inode: 'Fake inode',
-                                    title: 'Fake title',
-                                    contentType: 'Fake content type'
-                                },
-                                container: {
-                                    uuid: '',
-                                    acceptTypes: '',
-                                    identifier: '',
-                                    maxContentlets: 0,
-                                    variantId: ''
-                                },
-                                language_id: '1',
-                                pageContainers: [],
-                                pageId: '1',
-                                position: 'after'
-                            }
-                        }
-                    }
-                }))
-        );
+    describe('Position flag behavior', () => {
+        it('should emit addContent with "before" position when clicking top add button', () => {
+            const addTopButton = spectator.query(byTestId('add-top-button'));
+            const button = addTopButton?.querySelector('button');
+            spectator.click(button as Element);
+            spectator.detectChanges();
 
-        it('should only render the add button', () => {
-            expect(spectator.query(byTestId('add-top-button'))).toBeDefined();
-            expect(spectator.query(byTestId('add-bottom-button'))).toBeNull();
-            expect(spectator.query(byTestId('actions'))).toBeNull();
+            // Get the menu items and trigger the first command
+            const menuItems = component.menuItems();
+            menuItems[0].command?.({});
+
+            expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                type: 'content',
+                payload: expect.objectContaining({
+                    position: 'before'
+                })
+            });
         });
-    });
 
-    describe('Contentlet outside container', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
-                        contentletArea: {
-                            ...contentletAreaMock,
-                            width: 180,
-                            payload: {
-                                contentlet: {
-                                    identifier: 'contentlet-identifier-123',
-                                    inode: 'contentlet-inode-123',
-                                    title: 'Hello World',
-                                    contentType: 'test'
-                                },
-                                container: null,
-                                language_id: '1',
-                                pageContainers: [],
-                                pageId: '1',
-                                position: 'after'
-                            }
-                        }
-                    }
-                }))
-        );
+        it('should emit addContent with "after" position when clicking bottom add button', () => {
+            const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+            const button = addBottomButton?.querySelector('button');
+            spectator.click(button as Element);
+            spectator.detectChanges();
 
-        it('should only render the edit button', () => {
-            expect(spectator.query(byTestId('edit-button'))).toBeDefined();
+            // Get the menu items and trigger the first command
+            const menuItems = component.menuItems();
+            menuItems[0].command?.({});
 
-            const toBeNullTestIDs = [
-                'add-top-button',
-                'add-bottom-button',
-                'menu-add',
-                'delete-button',
-                'drag-button',
-                'edit-vtl-button',
-                'menu-vtl'
-            ];
-
-            toBeNullTestIDs.forEach((testId) => {
-                expect(spectator.query(byTestId(testId))).toBeNull();
+            expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                type: 'content',
+                payload: expect.objectContaining({
+                    position: 'after'
+                })
             });
         });
     });
 
-    describe('VTL contentlet', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    props: {
-                        contentletArea: {
-                            ...contentletAreaMock,
-                            payload: {
-                                ...contentletAreaMock.payload,
-                                vtlFiles: [
-                                    {
-                                        inode: '123',
-                                        name: 'test.vtl'
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }))
-        );
+    describe('Enterprise features', () => {
+        it('should show form option in menu when enterprise', () => {
+            spectator.component.isEnterprise = true;
+            spectator.detectChanges();
 
-        it('should set right position for actions', () => {
-            const topButton = spectator.query(byTestId('actions'));
-            expect(topButton).toHaveStyle({
-                position: 'absolute',
-                left: '414px',
-                top: '80px',
-                zIndex: '1'
-            });
+            const menuItems = component.menuItems();
+            const formItem = menuItems.find((item) => item.label === 'Form');
+            expect(formItem).toBeDefined();
+        });
+
+        it('should NOT show form option in menu when not enterprise', () => {
+            spectator.component.isEnterprise = false;
+            spectator.detectChanges();
+
+            const menuItems = component.menuItems();
+            const formItem = menuItems.find((item) => item.label === 'Form');
+            expect(formItem).toBeUndefined();
+        });
+    });
+
+    describe('Effect behavior', () => {
+        it('should hide menus when contentletArea changes', () => {
+            // Open a menu by clicking the add button
+            const addTopButton = spectator.query(byTestId('add-top-button'));
+            const button = addTopButton?.querySelector('button');
+            spectator.click(button as Element);
+            spectator.detectChanges();
+
+            // Verify menu is open by checking if it exists in the DOM
+            let menu = document.querySelector('.p-menu');
+            expect(menu).toBeTruthy();
+
+            // Change contentletArea - this should trigger the effect that hides menus
+            const newArea = { ...MOCK_CONTENTLET_AREA, x: 500 };
+            spectator.component.contentletArea = newArea;
+            spectator.detectChanges();
+
+            // Menu should be hidden now
+            menu = document.querySelector('.p-menu.p-component-overlay-visible');
+            expect(menu).toBeFalsy();
+        });
+    });
+
+    describe('Drag attributes', () => {
+        it('should set correct drag attributes on drag button', () => {
+            const dragButton = spectator.query(byTestId('drag-button')) as HTMLElement;
+
+            expect(dragButton?.getAttribute('draggable')).toBe('true');
+            expect(dragButton?.getAttribute('data-type')).toBe('contentlet');
+            expect(dragButton?.getAttribute('data-drag-origin')).toBe('contentlet-controls');
+        });
+
+        it('should include drag payload in data-item attribute', () => {
+            const dragButton = spectator.query(byTestId('drag-button')) as HTMLElement;
+            const dataItem = dragButton?.getAttribute('data-item');
+
+            expect(dataItem).toBeTruthy();
+            const parsedItem = JSON.parse(dataItem);
+            expect(parsedItem.contentlet).toEqual(MOCK_CONTENTLET_AREA.payload.contentlet);
+            expect(parsedItem.container).toEqual(MOCK_CONTENTLET_AREA.payload.container);
+            expect(parsedItem.showLabelImage).toBe(true);
+            expect(parsedItem.move).toBe(true);
         });
     });
 });

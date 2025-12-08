@@ -91,7 +91,6 @@ export class DotEditorModeSelectorComponent {
     readonly $modeGuardEffect = effect(() => {
         const currentMode = untracked(() => this.$currentMode());
         const hasAccessToEditMode = this.#store.$hasAccessToEditMode();
-
         const isToggleUnlockEnabled = this.#store.$isLockFeatureEnabled();
 
         if (isToggleUnlockEnabled) {

@@ -48,8 +48,6 @@ const initialState: UVEState = {
     },
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
-    canEditPage: true,
-    pageIsLocked: true,
     isClientReady: false,
     viewParams: {
         orientation: undefined,
