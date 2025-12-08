@@ -4,7 +4,8 @@ import {
     StyleEditorSectionSchema,
     StyleEditorField,
     StyleEditorForm,
-    StyleEditorSection
+    StyleEditorSection,
+    InputType
 } from './types';
 
 /**
@@ -15,6 +16,8 @@ import {
  * - Normalizes string options to { label, value } objects for dropdown, radio, and checkboxGroup fields
  * - Preserves additional properties like backgroundImage, width, and height for radio options
  * - Sets default values for optional properties (e.g., inputType defaults to 'text')
+ *
+ * @experimental This method is experimental and may be subject to change.
  *
  * @param field - The field definition to normalize
  * @returns The normalized field schema ready to be sent to UVE
@@ -40,12 +43,13 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
 
     // Handle type-specific properties
     if (field.type === 'input') {
-        config.inputType = field.inputType || 'text';
-        config.placeholder = field.placeholder;
-        config.min = field.min;
-        config.max = field.max;
-        config.pattern = field.pattern;
-        config.defaultValue = field.defaultValue;
+        config.inputType = field.inputType as unknown as InputType;
+        config.placeholder = field.placeholder as unknown as string;
+        config.defaultValue = field.defaultValue as unknown as
+            | string
+            | number
+            | boolean
+            | Record<string, boolean>;
     }
 
     if (field.type === 'dropdown' || field.type === 'radio') {
@@ -65,10 +69,6 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
         config.defaultValue = field.defaultValue;
     }
 
-    if (field.type === 'switch') {
-        config.defaultValue = field.defaultValue;
-    }
-
     return { ...base, config };
 }
 
@@ -78,6 +78,8 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
  * Handles both single-column and multi-column layouts:
  * - Single column (columns = 1): Wraps the fields array in a nested array structure
  * - Multi-column (columns > 1): Validates that fields is already a multi-dimensional array
+ *
+ * @experimental This method is experimental and may be subject to change.
  *
  * @param section - The section definition to normalize
  * @returns The normalized section schema with fields organized by columns
@@ -135,6 +137,8 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
  * This is the main entry point for converting a developer-friendly form definition
  * into the normalized schema structure. It processes all sections and their fields,
  * applying normalization rules to ensure consistency.
+ *
+ * @experimental This method is experimental and may be subject to change.
  *
  * @param form - The complete form definition to normalize
  * @returns The normalized form schema ready to be sent to UVE
