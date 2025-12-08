@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep {
@@ -9,14 +11,14 @@
     }
 
     .error-messsage__container {
-        min-height: $spacing-4;
+        min-height: spacing.$spacing-4;
     }
 }
 
 .url-mode__form {
     display: flex;
     flex-direction: column;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     justify-content: center;
     align-items: flex-start;
 }
@@ -24,14 +26,14 @@
 .url-mode__input-container {
     width: 100%;
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     flex-direction: column;
 }
 
 .url-mode__actions {
     width: 100%;
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     align-items: center;
     justify-content: flex-end;
 }

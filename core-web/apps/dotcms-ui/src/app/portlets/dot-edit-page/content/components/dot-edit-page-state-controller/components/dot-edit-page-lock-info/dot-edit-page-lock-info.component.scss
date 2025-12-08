@@ -1,14 +1,16 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/fonts";
 
 :host {
-    font-size: $font-size-sm;
-    color: $color-palette-gray-700;
+    font-size: fonts.$font-size-sm;
+    color: colors.$color-palette-gray-700;
 }
 
 .page-info {
     &__locked-by-message {
-        color: $red;
+        color: colors.$red;
     }
 
     &__locked-by-message--blink {

@@ -1,3 +1,6 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -12,13 +15,13 @@
 }
 
 .toggle-button {
-    color: $white;
+    color: colors.$white;
     background: transparent;
     &:enabled {
         background: transparent;
     }
     &:hover {
-        background-color: $color-palette-white-op-30;
+        background-color: colors.$color-palette-white-op-30;
     }
 
     &:focus {
@@ -31,13 +34,13 @@
     .dot-nav__button-wrapper {
         $button-width: 4.375rem;
         align-items: center;
-        background-color: $brand-background;
+        background-color: colors.$brand-background;
         display: flex;
         height: $toolbar-height;
         justify-content: center;
         width: $button-width;
         min-width: $button-width;
-        color: $white;
+        color: colors.$white;
     }
     .dot-nav__logo-wrapper {
         align-items: center;
@@ -47,7 +50,7 @@
         position: relative;
         flex: 1;
         &.whitelabel {
-            padding: $spacing-1 $spacing-1 $spacing-1 0;
+            padding: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 0;
         }
         .dot-nav__logo--whitelabel {
             @extend #logo;

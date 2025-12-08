@@ -1,8 +1,12 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
-    background-color: $white;
+    background-color: colors.$white;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -11,25 +15,25 @@
 
 dot-whats-changed,
 .dot-edit__iframe {
-    background: $white;
-    border-radius: $border-radius-xs;
-    box-shadow: $shadow-m;
+    background: colors.$white;
+    border-radius: common.$border-radius-xs;
+    box-shadow: shadows.$shadow-m;
     flex-grow: 1;
     overflow: hidden;
 }
 
 .dot-edit__page-wrapper {
-    background-color: $white;
+    background-color: colors.$white;
     height: 100%;
     max-width: 100%;
-    padding: $spacing-5;
+    padding: spacing.$spacing-5;
     width: 100%;
     overflow: auto;
 }
 
 .device-info {
     align-self: center;
-    padding: $spacing-1 0;
+    padding: spacing.$spacing-1 0;
 }
 
 .dot-edit-content__wrapper {
@@ -51,15 +55,15 @@ dot-whats-changed,
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    border: solid 1px $color-palette-gray-300;
+    border: solid 1px colors.$color-palette-gray-300;
     height: 100%;
 
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;
         border-radius: 10px;
-        box-shadow: $shadow-l;
-        background: $white;
-        background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
+        box-shadow: shadows.$shadow-l;
+        background: colors.$white;
+        background: linear-gradient(135deg, colors.$white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
         margin: 0 auto;
         width: fit-content;
@@ -107,9 +111,9 @@ dot-whats-changed,
         height: 35px;
         left: -28px;
         position: absolute;
-        background: $white;
+        background: colors.$white;
         top: 134px;
-        border: 1px solid $color-palette-gray-300;
+        border: 1px solid colors.$color-palette-gray-300;
         border-radius: 6px 0 0 6px;
         cursor: pointer;
         z-index: 2;

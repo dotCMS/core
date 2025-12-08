@@ -1,27 +1,30 @@
 @use "variables" as *;
 @use "dotcms-theme/utils/theme-variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: block;
 }
 
 .banner {
-    background: $color-palette-primary-200;
-    color: $color-palette-primary-900;
-    padding: $spacing-2 $spacing-4;
-    font-size: $font-size-sm;
+    background: colors.$color-palette-primary-200;
+    color: colors.$color-palette-primary-900;
+    padding: spacing.$spacing-2 spacing.$spacing-4;
+    font-size: fonts.$font-size-sm;
     position: absolute;
     width: 100%;
-    margin-left: -$spacing-5;
+    margin-left: -(spacing.$spacing-5);
     top: 5.5rem;
-    left: $spacing-5;
+    left: spacing.$spacing-5;
     display: flex;
     align-items: center;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 
     a {
-        color: $color-palette-primary-900;
+        color: colors.$color-palette-primary-900;
     }
 
     /* Adjust the size of the checkbox */

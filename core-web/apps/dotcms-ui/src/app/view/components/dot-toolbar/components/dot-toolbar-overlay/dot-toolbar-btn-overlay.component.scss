@@ -1,3 +1,6 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/common";
+
 @use "variables" as *;
 
 :host {
@@ -6,11 +9,11 @@
 }
 
 .dot-toolbar__badge {
-    background-color: $color-accessible-text-fuchsia;
-    border-radius: $notification-dot-badge-size;
-    color: $white;
-    width: $notification-dot-badge-size;
-    height: $notification-dot-badge-size;
+    background-color: colors.$color-accessible-text-fuchsia;
+    border-radius: common.$notification-dot-badge-size;
+    color: colors.$white;
+    width: common.$notification-dot-badge-size;
+    height: common.$notification-dot-badge-size;
     position: absolute;
     left: 28px;
     top: 2px;
@@ -18,7 +21,7 @@
 
 .overlay-btn.p-button-text {
     &:hover {
-        background-color: $color-palette-primary-op-10;
+        background-color: colors.$color-palette-primary-op-10;
     }
     &:focus {
         outline: none;
@@ -27,6 +30,6 @@
         outline: none;
     }
     &.isActive {
-        background-color: $color-palette-primary-op-20;
+        background-color: colors.$color-palette-primary-op-20;
     }
 }

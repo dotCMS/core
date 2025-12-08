@@ -1,3 +1,8 @@
+@use "../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -12,7 +17,7 @@
     display: flex;
     align-items: stretch;
     width: 100%;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
     min-height: 80px;
 }
 
@@ -28,30 +33,30 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid $white;
+    border: 2px solid colors.$white;
     position: relative;
     z-index: 2;
-    background: $color-palette-gray-400;
+    background: colors.$color-palette-gray-400;
     flex-shrink: 0;
 
     &--live {
-        background: $color-palette-green;
-        box-shadow: 0 0 0 2px $color-palette-green-op-20;
+        background: colors.$color-palette-green;
+        box-shadow: 0 0 0 2px colors.$color-palette-green-op-20;
     }
 
     &--draft {
-        background: $color-palette-yellow;
-        box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
+        background: colors.$color-palette-yellow;
+        box-shadow: 0 0 0 2px colors.$color-palette-yellow-op-20;
     }
 }
 
 .dot-history-timeline-item__connector {
     width: 2px;
-    background: $color-palette-gray-300;
+    background: colors.$color-palette-gray-300;
     flex-shrink: 0;
 
     &--top {
-        height: $spacing-3 + $spacing-0;
+        height: spacing.$spacing-3 + spacing.$spacing-0;
     }
 
     &--bottom {
@@ -68,19 +73,19 @@
 }
 
 .dot-history-timeline-item__content-wrapper {
-    background: $color-palette-gray-100;
-    border-radius: $border-radius-md;
-    padding: $spacing-1;
+    background: colors.$color-palette-gray-100;
+    border-radius: common.$border-radius-md;
+    padding: spacing.$spacing-1;
     position: relative;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     transition: background-color $basic-speed ease;
     flex: 1;
 
     &:hover {
-        background: $color-palette-primary-op-10;
+        background: colors.$color-palette-primary-op-10;
 
         .dot-history-timeline-item__actions {
             visibility: visible;
@@ -88,7 +93,7 @@
     }
 
     &--active {
-        background: $color-palette-primary-op-30 !important;
+        background: colors.$color-palette-primary-op-30 !important;
 
         .dot-history-timeline-item__actions {
             visibility: visible;
@@ -100,26 +105,26 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }
 
 .dot-history-timeline-item__header {
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     align-items: center;
-    line-height: $spacing-4;
+    line-height: spacing.$spacing-4;
 }
 
 .dot-history-timeline-item__time-section {
     display: flex;
     align-items: center;
-    gap: $spacing-2;
+    gap: spacing.$spacing-2;
 }
 
 .dot-history-timeline-item__time-relative {
-    font-weight: $font-weight-medium-bold;
-    color: $black;
-    font-size: $font-size-md;
+    font-weight: fonts.$font-weight-medium-bold;
+    color: colors.$black;
+    font-size: fonts.$font-size-md;
 }
 
 .dot-history-timeline-item__actions {
@@ -133,7 +138,7 @@
 .dot-history-timeline-item__user-section {
     display: flex;
     align-items: center;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
 }
 
 ::ng-deep .dot-history-timeline-item__avatar.p-avatar {
@@ -142,13 +147,13 @@
     border-radius: 50%;
 
     .p-avatar-text {
-        font-size: $font-size-md;
+        font-size: fonts.$font-size-md;
     }
 }
 
 .dot-history-timeline-item__user-name {
-    color: $color-palette-gray-800;
-    font-size: $font-size-md;
+    color: colors.$color-palette-gray-800;
+    font-size: fonts.$font-size-md;
 }
 
 ::ng-deep .dot-history-timeline-item__tooltip.p-tooltip {
@@ -156,7 +161,7 @@
         transform: translateX(-55px);
 
         .p-tooltip-arrow {
-            border-bottom-color: $color-palette-primary-200;
+            border-bottom-color: colors.$color-palette-primary-200;
             border-top-color: transparent;
             border-left-color: transparent;
             border-right-color: transparent;
@@ -165,7 +170,7 @@
     }
 
     .p-tooltip-text {
-        background: $color-palette-primary-200;
+        background: colors.$color-palette-primary-200;
         padding: 0;
         min-width: 220px;
         max-width: 220px;
@@ -173,25 +178,25 @@
 }
 
 .dot-history-timeline-item__overlay-content {
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     display: flex;
     flex-direction: column;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
 }
 
 .dot-history-timeline-item__overlay-title {
     margin: 0;
-    color: $color-palette-gray-800;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-bold;
+    color: colors.$color-palette-gray-800;
+    font-size: fonts.$font-size-sm;
+    font-weight: fonts.$font-weight-bold;
     word-wrap: break-word;
 }
 
 .dot-history-timeline-item__overlay-list {
-    padding-left: $spacing-3;
+    padding-left: spacing.$spacing-3;
     margin: 0;
 
     li {
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
     }
 }

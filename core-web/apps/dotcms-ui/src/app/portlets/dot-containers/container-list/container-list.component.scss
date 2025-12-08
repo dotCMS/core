@@ -1,3 +1,7 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -21,7 +25,7 @@
             flex-direction: column;
             height: 100%;
             justify-content: space-between;
-            background: $white;
+            background: colors.$white;
         }
     }
 }
@@ -30,25 +34,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 0 $spacing-3;
+    margin: 0 spacing.$spacing-3;
 
     .container-listing__filter-controls {
         display: flex;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
     }
 }
 
 .container-listing__path {
-    color: $color-palette-gray-500;
+    color: colors.$color-palette-gray-500;
 }
 
 dot-content-type-selector {
-    margin-right: $spacing-3;
+    margin-right: spacing.$spacing-3;
 }
 
 .listing-datatable__empty {
     display: flex;
     justify-content: center;
-    font-size: $font-size-xl;
-    margin-top: $spacing-4;
+    font-size: fonts.$font-size-xl;
+    margin-top: spacing.$spacing-4;
 }

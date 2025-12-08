@@ -1,3 +1,7 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -11,7 +15,7 @@
             h4,
             h5,
             h6 {
-                font-size: $font-size-lmd;
+                font-size: fonts.$font-size-lmd;
                 font-weight: bold;
             }
 
@@ -32,14 +36,14 @@
     }
 
     dot-icon {
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
 
         &.info {
             color: $info;
         }
 
         &.error {
-            color: $error;
+            color: colors.$error;
         }
 
         &.warning {
@@ -47,11 +51,11 @@
         }
 
         &.success {
-            color: $success;
+            color: colors.$success;
         }
 
         ::ng-deep i {
-            font-size: $font-size-xxxl;
+            font-size: fonts.$font-size-xxxl;
         }
     }
 }

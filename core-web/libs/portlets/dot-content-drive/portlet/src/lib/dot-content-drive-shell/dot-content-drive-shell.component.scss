@@ -1,3 +1,8 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -19,7 +24,7 @@
             width: 43.75rem; //700px
 
             // Let the content to set the desired padding to not mess with overlaps and overflows
-            padding: $spacing-4 0;
+            padding: spacing.$spacing-4 0;
             padding-top: 0;
         }
     }
@@ -33,8 +38,8 @@
     justify-content: center;
     align-items: center;
 
-    font-size: $font-size-xl;
-    font-weight: $font-weight-medium-bold;
+    font-size: fonts.$font-size-xl;
+    font-weight: fonts.$font-weight-medium-bold;
 }
 
 dot-content-drive-toolbar {
@@ -48,10 +53,10 @@ p-messages {
 .tree-selector {
     grid-area: tree;
     overflow: hidden;
-    transition: all $content-drive-animation-speed $content-drive-animation-ease;
+    transition: all common.$content-drive-animation-speed common.$content-drive-animation-ease;
     visibility: hidden;
     width: 0;
-    border-right: 1px solid $color-palette-gray-300;
+    border-right: 1px solid colors.$color-palette-gray-300;
 
     &.expanded {
         /* This is the width according to figma */

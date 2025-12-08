@@ -1,9 +1,13 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 .table-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
+    font-size: fonts.$font-size-lmd;
+    font-weight: fonts.$font-weight-bold;
+    color: colors.$black;
     line-height: $line-height-relative;
     margin: 0;
 }
@@ -42,11 +46,11 @@
 ::ng-deep .p-datatable {
     &.p-datatable-scrollable {
         .p-datatable-scrollable-wrapper {
-            border-radius: $border-radius-md;
+            border-radius: common.$border-radius-md;
         }
 
         .p-datatable-scrollable-body {
-            border-radius: 0 0 $border-radius-md $border-radius-md;
+            border-radius: 0 0 common.$border-radius-md common.$border-radius-md;
         }
     }
 

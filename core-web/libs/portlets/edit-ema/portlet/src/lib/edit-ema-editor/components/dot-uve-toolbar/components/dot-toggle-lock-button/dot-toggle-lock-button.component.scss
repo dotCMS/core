@@ -1,3 +1,7 @@
+@use "../../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -8,37 +12,37 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     border-radius: 0.375rem; // 6px
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid $color-palette-gray-400;
+    border: 1px solid colors.$color-palette-gray-400;
     outline: none;
-    font-weight: $font-weight-semi-bold;
-    gap: $spacing-1;
-    font-size: $font-size-sm;
-    height: $spacing-5;
+    font-weight: fonts.$font-weight-semi-bold;
+    gap: spacing.$spacing-1;
+    font-size: fonts.$font-size-sm;
+    height: spacing.$spacing-5;
 
     &--locked {
-        background: $color-palette-blue-tint;
-        color: $color-palette-blue;
+        background: colors.$color-palette-blue-tint;
+        color: colors.$color-palette-blue;
     }
 
     &--unlocked {
-        background: $white;
-        color: $color-palette-gray-900;
-        border-color: $color-palette-gray-400;
+        background: colors.$white;
+        color: colors.$color-palette-gray-900;
+        border-color: colors.$color-palette-gray-400;
 
         &:hover:not(:disabled) {
-            background: $color-palette-gray-200;
+            background: colors.$color-palette-gray-200;
         }
     }
 
     &--disabled {
         opacity: 0.6;
         cursor: not-allowed;
-        background: $white;
-        color: $color-palette-gray-900;
+        background: colors.$white;
+        color: colors.$color-palette-gray-900;
     }
 
     &:disabled {

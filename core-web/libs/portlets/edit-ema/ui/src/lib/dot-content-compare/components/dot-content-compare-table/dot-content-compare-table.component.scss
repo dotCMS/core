@@ -1,3 +1,7 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dot-content-compare-table__controls {
@@ -5,10 +9,10 @@
     align-items: center;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 
     p-dropdown {
-        margin-right: $spacing-3;
+        margin-right: spacing.$spacing-3;
     }
 
     button {
@@ -17,14 +21,14 @@
 }
 
 .dot-content-compare-table__title {
-    color: $black;
-    font-size: $font-size-lmd;
+    color: colors.$black;
+    font-size: fonts.$font-size-lmd;
 }
 
 :host ::ng-deep .p-datatable {
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid $color-palette-gray-300;
+    border: 1px solid colors.$color-palette-gray-300;
 
     table {
         border-collapse: separate;
@@ -34,17 +38,17 @@
 
         th {
             border-top: none;
-            border-bottom: 1px solid $color-palette-gray-300;
-            border-right: 1px solid $color-palette-gray-300;
-            background-color: $color-palette-gray-100;
-            padding: $spacing-4;
+            border-bottom: 1px solid colors.$color-palette-gray-300;
+            border-right: 1px solid colors.$color-palette-gray-300;
+            background-color: colors.$color-palette-gray-100;
+            padding: spacing.$spacing-4;
             font-weight: bold;
-            font-size: $font-size-lmd;
+            font-size: fonts.$font-size-lmd;
             text-align: left;
 
             &:first-child {
                 border-left: none;
-                background-color: $color-palette-gray-100;
+                background-color: colors.$color-palette-gray-100;
                 min-width: 12.5rem;
                 width: 12.5rem;
             }
@@ -56,16 +60,16 @@
 
         td {
             vertical-align: top;
-            border-bottom: 1px solid $color-palette-gray-300;
-            border-right: 1px solid $color-palette-gray-300;
-            padding: $spacing-4;
+            border-bottom: 1px solid colors.$color-palette-gray-300;
+            border-right: 1px solid colors.$color-palette-gray-300;
+            padding: spacing.$spacing-4;
             background-color: white;
             text-align: left;
 
             &:first-child {
                 border-left: none;
                 font-weight: 500;
-                background-color: $color-palette-gray-100;
+                background-color: colors.$color-palette-gray-100;
                 min-width: 12.5rem;
                 width: 12.5rem;
             }
@@ -89,13 +93,13 @@
             position: sticky;
             top: 0;
             z-index: 1;
-            background-color: $color-palette-gray-100;
+            background-color: colors.$color-palette-gray-100;
         }
 
         // Highlight differences in text content
         .p-datatable-tbody tr > td {
             &:last-child {
-                padding-right: $spacing-4;
+                padding-right: spacing.$spacing-4;
             }
 
             // Style for highlighted differences
@@ -121,8 +125,8 @@
 
             th,
             td {
-                border-right: 1px solid $color-palette-gray-300;
-                border-bottom: 1px solid $color-palette-gray-300;
+                border-right: 1px solid colors.$color-palette-gray-300;
+                border-bottom: 1px solid colors.$color-palette-gray-300;
             }
         }
     }

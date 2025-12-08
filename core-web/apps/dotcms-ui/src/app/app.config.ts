@@ -1,5 +1,4 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import Lara from '@primeuix/themes/lara';
 import { MarkdownModule } from 'ngx-markdown';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -21,6 +20,7 @@ import { ENV_PROVIDERS } from './providers';
 import { DotCustomReuseStrategyService } from './shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { SharedModule } from './shared/shared.module';
+import { CustomLaraPreset } from './theme.config';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
 
 export const appConfig: ApplicationConfig = {
@@ -29,7 +29,7 @@ export const appConfig: ApplicationConfig = {
         provideAnimationsAsync(),
         providePrimeNG({
             theme: {
-                preset: Lara,
+                preset: CustomLaraPreset,
                 options: {
                     darkModeSelector: false
                 }

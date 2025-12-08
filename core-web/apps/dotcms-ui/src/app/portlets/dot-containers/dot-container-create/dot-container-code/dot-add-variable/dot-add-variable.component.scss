@@ -1,28 +1,32 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep {
     .p-dataview-content {
         padding: 0;
-        margin-bottom: $spacing-4;
+        margin-bottom: spacing.$spacing-4;
     }
 }
 
 .dot-add-variable-list__item {
     display: flex;
     flex-basis: 100%;
-    padding: $spacing-2 $spacing-6;
+    padding: spacing.$spacing-2 spacing.$spacing-6;
     justify-content: space-between;
     align-items: center;
 
     .item__info {
         .info__title {
-            font-size: $font-size-md;
+            font-size: fonts.$font-size-md;
             margin: 0;
         }
 
         .info__label {
             margin: 0;
-            color: $color-palette-gray-700;
+            color: colors.$color-palette-gray-700;
         }
     }
 

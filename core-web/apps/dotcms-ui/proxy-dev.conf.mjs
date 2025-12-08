@@ -1,9 +1,19 @@
 /* eslint-env es6 */
 /* eslint-disable */
 export default [
+    // 1. Dedicated WebSocket Proxy (Must be first)
+    {
+        context: ['/api/ws'],
+        target: 'http://localhost:8080',
+        ws: true,
+        secure: false,
+        changeOrigin: true,
+        logLevel: 'debug'
+    },
+    // 2. Main API Proxy
     {
         context: [
-            '/api',
+            '/api', // Note: /api/ws will be caught by the rule above first
             '/c/portal',
             '/html',
             '/dwr',
@@ -25,12 +35,11 @@ export default [
         ],
         target: 'http://localhost:8080',
         secure: false,
-        changeOrigin: true, // Essential for Firefox compatibility
+        changeOrigin: true,
         logLevel: 'debug',
-        timeout: 300000, // 5 minute timeout for large file uploads
-        proxyTimeout: 300000, // Proxy-specific timeout for large file uploads
-        ws: true, // Enable WebSocket proxying for real-time features
-        // CRITICAL: followRedirects must be false to avoid 10MB body limit from follow-redirects library
+        timeout: 300000,
+        proxyTimeout: 300000,
+        ws: false, // Explicitly disable WS here to avoid EPIPE errors on HTTP requests
         followRedirects: false,
         headers: {
             Connection: 'keep-alive'

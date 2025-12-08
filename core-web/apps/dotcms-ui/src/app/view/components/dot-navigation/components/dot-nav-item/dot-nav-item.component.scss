@@ -1,17 +1,21 @@
 @use "variables" as *;
-@import "mixins";
-@import "dotcms-theme/utils/theme-variables";
+@use "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: block;
-    font-size: $font-size-md;
+    font-size: fonts.$font-size-md;
 
     &.dot-nav-item__collapsed {
         position: relative;
         transition: background-color $basic-speed ease;
 
         &:hover {
-            background-color: $color-palette-white-op-10;
+            background-color: colors.$color-palette-white-op-10;
 
             dot-sub-nav {
                 height: auto !important;
@@ -39,7 +43,7 @@
             background: var(--color-palette-primary-800);
             border-bottom-right-radius: 0.1875rem;
             border-top-right-radius: 0.1875rem;
-            box-shadow: $shadow-s;
+            box-shadow: shadows.$shadow-s;
             transform: translateY(1rem);
         }
 
@@ -56,7 +60,7 @@
         }
 
         .dot-nav__item--active {
-            background-color: $color-palette-primary;
+            background-color: colors.$color-palette-primary;
         }
     }
 }
@@ -81,7 +85,7 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    padding: $spacing-3 0 $spacing-2 $spacing-4;
+    padding: spacing.$spacing-3 0 spacing.$spacing-2 spacing.$spacing-4;
 }
 
 .dot-nav__item-toggle {
@@ -89,13 +93,13 @@
     cursor: pointer;
     display: flex;
     justify-content: center;
-    padding: $spacing-3 $spacing-4 $spacing-2 0;
+    padding: spacing.$spacing-3 spacing.$spacing-4 spacing.$spacing-2 0;
     position: relative;
 }
 
 .dot-nav__item-label {
     flex: 1;
-    margin-left: $spacing-3;
+    margin-left: spacing.$spacing-3;
     word-break: break-word;
     transition: opacity $basic-speed ease;
 }
@@ -103,11 +107,11 @@
 .dot-nav__item-arrow {
     opacity: 1;
     position: absolute;
-    right: $spacing-2;
+    right: spacing.$spacing-2;
     top: 50%;
     transform: translateY(-50%);
     transition: opacity $basic-speed ease;
-    font-size: $font-size-sm;
+    font-size: fonts.$font-size-sm;
 }
 
 dot-nav-icon {

@@ -1,12 +1,14 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     ::ng-deep {
         dot-site-selector {
             span.p-button-text {
                 max-width: 300px;
-                @include truncate-text;
+                @include mixins.truncate-text;
             }
         }
     }
@@ -19,7 +21,7 @@ p-toolbar::ng-deep {
         background-color: $toolbar-background;
         color: $toolbar-color;
         height: $toolbar-height;
-        padding: 0 $spacing-3 0 0;
+        padding: 0 spacing.$spacing-3 0 0;
     }
 
     .p-toolbar-group-left {
@@ -32,12 +34,12 @@ dot-toolbar-user {
 }
 
 .toolbar__crumbtrail {
-    margin-left: $spacing-4;
+    margin-left: spacing.$spacing-4;
 }
 
 .toolbar__sep {
-    border-left: solid 1px $color-palette-primary;
-    margin: 0 $spacing-1 0 $spacing-4 !important;
+    border-left: solid 1px colors.$color-palette-primary;
+    margin: 0 spacing.$spacing-1 0 spacing.$spacing-4 !important;
     display: block;
     height: 40px;
 }

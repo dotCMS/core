@@ -1,9 +1,11 @@
+@use "../../../../../../../../../../dotcms-scss/shared/colors";
+
 @use "variables" as *;
 :host {
     display: flex;
 }
 
 .p-button-text.selected:enabled {
-    background-color: $color-palette-primary-200;
-    color: $color-palette-primary-800;
+    background-color: colors.$color-palette-primary-200;
+    color: colors.$color-palette-primary-800;
 }

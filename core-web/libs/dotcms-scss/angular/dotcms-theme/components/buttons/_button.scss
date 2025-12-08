@@ -1,13 +1,17 @@
 @use "sass:math";
 @use "variables" as *;
-@import "mixins";
-@import "common";
+@use "mixins";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 // Shared all buttons
 .p-button {
     border: none;
-    color: $white;
-    border-radius: $border-radius-md; // Required for all buttons
+    color: colors.$white;
+    border-radius: common2.$border-radius-md; // Required for all buttons
 
     .p-button-label {
         color: inherit;
@@ -22,10 +26,10 @@
 
     // Shared but not icon only
     &:not(.p-button-icon-only) {
-        font-size: $font-size-md;
-        gap: $spacing-1;
-        height: $field-height-md;
-        padding: 0 $spacing-3;
+        font-size: fonts.$font-size-md;
+        gap: spacing.$spacing-1;
+        height: common2.$field-height-md;
+        padding: 0 spacing.$spacing-3;
         text-transform: capitalize;
 
         &.p-confirm-dialog-accept,
@@ -61,7 +65,7 @@
 
     // Button Links
     &.p-button-link {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
         background: transparent;
         border: transparent;
     }
@@ -72,7 +76,7 @@
     }
 
     &.p-button-tertiary {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
         @extend #main-tertiary-severity;
     }
 
@@ -170,28 +174,28 @@ a.p-button.p-button-text {
 
 // Icon Only Sizes
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
-    height: $field-height-md;
-    width: $field-height-md;
-    min-width: $field-height-md;
+    height: common2.$field-height-md;
+    width: common2.$field-height-md;
+    min-width: common2.$field-height-md;
     border: none;
 
     &.p-button-sm {
-        height: $field-height-sm;
-        width: $field-height-sm;
-        min-width: $field-height-sm;
+        height: common2.$field-height-sm;
+        width: common2.$field-height-sm;
+        min-width: common2.$field-height-sm;
     }
 }
 
 .p-button-icon-only.p-button-icon-outline {
-    border: 1.5px solid $color-palette-primary;
+    border: 1.5px solid colors.$color-palette-primary;
 }
 
 // Misc
 .p-button.p-button-vertical {
     height: 100%;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
     margin-bottom: 0;
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
 }
 
 .p-button-rounded {

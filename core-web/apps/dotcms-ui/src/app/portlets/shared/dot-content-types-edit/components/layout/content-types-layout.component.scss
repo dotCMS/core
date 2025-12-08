@@ -1,8 +1,11 @@
 @use "variables" as *;
-@import "mixins";
-@import "dotcms-theme/utils/theme-variables";
+@use "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
-$top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-main-height);
+$top-height: ($toolbar-height + theme-variables.$tabview-nav-height + $dot-secondary-toolbar-main-height);
 
 :host {
     ::ng-deep {
@@ -12,14 +15,14 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
         }
 
         > p-tabview > .p-tabview > .p-tabview-nav {
-            background-color: $color-palette-gray-200;
+            background-color: colors.$color-palette-gray-200;
         }
 
         .content-type__fields-sidebar {
-            background-color: $white;
+            background-color: colors.$white;
 
             .p-splitbutton {
-                border-bottom: solid 1px $color-palette-gray-300;
+                border-bottom: solid 1px colors.$color-palette-gray-300;
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -31,13 +34,13 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
                 .p-splitbutton-defaultbutton,
                 .p-splitbutton-menubutton {
-                    padding: $spacing-2 $spacing-3;
+                    padding: spacing.$spacing-2 spacing.$spacing-3;
                     background: none;
-                    color: $font-color-base;
+                    color: fonts.$font-color-base;
 
                     .pi {
-                        color: $font-color-base;
-                        font-size: $font-size-md;
+                        color: fonts.$font-color-base;
+                        font-size: fonts.$font-size-md;
                     }
                 }
 
@@ -46,14 +49,14 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                         text-align: left;
                         text-transform: none;
                         font-weight: normal;
-                        color: $font-color-base;
+                        color: fonts.$font-color-base;
                     }
 
                     .p-button-icon-left {
-                        color: $color-palette-gray-700;
+                        color: colors.$color-palette-gray-700;
                         width: 1.125rem;
-                        font-size: $font-size-md;
-                        margin-right: $spacing-3;
+                        font-size: fonts.$font-size-md;
+                        margin-right: spacing.$spacing-3;
                     }
                 }
             }
@@ -61,17 +64,17 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     dot-iframe {
-        padding: $spacing-3 0;
+        padding: spacing.$spacing-3 0;
         height: calc(100vh - #{$top-height});
     }
 
     .content-type__fields-main {
-        background-color: $color-palette-gray-200;
+        background-color: colors.$color-palette-gray-200;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
         overflow: auto;
-        padding: $spacing-3;
+        padding: spacing.$spacing-3;
     }
 
     .content-type__fields-layout {
@@ -81,7 +84,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     .content-type__fields-sidebar {
-        border-left: solid 1px $color-palette-gray-200;
+        border-left: solid 1px colors.$color-palette-gray-200;
         width: 15rem;
         display: flex;
         flex-direction: column;
@@ -93,15 +96,15 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     .content-type-fields-row {
-        background-color: $white;
+        background-color: colors.$white;
     }
 
     dot-api-link {
-        margin-left: $spacing-3;
+        margin-left: spacing.$spacing-3;
     }
 
     .content-type__title {
-        font-size: $font-size-lmd;
+        font-size: fonts.$font-size-lmd;
         display: flex;
         flex-flow: column wrap;
 
@@ -111,7 +114,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
             dot-icon {
                 align-items: center;
-                margin-right: $spacing-2;
+                margin-right: spacing.$spacing-2;
             }
 
             ::ng-deep {
@@ -131,7 +134,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
                     }
 
                     button {
-                        margin-left: $spacing-2;
+                        margin-left: spacing.$spacing-2;
                     }
                 }
             }
@@ -139,27 +142,27 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
         h4 {
             margin: 0;
-            color: $black;
+            color: colors.$black;
             font-weight: normal;
         }
     }
 
     .content-type__dot-separator {
-        font-size: $font-size-lg;
+        font-size: fonts.$font-size-lg;
         margin: 0 4px;
         vertical-align: middle;
     }
 
     .content-type__info {
         align-items: center;
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
         display: flex;
-        font-size: $font-size-sm;
-        margin-left: $spacing-4;
-        gap: $spacing-1;
+        font-size: fonts.$font-size-sm;
+        margin-left: spacing.$spacing-4;
+        gap: spacing.$spacing-1;
     }
 
     .content-type__add-to-menu {
-        margin-right: $spacing-2;
+        margin-right: spacing.$spacing-2;
     }
 }

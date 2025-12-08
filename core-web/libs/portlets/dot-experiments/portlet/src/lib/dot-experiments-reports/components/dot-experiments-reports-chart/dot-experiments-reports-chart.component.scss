@@ -1,9 +1,13 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 :host {
     width: 100%;
 }
 .chart__header {
-    padding-right: $spacing-1;
+    padding-right: spacing.$spacing-1;
 }
 
 .empty__wrapper {
@@ -17,14 +21,14 @@
 }
 
 .empty__icon {
-    color: $color-accessible-text-red;
+    color: colors.$color-accessible-text-red;
 }
 
 .empty__message {
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
 }
 
 .empty__description {
-    font-size: $font-size-md;
-    color: $color-palette-gray-600;
+    font-size: fonts.$font-size-md;
+    color: colors.$color-palette-gray-600;
 }

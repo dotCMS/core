@@ -1,9 +1,12 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 p-avatar {
     cursor: pointer;
-    padding: $spacing-2 0;
+    padding: spacing.$spacing-2 0;
 }
 
 ::ng-deep #toolbar-header:hover {
@@ -15,19 +18,19 @@ p-avatar {
     .toolbar-user__header {
         display: flex;
         align-items: center;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
     }
     .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
-        font-size: $font-size-lmd;
-        color: $black;
+        font-size: fonts.$font-size-lmd;
+        color: colors.$black;
     }
 }
 
 ::ng-deep {
     .toolbar-user__menu.p-menu {
-        margin-top: $spacing-0;
+        margin-top: spacing.$spacing-0;
         &.p-menu-overlay {
             width: 17rem;
         }
@@ -38,22 +41,22 @@ p-avatar {
     display: block;
 
     .p-menu {
-        margin-top: $spacing-0;
+        margin-top: spacing.$spacing-0;
     }
 
     .p-menu .p-menu-separator {
-        margin: $spacing-1;
+        margin: spacing.$spacing-1;
     }
 
     .toolbar-user__logout .p-menuitem-link .p-menuitem-text {
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
     }
 
     .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-text {
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
     }
 
     .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-icon {
-        color: $color-palette-gray-700;
+        color: colors.$color-palette-gray-700;
     }
 }

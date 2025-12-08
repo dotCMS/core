@@ -1,3 +1,7 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,7 +9,7 @@
     grid-template-columns: 1fr auto;
     grid-template-rows: 100%;
     height: 100%;
-    background-color: $white;
+    background-color: colors.$white;
 
     router-outlet {
         display: none;
@@ -43,20 +47,20 @@
 
     .p-confirm-dialog {
         .p-dialog-content {
-            padding: 0 $spacing-6 $spacing-6 $spacing-6;
+            padding: 0 spacing.$spacing-6 spacing.$spacing-6 spacing.$spacing-6;
         }
     }
 
     dot-experiments-shell dot-experiments-list {
         .dot-experiment {
-            padding: $spacing-3 $spacing-5 $spacing-5 $spacing-5 !important;
+            padding: spacing.$spacing-3 spacing.$spacing-5 spacing.$spacing-5 spacing.$spacing-5 !important;
         }
     }
 }
 
 p-messages {
     grid-column: -1 / 1;
-    border: solid 1px $color-palette-gray-200;
+    border: solid 1px colors.$color-palette-gray-200;
     border-top: none;
 }
 
@@ -65,19 +69,19 @@ p-messages {
     line-height: 1.5;
 
     strong {
-        font-weight: $font-weight-medium-bold;
+        font-weight: fonts.$font-weight-medium-bold;
     }
 }
 
 .unlock-link {
     display: inline-flex;
     align-items: center;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
     background: none;
     border: none;
     padding: 0;
     margin: 0;
     cursor: pointer;
     text-decoration: underline;
-    color: $color-palette-blue;
+    color: colors.$color-palette-blue;
 }

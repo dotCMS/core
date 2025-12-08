@@ -1,9 +1,12 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 :host {
-    border-right: 1px solid $color-palette-gray-200;
+    border-right: 1px solid colors.$color-palette-gray-200;
     position: relative;
-    background: $color-palette-surface-light; // #F9FAFB
+    background: colors.$color-palette-surface-light; // #F9FAFB
     width: 18.75rem;
     height: 100%; // Ensure the component takes full height
     min-height: 0; // Allow shrinking
@@ -36,16 +39,16 @@
                 .pi {
                     width: 14px;
                     height: 14px;
-                    color: $color-palette-gray-600;
-                    font-size: $font-size-default;
+                    color: colors.$color-palette-gray-600;
+                    font-size: fonts.$font-size-default;
                 }
             }
 
             &.p-highlight .p-tabview-nav-link {
-                border-bottom: 2px solid $color-palette-primary;
+                border-bottom: 2px solid colors.$color-palette-primary;
 
                 .pi {
-                    color: $color-palette-gray-800;
+                    color: colors.$color-palette-gray-800;
                 }
             }
         }

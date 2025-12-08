@@ -1,3 +1,7 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .category-list {
@@ -8,11 +12,11 @@
 
 .category-list__item {
     display: grid;
-    grid-template-columns: 1fr $spacing-5;
+    grid-template-columns: 1fr spacing.$spacing-5;
     align-items: center;
-    padding: $spacing-1 0;
-    gap: $spacing-1;
-    border-bottom: 1px solid $color-palette-gray-300;
+    padding: spacing.$spacing-1 0;
+    gap: spacing.$spacing-1;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
 }
 
 .category-list__item-content {
@@ -20,14 +24,14 @@
     justify-content: space-between;
     width: 100%;
     overflow: hidden;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     flex-direction: column;
 }
 
 .category-list__title {
-    color: $black;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium-bold;
+    color: colors.$black;
+    font-size: fonts.$font-size-sm;
+    font-weight: fonts.$font-weight-medium-bold;
     flex-shrink: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -40,9 +44,9 @@
 }
 
 .category-list__path-content {
-    font-size: $font-size-sm;
-    color: $color-palette-gray-700;
-    font-weight: $font-weight-regular-bold;
+    font-size: fonts.$font-size-sm;
+    color: colors.$color-palette-gray-700;
+    font-weight: fonts.$font-weight-regular-bold;
     display: block;
     white-space: nowrap;
     overflow: hidden;

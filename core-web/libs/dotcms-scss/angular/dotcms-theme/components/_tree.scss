@@ -1,11 +1,15 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-tree {
     border: 1px solid $input-border-color;
-    background: $white;
-    color: $black;
-    padding: $spacing-2;
-    border-radius: $border-radius-xs;
+    background: colors.$white;
+    color: colors.$black;
+    padding: spacing.$spacing-2;
+    border-radius: common.$border-radius-xs;
 
     .p-tree-container {
         .p-treenode {
@@ -14,15 +18,15 @@
             outline: 0;
 
             .p-treenode-content {
-                border-radius: $border-radius-xs;
+                border-radius: common.$border-radius-xs;
                 transition: none;
-                padding: $spacing-0 $spacing-1;
+                padding: spacing.$spacing-0 spacing.$spacing-1;
 
                 .p-tree-toggler {
-                    margin-right: $spacing-1;
-                    width: $spacing-5;
-                    height: $spacing-5;
-                    color: $black;
+                    margin-right: spacing.$spacing-1;
+                    width: spacing.$spacing-5;
+                    height: spacing.$spacing-5;
+                    color: colors.$black;
                     border: 0 none;
                     background: transparent;
                     border-radius: 50%;
@@ -45,16 +49,16 @@
                 }
 
                 .p-treenode-icon {
-                    margin-right: $spacing-1;
-                    color: $black;
+                    margin-right: spacing.$spacing-1;
+                    color: colors.$black;
                 }
 
                 .p-checkbox {
-                    margin-right: $spacing-1;
+                    margin-right: spacing.$spacing-1;
 
                     .p-indeterminate {
                         .p-checkbox-icon {
-                            color: $black;
+                            color: colors.$black;
                         }
                     }
                 }
@@ -82,31 +86,31 @@
 
                 &.p-treenode-dragover {
                     background: rgba(0, 0, 0, 0.04);
-                    color: $black;
+                    color: colors.$black;
                 }
             }
         }
 
         .p-tree-filter-container {
-            margin-bottom: $spacing-1;
+            margin-bottom: spacing.$spacing-1;
 
             .p-tree-filter {
                 width: 100%;
-                padding-right: $spacing-6;
+                padding-right: spacing.$spacing-6;
             }
 
             .p-tree-filter-icon {
-                right: $spacing-2;
-                color: $black;
+                right: spacing.$spacing-2;
+                color: colors.$black;
             }
         }
 
         .p-treenode-children {
-            padding: 0 0 0 $spacing-3;
+            padding: 0 0 0 spacing.$spacing-3;
         }
 
         .p-tree-loading-icon {
-            font-size: $icon-xl;
+            font-size: common.$icon-xl;
         }
 
         .p-treenode-droppoint.p-treenode-droppoint-active {
@@ -117,10 +121,10 @@
     &.p-tree-horizontal {
         .p-treenode {
             .p-treenode-content {
-                border-radius: $border-radius-xs;
+                border-radius: common.$border-radius-xs;
                 border: 1px solid $input-border-color;
-                background-color: $white;
-                color: $black;
+                background-color: colors.$white;
+                color: colors.$black;
                 padding: 0.571rem;
                 transition: none;
 
@@ -134,19 +138,19 @@
                 }
 
                 .p-tree-toggler {
-                    margin-right: $spacing-1;
+                    margin-right: spacing.$spacing-1;
                 }
 
                 .p-treenode-icon {
-                    color: $black;
-                    margin-right: $spacing-1;
+                    color: colors.$black;
+                    margin-right: spacing.$spacing-1;
                 }
 
                 .p-checkbox {
-                    margin-right: $spacing-1;
+                    margin-right: spacing.$spacing-1;
 
                     .p-checkbox-icon {
-                        color: $color-palette-primary;
+                        color: colors.$color-palette-primary;
                     }
                 }
 

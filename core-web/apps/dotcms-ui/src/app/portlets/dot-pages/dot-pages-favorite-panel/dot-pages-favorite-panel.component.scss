@@ -1,11 +1,15 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 ::ng-deep {
     button.dot-pages-panel-action__button {
         display: none;
         position: absolute;
-        right: $spacing-8;
-        top: $spacing-1;
+        right: spacing.$spacing-8;
+        top: spacing.$spacing-1;
         text-transform: none;
 
         .p-button-label {
@@ -13,27 +17,27 @@
         }
 
         span.p-button-label {
-            font-size: $font-size-md;
+            font-size: fonts.$font-size-md;
         }
     }
 
     .p-panel-expanded .dot-pages-panel-action__button {
         display: block;
         position: absolute;
-        background: $white;
+        background: colors.$white;
     }
 
     .p-toggleable-content .p-panel-content {
-        column-gap: $spacing-4;
-        row-gap: $spacing-4;
+        column-gap: spacing.$spacing-4;
+        row-gap: spacing.$spacing-4;
         display: grid;
         grid-template-columns: repeat(auto-fill, 250px);
         height: 100%;
         overflow: hidden;
         position: relative;
-        padding-left: $spacing-3;
-        padding-right: $spacing-3;
-        padding-bottom: $spacing-4;
+        padding-left: spacing.$spacing-3;
+        padding-right: spacing.$spacing-3;
+        padding-bottom: spacing.$spacing-4;
     }
 
     .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
@@ -60,36 +64,36 @@
         width: max-content;
 
         i.pi {
-            color: $color-palette-primary;
-            font-size: $font-size-xl;
-            margin-bottom: $spacing-3;
+            color: colors.$color-palette-primary;
+            font-size: fonts.$font-size-xl;
+            margin-bottom: spacing.$spacing-3;
         }
     }
 
     .pi-star-fill {
-        color: $color-palette-primary;
-        margin-right: $spacing-1;
+        color: colors.$color-palette-primary;
+        margin-right: spacing.$spacing-1;
     }
 
     .dot-pages-panel__header {
         display: flex;
         align-items: center;
-        margin-left: $spacing-3;
+        margin-left: spacing.$spacing-3;
     }
 
     .p-panel-header-icon {
         .pi {
             border: 1px solid;
             border-radius: 100px;
-            height: $spacing-5;
-            width: $spacing-5;
+            height: spacing.$spacing-5;
+            width: spacing.$spacing-5;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .pi:before {
-            font-size: $spacing-2;
+            font-size: spacing.$spacing-2;
         }
     }
 }
@@ -99,6 +103,6 @@
 }
 
 .dot-pages-empty__content {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     text-align: center;
 }

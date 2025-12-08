@@ -1,15 +1,19 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 .variant--title__wrapper {
     h2 {
         margin: 0;
-        font-size: $font-size-lmd;
-        font-weight: $font-weight-bold;
+        font-size: fonts.$font-size-lmd;
+        font-weight: fonts.$font-weight-bold;
     }
 
     .variant-name dot-icon {
         display: inline;
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 }
 
@@ -17,7 +21,7 @@
     min-height: 2.2rem;
 
     .separator {
-        color: $color-palette-gray-300;
+        color: colors.$color-palette-gray-300;
     }
 
     button {
@@ -27,10 +31,10 @@
 
 :host ::ng-deep {
     dot-icon {
-        color: $color-palette-gray-500;
+        color: colors.$color-palette-gray-500;
 
         &.isDone {
-            color: $color-accessible-text-green;
+            color: colors.$color-accessible-text-green;
         }
     }
 
@@ -42,14 +46,14 @@
             }
 
             &.first .p-card {
-                border-top-right-radius: $border-radius-sm;
-                border-top-left-radius: $border-radius-sm;
+                border-top-right-radius: common.$border-radius-sm;
+                border-top-left-radius: common.$border-radius-sm;
             }
 
             &.last .p-card {
-                border-bottom-right-radius: $border-radius-sm;
-                border-bottom-left-radius: $border-radius-sm;
-                border: 1px solid $color-palette-gray-300;
+                border-bottom-right-radius: common.$border-radius-sm;
+                border-bottom-left-radius: common.$border-radius-sm;
+                border: 1px solid colors.$color-palette-gray-300;
             }
         }
     }

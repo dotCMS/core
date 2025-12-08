@@ -2,22 +2,13 @@
     <label dotFieldRequired for="contentType">
         {{ 'contenttypes.field.properties.relationships.contentType.label' | dm }}
     </label>
-    <dot-searchable-dropdown
-        (switch)="triggerChanged()"
-        (filterChange)="getContentTypeList($event)"
-        (pageChange)="getContentTypeList($event.filter, $event.first)"
+    <dot-workflow
         [(ngModel)]="contentType"
-        [data]="contentTypeCurrentPage | async"
         [disabled]="editing"
-        [pageLinkSize]="paginatorService.maxLinksPage"
-        [placeholder]="
-            'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm
-        "
-        [rows]="paginatorService.paginationPerPage"
-        [totalRecords]="paginatorService.totalRecords"
+        [placeholder]="'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm"
+        (onChange)="onContentTypeChange($event)"
         id="contentType"
-        labelPropertyName="name"
-        width="100%" />
+        class="w-full" />
 </div>
 <div class="field">
     <label for="cardinality">{{ 'contenttypes.field.properties.relationships.label' | dm }}</label>

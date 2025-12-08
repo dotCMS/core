@@ -1,28 +1,32 @@
+@use "../../../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     ::ng-deep {
         .more-menu {
-            padding: $spacing-1;
+            padding: spacing.$spacing-1;
         }
     }
 }
 
 .menu-item {
-    padding: $spacing-2;
+    padding: spacing.$spacing-2;
 }
 
 .menu-item--active,
 .menu-item--active:hover {
-    background-color: $color-palette-primary-op-20;
+    background-color: colors.$color-palette-primary-op-20;
 }
 
 .menu-item__label {
-    font-size: $font-size-md;
-    font-weight: $font-weight-bold;
+    font-size: fonts.$font-size-md;
+    font-weight: fonts.$font-weight-bold;
 }
 
 .menu-item__description {
-    font-size: $font-size-md;
-    color: $color-palette-gray-700;
+    font-size: fonts.$font-size-md;
+    color: colors.$color-palette-gray-700;
 }

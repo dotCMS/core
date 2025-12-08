@@ -1,26 +1,29 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: flex;
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     position: sticky;
     align-self: flex-start;
-    margin-bottom: $spacing-3;
-    margin-top: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
+    margin-top: spacing.$spacing-3;
     top: 0;
     width: 100%;
 }
 
 .p-inputtext {
     flex: 1;
-    padding-right: $spacing-5;
+    padding-right: spacing.$spacing-5;
 }
 
 .dot-palette-input-filter__back-btn {
     background-color: transparent;
     border: 0;
     cursor: pointer;
-    margin: 0 $spacing-1 0 0;
+    margin: 0 spacing.$spacing-1 0 0;
     padding: 0;
 }
 
@@ -28,5 +31,5 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    right: $spacing-1;
+    right: spacing.$spacing-1;
 }

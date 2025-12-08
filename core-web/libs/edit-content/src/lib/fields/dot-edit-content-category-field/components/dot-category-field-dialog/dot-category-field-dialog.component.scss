@@ -1,3 +1,8 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep .p-breadcrumb {
@@ -5,8 +10,8 @@
         &:last-child a {
             pointer-events: none;
             .p-menuitem-text {
-                color: $black;
-                font-weight: $font-weight-bold;
+                color: colors.$black;
+                font-weight: fonts.$font-weight-bold;
             }
         }
     }
@@ -15,13 +20,13 @@
 .category-field__header {
     align-items: center;
     flex-wrap: wrap;
-    gap: $spacing-0;
-    padding: $spacing-1 $spacing-4;
+    gap: spacing.$spacing-0;
+    padding: spacing.$spacing-1 spacing.$spacing-4;
 }
 
 .category-field__header-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-medium-bold;
+    font-size: fonts.$font-size-lmd;
+    font-weight: fonts.$font-weight-medium-bold;
     margin: 0;
 }
 
@@ -29,21 +34,21 @@
     display: flex;
     flex-direction: row;
     margin: auto;
-    background-color: $color-palette-gray-300;
-    padding: $spacing-4;
-    gap: $spacing-1;
+    background-color: colors.$color-palette-gray-300;
+    padding: spacing.$spacing-4;
+    gap: spacing.$spacing-1;
 }
 
 .category-field__left-pane,
 .category-field__right-pane {
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }
 
 .category-field__left-pane {
     display: flex;
     flex-direction: row;
     flex: 1;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     max-width: 75vw;
     overflow: hidden;
     height: 100%;
@@ -51,8 +56,8 @@
 
 .category-field__right-pane {
     flex: 0 0 25%;
-    gap: $spacing-1;
-    padding: $spacing-3;
+    gap: spacing.$spacing-1;
+    padding: spacing.$spacing-3;
     &.empty {
         padding-left: 0;
     }
@@ -60,9 +65,9 @@
 
 .category-field__categories,
 .category-field__right-pane {
-    border: $field-border-size solid $color-palette-gray-400;
-    border-radius: $border-radius-md;
-    background-color: $white;
+    border: common.$field-border-size solid colors.$color-palette-gray-400;
+    border-radius: common.$border-radius-md;
+    background-color: colors.$white;
     overflow: hidden;
 }
 
@@ -90,10 +95,10 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 
     p {
         text-align: center;
-        font-size: $font-size-sm;
+        font-size: fonts.$font-size-sm;
     }
 }

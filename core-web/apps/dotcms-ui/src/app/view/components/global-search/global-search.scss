@@ -1,17 +1,19 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
 
-$placeholder-color: $color-palette-white-op-50;
+$placeholder-color: colors.$color-palette-white-op-50;
 
 :host {
     flex: 1;
     margin: 0 50px;
 
     .global-search__textbox {
-        background-color: $color-palette-white-op-20;
+        background-color: colors.$color-palette-white-op-20;
         border: none;
-        color: $white;
-        font-size: $font-size-lmd;
+        color: colors.$white;
+        font-size: fonts.$font-size-lmd;
         height: 36px;
         padding: 0 10px;
         width: 100%;
