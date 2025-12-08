@@ -5,6 +5,7 @@ import com.dotcms.cache.CacheValueImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Provides the caching implementation for HTML pages. This approach uses a main key to retrieve a cached page, and a
@@ -66,6 +67,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
     }
 
     @Override
+    @Deprecated
     public void add(IHTMLPage page, final String pageContent, PageCacheParameters pageCacheParams) {
         if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
             return;
@@ -81,8 +83,24 @@ public class StaticPageCacheImpl extends StaticPageCache {
 
     }
 
+    @Override
+    public void addBytes(final IHTMLPage page, final byte[] content, final PageCacheParameters pageCacheParams) {
+        if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null || content == null) {
+            return;
+        }
+
+        final String cacheKey = pageCacheParams.getKey();
+        final long ttl = page.getCacheTTL() > 0 ? page.getCacheTTL() * 1000L : 60L * 60 * 24 * 7 * 1000; // 1 week
+
+        Logger.info(this.getClass(), () -> "PageCache Put (bytes): ttl:" + ttl + " key:" + cacheKey + " size:" + content.length);
+
+        // Store bytes directly - avoids String conversion overhead
+        this.cache.put(cacheKey, new CacheValueImpl(content, ttl), PRIMARY_GROUP);
+    }
+
 
     @Override
+    @Deprecated
     public String get(final IHTMLPage page, final PageCacheParameters pageCacheParams) {
 
         if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
@@ -96,12 +114,53 @@ public class StaticPageCacheImpl extends StaticPageCache {
         if (cachedValue instanceof String) {
             return (String) cachedValue;
         }
+        if (cachedValue instanceof byte[]) {
+            // Convert bytes to String for backward compatibility
+            return new String((byte[]) cachedValue, StandardCharsets.UTF_8);
+        }
         if (cachedValue instanceof CacheValue) {
-            return (String) ((CacheValue) cachedValue).getValue();
+            final Object value = ((CacheValue) cachedValue).getValue();
+            if (value instanceof String) {
+                return (String) value;
+            }
+            if (value instanceof byte[]) {
+                return new String((byte[]) value, StandardCharsets.UTF_8);
+            }
         }
 
         return null;
 
+    }
+
+    @Override
+    public byte[] getBytes(final IHTMLPage page, final PageCacheParameters pageCacheParams) {
+        if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
+            return null;
+        }
+
+        final String cacheKey = pageCacheParams.getKey();
+
+        // Look up the cached page
+        final Object cachedValue = this.cache.getNoThrow(cacheKey, PRIMARY_GROUP);
+
+        if (cachedValue instanceof byte[]) {
+            return (byte[]) cachedValue;
+        }
+        if (cachedValue instanceof String) {
+            // Convert String to bytes for backward compatibility with old cache entries
+            return ((String) cachedValue).getBytes(StandardCharsets.UTF_8);
+        }
+        if (cachedValue instanceof CacheValue) {
+            final Object value = ((CacheValue) cachedValue).getValue();
+            if (value instanceof byte[]) {
+                return (byte[]) value;
+            }
+            if (value instanceof String) {
+                return ((String) value).getBytes(StandardCharsets.UTF_8);
+            }
+        }
+
+        return null;
     }
 
     @Override

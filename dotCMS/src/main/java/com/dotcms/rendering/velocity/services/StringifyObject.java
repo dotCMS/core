@@ -1,14 +1,32 @@
 package com.dotcms.rendering.velocity.services;
 
 
-
-import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
+/**
+ * Utility class to convert objects to their string representation for Velocity context.
+ * Uses ThreadLocal buffers to minimize object allocation during page rendering.
+ */
 final class StringifyObject {
+
+    /**
+     * ThreadLocal StringBuilder pool to avoid allocating new StringWriter/StringBuilder
+     * for each stringify operation. This significantly reduces GC pressure during
+     * page rendering where many objects need to be stringified.
+     */
+    private static final ThreadLocal<StringBuilder> BUFFER =
+            ThreadLocal.withInitial(() -> new StringBuilder(256));
+
+    /**
+     * ThreadLocal SimpleDateFormat to avoid creating expensive formatter objects.
+     * SimpleDateFormat is not thread-safe, so ThreadLocal is required.
+     */
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"));
+
     final String stringified;
 
     public StringifyObject(final Object o) {
@@ -37,62 +55,67 @@ final class StringifyObject {
     }
 
 
+    /**
+     * Gets the ThreadLocal StringBuilder, resetting it for reuse.
+     * @return A clean StringBuilder ready for use
+     */
+    private static StringBuilder getBuffer() {
+        final StringBuilder sb = BUFFER.get();
+        sb.setLength(0);  // Reset without reallocation
+        return sb;
+    }
+
     private String stringifyObject(final String[] str) {
-        StringWriter sw = new StringWriter();
-        sw.append('[');
+        final StringBuilder sb = getBuffer();
+        sb.append('[');
         for (int i = 0; i < str.length; i++) {
-            sw.append('"')
+            sb.append('"')
                 .append(str[i])
-                .append("\"");
+                .append('"');
             if (i != str.length - 1) {
-                sw.append(",");
+                sb.append(',');
             }
         }
-        sw.append(']');
-        return  sw.toString();
+        sb.append(']');
+        return sb.toString();
     }
 
-    private String  stringifyObject(final Collection co) {
-        StringWriter sw = new StringWriter();
-
-        sw.append('[');
-        Iterator<Object> it = co.iterator();
+    private String stringifyObject(final Collection<?> co) {
+        final StringBuilder sb = getBuffer();
+        sb.append('[');
+        final Iterator<?> it = co.iterator();
         while (it.hasNext()) {
-            Object obj = it.next();
-            sw.append('"')
+            final Object obj = it.next();
+            sb.append('"')
                 .append(obj.toString())
-                .append("\"");
-            
-            if(it.hasNext()) {
-                sw.append(",");
+                .append('"');
+            if (it.hasNext()) {
+                sb.append(',');
             }
         }
-        sw.append(']');
-        return  sw.toString();
+        sb.append(']');
+        return sb.toString();
     }
 
-    private String  stringifyObject(final Boolean o) {
-
-        return ((Boolean)o).toString();
+    private String stringifyObject(final Boolean o) {
+        return o.toString();
     }
 
-    private String  stringifyObject(final String x) {
-        StringWriter sw = new StringWriter();
-
-            sw.append('"');
-            sw.append(x.toString().replace("\"", "`"));
-            sw.append('"');
-            return  sw.toString();
-        
+    private String stringifyObject(final String x) {
+        final StringBuilder sb = getBuffer();
+        sb.append('"');
+        sb.append(x.replace("\"", "`"));
+        sb.append('"');
+        return sb.toString();
     }
 
-    private String  stringifyObject(final Date x) {
-        StringWriter sw = new StringWriter();
-        String d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(x);
-        sw.append('"');
-        sw.append(d);
-        sw.append('"');
-        return  sw.toString();
+    private String stringifyObject(final Date x) {
+        final StringBuilder sb = getBuffer();
+        final String d = DATE_FORMAT.get().format(x);
+        sb.append('"');
+        sb.append(d);
+        sb.append('"');
+        return sb.toString();
     }
 
 
