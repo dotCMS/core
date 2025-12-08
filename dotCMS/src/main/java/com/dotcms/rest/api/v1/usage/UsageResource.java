@@ -120,6 +120,8 @@ public class UsageResource {
                     final MetricValue metricValue = metricValueOpt.get();
                     
                     // Handle duplicate "COUNT" keys by mapping to specific names based on feature
+                    // TODO: Remove this workaround once MetricType naming is standardized
+                    // See: https://github.com/dotCMS/core/issues/34042
                     final String mapKey;
                     if ("COUNT".equals(metricName)) {
                         // Use feature to disambiguate generic "COUNT" metric
