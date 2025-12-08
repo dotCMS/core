@@ -16,7 +16,7 @@ cube('request', {
             userlanguage, persona, doc_path, doc_host, doc_protocol, doc_hash,
             doc_search, screen_resolution, user_language, viewport_height, viewport_width,
             utm_campaign, utm_medium, utm_source, utm_term, utm_content,
-            context_site_key, context_site_id, sessionid, context_user_id, request_id,
+            context_site_auth, context_site_id, sessionid, context_user_id, request_id,
             cluster_id, customer_id, utc_time,
             content_identifier, content_inode, content_title, content_content_type,
             conversion_name,
@@ -233,10 +233,10 @@ cube('request', {
       title: 'Site ID',
       description: 'dotCMS site identifier'
     },
-    siteKey: {
-      sql: `context_site_key`,
+    siteAuth: {
+      sql: `context_site_auth`,
       type: `string`,
-      title: 'Site Key',
+      title: 'Site Auth',
       description: 'Authentication key generated for every Site in the Content Analytics App'
     },
     languageId: {

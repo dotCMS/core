@@ -658,7 +658,6 @@ public class FieldAPIImpl implements FieldAPI {
         }
         try {
             final List<FieldVariable> existingVariables = loadVariables(field);
-
             // Delete variables that either:
             // 1. Don't have a complete match (key, id, value) in incoming list, OR
             // 2. Their key doesn't exist at all in incoming list
