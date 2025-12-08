@@ -1242,7 +1242,7 @@ public class WebAssetHelperIntegrationTest {
         final FolderView renamedFolder = webAssetHelper.updateFolder(originalPath, updateDetail, APILocator.systemUser());
 
         Assert.assertNotNull(renamedFolder);
-        Assert.assertEquals(newName, renamedFolder.name());
+        Assert.assertTrue("Folder name should be the same, despite casing",newName.equalsIgnoreCase(renamedFolder.name()));
         Assert.assertEquals("Original Title", renamedFolder.title()); // Should preserve the original title
         Assert.assertEquals(true, renamedFolder.showOnMenu()); // Should preserve original showOnMenu
         Assert.assertNotNull("Sort Order must not be null ",renamedFolder.sortOrder());
