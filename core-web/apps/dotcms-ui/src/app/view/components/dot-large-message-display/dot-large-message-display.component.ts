@@ -7,6 +7,7 @@ import {
     OnInit,
     QueryList,
     ViewChildren,
+    WritableSignal,
     inject
 } from '@angular/core';
 
@@ -103,8 +104,9 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
 
     private createContent(dialogComponent: Dialog, content: DotLargeMessageDisplayParams): void {
         // Access the dialog container element - container is already the native element
-        const dialogElement = dialogComponent.container as HTMLElement;
-        const target = dialogElement?.querySelector('.dialog-message__body') as HTMLElement;
+        // TODO: (migration) update to use signal because it was failing in the build after upgrading to primeng 21, needs to test
+        const dialogElement = dialogComponent.container as unknown as WritableSignal<HTMLElement | undefined>;
+        const target = dialogElement()?.querySelector('.dialog-message__body') as HTMLElement;
         if (target) {
             this.dotParseHtmlService.parse(content.body, target, true);
             if (content.script) {

@@ -24,7 +24,8 @@ export class DotSidebarDirective {
 
     constructor() {
         if (this.primeSidebar) {
-            this.primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
+            // TODO: (migration) this is broken in primeng 21, and can't be set programmatically because now is an input signal.
+            // this.primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
             this.primeSidebar.styleClass = SIDEBAR_SIZES.MD;
             this.primeSidebar.showCloseIcon = false;
             this.primeSidebar.dismissible = false;

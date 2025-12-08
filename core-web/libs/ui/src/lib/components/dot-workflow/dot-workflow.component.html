@@ -1,5 +1,4 @@
 <p-select
-    #selectRef
     optionLabel="name"
     [appendTo]="'body'"
     (onChange)="onContentTypeChange($event.value)"
@@ -15,5 +14,10 @@
     [virtualScroll]="true"
     [virtualScrollItemSize]="34"
     [lazy]="true"
+    [virtualScrollOptions]="{
+        contentStyle: {
+            height: '300px'
+        }
+    }"
     filterBy="name"
     class="w-full" />

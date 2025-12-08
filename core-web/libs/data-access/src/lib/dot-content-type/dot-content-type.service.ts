@@ -1,3 +1,5 @@
+// TODO: (migration) this needs refactoring there are two method doing the same, there should not be an exclusive method for pagination.
+
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
@@ -61,7 +63,12 @@ export class DotContentTypeService {
         // Default parameters
         params = params.set('orderby', 'name');
         params = params.set('direction', 'ASC');
-        params = params.set('per_page', (options.page ?? 40).toString());
+        params = params.set('per_page', (options.per_page ?? 40).toString());
+
+        // Add page parameter if provided (defaults to 1 if not specified)
+        if (options.page !== undefined && options.page !== null) {
+            params = params.set('page', options.page.toString());
+        }
 
         // Add optional parameters if they have meaningful values
         if (hasValidValue(options.filter)) {
