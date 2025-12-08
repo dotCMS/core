@@ -184,12 +184,17 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
         map.put("permissions", stringPermissions);
         map.remove("inode");
         final String ownerId = folder.getOwner();
-        if(null != ownerId){
-            final User owner = Try.of(()->UserLocalManagerUtil.getUserById(ownerId)).getOrNull();
-            if (null != owner) {
-                map.put("owner", owner.getFullName());
+        if (null != ownerId) {
+            if ("system".equalsIgnoreCase(ownerId)) {
+                map.put("owner", "System");
             } else {
-                map.put("owner", "unknown");
+                final User owner = Try.of(() -> UserLocalManagerUtil.getUserById(ownerId))
+                        .getOrNull();
+                if (null != owner) {
+                    map.put("owner", owner.getFullName());
+                } else {
+                    map.put("owner", "unknown");
+                }
             }
         }
         return map;
