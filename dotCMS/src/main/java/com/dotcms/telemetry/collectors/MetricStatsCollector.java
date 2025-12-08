@@ -108,21 +108,21 @@ public class MetricStatsCollector {
      */
     private Collection<MetricType> getMetricCollectors() {
         final Collection<MetricType> collectors = new ArrayList<>();
-        
-        Logger.info(this, "Starting MetricType discovery via CDI Instance<MetricType>");
-        
+
+        Logger.debug(this, "Starting MetricType discovery via CDI Instance<MetricType>");
+
         // CDI guarantees metricTypes is never null - it injects an empty Instance if no beans found
         for (MetricType metricType : metricTypes) {
             collectors.add(metricType);
             Logger.debug(this, () -> String.format("MetricStatsCollector discovered: %s", metricType.getClass().getName()));
         }
-        
+
         if (collectors.isEmpty()) {
             Logger.warn(this, "MetricStatsCollector discovered 0 MetricType implementations via CDI! This indicates a CDI scanning/configuration issue.");
         } else {
-            Logger.info(this, () -> String.format("MetricStatsCollector discovered %d MetricType implementations via CDI", collectors.size()));
+            Logger.debug(this, () -> String.format("MetricStatsCollector discovered %d MetricType implementations via CDI", collectors.size()));
         }
-        
+
         return collectors;
     }
 

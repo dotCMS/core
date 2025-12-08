@@ -103,12 +103,12 @@ public class UsageResource {
      * to discover metrics annotated with {@link com.dotcms.telemetry.DashboardMetric}.
      */
     private UsageSummary collectUsageSummary() {
-        Logger.info(this, "Collecting business metrics for usage dashboard");
+        Logger.debug(this, "Collecting business metrics for usage dashboard");
 
         final DashboardMetricsProvider metricsProvider = CDIUtils.getBeanThrows(DashboardMetricsProvider.class);
         final Collection<MetricType> keyMetrics = metricsProvider.getDashboardMetrics();
-        
-        Logger.info(this, () -> String.format("Found %d dashboard metrics to collect", keyMetrics.size()));
+
+        Logger.debug(this, () -> String.format("Found %d dashboard metrics to collect", keyMetrics.size()));
 
         // Collect metric values - use metricType.getName() as the map key
         final Map<String, MetricValue> metricMap = new HashMap<>();
@@ -138,17 +138,17 @@ public class UsageResource {
                     }
                     
                     metricMap.put(mapKey, metricValue);
-                    Logger.debug(this, () -> String.format("Collected metric: %s = %s (mapped to: %s)", 
+                    Logger.debug(this, () -> String.format("Collected metric: %s = %s (mapped to: %s)",
                             metricName, metricValue.getValue(), mapKey));
                 } else {
-                    Logger.info(this, () -> String.format("Metric %s returned empty value", metricName));
+                    Logger.debug(this, () -> String.format("Metric %s returned empty value", metricName));
                 }
             } catch (Exception e) {
                 Logger.warn(this, "Failed to collect metric: " + metricType.getName(), e);
             }
         }
-        
-        Logger.info(this, () -> String.format("Collected %d metric values from %d dashboard metrics", metricMap.size(), keyMetrics.size()));
+
+        Logger.debug(this, () -> String.format("Collected %d metric values from %d dashboard metrics", metricMap.size(), keyMetrics.size()));
 
         // Build summary from collected metrics
         return UsageSummary.builder()
@@ -168,10 +168,10 @@ public class UsageResource {
         
         // For now, using totalContent as contentTypes placeholder - can be enhanced later
         final long contentTypes = totalContent > 0 ? 1 : 0;
-        
-        Logger.info(this, () -> String.format("Content metrics - totalContent: %d, recentlyEdited: %d, contentTypesWithWorkflows: %d", 
+
+        Logger.debug(this, () -> String.format("Content metrics - totalContent: %d, recentlyEdited: %d, contentTypesWithWorkflows: %d",
                 totalContent, recentlyEdited, contentTypesWithWorkflows));
-        
+
         return new UsageSummary.ContentMetrics(totalContent, contentTypes, recentlyEdited, contentTypesWithWorkflows, lastContentEdited);
     }
 
@@ -180,10 +180,10 @@ public class UsageResource {
         final long activeSites = getMetricValueAsLong(metricMap, "COUNT_OF_ACTIVE_SITES", totalSites);
         final long templates = getMetricValueAsLong(metricMap, "COUNT_OF_TEMPLATES", 0L);
         final long siteAliases = getMetricValueAsLong(metricMap, "ALIASES_SITES_COUNT", 0L);
-        
-        Logger.info(this, () -> String.format("Site metrics - totalSites: %d, activeSites: %d, templates: %d, aliases: %d", 
+
+        Logger.debug(this, () -> String.format("Site metrics - totalSites: %d, activeSites: %d, templates: %d, aliases: %d",
                 totalSites, activeSites, templates, siteAliases));
-        
+
         return new UsageSummary.SiteMetrics(totalSites, activeSites, templates, siteAliases);
     }
 
@@ -193,10 +193,10 @@ public class UsageResource {
         // LAST_LOGIN_COUNT metric doesn't exist, using 0 as default
         final long recentLogins = 0L;
         final String lastLogin = getMetricValueAsString(metricMap, "LAST_LOGIN", "N/A");
-        
-        Logger.info(this, () -> String.format("User metrics - activeUsers: %d, totalUsers: %d, lastLogin: %s", 
+
+        Logger.debug(this, () -> String.format("User metrics - activeUsers: %d, totalUsers: %d, lastLogin: %s",
                 activeUsers, totalUsers, lastLogin));
-        
+
         return new UsageSummary.UserMetrics(activeUsers, totalUsers, recentLogins, lastLogin);
     }
 
@@ -206,10 +206,10 @@ public class UsageResource {
         final long workflowSteps = getMetricValueAsLong(metricMap, "STEPS_COUNT", 0L);
         final long liveContainers = getMetricValueAsLong(metricMap, "COUNT_OF_LIVE_CONTAINERS", 0L);
         final long builderTemplates = getMetricValueAsLong(metricMap, "COUNT_OF_TEMPLATE_BUILDER_TEMPLATES", 0L);
-        
-        Logger.info(this, () -> String.format("System metrics - languages: %d, workflowSchemes: %d, workflowSteps: %d, liveContainers: %d, builderTemplates: %d", 
+
+        Logger.debug(this, () -> String.format("System metrics - languages: %d, workflowSchemes: %d, workflowSteps: %d, liveContainers: %d, builderTemplates: %d",
                 languages, workflowSchemes, workflowSteps, liveContainers, builderTemplates));
-        
+
         return new UsageSummary.SystemMetrics(languages, workflowSchemes, workflowSteps, liveContainers, builderTemplates);
     }
 

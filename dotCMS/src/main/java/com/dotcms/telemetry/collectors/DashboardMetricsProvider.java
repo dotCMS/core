@@ -53,14 +53,14 @@ public class DashboardMetricsProvider {
      * @return list of dashboard-available metrics, sorted by priority (lowest first)
      */
     public List<MetricType> getDashboardMetrics() {
-        Logger.info(this, "Starting dashboard metrics discovery via CDI BeanManager");
-        
+        Logger.debug(this, "Starting dashboard metrics discovery via CDI BeanManager");
+
         try {
             // Use BeanManager to get all MetricType beans - this gives us Bean objects
             // which contain the actual class information (not proxies)
             final Set<Bean<?>> allBeans = beanManager.getBeans(MetricType.class, Any.Literal.INSTANCE);
-            
-            Logger.info(this, () -> String.format("BeanManager found %d MetricType beans", allBeans.size()));
+
+            Logger.debug(this, () -> String.format("BeanManager found %d MetricType beans", allBeans.size()));
             
             // Use a list that stores both the metric and its annotation for efficient sorting
             final List<MetricWithAnnotation> dashboardMetricsWithAnnotation = new ArrayList<>();
@@ -79,12 +79,12 @@ public class DashboardMetricsProvider {
                             bean, MetricType.class, beanManager.createCreationalContext(bean));
                     
                     dashboardMetricsWithAnnotation.add(new MetricWithAnnotation(metric, annotation));
-                    Logger.info(this, () -> String.format("Found dashboard metric: %s (category: %s, priority: %d)", 
+                    Logger.debug(this, () -> String.format("Found dashboard metric: %s (category: %s, priority: %d)",
                             beanClass.getName(), annotation.category(), annotation.priority()));
                 }
             }
-            
-            Logger.info(this, () -> String.format("CDI discovered %d total MetricType beans, %d annotated with @DashboardMetric", 
+
+            Logger.debug(this, () -> String.format("CDI discovered %d total MetricType beans, %d annotated with @DashboardMetric",
                     allBeans.size(), dashboardMetricsWithAnnotation.size()));
             
             // Sort by priority (from @DashboardMetric annotation)
