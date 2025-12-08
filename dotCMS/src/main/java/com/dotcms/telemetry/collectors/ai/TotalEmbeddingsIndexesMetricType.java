@@ -8,7 +8,9 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.Map;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class TotalEmbeddingsIndexesMetricType implements MetricType {
 
     @Override
