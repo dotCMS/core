@@ -74,6 +74,7 @@ const MOCK_EMPTY_CONTENTLET_AREA: ContentletArea = {
                 [isEnterprise]="isEnterprise"
                 [contentletArea]="contentletArea"
                 [allowContentDelete]="allowContentDelete"
+                [showStyleEditorOption]="showStyleEditorOption"
                 (editVTL)="onEditVTL($event)"
                 (editContent)="onEditContent($event)"
                 (deleteContent)="onDeleteContent($event)"
@@ -88,6 +89,7 @@ class TestHostComponent {
     isEnterprise = false;
     contentletArea: ContentletArea = MOCK_CONTENTLET_AREA;
     allowContentDelete = true;
+    showStyleEditorOption = false;
 
     onEditVTL = jest.fn();
     onEditContent = jest.fn();
@@ -236,6 +238,9 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should emit selectContent when clicking palette button', () => {
+                spectator.component.showStyleEditorOption = true;
+                spectator.detectChanges();
+
                 const paletteButton = spectator.query(byTestId('palette-button')) as Element;
                 spectator.click(paletteButton);
 
@@ -612,6 +617,52 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = component.menuItems();
             const formItem = menuItems.find((item) => item.label === 'Form');
             expect(formItem).toBeUndefined();
+        });
+    });
+
+    describe('Style Editor Features', () => {
+        describe('Palette button visibility', () => {
+            it('should NOT render palette button when showStyleEditorOption is false', () => {
+                spectator.component.showStyleEditorOption = false;
+                spectator.detectChanges();
+
+                const paletteButton = spectator.query(byTestId('palette-button'));
+                expect(paletteButton).toBeFalsy();
+            });
+
+            it('should render palette button when showStyleEditorOption is true', () => {
+                spectator.component.showStyleEditorOption = true;
+                spectator.detectChanges();
+
+                const paletteButton = spectator.query(byTestId('palette-button'));
+                expect(paletteButton).toBeTruthy();
+            });
+
+            it('should hide palette button when showStyleEditorOption changes to false', () => {
+                // First enable it
+                
+                spectator.component.showStyleEditorOption = true;
+                spectator.detectChanges();
+
+                let paletteButton = spectator.query(byTestId('palette-button'));
+                expect(paletteButton).toBeTruthy();
+
+                // Then disable it
+                spectator.component.showStyleEditorOption = false;
+                spectator.detectChanges();
+
+                paletteButton = spectator.query(byTestId('palette-button'));
+                expect(paletteButton).toBeFalsy();
+            });
+
+            it('should NOT render palette button when container is empty even if showStyleEditorOption is true', () => {
+                spectator.component.showStyleEditorOption = true;
+                spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+                spectator.detectChanges();
+
+                const paletteButton = spectator.query(byTestId('palette-button'));
+                expect(paletteButton).toBeFalsy();
+            });
         });
     });
 

@@ -572,7 +572,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -644,7 +644,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    store.setActiveContentArea(baseContentletPayload);
+                    store.setContentletArea(baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
@@ -921,7 +921,7 @@ describe('EditEmaEditorComponent', () => {
                             By.css('[data-testId="ema-dialog"]')
                         );
 
-                        store.setActiveContentArea(baseContentletPayload);
+                        store.setContentletArea(baseContentletPayload);
 
                         editURLContentButton.triggerEventHandler('onClick', {});
 
@@ -1063,7 +1063,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        store.setActiveContentArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1091,7 +1091,7 @@ describe('EditEmaEditorComponent', () => {
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 
-                        store.setActiveContentArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1118,7 +1118,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        store.setActiveContentArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1140,7 +1140,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should trigger copy contentlet dialog', () => {
-                        store.setActiveContentArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
@@ -1172,7 +1172,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1231,7 +1231,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1321,7 +1321,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1401,7 +1401,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1478,7 +1478,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1558,7 +1558,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    store.setActiveContentArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,

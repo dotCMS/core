@@ -26,8 +26,10 @@ import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
+    ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
+import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -45,7 +47,6 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withActiveContent } from '../withContentlet';
 import { PageContextComputed } from '../withPageContext';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
@@ -63,6 +64,7 @@ const initialState: EditorState = {
     ogTags: null,
     styleSchemas: [],
     activeContentlet: null,
+    contentArea: null,
     palette: {
         open: true,
         currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
@@ -83,11 +85,33 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withActiveContent(),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
+            const pageEntity = store.pageAPIResponse;
 
             return {
+                $allowContentDelete: computed<boolean>(() => {
+                    const numberContents = pageEntity()?.numberContents;
+                    const persona = pageEntity()?.viewAs?.persona;
+                    const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
+
+                    return numberContents > 1 || !persona || isDefaultPersona;
+                }),
+                $showContentletControls: computed<boolean>(() => {
+                    const contentletPosition = store.contentArea();
+                    const canEditPage = store.$canEditPage();
+                    const isIdle = store.state() === EDITOR_STATE.IDLE;
+
+                    return !!contentletPosition && canEditPage && isIdle;
+                }),
+                $styleSchema: computed<unknown>(() => {
+                    const contentlet = store.activeContentlet();
+                    const styleSchemas = store.styleSchemas();
+                    const contentSchema = styleSchemas.find(
+                        (schema) => schema.contentType === contentlet?.contentType
+                    );
+                    return contentSchema;
+                }),
                 $isDragging: computed<boolean>(
                     () =>
                         store.state() === EDITOR_STATE.DRAGGING ||
@@ -258,6 +282,40 @@ export function withEditor() {
                         dragItem: null,
                         contentArea: null,
                         bounds: [],
+                        state: EDITOR_STATE.IDLE
+                    });
+                },
+                setContentletArea(contentArea: ContentletArea) {
+                    const currentArea = store.contentArea();
+                    const isSameX = currentArea?.x === contentArea?.x;
+                    const isSameY = currentArea?.y === contentArea?.y;
+
+                    if (isSameX && isSameY) {
+                        // Prevent updating the state if the contentlet area is the same
+                        // This is because in inline editing, when we select to not copy the content and edit global
+                        // The contentlet area is updated on focus with the same values and IDLE
+                        // Losing the INLINE_EDITING state and making the user to open the dialog for checking whether to copy the content or not
+                        // Which is an awful UX
+
+                        return;
+                    }
+                    patchState(store, {
+                        contentArea,
+                        state: EDITOR_STATE.IDLE
+                    });
+                },
+                setActiveContentlet(contentlet: ContentletPayload) {
+                    patchState(store, {
+                        activeContentlet: contentlet,
+                        palette: {
+                            open: true,
+                            currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
+                        }
+                    });
+                },
+                resetContentletArea() {
+                    patchState(store, {
+                        contentArea: null,
                         state: EDITOR_STATE.IDLE
                     });
                 },

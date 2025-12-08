@@ -947,7 +947,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
                 const payload = this.uveStore.getPageSavePayload(coords.payload);
 
-                this.uveStore.setActiveContentArea({
+                this.uveStore.setContentletArea({
                     x: coords.x,
                     y: coords.y,
                     width: coords.width,
@@ -1574,7 +1574,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     #resetContentletArea(): void {
-        this.uveStore.unsetActiveContentArea();
+        this.uveStore.resetContentletArea();
     }
 
     protected handleSelectContent(contentlet: ContentletPayload): void {

@@ -19,10 +19,11 @@ import { Orientation } from '../../models';
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
+    styleSchemas: StyleSchema[];
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    styleSchemas: StyleSchema[];
     activeContentlet?: ContentletPayload;
+    contentArea?: ContentletArea;
     palette: {
         open: boolean;
         currentTab: UVE_PALETTE_TABS;
@@ -69,21 +70,9 @@ export interface EditorProps {
         pointerEvents: string;
         opacity: string;
     };
-    contentletTools?: {
-        contentletArea: ContentletArea;
-        hide: boolean;
-        isEnterprise: boolean;
-        disableDeleteButton?: string;
-    };
     dropzone?: {
         bounds: Container[];
         dragItem: EmaDragItem;
-    };
-    palette?: {
-        languageId: number;
-        paletteClass: PALETTE_CLASSES;
-        pagePath: string;
-        variantId?: string;
     };
     showDialogs: boolean;
     progressBar: boolean;
