@@ -138,8 +138,8 @@ export function buildPaletteMenuItems({
             items: [
                 {
                     label: 'uve.palette.menu.view.option.grid',
-                    command: () => onViewSelect('grid'),
-                    styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
+                    command: () => onViewSelect('grid grid-cols-12 gap-4'),
+                    styleClass: viewMode === 'grid grid-cols-12 gap-4' ? 'active-menu-item' : ''
                 },
                 {
                     label: 'uve.palette.menu.view.option.list',
