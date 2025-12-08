@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -182,6 +183,15 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
         final Map<String, Object> map = new HashMap<>(folder.getMap());
         map.put("permissions", stringPermissions);
         map.remove("inode");
+        final String ownerId = folder.getOwner();
+        if(null != ownerId){
+            final User owner = Try.of(()->UserLocalManagerUtil.getUserById(ownerId)).getOrNull();
+            if (null != owner) {
+                map.put("owner", owner.getFullName());
+            } else {
+                map.put("owner", "unknown");
+            }
+        }
         return map;
 
     }
