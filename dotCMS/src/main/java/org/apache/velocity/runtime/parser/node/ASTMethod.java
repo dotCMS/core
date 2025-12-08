@@ -55,6 +55,71 @@ import org.apache.velocity.util.introspection.VelMethod;
  */
 public class ASTMethod extends SimpleNode
 {
+    /**
+     * Maximum parameter count for pooled arrays.
+     * Methods with more parameters will allocate new arrays.
+     */
+    private static final int MAX_POOLED_PARAMS = 8;
+
+    /**
+     * ThreadLocal pools for Object[] arrays to avoid allocation per method call.
+     * Index corresponds to array size (0-8 params).
+     */
+    @SuppressWarnings("unchecked")
+    private static final ThreadLocal<Object[]>[] PARAMS_POOL = new ThreadLocal[MAX_POOLED_PARAMS + 1];
+
+    /**
+     * ThreadLocal pools for Class[] arrays to avoid allocation per method call.
+     * Index corresponds to array size (1-8 params). Size 0 uses ArrayUtils.EMPTY_CLASS_ARRAY.
+     */
+    @SuppressWarnings("unchecked")
+    private static final ThreadLocal<Class<?>[]>[] CLASSES_POOL = new ThreadLocal[MAX_POOLED_PARAMS + 1];
+
+    static {
+        // Initialize ThreadLocal pools for common parameter counts
+        for (int i = 0; i <= MAX_POOLED_PARAMS; i++) {
+            final int size = i;
+            PARAMS_POOL[i] = ThreadLocal.withInitial(() -> new Object[size]);
+            if (i > 0) {
+                CLASSES_POOL[i] = ThreadLocal.withInitial(() -> new Class<?>[size]);
+            }
+        }
+    }
+
+    /**
+     * Gets a pooled Object[] array of the specified size, or allocates a new one if size > MAX_POOLED_PARAMS.
+     * The returned array should be cleared after use to avoid memory leaks.
+     */
+    private static Object[] getParamsArray(int size) {
+        if (size <= MAX_POOLED_PARAMS) {
+            return PARAMS_POOL[size].get();
+        }
+        return new Object[size];
+    }
+
+    /**
+     * Gets a pooled Class[] array of the specified size, or allocates a new one if size > MAX_POOLED_PARAMS.
+     * The returned array should be cleared after use to avoid memory leaks.
+     */
+    private static Class<?>[] getClassesArray(int size) {
+        if (size == 0) {
+            return ArrayUtils.EMPTY_CLASS_ARRAY;
+        }
+        if (size <= MAX_POOLED_PARAMS) {
+            return CLASSES_POOL[size].get();
+        }
+        return new Class<?>[size];
+    }
+
+    /**
+     * Clears a pooled array to avoid memory leaks from retained references.
+     */
+    private static void clearArray(Object[] array) {
+        if (array != null && array.length <= MAX_POOLED_PARAMS) {
+            java.util.Arrays.fill(array, null);
+        }
+    }
+
     private String methodName = "";
     private int paramCount = 0;
 
@@ -140,30 +205,30 @@ public class ASTMethod extends SimpleNode
          *  at execution time.  There can be no in-node caching,
          *  but if we are careful, we can do it in the context.
          */
-        Object [] params = new Object[paramCount];
 
-          /*
-           * sadly, we do need recalc the values of the args, as this can
-           * change from visit to visit
-           */
-        final Class[] paramClasses =       
-            paramCount > 0 ? new Class[paramCount] : ArrayUtils.EMPTY_CLASS_ARRAY;
-
-        for (int j = 0; j < paramCount; j++)
-        {
-            params[j] = jjtGetChild(j + 1).value(context);
-            if (params[j] != null)
-            {
-                paramClasses[j] = params[j].getClass();
-            }
-        }
-            
-        VelMethod method = ClassUtils.getMethod(methodName, params, paramClasses, 
-            o, context, this, strictRef);
-        if (method == null) return null;
+        // Use pooled arrays to avoid allocation per method call
+        final Object[] params = getParamsArray(paramCount);
+        final Class<?>[] paramClasses = getClassesArray(paramCount);
 
         try
         {
+            /*
+             * sadly, we do need recalc the values of the args, as this can
+             * change from visit to visit
+             */
+            for (int j = 0; j < paramCount; j++)
+            {
+                params[j] = jjtGetChild(j + 1).value(context);
+                if (params[j] != null)
+                {
+                    paramClasses[j] = params[j].getClass();
+                }
+            }
+
+            VelMethod method = ClassUtils.getMethod(methodName, params, paramClasses,
+                o, context, this, strictRef);
+            if (method == null) return null;
+
             /*
              *  get the returned object.  It may be null, and that is
              *  valid for something declared with a void return type.
@@ -189,13 +254,11 @@ public class ASTMethod extends SimpleNode
         {
             return handleInvocationException(o, context, ite.getTargetException());
         }
-        
         /** Can also be thrown by method invocation **/
         catch( IllegalArgumentException t )
         {
             return handleInvocationException(o, context, t);
         }
-        
         /**
          * pass through application level runtime exceptions
          */
@@ -209,6 +272,11 @@ public class ASTMethod extends SimpleNode
                          + methodName + "' in " + o.getClass();
             Logger.error(this,msg, e);
             throw new VelocityException(msg, e);
+        }
+        finally
+        {
+            // Clear pooled arrays to avoid memory leaks from retained references
+            clearArray(params);
         }
     }
 
