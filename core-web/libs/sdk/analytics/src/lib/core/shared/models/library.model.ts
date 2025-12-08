@@ -12,6 +12,8 @@ import {
 import { DotCMSContentImpressionPayload, JsonObject } from './event.model';
 import { DotCMSAnalyticsRequestBody } from './request.model';
 
+import { LogLevel } from '../dot-analytics.logger';
+
 /**
  * Configuration for event queue management.
  * Controls how events are batched before sending to the server.
@@ -59,21 +61,31 @@ export interface ViewportMetrics {
 
 /**
  * Main interface for the DotCMS Analytics SDK.
- * Provides the core methods for tracking page views and custom events.
+ * Provides the core methods for tracking page views, custom events, and conversions.
  */
 export interface DotCMSAnalytics {
     /**
      * Track a page view event.
      * @param payload - Optional custom data to include with the page view (any valid JSON object)
      */
-    pageView: (payload?: JsonObject) => void;
+    pageView(): void;
+    pageView(payload: JsonObject): void;
 
     /**
      * Track a custom event.
      * @param eventName - The name/type of the event to track
      * @param payload - Custom data to include with the event (any valid JSON object)
      */
-    track: (eventName: string, payload: JsonObject) => void;
+    track(eventName: string): void;
+    track(eventName: string, payload: JsonObject): void;
+
+    /**
+     * Track a conversion event.
+     * @param name - Name of the conversion (e.g., 'purchase', 'download', 'signup')
+     * @param options - Optional custom data and element information
+     */
+    conversion(name: string): void;
+    conversion(name: string, options: JsonObject): void;
 }
 
 /**
@@ -90,6 +102,17 @@ export interface DotCMSAnalyticsConfig {
      * Enable debug mode to get additional logging information.
      */
     debug: boolean;
+
+    /**
+     * Set the minimum log level for console output.
+     * - 'debug': Show all logs including detailed debugging information
+     * - 'info': Show informational messages, warnings, and errors
+     * - 'warn': Show only warnings and errors
+     * - 'error': Show only errors
+     *
+     * If not specified, falls back to debug flag (debug=true → 'debug', debug=false → 'warn')
+     */
+    logLevel?: LogLevel;
 
     /**
      * Automatically track page views when set to true.
@@ -110,12 +133,19 @@ export interface DotCMSAnalyticsConfig {
     queue?: QueueConfig | boolean;
 
     /**
-     * Content impression tracking configuration:
-     * - `undefined` or `false` (default): Impression tracking disabled
+     * Content impression tracking configuration (default: undefined - disabled):
+     * - `undefined` or `false`: Impression tracking disabled
      * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 1000)
      * - `ImpressionConfig`: Enable with custom settings
      */
     impressions?: ImpressionConfig | boolean;
+
+    /**
+     * Content click tracking configuration (default: undefined - disabled):
+     * - `undefined` or `false`: Click tracking disabled
+     * - `true`: Enable click tracking
+     */
+    clicks?: boolean;
 }
 
 /**

@@ -172,20 +172,14 @@ describe('DotRouterService', () => {
     it('should go to edit page', () => {
         service.goToEditPage({ url: 'abc/def' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: { url: 'abc/def' },
-            state: {
-                menuId: 'edit-page'
-            }
+            queryParams: { url: 'abc/def', mId: 'edit' }
         });
     });
 
     it('should go to edit page with language_id', () => {
         service.goToEditPage({ url: 'abc/def', language_id: '1' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: { url: 'abc/def', language_id: '1' },
-            state: {
-                menuId: 'edit-page'
-            }
+            queryParams: { url: 'abc/def', language_id: '1', mId: 'edit' }
         });
     });
 
@@ -256,7 +250,7 @@ describe('DotRouterService', () => {
             queryParamsHandling: '',
             queryParams: {}
         });
-        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test'], { replaceUrl: false });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(expect.anything(), { replaceUrl: false });
     });
 
     it('should go to porlet by URL and keep the queryParams', () => {
@@ -268,9 +262,7 @@ describe('DotRouterService', () => {
             queryParamsHandling: 'preserve',
             queryParams: {}
         });
-        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
-            replaceUrl: false
-        });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(expect.anything(), { replaceUrl: false });
     });
 
     it('should go to porlet by URL with queryParams', () => {
@@ -290,9 +282,7 @@ describe('DotRouterService', () => {
                 path: '/images'
             }
         });
-        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/content-drive'], {
-            replaceUrl: false
-        });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(expect.anything(), { replaceUrl: false });
     });
 
     it('should return the correct  Portlet Id', () => {

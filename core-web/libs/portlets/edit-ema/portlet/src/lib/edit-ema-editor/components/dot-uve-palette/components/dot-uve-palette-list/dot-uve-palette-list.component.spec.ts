@@ -53,10 +53,13 @@ const mockStore = {
     }),
     $isContentletsView: signal(false),
     $isContentTypesView: signal(true),
+    $isFavoritesList: signal(false),
     // methods we assert on
     getContentTypes: jest.fn(),
     getContentlets: jest.fn(),
-    setLayoutMode: jest.fn()
+    setLayoutMode: jest.fn(),
+    addFavorite: jest.fn(),
+    removeFavorite: jest.fn()
 };
 
 describe('DotUvePaletteListComponent', () => {
@@ -371,8 +374,10 @@ describe('DotUvePaletteListComponent', () => {
             // Setup: Configure for favorites list type
             spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
             mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.$isFavoritesList.set(true); // Set computed signal to match favorites view
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.LOADED);
+            mockStore.$isEmpty.set(false); // Ensure controls are visible
             mockStore.contenttypes.set([
                 {
                     id: '1',
@@ -491,6 +496,28 @@ describe('DotUvePaletteListComponent', () => {
             expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.search.state.message');
         });
 
+        it('should display the empty state message for CONTENTLETS view (drilling into a content type)', () => {
+            // Setup: Empty contentlets view (drilling into Blog content type with no contentlets)
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.$isContentletsView.set(true);
+            mockStore.$isContentTypesView.set(false);
+            mockStore.contentlets.set([]);
+            mockStore.searchParams.selectedContentType.set('Blog');
+
+            spectator.detectChanges();
+
+            // Query the empty state message element
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+            expect(emptyStateMessage).toBeTruthy();
+
+            // Verify the message displayed matches the contentlets empty state message
+            expect(emptyStateMessage?.textContent).toBe(
+                'uve.palette.empty.state.contentlets.message'
+            );
+        });
+
         it('should display the correct icon for CONTENT list type empty state', () => {
             // Setup: Empty state with no content for CONTENT list type
             spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
@@ -514,6 +541,8 @@ describe('DotUvePaletteListComponent', () => {
             spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
             mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            mockStore.$isContentTypesView.set(true);
+            mockStore.$isContentletsView.set(false); // Ensure not in contentlets view
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             mockStore.$isEmpty.set(true);
             mockStore.contenttypes.set([]);
@@ -551,10 +580,31 @@ describe('DotUvePaletteListComponent', () => {
             expect(emptyStateIcon?.className).toContain('pi-search');
         });
 
+        it('should display the correct icon for CONTENTLETS view empty state', () => {
+            // Setup: Empty contentlets view (drilling into content type with no contentlets)
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            mockStore.$isEmpty.set(true);
+            mockStore.$isContentletsView.set(true);
+            mockStore.$isContentTypesView.set(false);
+            mockStore.contentlets.set([]);
+
+            spectator.detectChanges();
+
+            // Query the empty state icon element
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+            expect(emptyStateIcon).toBeTruthy();
+
+            // Verify the icon class matches the contentlets empty state icon (folder-open)
+            expect(emptyStateIcon?.className).toContain('pi-folder-open');
+        });
+
         it('should call menu.toggle when sort menu button is clicked in content types view', () => {
             // Setup: Content types view with CONTENT list type (not FAVORITES)
             spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
             mockStore.searchParams.listType.set(DotUVEPaletteListTypes.CONTENT);
+            mockStore.$isFavoritesList.set(false); // Ensure not in favorites view
+            mockStore.$isContentTypesView.set(true); // Ensure in content types view
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.LOADED);
             mockStore.$isEmpty.set(false); // Set isEmpty to false so controls are visible
