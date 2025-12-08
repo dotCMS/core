@@ -5,7 +5,7 @@ import {
     StyleEditorField,
     StyleEditorForm,
     StyleEditorSection,
-    InputType
+    StyleEditorFieldInputType
 } from './types';
 
 /**
@@ -43,7 +43,7 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
 
     // Handle type-specific properties
     if (field.type === 'input') {
-        config.inputType = field.inputType as unknown as InputType;
+        config.inputType = field.inputType as unknown as StyleEditorFieldInputType;
         config.placeholder = field.placeholder as unknown as string;
         config.defaultValue = field.defaultValue as unknown as
             | string

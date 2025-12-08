@@ -4,7 +4,7 @@
  * Each field type represents a different input control that can be used
  * in the style editor form.
  */
-export type FieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup' | 'switch';
+export type StyleEditorFieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup' | 'switch';
 
 /**
  * Available input types for text input fields.
@@ -12,7 +12,7 @@ export type FieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup' | 'swit
  * - 'text': Standard text input for string values
  * - 'number': Numeric input for number values
  */
-export type InputType = 'text' | 'number';
+export type StyleEditorFieldInputType = 'text' | 'number';
 
 /**
  * Base field definition that all field types extend.
@@ -25,7 +25,7 @@ export type InputType = 'text' | 'number';
  */
 export interface StyleEditorBaseField {
     /** The type of field, used to discriminate between different field types */
-    type: FieldType;
+    type: StyleEditorFieldType;
     /** The label text displayed to users for this field */
     label: string;
 }
@@ -365,13 +365,13 @@ export interface StyleEditorForm {
  */
 export interface StyleEditorFieldSchema {
     /** The field type identifier */
-    type: FieldType;
+    type: StyleEditorFieldType;
     /** The field label */
     label: string;
     /** Object containing all field-specific configuration */
     config: {
         /** Optional input type for input fields ('text' or 'number') */
-        inputType?: InputType;
+        inputType?: StyleEditorFieldInputType;
         /** Optional placeholder text shown when the field is empty */
         placeholder?: string;
         /** Optional minimum value constraint for number inputs */
