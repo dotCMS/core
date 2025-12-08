@@ -252,6 +252,10 @@ public class PaginatedContentletsIntegrationTest {
         final ContentletAPI contentletAPIMock = mock(ContentletAPI.class);
         final String luceneQuery = "+conHost:" + host.getIdentifier();
 
+        // Mock indexCount to return total results (used to determine pagination strategy)
+        when(contentletAPIMock.indexCount(luceneQuery, APILocator.systemUser(), false))
+                .thenReturn(4L);
+
         when(contentletAPIMock.searchIndex(luceneQuery, 2, 0, "title asc",
                         APILocator.systemUser(), false))
                 .thenReturn(expectedFirstCall);
