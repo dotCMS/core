@@ -7,6 +7,7 @@
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
+<%@ page import="com.dotmarketing.util.UtilMethods" %>
 
 <%
    final boolean hasAdminRole = user.isAdmin();
@@ -214,6 +215,68 @@
       span.textContent = "Make sure the filename of the image has less than 50 characters."
       elem.insertAdjacentElement('afterend', span)
    }
+
+    const saveAdminSite = async () => {
+
+
+        <%if(UtilMethods.isEmpty(System.getenv("DOT_ADMIN_SITE_URL"))){%>
+
+        if (await reallySaveAdminSite()) {
+            document.getElementById("setAdminSiteUrlPlease").style.display = "none";
+        } else {
+            document.getElementById("setAdminSiteUrlPlease").style.display = "block";
+        }
+        <%}%>
+        saveCompanyBasicInfo();
+
+    }
+
+    const reallySaveAdminSite = async () => {
+
+        const value = dijit.byId('companyPortalUrl').value;
+
+        if (!value || value.trim() === '') {
+            return true;
+        }
+
+        const key = "DOT_ADMIN_SITE_URL";
+
+        document.body.style.cursor = 'wait'
+        const data = {
+            key: key,
+            value: value
+        };
+        return await fetch('/api/v1/system-table/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            document.body.style.cursor = 'default'
+            if (response.ok) {
+                return response.json();
+            }
+            return Promise.reject(response);
+
+        })
+        .then(data => {
+            document.body.style.cursor = 'default'
+            return true;
+        })
+        .catch((response) => {
+            document.body.style.cursor = 'default'
+            console.log("error response:", response);
+            alert("Error in saving: " + response);
+            return false;
+        });
+
+    }
+
+
+
+
 </script>
 <style type="text/css">
 	.listingTable__form-control {
@@ -357,19 +420,29 @@
          <div class="flex">
             <div class="form-horizontal">
                <dl>
-                   <dt><%= LanguageUtil.get(pageContext, "Admin-Site-Url") %>
+                   <dt style="display: inline-block;"><%= LanguageUtil.get(pageContext, "Admin-Site-Url") %>
                    </dt>
-                   <dd style="display: inline-block;padding-bottom: 7px;">
-                       <%if (APILocator.getAdminSiteAPI().isAdminSiteConfigured()) {%>
-                       <%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>
-                       <%} else {%>
+                   <dd style="display: inline-block;">
+                       <%if (UtilMethods.isSet(System.getenv("DOT_ADMIN_SITE_URL"))) {%>
                        <b><%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>
                        </b>
-                       <div style="padding-top:4px;max-width:400px;"><small><%=LanguageUtil.get(pageContext,
-                               "admin.site.url.set.to.default")%>
-                       </small></div>
-                       <%} %>
+                       <div style="padding-top:4px;max-width:400px;">
+                           <small>
+                               <%=LanguageUtil.get(pageContext, "set.by.environment.variable")%>
+                           </small>
+                       </div>
+                       <%} else {%>
+                       <input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl"
+                              placeholder="<%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>" size="20" type="text"
+                              value="<%= APILocator.getAdminSiteAPI().getAdminSiteUrl() %>" style="width: 250px">
 
+                       <div id="setAdminSiteUrlPlease"
+                            style="padding-top:4px;max-width:400px; <%=(APILocator.getAdminSiteAPI().isAdminSiteConfigured()) ? "display:none":"" %>">
+                           <small>
+                               <%=LanguageUtil.get(pageContext, "admin.site.url.set.to.default")%>
+                           </small>
+                       </div>
+                       <%}%>
 
                    </dd>
                </dl>
@@ -583,7 +656,8 @@
    </tr>
 </table>
 <div class="buttonRow" style="margin-bottom: 60px;">
-   <button dojoType="dijit.form.Button" onclick="saveCompanyBasicInfo();" type="button" id="basicSubmitButton" iconClass="saveIcon">
+    <button dojoType="dijit.form.Button" onclick="saveAdminSite();" type="button" id="basicSubmitButton"
+            iconClass="saveIcon">
    <%= LanguageUtil.get(pageContext, "save") %>
    </button>
 </div>

@@ -95,7 +95,9 @@ public interface AdminSiteAPI {
             "dotcms.host",
             "dotcms.cloud",
             "dotcmscloud.com",
-            "localhost"};
+            "localhost",
+            "127.0.0.1"
+    };
 
 
 

@@ -24,6 +24,7 @@ package com.liferay.portal.model;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
@@ -173,6 +174,10 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
+    @JsonIgnore
+    public String getOldPortalURL() {
+        return _portalURL;
+    }
 
 	public String getPortalURL() {
         return APILocator.getAdminSiteAPI().getAdminSiteUrl();

@@ -23,11 +23,10 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
-
+import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.Optional;
 
 /**
  * 
@@ -102,8 +101,13 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
         request.setAttribute(WebKeys.CURRENT_HOST, host);
 
+
         if (session != null && user.isBackendUser()) {
-            session.setAttribute(WebKeys.CURRENT_HOST, host);
+            Host sessionHost = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
+            if (sessionHost != null && !host.equals(sessionHost)) {
+                session.setAttribute(WebKeys.CURRENT_HOST, host);
+            }
+
         }
     }
 

@@ -1,11 +1,13 @@
 package com.dotcms.adminsite;
 
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 import java.net.URL;
 import java.util.Collections;
@@ -165,21 +167,26 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             // Reset the warning flag if it becomes configured
             notConfiguredWarningLogged = false;
         }
-        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, _ADMIN_SITE_URL_DEFAULT);
+        HttpServletRequest req = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        String oldHost = req != null && UtilMethods.isSet(req.getHeader("host"))
+                ? req.getHeader("host").toLowerCase()
+                : APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL();
+
+        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, oldHost);
 
         while (adminSiteUrl.endsWith("/")) {
             adminSiteUrl = adminSiteUrl.substring(0, adminSiteUrl.length() - 1);
         }
 
         if (!adminSiteUrl.startsWith("http://") && !adminSiteUrl.startsWith("https://")) {
-            Logger.warn(AdminSiteAPI.class, "ADMIN_SITE_URL: '" + adminSiteUrl
-                    + "' is not a valid return URL. Please add the protocol, domain and optionally the port to access the dotCMS instance, e.g. DOT_ADMIN_SITE_URL=https://www.yoursite.com or DOT_ADMIN_SITE_URL=https://www.yoursite.com:8443");
+            Logger.info(AdminSiteAPI.class, "ADMIN_SITE_URL: '" + adminSiteUrl
+                    + "' is not a valid return URL - adding https:// to the ADMIN_SITE_URL.  This should be part of the configuration, e.g. DOT_ADMIN_SITE_URL=https://www.yoursite.com or DOT_ADMIN_SITE_URL=https://www.yoursite.com:8443");
             adminSiteUrl = "https://" + adminSiteUrl;
         }
 
         if (adminSiteUrl.lastIndexOf("/") > 10) {
-            Logger.warn(AdminSiteAPI.class,
-                    "ADMIN_SITE_URL should not include a uri, e.g it should be set to https://www.yoursite.com, not https://www.yoursite.com/dotAdmin. Please remove any path or uri after the domain/port");
+            Logger.info(AdminSiteAPI.class,
+                    "ADMIN_SITE_URL should not include a path, e.g it should be set to https://www.yoursite.com, not https://www.yoursite.com/dotAdmin. Removing the path or uri after the domain/port");
             while (adminSiteUrl.lastIndexOf("/") > 9) {
                 adminSiteUrl = adminSiteUrl.substring(0, adminSiteUrl.lastIndexOf("/") - 1);
             }
