@@ -1,14 +1,16 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
 
 .site-selector__title {
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
 }
 
 .site-selector__modal {
-    @include box_shadow(2);
-    background-color: $white;
-    color: $black;
+    @include mixins.box_shadow(2);
+    background-color: colors.$white;
+    color: colors.$black;
     display: block;
     left: 50%;
     padding: 40px 50px;

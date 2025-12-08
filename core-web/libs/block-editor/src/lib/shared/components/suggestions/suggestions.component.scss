@@ -1,17 +1,21 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: block;
     min-width: 15 * $dot-editor-size;
-    box-shadow: 0px (0.25 * $dot-editor-size) (1.25 * $dot-editor-size) $color-palette-black-op-10;
+    box-shadow: 0px (0.25 * $dot-editor-size) (1.25 * $dot-editor-size) colors.$color-palette-black-op-10;
     padding: (0.5 * $dot-editor-size) 0;
-    background: $white;
-    font-family: $font-default;
+    background: colors.$white;
+    font-family: fonts.$font-default;
 }
 
 h3 {
     text-transform: uppercase;
-    font-size: $font-size-md;
+    font-size: fonts.$font-size-md;
     margin: (0.5 * $dot-editor-size) $dot-editor-size;
     color: #999999;
 }
@@ -41,6 +45,6 @@ h3 {
 }
 
 .divider {
-    border-top: $color-palette-gray-500 solid 1px;
-    margin: $spacing-1 0;
+    border-top: colors.$color-palette-gray-500 solid 1px;
+    margin: spacing.$spacing-1 0;
 }

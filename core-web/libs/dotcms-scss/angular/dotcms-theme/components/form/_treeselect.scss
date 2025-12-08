@@ -1,5 +1,8 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/shadows";
+@use "../../../../shared/spacing";
 
 .p-treeselect {
     @extend #form-field-base;
@@ -17,7 +20,7 @@
         &.p-focus {
             @extend #form-field-focus;
             outline-offset: 0;
-            box-shadow: $shadow-xs;
+            box-shadow: shadows.$shadow-xs;
         }
     }
 
@@ -25,7 +28,7 @@
         @extend #form-field-disabled;
 
         .p-treeselect-trigger {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 
@@ -36,15 +39,15 @@
     }
 
     .p-treeselect-label {
-        padding: $spacing-1 $spacing-2;
-        line-height: $spacing-4;
+        padding: spacing.$spacing-1 spacing.$spacing-2;
+        line-height: spacing.$spacing-4;
         transition:
             background-color $basic-speed,
             border-color $basic-speed,
             box-shadow $basic-speed;
 
         &.p-placeholder {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 
@@ -57,7 +60,7 @@
     .p-treeselect {
         &.p-treeselect-chip {
             .p-treeselect-label {
-                padding: $spacing-0 $spacing-1;
+                padding: spacing.$spacing-0 spacing.$spacing-1;
             }
         }
     }
@@ -100,19 +103,19 @@ p-treeselect {
     &.ng-invalid {
         &.ng-dirty {
             .p-treeselect {
-                border-color: $error;
+                border-color: colors.$error;
             }
         }
     }
 
     &.p-treeselect-clearable {
         .p-treeselect-label-container {
-            padding-right: $spacing-5;
+            padding-right: spacing.$spacing-5;
         }
 
         .p-treeselect-clear-icon {
-            color: $color-palette-gray-500;
-            right: $spacing-7;
+            color: colors.$color-palette-gray-500;
+            right: spacing.$spacing-7;
         }
     }
 }

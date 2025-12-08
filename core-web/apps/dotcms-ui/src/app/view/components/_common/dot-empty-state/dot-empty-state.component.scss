@@ -1,3 +1,8 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -7,12 +12,12 @@
 
 .dot-empty-container__notice {
     .material-icons {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
         font-size: 4rem;
     }
 
     position: absolute;
-    padding: $spacing-3 $spacing-5;
+    padding: spacing.$spacing-3 spacing.$spacing-5;
     top: 50%;
     left: 50%;
     z-index: 1;
@@ -28,22 +33,22 @@
     }
 
     h3 {
-        font-size: $font-size-lg;
-        margin: $spacing-3 0 $spacing-2 0;
-        font-weight: $font-weight-semi-bold;
+        font-size: fonts.$font-size-lg;
+        margin: spacing.$spacing-3 0 spacing.$spacing-2 0;
+        font-weight: fonts.$font-weight-semi-bold;
     }
 
     p {
-        margin-bottom: $spacing-4;
+        margin-bottom: spacing.$spacing-4;
     }
 }
 
 .checkbox-dummy {
-    border: 2px solid $color-palette-gray-200;
-    background: $white;
+    border: 2px solid colors.$color-palette-gray-200;
+    background: colors.$white;
     width: 1.3rem;
     height: 1.3rem;
-    border-radius: $border-radius-xs;
+    border-radius: common.$border-radius-xs;
     position: relative;
 }
 
@@ -51,13 +56,13 @@
     position: relative;
     border-collapse: collapse;
     width: 100%;
-    background: $white;
+    background: colors.$white;
 
     tbody {
         tr {
-            border-top: 1px solid $color-palette-gray-200;
+            border-top: 1px solid colors.$color-palette-gray-200;
             outline: 0 none;
-            background: $white;
+            background: colors.$white;
             transition: none;
             outline-color: transparent;
 
@@ -67,12 +72,12 @@
 
             td {
                 &:first-child {
-                    padding-left: $spacing-5;
+                    padding-left: spacing.$spacing-5;
                 }
                 text-align: left;
-                border: 1px solid $color-palette-gray-200;
+                border: 1px solid colors.$color-palette-gray-200;
                 border-width: 0 0 1px 0;
-                padding: 1.25rem $spacing-2;
+                padding: 1.25rem spacing.$spacing-2;
                 width: 3.5%;
                 position: relative;
 
@@ -92,7 +97,7 @@
                     right: 0;
                     top: 50%;
                     bottom: 50%;
-                    background-color: $color-palette-gray-200;
+                    background-color: colors.$color-palette-gray-200;
                     height: 0.71rem;
                     transform: translateY(-50%);
                     border-radius: 1.7rem;

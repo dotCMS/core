@@ -1,14 +1,17 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
 
 :host {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     height: 100%;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 
     &.disabled {
         opacity: 1; // Override the global disabled opacity
@@ -18,29 +21,29 @@
 
 .icon-container {
     border-radius: 50%;
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 
     .icon {
-        font-size: $font-size-xxl;
+        font-size: fonts.$font-size-xxl;
         width: auto;
     }
 
     &.info {
-        color: $color-palette-primary-500;
-        background: $color-palette-primary-200;
+        color: colors.$color-palette-primary-500;
+        background: colors.$color-palette-primary-200;
     }
 
     &.error {
-        color: $color-alert-yellow;
-        background: $color-alert-yellow-light;
+        color: colors.$color-alert-yellow;
+        background: colors.$color-alert-yellow-light;
     }
 
     &.disabled {
-        color: $field-disabled-color;
-        background: $field-disabled-bgcolor;
+        color: theme-variables.$field-disabled-color;
+        background: theme-variables.$field-disabled-bgcolor;
 
         .icon {
-            color: $field-disabled-color;
+            color: theme-variables.$field-disabled-color;
         }
     }
 }
@@ -48,9 +51,9 @@
 .text {
     text-align: center;
     line-height: 140%;
-    font-size: $font-size-default;
+    font-size: fonts.$font-size-default;
 
     &.disabled {
-        color: $field-disabled-color;
+        color: theme-variables.$field-disabled-color;
     }
 }

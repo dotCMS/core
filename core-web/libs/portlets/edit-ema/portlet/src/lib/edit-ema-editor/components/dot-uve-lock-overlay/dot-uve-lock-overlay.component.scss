@@ -1,3 +1,6 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+
 @use "variables" as *;
 
 :host {
@@ -15,7 +18,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background: $color-palette-black-op-40;
+    background: colors.$color-palette-black-op-40;
 
     display: flex;
     align-items: center;
@@ -24,25 +27,25 @@
 
     &__content {
         text-align: center;
-        color: $white;
+        color: colors.$white;
     }
 
     &__icon {
         i {
-            font-size: $font-size-xxl;
+            font-size: fonts.$font-size-xxl;
             display: inline-block;
         }
     }
 
     &__title {
-        font-size: $font-size-lg;
+        font-size: fonts.$font-size-lg;
         font-weight: 600;
-        color: $white;
+        color: colors.$white;
         margin: 0;
     }
 
     &__message {
         margin: 0;
-        font-size: $font-size-md;
+        font-size: fonts.$font-size-md;
     }
 }

@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
 
 ::ng-deep .dot-iframe-dialog .p-dialog-header {
     background-color: #f1f3f4;

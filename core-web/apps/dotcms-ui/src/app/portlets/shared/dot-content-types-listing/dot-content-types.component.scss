@@ -1,3 +1,5 @@
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -11,5 +13,5 @@
 }
 
 dot-base-type-selector {
-    margin-left: $spacing-2;
+    margin-left: spacing.$spacing-2;
 }

@@ -1,3 +1,5 @@
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dot-form-dialog__content {
@@ -9,12 +11,12 @@
     bottom: 0;
     display: flex;
     justify-content: flex-end;
-    left: $spacing-6;
-    padding: $spacing-6 0;
+    left: spacing.$spacing-6;
+    padding: spacing.$spacing-6 0;
     position: absolute;
-    right: $spacing-6;
+    right: spacing.$spacing-6;
 
     & > button {
-        margin-left: $spacing-2;
+        margin-left: spacing.$spacing-2;
     }
 }

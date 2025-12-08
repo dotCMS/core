@@ -1,14 +1,17 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep {
     .p-tabview-nav {
-        padding: 0 $spacing-4;
-        background: $white;
+        padding: 0 spacing.$spacing-4;
+        background: colors.$white;
     }
 
     .p-tabview-panel {
-        padding: 0 $spacing-4;
-        padding-top: $spacing-4;
+        padding: 0 spacing.$spacing-4;
+        padding-top: spacing.$spacing-4;
     }
 }
 

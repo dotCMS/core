@@ -44,7 +44,9 @@ export default defineConfig({
     ],
 
     build: {
-        outDir: '../../../dist/libs/sdk/analytics',
+        // Explicitly resolve outDir to prevent output from going to external dist folders
+        // This ensures reproducible builds regardless of current working directory
+        outDir: path.resolve(__dirname, '../../../dist/libs/sdk/analytics'),
         emptyOutDir: true,
         reportCompressedSize: true,
         commonjsOptions: {

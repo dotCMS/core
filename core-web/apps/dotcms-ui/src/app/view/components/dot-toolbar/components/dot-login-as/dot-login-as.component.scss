@@ -1,5 +1,7 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     display: block;
@@ -7,7 +9,7 @@
 
 .login-as {
     &__error-message {
-        color: $error;
-        margin-bottom: $spacing-3;
+        color: colors.$error;
+        margin-bottom: spacing.$spacing-3;
     }
 }

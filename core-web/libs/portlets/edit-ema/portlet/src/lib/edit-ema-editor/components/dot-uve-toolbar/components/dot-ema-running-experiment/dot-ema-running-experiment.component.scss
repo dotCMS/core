@@ -1,3 +1,5 @@
+@use "../../../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 p-tag {
@@ -5,5 +7,5 @@ p-tag {
 }
 
 .experiments__icon {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }

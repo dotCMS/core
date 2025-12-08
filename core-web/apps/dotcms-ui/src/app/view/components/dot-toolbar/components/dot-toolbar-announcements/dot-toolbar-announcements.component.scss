@@ -1,3 +1,8 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/common";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .announcements__main-container {
@@ -16,24 +21,24 @@
 
 .announcements__link-container {
     display: flex;
-    padding: $spacing-1;
-    gap: $spacing-1;
-    border-radius: $border-radius-lg;
+    padding: spacing.$spacing-1;
+    gap: spacing.$spacing-1;
+    border-radius: common.$border-radius-lg;
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 
     i {
-        color: $color-palette-primary-500;
+        color: colors.$color-palette-primary-500;
     }
 }
 
 .announcements__badge {
-    background-color: $color-accessible-text-fuchsia;
+    background-color: colors.$color-accessible-text-fuchsia;
     border-radius: 50%;
-    color: $white;
-    font-size: $font-size-sm;
-    line-height: $font-size-sm;
+    color: colors.$white;
+    font-size: fonts.$font-size-sm;
+    line-height: fonts.$font-size-sm;
     width: 0.625rem;
     height: 0.625rem;
     position: absolute;
@@ -42,9 +47,9 @@
 }
 
 .announcements__about-link {
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
@@ -52,35 +57,35 @@
     display: flex;
     position: relative;
     flex-direction: row;
-    gap: $spacing-3;
-    padding: $spacing-2 $spacing-1;
-    margin-bottom: $spacing-1;
-    border-radius: $border-radius-md;
+    gap: spacing.$spacing-3;
+    padding: spacing.$spacing-2 spacing.$spacing-1;
+    margin-bottom: spacing.$spacing-1;
+    border-radius: common.$border-radius-md;
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
 .announcements__list-item--active {
-    background-color: $color-palette-secondary-100;
+    background-color: colors.$color-palette-secondary-100;
 }
 
 .announcements__title {
     margin: 0;
-    padding-bottom: $spacing-1;
-    border-bottom: 1px solid $color-palette-gray-300;
-    font-size: $font-size-lmd;
+    padding-bottom: spacing.$spacing-1;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
+    font-size: fonts.$font-size-lmd;
 }
 
 .announcements__content {
     display: flex;
     flex-direction: column;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
 }
 
 .announcements__date {
-    color: $color-palette-gray-800;
-    font-size: $font-size-sm;
+    color: colors.$color-palette-gray-800;
+    font-size: fonts.$font-size-sm;
 }
 
 .announcements__image {
@@ -89,31 +94,31 @@
     background-color: var(--color-palette-secondary-200);
     color: var(--color-palette-secondary-500);
     border-radius: 50%;
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
 }
 
 .announcements__label {
-    font-weight: $font-weight-semi-bold;
+    font-weight: fonts.$font-weight-semi-bold;
 }
 
 .announcements__about {
     display: grid;
     flex-direction: column;
-    gap: $spacing-0;
-    margin: $spacing-3;
+    gap: spacing.$spacing-0;
+    margin: spacing.$spacing-3;
     grid-template-columns: 1fr 1fr;
 }
 
 .announcements__link {
-    color: $color-palette-primary;
+    color: colors.$color-palette-primary;
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
 .announcements__url {
     text-decoration: none;
-    color: $black;
+    color: colors.$black;
     width: 100%;
 }
 

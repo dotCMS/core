@@ -1,7 +1,10 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dot-pages-card-empty {
-    border: 1px solid $color-palette-gray-300;
+    border: 1px solid colors.$color-palette-gray-300;
     border-radius: 4px;
 }
 
@@ -9,17 +12,17 @@
     display: flex;
     width: 100%;
     height: 170px;
-    border-bottom: 1px solid $color-palette-gray-300;
+    border-bottom: 1px solid colors.$color-palette-gray-300;
 }
 
 .dot-pages-card-empty__body {
     display: flex;
-    margin: $spacing-3 $spacing-4 $spacing-3 $spacing-3;
+    margin: spacing.$spacing-3 spacing.$spacing-4 spacing.$spacing-3 spacing.$spacing-3;
 
     ::ng-deep dot-icon {
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
         i {
-            color: $color-palette-gray-300;
+            color: colors.$color-palette-gray-300;
         }
     }
 }
@@ -29,6 +32,6 @@
 
     ::ng-deep p-skeleton:first-child {
         display: block;
-        margin-bottom: $spacing-1;
+        margin-bottom: spacing.$spacing-1;
     }
 }

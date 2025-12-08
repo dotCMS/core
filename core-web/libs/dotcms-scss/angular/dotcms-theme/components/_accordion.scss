@@ -1,16 +1,21 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-accordion .p-accordion-header .p-accordion-header-link {
-    padding: $spacing-3;
-    border: 1px solid $color-palette-gray-400;
-    color: $black;
-    font-weight: $font-weight-semi-bold;
-    border-radius: $border-radius-md;
+    padding: spacing.$spacing-3;
+    border: 1px solid colors.$color-palette-gray-400;
+    color: colors.$black;
+    font-weight: fonts.$font-weight-semi-bold;
+    border-radius: common.$border-radius-md;
     transition: box-shadow 0.2s;
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
 }
 .p-accordion .p-accordion-header .p-accordion-header-link .p-accordion-toggle-icon {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 .p-accordion .p-accordion-header .p-accordion-header-link:focus {
     outline: 0 none;
@@ -24,32 +29,32 @@
 }
 
 .p-accordion .p-accordion-content {
-    padding: $spacing-3;
-    border: 1px solid $color-palette-gray-400;
+    padding: spacing.$spacing-3;
+    border: 1px solid colors.$color-palette-gray-400;
     border-top: 0;
     border-top-right-radius: 0;
     border-top-left-radius: 0;
-    border-bottom-right-radius: $border-radius-md;
-    border-bottom-left-radius: $border-radius-md;
+    border-bottom-right-radius: common.$border-radius-md;
+    border-bottom-left-radius: common.$border-radius-md;
 }
 .p-accordion p-accordiontab .p-accordion-tab {
-    margin-bottom: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
 }
 
 .p-accordion p-accordiontab:first-child .p-accordion-header .p-accordion-header-link {
-    border-top-right-radius: $border-radius-md;
-    border-top-left-radius: $border-radius-md;
+    border-top-right-radius: common.$border-radius-md;
+    border-top-left-radius: common.$border-radius-md;
 }
 .p-accordion
     p-accordiontab:last-child
     .p-accordion-header:not(.p-highlight)
     .p-accordion-header-link {
-    border-bottom-right-radius: $border-radius-md;
-    border-bottom-left-radius: $border-radius-md;
+    border-bottom-right-radius: common.$border-radius-md;
+    border-bottom-left-radius: common.$border-radius-md;
 }
 .p-accordion p-accordiontab:last-child .p-accordion-content {
-    border-bottom-right-radius: $border-radius-md;
-    border-bottom-left-radius: $border-radius-md;
+    border-bottom-right-radius: common.$border-radius-md;
+    border-bottom-left-radius: common.$border-radius-md;
 }
 
 //Custom
@@ -59,25 +64,25 @@
             &.pi {
                 border: 1px solid;
                 border-radius: 100px;
-                height: $spacing-5;
-                width: $spacing-5;
+                height: spacing.$spacing-5;
+                width: spacing.$spacing-5;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                color: $color-palette-primary;
+                color: colors.$color-palette-primary;
             }
 
             &.pi:before {
-                font-size: $spacing-2;
+                font-size: spacing.$spacing-2;
             }
         }
 
         &.p-disabled {
             .p-accordion-header-link {
-                color: $color-palette-gray-400;
+                color: colors.$color-palette-gray-400;
 
                 .p-accordion-toggle-icon-end.pi {
-                    color: $color-palette-gray-400;
+                    color: colors.$color-palette-gray-400;
                 }
             }
         }

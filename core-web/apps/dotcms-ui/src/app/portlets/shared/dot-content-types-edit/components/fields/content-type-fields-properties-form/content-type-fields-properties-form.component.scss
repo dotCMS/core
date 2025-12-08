@@ -1,3 +1,5 @@
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -12,5 +14,5 @@
 }
 
 .p-field:nth-last-child(1n) {
-    margin-bottom: $spacing-7;
+    margin-bottom: spacing.$spacing-7;
 }

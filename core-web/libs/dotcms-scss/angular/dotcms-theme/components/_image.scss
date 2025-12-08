@@ -1,53 +1,58 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-component-overlay.p-image-mask {
-    background-color: $black;
+    background-color: colors.$black;
 }
 
 .p-image-preview-indicator {
     background-color: transparent;
-    color: $white;
+    color: colors.$white;
 
     .pi-window-maximize {
-        font-size: $font-size-xl;
+        font-size: fonts.$font-size-xl;
     }
 }
 
 .p-image-preview-container:hover > .p-image-preview-indicator {
-    background-color: $color-palette-black-op-50;
+    background-color: colors.$color-palette-black-op-50;
 }
 
 .p-image-toolbar {
-    padding: $spacing-3;
+    padding: spacing.$spacing-3;
 }
 
 .p-image-action.p-link {
-    color: $white;
+    color: colors.$white;
     background-color: transparent;
     width: 3rem;
     height: 3rem;
-    border-radius: $border-radius-circular;
+    border-radius: common.$border-radius-circular;
     transition:
         background-color $basic-speed,
         color $basic-speed,
         box-shadow $basic-speed;
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 
     &:last-child {
         margin-right: 0;
     }
 
     &:hover {
-        color: $white;
-        background: $color-palette-white-op-20;
+        color: colors.$white;
+        background: colors.$color-palette-white-op-20;
     }
 
     i {
-        font-size: $font-size-lg;
+        font-size: fonts.$font-size-lg;
     }
 
     .p-icon {
-        width: $spacing-4;
-        height: $spacing-4;
+        width: spacing.$spacing-4;
+        height: spacing.$spacing-4;
     }
 }

@@ -1,13 +1,17 @@
+@use "../../../shared/colors";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 p-panel {
     display: block;
-    margin-bottom: $spacing-5;
+    margin-bottom: spacing.$spacing-5;
 }
 
 .p-panel-toggleable {
     cursor: pointer;
-    background-color: $color-palette-primary-100;
+    background-color: colors.$color-palette-primary-100;
 
     &.p-panel-expanded {
         cursor: default;
@@ -15,16 +19,16 @@ p-panel {
 }
 
 .p-panel-header {
-    font-size: $font-size-lg;
-    margin: $spacing-1 0;
-    padding: $spacing-3 0;
+    font-size: fonts.$font-size-lg;
+    margin: spacing.$spacing-1 0;
+    padding: spacing.$spacing-3 0;
     position: relative;
 
     .p-panel-icons span {
-        color: $color-palette-primary;
-        font-size: $font-size-lg;
-        margin-left: $spacing-1;
-        margin-right: $spacing-2;
+        color: colors.$color-palette-primary;
+        font-size: fonts.$font-size-lg;
+        margin-left: spacing.$spacing-1;
+        margin-right: spacing.$spacing-2;
     }
 }
 
@@ -35,5 +39,5 @@ p-panel {
 }
 
 .p-panel-header .p-panel-icons span.pi {
-    margin-right: $spacing-4;
+    margin-right: spacing.$spacing-4;
 }

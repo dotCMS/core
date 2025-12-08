@@ -169,9 +169,9 @@ describe('DotToolbarComponent', () => {
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
         spectator.detectChanges();
-        spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
+        spectator.triggerEventHandler('dot-site-selector', 'switch', siteMock);
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
-        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock);
     });
 
     it(`should go to site-browser when site change on edit page url`, () => {
@@ -184,10 +184,10 @@ describe('DotToolbarComponent', () => {
         });
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
         spectator.detectChanges();
-        spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
+        spectator.triggerEventHandler('dot-site-selector', 'switch', siteMock);
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock);
     });
 
     it(`should pass class and width`, () => {

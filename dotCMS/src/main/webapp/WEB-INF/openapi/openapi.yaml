@@ -10581,6 +10581,29 @@ paths:
           description: default response
       tags:
       - Page
+  /v1/permissions:
+    get:
+      description: Returns available permission levels and scopes that can be assigned
+        to users and roles
+      operationId: getPermissionMetadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPermissionMetadataView"
+          description: Permission metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - frontend user attempted access (backend user required)
+      summary: Get permission metadata
+      tags:
+      - Permissions
   /v1/permissions/_bycontent:
     get:
       description: "Retrieves permissions for a specific contentlet by its identifier.\
@@ -10676,6 +10699,64 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Get permissions by permission type
+      tags:
+      - Permissions
+  /v1/permissions/user/{userId}/asset/{assetId}:
+    put:
+      description: "Saves permissions for a user's individual role on a specific asset\
+        \ (host or folder). This endpoint assigns permissions directly to the user's\
+        \ individual role. If the asset inherits permissions, inheritance will be\
+        \ broken automatically before saving. Optionally cascade permissions to descendants\
+        \ (removes their individual permissions). Only admin users can update permissions."
+      operationId: updateUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Asset identifier (host ID or folder inode)
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveUserPermissionsForm"
+        description: Permission updates to apply. Use empty arrays to remove all permissions
+          for a scope.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySaveUserPermissionsView"
+          description: User permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid input (see error message for details)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required or user lacks EDIT_PERMISSIONS
+            on asset
+        "404":
+          content:
+            application/json: {}
+          description: User or asset not found
+      summary: Update user permissions on asset
       tags:
       - Permissions
   /v1/personalization/pagepersonas:
@@ -18157,9 +18238,8 @@ paths:
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
       description: "Moves or adds a field to a Content Type. This endpoint is called\
-        \ (1) when dragging-and-dropping a new field to a Content Type, (2) when updating\
-        \ an existing field, or (3) when moving such a field around in the Content\
-        \ Type's layout."
+        \ when dragging-and-dropping a new field to a Content Type, or when moving\
+        \ such a field around in the Content Type's layout."
       operationId: moveOrAddContentTypeField
       parameters:
       - in: path
@@ -18274,7 +18354,7 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
-          description: Field was added or updated successfully
+          description: Field was added or moved successfully
         "400":
           description: Invalid JSON body
         "401":
@@ -18290,14 +18370,19 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:
     put:
-      operationId: updateField
+      description: "Updates a field in a Content Type. The request body must have\
+        \ the follow syntax:"
+      operationId: updateContentTypeField
       parameters:
-      - in: path
+      - description: The ID or Velocity Variable Name of the Content Type that the
+          updated field belongs to.
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: The ID of the Field that is being updated.
+        in: path
         name: id
         required: true
         schema:
@@ -18307,12 +18392,135 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateFieldForm"
+        description: The object containing the updated attributes of the Field.
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example: |-
+                {
+                    "entity": [
+                        {
+                            "divider": {
+                                "clazz": "com.dotcms.contenttype.model.field.ImmutableRowField",
+                                "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                "dataType": "SYSTEM",
+                                "fieldContentTypeProperties": [],
+                                "fieldType": "Row",
+                                "fieldTypeLabel": "Row",
+                                "fieldVariables": [],
+                                "fixed": false,
+                                "forceIncludeInApi": false,
+                                "iDate": 1764268372000,
+                                "id": "1b950209ec7b1a5e6901f7fe277e0a6a",
+                                "indexed": false,
+                                "listed": false,
+                                "modDate": 1764268380000,
+                                "name": "fields-0",
+                                "readOnly": false,
+                                "required": false,
+                                "searchable": false,
+                                "sortOrder": 0,
+                                "unique": false,
+                                "variable": "fields0"
+                            },
+                            "columns": [
+                                {
+                                    "columnDivider": {
+                                        "clazz": "com.dotcms.contenttype.model.field.ImmutableColumnField",
+                                        "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                        "dataType": "SYSTEM",
+                                        "fieldContentTypeProperties": [],
+                                        "fieldType": "Column",
+                                        "fieldTypeLabel": "Column",
+                                        "fieldVariables": [],
+                                        "fixed": false,
+                                        "forceIncludeInApi": false,
+                                        "iDate": 1764268372000,
+                                        "id": "6515a7a25deb3b99711398c14bfe3062",
+                                        "indexed": false,
+                                        "listed": false,
+                                        "modDate": 1764268380000,
+                                        "name": "fields-1",
+                                        "readOnly": false,
+                                        "required": false,
+                                        "searchable": false,
+                                        "sortOrder": 1,
+                                        "unique": false,
+                                        "variable": "fields1"
+                                    },
+                                    "fields": [
+                                        {
+                                            "clazz": "com.dotcms.contenttype.model.field.ImmutableTextField",
+                                            "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                            "dataType": "TEXT",
+                                            "fieldType": "Text",
+                                            "fieldTypeLabel": "Text",
+                                            "fieldVariables": [],
+                                            "fixed": false,
+                                            "forceIncludeInApi": false,
+                                            "iDate": 1764268380000,
+                                            "id": "ba34f109c9e86793384387e2619267ea",
+                                            "indexed": true,
+                                            "listed": true,
+                                            "modDate": 1764277924000,
+                                            "name": "Title",
+                                            "readOnly": false,
+                                            "required": false,
+                                            "searchable": false,
+                                            "sortOrder": 2,
+                                            "unique": false,
+                                            "variable": "title"
+                                        },
+                                        {
+                                            "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+                                            "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                            "dataType": "LONG_TEXT",
+                                            "fieldType": "Custom-Field",
+                                            "fieldTypeLabel": "Custom Field",
+                                            "fieldVariables": [
+                                                {
+                                                    "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+                                                    "fieldId": "803d40e80721ae61196dc566a15c7ea5",
+                                                    "id": "6f96be03-6c35-4ced-b825-dd52715b9b06",
+                                                    "key": "newRenderMode",
+                                                    "value": "component"
+                                                }
+                                            ],
+                                            "fixed": false,
+                                            "forceIncludeInApi": false,
+                                            "iDate": 1764433985000,
+                                            "id": "803d40e80721ae61196dc566a15c7ea5",
+                                            "indexed": false,
+                                            "listed": false,
+                                            "modDate": 1764687322000,
+                                            "name": "My Custom Field",
+                                            "readOnly": false,
+                                            "required": false,
+                                            "searchable": false,
+                                            "sortOrder": 3,
+                                            "unique": false,
+                                            "values": "## This is a VTL comment block                            "variable": "myCustomField"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                }
+          description: The updated Content Type's layout.
+        "401":
+          description: Unauthorized access
+        "404":
+          description: The ID of the specified Field was not found
+        "500":
+          description: Internal Server Error
+      summary: Updates a field in a Content Type
       tags:
       - Content Type Field
   /vtl/dynamic:
@@ -22109,6 +22317,40 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableMapStringSetString:
+      type: object
+      additionalProperties:
+        type: array
+        description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+          \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+          \ CAN_ADD_CHILDREN)"
+        example:
+          INDIVIDUAL:
+          - READ
+          - WRITE
+          - PUBLISH
+          HOST:
+          - READ
+        items:
+          type: string
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\":[\"\
+            READ\"]}"
+        uniqueItems: true
+      description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to sets\
+        \ of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)"
+      example:
+        INDIVIDUAL:
+        - READ
+        - WRITE
+        - PUBLISH
+        HOST:
+        - READ
+      properties:
+        empty:
+          type: boolean
     ImmutableMapStringString:
       type: object
       additionalProperties:
@@ -22116,6 +22358,28 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableSetString:
+      type: array
+      description: Available permission scopes (asset types) that support permissions
+      example:
+      - INDIVIDUAL
+      - HOST
+      - FOLDER
+      - CONTENT
+      - TEMPLATE
+      - PAGE
+      - CONTAINER
+      - CONTENT_TYPE
+      - CATEGORY
+      items:
+        type: string
+        description: Available permission scopes (asset types) that support permissions
+        example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\",\"\
+          PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+      properties:
+        empty:
+          type: boolean
+      uniqueItems: true
     JSONObject:
       type: object
       additionalProperties:
@@ -22985,6 +23249,54 @@ components:
           type: string
         type:
           type: string
+    PermissionMetadataView:
+      type: object
+      properties:
+        levels:
+          type: array
+          description: Available permission levels that can be assigned to users and
+            roles
+          example:
+          - READ
+          - WRITE
+          - PUBLISH
+          - EDIT_PERMISSIONS
+          - CAN_ADD_CHILDREN
+          items:
+            type: string
+            description: Available permission levels that can be assigned to users
+              and roles
+            example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
+              ]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+        scopes:
+          type: array
+          description: Available permission scopes (asset types) that support permissions
+          example:
+          - INDIVIDUAL
+          - HOST
+          - FOLDER
+          - CONTENT
+          - TEMPLATE
+          - PAGE
+          - CONTAINER
+          - CONTENT_TYPE
+          - CATEGORY
+          items:
+            type: string
+            description: Available permission scopes (asset types) that support permissions
+            example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
+              ,\"PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+      required:
+      - levels
+      - scopes
     PermissionTabField:
       type: object
       allOf:
@@ -24382,6 +24694,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityPermissionMetadataView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PermissionMetadataView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityPermissionView:
       type: object
       properties:
@@ -24587,6 +24922,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RoleView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySaveUserPermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SaveUserPermissionsView"
         errors:
           type: array
           items:
@@ -25971,6 +26329,66 @@ components:
           properties:
             empty:
               type: boolean
+    SaveUserPermissionsForm:
+      type: object
+      properties:
+        cascade:
+          type: boolean
+          default: false
+          description: Whether to cascade permissions to all children assets
+          example: false
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+              \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+            items:
+              type: string
+              description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+                \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"HOST\":[\"READ\"]}"
+            uniqueItems: true
+          description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+            \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+      required:
+      - permissions
+    SaveUserPermissionsView:
+      type: object
+      properties:
+        asset:
+          $ref: "#/components/schemas/UserPermissionAssetView"
+        cascadeInitiated:
+          type: boolean
+          description: Whether permission cascade to children was initiated
+        roleId:
+          type: string
+          description: User's individual role identifier
+          example: abc-123-def-456
+        userId:
+          type: string
+          description: User identifier
+          example: admin@dotcms.com
+      required:
+      - asset
+      - cascadeInitiated
+      - roleId
+      - userId
     Scheduling:
       type: object
       properties:
@@ -27428,6 +27846,87 @@ components:
         totalUsers:
           type: integer
           format: int64
+    UserPermissionAssetView:
+      type: object
+      description: The updated asset with new permission assignments
+      properties:
+        canEditPermissions:
+          type: boolean
+          description: Whether the requesting user can edit permissions on this asset
+          example: true
+        hostId:
+          type: string
+          description: "Host identifier (same as id for HOST type, parent host for\
+            \ FOLDER type)"
+          example: abc-123-def-456
+        id:
+          type: string
+          description: "Asset identifier (host identifier for HOST type, folder inode\
+            \ for FOLDER type)"
+          example: abc-123-def-456
+        inheritsPermissions:
+          type: boolean
+          description: Whether this asset inherits permissions from its parent
+          example: false
+        name:
+          type: string
+          description: "Asset name (hostname for HOST, folder name for FOLDER)"
+          example: demo.dotcms.com
+        path:
+          type: string
+          description: Full path to the asset
+          example: /demo.dotcms.com/application
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+              \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+              - PUBLISH
+            items:
+              type: string
+              description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+                \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\"\
+                :[\"READ\"]}"
+            uniqueItems: true
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+            - PUBLISH
+          properties:
+            empty:
+              type: boolean
+        type:
+          type: string
+          description: Asset type
+          enum:
+          - HOST
+          - FOLDER
+          example: HOST
+      required:
+      - canEditPermissions
+      - hostId
+      - id
+      - inheritsPermissions
+      - name
+      - path
+      - permissions
+      - type
     VanityUrlContentType:
       type: object
       allOf:

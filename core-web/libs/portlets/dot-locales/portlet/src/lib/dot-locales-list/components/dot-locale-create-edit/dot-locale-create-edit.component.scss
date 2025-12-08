@@ -1,3 +1,7 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -12,20 +16,20 @@
     }
     dot-copy-button {
         position: absolute;
-        top: $spacing-0;
-        right: $spacing-0;
+        top: spacing.$spacing-0;
+        right: spacing.$spacing-0;
     }
 }
 
 .locale-add__buttons {
     display: flex;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     margin-top: auto;
     justify-content: flex-end;
 }
 
 .locale-add__error-message {
-    margin: $spacing-1 0;
-    font-size: $font-size-sm;
-    color: $red;
+    margin: spacing.$spacing-1 0;
+    font-size: fonts.$font-size-sm;
+    color: colors.$red;
 }

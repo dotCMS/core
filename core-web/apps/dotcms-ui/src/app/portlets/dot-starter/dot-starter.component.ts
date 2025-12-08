@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs';
 
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
 
-import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
+import { DotCurrentUser, DotCMSContentType, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
 
 import { DotAccountService } from '../../api/services/dot-account-service';
 
@@ -33,7 +34,17 @@ export class DotStarterComponent implements OnInit {
     showCreatePageLink: boolean;
     showCreateTemplateLink: boolean;
 
+    // Test properties for dot-workflow component
+    selectedContentType: DotCMSContentType | null = null;
+    isDisabled = false;
+    isInitiallyDisabled = true;
+    contentTypeControl = new FormControl<DotCMSContentType | null>(null);
+
     readonly #destroyRef = inject(DestroyRef);
+
+    onContentTypeChange(contentType: DotCMSContentType | null): void {
+        console.log('Content type changed:', contentType);
+    }
 
     ngOnInit() {
         this.userData$ = this.route.data.pipe(

@@ -1,5 +1,6 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     position: relative;
@@ -16,12 +17,12 @@
     }
 
     dot-field-helper {
-        @include dot-field-helper-on-input;
-        top: $spacing-0;
+        @include mixins.dot-field-helper-on-input;
+        top: spacing.$spacing-0;
     }
 
     .p-info {
-        margin-top: $spacing-1;
+        margin-top: spacing.$spacing-1;
     }
 }
 
@@ -30,7 +31,7 @@
     max-width: 380px;
 
     span {
-        @include truncate-text;
+        @include mixins.truncate-text;
         text-align: left;
     }
 
@@ -40,6 +41,6 @@
     }
 
     &-host {
-        padding-left: $spacing-1;
+        padding-left: spacing.$spacing-1;
     }
 }

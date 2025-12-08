@@ -1,15 +1,19 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     align-items: center;
-    background-color: $white;
-    box-shadow: $shadow-m;
+    background-color: colors.$white;
+    box-shadow: shadows.$shadow-m;
     display: flex;
     flex-direction: column;
     height: calc(100vh - 48px - #{$toolbar-height});
     justify-content: center;
-    margin: $spacing-4;
-    padding: $spacing-9;
+    margin: spacing.$spacing-4;
+    padding: spacing.$spacing-9;
 }
 
 h4 {
@@ -18,5 +22,5 @@ h4 {
 
 dot-icon::ng-deep .material-icons,
 h4 {
-    color: $color-palette-gray-500;
+    color: colors.$color-palette-gray-500;
 }

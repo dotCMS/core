@@ -1,18 +1,22 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     height: 100%;
     width: 100%;
-    padding: $spacing-3;
-    gap: $spacing-3;
+    padding: spacing.$spacing-3;
+    gap: spacing.$spacing-3;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
 
     .error {
-        color: $error;
-        font-size: $font-size-lmd;
+        color: colors.$error;
+        font-size: fonts.$font-size-lmd;
         max-width: 100%;
         white-space: pre-wrap;
     }
@@ -44,13 +48,13 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: $spacing-3;
+        gap: spacing.$spacing-3;
     }
 
     .warning {
         display: block;
         font-style: normal;
         text-align: center;
-        color: $black;
+        color: colors.$black;
     }
 }

@@ -1,3 +1,7 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -26,13 +30,13 @@
             flex-direction: column;
             height: 100%;
             justify-content: space-between;
-            background: $white;
+            background: colors.$white;
         }
 
         .p-datatable-tablewrapper,
         .p-table-wrapper {
             flex-grow: 1;
-            background: $white;
+            background: colors.$white;
 
             table tbody.p-datatable-data tr,
             table tbody.p-table-tbody tr {
@@ -61,20 +65,20 @@
     align-items: center;
 
     dot-icon {
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
     }
 }
 
 .listing-datatable__empty {
     display: flex;
     justify-content: center;
-    font-size: $spacing-9;
-    font-size: $font-size-xl;
-    margin-top: $spacing-9;
+    font-size: spacing.$spacing-9;
+    font-size: fonts.$font-size-xl;
+    margin-top: spacing.$spacing-9;
 }
 
 dot-action-header {
-    background: $white;
+    background: colors.$white;
     position: relative;
     z-index: 1;
 }

@@ -1,13 +1,17 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    background: $white;
-    border-left: 1px solid $color-palette-gray-300;
+    background: colors.$white;
+    border-left: 1px solid colors.$color-palette-gray-300;
     display: flex;
     flex-direction: column;
     height: 100%;
     min-width: $content-palette-width;
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     position: relative;
     text-align: center;
     transition: all $basic-speed ease-in-out;
@@ -19,16 +23,16 @@
     overflow: hidden auto;
 
     div {
-        color: $black;
+        color: colors.$black;
         cursor: grab;
         display: flex;
         overflow: hidden;
-        padding: 0.25rem $spacing-1;
+        padding: 0.25rem spacing.$spacing-1;
         position: relative;
         text-align: center;
 
         &:hover {
-            background: $color-palette-gray-200;
+            background: colors.$color-palette-gray-200;
         }
 
         img {
@@ -40,8 +44,8 @@
         p {
             align-self: center;
             display: -webkit-box;
-            font-size: $font-size-sm;
-            margin: 0 0 0 $spacing-1;
+            font-size: fonts.$font-size-sm;
+            margin: 0 0 0 spacing.$spacing-1;
             overflow: hidden;
             text-align: left;
             text-overflow: ellipsis;
@@ -60,6 +64,6 @@
 
 .dot-content-palette__empty {
     text-align: center;
-    padding: $spacing-1 0;
-    margin: $spacing-4;
+    padding: spacing.$spacing-1 0;
+    margin: spacing.$spacing-4;
 }

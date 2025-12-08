@@ -1,3 +1,5 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -35,9 +37,9 @@
 footer {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 
     .p-button-secondary {
-        margin-right: $spacing-3;
+        margin-right: spacing.$spacing-3;
     }
 }

@@ -1,3 +1,7 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,13 +9,13 @@
     height: 100%;
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
 
     &.ProseMirror-selectednode {
         &::ng-deep {
             .p-card,
             .p-card:hover {
-                outline: 2px solid $color-palette-primary;
+                outline: 2px solid colors.$color-palette-primary;
             }
         }
     }
@@ -25,26 +29,26 @@
 
     &::ng-deep {
         .p-card {
-            background: $white;
+            background: colors.$white;
             border: 1px solid $input-border-color;
-            color: $black;
+            color: colors.$black;
             display: flex;
 
             &:hover {
-                outline: 2px solid $color-palette-primary-400;
+                outline: 2px solid colors.$color-palette-primary-400;
             }
 
             .p-card-header {
                 box-sizing: border-box;
-                padding: $spacing-3;
+                padding: spacing.$spacing-3;
                 padding-right: 0;
             }
 
             .p-card-body {
                 box-sizing: border-box;
                 min-width: 6.25 * $dot-editor-size;
-                padding: $spacing-3;
-                padding-right: $spacing-4;
+                padding: spacing.$spacing-3;
+                padding-right: spacing.$spacing-4;
                 flex: 1;
 
                 .p-card-content {
@@ -52,10 +56,10 @@
                 }
 
                 .p-card-subtitle {
-                    color: $color-palette-gray-700;
-                    font-size: $font-size-sm;
+                    color: colors.$color-palette-gray-700;
+                    font-size: fonts.$font-size-sm;
                     font-weight: regular;
-                    margin-bottom: $spacing-2;
+                    margin-bottom: spacing.$spacing-2;
                 }
 
                 .p-card-title {
@@ -65,13 +69,13 @@
 
                     h3 {
                         font-weight: 700;
-                        margin-bottom: $spacing-1;
+                        margin-bottom: spacing.$spacing-1;
                         margin: 0;
                         overflow: hidden;
                         padding: 0;
                         text-overflow: ellipsis;
                         white-space: nowrap;
-                        font-size: $font-size-lg;
+                        font-size: fonts.$font-size-lg;
                     }
                 }
             }
@@ -91,7 +95,7 @@
         display: flex;
 
         & > * {
-            margin-right: $spacing-1;
+            margin-right: spacing.$spacing-1;
 
             &:last-child {
                 margin-right: 0;

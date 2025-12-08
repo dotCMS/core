@@ -1,3 +1,7 @@
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dot-secondary-toolbar__main,
@@ -6,19 +10,19 @@
 }
 
 .dot-secondary-toolbar__main {
-    background-color: $white;
-    border-bottom: solid 1px $color-palette-gray-300;
+    background-color: colors.$white;
+    border-bottom: solid 1px colors.$color-palette-gray-300;
     display: flex;
-    padding: 0 $spacing-4 0 $spacing-4;
+    padding: 0 spacing.$spacing-4 0 spacing.$spacing-4;
     height: $dot-secondary-toolbar-main-height;
 }
 
 .dot-secondary-toolbar__lower {
     display: flex;
-    padding: 0 87px 0 $spacing-4;
+    padding: 0 87px 0 spacing.$spacing-4;
     flex-wrap: wrap;
-    background-color: $white;
-    border-bottom: solid 1px $color-palette-gray-300;
+    background-color: colors.$white;
+    border-bottom: solid 1px colors.$color-palette-gray-300;
 }
 
 ::ng-deep {
@@ -46,46 +50,46 @@
     }
 
     .toolbar__sep {
-        border-left: solid 1px $color-palette-gray-200;
-        margin: 0 $spacing-3 0 $spacing-2;
+        border-left: solid 1px colors.$color-palette-gray-200;
+        margin: 0 spacing.$spacing-3 0 spacing.$spacing-2;
         display: block;
         height: 40px;
     }
 
     .dot-secondary-toolbar__main.edit-page-variant-mode {
-        background-color: $color-palette-primary;
-        color: $white;
+        background-color: colors.$color-palette-primary;
+        color: colors.$white;
         .main-toolbar-left {
-            color: $white;
+            color: colors.$white;
             i,
             dot-copy-button button,
             button .pi {
-                color: $white;
+                color: colors.$white;
             }
 
             h2 {
                 color: inherit;
-                font-size: $font-size-xl;
+                font-size: fonts.$font-size-xl;
                 font-weight: normal;
             }
 
             dot-copy-button button {
                 i.pi {
-                    color: $white;
+                    color: colors.$white;
                 }
                 &:hover {
-                    background-color: $color-palette-white-op-10;
+                    background-color: colors.$color-palette-white-op-10;
                 }
             }
             button:hover {
-                background-color: $color-palette-white-op-10;
+                background-color: colors.$color-palette-white-op-10;
             }
         }
 
         .main-toolbar-right {
             h2 {
                 margin: 0;
-                font-size: $font-size-lmd;
+                font-size: fonts.$font-size-lmd;
             }
         }
     }
