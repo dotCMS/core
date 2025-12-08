@@ -1605,7 +1605,7 @@ describe('EditEmaEditorComponent', () => {
 
             describe('drag and drop', () => {
                 describe('drag start', () => {
-                    it('should call the setEditorDragItem from the store for content-types and set the `dotcms/item` type ', () => {
+                    it('should call the setEditorDragItem from the store for content-types and set the `dotcms/item` type ', async () => {
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
                         const dataTransfer = {
                             writable: false,
@@ -1641,6 +1641,9 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragStart);
 
+                        // Wait for requestAnimationFrame to complete
+                        await new Promise((resolve) => requestAnimationFrame(resolve));
+
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
                             baseType: 'test',
                             contentType: 'test',
@@ -1657,7 +1660,7 @@ describe('EditEmaEditorComponent', () => {
                         expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
                     });
 
-                    it('should call the setEditorDragItem from the store for contentlets', () => {
+                    it('should call the setEditorDragItem from the store for contentlets', async () => {
                         const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
@@ -1688,6 +1691,9 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragStart);
 
+                        // Wait for requestAnimationFrame to complete
+                        await new Promise((resolve) => requestAnimationFrame(resolve));
+
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
                             baseType: contentlet.baseType,
                             contentType: contentlet.contentType,
@@ -1701,7 +1707,7 @@ describe('EditEmaEditorComponent', () => {
                         });
                     });
 
-                    it('should call the setEditorDragItem from the store for contentlets and move', () => {
+                    it('should call the setEditorDragItem from the store for contentlets and move', async () => {
                         const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const container = {
@@ -1739,6 +1745,9 @@ describe('EditEmaEditorComponent', () => {
                         });
 
                         window.dispatchEvent(dragStart);
+
+                        // Wait for requestAnimationFrame to complete
+                        await new Promise((resolve) => requestAnimationFrame(resolve));
 
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
                             baseType: contentlet.baseType,

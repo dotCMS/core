@@ -12,7 +12,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { ContentletPayload } from '../../../shared/models';
 import { Orientation } from '../../models';
 

@@ -2,11 +2,7 @@
 @let dragItem = dragPayload();
 @let isEmpty = isContainerEmpty();
 
-<div
-    [ngStyle]="boundsStyles()"
-    (click)="selectContent.emit(context.contentlet)"
-    class="bounds"
-    data-testId="bounds">
+<div [ngStyle]="boundsStyles()" class="bounds" data-testId="bounds">
     <p-button
         (click)="setPositionFlag('before'); menu.toggle($event)"
         class="add-button-top"

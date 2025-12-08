@@ -305,7 +305,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 if (isContentletControlDrag) {
                     this.setDragImage(event);
-                    return;
                 }
 
                 // Needed to identify if a dotcms dragItem from the window left and came back
@@ -317,7 +316,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                this.uveStore.setEditorDragItem(data);
+                // Wait for the browser to finish initializing the drag before hiding controls
+                requestAnimationFrame(() => this.uveStore.setEditorDragItem(data));
             });
 
         fromEvent(this.window, 'dragenter')

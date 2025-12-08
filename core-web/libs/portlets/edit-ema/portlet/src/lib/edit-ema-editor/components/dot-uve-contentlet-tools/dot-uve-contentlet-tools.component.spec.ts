@@ -228,15 +228,6 @@ describe('DotUveContentletToolsComponent', () => {
 
     describe('Outputs', () => {
         describe('selectContent', () => {
-            it('should emit selectContent when clicking bounds', () => {
-                const bounds = spectator.query(byTestId('bounds')) as Element;
-                spectator.click(bounds);
-
-                expect(spectator.component.onSelectContent).toHaveBeenCalledWith(
-                    MOCK_CONTENTLET_AREA.payload.contentlet
-                );
-            });
-
             it('should emit selectContent when clicking palette button', () => {
                 spectator.component.showStyleEditorOption = true;
                 spectator.detectChanges();
@@ -640,7 +631,7 @@ describe('DotUveContentletToolsComponent', () => {
 
             it('should hide palette button when showStyleEditorOption changes to false', () => {
                 // First enable it
-                
+
                 spectator.component.showStyleEditorOption = true;
                 spectator.detectChanges();
 
