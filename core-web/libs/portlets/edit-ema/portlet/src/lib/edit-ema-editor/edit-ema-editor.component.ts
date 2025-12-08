@@ -97,7 +97,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { StyleSchema } from '../store/features/editor/models';
+import { StyleSchema, UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -1595,6 +1595,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
+    }
+
+    protected handleTabChange(tab: UVE_PALETTE_TABS): void {
+        this.uveStore.setPaletteTab(tab);
     }
 
     protected handleAddContent(event: {

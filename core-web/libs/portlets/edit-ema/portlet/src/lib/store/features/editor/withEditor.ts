@@ -313,6 +313,11 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
+                setPaletteTab(tab: UVE_PALETTE_TABS) {
+                    patchState(store, {
+                        palette: { open: true, currentTab: tab }
+                    });
+                },
                 setPaletteOpen(open: boolean) {
                     patchState(store, {
                         palette: { open, currentTab: store.palette().currentTab }

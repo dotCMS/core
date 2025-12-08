@@ -11,7 +11,7 @@
         [seoMedia]="$editorProps().seoResults.socialMedia"
         [seoOGTags]="$editorProps().seoResults.ogTags"
         [seoOGTagsResults]="ogTagsResults"
-        data-testId="results-seo-tool"></dot-results-seo-tool>
+        data-testId="results-seo-tool" />
 }
 
 @if (uveStore.$canEditPage()) {
@@ -20,6 +20,8 @@
         [languageId]="uveStore.$languageId()"
         [pagePath]="uveStore.$pageURI()"
         [variantId]="uveStore.$variantId()"
+        [activeTab]="uveStore.palette.currentTab()"
+        (onTabChange)="handleTabChange($event)"
         data-testId="palette" />
 }
 
