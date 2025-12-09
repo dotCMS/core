@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.job;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.telemetry.MetricsSnapshot;
 import com.dotcms.telemetry.collectors.MetricStatsCollector;
@@ -32,7 +33,8 @@ public class MetricsStatsJob implements StatefulJob {
     public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
         final MetricsSnapshot metricsSnapshot;
         try {
-            metricsSnapshot = MetricStatsCollector.getStatsAndCleanUp();
+            final MetricStatsCollector collector = CDIUtils.getBeanThrows(MetricStatsCollector.class);
+            metricsSnapshot = collector.getStatsAndCleanUp();
             APILocator.getMetricsAPI().persistMetricsSnapshot(metricsSnapshot);
         } catch (final Throwable e) {
             Logger.debug(this, String.format("An error occurred during job execution: %s",
