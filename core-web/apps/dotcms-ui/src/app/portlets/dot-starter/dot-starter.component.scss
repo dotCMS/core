@@ -139,6 +139,42 @@ markdown {
     }
 }
 
+.logos {
+    display: flex;
+    gap: $spacing-2;
+    margin-block-end: $spacing-4;
+}
+
+.logo-item {
+
+    img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+
+    label {
+        border-radius: $border-radius-sm;
+        display: flex;
+        gap: $spacing-1;
+        align-items: center;
+        box-shadow: 0 0 0 1px $color-palette-gray-400;
+        padding: $spacing-2;
+        cursor: pointer;
+
+        &:hover {
+            box-shadow: 0 0 0 1px $color-palette-primary-400;
+        }
+    }
+
+    &:has(.p-radiobutton-checked) label {
+        box-shadow: 0 0 0 2px $color-palette-primary-500;
+    }
+
+    p-radioButton {
+        display: none;
+    }
+}
 
 .dot-onboarding {
     padding-block-start: $spacing-4;

@@ -4,6 +4,17 @@
             <h1>{{ content.title }}</h1>
             <p>{{ content.description }}</p>
         </header>
+        <div class="logos">
+            @for (framework of frameworks; track framework.id) {
+            <div class="logo-item">
+                <p-radioButton name="framework" [value]="framework.id" [(ngModel)]="selectedFramework" [inputId]="framework.id" [disabled]="framework.disabled" />
+                <label [for]="framework.id">
+                    <img [src]="framework.logo" [alt]="framework.label" />
+                    <span>{{ framework.label }}</span>
+                </label>
+            </div>
+            }
+        </div>
         <section class="dot-onboarding__steps">
             <p-accordion [(activeIndex)]="activeAccordionIndex" [multiple]="false">
                 @for (step of content.steps; track step) {
@@ -13,7 +24,7 @@
                             @if (isStepCompleted(step.id)) {
                             <i class="pi pi-circle-on dot-onboarding__step-completed"></i>
                             } @else {
-                            <i class="pi pi-circle-off" ></i>
+                            <i class="pi pi-circle-off"></i>
                             }
                             <h2>{{ step.number + '. ' + step.title }}</h2>
                         </div>

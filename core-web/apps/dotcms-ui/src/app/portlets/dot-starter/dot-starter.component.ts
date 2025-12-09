@@ -371,6 +371,34 @@ Watch your Next.js app update instantly!`
 export class DotStarterComponent implements OnInit {
     readonly content = ONBOARDING_CONTENT;
 
+    selectedFramework = 'nextjs';
+    frameworks = [
+        {
+            id: 'nextjs',
+            label: 'Next.js',
+            logo: 'assets/logos/nextjs.svg'
+        },
+        {
+            id: 'angular',
+            label: 'Angular',
+            logo: 'assets/logos/angular.png',
+            disabled: true
+        },
+        {
+            id: 'angular-ssr',
+            label: 'Angular SSR',
+            logo: 'assets/logos/angular.png',
+            disabled: true
+        },
+        {
+            id: 'astro',
+            label: 'Astro',
+            logo: 'assets/logos/astro.svg',
+            disabled: true
+        },
+    ];
+
+
     progress = 0;
     private _activeAccordionIndex = 0;
     @ViewChild('onboardingContainer', { read: ElementRef })
