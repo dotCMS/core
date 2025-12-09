@@ -26,8 +26,7 @@
         <dot-content-types-form
             (valid)="setDialogOkButtonState($event)"
             (send)="handleFormSubmit($event)"
-            [layout]="layout"
-            [data]="data"
+            [contentType]="data"
             #form />
     }
 </dot-dialog>
