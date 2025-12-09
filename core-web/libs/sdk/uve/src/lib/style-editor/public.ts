@@ -1,3 +1,5 @@
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+
 import { normalizeForm } from './internal';
 import {
     StyleEditorFormSchema,
@@ -7,6 +9,9 @@ import {
     StyleEditorRadioField,
     StyleEditorCheckboxGroupField
 } from './types';
+
+import { getUVEState } from '../core/core.utils';
+import { sendMessageToUVE } from '../editor/public';
 
 /**
  * Helper functions for creating style editor field definitions.
@@ -273,4 +278,38 @@ export const styleEditorField = {
  */
 export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSchema {
     return normalizeForm(form);
+}
+
+/**
+ * Registers style editor forms with the UVE editor.
+ *
+ * @experimental This method is experimental and may be subject to change.
+ *
+ * @param forms - Array of style editor form schemas to register
+ * @param options - Optional configuration
+ * @param options.force - Force re-registration even if forms already registered
+ */
+export function registerStyleEditorSchemas(schemas: StyleEditorFormSchema[]): void {
+    const { mode } = getUVEState() || {};
+
+    if (!mode || mode !== UVE_MODE.EDIT) {
+        return;
+    }
+
+    const validatedSchemas = schemas.filter((schema, index) => {
+        if (!schema.contentType) {
+            console.warn(
+                `[registerStyleEditorSchemas] Skipping form with index [${index}] for not having a contentType`
+            );
+            return false;
+        }
+        return true;
+    });
+
+    sendMessageToUVE({
+        action: DotCMSUVEAction.REGISTER_STYLE_SCHEMAS,
+        payload: {
+            schemas: validatedSchemas
+        }
+    });
 }
