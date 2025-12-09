@@ -2,8 +2,10 @@ package com.dotcms.ai.workflow;
 
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.api.CompletionRequest;
+import com.dotcms.ai.api.CompletionResponse;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
+import com.dotcms.ai.api.SummarizeRequest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.rest.forms.CompletionsForm;
@@ -85,6 +87,16 @@ public class OpenAIContentPromptActionletTest {
             }
 
             @Override
+            public JSONObject summarize(SummarizeRequest summarizeRequest) {
+                return null;
+            }
+
+            @Override
+            public void summarize(SummarizeRequest summarizeRequest, OutputStream out) {
+
+            }
+
+            @Override
             public void summarizeStream(CompletionsForm searcher, OutputStream out) {
 
             }
@@ -161,7 +173,7 @@ public class OpenAIContentPromptActionletTest {
             }
 
             @Override
-            public Object raw(CompletionRequest completionRequest) {
+            public CompletionResponse raw(CompletionRequest completionRequest) {
                 return null;
             }
         });
