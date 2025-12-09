@@ -196,159 +196,6 @@ export default async function Home() {
             number: 5,
             title: 'Render content with DotCMSLayoutBody',
             description:
-                'Transform that JSON data into a rendered page by creating a Banner component and mapping it to your dotCMS content.',
-            substeps: [
-                {
-                    code: 'mkdir -p src/components && touch src/components/DotCMSPageClient.tsx',
-                    language: 'bash',
-                    type: 'command',
-                    explanation: {
-                        title: 'Create components directory and client component file',
-                        description: `Creates the components directory structure and an empty file for the client component. The \`-p\` flag creates parent directories if they don't exist.`
-                    }
-                },
-                {
-                    code: `'use client';
-
-import { DotCMSLayoutBody } from '@dotcms/react';
-import type { DotCMSPageAsset } from '@dotcms/types';
-import Image from 'next/image';
-
-// Banner component props
-interface BannerProps {
-  title?: string;
-  caption?: string;
-  image?: {
-    idPath: string;
-  };
-  link?: string;
-  target?: string;
-  identifier: string;
-}
-
-// Banner Component
-function Banner({ title, caption, image, link, target }: BannerProps) {
-  const dotcmsUrl = process.env.NEXT_PUBLIC_DOTCMS_URL || 'https://minstarter.dotcms.com';
-  const imageUrl = image?.idPath ? \`\${dotcmsUrl}\${image.idPath}\` : null;
-
-  return (
-    <div className="relative w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white overflow-hidden min-h-[400px]">
-      <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-        <div className="max-w-3xl">
-          {title && (
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-              {title}
-            </h1>
-          )}
-          {caption && (
-            <p className="text-xl md:text-2xl mb-8 text-white/90">
-              {caption}
-            </p>
-          )}
-          {link && (
-            <a
-              href={link}
-              target={target || '_self'}
-              className="inline-block bg-white text-blue-600 font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              Learn More
-            </a>
-          )}
-        </div>
-      </div>
-      {imageUrl && (
-        <div className="absolute inset-0 opacity-20">
-          <Image
-            src={imageUrl}
-            alt={title || 'Banner'}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Map content types to components
-const COMPONENTS_MAP = {
-  Banner: Banner,
-};
-
-interface DotCMSPageClientProps {
-  pageAsset: DotCMSPageAsset;
-}
-
-export function DotCMSPageClient({ pageAsset }: DotCMSPageClientProps) {
-  return (
-    <DotCMSLayoutBody
-      page={pageAsset}
-      components={COMPONENTS_MAP}
-    />
-  );
-}`,
-                    language: 'typescript',
-                    type: 'file',
-                    filePath: 'src/components/DotCMSPageClient.tsx',
-                    explanation: {
-                        title: 'Add the client component code',
-                        description: `This creates a client component that renders dotCMS content. The \`'use client'\` directive is required because this component uses browser APIs (like Next.js Image component).
-
-The \`Banner\` component receives props from dotCMS and renders them with Tailwind CSS styling.`
-                    }
-                },
-                {
-                    code: `const COMPONENTS_MAP = {
-  Banner: Banner,  // "Banner" must match your dotCMS content type name
-};`,
-                    language: 'typescript',
-                    type: 'file',
-                    filePath: 'src/components/DotCMSPageClient.tsx',
-                    explanation: {
-                        title: 'The `COMPONENTS_MAP` maps dotCMS content types to React components',
-                        description: `The key must **exactly match** the content type name in dotCMS (case-sensitive). If your dotCMS content type is called "Banner", the key must be "Banner". If it's "HeroBanner", the key must be "HeroBanner". This is how \`DotCMSLayoutBody\` knows which React component to render for each piece of content.`
-                    }
-                },
-                {
-                    code: `import { createDotCMSClient } from '@dotcms/client';
-import { DotCMSPageClient } from '@/components/DotCMSPageClient';
-
-// Create dotCMS client
-const client = createDotCMSClient({
-  dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_URL!,
-  authToken: process.env.DOTCMS_TOKEN,
-});
-
-export default async function Home() {
-  // Fetch page content from dotCMS
-  const { pageAsset } = await client.page.get('/');
-
-  return <DotCMSPageClient pageAsset={pageAsset} />;
-}`,
-                    language: 'typescript',
-                    type: 'file',
-                    filePath: 'src/app/page.tsx',
-                    explanation: {
-                        title: 'Update the page component',
-                        description: `Here's the flow of data from dotCMS to your screen:
-
-- **Server Component** (\`page.tsx\`) - Runs on the server (not in the browser), fetches page data from dotCMS API using \`client.page.get('/')\`, and passes the data to the client component
-
-- **Client Component** (\`DotCMSPageClient.tsx\`) - Runs in the browser (needs \`'use client'\` directive), receives pageAsset data as a prop, and uses \`DotCMSLayoutBody\` to automatically render content
-
-- **Automatic Component Rendering** - \`DotCMSLayoutBody\` reads the pageAsset, finds content with type "Banner", looks up "Banner" in \`COMPONENTS_MAP\`, and renders your \`Banner\` component with the content data (title, caption, etc.)
-
-Server components can securely access API tokens and fetch data, while client components handle interactivity and browser-specific features.`
-                    }
-                }
-            ]
-        },
-        {
-            id: 'step-5',
-            number: 5,
-            title: 'Render content with DotCMSLayoutBody',
-            description:
                 'Transform the raw JSON data into a beautiful, interactive page. You will create a client-side component that automatically maps dotCMS content types to React components.',
             substeps: [
                 {
@@ -583,6 +430,23 @@ export class DotStarterComponent implements OnInit {
                 }
             }, 300);
         }
+    }
+
+    undoStepAndSubsequent(stepId: string): void {
+        // Find the current step index
+        const currentIndex = this.content.steps.findIndex((step) => step.id === stepId);
+
+        if (currentIndex === -1) {
+            return;
+        }
+
+        // Remove current step and all subsequent steps from completedSteps
+        for (let i = currentIndex; i < this.content.steps.length; i++) {
+            this.completedSteps.delete(this.content.steps[i].id);
+        }
+
+        this.persistProgress();
+        this.updateProgress();
     }
 
     resetProgress(): void {

@@ -4,57 +4,18 @@
             <h1>{{ content.title }}</h1>
             <p>{{ content.description }}</p>
         </header>
-        <!-- @if (content.prerequisites.length) {
-            <div class="dot-onboarding__prerequisites">
-                <h2 class="dot-onboarding__section-title">Prerequisites</h2>
-
-                <ul class="dot-onboarding__prerequisites-list">
-                    @for (item of content.prerequisites; track item) {
-                    <li>
-                        <i class="pi pi-check-circle"></i>
-                        <span>{{ item }}</span>
-                    </li>
-                    }
-                </ul>
-            </div>
-            } -->
-
         <section class="dot-onboarding__steps">
             <p-accordion [(activeIndex)]="activeAccordionIndex" [multiple]="false">
                 @for (step of content.steps; track step) {
                 <p-accordionTab>
                     <ng-template pTemplate="header">
-                        <div class="flex justify-content-between align-items-center w-full">
+                        <div class="flex gap-2 align-items-center w-full">
+                            @if (isStepCompleted(step.id)) {
+                            <i class="pi pi-circle-on dot-onboarding__step-completed"></i>
+                            } @else {
+                            <i class="pi pi-circle-off" ></i>
+                            }
                             <h2>{{ step.number + '. ' + step.title }}</h2>
-
-                            <!-- <div class="flex align-items-center gap-2">
-                                <p-tag
-                                    [class]="
-                                        isStepCompleted(step.id)
-                                            ? 'sm p-tag-success'
-                                            : 'sm p-tag-info'
-                                    "
-                                    [icon]="
-                                        isStepCompleted(step.id)
-                                            ? 'pi pi-check-circle'
-                                            : 'pi pi-spinner'
-                                    "
-                                    [value]="
-                                        isStepCompleted(step.id) ? 'Completed' : 'In Progress'
-                                    "></p-tag>
-                                <button
-                                    type="button"
-                                    pButton
-                                    size="small"
-                                    [outlined]="true"
-                                    [icon]="isStepCompleted(step.id) ? 'pi pi-undo' : 'pi pi-check'"
-                                    [label]="
-                                        isStepCompleted(step.id)
-                                            ? 'Mark as Incomplete'
-                                            : 'Mark as Complete'
-                                    "
-                                    (click)="toggleStepCompletion(step.id)"></button>
-                            </div> -->
                         </div>
                     </ng-template>
                     <div class="dot-step">
@@ -93,8 +54,13 @@
                             }
                         </div>
 
+                        @if (isStepCompleted(step.id)) {
+                        <button class="dot-step__next-button" type="button" pButton [outlined]="true" label="Undo"
+                            (click)="undoStepAndSubsequent(step.id)"></button>
+                        } @else {
                         <button class="dot-step__next-button" type="button" pButton label="Next Step"
                             (click)="completeStepAndOpenNext(step.id)"></button>
+                        }
 
                     </div>
                 </p-accordionTab>

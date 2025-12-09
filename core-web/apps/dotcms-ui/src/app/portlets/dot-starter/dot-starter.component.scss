@@ -145,6 +145,10 @@ markdown {
     flex: 1;
     overflow: auto;
 
+    &__step-completed {
+        color: $color-palette-green;
+    }
+
     &__content, &__progress-container {
         max-width: 60rem;
         margin: 0 auto;
