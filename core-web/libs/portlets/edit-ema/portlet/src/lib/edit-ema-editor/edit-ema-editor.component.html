@@ -111,6 +111,10 @@
     <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }
 
-<div class="drag-image" #customDragImage data-testId="drag-image">
+<div
+    #customDragImage
+    class="absolute p-3 bg-white border-1 border-round-lg z-1"
+    style="top: -1000px; left: -1000px; width: fit-content"
+    data-testId="drag-image">
     {{ uveStore.$areaContentType() }}
 </div>
