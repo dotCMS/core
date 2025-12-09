@@ -34,21 +34,13 @@ import org.apache.velocity.runtime.parser.Token;
 
 /**
  * ASTStringLiteral support. Will interpolate!
- *
+ * 
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @version $Id: ASTStringLiteral.java 1032134 2010-11-06 20:19:39Z cbrisson $
  */
 public class ASTStringLiteral extends SimpleNode
 {
-    /**
-     * ThreadLocal StringWriter pool to avoid allocation per interpolated string evaluation.
-     * Interpolated strings like "Hello $name" call value() which creates a StringWriter.
-     * This is a hot path that can be called hundreds of times per page render.
-     */
-    private static final ThreadLocal<StringWriter> STRING_WRITER_POOL =
-            ThreadLocal.withInitial(() -> new StringWriter(256));
-
     /* cache the value of the interpolation switch */
     private boolean interpolate = true;
 
@@ -321,30 +313,28 @@ public class ASTStringLiteral extends SimpleNode
             {
                 /*
                  * now render against the real context
-                 * Use pooled StringWriter to avoid allocation per interpolated string
                  */
-                final StringWriter writer = STRING_WRITER_POOL.get();
-                final StringBuffer buffer = writer.getBuffer();
-                buffer.setLength(0);  // Reset without reallocation
 
+                StringWriter writer = new StringWriter();
                 nodeTree.render(context, writer);
 
                 /*
                  * and return the result as a String
                  */
-                final int length = buffer.length();
+
+                String ret = writer.toString();
 
                 /*
                  * if appropriate, remove the space from the end (dreaded <MORE>
                  * kludge part deux)
                  */
-                if (!containsLineComment && length > 0)
+                if (!containsLineComment && ret.length() > 0)
                 {
-                    return buffer.substring(0, length - 1);
+                    return ret.substring(0, ret.length() - 1);
                 }
                 else
                 {
-                    return buffer.toString();
+                    return ret;
                 }
             }
 

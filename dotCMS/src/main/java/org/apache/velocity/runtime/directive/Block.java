@@ -44,12 +44,6 @@ import org.apache.velocity.runtime.parser.node.Node;
  */
 public abstract class Block extends Directive
 {
-    /**
-     * ThreadLocal StringWriter pool to avoid allocation per block toString() call.
-     */
-    private static final ThreadLocal<StringWriter> STRING_WRITER_POOL =
-            ThreadLocal.withInitial(() -> new StringWriter(512));
-
     protected Node block;
     protected int maxDepth;
     protected String key;
@@ -169,14 +163,10 @@ public abstract class Block extends Directive
 
         public String toString()
         {
-            // Use pooled StringWriter to avoid allocation per toString() call
-            final StringWriter writer = STRING_WRITER_POOL.get();
-            final StringBuffer buffer = writer.getBuffer();
-            buffer.setLength(0);  // Reset without reallocation
-
+            Writer writer = new StringWriter();
             if (render(context, writer))
             {
-                return buffer.toString();
+                return writer.toString();
             }
             return null;
         }
