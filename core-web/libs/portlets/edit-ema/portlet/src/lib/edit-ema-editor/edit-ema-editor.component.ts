@@ -77,12 +77,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import {
-    CONTENTLET_CONTROLS_DRAG_ORIGIN,
-    DEFAULT_PERSONA,
-    IFRAME_SCROLL_ZONE,
-    PERSONA_KEY
-} from '../shared/consts';
+import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -146,7 +141,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
-    @ViewChild('dragImage') dragImage: ElementRef<HTMLDivElement>;
+    @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
 
     protected readonly uveStore = inject(UVEStore);
     private readonly dotMessageService = inject(DotMessageService);
@@ -299,11 +294,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             .subscribe((event: DragEvent) => {
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
+                const shouldUseCustomDragImage = dataset.useCustomDragImage === 'true';
 
-                const dragOrigin = dataset.dragOrigin;
-                const isContentletControlDrag = dragOrigin === CONTENTLET_CONTROLS_DRAG_ORIGIN;
-
-                if (isContentletControlDrag) {
+                if (shouldUseCustomDragImage) {
                     this.setDragImage(event);
                 }
 
@@ -1592,7 +1585,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
+        event.dataTransfer.setDragImage(this.customDragImage.nativeElement, 0, 0);
     }
 
     protected handleTabChange(tab: UVE_PALETTE_TABS): void {

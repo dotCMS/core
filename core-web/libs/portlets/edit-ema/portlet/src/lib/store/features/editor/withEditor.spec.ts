@@ -132,6 +132,26 @@ describe('withEditor', () => {
     });
 
     describe('withComputed', () => {
+        describe('$areaContentType', () => {
+            it('should return empty string when contentArea is null', () => {
+                patchState(store, {
+                    contentArea: null
+                });
+
+                expect(store.$areaContentType()).toBe('');
+            });
+
+            it('should return the content type of the current contentArea', () => {
+                patchState(store, {
+                    contentArea: MOCK_CONTENTLET_AREA
+                });
+
+                expect(store.$areaContentType()).toBe(
+                    MOCK_CONTENTLET_AREA.payload.contentlet.contentType
+                );
+            });
+        });
+
         describe('$pageData', () => {
             it('should return the expected data', () => {
                 expect(store.$pageData()).toEqual({

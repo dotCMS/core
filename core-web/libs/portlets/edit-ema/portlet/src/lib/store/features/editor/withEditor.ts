@@ -117,6 +117,9 @@ export function withEditor() {
                         store.state() === EDITOR_STATE.DRAGGING ||
                         store.state() === EDITOR_STATE.SCROLL_DRAG
                 ),
+                $areaContentType: computed<string>(() => {
+                    return store.contentArea()?.payload?.contentlet?.contentType ?? '';
+                }),
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.pageAPIResponse();
 

@@ -38,39 +38,51 @@ export function withPageContext() {
     return signalStoreFeature(
         { state: type<UVEState>() },
         withFlags(UVE_FEATURE_FLAGS),
-        withComputed(({ pageAPIResponse, pageParams, flags, experiment, currentUser }) => {
-            const page = computed(() => pageAPIResponse()?.page);
-            const viewAs = computed(() => pageAPIResponse()?.viewAs);
-            const $isPreviewMode = computed(() => pageParams()?.mode === UVE_MODE.PREVIEW);
-            const $isLiveMode = computed(() => pageParams()?.mode === UVE_MODE.LIVE);
-            const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
-            const $isLockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
-            const $isStyleEditorEnabled = computed(() => flags().FEATURE_FLAG_UVE_STYLE_EDITOR);
-            const $isPageLocked = computed(() => {
-                return computeIsPageLocked(page(), currentUser(), $isLockFeatureEnabled());
-            });
-            const $hasAccessToEditMode = computed(() => {
-                const isPageEditable = page()?.canEdit;
-                const isExperimentRunning = [
-                    DotExperimentStatus.RUNNING,
-                    DotExperimentStatus.SCHEDULED
-                ].includes(experiment()?.status);
-                return isPageEditable && !isExperimentRunning && !$isPageLocked();
-            });
+        withComputed(
+            ({
+                pageAPIResponse,
+                pageParams,
+                flags,
+                experiment,
+                currentUser,
+                isTraditionalPage
+            }) => {
+                const page = computed(() => pageAPIResponse()?.page);
+                const viewAs = computed(() => pageAPIResponse()?.viewAs);
+                const $isPreviewMode = computed(() => pageParams()?.mode === UVE_MODE.PREVIEW);
+                const $isLiveMode = computed(() => pageParams()?.mode === UVE_MODE.LIVE);
+                const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
+                const $isLockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+                const $isStyleEditorEnabled = computed(() => {
+                    const isHeadless = !isTraditionalPage();
+                    return flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
+                });
+                const $isPageLocked = computed(() => {
+                    return computeIsPageLocked(page(), currentUser(), $isLockFeatureEnabled());
+                });
+                const $hasAccessToEditMode = computed(() => {
+                    const isPageEditable = page()?.canEdit;
+                    const isExperimentRunning = [
+                        DotExperimentStatus.RUNNING,
+                        DotExperimentStatus.SCHEDULED
+                    ].includes(experiment()?.status);
+                    return isPageEditable && !isExperimentRunning && !$isPageLocked();
+                });
 
-            return {
-                $isLiveMode,
-                $isEditMode,
-                $isPreviewMode,
-                $isPageLocked,
-                $isLockFeatureEnabled,
-                $isStyleEditorEnabled,
-                $hasAccessToEditMode,
-                $languageId: computed(() => viewAs()?.language?.id || 1),
-                $pageURI: computed(() => page()?.pageURI ?? ''),
-                $variantId: computed(() => pageParams()?.variantId ?? ''),
-                $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
-            } satisfies PageContextComputed;
-        })
+                return {
+                    $isLiveMode,
+                    $isEditMode,
+                    $isPreviewMode,
+                    $isPageLocked,
+                    $isLockFeatureEnabled,
+                    $isStyleEditorEnabled,
+                    $hasAccessToEditMode,
+                    $languageId: computed(() => viewAs()?.language?.id || 1),
+                    $pageURI: computed(() => page()?.pageURI ?? ''),
+                    $variantId: computed(() => pageParams()?.variantId ?? ''),
+                    $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
+                } satisfies PageContextComputed;
+            }
+        )
     );
 }

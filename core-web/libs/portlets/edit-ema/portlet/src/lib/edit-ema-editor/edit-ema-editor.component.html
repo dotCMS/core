@@ -111,6 +111,6 @@
     <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }
 
-<div class="drag-image" #dragImage data-testId="drag-image">
-    {{ $contentArea()?.payload?.contentlet?.contentType }}
+<div class="drag-image" #customDragImage data-testId="drag-image">
+    {{ uveStore.$areaContentType() }}
 </div>

@@ -656,7 +656,7 @@ describe('DotUveContentletToolsComponent', () => {
 
             expect(dragButton?.getAttribute('draggable')).toBe('true');
             expect(dragButton?.getAttribute('data-type')).toBe('contentlet');
-            expect(dragButton?.getAttribute('data-drag-origin')).toBe('contentlet-controls');
+            expect(dragButton?.getAttribute('data-use-custom-drag-image')).toBe('true');
         });
 
         it('should include drag payload in data-item attribute', () => {

@@ -21,7 +21,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { CONTENTLET_CONTROLS_DRAG_ORIGIN } from '../../../shared/consts';
 import { ActionPayload, ContentletPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
@@ -91,8 +90,12 @@ export class DotUveContentletToolsComponent {
      * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
      */
     @Output() selectContent = new EventEmitter<ContentletPayload>();
-
-    protected readonly controlsDragOrigin = CONTENTLET_CONTROLS_DRAG_ORIGIN; // Maybe call this `showCustomDragImage`?
+    /**
+     * Opt-in flag indicating this drag source should use the custom drag image.
+     * Surfaced as `data-use-custom-drag-image` so the host editor can decide
+     * generically when to apply the drag preview.
+     */
+    protected readonly useCustomDragImage = true;
 
     /**
      * Indicates where newly added contentlets should be inserted relative to the current one.
