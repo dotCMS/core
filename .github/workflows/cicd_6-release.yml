@@ -113,6 +113,10 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
 
   # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
   # Waits for deployment to complete to safely update labels only if both succeed
@@ -129,7 +133,6 @@ jobs:
       upload_javadocs: ${{ github.event.inputs.upload_javadocs }}
       update_plugins: ${{ github.event.inputs.update_plugins }}
       update_github_labels: ${{ github.event.inputs.update_github_labels }}
-      deployment_succeeded: ${{ needs.deployment.result == 'success' }}
     secrets:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}

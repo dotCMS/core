@@ -914,12 +914,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param contentlets List of contentlets to hydrate
      * @param browserQuery Browser query parameters for hydration
      * @param roles User roles for permission checking
-     * @param resultList Output list to add hydrated results to
      */
-    private void hydrateContentletsInParallel(final List<Contentlet> contentlets,
+    private List<Map<String, Object>> hydrateContentletsInParallel(final List<Contentlet> contentlets,
                                               final BrowserQuery browserQuery,
-                                              final Role[] roles,
-                                              final List<Map<String, Object>> resultList) {
+                                              final Role[] roles) {
+        final List<Map<String, Object>> resultList = new ArrayList<>();
         final int totalContentlets = contentlets.size();
         final int chunkSize = Math.max(1, Math.min(10, totalContentlets / 4));
         final List<List<Contentlet>> chunks = createChunks(contentlets, chunkSize);
@@ -952,6 +951,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 throw new DotRuntimeException("Failed to hydrate contentlets in parallel", e);
             }
         }
+        return resultList;
     }
 
     /**
@@ -962,19 +962,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return List of chunks, each containing at most chunkSize elements
      */
     private <T> List<List<T>> createChunks(List<T> list, int chunkSize) {
-        /*
-        if (list == null || list.isEmpty() || chunkSize <= 0) {
-            return new ArrayList<>();
-        }
-
-        final List<List<T>> chunks = new ArrayList<>();
-        final int totalSize = list.size();
-
-        for (int i = 0; i < totalSize; i += chunkSize) {
-            final int endIndex = Math.min(i + chunkSize, totalSize);
-            chunks.add(list.subList(i, endIndex));
-        }*/
-
         return Lists.partition(list, chunkSize);
     }
 
@@ -1163,7 +1150,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         // 1. Folders
         if (browserQuery.showFolders) {
-            final List<Map<String, Object>> folders = getFolders(browserQuery, roles);
+            final List<Map<String, Object>> folders = foldersDefaultView(browserQuery, roles);
             folderCount = folders.size();
 
             // Calculate if the offset still falls within folders
@@ -1182,10 +1169,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Now the offset is adjusted (subtracting folders already seen)
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
             contentTotalCount = fromDB.totalResults;
-            contentCount = fromDB.contentlets.size();
 
             // Parallelize hydration with chunks
-            hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles, list);
+            final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
+            // Extract the size of the contentlets loaded and filtered
+            contentCount = contentlets.size();
+            // And finally add them all into the result list
+            list.addAll(contentlets);
         }
 
         // Final sorting (optional: maybe you only need to sort within each block before slicing)
@@ -1756,38 +1746,74 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
 
-
-    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) throws DotDataException, DotSecurityException {
+    /**
+     * Retrieves a list of folders transformed into a list of maps based on the specified browser query
+     * and roles. If the `directParent` property of the browser query is not null, it processes the folders
+     * using a transformer. If `directParent` is null, it returns an empty list.
+     *
+     * @param browserQuery an instance of BrowserQuery containing query details and user information.
+     *                      The `directParent` field is checked to determine whether to process folders.
+     * @param roles an array of Role instances associated with the user, used in the folder transformation process.
+     * @return a list of maps where each map represents a folder and its attributes, or an empty list
+     *         if `directParent` is null.
+     */
+    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) {
 
         if (browserQuery.directParent != null) {
-
-            List<Folder> folders = Collections.emptyList();
-            try {
-
-                folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
-                        .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
-
-            } catch (Exception e1) {
-
-                Logger.error(this, "Could not load folders : ", e1);
-            }
-
-
-            if(browserQuery.showMenuItemsOnly) {
-                folders.removeIf(f->!f.isShowOnMenu());
-            }
-
-            if(browserQuery.filterFolderNames){
-                folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
-            }
-
+            final List<Folder> folders = getFolders(browserQuery);
             final DotMapViewTransformer transformer = new DotFolderTransformerBuilder().withFolders(folders)
                     .withUserAndRoles(browserQuery.user, roles).build();
             return transformer.toMaps();
-
         }
         return List.of();
     } // getFolders.
+
+    /**
+     * Generates a default view of folders based on the given browser query and roles.
+     *
+     * @param browserQuery an object containing the query parameters related to folders
+     * @param roles an array of roles associated with the user to determine access and visibility
+     * @return a list of maps representing the default view of folders; returns an empty list if no direct parent exists in the browser query
+     */
+    private List<Map<String, Object>> foldersDefaultView(final BrowserQuery browserQuery, final Role[] roles) {
+        if (browserQuery.directParent != null) {
+            final List<Folder> folders = getFolders(browserQuery);
+            final DotMapViewTransformer transformer = new DotFolderTransformerBuilder()
+                    .withFolders(folders)
+                    .withDefaultView(browserQuery.user, roles).build();
+            return transformer.toMaps();
+        }
+        return List.of();
+    }
+
+    /**
+     * Retrieves the list of subfolders based on the specified browser query parameters.
+     *
+     * @param browserQuery the query object containing filtering parameters, parent folder information,
+     *                     and other flags used to retrieve and filter the subfolders
+     * @return a list of folders that match the filtering criteria specified in the browser query
+     */
+    private List<Folder> getFolders(BrowserQuery browserQuery) {
+        List<Folder> folders = Collections.emptyList();
+        try {
+
+            folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
+                    .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
+
+        } catch (Exception e1) {
+
+            Logger.error(this, "Could not load folders : ", e1);
+        }
+
+        if(browserQuery.showMenuItemsOnly) {
+            folders.removeIf(f->!f.isShowOnMenu());
+        }
+
+        if(browserQuery.filterFolderNames){
+            folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
+        }
+        return folders;
+    }
 
     private Map<String,Object> htmlPageMap(final HTMLPageAsset page) throws DotStateException {
         return new DotTransformerBuilder().webAssetOptions().content(page).build().toMaps().get(0);
