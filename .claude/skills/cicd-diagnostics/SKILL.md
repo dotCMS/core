@@ -216,10 +216,29 @@ python3 .claude/skills/cicd-diagnostics/fetch-jobs.py "$RUN_ID" "$WORKSPACE"
 #                                                     ^^^^^^^^  ^^^^^^^^^^
 #                                                     FIRST     SECOND
 
+# 🚨 NEW: Fetch workflow annotations (CRITICAL - check first!)
+python3 .claude/skills/cicd-diagnostics/fetch-annotations.py "$RUN_ID" "$WORKSPACE"
+#                                                            ^^^^^^^^  ^^^^^^^^^^
+#                                                            FIRST     SECOND
+
 # Set file paths
 METADATA="$WORKSPACE/run-metadata.json"
 JOBS="$WORKSPACE/jobs-detailed.json"
+ANNOTATIONS="$WORKSPACE/annotations.json"
 ```
+
+**⚠️ CRITICAL: Always fetch annotations when analyzing workflow failures!**
+
+Workflow annotations contain syntax validation errors that:
+- Are visible in GitHub UI but NOT in job logs
+- Explain why jobs were skipped or never evaluated
+- Are the root cause when release/deployment phases are missing
+
+**When to check annotations (high priority):**
+- Jobs marked "skipped" without obvious conditional logic
+- Expected jobs (release, deploy) missing from workflow run
+- Workflow completed but didn't execute all expected jobs
+- No error messages in logs despite workflow failure
 
 ### 3. Download Failed Job Logs
 
