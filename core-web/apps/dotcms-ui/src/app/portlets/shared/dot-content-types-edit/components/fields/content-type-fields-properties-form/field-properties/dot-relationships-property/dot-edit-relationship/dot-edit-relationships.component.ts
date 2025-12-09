@@ -81,7 +81,7 @@ export class DotEditRelationshipsComponent implements OnInit {
      * @memberof DotEditRelationshipsComponent
      */
     triggerChanged(relationship: DotRelationship): void {
-        this.switch.next({
+        this.switch.emit({
             velocityVar: relationship.relationTypeValue,
             cardinality: relationship.cardinality
         });

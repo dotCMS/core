@@ -5,7 +5,8 @@ import {
     DotCMSClazzes,
     DotCMSContentTypeField,
     DotDynamicFieldComponent,
-    DotRenderModes
+    DotRenderModes,
+    NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
 
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
@@ -30,7 +31,7 @@ export class FieldPropertyService {
                     if (fieldType.clazz === DotCMSClazzes.CUSTOM_FIELD) {
                         return {
                             ...fieldType,
-                            properties: [...fieldType.properties, 'newRenderMode']
+                            properties: [...fieldType.properties, NEW_RENDER_MODE_VARIABLE_KEY]
                         };
                     }
                     return fieldType;

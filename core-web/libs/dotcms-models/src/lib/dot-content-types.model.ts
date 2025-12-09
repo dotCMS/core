@@ -50,6 +50,8 @@ export const DotRenderModes = {
     COMPONENT: 'component'
 } as const;
 
+export const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
+
 /**
  * Union type representing all possible DotCMS class names
  * Derived from the DotCMSClazzes constant object
