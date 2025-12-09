@@ -1,12 +1,14 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, ElementRef, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 
+import { OverlayPanel } from 'primeng/overlaypanel';
+
 interface OnboardingSubstepExplanation {
     title: string;
     description: string;
 }
 
-type SubstepType = 'command' | 'file' | 'ui';
+type SubstepType = 'file' | 'terminal' | 'config';
 
 interface OnboardingSubstep {
     code: string;
@@ -27,7 +29,6 @@ interface OnboardingStep {
 interface OnboardingContent {
     title: string;
     description: string;
-    prerequisites: string[];
     steps: OnboardingStep[];
 }
 
@@ -36,12 +37,7 @@ const STORAGE_KEY = 'dotcmsDeveloperOnboarding';
 const ONBOARDING_CONTENT: OnboardingContent = {
     title: 'Build Your First dotCMS Headless Application',
     description:
-        'Step-by-step guide to connect Next.js with dotCMS. Learn authentication, content fetching, rendering, and visual editing in under 30 minutes.',
-    prerequisites: [
-        'Node.js installed (v18 or higher)',
-        'A dotCMS instance (minstarter.dotcms.com)',
-        'Basic knowledge of React and Next.js'
-    ],
+        'Select your preferred framework to get started. Learn how to connect to dotCMS, handle authentication, and enable visual editing in under 30 minutes',
     steps: [
         {
             id: 'step-1',
@@ -53,7 +49,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'npx create-next-app@latest my-dotcms-app --yes',
                     language: 'bash',
-                    type: 'command',
+                    type: 'terminal',
                     explanation: {
                         title: 'Create a new Next.js project with all defaults',
                         description: `The \`--yes\` flag creates a Next.js app with:
@@ -69,7 +65,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'cd my-dotcms-app',
                     language: 'bash',
-                    type: 'command',
+                    type: 'terminal',
                     explanation: {
                         title: 'Navigate into the project directory',
                         description:
@@ -79,7 +75,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'npm run dev',
                     language: 'bash',
-                    type: 'command',
+                    type: 'terminal',
                     explanation: {
                         title: 'Start the development server',
                         description: `The Next.js development server will start and the app will be available at http://localhost:3000. Keep this terminal running while developing.`
@@ -97,7 +93,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'npm install @dotcms/client @dotcms/react @dotcms/types',
                     language: 'bash',
-                    type: 'command',
+                    type: 'terminal',
                     explanation: {
                         title: 'Install dotCMS packages',
                         description: `- \`@dotcms/client\` - Handles authentication, API communication, and content fetching from dotCMS
@@ -117,7 +113,7 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                 {
                     code: 'touch .env.local',
                     language: 'bash',
-                    type: 'command',
+                    type: 'terminal',
                     explanation: {
                         title: 'Create .env.local file in project root',
                         description: `To generate your API key:
@@ -201,7 +197,7 @@ export default async function Home() {
                 {
                     code: 'mkdir -p src/components && touch src/components/DotCMSPageClient.tsx',
                     language: 'bash',
-                    type: 'command',
+                    type: 'terminal',
                     explanation: {
                         title: 'Create components directory',
                         description: `We need a dedicated place for our client-side components.`
@@ -316,8 +312,8 @@ The server fetches the data securely, and the client component renders it. This 
     }
   ]
 }`, // No code needed, purely visual
-                    language: 'text',
-                    type: 'command', // UI placeholder
+                    language: 'json',
+                    type: 'config', // UI placeholder
                     explanation: {
                         title: 'Open the Visual Editor',
                         description: `1. In dotCMS, navigate to **Settings > Apps** and click on **UVE - Universal Visual Editor**
@@ -337,7 +333,7 @@ The server fetches the data securely, and the client component renders it. This 
                 {
                     code: '', // No code needed, purely visual
                     language: 'text',
-                    type: 'command', // UI placeholder
+                    type: 'terminal',
                     explanation: {
                         title: 'Open the Visual Editor',
                         description: `1. Go to **Site Browser** → **Pages** in the dotCMS sidebar.
@@ -382,27 +378,45 @@ export class DotStarterComponent implements OnInit {
             id: 'angular',
             label: 'Angular',
             logo: 'assets/logos/angular.png',
-            disabled: true
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
         },
         {
             id: 'angular-ssr',
             label: 'Angular SSR',
             logo: 'assets/logos/angular.png',
-            disabled: true
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
         },
         {
             id: 'astro',
             label: 'Astro',
             logo: 'assets/logos/astro.svg',
-            disabled: true
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
+        },
+        {
+            id: 'php',
+            label: 'PHP',
+            logo: 'assets/logos/php.png',
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
+        },
+        {
+            id: 'dotnet',
+            label: '.NET',
+            logo: 'assets/logos/dot-net.png',
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         },
     ];
-
 
     progress = 0;
     private _activeAccordionIndex = 0;
     @ViewChild('onboardingContainer', { read: ElementRef })
     onboardingContainer?: ElementRef<HTMLElement>;
+    @ViewChild('frameworkInfoOverlay') frameworkInfoOverlay?: OverlayPanel;
+    selectedFrameworkInfo?: { id: string; label: string; logo: string; disabled?: boolean; githubUrl?: string };
     private completedSteps = new Set<string>();
     private readonly platformId = inject(PLATFORM_ID);
 
@@ -450,6 +464,11 @@ export class DotStarterComponent implements OnInit {
         if (firstIncompleteIndex !== -1) {
             this.activeAccordionIndex = firstIncompleteIndex;
         }
+    }
+
+    showFrameworkInfo(event: Event, framework: { id: string; label: string; logo: string; disabled?: boolean; githubUrl?: string }): void {
+        this.selectedFrameworkInfo = framework;
+        this.frameworkInfoOverlay?.toggle(event);
     }
 
     isStepCompleted(stepId: string): boolean {

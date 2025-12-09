@@ -8,13 +8,39 @@
             @for (framework of frameworks; track framework.id) {
             <div class="logo-item">
                 <p-radioButton name="framework" [value]="framework.id" [(ngModel)]="selectedFramework" [inputId]="framework.id" [disabled]="framework.disabled" />
-                <label [for]="framework.id">
-                    <img [src]="framework.logo" [alt]="framework.label" />
-                    <span>{{ framework.label }}</span>
-                </label>
+
+                @if (framework.disabled) {
+                    <label (click)="showFrameworkInfo($event, framework)" [for]="framework.id">
+                        <img [src]="framework.logo" [alt]="framework.label" />
+                        <span>{{ framework.label }}</span>
+                    </label>
+                } @else {
+                    <label [for]="framework.id">
+                        <img [src]="framework.logo" [alt]="framework.label" />
+                        <span>{{ framework.label }}</span>
+                    </label>
+                }
             </div>
             }
         </div>
+        <p-overlayPanel #frameworkInfoOverlay>
+            <div class="flex flex-column gap-3" style="max-width: 20rem">
+                <div>
+                    <span class="font-medium text-900 block mb-2">Ready to build with {{ selectedFrameworkInfo?.label }}?</span>
+                    <p class="text-600 m-0">
+                        The interactive guide is in development, but you can check out our fully configured {{ selectedFrameworkInfo?.label }} starter kit today
+                    </p>
+                </div>
+                <div>
+                    <a [href]="selectedFrameworkInfo?.githubUrl" target="_blank" rel="noopener noreferrer"
+                        class="flex align-items-center gap-2 text-primary no-underline">
+                        <i class="pi pi-github"></i>
+                        <span class="font-medium">View Starter Kit</span>
+                        <i class="pi pi-external-link text-sm"></i>
+                    </a>
+                </div>
+            </div>
+        </p-overlayPanel>
         <section class="dot-onboarding__steps">
             <p-accordion [(activeIndex)]="activeAccordionIndex" [multiple]="false">
                 @for (step of content.steps; track step) {
@@ -51,8 +77,8 @@
                                 <div>
                                     @if (substep.filePath) {
                                     <div class="dot-step__file-path">{{ substep.filePath }}</div>
-                                    } @else if (substep.type === 'command') {
-                                    <div class="dot-step__file-path">terminal</div>
+                                    } @else {
+                                    <div class="dot-step__file-path">{{ substep.type}}</div>
                                     }
                                     <ng-template #buttonTemplate>
                                         <dot-button-copy />

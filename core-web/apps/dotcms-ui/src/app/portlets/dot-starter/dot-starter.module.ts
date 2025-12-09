@@ -8,6 +8,7 @@ import { RouterModule } from '@angular/router';
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { TagModule } from 'primeng/tag';
@@ -28,6 +29,7 @@ import { dotStarterRoutes } from './dot-starter.routes';
         FormsModule,
         KnobModule,
         MarkdownModule,
+        OverlayPanelModule,
         ProgressBarModule,
         RadioButtonModule,
         RouterModule.forChild(dotStarterRoutes),
