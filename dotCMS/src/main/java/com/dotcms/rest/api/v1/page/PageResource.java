@@ -793,7 +793,6 @@ public class PageResource {
             final String containerId = containerEntry.getContainerId();
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
             final List<String> contentletIdList = containerEntry.getContentIds();
-            // todo check if the style properties belong to a contenlet otherwise clean up the style properties.
             for (final String contentletId : contentletIdList) {
                 final Contentlet contentlet;
                 try {
@@ -833,11 +832,9 @@ public class PageResource {
      * @param containerEntries List
      * @return List
      */
-    // todo should I use really a class or is there smt light should I validate the dupes by contentlet id or should I check too the styles?
     private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
         // Helper class to hold both contentIds and styleProperties during reduction
         class ContainerData {
-
             final Set<String> contentIds = new LinkedHashSet<>();
             final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
         }
@@ -853,6 +850,7 @@ public class PageResource {
             data.contentIds.addAll(containerEntry.getContentIds());
 
             if (containerEntry.getStylePropertiesMap() != null) {
+                // keys that appear again overwrite previous ones (last one wins)
                 data.stylePropertiesMap.putAll(containerEntry.getStylePropertiesMap());
             }
         }
