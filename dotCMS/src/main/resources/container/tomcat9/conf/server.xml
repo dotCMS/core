@@ -2,7 +2,7 @@
 
 <Server port="${CMS_SERVER_PORT:-8005}" shutdown="${CMS_SERVER_SHUTDOWN:-SHUTDOWN}">
   <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
-  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="${CMS_SSL_ENGINE:-on}" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="${CMS_SSL_ENGINE:-off}" />
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
   <Service name="Catalina">
     <Executor

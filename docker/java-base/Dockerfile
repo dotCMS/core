@@ -17,7 +17,7 @@ ENV PATH="$SDKMAN_DIR/bin:$PATH"
 # Installing basic packages and SDKMAN
 RUN apt update && \
     apt upgrade -y && \
-    apt install -y --no-install-recommends zip unzip wget libtcnative-1 tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg && \
+    apt install -y --no-install-recommends zip unzip wget tzdata tini ca-certificates openssl libpq-dev curl gnupg && \
     rm -rf /var/lib/apt/lists/* && \
     wget -O - https://get.sdkman.io | bash && \
     bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JAVA_VERSION} && sdk flush archives" && \

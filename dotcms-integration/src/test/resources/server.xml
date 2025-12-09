@@ -25,7 +25,7 @@
     <Listener className="org.apache.catalina.security.SecurityListener" />
     -->
     <!--APR library loader. Documentation at /docs/apr.html -->
-    <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+    <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="off" />
     <!-- Prevent memory leaks due to use of particular java/javax APIs-->
     <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
     <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
