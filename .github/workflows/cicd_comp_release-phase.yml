@@ -50,10 +50,6 @@ on:
         description: 'Update GitHub labels'
         type: boolean
         default: true
-      deployment_succeeded:
-        description: 'Whether the deployment phase succeeded (required for safe label updates)'
-        type: boolean
-        required: true
     secrets:
       EE_REPO_USERNAME:
         required: false
@@ -206,13 +202,12 @@ jobs:
           echo "::endgroup::"
 
   # Update GitHub labels for release tracking
-  # CRITICAL SAFETY: Only updates labels if BOTH deployment phase (Docker Hub) AND
-  # release-artifacts (Artifactory/Javadocs) succeeded. This prevents partial releases
-  # from being marked as complete.
+  # Only updates labels if release-artifacts (Artifactory/Javadocs) succeeded.
+  # The calling workflow's dependency chain ensures deployment also succeeded.
   release-labeling:
     name: Release Labeling
     needs: [ release-artifacts ]
-    if: success() && inputs.deployment_succeeded && inputs.update_github_labels == true
+    if: success() && inputs.update_github_labels == true
     uses: ./.github/workflows/issue_comp_release-labeling.yml
     with:
       new_label: 'Release : ${{ inputs.release_version }}'
