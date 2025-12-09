@@ -146,7 +146,7 @@ describe('FieldPropertyService', () => {
                     {
                         id: 'var1',
                         key: 'newRenderMode',
-                        value: DotRenderModes.COMPONENTS,
+                        value: DotRenderModes.COMPONENT,
                         fieldId: '123',
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
                     }
@@ -165,7 +165,7 @@ describe('FieldPropertyService', () => {
             };
 
             const result = fieldPropertiesService.getValue(field, 'newRenderMode');
-            expect(result).toEqual(DotRenderModes.COMPONENTS);
+            expect(result).toEqual(DotRenderModes.COMPONENT);
         });
 
         it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariable does not exist', () => {
