@@ -11,11 +11,13 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of old style Language Variables
  */
 
+@ApplicationScoped
 public class OldStyleLanguagesVarialeMetricType implements MetricType {
 
     @Override
