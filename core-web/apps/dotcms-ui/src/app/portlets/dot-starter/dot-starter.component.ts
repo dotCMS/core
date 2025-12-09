@@ -372,15 +372,56 @@ export class DotStarterComponent implements OnInit {
     readonly content = ONBOARDING_CONTENT;
 
     progress = 0;
-    activeAccordionIndex = 0;
+    private _activeAccordionIndex = 0;
     @ViewChild('onboardingContainer', { read: ElementRef })
     onboardingContainer?: ElementRef<HTMLElement>;
     private completedSteps = new Set<string>();
     private readonly platformId = inject(PLATFORM_ID);
 
+    get activeAccordionIndex(): number {
+        return this._activeAccordionIndex;
+    }
+
+    set activeAccordionIndex(value: number) {
+        this._activeAccordionIndex = value;
+
+        // Complete all previous steps that aren't already completed
+        if (value !== null && value !== undefined && value >= 0 && value < this.content.steps.length) {
+            let hasChanges = false;
+            for (let i = 0; i < value; i++) {
+                const step = this.content.steps[i];
+                if (step && !this.isStepCompleted(step.id)) {
+                    this.completedSteps.add(step.id);
+                    hasChanges = true;
+                }
+            }
+
+            if (hasChanges) {
+                this.persistProgress();
+                this.updateProgress();
+            }
+
+            // Check if the newly opened step is completed
+            const openedStep = this.content.steps[value];
+            if (openedStep && this.isStepCompleted(openedStep.id)) {
+                // Automatically undo this step and all subsequent steps
+                this.undoStepAndSubsequent(openedStep.id);
+            }
+        }
+    }
+
     ngOnInit(): void {
         this.loadProgress();
         this.updateProgress();
+
+        // Open the accordion to the first incomplete step
+        const firstIncompleteIndex = this.content.steps.findIndex(
+            (step) => !this.isStepCompleted(step.id)
+        );
+
+        if (firstIncompleteIndex !== -1) {
+            this.activeAccordionIndex = firstIncompleteIndex;
+        }
     }
 
     isStepCompleted(stepId: string): boolean {

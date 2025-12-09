@@ -54,13 +54,8 @@
                             }
                         </div>
 
-                        @if (isStepCompleted(step.id)) {
-                        <button class="dot-step__next-button" type="button" pButton [outlined]="true" label="Undo"
-                            (click)="undoStepAndSubsequent(step.id)"></button>
-                        } @else {
                         <button class="dot-step__next-button" type="button" pButton label="Next Step"
                             (click)="completeStepAndOpenNext(step.id)"></button>
-                        }
 
                     </div>
                 </p-accordionTab>
