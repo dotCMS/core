@@ -69,6 +69,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.MultiTreeAPIImpl;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -317,6 +318,98 @@ public class PageResourceTest {
         entries.add(containerEntry);
         final PageContainerForm pageContainerForm = new PageContainerForm(entries, requestJson);
         this.pageResource.addContent(request, response, pagetest.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
+    }
+
+    /**
+     * Method to test: {@link PageResource#addContent} with styleProperties
+     * When: Add content to a page with styleProperties using the PageAPI
+     * Should: Save styleProperties in the {@link MultiTree} and be retrievable
+     */
+    @Test
+    public void test_addContent_with_styleProperties() throws Exception {
+        // Create a page with container
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset testPage = pageRenderTest.getPage();
+        final Container container = pageRenderTest.getFirstContainer();
+
+        // Create contentlet
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+        final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                .languageId(1)
+                .folder(APILocator.getFolderAPI().findSystemFolder())
+                .host(host)
+                .setProperty("title", "Test Content with Style Properties")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersisted();
+
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(contentlet, user, false);
+
+        // Prepare styleProperties
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("backgroundColor", "red");
+        styleProperties.put("fontSize", "16px");
+        styleProperties.put("padding", "10px");
+
+        // Create ContainerEntry with styleProperties
+        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
+        final String containerUUID = UUIDGenerator.generateUuid();
+        final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
+        stylePropertiesMap.put(contentlet.getIdentifier(), styleProperties);
+
+        final PageContainerForm.ContainerEntry containerEntry =
+                new PageContainerForm.ContainerEntry(
+                        null,
+                        container.getIdentifier(),
+                        containerUUID,
+                        list(contentlet.getIdentifier()),
+                        stylePropertiesMap
+                );
+
+        entries.add(containerEntry);
+        final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+
+        // Save content with styleProperties
+        final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                request,
+                response,
+                testPage.getIdentifier(),
+                VariantAPI.DEFAULT_VARIANT.name(),
+                pageContainerForm
+        );
+
+        // Verify response is successful
+        assertNotNull(addContentResponse);
+        assertEquals(200, addContentResponse.getStatus());
+
+        // Retrieve MultiTree and verify styleProperties are saved
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+
+        assertNotNull("MultiTrees should not be null", multiTrees);
+        assertFalse("MultiTrees should not be empty", multiTrees.isEmpty());
+
+        // Find the MultiTree for our contentlet
+        final Optional<MultiTree> multiTreeOpt = multiTrees.stream()
+                .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                .findFirst();
+
+        assertTrue("MultiTree for the contentlet should exist", multiTreeOpt.isPresent());
+
+        final MultiTree multiTree = multiTreeOpt.get();
+        final Map<String, Object> savedStyleProperties = multiTree.getStyleProperties();
+
+        // Verify styleProperties were saved correctly
+        assertNotNull("StyleProperties should not be null", savedStyleProperties);
+        assertFalse("StyleProperties should not be empty", savedStyleProperties.isEmpty());
+        assertEquals("backgroundColor should match", "red", savedStyleProperties.get("backgroundColor"));
+        assertEquals("fontSize should match", "16px", savedStyleProperties.get("fontSize"));
+        assertEquals("padding should match", "10px", savedStyleProperties.get("padding"));
+
+        Logger.info(this, "StyleProperties saved successfully: " + savedStyleProperties);
     }
 
     /**

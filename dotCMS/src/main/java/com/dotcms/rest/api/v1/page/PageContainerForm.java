@@ -10,7 +10,9 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class contains all the Contentlets that make up an HTML Page. It provides the list of Containers in it, and the
@@ -47,6 +49,7 @@ public class PageContainerForm {
         private static final String CONTAINER_UUID_ATTRIBUTE_NAME = "uuid";
         private static final String CONTAINER_PERSONA_TAG_ATTRIBUTE_NAME = "personaTag";
         private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentletsId";
+        private static final String STYLE_PROPERTIES_ATTRIBUTE_NAME = "styleProperties";
 
         @Override
         public PageContainerForm deserialize(final JsonParser jsonParser,
@@ -76,6 +79,33 @@ public class PageContainerForm {
                 }
 
                 contentletsNode.forEach((JsonNode contentId) -> containerEntry.addContentId(contentId.textValue()));
+
+                // Parse styleProperties for each contentlet (optional field)
+                final JsonNode stylePropertiesNode = jsonElement.get(STYLE_PROPERTIES_ATTRIBUTE_NAME);
+                if (stylePropertiesNode != null && stylePropertiesNode.isObject()) {
+                    stylePropertiesNode.fields().forEachRemaining(entry -> {
+                        final String contentletId = entry.getKey();
+                        final JsonNode styleProps = entry.getValue();
+                        if (styleProps != null && styleProps.isObject()) {
+                            final Map<String, Object> propsMap = new HashMap<>();
+                            styleProps.fields().forEachRemaining(prop -> {
+                                final JsonNode propValue = prop.getValue();
+                                // Handle different JSON value types
+                                if (propValue.isTextual()) {
+                                    propsMap.put(prop.getKey(), propValue.asText());
+                                } else if (propValue.isNumber()) {
+                                    propsMap.put(prop.getKey(), propValue.numberValue());
+                                } else if (propValue.isBoolean()) {
+                                    propsMap.put(prop.getKey(), propValue.asBoolean());
+                                } else {
+                                    propsMap.put(prop.getKey(), propValue.toString());
+                                }
+                            });
+                            containerEntry.setStyleProperties(contentletId, propsMap);
+                        }
+                    });
+                }
+
                 entries.add(containerEntry);
             }
 
@@ -93,19 +123,24 @@ public class PageContainerForm {
         private final String id;
         private final String uuid;
         private final List<String> contentIds;
+        private final Map<String, Map<String, Object>> stylePropertiesMap;
 
         public ContainerEntry(final String personaTag, final String id, final String uuid) {
             this.id = id;
             this.uuid = uuid;
             this.personaTag  = personaTag;
-            contentIds = new ArrayList<>();
+            this.contentIds = new ArrayList<>();
+            this.stylePropertiesMap = new HashMap<>();
         }
 
-        public ContainerEntry(final String personaTag, final String id, final String uuid, final List<String> contentIds) {
+        public ContainerEntry(final String personaTag, final String id, final String uuid,
+                final List<String> contentIds,
+                final Map<String, Map<String, Object>> stylePropertiesMap) {
             this.id = id;
             this.uuid = uuid;
             this.personaTag  = personaTag;
             this.contentIds = contentIds;
+            this.stylePropertiesMap = stylePropertiesMap != null ? stylePropertiesMap : new HashMap<>();
         }
 
         public String getPersonaTag() {
@@ -126,6 +161,14 @@ public class PageContainerForm {
 
         public String getContainerUUID() {
             return uuid;
+        }
+
+        public Map<String, Map<String, Object>> getStylePropertiesMap() {
+            return stylePropertiesMap;
+        }
+
+        public void setStyleProperties(final String contentletId, final Map<String, Object> styleProperties) {
+            this.stylePropertiesMap.put(contentletId, styleProperties);
         }
 
     }
