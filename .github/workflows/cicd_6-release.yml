@@ -133,7 +133,6 @@ jobs:
       upload_javadocs: ${{ github.event.inputs.upload_javadocs }}
       update_plugins: ${{ github.event.inputs.update_plugins }}
       update_github_labels: ${{ github.event.inputs.update_github_labels }}
-      deployment_succeeded: ${{ needs.deployment.result == 'success' }}
     secrets:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
