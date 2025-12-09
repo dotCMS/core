@@ -23,6 +23,8 @@ class DragEventMock extends Event {
         effectAllowed?: string;
         setData?: ReturnType<typeof jest.fn>;
         setDragImage?: ReturnType<typeof jest.fn>;
+        types?: string[];
+        files?: FileList | File[];
     } | null = null;
 
     constructor(type: string) {
@@ -30,7 +32,9 @@ class DragEventMock extends Event {
         this.dataTransfer = {
             effectAllowed: '',
             setData: jest.fn(),
-            setDragImage: jest.fn()
+            setDragImage: jest.fn(),
+            types: [],
+            files: []
         };
     }
 }
@@ -41,6 +45,32 @@ class DragEventMock extends Event {
 // Helper function to create properly mocked drag event
 function createDragStartEvent(): DragEvent {
     return new DragEvent('dragstart');
+}
+
+// Helper function to create drag over event with internal drag type
+function createDragOverEvent(types: string[] = [DOT_DRAG_ITEM]): DragEvent {
+    const event = new DragEvent('dragover');
+    Object.defineProperty(event, 'dataTransfer', {
+        value: {
+            types,
+            files: []
+        },
+        writable: true
+    });
+    return event;
+}
+
+// Helper function to create drag over event with files
+function createFileDragOverEvent(files: File[] = []): DragEvent {
+    const event = new DragEvent('dragover');
+    Object.defineProperty(event, 'dataTransfer', {
+        value: {
+            types: ['Files'],
+            files
+        },
+        writable: true
+    });
+    return event;
 }
 
 const mockLanguages: DotLanguage[] = [
@@ -825,6 +855,276 @@ describe('DotFolderListViewComponent', () => {
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(false);
                 expect(row.classList.contains('is-dragging')).toBe(false);
+            });
+        });
+
+        describe('onDragOver', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+            });
+
+            it('should set dragOverRowId when dragging over a row with internal drag', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dragOverEvent = createDragOverEvent();
+                const preventDefaultSpy = jest.spyOn(dragOverEvent, 'preventDefault');
+
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(preventDefaultSpy).toHaveBeenCalled();
+            });
+
+            it('should not set dragOverRowId when dragging over with file drop', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+                const dragOverEvent = createFileDragOverEvent([mockFile]);
+
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+            });
+
+            it('should not set dragOverRowId when dataTransfer is null', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dragOverEvent = new DragEvent('dragover');
+                Object.defineProperty(dragOverEvent, 'dataTransfer', {
+                    value: null,
+                    writable: true
+                });
+
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+            });
+
+            it('should update dragOverRowId when dragging over different rows', () => {
+                const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
+                const dragOverEvent = createDragOverEvent();
+
+                // Drag over first item
+                rows[0].dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+
+                // Drag over second item
+                rows[1].dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
+            });
+
+            it('should apply is-drag-over class when dragOverRowId matches item identifier', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dragOverEvent = createDragOverEvent();
+
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                expect(row.classList.contains('is-drag-over')).toBe(true);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+            });
+
+            it('should not apply is-drag-over class when dragOverRowId does not match', () => {
+                const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
+                const dragOverEvent = createDragOverEvent();
+
+                // Drag over second item
+                rows[1].dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                // First row should not have the class
+                expect(rows[0].classList.contains('is-drag-over')).toBe(false);
+            });
+        });
+
+        describe('onDrop', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+            });
+
+            it('should clear dragOverRowId when dropping on a row with internal drag', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropEvent = new DragEvent('drop');
+                Object.defineProperty(dropEvent, 'dataTransfer', {
+                    value: {
+                        types: [DOT_DRAG_ITEM],
+                        files: [],
+                        preventDefault: jest.fn(),
+                        stopPropagation: jest.fn()
+                    },
+                    writable: true
+                });
+
+                // Set dragOverRowId first
+                const dragOverEvent = createDragOverEvent();
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+
+                // Now drop
+                row.dispatchEvent(dropEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+                expect(dropSpy).toHaveBeenCalledWith(firstItem);
+            });
+
+            it('should not handle file drops and let them bubble up', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+                const dropEvent = new DragEvent('drop');
+                Object.defineProperty(dropEvent, 'dataTransfer', {
+                    value: {
+                        types: ['Files'],
+                        files: [mockFile]
+                    },
+                    writable: true
+                });
+
+                row.dispatchEvent(dropEvent);
+                spectator.detectChanges();
+
+                expect(dropSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not handle drops that are not internal drags', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropEvent = new DragEvent('drop');
+                Object.defineProperty(dropEvent, 'dataTransfer', {
+                    value: {
+                        types: ['text/plain'],
+                        files: []
+                    },
+                    writable: true
+                });
+
+                row.dispatchEvent(dropEvent);
+                spectator.detectChanges();
+
+                expect(dropSpy).not.toHaveBeenCalled();
+            });
+
+            it('should clear dragOverRowId on drop even if it was set', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dropEvent = new DragEvent('drop');
+                Object.defineProperty(dropEvent, 'dataTransfer', {
+                    value: {
+                        types: [DOT_DRAG_ITEM],
+                        files: [],
+                        preventDefault: jest.fn(),
+                        stopPropagation: jest.fn()
+                    },
+                    writable: true
+                });
+
+                // Set dragOverRowId first
+                const dragOverEvent = createDragOverEvent();
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                row.dispatchEvent(dropEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+            });
+        });
+
+        describe('onDragEnd', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+            });
+
+            it('should clear dragOverRowId when drag ends', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dragOverEvent = createDragOverEvent();
+
+                // Set dragOverRowId first
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+
+                // End drag
+                spectator.dispatchFakeEvent(row, 'dragend');
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+                expect(spectator.component.state.isDragging()).toBe(false);
+            });
+
+            it('should clear dragOverRowId and isDragging state together', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dragStartEvent = createDragStartEvent();
+                const dragOverEvent = createDragOverEvent();
+
+                // Start drag
+                row.dispatchEvent(dragStartEvent);
+                spectator.detectChanges();
+                // Drag over
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.isDragging()).toBe(true);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+
+                // End drag
+                spectator.dispatchFakeEvent(row, 'dragend');
+                spectator.detectChanges();
+
+                expect(spectator.component.state.isDragging()).toBe(false);
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+            });
+        });
+
+        describe('dragOverRowId state management', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.detectChanges();
+            });
+
+            it('should initialize dragOverRowId as null', () => {
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+            });
+
+            it('should update dragOverRowId when dragging over different items', () => {
+                const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
+                const dragOverEvent = createDragOverEvent();
+
+                // Drag over first item
+                rows[0].dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+
+                // Drag over second item
+                rows[1].dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
+            });
+
+            it('should reflect dragOverRowId changes in the DOM immediately', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const dragOverEvent = createDragOverEvent();
+
+                // Verify initial state
+                expect(row.classList.contains('is-drag-over')).toBe(false);
+
+                // Drag over first item
+                row.dispatchEvent(dragOverEvent);
+                spectator.detectChanges();
+
+                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(row.classList.contains('is-drag-over')).toBe(true);
             });
         });
     });

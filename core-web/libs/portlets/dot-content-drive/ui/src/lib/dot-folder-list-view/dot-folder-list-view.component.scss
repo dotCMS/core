@@ -59,6 +59,12 @@
                             cursor: grabbing;
                         }
 
+                        &.is-drag-over:not(.p-highlight) {
+                            color: $text-color-hover;
+                            background-color: $color-palette-primary-100;
+                            transition: background-color ease-in $basic-speed;
+                        }
+
                         &:focus:not(.p-highlight) {
                             background-color: $white;
                         }

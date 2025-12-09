@@ -59,13 +59,16 @@
             <tr
                 class="content-drive-table__row"
                 [class.is-dragging]="state.isDragging()"
+                [class.is-drag-over]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
                 [draggable]="true"
                 (dragstart)="onDragStart($event, item)"
-                (dragend)="onDragEnd()">
+                (dragend)="onDragEnd()"
+                (dragover)="onDragOver($event, item)"
+                (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
                     <p-tableCheckbox [value]="item" />
                 </td>

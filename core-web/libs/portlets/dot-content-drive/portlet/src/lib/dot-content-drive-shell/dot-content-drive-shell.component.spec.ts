@@ -29,7 +29,11 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotContentDriveFolder } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotContentDriveFolder,
+    DotContentDriveItem
+} from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
     DotFolderTreeNodeItem,
@@ -1544,6 +1548,267 @@ describe('DotContentDriveShellComponent', () => {
                     life: ERROR_MESSAGE_LIFE
                 });
                 expect(store.cleanDragItems).toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('onTableDrop', () => {
+        let workflowService: SpyObject<DotWorkflowActionsFireService>;
+
+        beforeEach(() => {
+            spectator.detectChanges();
+            workflowService = spectator.inject(DotWorkflowActionsFireService);
+            messageService.add.mockClear();
+        });
+
+        it('should trigger move when drop event is emitted with a folder', () => {
+            const mockDragItems = {
+                folders: [],
+                contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+            };
+            store.dragItems.mockReturnValue(mockDragItems);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            workflowService.bulkFire.mockReturnValue(
+                of({ successCount: 1, skippedCount: 0, fails: [] })
+            );
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/documents/',
+                identifier: 'folder-123'
+            } as DotContentDriveItem;
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'drop', folderItem);
+
+            // Should show info message
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'info',
+                summary: expect.any(String),
+                detail: expect.any(String)
+            });
+
+            // Should call workflow service with correct parameters
+            expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                additionalParams: {
+                    assignComment: {
+                        assign: '',
+                        comment: ''
+                    },
+                    pushPublish: {},
+                    additionalParamsMap: {
+                        _path_to_move: `//${MOCK_SITES[0].hostname}/documents/`
+                    }
+                },
+                contentletIds: [mockDragItems.contentlets[0].inode],
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            });
+        });
+
+        it('should not trigger move when drop event is emitted with a non-folder item', () => {
+            const contentItem = {
+                ...MOCK_ITEMS[0],
+                type: 'content',
+                identifier: 'content-123'
+            } as DotContentDriveItem;
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'drop', contentItem);
+
+            // Should not show any messages or call workflow service
+            expect(messageService.add).not.toHaveBeenCalled();
+            expect(workflowService.bulkFire).not.toHaveBeenCalled();
+        });
+
+        it('should follow the same flow as sidebar moveItems when drop event is emitted with a folder', () => {
+            const mockDragItems = {
+                folders: [],
+                contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+            };
+            store.dragItems.mockReturnValue(mockDragItems);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            workflowService.bulkFire.mockReturnValue(
+                of({ successCount: 1, skippedCount: 0, fails: [] })
+            );
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/images/',
+                identifier: 'folder-456'
+            } as DotContentDriveItem;
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'drop', folderItem);
+
+            // Should show success message after successful move
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: expect.any(String),
+                detail: expect.any(String),
+                life: SUCCESS_MESSAGE_LIFE
+            });
+
+            // Should clean drag items and reload items
+            expect(store.cleanDragItems).toHaveBeenCalled();
+            expect(store.loadItems).toHaveBeenCalled();
+        });
+
+        it('should handle move to root folder (empty path) when drop event is emitted', () => {
+            const mockDragItems = {
+                folders: [],
+                contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+            };
+            store.dragItems.mockReturnValue(mockDragItems);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            workflowService.bulkFire.mockReturnValue(
+                of({ successCount: 1, skippedCount: 0, fails: [] })
+            );
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '',
+                identifier: 'root-folder'
+            } as DotContentDriveItem;
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'drop', folderItem);
+
+            expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                additionalParams: {
+                    assignComment: {
+                        assign: '',
+                        comment: ''
+                    },
+                    pushPublish: {},
+                    additionalParamsMap: {
+                        _path_to_move: `//${MOCK_SITES[0].hostname}/`
+                    }
+                },
+                contentletIds: [mockDragItems.contentlets[0].inode],
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            });
+        });
+
+        it('should handle workflow service error when drop event is emitted with a folder', () => {
+            const mockDragItems = {
+                folders: [],
+                contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+            };
+            store.dragItems.mockReturnValue(mockDragItems);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            workflowService.bulkFire.mockReturnValue(throwError(() => new Error('Workflow error')));
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/documents/',
+                identifier: 'folder-123'
+            } as DotContentDriveItem;
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'drop', folderItem);
+
+            const errorCalls = messageService.add.mock.calls.filter(
+                (call) => call[0].severity === 'error'
+            );
+
+            expect(errorCalls.length).toBeGreaterThanOrEqual(1);
+            expect(errorCalls[0][0]).toEqual({
+                severity: 'error',
+                summary: expect.any(String),
+                detail: expect.any(String),
+                life: ERROR_MESSAGE_LIFE
+            });
+            expect(store.cleanDragItems).toHaveBeenCalled();
+        });
+
+        it('should show message with folders when dragging folders and contentlets and drop event is emitted with a folder', () => {
+            const mockFolder: DotContentDriveFolder = {
+                __icon__: 'folderIcon',
+                defaultFileType: '',
+                description: '',
+                extension: 'folder',
+                filesMasks: '',
+                hasTitleImage: false,
+                hostId: 'host-1',
+                iDate: 1234567890,
+                identifier: 'folder-1',
+                inode: 'inode-folder-1',
+                mimeType: 'folder',
+                modDate: 1234567890,
+                name: 'Test Folder',
+                owner: 'admin',
+                parent: '/',
+                path: '/test-folder/',
+                permissions: [],
+                showOnMenu: true,
+                sortOrder: 0,
+                title: 'Test Folder',
+                type: 'folder'
+            };
+
+            const mockDragItems = {
+                folders: [mockFolder],
+                contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+            };
+            store.dragItems.mockReturnValue(mockDragItems);
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            workflowService.bulkFire.mockReturnValue(
+                of({ successCount: 1, skippedCount: 0, fails: [] })
+            );
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/documents/',
+                identifier: 'folder-123'
+            } as DotContentDriveItem;
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'drop', folderItem);
+
+            // Should show the message with folders (different message when folders are included)
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'info',
+                summary: 'content-drive.move-to-folder-in-progress-with-folders',
+                detail: expect.any(String)
+            });
+
+            // Should still call workflow service with contentlet inodes (not folders)
+            expect(workflowService.bulkFire).toHaveBeenCalledWith({
+                additionalParams: {
+                    assignComment: {
+                        assign: '',
+                        comment: ''
+                    },
+                    pushPublish: {},
+                    additionalParamsMap: {
+                        _path_to_move: `//${MOCK_SITES[0].hostname}/documents/`
+                    }
+                },
+                contentletIds: [mockDragItems.contentlets[0].inode],
+                workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
             });
         });
     });

@@ -461,6 +461,21 @@ export class DotContentDriveShellComponent {
             });
     }
 
+    protected onTableDrop(event: DotContentDriveItem) {
+        if (!isFolder(event)) {
+            return;
+        }
+
+        this.onMoveItems({
+            targetFolder: {
+                type: 'folder',
+                path: event.path,
+                hostname: this.#store.currentSite()?.hostname,
+                id: event.identifier
+            }
+        });
+    }
+
     protected getMoveMetadata(event: DotContentDriveMoveItems) {
         const dragItems = this.#store.dragItems();
 
