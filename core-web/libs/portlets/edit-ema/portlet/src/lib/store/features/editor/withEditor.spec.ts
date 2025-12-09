@@ -765,7 +765,7 @@ describe('withEditor', () => {
         });
 
         describe('resetEditorProperties', () => {
-            it('should reset the editor props corretcly', () => {
+            it('should reset the editor props correctly', () => {
                 store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
                 store.setEditorState(EDITOR_STATE.SCROLLING);
                 store.setContentletArea(MOCK_CONTENTLET_AREA);

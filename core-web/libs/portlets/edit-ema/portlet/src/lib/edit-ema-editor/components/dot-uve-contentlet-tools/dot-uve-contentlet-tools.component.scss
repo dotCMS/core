@@ -38,6 +38,7 @@
     pointer-events: none;
     outline: solid 2px $color-palette-primary-500;
     background-color: transparent;
+    container-type: inline-size;
 
     .add-button-top,
     .add-button-bottom {
@@ -65,6 +66,13 @@
         transform: translate(0, -50%);
         pointer-events: all;
         z-index: 1;
+    }
+
+    @container (max-width: 400px) {
+        .add-button-top {
+            left: 0;
+            transform: translate(0, -50%);
+        }
     }
 }
 

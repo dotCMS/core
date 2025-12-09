@@ -378,7 +378,7 @@ export function withEditor() {
                 },
                 setPaletteOpen(open: boolean) {
                     patchState(store, {
-                        palette: { open, currentTab: store.palette().currentTab }
+                        palette: { ...store.palette(), open }
                     });
                 }
             };

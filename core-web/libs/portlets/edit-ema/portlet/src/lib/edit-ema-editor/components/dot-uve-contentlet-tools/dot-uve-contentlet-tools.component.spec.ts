@@ -458,18 +458,8 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         describe('menuItems', () => {
-            it('should have 2 items (content, widget) when not enterprise', () => {
+            it('should have 3 items (content, widget, form)', () => {
                 spectator.component.isEnterprise = false;
-                spectator.detectChanges();
-
-                const items = component.menuItems();
-                expect(items).toHaveLength(2);
-                expect(items[0].label).toBe('Content');
-                expect(items[1].label).toBe('Widget');
-            });
-
-            it('should have 3 items (content, widget, form) when enterprise', () => {
-                spectator.component.isEnterprise = true;
                 spectator.detectChanges();
 
                 const items = component.menuItems();
@@ -588,26 +578,6 @@ describe('DotUveContentletToolsComponent', () => {
                     position: 'after'
                 })
             });
-        });
-    });
-
-    describe('Enterprise features', () => {
-        it('should show form option in menu when enterprise', () => {
-            spectator.component.isEnterprise = true;
-            spectator.detectChanges();
-
-            const menuItems = component.menuItems();
-            const formItem = menuItems.find((item) => item.label === 'Form');
-            expect(formItem).toBeDefined();
-        });
-
-        it('should NOT show form option in menu when not enterprise', () => {
-            spectator.component.isEnterprise = false;
-            spectator.detectChanges();
-
-            const menuItems = component.menuItems();
-            const formItem = menuItems.find((item) => item.label === 'Form');
-            expect(formItem).toBeUndefined();
         });
     });
 

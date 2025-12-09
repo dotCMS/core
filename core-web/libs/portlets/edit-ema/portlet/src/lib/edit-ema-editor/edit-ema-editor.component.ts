@@ -1,5 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
+import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,16 +17,17 @@ import {
     inject,
     signal,
     untracked,
-    computed
+    computed,
+    DestroyRef
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { catchError, filter, map, switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -163,9 +164,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
-
-    readonly destroy$ = new Subject<boolean>();
     #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly host = '*';
@@ -238,7 +238,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.handleDragEvents();
 
         fromEvent(this.window, 'message')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
     }
 
@@ -295,7 +295,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     handleDragEvents() {
         fromEvent(this.window, 'dragstart')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((event: DragEvent) => {
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
@@ -322,7 +322,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         fromEvent(this.window, 'dragenter')
             .pipe(
-                takeUntil(this.destroy$),
+                takeUntilDestroyed(this.#destroyRef),
                 // For some reason the fromElement is not in the DragEvent type
                 filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement) // I just want to trigger this when we are dragging from the outside
             )
@@ -357,7 +357,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         fromEvent(this.window, 'dragend')
             .pipe(
-                takeUntil(this.destroy$),
+                takeUntilDestroyed(this.#destroyRef),
                 filter((event: DragEvent) => event.dataTransfer.dropEffect === 'none')
             )
             .subscribe(() => {
@@ -366,7 +366,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         fromEvent(this.window, 'dragover')
             .pipe(
-                takeUntil(this.destroy$),
+                takeUntilDestroyed(this.#destroyRef),
                 // Check that  `dragItem()` is not empty because there is a scenario where a dragover
                 // occurs over the editor after invoking `handleReloadContentEffect`, which clears the dragItem.
                 // For more details, refer to the issue: https://github.com/dotCMS/core/issues/29855
@@ -422,7 +422,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         fromEvent(this.window, 'dragleave')
             .pipe(
-                takeUntil(this.destroy$),
+                takeUntilDestroyed(this.#destroyRef),
                 filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
             )
             .subscribe(() => {
@@ -430,7 +430,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
 
         fromEvent(this.window, 'drop')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((event: DragEvent) => {
                 event.preventDefault();
                 const target = event.target as HTMLDivElement;
@@ -579,8 +579,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
         this.#iframeResizeObserver?.disconnect();
         this.#iframeResizeObserver = null;
         if (this.uveStore.isTraditionalPage()) {
@@ -1568,7 +1566,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             this.#iframeResizeObserver.observe(iframeElement);
         } else {
             fromEvent(this.window, 'resize')
-                .pipe(takeUntil(this.destroy$))
+                .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe(() => this.#resetContentletArea());
         }
     }

@@ -1,3 +1,5 @@
+import { signalMethod } from '@ngrx/signals';
+
 import { JsonPipe, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -6,7 +8,6 @@ import {
     Output,
     ViewChild,
     computed,
-    effect,
     inject,
     input,
     signal
@@ -23,9 +24,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { CONTENTLET_CONTROLS_DRAG_ORIGIN } from '../../../shared/consts';
 import { ActionPayload, ContentletPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
-
-// TODO: Add the CSS for this
-// const MIN_WIDTH_FOR_CENTERED_BUTTON = 250;
 
 /**
  * @class DotUveContentletToolsComponent
@@ -143,7 +141,7 @@ export class DotUveContentletToolsComponent {
      * Items are localized and wired so that selecting them emits `addContent`.
      */
     readonly menuItems = computed<MenuItem[]>(() => {
-        const items = [
+        return [
             {
                 label: this.#dotMessageService.get('content'),
                 command: () =>
@@ -153,18 +151,13 @@ export class DotUveContentletToolsComponent {
                 label: this.#dotMessageService.get('Widget'),
                 command: () =>
                     this.addContent.emit({ type: 'widget', payload: this.contentContext() })
-            }
-        ];
-
-        if (this.isEnterprise()) {
-            items.push({
+            },
+            {
                 label: this.#dotMessageService.get('form'),
                 command: () =>
                     this.addContent.emit({ type: 'form', payload: this.contentContext() })
-            });
-        }
-
-        return items;
+            }
+        ];
     });
 
     /**
@@ -219,15 +212,14 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Sets up reactive side effects for the tools component.
-     * Currently used to hide open menus whenever the hovered contentlet changes.
+     * Hides the menus when the contentlet area changes.
      */
+    readonly hideMenusMethod = signalMethod<ContentletArea>((_area) => {
+        this.hideMenus();
+    });
+
     constructor() {
-        effect(() => {
-            // If this changes, we need to hide the menus
-            this.contentletArea();
-            this.hideMenus();
-        });
+        this.hideMenusMethod(this.contentletArea);
     }
 
     /**
