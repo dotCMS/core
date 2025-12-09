@@ -4,13 +4,12 @@ import { JsonPipe, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
-    Output,
-    ViewChild,
     computed,
     inject,
     input,
-    signal
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -38,8 +37,8 @@ import { ContentletArea } from '../ema-page-dropzone/types';
 export class DotUveContentletToolsComponent {
     readonly #dotMessageService = inject(DotMessageService);
 
-    @ViewChild('menu') menu?: Menu;
-    @ViewChild('menuVTL') menuVTL?: Menu;
+    readonly menu = viewChild<Menu>('menu');
+    readonly menuVTL = viewChild<Menu>('menuVTL');
 
     /**
      * Whether the current environment is Enterprise.
@@ -67,29 +66,29 @@ export class DotUveContentletToolsComponent {
     /**
      * Emitted when the user chooses to edit a VTL file associated with the current contentlet.
      */
-    @Output() editVTL = new EventEmitter<VTLFile>();
+    readonly editVTL = output<VTLFile>();
     /**
      * Emitted when the user wants to edit the contentlet itself.
      * Carries the current `ActionPayload` built from `contentletArea`.
      */
-    @Output() editContent = new EventEmitter<ActionPayload>();
+    readonly editContent = output<ActionPayload>();
     /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.
      */
-    @Output() deleteContent = new EventEmitter<ActionPayload>();
+    readonly deleteContent = output<ActionPayload>();
     /**
      * Emitted when the user invokes the "add content" menu.
      * The `type` indicates what the user wants to add (content, form or widget).
      */
-    @Output() addContent = new EventEmitter<{
+    readonly addContent = output<{
         type: 'content' | 'form' | 'widget';
         payload: ActionPayload;
     }>();
     /**
      * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
      */
-    @Output() selectContent = new EventEmitter<ContentletPayload>();
+    readonly selectContent = output<ContentletPayload>();
     /**
      * Opt-in flag indicating this drag source should use the custom drag image.
      * Surfaced as `data-use-custom-drag-image` so the host editor can decide
@@ -236,7 +235,7 @@ export class DotUveContentletToolsComponent {
      * Ensures PrimeNG menus close when the hovered contentlet changes.
      */
     protected hideMenus(): void {
-        this.menu?.hide();
-        this.menuVTL?.hide();
+        this.menu()?.hide();
+        this.menuVTL()?.hide();
     }
 }

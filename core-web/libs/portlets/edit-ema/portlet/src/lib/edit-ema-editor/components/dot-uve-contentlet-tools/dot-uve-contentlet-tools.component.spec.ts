@@ -101,6 +101,7 @@ class TestHostComponent {
 describe('DotUveContentletToolsComponent', () => {
     let spectator: Spectator<TestHostComponent>;
     let component: DotUveContentletToolsComponent;
+    let hostComponent: TestHostComponent;
 
     const createComponent = createComponentFactory({
         component: TestHostComponent,
@@ -124,6 +125,7 @@ describe('DotUveContentletToolsComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        hostComponent = spectator.component;
         component = spectator.query(DotUveContentletToolsComponent);
         spectator.detectChanges();
     });
@@ -158,7 +160,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should NOT render actions container when container is empty', () => {
-            spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+            hostComponent.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
             spectator.detectChanges();
 
             const actions = spectator.query(byTestId('actions'));
@@ -166,7 +168,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should NOT render bottom add button when container is empty', () => {
-            spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+            hostComponent.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
             spectator.detectChanges();
 
             const addBottomButton = spectator.query(byTestId('add-bottom-button'));
@@ -185,7 +187,7 @@ describe('DotUveContentletToolsComponent', () => {
                 ...MOCK_CONTENTLET_AREA,
                 payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
             };
-            spectator.component.contentletArea = areaWithoutVtl;
+            hostComponent.contentletArea = areaWithoutVtl;
             spectator.detectChanges();
 
             const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
@@ -208,7 +210,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should disable delete button when allowContentDelete is false', () => {
-            spectator.component.allowContentDelete = false;
+            hostComponent.allowContentDelete = false;
             spectator.detectChanges();
 
             const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
@@ -217,7 +219,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should enable delete button when allowContentDelete is true', () => {
-            spectator.component.allowContentDelete = true;
+            hostComponent.allowContentDelete = true;
             spectator.detectChanges();
 
             const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
@@ -229,13 +231,13 @@ describe('DotUveContentletToolsComponent', () => {
     describe('Outputs', () => {
         describe('selectContent', () => {
             it('should emit selectContent when clicking palette button', () => {
-                spectator.component.showStyleEditorOption = true;
+                hostComponent.showStyleEditorOption = true;
                 spectator.detectChanges();
 
                 const paletteButton = spectator.query(byTestId('palette-button')) as Element;
                 spectator.click(paletteButton);
 
-                expect(spectator.component.onSelectContent).toHaveBeenCalledWith(
+                expect(hostComponent.onSelectContent).toHaveBeenCalledWith(
                     MOCK_CONTENTLET_AREA.payload.contentlet
                 );
             });
@@ -246,7 +248,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const editButton = spectator.query(byTestId('edit-button')) as Element;
                 spectator.click(editButton);
 
-                expect(spectator.component.onEditContent).toHaveBeenCalledWith({
+                expect(hostComponent.onEditContent).toHaveBeenCalledWith({
                     ...MOCK_CONTENTLET_AREA.payload,
                     position: 'after'
                 });
@@ -258,7 +260,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const deleteButton = spectator.query(byTestId('delete-button')) as Element;
                 spectator.click(deleteButton);
 
-                expect(spectator.component.onDeleteContent).toHaveBeenCalledWith({
+                expect(hostComponent.onDeleteContent).toHaveBeenCalledWith({
                     ...MOCK_CONTENTLET_AREA.payload,
                     position: 'after'
                 });
@@ -276,7 +278,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const menuItems = component.menuItems();
                 menuItems[0].command?.({});
 
-                expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                expect(hostComponent.onAddContent).toHaveBeenCalledWith({
                     type: 'content',
                     payload: {
                         ...MOCK_CONTENTLET_AREA.payload,
@@ -295,7 +297,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const menuItems = component.menuItems();
                 menuItems[1].command?.({});
 
-                expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                expect(hostComponent.onAddContent).toHaveBeenCalledWith({
                     type: 'widget',
                     payload: {
                         ...MOCK_CONTENTLET_AREA.payload,
@@ -305,7 +307,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should emit addContent with type "form" when enterprise and selecting form from menu', () => {
-                spectator.component.isEnterprise = true;
+                hostComponent.isEnterprise = true;
                 spectator.detectChanges();
 
                 const addBottomButton = spectator.query(byTestId('add-bottom-button'));
@@ -317,7 +319,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const menuItems = component.menuItems();
                 menuItems[2].command?.({});
 
-                expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+                expect(hostComponent.onAddContent).toHaveBeenCalledWith({
                     type: 'form',
                     payload: {
                         ...MOCK_CONTENTLET_AREA.payload,
@@ -343,7 +345,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const vtlMenuItems = component.vtlMenuItems();
                 vtlMenuItems[0].command?.({});
 
-                expect(spectator.component.onEditVTL).toHaveBeenCalledWith(expectedFile);
+                expect(hostComponent.onEditVTL).toHaveBeenCalledWith(expectedFile);
             });
 
             it('should emit editVTL with second file when clicking second VTL menu item', () => {
@@ -361,7 +363,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const vtlMenuItems = component.vtlMenuItems();
                 vtlMenuItems[1].command?.({});
 
-                expect(spectator.component.onEditVTL).toHaveBeenCalledWith(expectedFile);
+                expect(hostComponent.onEditVTL).toHaveBeenCalledWith(expectedFile);
             });
         });
     });
@@ -404,7 +406,7 @@ describe('DotUveContentletToolsComponent', () => {
                     ...MOCK_CONTENTLET_AREA,
                     payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
                 };
-                spectator.component.contentletArea = areaWithoutVtl;
+                hostComponent.contentletArea = areaWithoutVtl;
                 spectator.detectChanges();
 
                 expect(component.hasVtlFiles()).toBe(false);
@@ -415,7 +417,7 @@ describe('DotUveContentletToolsComponent', () => {
                     ...MOCK_CONTENTLET_AREA,
                     payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: [] }
                 };
-                spectator.component.contentletArea = areaWithEmptyVtl;
+                hostComponent.contentletArea = areaWithEmptyVtl;
                 spectator.detectChanges();
 
                 expect(component.hasVtlFiles()).toBe(false);
@@ -428,7 +430,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should return true when contentlet identifier is TEMP_EMPTY_CONTENTLET', () => {
-                spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+                hostComponent.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
                 spectator.detectChanges();
 
                 expect(component.isContainerEmpty()).toBe(true);
@@ -437,7 +439,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('delete button behavior', () => {
             it('should enable delete button when delete is allowed', () => {
-                spectator.component.allowContentDelete = true;
+                hostComponent.allowContentDelete = true;
                 spectator.detectChanges();
 
                 const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
@@ -447,7 +449,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should disable delete button when delete is not allowed', () => {
-                spectator.component.allowContentDelete = false;
+                hostComponent.allowContentDelete = false;
                 spectator.detectChanges();
 
                 const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
@@ -459,7 +461,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('menuItems', () => {
             it('should have 3 items (content, widget, form)', () => {
-                spectator.component.isEnterprise = false;
+                hostComponent.isEnterprise = false;
                 spectator.detectChanges();
 
                 const items = component.menuItems();
@@ -483,7 +485,7 @@ describe('DotUveContentletToolsComponent', () => {
                     ...MOCK_CONTENTLET_AREA,
                     payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
                 };
-                spectator.component.contentletArea = areaWithoutVtl;
+                hostComponent.contentletArea = areaWithoutVtl;
                 spectator.detectChanges();
 
                 expect(component.vtlMenuItems()).toBeUndefined();
@@ -502,7 +504,7 @@ describe('DotUveContentletToolsComponent', () => {
 
             it('should default to 0px when contentletArea values are undefined', () => {
                 const areaWithUndefined = { ...MOCK_CONTENTLET_AREA, x: undefined };
-                spectator.component.contentletArea = areaWithUndefined as ContentletArea;
+                hostComponent.contentletArea = areaWithUndefined as ContentletArea;
                 spectator.detectChanges();
 
                 const bounds = spectator.query(byTestId('bounds')) as HTMLElement;
@@ -529,7 +531,7 @@ describe('DotUveContentletToolsComponent', () => {
                         contentlet: undefined as unknown as ContentletPayload
                     }
                 };
-                spectator.component.contentletArea = areaWithoutContentlet;
+                hostComponent.contentletArea = areaWithoutContentlet;
                 spectator.detectChanges();
 
                 const payload = component.dragPayload();
@@ -554,7 +556,7 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = component.menuItems();
             menuItems[0].command?.({});
 
-            expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+            expect(hostComponent.onAddContent).toHaveBeenCalledWith({
                 type: 'content',
                 payload: expect.objectContaining({
                     position: 'before'
@@ -572,7 +574,7 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = component.menuItems();
             menuItems[0].command?.({});
 
-            expect(spectator.component.onAddContent).toHaveBeenCalledWith({
+            expect(hostComponent.onAddContent).toHaveBeenCalledWith({
                 type: 'content',
                 payload: expect.objectContaining({
                     position: 'after'
@@ -584,7 +586,7 @@ describe('DotUveContentletToolsComponent', () => {
     describe('Style Editor Features', () => {
         describe('Palette button visibility', () => {
             it('should NOT render palette button when showStyleEditorOption is false', () => {
-                spectator.component.showStyleEditorOption = false;
+                hostComponent.showStyleEditorOption = false;
                 spectator.detectChanges();
 
                 const paletteButton = spectator.query(byTestId('palette-button'));
@@ -592,7 +594,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should render palette button when showStyleEditorOption is true', () => {
-                spectator.component.showStyleEditorOption = true;
+                hostComponent.showStyleEditorOption = true;
                 spectator.detectChanges();
 
                 const paletteButton = spectator.query(byTestId('palette-button'));
@@ -602,14 +604,14 @@ describe('DotUveContentletToolsComponent', () => {
             it('should hide palette button when showStyleEditorOption changes to false', () => {
                 // First enable it
 
-                spectator.component.showStyleEditorOption = true;
+                hostComponent.showStyleEditorOption = true;
                 spectator.detectChanges();
 
                 let paletteButton = spectator.query(byTestId('palette-button'));
                 expect(paletteButton).toBeTruthy();
 
                 // Then disable it
-                spectator.component.showStyleEditorOption = false;
+                hostComponent.showStyleEditorOption = false;
                 spectator.detectChanges();
 
                 paletteButton = spectator.query(byTestId('palette-button'));
@@ -617,8 +619,8 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should NOT render palette button when container is empty even if showStyleEditorOption is true', () => {
-                spectator.component.showStyleEditorOption = true;
-                spectator.component.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
+                hostComponent.showStyleEditorOption = true;
+                hostComponent.contentletArea = MOCK_EMPTY_CONTENTLET_AREA;
                 spectator.detectChanges();
 
                 const paletteButton = spectator.query(byTestId('palette-button'));
@@ -641,7 +643,7 @@ describe('DotUveContentletToolsComponent', () => {
 
             // Change contentletArea - this should trigger the effect that hides menus
             const newArea = { ...MOCK_CONTENTLET_AREA, x: 500 };
-            spectator.component.contentletArea = newArea;
+            hostComponent.contentletArea = newArea;
             spectator.detectChanges();
 
             // Menu should be hidden now
