@@ -21,6 +21,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
 
@@ -78,8 +79,8 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
     public Host getCurrentHost(final HttpServletRequest request, final User userParam)
             throws DotDataException, DotSecurityException {
 
-        final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-        final User user       = userParam != null ? userParam : userWebAPI.getSystemUser();
+
+        final User user       = PortalUtil.getUser(request) == null ? APILocator.getUserAPI().getAnonymousUser() : PortalUtil.getUser(request);
         final boolean respectAnonPerms = user == null || user.isFrontendUser() || !user.isBackendUser();
 
         Optional<Host> optionalHost = this.getCurrentHostFromRequest(request, user, respectAnonPerms);

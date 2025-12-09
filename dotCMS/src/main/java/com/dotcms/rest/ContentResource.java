@@ -614,7 +614,9 @@ public class ContentResource {
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
-        final String tmDate = (String) request.getSession().getAttribute("tm_date");
+        final String tmDate = (request.getSession(false) !=null && request.getSession().getAttribute("tm_date") !=null)
+                ? (String)  request.getSession().getAttribute("tm_date")
+                : null;
         type = UtilMethods.isSet(type) ? type : "json";
         final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
