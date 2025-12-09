@@ -1,10 +1,9 @@
 @for (node of content; track node) {
     @if (customRenderers?.[node.type]) {
-        <ng-container
-            *ngTemplateOutlet="
+        <ng-container *ngTemplateOutlet="
                 customRender;
                 context: { customRender: customRenderers?.[node.type], node: node }
-            "></ng-container>
+            " />
     } @else {
         @switch (node.type) {
             @case (BLOCKS.PARAGRAPH) {
@@ -103,5 +102,5 @@
 }
 
 <ng-template #customRender let-customRender="customRender" let-node="node">
-    <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }"></ng-container>
+    <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }" />
 </ng-template>

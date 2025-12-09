@@ -6,16 +6,14 @@
     pButton
     data-testId="persona-button">
     @if (value?.identifier !== 'modes.persona.no.persona') {
-        <p-avatar
-            [text]="value?.name"
+        <p-avatar [text]="value?.name"
             [image]="photo"
             styleClass="ema-persona__avatar-selected"
-            dotAvatar></p-avatar>
+            dotAvatar />
     } @else {
-        <p-avatar
-            [text]="'modes.persona.no.persona' | dm"
+        <p-avatar [text]="'modes.persona.no.persona' | dm"
             styleClass="ema-persona__avatar-selected"
-            dotAvatar></p-avatar>
+            dotAvatar />
     }
 </button>
 <p-overlayPanel #op styleClass="edit-ema-selector" data-testId="persona-op">
@@ -29,11 +27,10 @@
         <ng-template let-persona pTemplate="item">
             <div class="flex w-full gap-4 align-items-center justify-content-between">
                 <div class="flex gap-2 align-items-center">
-                    <p-avatar
-                        [text]="persona.name"
+                    <p-avatar [text]="persona.name"
                         [image]="persona.photo"
                         styleClass="ema-persona__avatar"
-                        dotAvatar></p-avatar>
+                        dotAvatar />
                     <span>{{ persona.name }}</span>
                 </div>
                 @if (persona.personalized) {

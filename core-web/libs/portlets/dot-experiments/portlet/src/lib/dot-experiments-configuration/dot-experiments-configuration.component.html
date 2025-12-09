@@ -11,11 +11,10 @@
                 data-testId="experiment-button-menu"
                 icon="pi pi-ellipsis-v"
                 pButton></button>
-            <p-menu
-                [model]="vm.menuItems"
+            <p-menu [model]="vm.menuItems"
                 [popup]="true"
                 #menu
-                data-testId="experiment-menu"></p-menu>
+                data-testId="experiment-menu" />
         </div>
     </dot-experiments-header>
     <div class="dot-experiment-config-content">
@@ -49,4 +48,4 @@
 }
 
 <p-confirmDialog [key]="confirmDialogKey" [style]="{ width: '30vw' }" />
-<p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>
+<p-confirmPopup dotRemoveConfirmPopupWithEscape />

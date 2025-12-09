@@ -39,8 +39,7 @@ import { I18nService } from './services/system/locale/I18n';
             <div flex layout="column" class="cw-conditions">
                 @for (condition of group?._conditions; track trackByFn($index); let i = $index) {
                     <div layout="row" class="cw-condition-row">
-                        <rule-condition
-                            (deleteCondition)="deleteCondition.emit($event)"
+                        <rule-condition (deleteCondition)="deleteCondition.emit($event)"
                             (updateConditionType)="updateConditionType.emit($event)"
                             (updateConditionParameter)="updateConditionParameter.emit($event)"
                             (updateConditionOperator)="updateConditionOperator.emit($event)"
@@ -49,7 +48,7 @@ import { I18nService } from './services/system/locale/I18n';
                             [conditionTypePlaceholder]="conditionTypePlaceholder"
                             [index]="i"
                             flex
-                            layout="row"></rule-condition>
+                            layout="row" />
                         <div class="cw-btn-group cw-add-btn">
                             @if (i === group?._conditions.length - 1) {
                                 <div class="ui basic icon buttons">

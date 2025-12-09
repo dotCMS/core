@@ -4,10 +4,9 @@
             <div [ngClass]="control.type" class="field form-row">
                 @switch (control.type) {
                     @case ('checkbox') {
-                        <p-checkbox
-                            [formControlName]="control.key"
+                        <p-checkbox [formControlName]="control.key"
                             [binary]="true"
-                            [id]="control.key"></p-checkbox>
+                            [id]="control.key" />
                         <label
                             [checkIsRequiredControl]="control.key"
                             [for]="control.key"

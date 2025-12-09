@@ -17,11 +17,10 @@
                 data-type="contentlet"></div>
         }
 
-        <ng-container
-            *ngTemplateOutlet="
+        <ng-container *ngTemplateOutlet="
                 errorTemplate;
                 context: { error: container | dotError: dragItem, container: container }
-            "></ng-container>
+            " />
     </div>
 }
 

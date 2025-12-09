@@ -1,17 +1,15 @@
 @if (contentletArea.payload.container) {
-    <p-button
-        (click)="setPositionFlag('before'); menu.toggle($event)"
+    <p-button (click)="setPositionFlag('before'); menu.toggle($event)"
         [ngStyle]="styles.topButton"
         data-testId="add-top-button"
-        icon="pi pi-plus"></p-button>
+        icon="pi pi-plus" />
     @if (!isContainerEmpty) {
-        <p-button
-            (click)="setPositionFlag('after'); menu.toggle($event)"
+        <p-button (click)="setPositionFlag('after'); menu.toggle($event)"
             [ngStyle]="styles.bottomButton"
             data-testId="add-bottom-button"
-            icon="pi pi-plus"></p-button>
+            icon="pi pi-plus" />
     }
-    <p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add"></p-menu>
+    <p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
 }
 
 @if (!isContainerEmpty) {

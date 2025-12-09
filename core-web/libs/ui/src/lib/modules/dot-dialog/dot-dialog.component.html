@@ -12,15 +12,14 @@
             class="dialog__header">
             <h4 [textContent]="header" class="dialog__title"></h4>
             @if (closeable) {
-                <p-button
-                    (click)="close($event)"
+                <p-button (click)="close($event)"
                     icon="pi pi-times"
                     styleClass="p-button-rounded p-button-text"
-                    data-testId="close-button"></p-button>
+                    data-testId="close-button" />
             }
         </header>
         <div (scroll)="onContentScroll($event)" [ngStyle]="contentStyle" class="dialog__content">
-            <ng-content></ng-content>
+            <ng-content />
         </div>
         @if (actions) {
             <footer [class.dialog__footer--shadowed]="isContentScrolled" class="dialog__footer">

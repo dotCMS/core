@@ -18,8 +18,7 @@
         </ng-template>
         @if (vm.favoritePages?.items?.length !== 0) {
             @for (item of vm.favoritePages.items; track $index) {
-                <dot-pages-card
-                    (edit)="editFavoritePage(item)"
+                <dot-pages-card (edit)="editFavoritePage(item)"
                     (goTo)="goToUrl.emit(item.url)"
                     (showActionMenu)="
                         showActionsMenu.emit({
@@ -36,7 +35,7 @@
                     "
                     [title]="item.title"
                     [url]="item.url"
-                    [ownerPage]="item.owner === vm.loggedUser.id"></dot-pages-card>
+                    [ownerPage]="item.owner === vm.loggedUser.id" />
             }
         } @else {
             <div class="dot-pages-empty__container">

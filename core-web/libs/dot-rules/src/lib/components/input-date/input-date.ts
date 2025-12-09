@@ -17,8 +17,7 @@ import { isEmpty } from '@dotcms/utils';
     // host: { role: 'text' },
     selector: 'cw-input-date',
     template: `
-        <p-calendar
-            (onBlur)="onBlur($event)"
+        <p-calendar (onBlur)="onBlur($event)"
             (onSelect)="updateValue($event)"
             [(ngModel)]="modelValue"
             [showTime]="true"
@@ -26,7 +25,7 @@ import { isEmpty } from '@dotcms/utils';
             [disabled]="disabled"
             [tabindex]="tabIndex || ''"
             hourFormat="12"
-            showButtonBar="true"></p-calendar>
+            showButtonBar="true" />
     `,
     standalone: false
 })

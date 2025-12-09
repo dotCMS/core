@@ -3,9 +3,8 @@
         [attr.data-testId]="'dot-options-item_' + item.val"
         [class.active]="expanded.has(i)"
         class="dot-options__item">
-        <ng-container
-            [ngTemplateOutletContext]="{ $implicit: item, index: i }"
-            [ngTemplateOutlet]="defaultHeader"></ng-container>
+        <ng-container [ngTemplateOutletContext]="{ $implicit: item, index: i }"
+            [ngTemplateOutlet]="defaultHeader" />
         @if (item?.content) {
             <div
                 [attr.data-testId]="'dot-options-item-content_' + item.val"
@@ -13,7 +12,7 @@
                 class="option-item__content flex flex-grow-1 flex-column"
                 [@contentExpansion]="expanded.has(i) ? 'expanded' : 'collapsed'">
                 @if (expanded.has(i) && item?.content?.templateRef) {
-                    <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>
+                    <ng-container *ngTemplateOutlet="item?.content?.templateRef" />
                 }
             </div>
         }

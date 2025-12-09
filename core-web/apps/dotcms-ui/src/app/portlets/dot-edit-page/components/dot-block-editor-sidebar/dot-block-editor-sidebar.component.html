@@ -10,13 +10,12 @@
     position="right">
     @if (blockEditorInput) {
         <div class="container">
-            <dot-block-editor
-                [contentletIdentifier]="blockEditorInput.contentletIdentifier"
+            <dot-block-editor [contentletIdentifier]="blockEditorInput.contentletIdentifier"
                 [field]="blockEditorInput.field"
                 [languageId]="blockEditorInput.languageId"
                 [showVideoThumbnail]="showVideoThumbnail"
                 [value]="blockEditorInput.content"
-                #blockEditor></dot-block-editor>
+                #blockEditor />
             <footer>
                 <button
                     (click)="closeSidebar()"

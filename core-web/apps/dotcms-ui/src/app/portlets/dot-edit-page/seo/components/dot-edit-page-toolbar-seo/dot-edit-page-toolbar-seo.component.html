@@ -10,37 +10,34 @@
                 icon="pi pi-arrow-left"
                 pButton
                 tooltipPosition="bottom"></button>
-            <dot-edit-page-info-seo
-                [title]="variant.variant.title"
+            <dot-edit-page-info-seo [title]="variant.variant.title"
                 [apiLink]="apiLink"
                 [url]="variant.variant.url"
-                class="dot-variant-header flex gap-3"></dot-edit-page-info-seo>
+                class="dot-variant-header flex gap-3" />
         } @else {
-            <dot-edit-page-info-seo
-                [title]="pageState.page.title"
+            <dot-edit-page-info-seo [title]="pageState.page.title"
                 [apiLink]="apiLink"
                 [url]="pageState.page.pageURI"
-                class="flex gap-2"></dot-edit-page-info-seo>
+                class="flex gap-2" />
             @if (showFavoritePageStar) {
-                <p-button
-                    (click)="favoritePage.emit(true)"
+                <p-button (click)="favoritePage.emit(true)"
                     [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
                     [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
                     class="flex gap-3"
                     styleClass="p-button-rounded p-button-sm p-button-text"
                     data-testId="addFavoritePageButton"
-                    tooltipPosition="bottom"></p-button>
+                    tooltipPosition="bottom" />
             }
         }
     </div>
 
     <div class="main-toolbar-right flex align-items-center gap-3">
         @if (variant) {
-            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            <dot-global-message data-testId="globalMessage" right />
             <i class="pi pi-filter-fill -rotate-180"></i>
             <h2>{{ variant.experimentName }}</h2>
         } @else {
-            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            <dot-global-message data-testId="globalMessage" right />
             @if (runningExperiment) {
                 <p-tag
                     [value]="
@@ -63,34 +60,30 @@
                     <i class="material-icons">science</i>
                 </p-tag>
             }
-            <dot-edit-page-workflows-actions
-                (fired)="actionFired.emit($event)"
-                [page]="pageState.page"></dot-edit-page-workflows-actions>
+            <dot-edit-page-workflows-actions (fired)="actionFired.emit($event)"
+                [page]="pageState.page" />
         }
     </div>
 
     <!-- Tab actions and dropdowns -->
     <div class="lower-toolbar-left w-6">
-        <dot-edit-page-state-controller-seo
-            (modeChange)="stateChange()"
+        <dot-edit-page-state-controller-seo (modeChange)="stateChange()"
             [pageState]="pageState"
             [variant]="variant"
-            [apiLink]="apiLink"></dot-edit-page-state-controller-seo>
+            [apiLink]="apiLink" />
     </div>
 
     <div class="lower-toolbar-right w-6">
         @if (showWhatsChanged && isEnterpriseLicense$ | async) {
-            <p-checkbox
-                (onChange)="whatschange.emit($event.checked)"
+            <p-checkbox (onChange)="whatschange.emit($event.checked)"
                 [binary]="true"
                 [label]="'dot.common.whats.changed' | dm"
                 [pTooltip]="'dot.common.whats.changed.clipboard' | dm"
                 class="flex dot-edit__what-changed-button"
-                tooltipPosition="bottom"></p-checkbox>
+                tooltipPosition="bottom" />
         }
-        <dot-edit-page-view-as-controller-seo
-            [pageState]="pageState"
+        <dot-edit-page-view-as-controller-seo [pageState]="pageState"
             [variant]="variant"
-            class="flex gap-2"></dot-edit-page-view-as-controller-seo>
+            class="flex gap-2" />
     </div>
 </dot-secondary-toolbar>

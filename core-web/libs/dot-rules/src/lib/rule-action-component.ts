@@ -17,19 +17,17 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
         @if (typeDropdown !== null) {
             <div flex layout="row" class="cw-rule-action cw-entry">
                 <div flex="25" layout="row" class="cw-row-start-area">
-                    <cw-input-dropdown
-                        (onDropDownChange)="onTypeChange($event)"
+                    <cw-input-dropdown (onDropDownChange)="onTypeChange($event)"
                         [value]="action.type?.key"
                         [options]="typeDropdown?.options"
                         flex
                         class="cw-type-dropdown"
-                        placeholder="{{ actionTypePlaceholder }}"></cw-input-dropdown>
+                        placeholder="{{ actionTypePlaceholder }}" />
                 </div>
-                <cw-serverside-condition
-                    (parameterValueChange)="onParameterValueChange($event)"
+                <cw-serverside-condition (parameterValueChange)="onParameterValueChange($event)"
                     [componentInstance]="action"
                     flex="75"
-                    class="cw-condition-component"></cw-serverside-condition>
+                    class="cw-condition-component" />
                 <div class="cw-btn-group cw-delete-btn">
                     <div class="ui basic icon buttons">
                         <button

@@ -19,11 +19,10 @@
             <div [attr.data-testid]="field.name" class="field">
                 @switch (field.type) {
                     @case ('BUTTON') {
-                        <ng-container
-                            *ngTemplateOutlet="
+                        <ng-container *ngTemplateOutlet="
                                 labelField;
                                 context: { field: field }
-                            "></ng-container>
+                            " />
                         <div>
                             <button
                                 (click)="onIntegrate(field.value)"
@@ -32,11 +31,10 @@
                                 [disabled]="!$appConfigured()"
                                 pButton
                                 type="button"></button>
-                            <ng-container
-                                *ngTemplateOutlet="
+                            <ng-container *ngTemplateOutlet="
                                     warningIcon;
                                     context: { field: field }
-                                "></ng-container>
+                                " />
                         </div>
                         <span class="form__group-hint">
                             <markdown>{{ field.hint }}</markdown>
@@ -44,11 +42,10 @@
                     }
                     @case ('STRING') {
                         <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
-                        <ng-container
-                            *ngTemplateOutlet="
+                        <ng-container *ngTemplateOutlet="
                                 warningIcon;
                                 context: { field: field }
-                            "></ng-container>
+                            " />
                         <textarea
                             (click)="field.hidden ? $event.target.select() : null"
                             [id]="field.name"
@@ -68,31 +65,28 @@
                             [field]="field" />
                     }
                     @case ('BOOL') {
-                        <p-checkbox
-                            [ngClass]="{
+                        <p-checkbox [ngClass]="{
                                 required: field.required
                             }"
                             [id]="field.name"
                             [label]="field.label"
                             [formControlName]="field.name"
                             [value]="field.value"
-                            binary="true"></p-checkbox>
-                        <ng-container
-                            *ngTemplateOutlet="
+                            binary="true" />
+                        <ng-container *ngTemplateOutlet="
                                 warningIcon;
                                 context: { field: field }
-                            "></ng-container>
+                            " />
                         <span class="p-field-hint">
                             <markdown>{{ field.hint }}</markdown>
                         </span>
                     }
                     @case ('SELECT') {
                         <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
-                        <ng-container
-                            *ngTemplateOutlet="
+                        <ng-container *ngTemplateOutlet="
                                 warningIcon;
                                 context: { field: field }
-                            "></ng-container>
+                            " />
                         <p-dropdown
                             [id]="field.name"
                             [formControlName]="field.name"

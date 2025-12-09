@@ -1,11 +1,10 @@
 @if (data(); as data) {
     <p-card>
         <ng-template pTemplate="header">
-            <dot-contentlet-thumbnail
-                [width]="94"
+            <dot-contentlet-thumbnail [width]="94"
                 [height]="94"
                 [iconSize]="'72px'"
-                [contentlet]="data"></dot-contentlet-thumbnail>
+                [contentlet]="data" />
         </ng-template>
 
         <h3 *pTemplate="'title'" class="title">{{ data.title }}</h3>
@@ -13,7 +12,7 @@
 
         <ng-template pTemplate="footer">
             <div class="state">
-                <dot-state-icon [state]="data | contentletState" size="16px"></dot-state-icon>
+                <dot-state-icon [state]="data | contentletState" size="16px" />
                 @if (data.language) {
                     <dot-badge [bordered]="true">{{ data.language | lowercase }}</dot-badge>
                 }

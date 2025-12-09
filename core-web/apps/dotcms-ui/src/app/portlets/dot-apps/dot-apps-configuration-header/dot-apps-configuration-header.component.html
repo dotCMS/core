@@ -1,9 +1,8 @@
-<p-avatar
-    (click)="goToApps(app.key)"
+<p-avatar (click)="goToApps(app.key)"
     [image]="app.iconUrl"
     [text]="app.name"
     size="xlarge"
-    dotAvatar></p-avatar>
+    dotAvatar />
 
 <div class="dot-apps-configuration__data">
     <header>
@@ -12,7 +11,7 @@
         </h3>
         <div class="dot-apps-configuration__service-key">
             {{ 'apps.key' | dm }}
-            <dot-copy-link [copy]="app.key" [label]="app.key"></dot-copy-link>
+            <dot-copy-link [copy]="app.key" [label]="app.key" />
         </div>
     </header>
     <span class="dot-apps-configuration__configurations">

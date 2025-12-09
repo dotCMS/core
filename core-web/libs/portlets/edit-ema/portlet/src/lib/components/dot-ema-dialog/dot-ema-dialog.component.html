@@ -32,7 +32,7 @@
                     height="100%"></iframe>
             }
             @if (ds.status === dialogStatus.LOADING) {
-                <dot-spinner class="absolute top-50" data-testId="spinner"></dot-spinner>
+                <dot-spinner class="absolute top-50" data-testId="spinner" />
             }
         }
     }
@@ -49,8 +49,7 @@
         [maskStyleClass]="'p-dialog-mask-transparent-nested'"
         appendTo="body"
         data-testId="dialog-compare">
-        <dot-content-compare
-            (letMeBringBack)="bringBack($event)"
-            [data]="$compareData()"></dot-content-compare>
+        <dot-content-compare (letMeBringBack)="bringBack($event)"
+            [data]="$compareData()" />
     </p-dialog>
 </p-dialog>

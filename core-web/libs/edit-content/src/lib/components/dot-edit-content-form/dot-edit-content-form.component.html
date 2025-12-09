@@ -31,7 +31,7 @@
             scrollable="false"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
-            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
+            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
 
             <!-- Tabs are lazy -->
             @for (tab of tabs; track tab) {
@@ -80,12 +80,11 @@
                     <div
                         class="dot-edit-content-actions__lock flex align-items-center gap-2"
                         [class.locked]="isContentLocked">
-                        <p-inputSwitch
-                            [ngModel]="isContentLocked"
+                        <p-inputSwitch [ngModel]="isContentLocked"
                             [disabled]="!canLock"
                             (onChange)="onContentLockChange($event)"
                             inputId="lockSwitch"
-                            data-testId="content-lock-switch"></p-inputSwitch>
+                            data-testId="content-lock-switch" />
                         <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
                     </div>
                 }

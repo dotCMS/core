@@ -10,11 +10,10 @@
                     data-testid="help-button"
                     icon="pi pi-question-circle"></button>
             </div>
-            <ngx-monaco-editor
-                [ngModel]="store.query().value"
+            <ngx-monaco-editor [ngModel]="store.query().value"
                 [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"
                 (ngModelChange)="store.setQuery($event)"
-                data-testId="query-editor"></ngx-monaco-editor>
+                data-testId="query-editor" />
             <div class="content-analytics__actions">
                 <span
                     tooltipPosition="top"

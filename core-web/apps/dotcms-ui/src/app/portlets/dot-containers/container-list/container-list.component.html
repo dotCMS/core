@@ -1,8 +1,7 @@
 @if (vm$ | async; as vm) {
     <dot-portlet-base>
         <dot-action-header [options]="vm.actionHeaderOptions">
-            <dot-content-type-selector
-                (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
+            <dot-content-type-selector (selected)="changeContentTypeSelector($event)" />
             <input
                 (keydown.arrowdown)="focusFirstRow()"
                 #gf
@@ -13,11 +12,10 @@
                 data-testId="query-input" />
             <div class="container-listing__header-options">
                 <div class="container-listing__filter-controls">
-                    <p-checkbox
-                        (onChange)="handleArchivedFilter($event.checked)"
+                    <p-checkbox (onChange)="handleArchivedFilter($event.checked)"
                         [label]="'Show-Archived' | dm"
                         [binary]="true"
-                        data-testId="archiveCheckbox"></p-checkbox>
+                        data-testId="archiveCheckbox" />
                 </div>
                 <div>
                     <button
@@ -29,11 +27,10 @@
                         pButton
                         icon="pi pi-ellipsis-v"
                         data-testId="bulkActions"></button>
-                    <p-menu
-                        [popup]="true"
+                    <p-menu [popup]="true"
                         [model]="vm.containerBulkActions"
                         #actionsMenu
-                        appendTo="body"></p-menu>
+                        appendTo="body" />
                 </div>
             </div>
         </dot-action-header>
@@ -57,7 +54,7 @@
                     @if (vm.containers?.length) {
                         <tr>
                             <th style="width: 5%">
-                                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                                <p-tableHeaderCheckbox />
                             </th>
                             @for (col of columns; track col) {
                                 <th
@@ -66,7 +63,7 @@
                                     [pSortableColumn]="col.fieldName">
                                     {{ col.header }}
                                     @if (col.sortable) {
-                                        <p-sortIcon [field]="col.fieldName"></p-sortIcon>
+                                        <p-sortIcon [field]="col.fieldName" />
                                     }
                                 </th>
                             }
@@ -90,10 +87,9 @@
                         data-testClass="testTableRow">
                         <td (click)="$event.stopPropagation()">
                             @if (!rowData.disableInteraction) {
-                                <p-tableCheckbox
-                                    (click)="$event.stopPropagation()"
+                                <p-tableCheckbox (click)="$event.stopPropagation()"
                                     [value]="rowData"
-                                    [attr.test-id]="rowData.friendlyName"></p-tableCheckbox>
+                                    [attr.test-id]="rowData.friendlyName" />
                             }
                         </td>
                         <td [ngStyle]="{ 'text-align': vm.tableColumns[0].textAlign }">
@@ -104,10 +100,9 @@
                             }
                         </td>
                         <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
-                            <dot-state-icon
-                                [labels]="vm.stateLabels"
+                            <dot-state-icon [labels]="vm.stateLabels"
                                 [state]="getContainerState(rowData)"
-                                size="14px"></dot-state-icon>
+                                size="14px" />
                         </td>
                         <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
                             {{ rowData.friendlyName }}
@@ -117,11 +112,10 @@
                         </td>
                         <td style="width: 5%">
                             @if (!rowData.disableInteraction) {
-                                <dot-action-menu-button
-                                    [attr.data-testid]="rowData.identifier"
+                                <dot-action-menu-button [attr.data-testid]="rowData.identifier"
                                     [actions]="setContainerActions(rowData)"
                                     [item]="rowData"
-                                    class="listing-datatable__action-button"></dot-action-menu-button>
+                                    class="listing-datatable__action-button" />
                             }
                         </td>
                     </tr>
@@ -134,9 +128,8 @@
             </p-table>
         }
         @if (vm.addToBundleIdentifier) {
-            <dot-add-to-bundle
-                (cancel)="resetBundleIdentifier()"
-                [assetIdentifier]="vm.addToBundleIdentifier"></dot-add-to-bundle>
+            <dot-add-to-bundle (cancel)="resetBundleIdentifier()"
+                [assetIdentifier]="vm.addToBundleIdentifier" />
         }
     </dot-portlet-base>
 }

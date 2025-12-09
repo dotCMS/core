@@ -1,11 +1,10 @@
 @let options = $options();
 
 @if (options?.actionIcon) {
-    <p-button
-        (onClick)="handleAction()"
+    <p-button (onClick)="handleAction()"
         [icon]="options?.actionIcon"
         styleClass="p-button-text p-button-sm p-button-rounded"
-        data-testId="info-action"></p-button>
+        data-testId="info-action" />
 }
 
 <div class="info-container">

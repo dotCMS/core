@@ -15,11 +15,10 @@
     dataKey="inode">
     <div class="template-listing__header-options">
         <div>
-            <p-checkbox
-                (onChange)="handleArchivedFilter($event.checked)"
+            <p-checkbox (onChange)="handleArchivedFilter($event.checked)"
                 [label]="'Show-Archived' | dm"
                 [binary]="true"
-                data-testid="archiveCheckbox"></p-checkbox>
+                data-testid="archiveCheckbox" />
             <button
                 (click)="actionsMenu.toggle($event)"
                 [disabled]="!this.selectedTemplates?.length"
@@ -30,7 +29,7 @@
                 icon="pi pi-ellipsis-v"
                 data-testid="bulkActions"></button>
         </div>
-        <p-menu [popup]="true" [model]="templateBulkActions" #actionsMenu appendTo="body"></p-menu>
+        <p-menu [popup]="true" [model]="templateBulkActions" #actionsMenu appendTo="body" />
     </div>
 
     <dot-empty-state
@@ -47,10 +46,9 @@
             {{ rowData.name }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
-            <dot-state-icon
-                [labels]="setStateLabels()"
+            <dot-state-icon [labels]="setStateLabels()"
                 [state]="getTemplateState(rowData)"
-                size="14px"></dot-state-icon>
+                size="14px" />
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }" data-testId="theme-cell">
             @if (rowData.themeInfo?.inode === 'SYSTEM_THEME') {

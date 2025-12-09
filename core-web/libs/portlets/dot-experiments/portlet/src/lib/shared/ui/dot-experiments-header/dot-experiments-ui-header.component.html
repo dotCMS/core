@@ -9,13 +9,12 @@
     @if (!isLoading) {
         <span data-testId="title">{{ title }}</span>
     } @else {
-        <p-skeleton height="1rem" width="12rem"></p-skeleton>
+        <p-skeleton height="1rem" width="12rem" />
     }
 
     @if (!!experiment?.status) {
         <div class="flex flex-grow-1 align-items-center justify-content-end">
-            <p-chip
-                [icon]="this.statusIcon"
+            <p-chip [icon]="this.statusIcon"
                 [label]="
                     (experiment?.status | titlecase | dm) +
                     (experiment?.status === experimentStatus.RUNNING
@@ -26,9 +25,9 @@
                         : '')
                 "
                 data-testId="status-tag"
-                styleClass="{{ experiment?.status | lowercase }}"></p-chip>
+                styleClass="{{ experiment?.status | lowercase }}" />
         </div>
     }
 
-    <ng-content></ng-content>
+    <ng-content />
 </div>

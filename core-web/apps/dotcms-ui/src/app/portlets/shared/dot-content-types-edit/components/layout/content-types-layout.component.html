@@ -2,7 +2,7 @@
     <div class="main-toolbar-left flex align-items-center">
         <div class="content-type__title">
             <header>
-                <dot-icon name="{{ contentType.icon }}"></dot-icon>
+                <dot-icon name="{{ contentType.icon }}" />
                 <ng-template #inlineEditDisplayTemplate>
                     <h4 (click)="editInlineActivate($event)">{{ contentType.name }}</h4>
                 </ng-template>
@@ -16,24 +16,21 @@
                         pInputText
                         type="text" />
                 </ng-template>
-                <dot-inline-edit
-                    [inlineEditContentTemplate]="inlineEditContentTemplate"
+                <dot-inline-edit [inlineEditContentTemplate]="inlineEditContentTemplate"
                     [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
-                    #dotEditInline></dot-inline-edit>
+                    #dotEditInline />
             </header>
         </div>
 
         <div class="content-type__info">
-            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
-            <dot-copy-button
-                [copy]="contentType.id"
+            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}" />
+            <dot-copy-button [copy]="contentType.id"
                 [tooltipText]="contentType.id"
                 label="Copy ID"
-                data-testId="copyIdentifier"></dot-copy-button>
-            <dot-copy-button
-                [copy]="contentType.variable"
+                data-testId="copyIdentifier" />
+            <dot-copy-button [copy]="contentType.variable"
                 label="{{ 'contenttypes.content.variable' | dm }}: {{ contentType.variable }}"
-                data-testId="copyVariableName"></dot-copy-button>
+                data-testId="copyVariableName" />
         </div>
     </div>
     <div class="main-toolbar-right">
@@ -60,16 +57,14 @@
         header="{{ 'contenttypes.tab.fields.header' | dm }}">
         <div class="content-type__fields-layout" id="content-type-form-layout">
             <div class="content-type__fields-main" id="content-type-form-main">
-                <ng-content></ng-content>
+                <ng-content />
             </div>
             <div class="content-type__fields-sidebar">
-                <p-splitButton
-                    (onClick)="fireAddRowEvent()"
+                <p-splitButton (onClick)="fireAddRowEvent()"
                     [model]="actions"
                     icon="pi pi-plus"
-                    label="{{ 'contenttypes.content.row' | dm }}"></p-splitButton>
-                <dot-content-types-fields-list
-                    [baseType]="contentType.baseType"></dot-content-types-fields-list>
+                    label="{{ 'contenttypes.content.row' | dm }}" />
+                <dot-content-types-fields-list [baseType]="contentType.baseType" />
             </div>
         </div>
     </p-tabPanel>
@@ -80,7 +75,7 @@
             header="{{ 'contenttypes.tab.relationship.header' | dm }}">
             <ng-template pTemplate="content">
                 <dot-portlet-box>
-                    <dot-iframe [src]="relationshipURL"></dot-iframe>
+                    <dot-iframe [src]="relationshipURL" />
                 </dot-portlet-box>
             </ng-template>
         </p-tabPanel>
@@ -92,7 +87,7 @@
             header="{{ 'contenttypes.tab.permissions.header' | dm }}">
             <ng-template pTemplate="content">
                 <dot-portlet-box>
-                    <dot-iframe [src]="permissionURL"></dot-iframe>
+                    <dot-iframe [src]="permissionURL" />
                 </dot-portlet-box>
             </ng-template>
         </p-tabPanel>
@@ -104,14 +99,13 @@
             header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}">
             <ng-template pTemplate="content">
                 <dot-portlet-box>
-                    <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+                    <dot-iframe [src]="pushHistoryURL" />
                 </dot-portlet-box>
             </ng-template>
         </p-tabPanel>
     }
 </p-tabView>
 @if (addToMenuContentType) {
-    <dot-add-to-menu
-        (cancel)="addToMenuContentType = false"
-        [contentType]="contentType"></dot-add-to-menu>
+    <dot-add-to-menu (cancel)="addToMenuContentType = false"
+        [contentType]="contentType" />
 }

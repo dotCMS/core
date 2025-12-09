@@ -25,10 +25,9 @@
                             }}"
                             required
                             type="text" />
-                        <dot-field-validation-message
-                            [field]="
+                        <dot-field-validation-message [field]="
                                 getConditionsFormArrayItemByIndex(i).controls['parameter']
-                            "></dot-field-validation-message>
+                            " />
                     </div>
                     <div class="field flex-none flex flex-column w-15rem">
                         <label dotFieldRequired for="operator">
@@ -36,8 +35,7 @@
                                 'experiments.goal.url_parameter.form.conditions.operator.label' | dm
                             }}
                         </label>
-                        <p-dropdown
-                            [dotOptions]="operatorsList"
+                        <p-dropdown [dotOptions]="operatorsList"
                             id="operator"
                             data-testId="operator-input"
                             dotDropdown
@@ -45,11 +43,10 @@
                             placeholder="{{
                                 'experiments.goal.url_parameter.form.conditions.operator.placeholder'
                                     | dm
-                            }}"></p-dropdown>
-                        <dot-field-validation-message
-                            [field]="
+                            }}" />
+                        <dot-field-validation-message [field]="
                                 getConditionsFormArrayItemByIndex(i).controls['operator']
-                            "></dot-field-validation-message>
+                            " />
                     </div>
                     <div class="field flex-grow-1 flex flex-column" formGroupName="value">
                         <label dotFieldRequired for="value">
@@ -67,10 +64,9 @@
                             }}"
                             required
                             type="text" />
-                        <dot-field-validation-message
-                            [field]="
+                        <dot-field-validation-message [field]="
                                 getConditionsFormArrayItemByIndex(i).controls['value']
-                            "></dot-field-validation-message>
+                            " />
                     </div>
                 </div>
             </ng-container>

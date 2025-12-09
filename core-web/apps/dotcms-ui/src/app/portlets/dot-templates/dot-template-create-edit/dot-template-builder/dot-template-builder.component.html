@@ -5,12 +5,11 @@
         <ng-template pTemplate="content">
             @switch (item.type) {
                 @case ('advanced') {
-                    <dot-template-advanced
-                        (updateTemplate)="updateTemplate.emit($event)"
+                    <dot-template-advanced (updateTemplate)="updateTemplate.emit($event)"
                         (save)="save.emit($event)"
                         (cancel)="cancel.emit()"
                         [didTemplateChanged]="didTemplateChanged"
-                        [body]="item.body"></dot-template-advanced>
+                        [body]="item.body" />
                 }
                 @case ('design') {
                     <dotcms-template-builder-lib
@@ -22,7 +21,7 @@
                         }"
                         [containerMap]="item.containers"
                         data-testId="new-template-builder">
-                        <dot-global-message toolbar-left></dot-global-message>
+                        <dot-global-message toolbar-left />
                     </dotcms-template-builder-lib>
                 }
             }
@@ -31,18 +30,17 @@
     <p-tabPanel [header]="'Permissions' | dm">
         <ng-template pTemplate="content">
             <dot-portlet-box>
-                <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
+                <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe" />
             </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
     <p-tabPanel [header]="'History' | dm">
         <ng-template pTemplate="content">
             <dot-portlet-box>
-                <dot-iframe
-                    (custom)="custom.emit($event)"
+                <dot-iframe (custom)="custom.emit($event)"
                     [src]="historyUrl"
                     #historyIframe
-                    data-testId="historyIframe"></dot-iframe>
+                    data-testId="historyIframe" />
             </dot-portlet-box>
         </ng-template>
     </p-tabPanel>

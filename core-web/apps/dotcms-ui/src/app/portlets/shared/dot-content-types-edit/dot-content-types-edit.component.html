@@ -4,14 +4,13 @@
         (changeContentTypeName)="editContentTypeName($event)"
         [contentType]="data">
         @if (data.id) {
-            <dot-content-type-fields-drop-zone
-                (saveFields)="saveFields($event)"
+            <dot-content-type-fields-drop-zone (saveFields)="saveFields($event)"
                 (removeFields)="removeFields($event)"
                 (editField)="editField($event)"
                 [layout]="layout"
                 [loading]="loadingFields"
                 [contentType]="data"
-                #fieldsDropZone></dot-content-type-fields-drop-zone>
+                #fieldsDropZone />
         }
     </dot-content-type-layout>
 }
@@ -23,11 +22,10 @@
     [closeable]="dialogCloseable"
     [header]="templateInfo.header">
     @if (show) {
-        <dot-content-types-form
-            (valid)="setDialogOkButtonState($event)"
+        <dot-content-types-form (valid)="setDialogOkButtonState($event)"
             (send)="handleFormSubmit($event)"
             [layout]="layout"
             [data]="data"
-            #form></dot-content-types-form>
+            #form />
     }
 </dot-dialog>

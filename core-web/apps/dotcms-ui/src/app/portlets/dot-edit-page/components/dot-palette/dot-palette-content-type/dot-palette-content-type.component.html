@@ -1,6 +1,5 @@
-<dot-palette-input-filter
-    (filter)="filterContentTypes($event)"
-    #filterInput></dot-palette-input-filter>
+<dot-palette-input-filter (filter)="filterContentTypes($event)"
+    #filterInput />
 @if (items?.length && !loading) {
     <div class="dot-content-palette__items">
         @for (item of items; track item) {
@@ -9,16 +8,16 @@
                 (click)="showContentTypesList(item.variable)"
                 draggable="true"
                 data-testId="paletteItem">
-                <dot-icon [name]="item.icon" size="30"></dot-icon>
+                <dot-icon [name]="item.icon" size="30" />
                 <p>{{ item.name }}</p>
-                <dot-icon name="keyboard_arrow_right" class="arrow"></dot-icon>
+                <dot-icon name="keyboard_arrow_right" class="arrow" />
             </div>
         }
     </div>
 }
 
 @if (loading && viewContentlet === 'contentlet:out') {
-    <dot-spinner [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+    <dot-spinner [size]="'40px'" [borderSize]="'8px'" />
 }
 
 @if (!items?.length && !loading) {

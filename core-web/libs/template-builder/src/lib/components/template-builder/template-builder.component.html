@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
         <div class="p-toolbar-group-start">
-            <ng-content select="[toolbar-left]"></ng-content>
+            <ng-content select="[toolbar-left]" />
         </div>
         <div class="p-toolbar-group-end">
             <dotcms-add-widget
@@ -20,11 +20,10 @@
                 data-widget-type="col"
                 data-testId="add-box" />
             <p-divider layout="vertical" />
-            <dotcms-template-builder-actions
-                (selectTheme)="openThemeSelectorDynamicDialog()"
+            <dotcms-template-builder-actions (selectTheme)="openThemeSelectorDynamicDialog()"
                 [layoutProperties]="vm.layoutProperties"
-                data-testId="template-builder-actions"></dotcms-template-builder-actions>
-            <ng-content select="[toolbar-actions-right]"></ng-content>
+                data-testId="template-builder-actions" />
+            <ng-content select="[toolbar-actions-right]" />
         </div>
     </p-toolbar>
     <div
@@ -86,8 +85,7 @@
                                     [attr.data-testId]="'box-' + $index"
                                     class="grid-stack-item sub"
                                     #boxElement>
-                                    <dotcms-template-builder-box
-                                        (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                                    <dotcms-template-builder-box (deleteColumn)="removeColumn(box, boxElement, row.id)"
                                         (addContainer)="addContainer(box, row.id, $event)"
                                         (deleteContainer)="deleteContainer(box, row.id, $event)"
                                         (editClasses)="editBoxStyleClasses(row.id, box)"
@@ -95,7 +93,7 @@
                                         [containerMap]="vm.containerMap"
                                         [items]="box.containers"
                                         [width]="box.w"
-                                        class="grid-stack-item-content"></dotcms-template-builder-box>
+                                        class="grid-stack-item-content" />
                                 </div>
                             }
                         </div>

@@ -16,8 +16,7 @@
     </button>
 } @else {
     @if ($unlockButton(); as unlockButton) {
-        <p-button
-            [disabled]="unlockButton.disabled"
+        <p-button [disabled]="unlockButton.disabled"
             [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
             [escape]="false"
             tooltipPosition="bottom"
@@ -25,6 +24,6 @@
             styleClass="p-button-text p-button-sm p-button-rounded unlock-button"
             [loading]="unlockButton.loading"
             (click)="unlockPage(unlockButton.inode)"
-            data-testId="uve-toolbar-unlock-button"></p-button>
+            data-testId="uve-toolbar-unlock-button" />
     }
 }

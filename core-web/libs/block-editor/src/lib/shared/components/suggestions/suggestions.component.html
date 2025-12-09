@@ -20,8 +20,7 @@
         </dot-suggestion-list>
     </div>
 } @else {
-    <dot-empty-message
-        (back)="handleBackButton()"
+    <dot-empty-message (back)="handleBackButton()"
         [title]="noResultsMessage"
-        [showBackBtn]="!isFilterActive"></dot-empty-message>
+        [showBackBtn]="!isFilterActive" />
 }

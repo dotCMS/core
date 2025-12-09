@@ -16,11 +16,10 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                             <th
                                 [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
                                 [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
-                                <ng-container
-                                    *ngComponentOutlet="
+                                <ng-container *ngComponentOutlet="
                                         blockEditorItem;
                                         inputs: { content: cellNode.content }
-                                    "></ng-container>
+                                    " />
                             </th>
                         }
                     </tr>
@@ -33,11 +32,10 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                             <td
                                 [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
                                 [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
-                                <ng-container
-                                    *ngComponentOutlet="
+                                <ng-container *ngComponentOutlet="
                                         blockEditorItem;
                                         inputs: { content: cellNode.content }
-                                    "></ng-container>
+                                    " />
                             </td>
                         }
                     </tr>

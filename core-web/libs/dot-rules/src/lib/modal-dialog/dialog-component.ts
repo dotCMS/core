@@ -16,13 +16,12 @@ import { KeyCode } from '../services/util/key-util';
             [draggable]="false"
             appendTo="body">
             @if (errorMessage) {
-                <p-message
-                    [text]="errorMessage"
+                <p-message [text]="errorMessage"
                     style="margin-bottom: 16px; display: block;"
-                    severity="error"></p-message>
+                    severity="error" />
             }
 
-            <ng-content></ng-content>
+            <ng-content />
             <p-footer>
                 <button
                     (click)="ok.emit()"

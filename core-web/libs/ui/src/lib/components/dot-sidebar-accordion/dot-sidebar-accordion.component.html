@@ -17,7 +17,7 @@
                     <span>{{ tab.$label() }}</span>
                 </div>
                 <div class="accordion-header__right" (click)="$event.stopPropagation()">
-                    <ng-container *ngTemplateOutlet="tab.headerContent"></ng-container>
+                    <ng-container *ngTemplateOutlet="tab.headerContent" />
                 </div>
             </div>
             <div
@@ -27,7 +27,7 @@
                 [class.accordion-content--expanded]="isTabActive(tab.$id())"
                 [class.accordion-content--collapsed]="!isTabActive(tab.$id())">
                 <!-- Project tab content using ngTemplateOutlet -->
-                <ng-container *ngTemplateOutlet="tab.tabContent"></ng-container>
+                <ng-container *ngTemplateOutlet="tab.tabContent" />
             </div>
         </div>
     }

@@ -14,7 +14,7 @@
 </ng-template>
 
 <ng-template #defaultFilterTemplate>
-    <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
+    <dot-icon class="searchable-dropdown__search-icon" name="search" />
     <input
         #searchInput
         (click)="$event.stopPropagation()"
@@ -52,15 +52,13 @@
     appendTo="body">
     <header class="searchable-dropdown__search">
         <div class="searchable-dropdown__search-section">
-            <ng-container
-                [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate"></ng-container>
+            <ng-container [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate" />
         </div>
         @if (action) {
             <div class="searchable-dropdown__search-action">
-                <p-button
-                    (click)="action($event)"
+                <p-button (click)="action($event)"
                     icon="pi pi-plus"
-                    styleClass="p-button-text p-button-rounded"></p-button>
+                    styleClass="p-button-text p-button-rounded" />
             </div>
         }
     </header>
@@ -78,16 +76,14 @@
         [value]="options"
         class="searchable-dropdown__data-list">
         <ng-template let-data pTemplate="list">
-            <ng-container
-                [ngTemplateOutletContext]="{
+            <ng-container [ngTemplateOutletContext]="{
                     data: data,
                     selectedOptionValue: selectedOptionValue
                 }"
-                [ngTemplateOutlet]="externalItemListTemplate || defaultListTemplate"></ng-container>
+                [ngTemplateOutlet]="externalItemListTemplate || defaultListTemplate" />
         </ng-template>
     </p-dataView>
 </p-overlayPanel>
 
-<ng-container
-    [ngTemplateOutletContext]="{ item: value }"
-    [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate"></ng-container>
+<ng-container [ngTemplateOutletContext]="{ item: value }"
+    [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate" />

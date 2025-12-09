@@ -1,9 +1,8 @@
-<p-dropdown
-    (onChange)="change($event)"
+<p-dropdown (onChange)="change($event)"
     [options]="options$ | async"
     [style]="{ width: '215px' }"
     [filter]="true"
     [showClear]="true"
     [resetFilterOnHide]="true"
     appendTo="body"
-    filterBy="label"></p-dropdown>
+    filterBy="label" />

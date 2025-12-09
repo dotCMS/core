@@ -11,17 +11,15 @@
     } @else {
         <div class="preview-image__container">
             @if (tempFile) {
-                <dot-temp-file-thumbnail
-                    [tempFile]="tempFile"
+                <dot-temp-file-thumbnail [tempFile]="tempFile"
                     [iconSize]="'48px'"
-                    data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
+                    data-testId="temp-file-thumbnail" />
             } @else {
-                <dot-contentlet-thumbnail
-                    [fieldVariable]="contentlet.fieldVariable"
+                <dot-contentlet-thumbnail [fieldVariable]="contentlet.fieldVariable"
                     [iconSize]="'48px'"
                     [contentlet]="contentlet"
                     [playableVideo]="true"
-                    data-testId="contentlet-thumbnail"></dot-contentlet-thumbnail>
+                    data-testId="contentlet-thumbnail" />
             }
         </div>
         <div class="preview-metadata__container">
@@ -60,51 +58,46 @@
     </div>
 
     <div class="preview-metadata__actions">
-        <p-button
-            (click)="removeFile.emit()"
+        <p-button (click)="removeFile.emit()"
             [disabled]="disabled"
             [label]="'dot.common.remove' | dm"
             styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
-            icon="pi pi-trash"></p-button>
+            icon="pi pi-trash" />
         @if (isEditable) {
-            <p-button
-                (click)="onEdit()"
+            <p-button (click)="onEdit()"
                 [disabled]="disabled"
                 [label]="'dot.common.edit' | dm"
                 styleClass="p-button-outlined p-button-sm p-button-secondary"
                 data-testId="edit-button"
-                icon="pi pi-pencil"></p-button>
+                icon="pi pi-pencil" />
         }
     </div>
 
     <div class="preview-metadata__action--responsive">
         @if (isEditable) {
-            <p-button
-                (click)="onEdit()"
+            <p-button (click)="onEdit()"
                 [disabled]="disabled"
                 styleClass="p-button-rounded p-button-sm p-button-tertiary"
                 data-testId="edit-button-responsive"
-                icon="pi pi-pencil"></p-button>
+                icon="pi pi-pencil" />
         }
-        <p-button
-            (click)="visibility = !visibility"
+        <p-button (click)="visibility = !visibility"
             [disabled]="disabled"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="infor-button-responsive"
-            icon="pi pi-info"></p-button>
+            icon="pi pi-info" />
         <p-button
             (click)="downloadAsset()"
             [disabled]="disabled"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="download-btn-responsive"
             icon="pi pi-download" />
-        <p-button
-            (click)="removeFile.emit()"
+        <p-button (click)="removeFile.emit()"
             [disabled]="disabled"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
-            icon="pi pi-trash"></p-button>
+            icon="pi pi-trash" />
     </div>
 </div>
 

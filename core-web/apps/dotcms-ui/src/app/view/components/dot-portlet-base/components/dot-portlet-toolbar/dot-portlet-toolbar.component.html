@@ -4,13 +4,13 @@
             <h3 data-testId="title">{{ title }}</h3>
         }
         <div class="dot-portlet-toolbar__extra-left">
-            <ng-content select="[left]"></ng-content>
+            <ng-content select="[left]" />
         </div>
     </div>
 
     <div class="p-toolbar-group-end" data-testId="rightGroup">
         <div class="dot-portlet-toolbar__extra-right">
-            <ng-content select="[right]"></ng-content>
+            <ng-content select="[right]" />
         </div>
 
         <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">
@@ -39,11 +39,10 @@
                         pButton
                         icon="pi pi-chevron-down"
                         iconPos="right"></button>
-                    <p-menu
-                        [popup]="true"
+                    <p-menu [popup]="true"
                         [model]="actions?.primary"
                         #menu
-                        data-testId="actionsMenu"></p-menu>
+                        data-testId="actionsMenu" />
                 }
             }
         </div>

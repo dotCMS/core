@@ -1,6 +1,5 @@
 <div class="theme__header">
-    <p-dropdown
-        (onChange)="siteChange($event.value)"
+    <p-dropdown (onChange)="siteChange($event.value)"
         [filter]="true"
         [showClear]="true"
         [showClear]="false"
@@ -8,7 +7,7 @@
         #siteSelector
         dotSiteSelector
         optionLabel="name"
-        filterBy="name"></p-dropdown>
+        filterBy="name" />
 
     <div class="theme-header__search-box">
         <input
@@ -72,12 +71,10 @@
 </div>
 
 <div class="theme__footer">
-    <p-button
-        (onClick)="close()"
+    <p-button (onClick)="close()"
         styleClass="p-button-outlined"
-        label="{{ 'dot.common.cancel' | dm }}"></p-button>
-    <p-button
-        (onClick)="apply()"
+        label="{{ 'dot.common.cancel' | dm }}" />
+    <p-button (onClick)="apply()"
         [disabled]="!currentTheme || currentTheme?.inode === themeId"
-        label="{{ 'dot.common.apply' | dm }}"></p-button>
+        label="{{ 'dot.common.apply' | dm }}" />
 </div>

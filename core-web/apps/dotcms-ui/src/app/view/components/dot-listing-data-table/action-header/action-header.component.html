@@ -1,13 +1,12 @@
 <div [class.selected]="selectedItems.length" class="action-header">
     @if (options && options.primary) {
-        <dot-action-button
-            (press)="handlePrimaryAction()"
+        <dot-action-button (press)="handlePrimaryAction()"
             [model]="options.primary.model"
-            class="action-header__primary-button"></dot-action-button>
+            class="action-header__primary-button" />
     }
     <div [style.overflow]="dynamicOverflow" class="action-header__container">
         <div class="action-header__global-search">
-            <ng-content></ng-content>
+            <ng-content />
         </div>
         @if ((options && options.secondary) || selectedItems.length) {
             <div class="action-header__group-actions">

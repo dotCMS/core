@@ -6,23 +6,21 @@
         dragula="fields-row-bag">
         @for (row of fieldRows; track row; let i = $index) {
             @if (row.columns && row.columns.length) {
-                <dot-content-type-fields-row
-                    (editField)="editFieldHandler($event)"
+                <dot-content-type-fields-row (editField)="editFieldHandler($event)"
                     (removeField)="removeField($event)"
                     (removeRow)="removeFieldRow($event, i)"
-                    [fieldRow]="row"></dot-content-type-fields-row>
+                    [fieldRow]="row" />
             } @else {
-                <dot-content-type-fields-tab
-                    (editTab)="saveFieldsHandler($event)"
+                <dot-content-type-fields-tab (editTab)="saveFieldsHandler($event)"
                     (removeTab)="removeTab($event, i)"
                     [fieldTab]="row"
-                    class="row-header__drag"></dot-content-type-fields-tab>
+                    class="row-header__drag" />
             }
         }
-        <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
+        <dot-add-rows (selectColums)="addRow($event)" />
     </div>
 
-    <dot-loading-indicator [fullscreen]="true"></dot-loading-indicator>
+    <dot-loading-indicator [fullscreen]="true" />
 </div>
 
 <dot-dialog
@@ -38,26 +36,23 @@
                 currentFieldType?.clazz ===
                 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
             ) {
-                <dot-convert-to-block-info
-                    (action)="scrollTo($event)"
+                <dot-convert-to-block-info (action)="scrollTo($event)"
                     [currentFieldType]="currentFieldType"
-                    [currentField]="currentField"></dot-convert-to-block-info>
+                    [currentField]="currentField" />
             }
             <div class="wrapper">
-                <dot-content-type-fields-properties-form
-                    (saveField)="saveFieldsHandler($event)"
+                <dot-content-type-fields-properties-form (saveField)="saveFieldsHandler($event)"
                     (valid)="setDialogOkButtonState($event)"
                     [formFieldData]="currentField"
                     [contentType]="contentType"
-                    #fieldPropertiesForm></dot-content-type-fields-properties-form>
+                    #fieldPropertiesForm />
                 @if (
                     !!currentField?.id &&
                     currentFieldType?.clazz ===
                         'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
                 ) {
-                    <dot-convert-wysiwyg-to-block
-                        (convert)="convertWysiwygToBlock($event)"
-                        [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                    <dot-convert-wysiwyg-to-block (convert)="convertWysiwygToBlock($event)"
+                        [currentFieldType]="currentFieldType" />
                 }
             </div>
         </p-tabPanel>
@@ -65,20 +60,18 @@
             <p-tabPanel [header]="'Settings'" [disabled]="!currentField?.id" #panel>
                 @switch (this.currentFieldType?.clazz) {
                     @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
-                        <dot-block-editor-settings
-                            (changeControls)="changesDialogActions($event)"
+                        <dot-block-editor-settings (changeControls)="changesDialogActions($event)"
                             (save)="toggleDialog()"
                             (valid)="setDialogOkButtonState($event)"
                             [field]="currentField"
-                            [isVisible]="panel.selected"></dot-block-editor-settings>
+                            [isVisible]="panel.selected" />
                     }
                     @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
-                        <dot-binary-settings
-                            (save)="toggleDialog()"
+                        <dot-binary-settings (save)="toggleDialog()"
                             (valid)="setDialogOkButtonState($event)"
                             (changeControls)="changesDialogActions($event)"
                             [field]="currentField"
-                            [isVisible]="panel.selected"></dot-binary-settings>
+                            [isVisible]="panel.selected" />
                     }
                 }
             </p-tabPanel>
@@ -89,9 +82,8 @@
             [disabled]="!currentField?.id"
             #panel>
             <ng-template pTemplate="content">
-                <dot-content-type-fields-variables
-                    [showTable]="panel.selected"
-                    [field]="currentField"></dot-content-type-fields-variables>
+                <dot-content-type-fields-variables [showTable]="panel.selected"
+                    [field]="currentField" />
             </ng-template>
         </p-tabPanel>
     </p-tabView>

@@ -13,7 +13,7 @@
         styleClass="h-full flex flex-column"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
-        <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
+        <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
 
         <p-tabPanel class="flex flex-column tab-panel">
             <ng-template pTemplate="header">
@@ -26,10 +26,9 @@
                 class="h-full">
                 <ng-template #sectionAction>
                     @if (!$store.isNew() && !$store.isCopyingLocale()) {
-                        <dot-copy-button
-                            [copy]="contentlet.identifier"
+                        <dot-copy-button [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
-                            [tooltipText]="'Identifier' | dm"></dot-copy-button>
+                            [tooltipText]="'Identifier' | dm" />
                     }
                 </ng-template>
 
@@ -106,7 +105,7 @@
 </aside>
 
 <!-- Confirmation dialog for delete actions -->
-<p-confirmDialog></p-confirmDialog>
+<p-confirmDialog />
 
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>

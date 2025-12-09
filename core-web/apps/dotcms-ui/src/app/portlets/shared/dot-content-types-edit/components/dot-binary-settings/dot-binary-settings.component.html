@@ -18,15 +18,13 @@
         </small>
     </div>
     @for (option of systemOptions; track option.key) {
-        <p-divider
-            [style]="{
+        <p-divider [style]="{
                 margin: '1rem 0'
-            }"></p-divider>
+            }" />
         <div class="horizontal-field" formGroupName="systemOptions">
             <p [innerHTML]="option.message | dm" class="info"></p>
-            <p-inputSwitch
-                [formControlName]="option.key"
-                data-testId="setting-switch"></p-inputSwitch>
+            <p-inputSwitch [formControlName]="option.key"
+                data-testId="setting-switch" />
         </div>
     }
 </form>

@@ -1,9 +1,8 @@
-<dot-binary-file
-    (dotValueChange)="onThumbnailChange($event)"
+<dot-binary-file (dotValueChange)="onThumbnailChange($event)"
     [disabled]="loading"
     [previewImageUrl]="asset?.inode ? '/dA/' + asset?.inode : null"
     [previewImageName]="asset?.name"
     [style.height.rem]="asset ? '7.14' : '3.35'"
     [placeholder]="'templates.properties.form.thumbnail.placeholder' | dm"
-    accept="image/*"></dot-binary-file>
+    accept="image/*" />
 <small class="p-invalid" data-testId="error">{{ error }}</small>

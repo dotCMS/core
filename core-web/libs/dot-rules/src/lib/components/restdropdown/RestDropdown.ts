@@ -23,15 +23,14 @@ import { Verify } from '../../services/validation/Verify';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-input-rest-dropdown',
     template: `
-        <cw-input-dropdown
-            (onDropDownChange)="fireChange($event)"
+        <cw-input-dropdown (onDropDownChange)="fireChange($event)"
             (touch)="fireTouch($event)"
             [value]="modelValue"
             [maxSelections]="maxSelections"
             [minSelections]="minSelections"
             [allowAdditions]="allowAdditions"
             [options]="options | async"
-            placeholder="{{ placeholder }}"></cw-input-dropdown>
+            placeholder="{{ placeholder }}" />
     `,
     standalone: false
 })

@@ -3,11 +3,10 @@
         <ng-template pTemplate="title">
             <div class="flex justify-content-between">
                 <h2 class="flex align-items-center gap-1 uppercase">
-                    <dot-icon
-                        [ngClass]="{ isDone: vm.goals }"
+                    <dot-icon [ngClass]="{ isDone: vm.goals }"
                         [size]="16"
                         data-testId="goal-title-step-done"
-                        name="check_circle"></dot-icon>
+                        name="check_circle" />
                     <span class="p-label-input-required" data-testId="goals-card-name">
                         {{ 'experiments.configure.goals.name' | dm }}
                     </span>
@@ -119,4 +118,4 @@
     </p-card>
 }
 
-<ng-container dotDynamic></ng-container>
+<ng-container dotDynamic />

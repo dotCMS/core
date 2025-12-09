@@ -1,6 +1,6 @@
 <div class="dot-apps-configuration__container">
     @if (apps) {
-        <dot-apps-configuration-header [app]="apps"></dot-apps-configuration-header>
+        <dot-apps-configuration-header [app]="apps" />
     }
     <div class="dot-apps-configuration__body">
         <div>
@@ -28,22 +28,20 @@
                         icon="pi pi-trash"></button>
                 </div>
             </div>
-            <dot-apps-configuration-list
-                (loadData)="loadData($event)"
+            <dot-apps-configuration-list (loadData)="loadData($event)"
                 (edit)="gotoConfiguration($event)"
                 (export)="confirmExport($event)"
                 (delete)="deleteConfiguration($event)"
                 [siteConfigurations]="apps.sites"
                 [hideLoadDataButton]="hideLoadDataButton"
-                [itemsPerPage]="paginationPerPage"></dot-apps-configuration-list>
+                [itemsPerPage]="paginationPerPage" />
         </div>
     </div>
 </div>
 
-<dot-apps-import-export-dialog
-    (shutdown)="onClosedDialog()"
+<dot-apps-import-export-dialog (shutdown)="onClosedDialog()"
     [app]="apps"
     [site]="siteSelected"
     [action]="importExportDialogAction"
     [show]="showDialog"
-    #importExportDialog></dot-apps-import-export-dialog>
+    #importExportDialog />

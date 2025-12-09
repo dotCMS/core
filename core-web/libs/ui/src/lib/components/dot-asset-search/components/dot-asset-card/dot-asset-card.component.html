@@ -1,11 +1,10 @@
 <p-card>
     <ng-template pTemplate="header">
         <div class="thumbnail-container">
-            <dot-contentlet-thumbnail
-                [contentlet]="contentlet"
+            <dot-contentlet-thumbnail [contentlet]="contentlet"
                 [iconSize]="'72px'"
                 [showVideoThumbnail]="true"
-                data-testId="dot-contentlet-thumbnail"></dot-contentlet-thumbnail>
+                data-testId="dot-contentlet-thumbnail" />
         </div>
     </ng-template>
     <h2 *pTemplate="'title'" class="title" data-testId="dot-card-title">
@@ -14,7 +13,7 @@
     <ng-template pTemplate="footer">
         <div class="state">
             <span class="badge" data-testId="dot-card-language">{{ contentlet?.language }}</span>
-            <dot-state-icon [state]="contentlet" size="16px"></dot-state-icon>
+            <dot-state-icon [state]="contentlet" size="16px" />
         </div>
     </ng-template>
 </p-card>

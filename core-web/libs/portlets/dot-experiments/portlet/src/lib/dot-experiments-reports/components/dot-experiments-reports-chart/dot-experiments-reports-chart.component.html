@@ -4,13 +4,12 @@
             <div class="legend-wrapper" data-testId="chart-legends"></div>
         </div>
         @if (!isEmpty) {
-            <p-chart
-                [data]="data"
+            <p-chart [data]="data"
                 [options]="options"
                 [plugins]="plugins"
                 id="{{ chartId }}"
                 height="500px"
-                width="100%"></p-chart>
+                width="100%" />
         } @else {
             <div
                 class="empty__wrapper flex justify-content-center align-items-center flex-column"
@@ -26,10 +25,10 @@
 } @else {
     <div class="grid" data-testId="loading-skeleton">
         <div class="col-2 mt-4">
-            <p-skeleton height="1rem" width="100%"></p-skeleton>
+            <p-skeleton height="1rem" width="100%" />
         </div>
         <div class="col-12">
-            <p-skeleton height="33rem" width="100%"></p-skeleton>
+            <p-skeleton height="33rem" width="100%" />
         </div>
     </div>
 }

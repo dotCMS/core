@@ -3,18 +3,16 @@
         <ng-template pTemplate="title">
             <div class="variant--title__wrapper flex justify-content-between">
                 <h2 class="flex align-items-center gap-1 uppercase">
-                    <dot-icon
-                        [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
+                    <dot-icon [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
                         [size]="16"
                         data-testId="variant-title-step-done"
-                        name="check_circle"></dot-icon>
+                        name="check_circle" />
                     <span class="p-label-input-required" data-testId="variants-card-header">
                         {{ 'experiments.configure.variants.name' | dm }}
                     </span>
                 </h2>
-                <dot-experiments-configuration-items-count
-                    [count]="vm.trafficProportion.variants?.length"
-                    [maxLength]="maxVariantsAllowed"></dot-experiments-configuration-items-count>
+                <dot-experiments-configuration-items-count [count]="vm.trafficProportion.variants?.length"
+                    [maxLength]="maxVariantsAllowed" />
             </div>
         </ng-template>
         @for (
@@ -39,12 +37,11 @@
                                 [text]="variant.name" />
                         }
                         @if (variant.url) {
-                            <dot-copy-button
-                                [copy]="url + '&variantName=' + variant.id"
+                            <dot-copy-button [copy]="url + '&variantName=' + variant.id"
                                 [label]="'editpage.header.copy' | dm"
                                 [tooltipText]="
                                     'dot.common.message.pageurl.copy.clipboard' | dm
-                                "></dot-copy-button>
+                                " />
                         }
                     </div>
                     <span class="separator">|</span>
@@ -134,4 +131,4 @@
     </p-card>
 }
 
-<ng-container dotDynamic></ng-container>
+<ng-container dotDynamic />

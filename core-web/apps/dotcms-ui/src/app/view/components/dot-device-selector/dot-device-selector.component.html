@@ -1,9 +1,8 @@
 <div class="dot-device-selector wrapper h-full flex-auto flex align-items-center gap-3 min-w-full">
-    <dot-icon big name="devices"></dot-icon>
+    <dot-icon big name="devices" />
 
     <div class="device-selector__field flex-grow-1">
-        <p-dropdown
-            (onChange)="change($event.value)"
+        <p-dropdown (onChange)="change($event.value)"
             [(ngModel)]="value"
             [disabled]="disabled"
             [options]="options"
@@ -11,6 +10,6 @@
             class="p-dropdown-sm"
             id="device-selector"
             dataKey="inode"
-            optionLabel="name"></p-dropdown>
+            optionLabel="name" />
     </div>
 </div>

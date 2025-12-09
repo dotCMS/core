@@ -10,21 +10,19 @@
             <label dotFieldRequired for="pushActionSelected">
                 {{ 'contenttypes.content.push_publish.I_want_To' | dm }}:
             </label>
-            <p-selectButton
-                [options]="pushActions"
+            <p-selectButton [options]="pushActions"
                 class="push-publish-dialog__action-select p-button-tabbed"
                 id="pushActionSelected"
-                formControlName="pushActionSelected"></p-selectButton>
+                formControlName="pushActionSelected" />
         </div>
         <div class="field">
             <label for="filterKey">{{ 'contenttypes.content.push_publish.filters' | dm }}:</label>
-            <p-dropdown
-                [autofocus]="true"
+            <p-dropdown [autofocus]="true"
                 [options]="filterOptions"
                 id="filterKey"
                 pAutoFocus
                 formControlName="filterKey"
-                appendTo="body"></p-dropdown>
+                appendTo="body" />
         </div>
         <div class="field form-group__two-cols push-publish-dialog__publish-dates-container">
             <div class="field push-publish-dialog__publish-date">
@@ -32,8 +30,7 @@
                     {{ 'contenttypes.content.push_publish.publish_date' | dm }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
-                    <p-calendar
-                        [minDate]="dateFieldMinDate"
+                    <p-calendar [minDate]="dateFieldMinDate"
                         class="push-publish-dialog__calendar-date"
                         id="publishDate"
                         appendTo="body"
@@ -42,21 +39,19 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-calendar>
+                        showTime="true" />
                 </div>
-                <dot-field-validation-message
-                    [field]="form.get('publishDate')"
+                <dot-field-validation-message [field]="form.get('publishDate')"
                     message="{{
                         'contenttypes.content.push_publish.publish_date_errormsg' | dm
-                    }}"></dot-field-validation-message>
+                    }}" />
             </div>
             <div class="field push-publish-dialog__expire-date">
                 <label dotFieldRequired for="expireDate">
                     {{ 'contenttypes.content.push_publish.expire_date' | dm }}:
                 </label>
                 <div class="push-publish-dialog__calendar">
-                    <p-calendar
-                        [minDate]="dateFieldMinDate"
+                    <p-calendar [minDate]="dateFieldMinDate"
                         class="push-publish-dialog__calendar-date"
                         id="expireDate"
                         appendTo="body"
@@ -64,13 +59,12 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-calendar>
+                        showTime="true" />
                 </div>
-                <dot-field-validation-message
-                    [field]="form.get('expireDate')"
+                <dot-field-validation-message [field]="form.get('expireDate')"
                     message="{{
                         'contenttypes.content.push_publish.expire_date_errormsg' | dm
-                    }}"></dot-field-validation-message>
+                    }}" />
             </div>
         </div>
         <div class="field push-publish-dialog__timezone-label">
@@ -80,29 +74,26 @@
         </div>
         <div [hidden]="!showTimezonePicker" class="field" data-testid="timeZoneSelectContainer">
             <label for="timezoneId">{{ 'time-zone' | dm }}:</label>
-            <p-dropdown
-                (onChange)="updateTimezoneLabel($event.value)"
+            <p-dropdown (onChange)="updateTimezoneLabel($event.value)"
                 [options]="timeZoneOptions"
                 [filter]="true"
                 id="timezoneId"
                 data-testid="timeZoneSelect"
                 formControlName="timezoneId"
                 filterBy="label"
-                appendTo="body"></p-dropdown>
+                appendTo="body" />
         </div>
         <div class="field">
             <label dotFieldRequired for="environment">
                 {{ 'contenttypes.content.push_publish.push_to' | dm }}:
             </label>
-            <dot-push-publish-env-selector
-                [assetIdentifier]="assetIdentifier"
+            <dot-push-publish-env-selector [assetIdentifier]="assetIdentifier"
                 id="environment"
-                formControlName="environment"></dot-push-publish-env-selector>
-            <dot-field-validation-message
-                [field]="form.get('environment')"
+                formControlName="environment" />
+            <dot-field-validation-message [field]="form.get('environment')"
                 message="{{
                     'contenttypes.content.push_publish.push_to_errormsg' | dm
-                }}"></dot-field-validation-message>
+                }}" />
         </div>
     </form>
 }

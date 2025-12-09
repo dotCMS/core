@@ -1,16 +1,14 @@
 @if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}"></dot-sidebar-header>
+        <dot-sidebar-header [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}" />
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
             <form [formGroup]="form" class="p-fluid" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
                     <label for="initialDate">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
-                    <p-calendar
-                        (onClear)="setDateBoundaries()"
+                    <p-calendar (onClear)="setDateBoundaries()"
                         (onSelect)="setDateBoundaries()"
                         [defaultDate]="initialDate"
                         [minDate]="today"
@@ -21,14 +19,13 @@
                         [stepMinute]="30"
                         id="initialDate"
                         data-testId="scheduling-startDate"
-                        formControlName="startDate"></p-calendar>
+                        formControlName="startDate" />
                 </div>
                 <div class="field">
                     <label for="endTime">
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>
-                    <p-calendar
-                        [defaultDate]="minEndDate || initialDate"
+                    <p-calendar [defaultDate]="minEndDate || initialDate"
                         [maxDate]="maxEndDate"
                         [minDate]="minEndDate || initialDate"
                         [readonlyInput]="true"
@@ -38,7 +35,7 @@
                         [stepMinute]="30"
                         id="endTime"
                         data-testId="scheduling-endDate"
-                        formControlName="endDate"></p-calendar>
+                        formControlName="endDate" />
                 </div>
             </form>
         </div>

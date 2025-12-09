@@ -1,14 +1,13 @@
 @if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}"></dot-sidebar-header>
+        <dot-sidebar-header [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}" />
         <div class="experiment-traffic-allocation-add__form-wrapper flex flex-column">
             <h5>{{ 'experiments.configure.traffic.allocation' | dm }}</h5>
             <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
             <form [formGroup]="form" class="p-fluid" novalidate>
                 <div class="field">
-                    <p-slider [max]="100" [min]="1" formControlName="trafficAllocation"></p-slider>
+                    <p-slider [max]="100" [min]="1" formControlName="trafficAllocation" />
                     <div class="flex justify-content-end align-items-baseline gap-2">
                         <input
                             (keyup)="checkAllocationRange()"

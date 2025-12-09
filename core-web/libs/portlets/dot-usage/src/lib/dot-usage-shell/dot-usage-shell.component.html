@@ -6,14 +6,13 @@
         </div>
 
         <div class="usage-header__actions">
-            <p-button
-                icon="pi pi-refresh"
+            <p-button icon="pi pi-refresh"
                 [text]="true"
                 [loading]="loading()"
                 [disabled]="loading()"
                 (onClick)="onRefresh()"
                 pTooltip="Refresh metrics"
-                data-testid="refresh-button"></p-button>
+                data-testid="refresh-button" />
         </div>
     </div>
 
@@ -24,9 +23,9 @@
                 @for (i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; track i) {
                     <p-card class="metric-card">
                         <div class="metric-card__content">
-                            <p-skeleton height="1.5rem" width="60%"></p-skeleton>
-                            <p-skeleton height="3rem" width="80%" class="mt-2"></p-skeleton>
-                            <p-skeleton height="1rem" width="40%" class="mt-1"></p-skeleton>
+                            <p-skeleton height="1.5rem" width="60%" />
+                            <p-skeleton height="3rem" width="80%" class="mt-2" />
+                            <p-skeleton height="1rem" width="40%" class="mt-1" />
                         </div>
                     </p-card>
                 }
@@ -45,12 +44,11 @@
                             <strong>Error Loading Usage Data</strong>
                             <p>{{ error() }}</p>
                         </div>
-                        <p-button
-                            label="Retry"
+                        <p-button label="Retry"
                             severity="secondary"
                             size="small"
                             (onClick)="onRetry()"
-                            data-testid="retry-button"></p-button>
+                            data-testid="retry-button" />
                     </div>
                 </ng-template>
             </p-messages>

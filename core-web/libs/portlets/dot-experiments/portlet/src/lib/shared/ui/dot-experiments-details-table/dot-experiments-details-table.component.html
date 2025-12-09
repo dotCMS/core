@@ -12,20 +12,18 @@
             }
             <div class="flex flex-column gap-3 details">
                 <div class="details__headers grid grid-nogutter">
-                    <ng-container
-                        *ngTemplateOutlet="
+                    <ng-container *ngTemplateOutlet="
                             headers || defaultHeaders;
                             context: { $implicit: data }
-                        "></ng-container>
+                        " />
                 </div>
                 <div class="details__rows-wrapper flex flex-column gap-2">
                     @for (row of data; track row) {
                         <div class="details__row grid grid-nogutter" data-testId="detail-row">
-                            <ng-container
-                                *ngTemplateOutlet="
+                            <ng-container *ngTemplateOutlet="
                                     rows || defaultRowsTemplate;
                                     context: { $implicit: row }
-                                "></ng-container>
+                                " />
                         </div>
                     }
                 </div>
@@ -68,10 +66,10 @@
 } @else {
     <div class="grid" data-testId="loading-skeleton">
         <div class="col-2 mt-4">
-            <p-skeleton height="1rem" width="100%"></p-skeleton>
+            <p-skeleton height="1rem" width="100%" />
         </div>
         <div class="col-12">
-            <p-skeleton height="33rem" width="100%"></p-skeleton>
+            <p-skeleton height="33rem" width="100%" />
         </div>
     </div>
 }

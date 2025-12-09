@@ -7,11 +7,10 @@
     (editUrlContentMap)="editContentMap($event)" />
 
 @if (showSEOTool) {
-    <dot-results-seo-tool
-        [seoMedia]="$editorProps().seoResults.socialMedia"
+    <dot-results-seo-tool [seoMedia]="$editorProps().seoResults.socialMedia"
         [seoOGTags]="$editorProps().seoResults.ogTags"
         [seoOGTagsResults]="ogTagsResults"
-        data-testId="results-seo-tool"></dot-results-seo-tool>
+        data-testId="results-seo-tool" />
 }
 
 @if ($editorProps().palette; as palette) {

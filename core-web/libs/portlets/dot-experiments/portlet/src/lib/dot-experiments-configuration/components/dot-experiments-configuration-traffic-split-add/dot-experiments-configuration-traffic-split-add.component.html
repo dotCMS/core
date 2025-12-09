@@ -1,8 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}"></dot-sidebar-header>
+        <dot-sidebar-header [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}" />
         <div class="experiment-traffic-split__form-wrapper flex flex-column">
             <form
                 [formGroup]="form"
@@ -13,15 +12,13 @@
                     <label>
                         {{ 'experiments.configure.traffic.split.name' | dm }}
                     </label>
-                    <p-radioButton
-                        (click)="splitVariantsEvenly()"
+                    <p-radioButton (click)="splitVariantsEvenly()"
                         [label]="'experiments.configure.traffic.split.evenly' | dm"
                         [value]="splitEvenly"
-                        formControlName="type"></p-radioButton>
-                    <p-radioButton
-                        [label]="'experiments.configure.traffic.split.custom' | dm"
+                        formControlName="type" />
+                    <p-radioButton [label]="'experiments.configure.traffic.split.custom' | dm"
                         [value]="customPercentages"
-                        formControlName="type"></p-radioButton>
+                        formControlName="type" />
                 </div>
                 <div class="experiment-traffic-split__variants">
                     <header class="experiment-traffic-split__variants-header">
@@ -39,14 +36,13 @@
                                     {{ variant.value.name }}
                                 </span>
                                 @if (form.value.type === customPercentages) {
-                                    <p-inputNumber
-                                        (onInput)="checkControl(i, $event.value)"
+                                    <p-inputNumber (onInput)="checkControl(i, $event.value)"
                                         [maxFractionDigits]="2"
                                         [max]="100"
                                         [min]="0"
                                         class="experiment-traffic-split__variants-weight p-inputtext-sm"
                                         formControlName="weight"
-                                        mode="decimal"></p-inputNumber>
+                                        mode="decimal" />
                                 } @else {
                                     <span
                                         class="experiment-traffic-split__variants-weight"

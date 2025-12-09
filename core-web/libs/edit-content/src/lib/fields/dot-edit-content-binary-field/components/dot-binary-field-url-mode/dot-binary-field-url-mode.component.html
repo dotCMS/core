@@ -14,10 +14,9 @@
                 data-testId="url-input" />
             <div class="error-messsage__container">
                 @if (!vm.error) {
-                    <dot-field-validation-message
-                        [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
+                    <dot-field-validation-message [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
                         [field]="form.get('url')"
-                        data-testId="error-message"></dot-field-validation-message>
+                        data-testId="error-message" />
                 } @else {
                     <small class="p-invalid" data-testId="error-msg">
                         {{ vm.error | dm: [acceptTypes] }}
@@ -26,27 +25,24 @@
             </div>
         </div>
         <div class="url-mode__actions">
-            <p-button
-                (click)="cancelUpload()"
+            <p-button (click)="cancelUpload()"
                 [label]="'dot.common.cancel' | dm"
                 styleClass="p-button-outlined"
                 type="button"
                 aria-label="Cancel button"
-                data-testId="cancel-button"></p-button>
+                data-testId="cancel-button" />
             <div [style]="{ width: '6.85rem' }">
                 @if (!vm.isLoading) {
-                    <p-button
-                        [label]="'dot.common.import' | dm"
+                    <p-button [label]="'dot.common.import' | dm"
                         [icon]="'pi pi-download'"
                         type="submit"
                         aria-label="Import button"
-                        data-testId="import-button"></p-button>
+                        data-testId="import-button" />
                 } @else {
-                    <p-button
-                        [icon]="'pi pi-spin pi-spinner'"
+                    <p-button [icon]="'pi pi-spin pi-spinner'"
                         type="button"
                         aria-label="Loading button"
-                        data-testId="loading-button"></p-button>
+                        data-testId="loading-button" />
                 }
             </div>
         </div>

@@ -3,13 +3,12 @@ TODO: labels for defaultLabel and selectedItemsLabel in p-multiselect need to be
 
 Also there is a problem here, when the field is invalid this multiselect should have the invalid class
 -->
-<p-multiSelect
-    (onChange)="valueChange($event, selectedEnvironments)"
+<p-multiSelect (onChange)="valueChange($event, selectedEnvironments)"
     [(ngModel)]="selectedEnvironments"
     [options]="pushEnvironments"
     [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
     appendTo="body"
-    optionLabel="name"></p-multiSelect>
+    optionLabel="name" />
 
 @if (showList) {
     <ul class="environment-selector__list">
