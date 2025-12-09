@@ -145,11 +145,10 @@ public class PageResourceHelper implements Serializable {
      * @param containerEntries The list of Containers and Contentlets in the form of
      *                         {@link PageContainerForm.ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
-     *
      * @throws DotDataException An error occurred when interacting with the data source.
      */
     @WrapInTransaction
-    public void saveContent(final String pageId,
+    public List<Map<String, Object>> saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
 
             final Language language, String variantName) throws DotDataException {
@@ -165,8 +164,7 @@ public class PageResourceHelper implements Serializable {
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
-                    final Map<String, Object> styleProperties = stylePropertiesMap != null ?
-                            stylePropertiesMap.get(contentletId) : null;
+                    final Map<String, Object> styleProperties = stylePropertiesMap.get(contentletId);
 
                     final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
                             .setContentlet(contentletId)
@@ -177,7 +175,8 @@ public class PageResourceHelper implements Serializable {
                             .setStyleProperties(styleProperties);
 
                     CollectionsUtils.computeSubValueIfAbsent(
-                            multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
+                            multiTreesMap, personalization,
+                            MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
                             (String key, MultiTree multitree) -> list(multitree));
 
@@ -213,6 +212,32 @@ public class PageResourceHelper implements Serializable {
                     multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
         }
+
+        // MultiTrees as a flattened list
+        final List<MultiTree> savedMultiTrees = multiTreesMap.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        // Response with container, contentlet and styleProperties
+        return savedContent(savedMultiTrees);
+    }
+
+    /**
+     * Returns a list of the saved MultiTrees with the containerId, uuid, contentletId and styleProperties.
+     * @param savedMultiTrees The list of saved MultiTrees.
+     * @return A list of the saved MultiTrees with the containerId, uuid, contentletId and styleProperties.
+     */
+    private List<Map<String, Object>> savedContent(List<MultiTree> savedMultiTrees) {
+        return savedMultiTrees.stream()
+                .map(multiTree -> {
+                    final Map<String, Object> contentInfo = new HashMap<>();
+                    contentInfo.put("containerId", multiTree.getContainer());
+                    contentInfo.put("uuid", multiTree.getRelationType());
+                    contentInfo.put("contentletId", multiTree.getContentlet());
+                    contentInfo.put("styleProperties", multiTree.getStyleProperties());
+                    return contentInfo;
+                })
+                .collect(Collectors.toList());
     }
 
     public void saveMultiTree(final String containerId,

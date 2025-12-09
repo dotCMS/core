@@ -774,9 +774,10 @@ public class PageResource {
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
-            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
+            final List<Map<String, Object>> savedContent = pageResourceHelper.saveContent(
+                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
-            return Response.ok(new ResponseEntityView<>("ok")).build();
+            return Response.ok(new ResponseEntityView<>(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
                     pageId);
@@ -842,17 +843,19 @@ public class PageResource {
         final Map<MultiKey, ContainerData> containerEntryMap = new HashMap<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+            // containerEntryMap key: personaTag + containerId + containerUUID
+            final MultiKey key = new MultiKey(containerEntry.getPersonaTag(),
+                    containerEntry.getContainerId(), containerEntry.getContainerUUID());
 
-            final ContainerData data = containerEntryMap.computeIfAbsent(
-                    new MultiKey(containerEntry.getPersonaTag(), containerEntry.getContainerId(),
-                            containerEntry.getContainerUUID()), k -> new ContainerData());
+            final ContainerData data = containerEntryMap.computeIfAbsent(key, k -> new ContainerData());
 
             data.contentIds.addAll(containerEntry.getContentIds());
 
-            if (containerEntry.getStylePropertiesMap() != null) {
-                // keys that appear again overwrite previous ones (last one wins)
-                data.stylePropertiesMap.putAll(containerEntry.getStylePropertiesMap());
-            }
+            // Merge styles. Keys that appear again overwrite previous ones (last one wins)
+            final Map<String, Map<String, Object>> incomingStyles = Optional.ofNullable(
+                    containerEntry.getStylePropertiesMap()).orElse(Collections.emptyMap());
+
+            data.stylePropertiesMap.putAll(incomingStyles);
         }
 
         return containerEntryMap.entrySet().stream()
