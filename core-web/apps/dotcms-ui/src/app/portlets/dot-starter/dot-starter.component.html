@@ -1,3 +1,5 @@
+{{ state() | json }}
+
 <div class="dot-onboarding" #onboardingContainer>
     <div class="dot-onboarding__content">
         <header>
@@ -112,9 +114,9 @@
 
         <div class="dot-onboarding__progress-ring">
             <span class="dot-onboarding__progress-percentage">
-                {{ progress | number: '1.0-0' }}%
+                {{ state().progress | number: '1.0-0' }}%
             </span>
-            <p-knob [(ngModel)]="progress" [readonly]="true" [size]="24" [strokeWidth]="4" valueTemplate=" "></p-knob>
+            <p-knob [(ngModel)]="state().progress" [readonly]="true" [size]="24" [strokeWidth]="4" valueTemplate=" "></p-knob>
         </div>
     </div>
 </section>

@@ -1,7 +1,13 @@
+import { patchState } from '@ngrx/signals';
+
 import { isPlatformBrowser } from '@angular/common';
 import { Component, ElementRef, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 
 import { OverlayPanel } from 'primeng/overlaypanel';
+
+import { state } from './store';
+
+
 
 interface OnboardingSubstepExplanation {
     title: string;
@@ -365,6 +371,7 @@ Watch your Next.js app update instantly!`
     standalone: false
 })
 export class DotStarterComponent implements OnInit {
+    readonly state = state;
     readonly content = ONBOARDING_CONTENT;
 
     selectedFramework = 'nextjs';
@@ -410,8 +417,6 @@ export class DotStarterComponent implements OnInit {
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         },
     ];
-
-    progress = 0;
     private _activeAccordionIndex = 0;
     @ViewChild('onboardingContainer', { read: ElementRef })
     onboardingContainer?: ElementRef<HTMLElement>;
@@ -424,6 +429,7 @@ export class DotStarterComponent implements OnInit {
         return this._activeAccordionIndex;
     }
 
+    // state
     set activeAccordionIndex(value: number) {
         this._activeAccordionIndex = value;
 
@@ -652,6 +658,9 @@ ${substep.code}
     }
 
     private updateProgress(): void {
-        this.progress = Math.round(this.progressPercentage);
+        patchState(state, (state) => ({
+            ...state,
+            progress: Math.round(this.progressPercentage)
+        }));
     }
 }
