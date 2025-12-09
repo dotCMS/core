@@ -11,6 +11,7 @@ import com.dotmarketing.util.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,22 +36,41 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         final String scenario1String = "scenario1";
         final String scenario2String = "scenario2";
         final int slots = 6;
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        final ConditionalSubmitter conditionalExecutor = DotConcurrentFactory.getInstance().createConditionalSubmitter(slots);
+        final int taskCount = 12;
+        ExecutorService executorService = Executors.newFixedThreadPool(taskCount);
+        // Use 0 second timeout so tasks fall back immediately when no slot is available
+        // (default 1s timeout would cause tasks to wait and acquire released slots)
+        final ConditionalSubmitter conditionalExecutor = DotConcurrentFactory.getInstance()
+                .createConditionalSubmitter(slots, 0);
         final List<Future<String>> futures = new ArrayList<>();
-        int scenarios1Count = 0;
-        int scenarios2Count = 0;
-        // Reduced from 8 seconds to 200ms - still enough to hold the slot while other tasks arrive
+
+        // Use latches to ensure all tasks start simultaneously and compete for slots
+        final CountDownLatch readyLatch = new CountDownLatch(taskCount);
+        final CountDownLatch startLatch = new CountDownLatch(1);
+
         final Supplier<String> supplier1 = ()-> {
             DateUtil.sleep(200);
             return scenario1String;
         };
         final Supplier<String> supplier2 = ()-> scenario2String;
-        // Reduced iterations from 20 to 12 - still tests the slot limiting behavior (6 slots, 12 tasks)
-        for (int i = 0; i < 12; ++i) {
-            futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
+
+        for (int i = 0; i < taskCount; ++i) {
+            futures.add(executorService.submit(() -> {
+                readyLatch.countDown();
+                try {
+                    startLatch.await(); // Wait for all threads to be ready
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return conditionalExecutor.submit(supplier1, supplier2);
+            }));
         }
 
+        readyLatch.await(); // Wait for all threads to be ready
+        startLatch.countDown(); // Release all threads simultaneously
+
+        int scenarios1Count = 0;
+        int scenarios2Count = 0;
         for (final Future<String> future: futures) {
             final String result = future.get();
             if (scenario2String.equals(result)) {
@@ -64,11 +84,25 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         assertEquals(6, scenarios2Count);
 
         // Second round to verify slot release works correctly
+        final CountDownLatch readyLatch2 = new CountDownLatch(taskCount);
+        final CountDownLatch startLatch2 = new CountDownLatch(1);
+
         scenarios2Count = scenarios1Count = 0;
         futures.clear();
-        for (int i = 0; i < 12; ++i) {
-            futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
+        for (int i = 0; i < taskCount; ++i) {
+            futures.add(executorService.submit(() -> {
+                readyLatch2.countDown();
+                try {
+                    startLatch2.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return conditionalExecutor.submit(supplier1, supplier2);
+            }));
         }
+
+        readyLatch2.await();
+        startLatch2.countDown();
 
         for (final Future<String> future: futures) {
             final String result = future.get();
