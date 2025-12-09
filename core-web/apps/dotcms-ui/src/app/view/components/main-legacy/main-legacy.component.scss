@@ -3,33 +3,27 @@
 @import "dotcms-theme/utils/_mixins.scss";
 
 .layout {
-    display: flex;
+    display: grid;
+    grid-template-areas:
+        "navigation branding-bar"
+        "navigation content-viewport";
+    grid-template-columns: $navigation-width 1fr;
+    grid-template-rows: auto 1fr;
     height: 100vh;
     width: 100vw;
     overflow: hidden;
 }
 
 .layout__navigation {
+    grid-area: navigation;
     background-color: $brand-background;
-    flex-shrink: 0;
-}
-
-.layout__main {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
 }
 
 .layout__branding-bar {
-    flex-shrink: 0;
+    grid-area: branding-bar;
 }
 
 .layout__viewport {
-    overflow: hidden;
-    height: 100%;
-    width: 100%;
-    flex: 1;
+    grid-area: content-viewport;
+    overflow-y: auto;
 }

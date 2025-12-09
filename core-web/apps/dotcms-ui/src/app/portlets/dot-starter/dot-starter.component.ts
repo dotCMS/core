@@ -72,7 +72,8 @@ const ONBOARDING_CONTENT: OnboardingContent = {
                     type: 'command',
                     explanation: {
                         title: 'Navigate into the project directory',
-                        description: 'Change into the newly created project directory so you can run commands within it.'
+                        description:
+                            'Change into the newly created project directory so you can run commands within it.'
                     }
                 },
                 {
@@ -344,25 +345,172 @@ Server components can securely access API tokens and fetch data, while client co
             ]
         },
         {
+            id: 'step-5',
+            number: 5,
+            title: 'Render content with DotCMSLayoutBody',
+            description:
+                'Transform the raw JSON data into a beautiful, interactive page. You will create a client-side component that automatically maps dotCMS content types to React components.',
+            substeps: [
+                {
+                    code: 'mkdir -p src/components && touch src/components/DotCMSPageClient.tsx',
+                    language: 'bash',
+                    type: 'command',
+                    explanation: {
+                        title: 'Create components directory',
+                        description: `We need a dedicated place for our client-side components.`
+                    }
+                },
+                {
+                    code: `'use client';
+
+import { DotCMSLayoutBody } from '@dotcms/react';
+import type { DotCMSPageAsset } from '@dotcms/types';
+import Image from 'next/image';
+
+// 1. Define the Banner Component
+// This component matches the fields defined in your dotCMS "Banner" Content Type
+function Banner({ title, caption, image, link, target }: any) {
+  const dotcmsUrl = process.env.NEXT_PUBLIC_DOTCMS_URL;
+  const imageUrl = image?.idPath ? \`\${dotcmsUrl}\${image.idPath}\` : null;
+
+  return (
+    <div className="relative w-full bg-gray-900 text-white overflow-hidden min-h-[400px] flex items-center rounded-xl my-8">
+      <div className="container mx-auto px-8 relative z-10">
+        <div className="max-w-2xl">
+          {title && <h1 className="text-5xl font-bold mb-6">{title}</h1>}
+          {caption && <p className="text-xl mb-8 text-gray-200">{caption}</p>}
+          {link && (
+            <a href={link} target={target} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded transition-colors">
+              Learn More
+            </a>
+          )}
+        </div>
+      </div>
+      {imageUrl && (
+        <div className="absolute inset-0 opacity-40">
+          {/* 'unoptimized' allows loading images from external dotCMS domains without extra Next.js config */}
+          <Image src={imageUrl} alt={title || 'Banner'} fill className="object-cover" unoptimized />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 2. Create the Component Map
+// Keys must EXACTLY match the Content Type Variable Name in dotCMS
+const COMPONENTS_MAP = {
+  Banner: Banner,
+};
+
+// 3. Main Client Component
+export function DotCMSPageClient({ pageAsset }: { pageAsset: DotCMSPageAsset }) {
+  return (
+    <DotCMSLayoutBody
+      page={pageAsset}
+      components={COMPONENTS_MAP}
+    />
+  );
+}`,
+                    language: 'typescript',
+                    type: 'file',
+                    filePath: 'src/components/DotCMSPageClient.tsx',
+                    explanation: {
+                        title: 'Create the Component Mapper',
+                        description: `This file handles the logic of turning data into UI:
+
+- **Banner Component**: A standard React component. Note the \`unoptimized\` prop on the Image—this allows Next.js to display images from your specific dotCMS instance URL without complex configuration changes.
+- **COMPONENTS_MAP**: This object tells the SDK "When you see content of type 'Banner', render this React component."
+- **DotCMSLayoutBody**: The magic component from the SDK that iterates over the page layout and renders the correct components automatically.`
+                    }
+                },
+                {
+                    code: `import { createDotCMSClient } from '@dotcms/client';
+import { DotCMSPageClient } from '@/components/DotCMSPageClient';
+
+const client = createDotCMSClient({
+  dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_URL!,
+  authToken: process.env.DOTCMS_TOKEN,
+});
+
+export default async function Home() {
+  const { pageAsset } = await client.page.get('/');
+
+  return (
+    <main className="container mx-auto px-4">
+      <DotCMSPageClient pageAsset={pageAsset} />
+    </main>
+  );
+}`,
+                    language: 'typescript',
+                    type: 'file',
+                    filePath: 'src/app/page.tsx',
+                    explanation: {
+                        title: 'Update the Home Page',
+                        description: `We replace the raw JSON dump with our new \`<DotCMSPageClient />\`.
+
+The server fetches the data securely, and the client component renders it. This "Hybrid" approach gives you the best of both worlds: SEO performance and interactive UI.`
+                    }
+                }
+            ]
+        },
+        {
             id: 'step-6',
             number: 6,
             title: 'Configure Universal Visual Editor',
             description:
-                "Connect your Next.js app to dotCMS's Universal Visual Editor (UVE), which allows content editors to see live previews of your Next.js app inside dotCMS and edit content in context. Navigate to the UVE app configuration in dotCMS and register your local development URL (http://localhost:3000) to create a bridge between dotCMS and your frontend."
+                'Now connect the two worlds. We need to tell dotCMS to load your local development environment (`localhost:3000`) inside its visual editor instead of the production site.',
+            substeps: [
+                {
+                    code: `{
+  "config": [
+    {
+      "pattern": ".*",
+      "url": "http://localhost:3000"
+    }
+  ]
+}`, // No code needed, purely visual
+                    language: 'text',
+                    type: 'command', // UI placeholder
+                    explanation: {
+                        title: 'Open the Visual Editor',
+                        description: `1. In dotCMS, navigate to **Settings > Apps** and click on **UVE - Universal Visual Editor**
+2. Click the plus button at the right of the site we're integrating (i.e., \`demo.dotcms.com\`).
+3. In the Configuration field, add the JSON object.`
+                    }
+                }
+            ]
         },
         {
             id: 'step-7',
             number: 7,
             title: 'Edit your page visually',
             description:
-                'Test the Universal Visual Editor by making live edits to your banner content. Navigate to Pages in dotCMS, open the Home page in the UVE, click on the banner to edit its content (text, images, links), save changes, and verify the updates appear in your Next.js app. This demonstrates the core value of headless CMS - developers build components once, and content editors can update them without touching code.'
+                'The moment of truth. You will now edit content in dotCMS and see it update live in your Next.js application without touching the code.',
+            substeps: [
+                {
+                    code: '', // No code needed, purely visual
+                    language: 'text',
+                    type: 'command', // UI placeholder
+                    explanation: {
+                        title: 'Open the Visual Editor',
+                        description: `1. Go to **Site Browser** → **Pages** in the dotCMS sidebar.
+2. Click on the **Home** page (index).
+3. The screen will split: dotCMS controls on the right, your Next.js app on the left.
+4. Click the **Edit** (pencil) icon on the top right.
+5. Click directly on the **Banner** component in the preview.
+6. Change the **Title** text and press **Save**.
+
+Watch your Next.js app update instantly!`
+                    }
+                }
+            ]
         },
         {
             id: 'step-8',
             number: 8,
             title: 'You Did It!',
             description:
-                "Congratulations! You've successfully built a headless Next.js application powered by dotCMS. You've experienced the core value of a headless CMS: separation of concerns, developer freedom, visual editing, and API-first architecture. Next steps include adding more content types, fetching content directly, adding more pages with dynamic routes, and deploying to production. Learn more at https://www.dotcms.com/docs/latest/"
+                'Congratulations! You have successfully built a Headless Next.js app with full visual editing capabilities. You now have a workflow where developers build components in React, and editors manage content visually.'
         }
     ]
 };
@@ -378,7 +526,8 @@ export class DotStarterComponent implements OnInit {
 
     progress = 0;
     activeAccordionIndex = 0;
-    @ViewChild('onboardingContainer', { read: ElementRef }) onboardingContainer?: ElementRef<HTMLElement>;
+    @ViewChild('onboardingContainer', { read: ElementRef })
+    onboardingContainer?: ElementRef<HTMLElement>;
     private completedSteps = new Set<string>();
     private readonly platformId = inject(PLATFORM_ID);
 
@@ -417,7 +566,10 @@ export class DotStarterComponent implements OnInit {
             this.activeAccordionIndex = nextIndex;
             // Scroll to the accordion item after it opens
             setTimeout(() => {
-                if (!isPlatformBrowser(this.platformId) || !this.onboardingContainer?.nativeElement) {
+                if (
+                    !isPlatformBrowser(this.platformId) ||
+                    !this.onboardingContainer?.nativeElement
+                ) {
                     return;
                 }
                 const container = this.onboardingContainer.nativeElement;
