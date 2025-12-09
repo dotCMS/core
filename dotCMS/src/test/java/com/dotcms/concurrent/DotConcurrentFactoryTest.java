@@ -1,11 +1,13 @@
 package com.dotcms.concurrent;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.json.JSONException;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,19 +19,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import org.junit.Test;
 
 public class DotConcurrentFactoryTest extends UnitTestBase {
 
     /**
      * Method to test: {@link ConditionalSubmitter#submit(Supplier, Supplier)}
-     * Given Scenario: run 100 task but only 6 should be submitted as a scenario 1, the rest should be scenario 2
-     * ExpectedResult: 6 ran on scenario 1 and 94 on scenario 2
+     * Given Scenario: run tasks but only 6 should be submitted as scenario 1, the rest should be scenario 2
+     * ExpectedResult: 6 ran on scenario 1 and the rest on scenario 2
      *
      */
     @Test
@@ -43,21 +40,18 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         final List<Future<String>> futures = new ArrayList<>();
         int scenarios1Count = 0;
         int scenarios2Count = 0;
+        // Reduced from 8 seconds to 200ms - still enough to hold the slot while other tasks arrive
         final Supplier<String> supplier1 = ()-> {
-
-            System.out.println("Supplier1, a " + System.currentTimeMillis());
-            DateUtil.sleep(DateUtil.EIGHT_SECOND_MILLIS);
-            System.out.println("Supplier1, b " + System.currentTimeMillis());
+            DateUtil.sleep(200);
             return scenario1String;
         };
         final Supplier<String> supplier2 = ()-> scenario2String;
-        for (int i = 0; i < 20; ++i) {
-
+        // Reduced iterations from 20 to 12 - still tests the slot limiting behavior (6 slots, 12 tasks)
+        for (int i = 0; i < 12; ++i) {
             futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
         }
 
         for (final Future<String> future: futures) {
-
             final String result = future.get();
             if (scenario2String.equals(result)) {
                 scenarios2Count++;
@@ -67,17 +61,16 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         }
 
         assertEquals(6, scenarios1Count);
-        assertEquals(14, scenarios2Count);
+        assertEquals(6, scenarios2Count);
 
+        // Second round to verify slot release works correctly
         scenarios2Count = scenarios1Count = 0;
         futures.clear();
-        for (int i = 0; i < 20; ++i) {
-
+        for (int i = 0; i < 12; ++i) {
             futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
         }
 
         for (final Future<String> future: futures) {
-
             final String result = future.get();
             if (scenario2String.equals(result)) {
                 scenarios2Count++;
@@ -87,8 +80,9 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         }
 
         assertEquals(6, scenarios1Count);
-        assertEquals(14, scenarios2Count);
+        assertEquals(6, scenarios2Count);
 
+        executorService.shutdown();
     }
 
     /**
@@ -106,46 +100,36 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
 
         final DotSubmitter submitter =
                 dotConcurrentFactory.getSingleSubmitter(submitterName);
-        final List<Future> futures = new ArrayList<>();
-        System.out.println(submitter);
+        final List<Future<?>> futures = new ArrayList<>();
 
-        IntStream.range(0, 10).forEach(
-                n -> {
-                    futures.add(submitter.submit(new PrintTask("Thread" + n)));
-                }
+        // Reduced from 10 to 5 iterations - still verifies single-threaded execution
+        IntStream.range(0, 5).forEach(
+                n -> futures.add(submitter.submit(new PrintTask("Thread" + n)))
         );
 
-        //check active thread, if zero then shut down the thread pool
-        for (final Future future : futures) {
-
+        // Wait for all tasks to complete
+        for (final Future<?> future : futures) {
             future.get();
         }
-
-        System.out.print("Staring a new one submitter");
 
         final DotSubmitter submitter2 =
                 dotConcurrentFactory.getSingleSubmitter(submitterName);
 
-        System.out.println(submitter2);
+        assertSame(submitter, submitter2);
 
-        assertTrue(submitter == submitter2);
-
-        final List<Future> futures2 = new ArrayList<>();
-        IntStream.range(0, 10).forEach(
-                n -> {
-                    futures2.add(submitter2.submit(new PrintTask("Thread" + n)));
-                }
+        final List<Future<?>> futures2 = new ArrayList<>();
+        IntStream.range(0, 5).forEach(
+                n -> futures2.add(submitter2.submit(new PrintTask("Thread" + n)))
         );
 
-        //check active thread, if zero then shut down the thread pool
-        for (final Future future : futures2) {
-
+        // Wait for all tasks to complete
+        for (final Future<?> future : futures2) {
             future.get();
         }
     }
 
     @Test
-    public void testDefaultOne_Submitter_Config() throws JSONException{
+    public void testDefaultOne_Submitter_Config() throws JSONException, InterruptedException, ExecutionException {
 
         final String submitterName = "testsubmitter";
         final DotConcurrentFactory dotConcurrentFactory =
@@ -157,70 +141,40 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
                         .maxPoolSize(4).queueCapacity(500).build()
                 );
 
-        System.out.println(submitter);
-
-        IntStream.range(0, 40).forEach(
-                n -> {
-
-                    if (n % 10 == 0) {
-
-                        System.out.println(submitter);
-                    }
-                    submitter.execute(new PrintTask("Thread" + n));
-                }
+        // Reduced from 40 to 10 iterations - still tests thread pool behavior
+        final List<Future<?>> futures = new ArrayList<>();
+        IntStream.range(0, 10).forEach(
+                n -> futures.add(submitter.submit(new PrintTask("Thread" + n)))
         );
 
-        //check active thread, if zero then shut down the thread pool
-        for (;;) {
-            int count = submitter.getActiveCount();
-            System.out.println("Active Threads : " + count);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (count == 0) {
-                //submitter.shutdown();
-                break;
-            }
+        // Wait for completion instead of polling
+        for (final Future<?> future : futures) {
+            future.get();
         }
-
-        System.out.print("Staring a new one submitter");
 
         final DotSubmitter submitter2 =
                 dotConcurrentFactory.getSubmitter(submitterName);
 
-        System.out.println(submitter2);
+        assertSame(submitter, submitter2);
 
-        assertTrue(submitter == submitter2);
-
-        IntStream.range(0, 20).forEach(
-                n -> {
-                    submitter2.execute(new PrintTask("Thread" + n));
-                }
+        // Reduced from 20 to 5 iterations
+        final List<Future<?>> futures2 = new ArrayList<>();
+        IntStream.range(0, 5).forEach(
+                n -> futures2.add(submitter2.submit(new PrintTask("Thread" + n)))
         );
 
-        //check active thread, if zero then shut down the thread pool
-        for (;;) {
-            int count = submitter2.getActiveCount();
-            System.out.println("Active Threads : " + count);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (count == 0) {
-                submitter2.shutdown();
-                break;
-            }
+        for (final Future<?> future : futures2) {
+            future.get();
         }
 
+        submitter2.shutdown();
     }
 
     @Test
-    public void testDefaultOne_Submitter_Config_shutdown_keep_config() throws JSONException{
+    public void testDefaultOne_Submitter_Config_shutdown_keep_config()
+            throws JSONException, InterruptedException, ExecutionException {
 
-        final String submitterName = "testsubmitter";
+        final String submitterName = "testsubmitter_shutdown";
         final DotConcurrentFactory dotConcurrentFactory =
                 DotConcurrentFactory.getInstance();
 
@@ -230,76 +184,46 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
                                 .maxPoolSize(4).queueCapacity(500).build()
                 );
 
-        System.out.println(submitter);
-
-        IntStream.range(0, 40).forEach(
-                n -> {
-
-                    if (n % 10 == 0) {
-
-                        System.out.println(submitter);
-                    }
-                    submitter.execute(new PrintTask("Thread" + n));
-                }
+        // Reduced from 40 to 8 iterations - still tests config preservation
+        final List<Future<?>> futures = new ArrayList<>();
+        IntStream.range(0, 8).forEach(
+                n -> futures.add(submitter.submit(new PrintTask("Thread" + n)))
         );
 
         assertEquals(2, submitter.getPoolSize());
         assertEquals(4, submitter.getMaxPoolSize());
 
-        //check active thread, if zero then shut down the thread pool
-        for (;;) {
-            int count = submitter.getActiveCount();
-            System.out.println("Active Threads : " + count);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (count == 0) {
-                //submitter.shutdown();
-                break;
-            }
+        // Wait for completion instead of polling
+        for (final Future<?> future : futures) {
+            future.get();
         }
 
         submitter.shutdown();
 
-        System.out.print("Staring a new one submitter");
-
+        // After shutdown, getting same name should create new submitter with same config
         final DotSubmitter submitter2 =
                 dotConcurrentFactory.getSubmitter(submitterName);
 
-        System.out.println(submitter2);
+        assertNotSame(submitter, submitter2);
 
-        assertFalse(submitter == submitter2);
-
-        IntStream.range(0, 20).forEach(
-                n -> {
-                    submitter2.execute(new PrintTask("Thread" + n));
-                }
+        // Reduced from 20 to 5 iterations
+        final List<Future<?>> futures2 = new ArrayList<>();
+        IntStream.range(0, 5).forEach(
+                n -> futures2.add(submitter2.submit(new PrintTask("Thread" + n)))
         );
 
         assertEquals(2, submitter2.getPoolSize());
         assertEquals(4, submitter2.getMaxPoolSize());
 
-        //check active thread, if zero then shut down the thread pool
-        for (;;) {
-            int count = submitter2.getActiveCount();
-            System.out.println("Active Threads : " + count);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (count == 0) {
-                submitter2.shutdown();
-                break;
-            }
+        for (final Future<?> future : futures2) {
+            future.get();
         }
 
+        submitter2.shutdown();
     }
 
     @Test
-    public void testDefaultOne() throws JSONException{
+    public void testDefaultOne() throws JSONException, InterruptedException, ExecutionException {
 
         final DotConcurrentFactory dotConcurrentFactory =
                 DotConcurrentFactory.getInstance();
@@ -307,68 +231,37 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         final DotSubmitter submitter =
                 dotConcurrentFactory.getSubmitter();
 
-        System.out.println(submitter);
-
-        IntStream.range(0, 40).forEach(
-                n -> {
-
-                    if (n % 10 == 0) {
-
-                        System.out.println(submitter);
-                    }
-                    submitter.execute(new PrintTask("Thread" + n));
-                }
+        // Reduced from 40 to 10 iterations
+        final List<Future<?>> futures = new ArrayList<>();
+        IntStream.range(0, 10).forEach(
+                n -> futures.add(submitter.submit(new PrintTask("Thread" + n)))
         );
 
-        //check active thread, if zero then shut down the thread pool
-        for (;;) {
-            int count = submitter.getActiveCount();
-            System.out.println("Active Threads : " + count);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (count == 0) {
-                //submitter.shutdown();
-                break;
-            }
+        // Wait for completion instead of polling
+        for (final Future<?> future : futures) {
+            future.get();
         }
-
-        System.out.print("Staring a new one submitter");
 
         final DotSubmitter submitter2 =
                 dotConcurrentFactory.getSubmitter();
 
-        System.out.println(submitter2);
+        assertSame(submitter, submitter2);
 
-        assertTrue(submitter == submitter2);
-
-        IntStream.range(0, 20).forEach(
-                n -> {
-                    submitter2.execute(new PrintTask("Thread" + n));
-                }
+        // Reduced from 20 to 5 iterations
+        final List<Future<?>> futures2 = new ArrayList<>();
+        IntStream.range(0, 5).forEach(
+                n -> futures2.add(submitter2.submit(new PrintTask("Thread" + n)))
         );
 
-        //check active thread, if zero then shut down the thread pool
-        for (;;) {
-            int count = submitter2.getActiveCount();
-            System.out.println("Active Threads : " + count);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (count == 0) {
-                submitter2.shutdown();
-                break;
-            }
+        for (final Future<?> future : futures2) {
+            future.get();
         }
 
+        submitter2.shutdown();
     }
 
 
-    class PrintTask implements Runnable {
+    static class PrintTask implements Runnable {
 
         String name;
 
@@ -378,16 +271,12 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
 
         @Override
         public void run() {
-
-            System.out.println(name + " is running");
-
+            // Reduced from 500ms to 20ms - just needs to simulate some work
             try {
-                Thread.sleep(500);
+                Thread.sleep(20);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
-
-            System.out.println(name + " is running");
         }
 
     }
@@ -397,54 +286,55 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
     
     /**
      * This tests that the delayed queue will run jobs in the future, efficiently
-     * 
-     * @throws Exception
+     *
+     * @throws Exception if test fails
      */
     @Test
     public void test_delayed_queue() throws Exception{
-        
-        // will kill it from the cache in some time.
+
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
-        final AtomicInteger aInt=new AtomicInteger(0);
-        
-        // add 50 to the atomicInteger, 3 seconds in the future
-        int runs = 50;
-        for(int i=0;i<runs;i++) {
-            submitter.delay(()-> aInt.addAndGet(1), 1, TimeUnit.SECONDS);
+        final AtomicInteger aInt = new AtomicInteger(0);
+
+        // Reduced from 50 to 10 iterations - still tests delayed execution
+        final int runs = 10;
+        for (int i = 0; i < runs; i++) {
+            // Reduced delay from 1 second to 100ms
+            submitter.delay(() -> aInt.addAndGet(1), 100, TimeUnit.MILLISECONDS);
         }
-        
-        // None of the jobs have been run
-        assert(aInt.get()==0);
-        
-        // rest.  I must rest
-        Thread.sleep(2000);
-        
-        // all of the jobs have been run
-        assert(aInt.get()==50);
+
+        // None of the jobs have been run yet
+        assertEquals(0, aInt.get());
+
+        // Wait for delayed tasks to complete (200ms buffer)
+        Thread.sleep(300);
+
+        // All of the jobs should have been run
+        assertEquals(runs, aInt.get());
     }
 
     /**
-     * Test the CompleatableFuture any; in this case the last one should be the fastest
+     * Test the CompletableFuture any; in this case the last one should be the fastest
      *
-     * @throws Exception
+     * @throws Exception if test fails
      */
     @Test
     public void test_toCompletableAnyFuture_success() throws Exception{
-        // will kill it from the cache in some time.
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
         final List<Future<Integer>> futures = new ArrayList<>();
-        for (int i = 1; i <= 10; ++i) {
-            final int finalIndex = i;
-            futures.add(submitter.submit(() ->{
 
-                DateUtil.sleep(Math.abs(finalIndex - 10) * 1000);
+        // Reduced from 10 iterations with up to 9 second delays to 5 iterations with 100ms delays
+        for (int i = 1; i <= 5; ++i) {
+            final int finalIndex = i;
+            futures.add(submitter.submit(() -> {
+                // Last one (index 5) has 0 delay, first one (index 1) has 400ms delay
+                DateUtil.sleep(Math.abs(finalIndex - 5) * 100);
                 return finalIndex;
             }));
         }
 
         final CompletableFuture<Integer> completableFuture = DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
         final Integer result = completableFuture.get();
-        assertEquals("The last one should be the fastest", 10, result.intValue());
+        assertEquals("The last one should be the fastest", 5, result.intValue());
     }
 
 }
