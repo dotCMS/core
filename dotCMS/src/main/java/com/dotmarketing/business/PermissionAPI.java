@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,11 +17,16 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public interface PermissionAPI {
 
@@ -49,6 +55,10 @@ public interface PermissionAPI {
 		PUBLISH(PERMISSION_PUBLISH),EDIT_PERMISSIONS(PERMISSION_EDIT_PERMISSIONS),
 		CAN_ADD_CHILDREN(PERMISSION_CAN_ADD_CHILDREN);
 
+		// Canonical types (excluding aliases USE, EDIT)
+		private static final EnumSet<Type> CANONICAL_TYPES =
+			EnumSet.of(READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN);
+
 		private final int type;
 		Type(final int type) {
 			this.type = type;
@@ -65,6 +75,36 @@ public interface PermissionAPI {
 				}
 			}
 			return null;
+		}
+
+		/**
+		 * Returns the canonical permission types, excluding aliases (USE, EDIT).
+		 * @return Unmodifiable set of canonical permission types
+		 */
+		public static Set<Type> getCanonicalTypes() {
+			return Collections.unmodifiableSet(CANONICAL_TYPES);
+		}
+
+		/**
+		 * Returns canonical permission level names as strings.
+		 * @return Set of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+		 */
+		public static Set<String> getCanonicalLevelNames() {
+			return CANONICAL_TYPES.stream()
+				.map(Enum::name)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		}
+
+		/**
+		 * Converts a permission bit mask to canonical type names.
+		 * @param bits Permission bit mask (e.g., 7 = READ|WRITE|PUBLISH)
+		 * @return List of permission names present in the bit mask
+		 */
+		public static List<String> fromBitsAsNames(int bits) {
+			return CANONICAL_TYPES.stream()
+				.filter(t -> (bits & t.getType()) > 0)
+				.map(Enum::name)
+				.collect(Collectors.toList());
 		}
 	}
 
@@ -110,8 +150,92 @@ public interface PermissionAPI {
 
 	}
 
+	/**
+	 * Permission scopes representing asset types that support permissions.
+	 * Uses REST-friendly naming convention (PAGE instead of HTMLPAGES, etc.).
+	 * Maps to the actual permission type strings stored in the database.
+	 * <p>
+	 * Based on RoleAjax.saveRolePermission() (lines 833-882) which defines all valid permission types.
+	 *
+	 */
+	enum Scope {
+		INDIVIDUAL(INDIVIDUAL_PERMISSION_TYPE),
+		HOST(Host.class.getCanonicalName()),
+		FOLDER(Folder.class.getCanonicalName()),
+		CONTAINER(Container.class.getCanonicalName()),
+		TEMPLATE(Template.class.getCanonicalName()),
+		TEMPLATE_LAYOUT(TemplateLayout.class.getCanonicalName()),
+		LINK(Link.class.getCanonicalName()),
+		CONTENT(Contentlet.class.getCanonicalName()),
+		PAGE(IHTMLPage.class.getCanonicalName()),
+		CONTENT_TYPE(Structure.class.getCanonicalName()),
+		STRUCTURE(Structure.class.getCanonicalName()),  // Alias for backward compatibility
+		CATEGORY(Category.class.getCanonicalName()),
+		RULE(Rule.class.getCanonicalName());
 
+		private final String permissionType;
 
+		Scope(String permissionType) {
+			this.permissionType = permissionType;
+		}
+
+		/**
+		 * Gets the permission type string (class canonical name or "individual").
+		 * This value is used in the Permission bean and stored in the database.
+		 *
+		 * @return The permission type string
+		 */
+		public String getPermissionType() {
+			return permissionType;
+		}
+
+		/**
+		 * Returns all available scope names as strings.
+		 *
+		 * @return Set of all scope names
+		 */
+		public static Set<String> getAllScopeNames() {
+			return Arrays.stream(values())
+				.map(Enum::name)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		}
+
+		/**
+		 * Gets Scope from permission type class name or "individual".
+		 * For types with aliases (like STRUCTURE/CONTENT_TYPE), returns the first matching scope.
+		 *
+		 * @param permissionType The permission type string (class canonical name)
+		 * @return The matching Scope, or null if not found
+		 */
+		public static Scope fromPermissionType(String permissionType) {
+			if (permissionType == null) {
+				return null;
+			}
+			for (Scope scope : values()) {
+				if (scope.permissionType.equalsIgnoreCase(permissionType)) {
+					return scope;
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * Gets Scope from scope name string.
+		 *
+		 * @param name The scope name (e.g., "HOST", "FOLDER", "CONTENT_TYPE")
+		 * @return The matching Scope, or null if not found
+		 */
+		public static Scope fromName(String name) {
+			if (name == null) {
+				return null;
+			}
+			try {
+				return Scope.valueOf(name.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				return null;
+			}
+		}
+	}
 
 	/**
 	 * This method returns all the permission type masks configured in the system
