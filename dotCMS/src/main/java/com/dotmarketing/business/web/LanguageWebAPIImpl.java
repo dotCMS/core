@@ -30,7 +30,7 @@ import java.util.Locale;
  */
 public class LanguageWebAPIImpl implements LanguageWebAPI {
 
-    private LanguageAPI langAPI;
+    private final LanguageAPI langAPI;
 
     public LanguageWebAPIImpl() {
         langAPI = APILocator.getLanguageAPI();
@@ -54,30 +54,24 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     // only try internal session and attributes
     private Language currentLanguage(HttpServletRequest httpRequest) {
         HttpSession sessionOpt = httpRequest.getSession(false);
-        Language lang = null;
 
         try{
             if(sessionOpt !=null){
                 if(sessionOpt.getAttribute("tm_lang")!=null){
-                    lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
+                    return langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
                 }else{
-                    lang= langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+                    return langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
                 }
             }
             else if(UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))){
-                lang= langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
-            }
-            if(lang==null) {
-                lang =langAPI.getDefaultLanguage();
+                return langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
             }
         }
         catch(Exception e){
-            lang =langAPI.getDefaultLanguage();
+            // no log
         }
 
-
-
-        return lang;
+        return langAPI.getDefaultLanguage();
     }
 
 
