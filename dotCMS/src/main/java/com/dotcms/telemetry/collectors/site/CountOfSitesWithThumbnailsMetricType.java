@@ -15,10 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of sites with thumbnails set
  */
+@ApplicationScoped
 public class CountOfSitesWithThumbnailsMetricType implements MetricType {
 
     private static final String ALL_SITES_INODES = "SELECT c.inode AS inode \n" +

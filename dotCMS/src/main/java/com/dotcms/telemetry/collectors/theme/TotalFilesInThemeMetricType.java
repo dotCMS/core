@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.theme;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the total of Number of LIVE/WORKING files in themes
  */
+@ApplicationScoped
 public class TotalFilesInThemeMetricType implements DBMetricType {
 
     @Override

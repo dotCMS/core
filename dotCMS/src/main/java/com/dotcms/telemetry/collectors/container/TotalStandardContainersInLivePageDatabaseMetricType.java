@@ -3,11 +3,13 @@ package com.dotcms.telemetry.collectors.container;
 import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 /**
  * Total of STANDARD containers used in LIVE pages
  */
+@ApplicationScoped
 public class TotalStandardContainersInLivePageDatabaseMetricType extends TotalContainersInLivePageDatabaseMetricType {
 
     @Inject

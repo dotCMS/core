@@ -7,6 +7,7 @@ import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
  * Represents a Metric to count how many times the Endpoint '/contentAsset/image/' is called from
  * Back End.
  */
+@ApplicationScoped
 public class CountOfContentAssetImageBEAPICalls extends ApiMetricType {
 
     @Override

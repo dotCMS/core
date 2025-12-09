@@ -1,12 +1,16 @@
 package com.dotcms.telemetry.collectors.template;
 
+import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the total count of templates
  */
+@ApplicationScoped
+@DashboardMetric(category = "site", priority = 4)
 public class TotalTemplatesDatabaseMetricType implements DBMetricType {
 
     @Override

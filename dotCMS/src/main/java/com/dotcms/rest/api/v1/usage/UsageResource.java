@@ -1,25 +1,11 @@
 package com.dotcms.rest.api.v1.usage;
 
-import com.dotcms.rest.InitDataObject;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.telemetry.MetricType;
 import com.dotcms.telemetry.MetricValue;
-import com.dotcms.telemetry.collectors.content.LastContentEditedDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.RecentlyEditedContentDatabaseMetricType;
-import com.dotcms.telemetry.collectors.content.TotalContentsDatabaseMetricType;
-import com.dotcms.telemetry.collectors.site.TotalActiveSitesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.site.TotalSitesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.site.TotalAliasesAllSitesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.template.TotalBuilderTemplatesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.template.TotalTemplatesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.theme.TotalLiveContainerDatabaseMetricType;
-import com.dotcms.telemetry.collectors.user.ActiveUsersDatabaseMetricType;
-import com.dotcms.telemetry.collectors.user.LastLoginDatabaseMetricType;
-import com.dotcms.telemetry.collectors.user.TotalUsersDatabaseMetricType;
-import com.dotcms.telemetry.collectors.workflow.ContentTypesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.workflow.SchemesDatabaseMetricType;
-import com.dotcms.telemetry.collectors.workflow.StepsDatabaseMetricType;
-import com.dotcms.telemetry.collectors.language.TotalLanguagesDatabaseMetricType;
+import com.dotcms.telemetry.collectors.DashboardMetricsProvider;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +23,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +30,11 @@ import java.util.Optional;
 
 /**
  * REST resource for usage dashboard data.
- * Provides optimized business metrics for dashboard consumption.
+ * 
+ * <p>Collects metrics via {@link com.dotcms.telemetry.collectors.DashboardMetricsProvider},
+ * which automatically discovers all {@link com.dotcms.telemetry.DashboardMetric}-annotated
+ * MetricType implementations. To include a metric in the dashboard, annotate it with
+ * {@code @DashboardMetric}.</p>
  */
 @Tag(name = "Usage", 
      description = "Provides business intelligence metrics for dashboard usage")
@@ -92,7 +81,8 @@ public class UsageResource {
 
         Logger.debug(this, "Generating usage dashboard summary");
         
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+        // Initialize and validate user authentication/authorization
+        new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
@@ -109,56 +99,58 @@ public class UsageResource {
     }
 
     /**
-     * Collect and process business metrics for dashboard display
+     * Collects metrics for dashboard display using {@link DashboardMetricsProvider}
+     * to discover metrics annotated with {@link com.dotcms.telemetry.DashboardMetric}.
      */
     private UsageSummary collectUsageSummary() {
         Logger.debug(this, "Collecting business metrics for usage dashboard");
 
-        // Define key metric collectors we need
-        final Collection<com.dotcms.telemetry.MetricType> keyMetrics = Arrays.asList(
-            new TotalContentsDatabaseMetricType(),
-            new RecentlyEditedContentDatabaseMetricType(),
-            new ContentTypesDatabaseMetricType(),
-            new TotalSitesDatabaseMetricType(), 
-            new TotalActiveSitesDatabaseMetricType(),
-            new TotalAliasesAllSitesDatabaseMetricType(),
-            new ActiveUsersDatabaseMetricType(),
-            new TotalUsersDatabaseMetricType(),
-            new LastLoginDatabaseMetricType(),
-            new LastContentEditedDatabaseMetricType(),
-            new TotalTemplatesDatabaseMetricType(),
-            new TotalBuilderTemplatesDatabaseMetricType(),
-            new TotalLiveContainerDatabaseMetricType(),
-            new TotalLanguagesDatabaseMetricType(),
-            new SchemesDatabaseMetricType(),
-            new StepsDatabaseMetricType()
-        );
+        final DashboardMetricsProvider metricsProvider = CDIUtils.getBeanThrows(DashboardMetricsProvider.class);
+        final Collection<MetricType> keyMetrics = metricsProvider.getDashboardMetrics();
 
-        // Collect metric values - handle duplicate keys by using metric type to create unique keys
+        Logger.debug(this, () -> String.format("Found %d dashboard metrics to collect", keyMetrics.size()));
+
+        // Collect metric values - use metricType.getName() as the map key
         final Map<String, MetricValue> metricMap = new HashMap<>();
-        for (com.dotcms.telemetry.MetricType metricType : keyMetrics) {
+        for (MetricType metricType : keyMetrics) {
             try {
+                final String metricName = metricType.getName();
                 final Optional<MetricValue> metricValueOpt = metricType.getStat();
                 if (metricValueOpt.isPresent()) {
                     final MetricValue metricValue = metricValueOpt.get();
-                    final String baseName = metricValue.getMetric().getName();
                     
-                    // Handle duplicate "COUNT" keys by using metric type class name
-                    String mapKey = baseName;
-                    if ("COUNT".equals(baseName)) {
-                        if (metricType instanceof TotalContentsDatabaseMetricType) {
-                            mapKey = "COUNT_CONTENT";
-                        } else if (metricType instanceof TotalLanguagesDatabaseMetricType) {
-                            mapKey = "COUNT_LANGUAGES";
+                    // Handle duplicate "COUNT" keys by mapping to specific names based on feature
+                    // TODO: Remove this workaround once MetricType naming is standardized
+                    // See: https://github.com/dotCMS/core/issues/34042
+                    final String mapKey;
+                    if ("COUNT".equals(metricName)) {
+                        // Use feature to disambiguate generic "COUNT" metric
+                        switch (metricType.getFeature()) {
+                            case CONTENTLETS:
+                                mapKey = "COUNT_CONTENT";
+                                break;
+                            case LANGUAGES:
+                                mapKey = "COUNT_LANGUAGES";
+                                break;
+                            default:
+                                mapKey = metricName;
                         }
+                    } else {
+                        mapKey = metricName;
                     }
                     
                     metricMap.put(mapKey, metricValue);
+                    Logger.debug(this, () -> String.format("Collected metric: %s = %s (mapped to: %s)",
+                            metricName, metricValue.getValue(), mapKey));
+                } else {
+                    Logger.debug(this, () -> String.format("Metric %s returned empty value", metricName));
                 }
             } catch (Exception e) {
                 Logger.warn(this, "Failed to collect metric: " + metricType.getName(), e);
             }
         }
+
+        Logger.debug(this, () -> String.format("Collected %d metric values from %d dashboard metrics", metricMap.size(), keyMetrics.size()));
 
         // Build summary from collected metrics
         return UsageSummary.builder()
@@ -178,7 +170,10 @@ public class UsageResource {
         
         // For now, using totalContent as contentTypes placeholder - can be enhanced later
         final long contentTypes = totalContent > 0 ? 1 : 0;
-        
+
+        Logger.debug(this, () -> String.format("Content metrics - totalContent: %d, recentlyEdited: %d, contentTypesWithWorkflows: %d",
+                totalContent, recentlyEdited, contentTypesWithWorkflows));
+
         return new UsageSummary.ContentMetrics(totalContent, contentTypes, recentlyEdited, contentTypesWithWorkflows, lastContentEdited);
     }
 
@@ -187,7 +182,10 @@ public class UsageResource {
         final long activeSites = getMetricValueAsLong(metricMap, "COUNT_OF_ACTIVE_SITES", totalSites);
         final long templates = getMetricValueAsLong(metricMap, "COUNT_OF_TEMPLATES", 0L);
         final long siteAliases = getMetricValueAsLong(metricMap, "ALIASES_SITES_COUNT", 0L);
-        
+
+        Logger.debug(this, () -> String.format("Site metrics - totalSites: %d, activeSites: %d, templates: %d, aliases: %d",
+                totalSites, activeSites, templates, siteAliases));
+
         return new UsageSummary.SiteMetrics(totalSites, activeSites, templates, siteAliases);
     }
 
@@ -197,7 +195,10 @@ public class UsageResource {
         // LAST_LOGIN_COUNT metric doesn't exist, using 0 as default
         final long recentLogins = 0L;
         final String lastLogin = getMetricValueAsString(metricMap, "LAST_LOGIN", "N/A");
-        
+
+        Logger.debug(this, () -> String.format("User metrics - activeUsers: %d, totalUsers: %d, lastLogin: %s",
+                activeUsers, totalUsers, lastLogin));
+
         return new UsageSummary.UserMetrics(activeUsers, totalUsers, recentLogins, lastLogin);
     }
 
@@ -207,7 +208,10 @@ public class UsageResource {
         final long workflowSteps = getMetricValueAsLong(metricMap, "STEPS_COUNT", 0L);
         final long liveContainers = getMetricValueAsLong(metricMap, "COUNT_OF_LIVE_CONTAINERS", 0L);
         final long builderTemplates = getMetricValueAsLong(metricMap, "COUNT_OF_TEMPLATE_BUILDER_TEMPLATES", 0L);
-        
+
+        Logger.debug(this, () -> String.format("System metrics - languages: %d, workflowSchemes: %d, workflowSteps: %d, liveContainers: %d, builderTemplates: %d",
+                languages, workflowSchemes, workflowSteps, liveContainers, builderTemplates));
+
         return new UsageSummary.SystemMetrics(languages, workflowSchemes, workflowSteps, liveContainers, builderTemplates);
     }
 

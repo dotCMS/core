@@ -4,10 +4,12 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collect the count of Language Variable that does not have Live Version.
  */
+@ApplicationScoped
 public class TotalWorkingLanguagesVariablesDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

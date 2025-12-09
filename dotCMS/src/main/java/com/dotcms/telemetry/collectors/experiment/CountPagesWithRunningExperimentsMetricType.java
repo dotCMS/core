@@ -4,11 +4,13 @@ import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Metric type to count pages with running experiments
  * @author jsanca
  */
+@ApplicationScoped
 public class CountPagesWithRunningExperimentsMetricType  implements DBMetricType {
 
     @Override

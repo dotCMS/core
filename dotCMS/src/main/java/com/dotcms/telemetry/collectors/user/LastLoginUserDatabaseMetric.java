@@ -3,9 +3,12 @@ package com.dotcms.telemetry.collectors.user;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 
+import javax.enterprise.context.ApplicationScoped;
+
 /**
  * Email address of the last logged-in user
  */
+@ApplicationScoped
 public class LastLoginUserDatabaseMetric implements UsersDatabaseMetricType  {
 
     @Override

@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.rest;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.telemetry.collectors.MetricStatsCollector;
@@ -63,7 +64,8 @@ public class TelemetryResource {
         final Set<String> metricNameSet = UtilMethods.isSet(metricNames)?
                 Stream.of(metricNames.split(StringPool.COMMA)).collect(Collectors.toSet()) : Set.of();
 
-        return Response.ok(new ResponseEntityMetricsSnapshotView(MetricStatsCollector.getStats(metricNameSet)))
+        final MetricStatsCollector collector = CDIUtils.getBeanThrows(MetricStatsCollector.class);
+        return Response.ok(new ResponseEntityMetricsSnapshotView(collector.getStats(metricNameSet)))
                 .build();
     }
 

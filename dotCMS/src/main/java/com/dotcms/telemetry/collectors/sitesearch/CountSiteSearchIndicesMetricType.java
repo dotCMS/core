@@ -5,10 +5,12 @@ import com.dotmarketing.exception.DotDataException;
 
 import java.util.Collection;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collect the count of Site Search indices
  */
+@ApplicationScoped
 public class CountSiteSearchIndicesMetricType extends IndicesSiteSearchMetricType {
 
 

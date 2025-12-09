@@ -4,10 +4,12 @@ import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 
 import javax.inject.Inject;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Total of FILE containers used in LIVE pages
  */
+@ApplicationScoped
 public class TotalFileContainersInWorkingPageDatabaseMetricType extends TotalContainersInWorkingPageDatabaseMetricType {
 
     @Inject

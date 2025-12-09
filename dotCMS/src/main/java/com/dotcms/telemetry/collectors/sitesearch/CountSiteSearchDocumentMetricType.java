@@ -6,10 +6,12 @@ import com.dotmarketing.exception.DotDataException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the number of documents in all site search indexes.
  */
+@ApplicationScoped
 public class CountSiteSearchDocumentMetricType extends IndicesSiteSearchMetricType {
 
 
