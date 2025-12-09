@@ -129,11 +129,18 @@ export class DotWorkflowComponent implements ControlValueAccessor {
     }
 
     /**
-     * Handles lazy loading of content types from PrimeNG Select
+     * Parses lazy load event and calculates items needed
      *
+     * @private
      * @param event Lazy load event with first (offset) and either rows (page size) or last (last index)
+     * @returns Object with parsed values and calculated itemsNeeded
      */
-    onLazyLoad(event: { first: number; rows?: number; last?: number }): void {
+    private parseLazyLoadEvent(event: { first: number; rows?: number; last?: number }): {
+        first: number;
+        last?: number;
+        rows?: number;
+        itemsNeeded: number;
+    } {
         const first = Number(event?.first) || 0;
         // PrimeNG 21 uses 'last' instead of 'rows' - last is the last index (inclusive)
         const last = event?.last !== undefined ? Number(event.last) : undefined;
@@ -142,20 +149,47 @@ export class DotWorkflowComponent implements ControlValueAccessor {
         // Calculate items needed: if 'last' is provided, use it; otherwise use 'rows'
         const itemsNeeded = last !== undefined ? last + 1 : (rows !== undefined ? first + rows : this.pageSize);
 
-        const currentCount = this.contentTypes().length;
-        const totalEntries = this.totalRecords();
+        return { first, last, rows, itemsNeeded };
+    }
 
+    /**
+     * Checks if we need to load more content types based on current state
+     *
+     * @private
+     * @param itemsNeeded Total number of items needed
+     * @param currentCount Current number of items loaded
+     * @param totalEntries Total number of entries available (0 if unknown)
+     * @returns true if we need to load more, false otherwise
+     */
+    private shouldLoadMore(itemsNeeded: number, currentCount: number, totalEntries: number): boolean {
         // If we already have all items, no need to load
         if (totalEntries > 0 && currentCount >= totalEntries) {
-            return;
+            return false;
         }
 
         // If we already have enough items, no need to load
         if (currentCount >= itemsNeeded) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Handles lazy loading of content types from PrimeNG Select
+     *
+     * @param event Lazy load event with first (offset) and either rows (page size) or last (last index)
+     */
+    onLazyLoad(event: { first: number; rows?: number; last?: number }): void {
+        const parsed = this.parseLazyLoadEvent(event);
+        const currentCount = this.contentTypes().length;
+        const totalEntries = this.totalRecords();
+
+        if (!this.shouldLoadMore(parsed.itemsNeeded, currentCount, totalEntries)) {
             return;
         }
 
-        this.loadContentTypesLazy(event);
+        this.loadContentTypesLazy(parsed, currentCount, totalEntries);
     }
 
     /**
@@ -163,36 +197,24 @@ export class DotWorkflowComponent implements ControlValueAccessor {
      * Converts PrimeNG's offset-based lazy loading to page-based API calls
      *
      * @private
-     * @param event Lazy load event with first (offset) and either rows (page size) or last (last index)
+     * @param parsed Parsed event values
+     * @param currentCount Current number of items loaded
+     * @param totalEntries Total number of entries available (0 if unknown)
      */
-    private loadContentTypesLazy(event: { first: number; rows?: number; last?: number }): void {
+    private loadContentTypesLazy(
+        parsed: { first: number; last?: number; rows?: number; itemsNeeded: number },
+        currentCount: number,
+        totalEntries: number
+    ): void {
         if (this.loading()) {
             return;
         }
 
-        const first = Number(event?.first) || 0;
-        const last = event?.last !== undefined ? Number(event.last) : undefined;
-        const rows = event?.rows !== undefined ? Number(event.rows) : undefined;
-
-        // Calculate how many items we need total
-        const itemsNeeded = last !== undefined ? last + 1 : (rows !== undefined ? first + rows : this.pageSize);
-
-        const currentCount = this.contentTypes().length;
-        const totalEntries = this.totalRecords();
-
-        // If we already have enough items for the requested range, return
-        if (currentCount >= itemsNeeded) {
-            return;
-        }
-
-        // If we know the total and we have all items, return
-        if (totalEntries > 0 && currentCount >= totalEntries) {
-            return;
-        }
+        const { itemsNeeded, last } = parsed;
 
         // Calculate which page contains the last index we need
         // Page number is 1-indexed: offset 0-39 = page 1, 40-79 = page 2, etc.
-        const lastIndexNeeded = last !== undefined ? last : (itemsNeeded - 1);
+        const lastIndexNeeded = last !== undefined ? last : itemsNeeded - 1;
         const pageToLoad = Math.floor(lastIndexNeeded / this.pageSize) + 1;
 
         // If we know the total, check if we're requesting beyond it
