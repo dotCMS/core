@@ -19,6 +19,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -1387,6 +1388,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1397,6 +1399,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Folder subFolder = new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
+                    .owner(owner)
                     .nextPersisted();
             subFolders.add(subFolder);
         }
@@ -1441,6 +1444,8 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertNotNull("Item should have name", item.get("name"));
             assertTrue("First 25 items should be folders",
                 item.get("name").toString().startsWith("folder_"));
+            assertEquals("Owner should be the same as parent folder",
+                owner.getFullName(), item.get("owner"));
         }
 
         // Verify the last item is a contentlet
