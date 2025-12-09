@@ -227,18 +227,31 @@ JOBS="$WORKSPACE/jobs-detailed.json"
 ANNOTATIONS="$WORKSPACE/annotations.json"
 ```
 
-**⚠️ CRITICAL: Always fetch annotations when analyzing workflow failures!**
+**🎯 SMART ANNOTATION STRATEGY: Check annotations based on job states**
 
-Workflow annotations contain syntax validation errors that:
+**Fetch annotations FIRST (before logs) when you see these indicators:**
+- ✅ Jobs marked `"skipped"` in fetch-jobs.py output (check for `if:` conditions)
+- ✅ Expected jobs (release, deploy) completely missing from workflow run
+- ✅ Workflow shows "completed" but didn't execute all expected phases
+- ✅ Job conclusion is `"startup_failure"` or `"action_required"` (not `"failure"`)
+- ✅ No obvious error messages in initial metadata review
+
+**Skip annotations (go straight to logs) when you see:**
+- ❌ All expected jobs ran and failed (conclusion: `"failure"` with logs available)
+- ❌ Clear test failures or build errors visible in job summaries
+- ❌ Authentication/infrastructure errors already apparent in metadata
+- ❌ Obvious root cause already identified (e.g., flaky test, known issue)
+
+**Why this matters:**
+Workflow annotations contain YAML syntax validation errors that:
 - Are visible in GitHub UI but NOT in job logs
-- Explain why jobs were skipped or never evaluated
-- Are the root cause when release/deployment phases are missing
+- Explain why jobs were skipped or never evaluated (workflow-level issues)
+- Are the ONLY way to diagnose jobs that never ran due to syntax errors
 
-**When to check annotations (high priority):**
-- Jobs marked "skipped" without obvious conditional logic
-- Expected jobs (release, deploy) missing from workflow run
-- Workflow completed but didn't execute all expected jobs
-- No error messages in logs despite workflow failure
+**Time optimization:**
+- Annotations-first path: ~1-2 min to root cause (when workflow syntax is the issue)
+- Logs-first path: ~2-5 min to root cause (when application/tests are the issue)
+- Wrong order wastes time analyzing logs for problems that don't exist in logs!
 
 ### 3. Download Failed Job Logs
 
