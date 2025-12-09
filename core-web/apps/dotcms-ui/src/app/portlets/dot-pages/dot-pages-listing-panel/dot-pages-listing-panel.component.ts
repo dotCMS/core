@@ -18,7 +18,7 @@ import { RouterModule } from '@angular/router';
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenu } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -51,7 +51,7 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
         TableModule,
         TooltipModule,
         RouterModule,
-        ContextMenuModule
+        ContextMenu
     ]
 })
 export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
@@ -193,7 +193,7 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      * @memberof DotPagesListingPanelComponent
      */
     @HostListener('window:click')
-    private closeContextMenu(): void {
+    closeContextMenu(): void {
         if (this.#domIdMenuAttached.includes('tableRow')) {
             this.cm.hide();
             this.store.clearMenuActions();

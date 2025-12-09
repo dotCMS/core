@@ -14,6 +14,7 @@ export enum SIDEBAR_SIZES {
 
 /**
  * Directive to configure the default options of Sidebar (PrimeNG)
+ * Note: In PrimeNG v21, position must be set via template: [position]="'right'"
  *
  */
 @Directive({
@@ -24,11 +25,14 @@ export class DotSidebarDirective {
 
     constructor() {
         if (this.primeSidebar) {
-            this.primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
+            // Set other properties that are not signals
             this.primeSidebar.styleClass = SIDEBAR_SIZES.MD;
             this.primeSidebar.showCloseIcon = false;
             this.primeSidebar.dismissible = false;
             this.primeSidebar.closeOnEscape = false;
+
+            // Note: position is an InputSignal in PrimeNG v21 and cannot be set programmatically
+            // Components using this directive should set position="right" in the template
         } else {
             console.warn('DotSidebarDirective is for use with PrimeNg Drawer');
         }

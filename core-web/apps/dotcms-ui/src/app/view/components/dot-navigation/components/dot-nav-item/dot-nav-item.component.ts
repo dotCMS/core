@@ -23,12 +23,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    imports: [
-        CommonModule,
-        DotSubNavComponent,
-        DotNavIconComponent,
-        DotRandomIconPipe
-    ],
+    imports: [CommonModule, DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe],
     host: {
         '[class.dot-nav-item__collapsed]': '$collapsed()'
     }
@@ -58,7 +53,7 @@ export class DotNavItemComponent {
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
 
-    @HostListener('mouseleave', ['$event'])
+    @HostListener('mouseleave')
     menuUnhovered() {
         this.resetSubMenuPosition();
     }

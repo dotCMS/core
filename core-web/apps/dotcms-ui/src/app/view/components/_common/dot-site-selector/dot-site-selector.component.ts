@@ -9,17 +9,17 @@ import {
     signal,
     ViewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Select, SelectModule } from 'primeng/select';
+
 import { delay, map, retryWhen, scan, take, tap } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService, LoggerService } from '@dotcms/dotcms-js';
 import { SiteEntity } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-
-import { Select, SelectModule } from 'primeng/select';
 
 /**
  * It is dropdown of sites, it handles global search using p-select native filtering

@@ -14,7 +14,7 @@ import { ConfirmationService } from 'primeng/api';
 export class DotRemoveConfirmPopupWithEscapeDirective {
     private confirmationService: ConfirmationService = inject(ConfirmationService);
 
-    @HostListener('document:keydown.escape', ['$event'])
+    @HostListener('document:keydown.escape')
     onPressEscape() {
         this.confirmationService.close();
     }

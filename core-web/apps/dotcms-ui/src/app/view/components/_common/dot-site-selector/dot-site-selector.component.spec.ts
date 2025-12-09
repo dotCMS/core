@@ -4,8 +4,8 @@ import { Observable, of as observableOf, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, input } from '@angular/core';
-import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -132,7 +132,6 @@ describe('DotSiteSelectorComponent', () => {
     let deHost: DebugElement;
     let de: DebugElement;
     let paginatorService: PaginatorService;
-    let siteService: SiteService;
     let globalStore: MockGlobalStore;
     let loggerService: MockLoggerService;
     let dotEventsService: DotEventsService;
@@ -168,7 +167,9 @@ describe('DotSiteSelectorComponent', () => {
         if (jest.isMockFunction(mockFn)) {
             mockFn.mockClear();
         }
-        jest.spyOn(PaginatorService.prototype, 'getWithOffset').mockReturnValue(observableOf(sites));
+        jest.spyOn(PaginatorService.prototype, 'getWithOffset').mockReturnValue(
+            observableOf(sites)
+        );
 
         TestBed.configureTestingModule({
             imports: [
@@ -200,7 +201,6 @@ describe('DotSiteSelectorComponent', () => {
         comp = de.componentInstance;
 
         paginatorService = de.injector.get(PaginatorService);
-        siteService = de.injector.get(SiteService);
         dotEventsService = de.injector.get(DotEventsService);
     }));
 
@@ -304,7 +304,9 @@ describe('DotSiteSelectorComponent', () => {
             expect(comp.$moreThanOneSite()).toBe(true);
 
             // Change mock for second part of test
-            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(observableOf([sites[0]]));
+            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(
+                observableOf([sites[0]])
+            );
             comp.loadAllSites();
             tick(); // Wait for observable to complete
             fixtureHost.detectChanges();
@@ -377,7 +379,9 @@ describe('DotSiteSelectorComponent', () => {
 
         it('should set current site based on passed id', fakeAsync(() => {
             // Change mock for this test
-            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(observableOf(mockSites));
+            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(
+                observableOf(mockSites)
+            );
             // Set id before detectChanges so effect can pick it up
             componentHost.id = mockSites[1].identifier;
             // Reload sites to trigger the effect
@@ -395,9 +399,7 @@ describe('DotSiteSelectorComponent', () => {
             const sitesWithoutTarget = [sites[0], sites[2]];
 
             // Override prototype mock to return sites without target
-            const mockGetWithOffset = jest.fn().mockReturnValue(
-                observableOf(sitesWithoutTarget)
-            );
+            const mockGetWithOffset = jest.fn().mockReturnValue(observableOf(sitesWithoutTarget));
             PaginatorService.prototype.getWithOffset = mockGetWithOffset;
 
             // Set id to a site that's not in the list
@@ -441,7 +443,9 @@ describe('DotSiteSelectorComponent', () => {
         }));
 
         it('should display p-select when asField is true', fakeAsync(() => {
-            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(observableOf([sites[0]]));
+            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(
+                observableOf([sites[0]])
+            );
             componentHost.asField = true;
             comp.loadAllSites();
             tick(); // Wait for observable to complete
@@ -458,7 +462,9 @@ describe('DotSiteSelectorComponent', () => {
                 writable: true,
                 configurable: true
             });
-            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(observableOf(singleSite));
+            (PaginatorService.prototype.getWithOffset as jest.Mock).mockReturnValue(
+                observableOf(singleSite)
+            );
             // Reload to get single site
             comp.loadAllSites();
             tick(); // Wait for observable to complete
@@ -514,26 +520,26 @@ describe('DotSiteSelectorComponent', () => {
             // Use default mock from beforeEach
             fixtureHost.detectChanges();
             tick(); // Wait for observable to complete
-            
+
             const setInitialStateSpy = jest.fn();
             comp.select = {
                 scroller: {
                     setInitialState: setInitialStateSpy
                 }
             } as any;
-            
+
             // Mock requestAnimationFrame to execute immediately
             const originalRAF = window.requestAnimationFrame;
             window.requestAnimationFrame = (callback: FrameRequestCallback) => {
                 callback(0);
                 return 0;
             };
-            
+
             comp.onSelectShow();
-            
+
             // Restore original
             window.requestAnimationFrame = originalRAF;
-            
+
             expect(setInitialStateSpy).toHaveBeenCalled();
         }));
     });

@@ -1,13 +1,18 @@
 import { Observable } from 'rxjs';
 
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
 
-import { DotCurrentUser, DotCMSContentType, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
+import {
+    DotCurrentUser,
+    DotCMSContentType,
+    DotPermissionsType,
+    PermissionsType
+} from '@dotcms/dotcms-models';
 
 import { DotAccountService } from '../../api/services/dot-account-service';
 
@@ -43,7 +48,8 @@ export class DotStarterComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
 
     onContentTypeChange(contentType: DotCMSContentType | null): void {
-        console.log('Content type changed:', contentType);
+        // Content type change handler
+        this.selectedContentType = contentType;
     }
 
     ngOnInit() {

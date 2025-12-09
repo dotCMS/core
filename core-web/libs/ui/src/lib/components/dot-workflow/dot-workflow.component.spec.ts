@@ -1,10 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
-import { DotWorkflowComponent } from './dot-workflow.component';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { DotWorkflowComponent } from './dot-workflow.component';
 
 const mockContentTypes: DotCMSContentType[] = [
     {
@@ -22,10 +25,14 @@ const mockContentTypes: DotCMSContentType[] = [
 describe('DotWorkflowComponent', () => {
     let component: DotWorkflowComponent;
     let fixture: ComponentFixture<DotWorkflowComponent>;
-    let contentTypeService: jasmine.SpyObj<DotContentTypeService>;
+    let contentTypeService: DotContentTypeService & {
+        getContentTypes: { and: { returnValue: (value: unknown) => void } };
+    };
 
     beforeEach(async () => {
-        const contentTypeServiceSpy = jasmine.createSpyObj('DotContentTypeService', ['getContentTypes']);
+        const contentTypeServiceSpy = jasmine.createSpyObj('DotContentTypeService', [
+            'getContentTypes'
+        ]);
 
         await TestBed.configureTestingModule({
             imports: [DotWorkflowComponent, HttpClientTestingModule, ReactiveFormsModule],
@@ -37,7 +44,9 @@ describe('DotWorkflowComponent', () => {
             ]
         }).compileComponents();
 
-        contentTypeService = TestBed.inject(DotContentTypeService) as jasmine.SpyObj<DotContentTypeService>;
+        contentTypeService = TestBed.inject(DotContentTypeService) as DotContentTypeService & {
+            getContentTypes: { and: { returnValue: (value: unknown) => void } };
+        };
         contentTypeService.getContentTypes.and.returnValue(of(mockContentTypes));
 
         fixture = TestBed.createComponent(DotWorkflowComponent);
@@ -107,7 +116,6 @@ describe('DotWorkflowComponent', () => {
         });
 
         it('should work with FormControl', () => {
-            const formControl = new FormControl<DotCMSContentType | null>(null);
             const onChangeSpy = jasmine.createSpy('onChange');
             const onTouchedSpy = jasmine.createSpy('onTouched');
 

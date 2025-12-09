@@ -174,7 +174,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         };
     }
 
-    @HostListener('window:mousemove', ['$event'])
+    @HostListener('window:mousemove')
     onMouseMove() {
         if (this.draggingElement) {
             const containerRect = this.templateContaniner.getBoundingClientRect();

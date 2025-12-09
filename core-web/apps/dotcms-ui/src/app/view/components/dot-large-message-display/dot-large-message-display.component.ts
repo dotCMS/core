@@ -102,8 +102,8 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     }
 
     private createContent(dialogComponent: Dialog, content: DotLargeMessageDisplayParams): void {
-        // Access the dialog container element - container is already the native element
-        const dialogElement = dialogComponent.container as HTMLElement;
+        // Access the dialog container element - container is a WritableSignal<HTMLElement> in PrimeNG v21
+        const dialogElement = dialogComponent.container();
         const target = dialogElement?.querySelector('.dialog-message__body') as HTMLElement;
         if (target) {
             this.dotParseHtmlService.parse(content.body, target, true);

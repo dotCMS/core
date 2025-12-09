@@ -31,7 +31,7 @@ export class RemoveConfirmDialogComponent {
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
     private currentPopup: ConfirmationService;
 
-    @HostListener('document:keydown.escape', ['$event'])
+    @HostListener('document:keydown.escape')
     onEscapePress() {
         if (this.currentPopup) {
             this.currentPopup.close();
