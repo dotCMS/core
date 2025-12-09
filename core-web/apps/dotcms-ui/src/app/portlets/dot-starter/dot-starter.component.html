@@ -44,7 +44,7 @@
             </div>
         </p-overlayPanel>
         <section class="dot-onboarding__steps">
-            <p-accordion [(activeIndex)]="activeAccordionIndex" [multiple]="false">
+            <p-accordion (activeIndexChange)="activeIndexChange($event)" [activeIndex]="state().activeAccordionIndex" [multiple]="false">
                 @for (step of content.steps; track step) {
                 <p-accordionTab>
                     <ng-template pTemplate="header">

@@ -417,7 +417,7 @@ export class DotStarterComponent implements OnInit {
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         },
     ];
-    private _activeAccordionIndex = 0;
+
     @ViewChild('onboardingContainer', { read: ElementRef })
     onboardingContainer?: ElementRef<HTMLElement>;
     @ViewChild('frameworkInfoOverlay') frameworkInfoOverlay?: OverlayPanel;
@@ -425,13 +425,29 @@ export class DotStarterComponent implements OnInit {
     private completedSteps = new Set<string>();
     private readonly platformId = inject(PLATFORM_ID);
 
-    get activeAccordionIndex(): number {
-        return this._activeAccordionIndex;
+    ngOnInit(): void {
+        this.loadProgress();
+        this.updateProgress();
+
+        // Open the accordion to the first incomplete step
+        const firstIncompleteIndex = this.content.steps.findIndex(
+            (step) => !this.isStepCompleted(step.id)
+        );
+
+        if (firstIncompleteIndex !== -1) {
+            this.updateActiveAccordionIndex(firstIncompleteIndex);
+        }
     }
 
-    // state
-    set activeAccordionIndex(value: number) {
-        this._activeAccordionIndex = value;
+    private updateActiveAccordionIndex(index: number) {
+        patchState(state, (state) => ({
+            ...state,
+            activeAccordionIndex: index
+        }));
+    }
+
+    activeIndexChange(value: number) {
+        this.updateActiveAccordionIndex(value);
 
         // Complete all previous steps that aren't already completed
         if (value !== null && value !== undefined && value >= 0 && value < this.content.steps.length) {
@@ -458,19 +474,6 @@ export class DotStarterComponent implements OnInit {
         }
     }
 
-    ngOnInit(): void {
-        this.loadProgress();
-        this.updateProgress();
-
-        // Open the accordion to the first incomplete step
-        const firstIncompleteIndex = this.content.steps.findIndex(
-            (step) => !this.isStepCompleted(step.id)
-        );
-
-        if (firstIncompleteIndex !== -1) {
-            this.activeAccordionIndex = firstIncompleteIndex;
-        }
-    }
 
     showFrameworkInfo(event: Event, framework: { id: string; label: string; logo: string; disabled?: boolean; githubUrl?: string }): void {
         this.selectedFrameworkInfo = framework;
@@ -504,7 +507,7 @@ export class DotStarterComponent implements OnInit {
         const currentIndex = this.content.steps.findIndex((step) => step.id === stepId);
         if (currentIndex !== -1 && currentIndex < this.content.steps.length - 1) {
             const nextIndex = currentIndex + 1;
-            this.activeAccordionIndex = nextIndex;
+            this.updateActiveAccordionIndex(nextIndex);
             // Scroll to the accordion item after it opens
             setTimeout(() => {
                 if (
