@@ -418,6 +418,77 @@ describe('withMenu Feature', () => {
             const finalActive = store.activeMenuItem();
             expect(finalActive).toEqual(initialActive);
         });
+
+        it('should resolve legacy section IDs using REPLACE_SECTIONS_MAP', () => {
+            // Add items that match the mapped sections
+            const menuWithMappedSections: DotMenu[] = [
+                ...mockMenuItems,
+                {
+                    active: false,
+                    id: 'CONTENT',
+                    label: 'Content',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'site-browser',
+                            label: 'Site Browser',
+                            url: '/c/site-browser',
+                            menuLink: '/c/site-browser',
+                            parentMenuId: 'CONTENT'
+                        }
+                    ],
+                    name: 'Content',
+                    tabDescription: 'Content',
+                    tabIcon: 'pi pi-folder',
+                    tabName: 'Content',
+                    url: '/content'
+                },
+                {
+                    active: false,
+                    id: 'MARKETING',
+                    label: 'Marketing',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'analytics-dashboard',
+                            label: 'Analytics Dashboard',
+                            url: '/c/analytics-dashboard',
+                            menuLink: '/c/analytics-dashboard',
+                            parentMenuId: 'MARKETING'
+                        }
+                    ],
+                    name: 'Marketing',
+                    tabDescription: 'Marketing',
+                    tabIcon: 'pi pi-chart-bar',
+                    tabName: 'Marketing',
+                    url: '/marketing'
+                }
+            ];
+
+            store.loadMenu(menuWithMappedSections);
+
+            // Test legacy ID 'edit-page' maps to 'site-browser'
+            store.setActiveMenu('edit-page', 'CONT');
+            expect(store.activeMenuItem()?.id).toBe('site-browser');
+
+            // Test current ID still works
+            store.setActiveMenu('site-browser', 'CONT');
+            expect(store.activeMenuItem()?.id).toBe('site-browser');
+
+            // Test legacy ID 'analytics' maps to 'analytics-dashboard'
+            store.setActiveMenu('analytics', 'MARK');
+            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
+
+            // Test current ID still works
+            store.setActiveMenu('analytics-dashboard', 'MARK');
+            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
+        });
     });
 
     describe('Entity Map', () => {
