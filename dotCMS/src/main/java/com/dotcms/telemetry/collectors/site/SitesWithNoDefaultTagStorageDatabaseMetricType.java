@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.site;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of sites With non-default value on the tagStorage attribute
  */
+@ApplicationScoped
 public class SitesWithNoDefaultTagStorageDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

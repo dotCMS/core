@@ -11,7 +11,9 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 const CURRENT_USER_KEY = 'CMS Anonymous';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotRolesService {
     private dotMessageService = inject(DotMessageService);
     private coreWebService = inject(CoreWebService);

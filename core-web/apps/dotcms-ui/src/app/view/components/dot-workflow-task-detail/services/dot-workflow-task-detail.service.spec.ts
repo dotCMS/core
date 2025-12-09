@@ -13,10 +13,9 @@ import { DotMenuService } from '../../../../api/services/dot-menu.service';
 describe('DotWorkflowTaskDetailService', () => {
     let service: DotWorkflowTaskDetailService;
     let dotMenuService: DotMenuService;
-    let injector;
 
     beforeEach(() => {
-        injector = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
                 DotMenuService,
@@ -25,8 +24,8 @@ describe('DotWorkflowTaskDetailService', () => {
             ]
         });
 
-        service = injector.get(DotWorkflowTaskDetailService);
-        dotMenuService = injector.get(DotMenuService);
+        service = TestBed.inject(DotWorkflowTaskDetailService);
+        dotMenuService = TestBed.inject(DotMenuService);
         jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 

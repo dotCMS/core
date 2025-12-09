@@ -866,6 +866,7 @@ describe('Utils Functions', () => {
             it('should return default state when sessionStorage is empty', () => {
                 const state = getStoredUIState();
                 expect(state).toEqual({
+                    view: 'form',
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
@@ -891,6 +892,7 @@ describe('Utils Functions', () => {
 
                 const state = getStoredUIState();
                 expect(state).toEqual({
+                    view: 'form',
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
@@ -915,6 +917,7 @@ describe('Utils Functions', () => {
 
                 const state = getStoredUIState();
                 expect(state).toEqual({
+                    view: 'form',
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,

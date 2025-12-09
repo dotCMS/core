@@ -17,7 +17,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { ValuesPropertyComponent } from './index';
 
-import { DotFieldHelperModule } from '../../../../../../../../view/components/dot-field-helper/dot-field-helper.module';
+import { DotFieldHelperComponent } from '../../../../../../../../view/components/dot-field-helper/dot-field-helper.component';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -77,7 +77,12 @@ describe('ValuesPropertyComponent', () => {
                 ValuesPropertyComponent,
                 DotTextareaContentMockComponent
             ],
-            imports: [DotFieldHelperModule, ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
+            imports: [
+                DotFieldHelperComponent,
+                ReactiveFormsModule,
+                DotSafeHtmlPipe,
+                DotMessagePipe
+            ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

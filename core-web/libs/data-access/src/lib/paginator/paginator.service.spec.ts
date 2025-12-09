@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
@@ -8,7 +8,6 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { OrderDirection, PaginatorService } from './paginator.service';
 
 describe('PaginatorService', () => {
-    let injector: TestBed;
     let paginatorService: PaginatorService;
     let httpMock: HttpTestingController;
 
@@ -17,9 +16,8 @@ describe('PaginatorService', () => {
             imports: [HttpClientTestingModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, PaginatorService]
         });
-        injector = getTestBed();
-        paginatorService = injector.get(PaginatorService);
-        httpMock = injector.get(HttpTestingController);
+        paginatorService = TestBed.inject(PaginatorService);
+        httpMock = TestBed.inject(HttpTestingController);
         paginatorService.url = 'v1/urldemo';
     });
 
@@ -70,7 +68,6 @@ describe('PaginatorService', () => {
 describe('PaginatorService getting', () => {
     let fakeEntity: { items: { id: number; name: string }[]; totalRecords: number };
     let headerLink;
-    let injector: TestBed;
     let paginatorService: PaginatorService;
     let httpMock: HttpTestingController;
     let req;
@@ -81,9 +78,8 @@ describe('PaginatorService getting', () => {
             imports: [HttpClientTestingModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, PaginatorService]
         });
-        injector = getTestBed();
-        paginatorService = injector.get(PaginatorService);
-        httpMock = injector.get(HttpTestingController);
+        paginatorService = TestBed.inject(PaginatorService);
+        httpMock = TestBed.inject(HttpTestingController);
         paginatorService.url = 'v1/urldemo';
 
         headerLink = `/baseURL?filter=filter&page=1>;rel="first",

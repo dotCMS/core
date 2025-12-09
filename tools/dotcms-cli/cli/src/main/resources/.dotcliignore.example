@@ -1,0 +1,66 @@
+# .dotcliignore - Patterns for files and directories to exclude from push/pull operations
+#
+# This file uses glob patterns similar to .gitignore:
+#   *       - matches any sequence of characters within a path segment
+#   **      - matches any sequence of characters across path segments
+#   ?       - matches any single character
+#   []      - matches a character class
+#   !       - negates a pattern (includes files that were previously excluded)
+#
+# Lines starting with # are comments and are ignored.
+# Blank lines are also ignored.
+# Patterns are evaluated relative to the workspace root.
+
+# Version control directories
+.git/
+.svn/
+.hg/
+
+# Dependency directories
+node_modules/
+vendor/
+bower_components/
+
+# Build outputs
+dist/
+build/
+target/
+*.class
+*.jar
+*.war
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+tmp/
+
+# Environment and configuration files (containing secrets)
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+credentials.json
+
+# Example of negation: Include a specific file even if its extension is excluded
+# !important.log

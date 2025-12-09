@@ -1,8 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-    name: 'dotFileSizeFormat',
-    standalone: true
+    name: 'dotFileSizeFormat'
 })
 export class DotFileSizeFormatPipe implements PipeTransform {
     transform(bytes: number): string {

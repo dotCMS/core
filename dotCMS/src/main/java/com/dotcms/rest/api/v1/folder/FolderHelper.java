@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -102,7 +103,7 @@ public class FolderHelper {
      */
     public Folder loadFolderByURI(String siteName, User user, String uri) throws DotDataException, DotSecurityException {
         Host host = hostAPI.findByName(siteName,user,true);
-        Folder ret = null;
+        Folder ret;
         if(uri.equals("/")){
             ret = folderAPI.findSystemFolder();
         }else{
@@ -208,7 +209,7 @@ public class FolderHelper {
 
     /**
      * Will find the subfolders living directly under the host passed.
-     * If pathToSearch is sent is  gonna filter the path of the subfolder by it.
+     * If pathToSearch is sent is going to filter the path of the subfolder by it.
      */
     private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId,
             final String pathToSearch, final User user)
@@ -237,7 +238,7 @@ public class FolderHelper {
     }
 
     /**
-     * Will find the subfolders living directly under the host passed and the last valid folder (spliting the pathToSearch by the last '/').
+     * Will find the subfolders living directly under the host passed and the last valid folder (splitting the pathToSearch by the last '/').
      * And filter the results by what is left after the last '/'.
      */
     private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId,
@@ -272,4 +273,12 @@ public class FolderHelper {
         return subFolders;
     }
 
+    /**
+     * Check if the folder is valid and has an inode.
+     * @param folder folder to check
+     * @return true if the folder exists in the database or if the folder is not null
+     */
+    public boolean isValidFolder(final Folder folder) {
+        return UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode());
+    }
 }

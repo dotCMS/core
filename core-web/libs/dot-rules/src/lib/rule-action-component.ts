@@ -14,33 +14,35 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 @Component({
     selector: 'rule-action',
     template: `
-        <div *ngIf="typeDropdown != null" flex layout="row" class="cw-rule-action cw-entry">
-            <div flex="25" layout="row" class="cw-row-start-area">
-                <cw-input-dropdown
-                    (onDropDownChange)="onTypeChange($event)"
-                    [value]="action.type?.key"
-                    [options]="typeDropdown.options"
-                    flex
-                    class="cw-type-dropdown"
-                    placeholder="{{ actionTypePlaceholder }}"></cw-input-dropdown>
-            </div>
-            <cw-serverside-condition
-                (parameterValueChange)="onParameterValueChange($event)"
-                [componentInstance]="action"
-                flex="75"
-                class="cw-condition-component"></cw-serverside-condition>
-            <div class="cw-btn-group cw-delete-btn">
-                <div class="ui basic icon buttons">
-                    <button
-                        (click)="onDeleteRuleActionClicked()"
-                        [disabled]="!action.isPersisted()"
-                        pButton
-                        type="button"
-                        icon="pi pi-trash"
-                        class="p-button-rounded p-button-danger p-button-text"></button>
+        @if (typeDropdown !== null) {
+            <div flex layout="row" class="cw-rule-action cw-entry">
+                <div flex="25" layout="row" class="cw-row-start-area">
+                    <cw-input-dropdown
+                        (onDropDownChange)="onTypeChange($event)"
+                        [value]="action.type?.key"
+                        [options]="typeDropdown?.options"
+                        flex
+                        class="cw-type-dropdown"
+                        placeholder="{{ actionTypePlaceholder }}"></cw-input-dropdown>
+                </div>
+                <cw-serverside-condition
+                    (parameterValueChange)="onParameterValueChange($event)"
+                    [componentInstance]="action"
+                    flex="75"
+                    class="cw-condition-component"></cw-serverside-condition>
+                <div class="cw-btn-group cw-delete-btn">
+                    <div class="ui basic icon buttons">
+                        <button
+                            (click)="onDeleteRuleActionClicked()"
+                            [disabled]="!action.isPersisted()"
+                            pButton
+                            type="button"
+                            icon="pi pi-trash"
+                            class="p-button-rounded p-button-danger p-button-text"></button>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
     `,
     standalone: false
 })
@@ -57,7 +59,7 @@ export class RuleActionComponent implements OnInit {
     updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
     @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
-    typeDropdown: any;
+    typeDropdown: any = null;
 
     ngOnChanges(change): void {
         if (change.action) {

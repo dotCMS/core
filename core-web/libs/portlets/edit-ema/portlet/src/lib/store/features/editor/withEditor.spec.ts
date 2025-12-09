@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -74,6 +75,9 @@ describe('withEditor', () => {
             mockProvider(ActivatedRoute),
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -106,9 +110,7 @@ describe('withEditor', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
                             apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&mode=EDIT_MODE',
-                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                            copyUrl:
-                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
+                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1'
                         },
                         preview: null,
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
@@ -298,7 +300,7 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        pagePath: MOCK_RESPONSE_HEADLESS.page.pageURI,
                         paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null

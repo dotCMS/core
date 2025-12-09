@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotDialogModule } from '@dotcms/ui';
+import { DotDialogComponent } from '@dotcms/ui';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
@@ -26,8 +26,8 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     beforeEach(waitForAsync(() =>
         TestBed.configureTestingModule({
-            imports: [DotDialogModule],
-            declarations: [DotLargeMessageDisplayComponent, TestHostComponent],
+            imports: [DotLargeMessageDisplayComponent, DotDialogComponent],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotcmsEventsService,

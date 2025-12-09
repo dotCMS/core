@@ -1,8 +1,9 @@
 @let field = $field();
 @let showLabel = $showLabel();
 @let dataType = field.dataType;
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
@@ -13,8 +14,8 @@
             [id]="field.variable"
             [name]="field.variable"
             [formControlName]="field.variable"
-            [class.ng-invalid]="hasError"
-            [class.ng-dirty]="hasError"
+            [class.ng-invalid]="fieldHasError"
+            [class.ng-dirty]="fieldHasError"
             [attr.data-testId]="field.variable"
             [type]="inputTextOptions[dataType].type"
             [attr.inputmode]="inputTextOptions[dataType].inputMode"
@@ -22,7 +23,7 @@
             pInputText />
     </dot-card-field-content>
     <dot-card-field-footer>
-        @if (hasError) {
+        @if (fieldHasError) {
             <div class="error-message">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
@@ -30,7 +31,7 @@
             </div>
         }
 
-        @if (!hasError && field.hint) {
+        @if (!fieldHasError && field.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}

@@ -19,7 +19,9 @@ import javax.ws.rs.NotSupportedException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class TotalSitesWithAutoIndexContentConfigMetricType implements MetricType {
 
     @Override

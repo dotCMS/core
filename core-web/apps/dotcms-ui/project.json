@@ -53,6 +53,11 @@
                         "glob": "**/*",
                         "input": "./libs/portlets/dot-content-drive/portlet/src/lib/assets",
                         "output": "./assets/dot-content-drive"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-toolbar/assets",
+                        "output": "./assets/edit-uve-toolbar"
                     }
                 ],
                 "styles": [

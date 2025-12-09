@@ -8,6 +8,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotDialogActions, DotPersona } from '@dotcms/dotcms-models';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-create-persona-form.component';
 
@@ -17,7 +18,7 @@ const PERSONA_CONTENT_TYPE = 'persona';
     selector: 'dot-add-persona-dialog',
     templateUrl: './dot-add-persona-dialog.component.html',
     styleUrls: ['./dot-add-persona-dialog.component.scss'],
-    standalone: false
+    imports: [DotDialogComponent, DotCreatePersonaFormComponent, DotMessagePipe]
 })
 export class DotAddPersonaDialogComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

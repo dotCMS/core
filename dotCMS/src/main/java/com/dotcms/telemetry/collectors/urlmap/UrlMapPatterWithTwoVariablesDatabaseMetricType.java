@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.urlmap;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collect the count of Content Types that are using a detail page with 2 or more variables.
  */
+@ApplicationScoped
 public class UrlMapPatterWithTwoVariablesDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

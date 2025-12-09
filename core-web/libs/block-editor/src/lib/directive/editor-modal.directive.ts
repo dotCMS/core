@@ -7,7 +7,6 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 
 @Directive({
     selector: 'dot-editor-modal[editor], [dotEditorModal][editor]',
-    standalone: true,
     exportAs: 'dotEditorModal'
 })
 export class EditorModalDirective implements OnInit, OnDestroy {

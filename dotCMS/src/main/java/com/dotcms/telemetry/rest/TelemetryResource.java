@@ -1,9 +1,12 @@
 package com.dotcms.telemetry.rest;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.telemetry.collectors.MetricStatsCollector;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
@@ -13,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,9 +49,11 @@ public class TelemetryResource {
                                             ResponseEntityMetricsSnapshotView.class)))})
     public final Response getData(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
-                                  @QueryParam("metricNames") final String metricNames) {
+                                  @QueryParam("metricNames") final String metricNames) throws DotDataException {
 
-        Logger.debug(this, () -> "Generating dotCMS Telemetry data, metricNames " + metricNames);
+        Logger.debug(this, ()-> "Generating dotCMS Telemetry data");
+        Logger.debug(this, ()-> "Client Info: " + Try.of(()->APILocator.getMetricsAPI().getClient()));
+        Logger.debug(this, ()-> "Metric Names: " + metricNames);
         new WebResource.InitBuilder(new WebResource())
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
@@ -58,7 +64,8 @@ public class TelemetryResource {
         final Set<String> metricNameSet = UtilMethods.isSet(metricNames)?
                 Stream.of(metricNames.split(StringPool.COMMA)).collect(Collectors.toSet()) : Set.of();
 
-        return Response.ok(new ResponseEntityMetricsSnapshotView(MetricStatsCollector.getStats(metricNameSet)))
+        final MetricStatsCollector collector = CDIUtils.getBeanThrows(MetricStatsCollector.class);
+        return Response.ok(new ResponseEntityMetricsSnapshotView(collector.getStats(metricNameSet)))
                 .build();
     }
 

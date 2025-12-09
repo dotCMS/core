@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotIconModule } from '@dotcms/ui';
+import { DotClipboardUtil, DotIconComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
@@ -25,15 +25,19 @@ describe('DotCopyLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotCopyLinkComponent],
+            imports: [DotCopyLinkComponent, ButtonModule, TooltipModule, DotIconComponent],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                DotClipboardUtil
-            ],
-            imports: [ButtonModule, TooltipModule, DotIconModule]
+                {
+                    provide: DotClipboardUtil,
+                    useValue: {
+                        copy: jest.fn()
+                    }
+                }
+            ]
         }).compileComponents();
     }));
 

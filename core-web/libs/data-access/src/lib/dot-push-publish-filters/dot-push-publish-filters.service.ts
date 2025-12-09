@@ -11,7 +11,9 @@ export interface DotPushPublishFilter {
     key: string;
     title: string;
 }
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotPushPublishFiltersService {
     private coreWebService = inject(CoreWebService);
 

@@ -4,17 +4,53 @@
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
+        @if ($isEditMode()) {
+            <button
+                pButton
+                type="button"
+                class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
+                (click)="togglePalette()"
+                data-testId="uve-toolbar-palette-toggle">
+                <img
+                    src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                    alt="Left Panel Open"
+                    [class.hidden]="!$isPaletteOpen()"
+                    data-testId="palette-open-icon" />
+                <img
+                    src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                    alt="Left Panel Close"
+                    [class.hidden]="$isPaletteOpen()"
+                    data-testId="palette-close-icon" />
+            </button>
+        }
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
         <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
         <p-button
+            (click)="op.toggle($event)"
             [pTooltip]="'editpage.header.copy' | dm"
             tooltipPosition="bottom"
             icon="pi pi-copy"
             styleClass="p-button-text p-button-sm p-button-rounded"
-            (cdkCopyToClipboardCopied)="triggerCopyToast()"
-            [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
-            data-testId="uve-toolbar-copy-url" />
-
+            data-testId="uve-toolbar-copy-url">
+            <p-overlayPanel #op>
+                <div class="url-list">
+                    @for (url of $pageURLS(); track url.value) {
+                        <div class="url-item">
+                            <span class="url-label">{{ url.label | dm }}:</span>
+                            <div class="url-value">
+                                <a [href]="url.value" target="_blank">{{ url.value }}</a>
+                                <p-button
+                                    icon="pi pi-copy"
+                                    styleClass="p-button-text p-button-sm p-button-rounded"
+                                    (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                    [cdkCopyToClipboard]="url.value"
+                                    data-testId="copy-url-button" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </p-overlayPanel>
+        </p-button>
         <a
             title="Page API URL"
             [pTooltip]="'uve.toolbar.page.api.url' | dm"
@@ -68,18 +104,7 @@
     }
 
     <div class="p-toolbar-group-end">
-        @if ($unlockButton(); as unlockButton) {
-            <p-button
-                [disabled]="unlockButton.disabled"
-                [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
-                [escape]="false"
-                tooltipPosition="bottom"
-                icon="pi pi-lock"
-                styleClass="p-button-text p-button-sm p-button-rounded unlock-button"
-                [loading]="unlockButton.loading"
-                (click)="unlockPage(unlockButton.inode)"
-                data-testId="uve-toolbar-unlock-button"></p-button>
-        }
+        <dot-toggle-lock-button />
 
         @if (runningExperiment) {
             <dot-ema-running-experiment

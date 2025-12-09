@@ -11,8 +11,7 @@ interface DotErrorPipeResponse {
 }
 
 @Pipe({
-    name: 'dotError',
-    standalone: true
+    name: 'dotError'
 })
 export class DotErrorPipe implements PipeTransform {
     transform(

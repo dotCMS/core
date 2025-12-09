@@ -10,7 +10,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderComponent } from './action-header.component';
 
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../_common/dot-action-button/dot-action-button.component';
 
 xdescribe('ActionHeaderComponent', () => {
     let comp: ActionHeaderComponent;
@@ -26,7 +26,7 @@ xdescribe('ActionHeaderComponent', () => {
             declarations: [ActionHeaderComponent],
             imports: [
                 BrowserAnimationsModule,
-                DotActionButtonModule,
+                DotActionButtonComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ActionHeaderComponent,

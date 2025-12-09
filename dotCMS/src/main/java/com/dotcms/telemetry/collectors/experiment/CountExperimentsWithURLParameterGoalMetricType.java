@@ -4,11 +4,13 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Metric type to count the experiments with url parameter goal
  * @author jsanca
  */
+@ApplicationScoped
 public class CountExperimentsWithURLParameterGoalMetricType implements DBMetricType {
 
     @Override

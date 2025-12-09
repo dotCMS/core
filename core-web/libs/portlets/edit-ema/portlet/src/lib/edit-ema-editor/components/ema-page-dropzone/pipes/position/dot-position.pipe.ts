@@ -3,8 +3,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { EmaPageDropzoneItem } from '../../types';
 
 @Pipe({
-    name: 'dotPosition',
-    standalone: true
+    name: 'dotPosition'
 })
 export class DotPositionPipe implements PipeTransform {
     transform(item: EmaPageDropzoneItem, isError = false): Record<string, string> {

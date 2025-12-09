@@ -14,8 +14,7 @@ import {
 
 @Component({
     selector: 'dot-test-component',
-    template: '',
-    standalone: true
+    template: ''
 })
 class TestComponent {}
 

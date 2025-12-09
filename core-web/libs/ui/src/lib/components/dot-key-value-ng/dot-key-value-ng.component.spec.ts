@@ -9,7 +9,7 @@ import { DotKeyValue, DotKeyValueComponent } from './dot-key-value-ng.component'
 import { DotKeyValueTableHeaderRowComponent } from './dot-key-value-table-header-row/dot-key-value-table-header-row.component';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';
 
-import { DotIconModule } from '../../dot-icon/dot-icon.module';
+import { DotIconComponent } from '../../dot-icon/dot-icon.component';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 export const mockKeyValue: DotKeyValue[] = [
@@ -41,7 +41,7 @@ describe('DotKeyValueComponent', () => {
     const createComponent = createComponentFactory({
         component: DotKeyValueComponent,
         imports: [
-            DotIconModule,
+            DotIconComponent,
             TableModule,
             DotKeyValueTableRowComponent,
             DotKeyValueTableHeaderRowComponent,

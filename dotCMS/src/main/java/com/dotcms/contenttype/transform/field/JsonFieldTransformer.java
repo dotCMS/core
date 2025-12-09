@@ -17,23 +17,28 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This transformer is in charge of taking a JSON string and transforming it into a {@link Field}
+ * object.
+ *
+ * @author Will Ezell
+ * @since Oct 7th, 2016
+ */
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
     private static final String CATEGORIES_PROPERTY_NAME = "categories";
     private static final String CARDINALITY_PROPERTY_NAME = "cardinality";
     private static final String VELOCITY_VARIABLE_PROPERTY_NAME = "velocityVar";
-    private static final String FIELDS_VARIABLES_PROPERTY_NAME = "fieldVariables";
+    public static final String FIELDS_VARIABLES_PROPERTY_NAME = "fieldVariables";
     private static final String VALUES = "values";
 
   final List<Field> list;
@@ -51,7 +56,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     // are we an array?
     try {
       JSONArray jarr = new JSONArray(json);
-      if (jarr.size() > 0) {
+      if (!jarr.isEmpty()) {
         JSONObject jo = jarr.getJSONObject(0);
         if (jo.has("fields")) {
           l = fromJsonArray(jo.getJSONArray("fields"));
@@ -74,55 +79,73 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     this.list = ImmutableList.copyOf(l);
   }
 
-
-
-  private List<Field> fromJsonArrayStr(String json)
-      throws JSONException, JsonParseException, JsonMappingException, IOException {
+    /**
+     * Takes a String containing an array of field data, and generates a list of expected
+     * {@link Field} objects.
+     *
+     * @param json The raw JSON string containing the array of field data.
+     *
+     * @return A {@link List} of {@link Field} objects.
+     *
+     * @throws DotStateException An error occurred while parsing the JSON string.
+     */
+  private List<Field> fromJsonArrayStr(final String json) throws JSONException {
     return fromJsonArray(new JSONArray(json));
-
   }
 
-  private List<Field> fromJsonArray(JSONArray jarr)
-      throws JSONException, JsonParseException, JsonMappingException, IOException {
-    List<Field> fields = new ArrayList<>();
-    for (int i = 0; i < jarr.length(); i++) {
-      JSONObject fieldJsonObject = jarr.getJSONObject(i);
+    /**
+     * Takes a JSON array containing the data from several fields, and generates a list of expected
+     * {@link Field} objects.
+     *
+     * @param jsonArray The {@link JSONArray} containing field data.
+     *
+     * @return A {@link List} of {@link Field} objects.
+     *
+     * @throws JSONException An error occurred while parsing the JSON array.
+     */
+  private List<Field> fromJsonArray(final JSONArray jsonArray) throws JSONException {
+    final List<Field> fields = new ArrayList<>();
+    for (int i = 0; i < jsonArray.length(); i++) {
+      final JSONObject fieldJsonObject = jsonArray.getJSONObject(i);
       fieldJsonObject.remove("acceptedDataTypes");
-      Field f = fromJsonStr(fieldJsonObject.toString());
-        if (fieldJsonObject.has(FIELDS_VARIABLES_PROPERTY_NAME)) {
-            String varStr = fieldJsonObject.getJSONArray(FIELDS_VARIABLES_PROPERTY_NAME).toString();
-        List<FieldVariable> vars = mapper.readValue(varStr,
-            mapper.getTypeFactory().constructCollectionType(List.class, ImmutableFieldVariable.class));
-        f.constructFieldVariables(vars);
-      }
-      fields.add(f);
+      final Field field = fromJsonStr(fieldJsonObject.toString());
+      fields.add(field);
     }
-
-
     return fields;
   }
 
-
-  private Field fromJsonStr(String input) throws DotStateException {
-
+    /**
+     * Takes a String containing field data, and generates the expected {@link Field} object.
+     *
+     * @param input The raw JSON string.
+     *
+     * @return The {@link Field} object.
+     *
+     * @throws DotStateException An error occurred while parsing the JSON string.
+     */
+  private Field fromJsonStr(final String input) throws DotStateException {
     try {
-      JSONObject jo = new JSONObject(input);
-
-      if (jo.has(CATEGORIES_PROPERTY_NAME)){
-          final JSONObject categories = (JSONObject) jo.get(CATEGORIES_PROPERTY_NAME);
-          jo.put(VALUES, categories.get("inode"));
-      } else if (jo.has(ContentTypeFieldProperties.RELATIONSHIPS.getName())) {
-          final JSONObject relationship = (JSONObject) jo.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
-          jo.put(VALUES, relationship.get(CARDINALITY_PROPERTY_NAME));
-          jo.put("relationType", relationship.get(VELOCITY_VARIABLE_PROPERTY_NAME));
+      final JSONObject jsonObject = new JSONObject(input);
+      if (jsonObject.has(CATEGORIES_PROPERTY_NAME)){
+          final JSONObject categories = (JSONObject) jsonObject.get(CATEGORIES_PROPERTY_NAME);
+          jsonObject.put(VALUES, categories.get("inode"));
+      } else if (jsonObject.has(ContentTypeFieldProperties.RELATIONSHIPS.getName())) {
+          final JSONObject relationship = (JSONObject) jsonObject.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
+          jsonObject.put(VALUES, relationship.get(CARDINALITY_PROPERTY_NAME));
+          jsonObject.put("relationType", relationship.get(VELOCITY_VARIABLE_PROPERTY_NAME));
       }
-
-      return (Field) mapper.readValue(jo.toString(), Field.class);
-    } catch (Exception e) {
+      final Field field = mapper.readValue(jsonObject.toString(), Field.class);
+      if (jsonObject.has(FIELDS_VARIABLES_PROPERTY_NAME)) {
+        final String fieldVarsStr = jsonObject.getJSONArray(FIELDS_VARIABLES_PROPERTY_NAME).toString();
+        final List<FieldVariable> vars = mapper.readValue(fieldVarsStr,
+                mapper.getTypeFactory().constructCollectionType(List.class,
+                        ImmutableFieldVariable.class));
+        field.constructFieldVariables(vars);
+      }
+      return field;
+    } catch (final Exception e) {
       throw new DotStateException(e);
     }
-
-
   }
 
   @Override
@@ -134,7 +157,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   public List<Field> asList() throws DotStateException {
     return this.list;
   }
-
 
   @Override
   public JSONObject jsonObject() {
@@ -188,8 +210,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
      * @param field The Field object to convert.
      * @return A Map containing the basic field properties.
      */
+    @SuppressWarnings("unchecked")
     private Map<String, Object> createBaseFieldMap(Field field) {
-
         Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
         fieldMap.put(FIELDS_VARIABLES_PROPERTY_NAME,
                 new JsonFieldVariableTransformer(field.fieldVariables()).mapList());

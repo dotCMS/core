@@ -4,10 +4,12 @@ import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 
 import javax.inject.Inject;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Total of STANDARD containers used in WORKING pages
  */
+@ApplicationScoped
 public class TotalStandardContainersInWorkingPageDatabaseMetricType extends TotalContainersInWorkingPageDatabaseMetricType {
 
     @Inject

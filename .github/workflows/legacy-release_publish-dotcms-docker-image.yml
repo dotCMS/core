@@ -16,6 +16,10 @@ on:
           - 'GHCR.IO'
           - 'BOTH'
         default: 'DOCKER.IO'
+      custom_tag:
+        description: 'Custom Docker Image Tag'
+        required: false
+        type: string
 jobs:
   prepare-build:
     name: Prepare build
@@ -45,6 +49,7 @@ jobs:
       ref: ${{ needs.prepare-build.outputs.ref }}
       docker_platforms: ${{ needs.prepare-build.outputs.docker_platforms }}
       docker_registry: ${{ inputs.docker_registry }}
+      custom_tag: ${{ inputs.custom_tag }}
     secrets:
       docker_io_username: ${{ secrets.DOCKER_USERNAME }}
       docker_io_token: ${{ secrets.DOCKER_TOKEN }}

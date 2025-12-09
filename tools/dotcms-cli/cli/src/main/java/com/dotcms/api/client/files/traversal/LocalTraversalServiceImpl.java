@@ -12,10 +12,12 @@ import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTaskParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
+import com.dotcms.cli.common.DotCliIgnore;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletionException;
@@ -102,6 +104,13 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 fileHashCalculatorService
         );
 
+        // Create DotCliIgnore instance with hierarchical loading
+        // Load patterns from the source path up to the workspace root
+        final File sourceFile = new File(params.sourcePath());
+        final Path sourcePath = sourceFile.isDirectory() ? sourceFile.toPath() : sourceFile.getParentFile().toPath();
+        final Path workspaceRoot = workspace.toPath();
+        final DotCliIgnore dotCliIgnore = DotCliIgnore.create(sourcePath, workspaceRoot);
+
         task.setTaskParams(LocalFolderTraversalTaskParams.builder()
                 .siteExists(siteExists)
                 .sourcePath(params.sourcePath())
@@ -110,6 +119,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 .removeFolders(params.removeFolders())
                 .ignoreEmptyFolders(params.ignoreEmptyFolders())
                 .failFast(params.failFast())
+                .dotCliIgnore(dotCliIgnore)
                 .build()
         );
 

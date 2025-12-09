@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
@@ -61,6 +62,9 @@ describe('withEditor', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(Router),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DotPageApiService,
                 useValue: {

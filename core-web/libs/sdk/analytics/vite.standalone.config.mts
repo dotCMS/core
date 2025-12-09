@@ -9,7 +9,9 @@ export default defineConfig({
     cacheDir: '../../../node_modules/.vite/libs/sdk/analytics',
     plugins: [nxViteTsPaths()],
     build: {
-        outDir: '../../../dist/libs/sdk/analytics',
+        // Explicitly resolve outDir to prevent output from going to external dist folders
+        // This ensures reproducible builds regardless of current working directory
+        outDir: resolve(__dirname, '../../../dist/libs/sdk/analytics'),
         emptyOutDir: false,
         reportCompressedSize: true,
         lib: {

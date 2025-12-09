@@ -28,11 +28,30 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
     readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
+
+    /**
+     * Determines whether to show the "Draft" mode option in the mode selector.
+     *
+     * With feature flag enabled: Always show draft mode (user can toggle lock)
+     * Without feature flag: Only show if user can edit the page
+     */
+    readonly $shouldShowDraftMode = computed(() => {
+        const isLockFeatureEnabled = this.#store.$isLockFeatureEnabled();
+
+        // With new lock feature, draft mode is always available
+        // Users can toggle lock to edit when ready
+        if (isLockFeatureEnabled) {
+            return true;
+        }
+
+        // Legacy behavior: only show if user can edit
+        return this.#store.canEditPage();
+    });
+
     readonly $menuItems = computed(() => {
-        const canEditPage = this.#store.canEditPage();
         const menu = [];
 
-        if (canEditPage) {
+        if (this.$shouldShowDraftMode()) {
             menu.push({
                 label: 'uve.editor.mode.draft',
                 description: 'uve.editor.mode.draft.description',
@@ -61,9 +80,25 @@ export class DotEditorModeSelectorComponent {
         return this.$menuItems().find((item) => item.id === this.$currentMode())?.label;
     });
 
+    /**
+     * Effect that guards against unauthorized edit mode access.
+     *
+     * If the lock feature is disabled (legacy behavior):
+     * - Checks if user has edit permissions
+     * - If user is in edit mode without permissions, automatically switches to preview mode
+     *
+     * If the lock feature is enabled:
+     * - No guard is needed since edit access is controlled by the lock mechanism
+     */
     readonly $modeGuardEffect = effect(() => {
         const currentMode = untracked(() => this.$currentMode());
         const canEditPage = this.#store.canEditPage();
+
+        const isToggleUnlockEnabled = this.#store.$isLockFeatureEnabled();
+
+        if (isToggleUnlockEnabled) {
+            return;
+        }
 
         // If the user is in edit mode and does not have edit permission, change to preview mode
         if (currentMode === UVE_MODE.EDIT && !canEditPage) {

@@ -3,16 +3,27 @@
         <dot-content-drive-tree-toggler
             data-testid="tree-toggler"
             [class.sidebar-expanded]="$treeExpanded()" />
+
         <div class="p-toolbar-group-top">
             <dot-content-drive-search-input data-testid="search-input" class="search-input" />
-            <p-button
-                [label]="'content-drive.add-new' | dm"
-                icon="pi pi-chevron-down"
-                iconPos="right"
-                class="add-new-button"
-                data-testid="add-new-button"
-                (click)="menu.toggle($event)"
-                #button />
+
+            @if ($displayButton()) {
+                <p-button
+                    [@slideAnimation]
+                    [label]="'content-drive.add-new' | dm"
+                    icon="pi pi-chevron-down"
+                    iconPos="right"
+                    class="add-new-button"
+                    data-testid="add-new-button"
+                    (click)="menu.toggle($event)"
+                    #button />
+            }
+
+            @if ($displayActions()) {
+                <dot-content-drive-workflow-actions
+                    [@slideAnimation]
+                    data-testid="workflow-actions" />
+            }
         </div>
 
         <div class="p-toolbar-group-bottom">

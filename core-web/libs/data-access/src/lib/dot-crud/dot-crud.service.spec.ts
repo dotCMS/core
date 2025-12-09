@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
@@ -7,7 +7,6 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotCrudService } from '.';
 
 describe('CrudService', () => {
-    let injector: TestBed;
     let dotCrudService: DotCrudService;
     let httpMock: HttpTestingController;
 
@@ -16,9 +15,8 @@ describe('CrudService', () => {
             imports: [HttpClientTestingModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, DotCrudService]
         });
-        injector = getTestBed();
-        dotCrudService = injector.get(DotCrudService);
-        httpMock = injector.get(HttpTestingController);
+        dotCrudService = TestBed.inject(DotCrudService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should post data and return an entity', () => {

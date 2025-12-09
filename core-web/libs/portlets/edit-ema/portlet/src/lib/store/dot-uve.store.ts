@@ -6,6 +6,7 @@ import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';
+import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
@@ -36,6 +37,35 @@ const initialState: UVEState = {
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
+    withMethods((store) => {
+        return {
+            setUveStatus(status: UVE_STATUS) {
+                patchState(store, {
+                    status
+                });
+            },
+            updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
+                patchState(store, {
+                    status: UVE_STATUS.LOADED,
+                    pageAPIResponse
+                });
+            },
+            patchViewParams(viewParams: Partial<DotUveViewParams>) {
+                patchState(store, {
+                    viewParams: {
+                        ...store.viewParams(),
+                        ...viewParams
+                    }
+                });
+            }
+        };
+    }),
+    withSave(),
+    withLayout(),
+    withEditor(),
+    withTrack(),
+    withFlags(UVE_FEATURE_FLAGS),
+    withLock(),
     withComputed(
         ({
             pageAPIResponse,
@@ -44,7 +74,8 @@ export const UVEStore = signalStore(
             languages,
             errorCode: error,
             status,
-            isEnterprise
+            isEnterprise,
+            flags
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
@@ -141,6 +172,9 @@ export const UVEStore = signalStore(
                 $languageId: computed<number>(() => {
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
+                $isEditMode: computed<boolean>(() => {
+                    return pageParams()?.mode === UVE_MODE.EDIT;
+                }),
                 $isPreviewMode: computed<boolean>(() => {
                     return pageParams()?.mode === UVE_MODE.PREVIEW;
                 }),
@@ -154,36 +188,11 @@ export const UVEStore = signalStore(
                     };
 
                     return normalizeQueryParams(params);
+                }),
+                $isLockFeatureEnabled: computed<boolean>(() => {
+                    return flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
                 })
             };
         }
-    ),
-    withMethods((store) => {
-        return {
-            setUveStatus(status: UVE_STATUS) {
-                patchState(store, {
-                    status
-                });
-            },
-            updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
-                patchState(store, {
-                    status: UVE_STATUS.LOADED,
-                    pageAPIResponse
-                });
-            },
-            patchViewParams(viewParams: Partial<DotUveViewParams>) {
-                patchState(store, {
-                    viewParams: {
-                        ...store.viewParams(),
-                        ...viewParams
-                    }
-                });
-            }
-        };
-    }),
-    withSave(),
-    withLayout(),
-    withEditor(),
-    withTrack(),
-    withFlags(UVE_FEATURE_FLAGS)
+    )
 );

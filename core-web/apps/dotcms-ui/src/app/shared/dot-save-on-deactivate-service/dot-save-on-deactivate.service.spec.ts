@@ -1,6 +1,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -36,7 +37,7 @@ describe('DotSaveOnDeactivateService', () => {
     let mockComponent: MockComponent;
     let dotDialogService: DotAlertConfirmService;
     beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             declarations: [MockComponent],
             providers: [
                 DotSaveOnDeactivateService,
@@ -48,8 +49,8 @@ describe('DotSaveOnDeactivateService', () => {
             ],
             imports: []
         });
-        dotSaveOnDeactivateService = testbed.get(DotSaveOnDeactivateService);
-        dotDialogService = testbed.get(DotAlertConfirmService);
+        dotSaveOnDeactivateService = TestBed.inject(DotSaveOnDeactivateService);
+        dotDialogService = TestBed.inject(DotAlertConfirmService);
         mockComponent = new MockComponent();
     });
 

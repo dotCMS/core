@@ -1,11 +1,15 @@
 package com.dotcms.telemetry.collectors.user;
 
+import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collect the count of Active User
  */
+@ApplicationScoped
+@DashboardMetric(category = "user", priority = 1)
 public class ActiveUsersDatabaseMetricType implements UsersDatabaseMetricType  {
 
     @Override

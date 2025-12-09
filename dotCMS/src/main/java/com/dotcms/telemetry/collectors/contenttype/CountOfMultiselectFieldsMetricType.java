@@ -1,7 +1,9 @@
 package com.dotcms.telemetry.collectors.contenttype;
 
 import java.util.Map;
+import javax.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class CountOfMultiselectFieldsMetricType extends ContentTypeFieldsMetricType {
     boolean filterCondition(Map<String, Object> map) {
         return "com.dotcms.contenttype.model.field.MultiSelectField".equals(map.get("field_type"));

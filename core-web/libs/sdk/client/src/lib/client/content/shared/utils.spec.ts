@@ -89,6 +89,32 @@ describe('Utils', () => {
             // This is the current behavior of the function
             expect(result).toBe('+Blog.Blog.title:hello +Blog.author:john');
         });
+
+        it('should not prefix Lucene grouping operators with parentheses', () => {
+            const query =
+                '+contentType:draftContent +languageId:1 +(live:false AND working:true AND deleted:false)';
+            const result = sanitizeQueryForContentType(query, contentType);
+
+            expect(result).toBe(
+                '+contentType:draftContent +languageId:1 +(live:false AND working:true AND deleted:false)'
+            );
+        });
+
+        it('should handle complex queries with both fields and grouping operators', () => {
+            const query = '+title:hello +(live:false AND working:true) +author:john';
+            const result = sanitizeQueryForContentType(query, contentType);
+
+            expect(result).toBe(
+                '+Blog.title:hello +(live:false AND working:true) +Blog.author:john'
+            );
+        });
+
+        it('should not prefix grouped OR conditions', () => {
+            const query = '+(contentType:Blog OR contentType:News) +title:hello';
+            const result = sanitizeQueryForContentType(query, contentType);
+
+            expect(result).toBe('+(contentType:Blog OR contentType:News) +Blog.title:hello');
+        });
     });
 
     describe('shouldAddSiteIdConstraint', () => {

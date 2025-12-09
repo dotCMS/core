@@ -15,8 +15,12 @@ describe('DotFieldHelperComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotFieldHelperComponent],
-            imports: [BrowserAnimationsModule, ButtonModule, OverlayPanelModule]
+            imports: [
+                DotFieldHelperComponent,
+                BrowserAnimationsModule,
+                ButtonModule,
+                OverlayPanelModule
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotFieldHelperComponent);

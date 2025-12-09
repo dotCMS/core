@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.language;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Checks if the default language was changed from English
  */
+@ApplicationScoped
 public class HasChangeDefaultLanguagesDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

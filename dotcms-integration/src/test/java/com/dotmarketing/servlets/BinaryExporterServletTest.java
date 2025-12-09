@@ -52,7 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -239,7 +239,7 @@ public class BinaryExporterServletTest {
             final MockHeaderRequest request = new MockHeaderRequest(mockServletRequest(fileURI));
             if (AUTH_WITH_CREDENTIALS.equals(authType)) {
                 request.setHeader("Authorization",
-                        "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
+                        "Basic " + Base64.getEncoder().encodeToString(userEmailAndPassword.getBytes()));
             } else if (AUTH_WITH_TOKEN.equals(authType)) {
                 request.setHeader("Authorization",
                         "Bearer " + APILocator.getApiTokenAPI().getJWT(apiToken, user));

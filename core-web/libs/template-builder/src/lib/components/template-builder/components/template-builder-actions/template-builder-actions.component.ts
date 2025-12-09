@@ -20,11 +20,11 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateLayoutProperties } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
-import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
+import { DotLayoutPropertiesComponent } from '../dot-layout-properties/dot-layout-properties.component';
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    imports: [ButtonModule, DotLayoutPropertiesModule, DotMessagePipe],
+    imports: [ButtonModule, DotLayoutPropertiesComponent, DotMessagePipe],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

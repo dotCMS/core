@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.site;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of non-system fields in Host content type
  */
+@ApplicationScoped
 public class SitesWithNoSystemFieldsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

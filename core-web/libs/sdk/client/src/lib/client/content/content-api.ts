@@ -2,6 +2,8 @@ import { DotRequestOptions, DotHttpClient, DotCMSClientConfig } from '@dotcms/ty
 
 import { CollectionBuilder } from './builders/collection/collection';
 
+import { BaseApiClient } from '../base/base-api';
+
 /**
  * Creates a builder to filter and fetch a collection of content items.
  * @param contentType - The content type to retrieve.
@@ -51,15 +53,11 @@ import { CollectionBuilder } from './builders/collection/collection';
  * });
  * ```
  */
-export class Content {
-    #requestOptions: DotRequestOptions;
-    #httpClient: DotHttpClient;
-    #config: DotCMSClientConfig;
-
+export class Content extends BaseApiClient {
     /**
      * Creates an instance of Content.
+     * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
      * @param {DotRequestOptions} requestOptions - The options for the client request.
-     * @param {string} serverUrl - The server URL.
      * @param {DotHttpClient} httpClient - HTTP client for making requests.
      */
 
@@ -68,9 +66,7 @@ export class Content {
         requestOptions: DotRequestOptions,
         httpClient: DotHttpClient
     ) {
-        this.#requestOptions = requestOptions;
-        this.#config = config;
-        this.#httpClient = httpClient;
+        super(config, requestOptions, httpClient);
     }
 
     /**
@@ -140,10 +136,10 @@ export class Content {
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
         return new CollectionBuilder<T>(
-            this.#requestOptions,
-            this.#config,
+            this.requestOptions,
+            this.config,
             contentType,
-            this.#httpClient
+            this.httpClient
         );
     }
 }

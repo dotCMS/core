@@ -17,7 +17,6 @@ import { Pipe, PipeTransform } from '@angular/core';
  */
 @Pipe({
     name: 'dotNameFormat',
-    standalone: true,
     pure: true
 })
 export class DotNameFormatPipe implements PipeTransform {

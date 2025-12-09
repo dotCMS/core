@@ -26,8 +26,14 @@ describe('DotPaletteInputFilterComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPaletteInputFilterComponent, MockDotIconComponent],
-            imports: [DotSafeHtmlPipe, DotMessagePipe, HttpClientTestingModule, FormsModule],
+            declarations: [MockDotIconComponent],
+            imports: [
+                DotPaletteInputFilterComponent,
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                HttpClientTestingModule,
+                FormsModule
+            ],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }]
         });
 

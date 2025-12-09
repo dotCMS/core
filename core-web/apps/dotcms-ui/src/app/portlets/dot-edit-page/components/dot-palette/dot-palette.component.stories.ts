@@ -11,14 +11,13 @@ import {
     DotSessionStorageService,
     PaginatorService
 } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPaletteComponent } from './dot-palette.component';
-import { DotPaletteModule } from './dot-palette.module';
 
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '../../../../view/pipes/dot-filter/dot-filter-pipe.module';
+import { DotFilterPipe } from '../../../../view/pipes/dot-filter/dot-filter.pipe';
 
 const data = [
     {
@@ -133,9 +132,9 @@ const meta: Meta<DotPaletteComponent> = {
         moduleMetadata({
             imports: [
                 CommonModule,
-                DotIconModule,
-                DotFilterPipeModule,
-                DotPaletteModule,
+                DotIconComponent,
+                DotFilterPipe,
+                DotPaletteComponent,
                 DotMessagePipe,
                 BrowserAnimationsModule
             ],

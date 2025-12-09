@@ -1,7 +1,12 @@
 import { Injectable, Type, inject } from '@angular/core';
 import { ValidationErrors } from '@angular/forms';
 
-import { DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotDynamicFieldComponent,
+    DotRenderModes
+} from '@dotcms/dotcms-models';
 
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { PROPERTY_INFO } from './field-property-info';
@@ -20,9 +25,19 @@ export class FieldPropertyService {
         const fieldService = inject(FieldService);
 
         fieldService.loadFieldTypes().subscribe((fieldTypes) => {
-            fieldTypes.forEach((fieldType) => {
-                this.fieldTypes.set(fieldType.clazz, fieldType);
-            });
+            fieldTypes
+                .map((fieldType) => {
+                    if (fieldType.clazz === DotCMSClazzes.CUSTOM_FIELD) {
+                        return {
+                            ...fieldType,
+                            properties: [...fieldType.properties, 'newRenderMode']
+                        };
+                    }
+                    return fieldType;
+                })
+                .forEach((fieldType) => {
+                    this.fieldTypes.set(fieldType.clazz, fieldType);
+                });
         });
     }
 
@@ -57,6 +72,23 @@ export class FieldPropertyService {
         return propertyName === 'dataType'
             ? this.getDataType(fieldTypeClass)
             : this.getPropInfo(propertyName);
+    }
+
+    /**
+     * Return the value of a property for a specific field
+     * @param field DotCMSContentTypeField
+     * @param propertyName string
+     * @returns unknown
+     * @memberof FieldPropertyService
+     */
+    getValue(field: DotCMSContentTypeField, propertyName: string): unknown {
+        if (propertyName === 'newRenderMode') {
+            const fieldVariable = field?.fieldVariables?.find(
+                (variable) => variable.key === 'newRenderMode'
+            );
+            return fieldVariable?.value || DotRenderModes.IFRAME;
+        }
+        return field[propertyName];
     }
 
     /**

@@ -13,11 +13,15 @@ import {
     inject
 } from '@angular/core';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
+
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
 
 import { take, takeUntil } from 'rxjs/operators';
 
@@ -30,6 +34,12 @@ import {
     DotAppsSite,
     DotDialogActions
 } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
@@ -37,7 +47,15 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
     styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
-    standalone: false
+    imports: [
+        ReactiveFormsModule,
+        InputTextModule,
+        PasswordModule,
+        DotDialogComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
     private dotAppsService = inject(DotAppsService);

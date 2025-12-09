@@ -10,7 +10,14 @@ export { DotCMSEditableText } from './lib/next/components/DotCMSEditableText/Dot
 
 export {
     DotCMSBlockEditorRenderer,
-    BlockEditorRendererProps
+    BlockEditorRendererProps,
+    CustomRenderer,
+    CustomRendererProps
 } from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
 
 export { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
+
+export { useAISearch } from './lib/next/hooks/useAISearch';
+
+//Export AI types from shared types
+export type { DotCMSAISearchValue, DotCMSAISearchProps } from './lib/next/shared/types';

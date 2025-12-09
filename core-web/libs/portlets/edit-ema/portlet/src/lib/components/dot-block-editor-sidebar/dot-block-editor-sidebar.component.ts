@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -41,7 +40,6 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     imports: [
         FormsModule,
         BlockEditorModule,
-        CommonModule,
         SidebarModule,
         DotMessagePipe,
         ButtonModule,

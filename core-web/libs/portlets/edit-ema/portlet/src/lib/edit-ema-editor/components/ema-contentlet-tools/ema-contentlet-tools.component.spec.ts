@@ -292,14 +292,26 @@ describe('EmaContentletToolsComponent', () => {
         describe('delete button', () => {
             it('should enable delete button when disableDeleteButton is false', () => {
                 spectator.setInput('disableDeleteButton', null);
-                const deleteButton = spectator.query(byTestId('delete-button'));
-                expect(deleteButton.getAttribute('ng-reflect-disabled')).toBe('false');
+                spectator.detectChanges();
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the disabled property on the p-button component instance
+                const deleteButtonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="delete-button"]')
+                );
+                const deleteButtonComponent = deleteButtonDebugElement?.componentInstance;
+                expect(deleteButtonComponent?.disabled).toBe(false);
             });
 
             it('should disable delete button when disableDeleteButton is true', () => {
                 spectator.setInput('disableDeleteButton', 'Cannot delete this contentlet');
-                const deleteButton = spectator.query(byTestId('delete-button'));
-                expect(deleteButton.getAttribute('ng-reflect-disabled')).toBe('true');
+                spectator.detectChanges();
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the disabled property on the p-button component instance
+                const deleteButtonDebugElement = spectator.debugElement.query(
+                    By.css('[data-testId="delete-button"]')
+                );
+                const deleteButtonComponent = deleteButtonDebugElement?.componentInstance;
+                expect(deleteButtonComponent?.disabled).toBe(true);
             });
         });
     });

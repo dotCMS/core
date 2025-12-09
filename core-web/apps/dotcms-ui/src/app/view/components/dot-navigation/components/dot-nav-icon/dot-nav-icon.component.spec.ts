@@ -2,7 +2,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { DotNavIconComponent } from './dot-nav-icon.component';
 
@@ -13,8 +13,7 @@ describe('DotNavIconComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotNavIconComponent],
-            imports: [DotIconModule]
+            imports: [DotNavIconComponent]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotNavIconComponent);

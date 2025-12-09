@@ -6,6 +6,7 @@ import Image from "next/image";
 import { enableBlockEditorInline } from "@dotcms/uve";
 import {
     DotCMSBlockEditorRenderer,
+    DotCMSEditableText,
     useEditableDotCMSPage,
 } from "@dotcms/react";
 
@@ -43,9 +44,12 @@ export function DetailPage({ pageContent }) {
                 <Header navItems={navigation?.children} />
             )}
             <main className="flex flex-col gap-8 m-auto">
-                {urlContentMap?.title && (
-                    <h1 className="text-4xl font-bold">{urlContentMap?.title}</h1>
-                )}
+                <h1 className="text-4xl font-bold">
+                    <DotCMSEditableText
+                        contentlet={urlContentMap}
+                        fieldName="title"
+                    />
+                </h1>
 
                 {urlContentMap?.image && (
                     <div className="relative w-full h-80 overflow-hidden">
@@ -62,7 +66,7 @@ export function DetailPage({ pageContent }) {
                     <DotCMSBlockEditorRenderer
                         blocks={blogContent}
                         className={blockEditorClasses}
-                        customRenderers={customeRenderers}
+                        customRenderers={customRenderers}
                     />
                 </div>
             </main>
@@ -72,9 +76,9 @@ export function DetailPage({ pageContent }) {
     );
 }
 
-const customeRenderers = {
+const customRenderers = {
     Activity: (props) => {
-        const { title, description } = props.attrs.data;
+        const { title, description } = props.attrs?.data || {};
 
         return (
             <div>
@@ -84,7 +88,7 @@ const customeRenderers = {
         );
     },
     Product: (props) => {
-        const { title, description } = props.attrs.data;
+        const { title, description } = props.attrs?.data || {};
 
         return (
             <div>

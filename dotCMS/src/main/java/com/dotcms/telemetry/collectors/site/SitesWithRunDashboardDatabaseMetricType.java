@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.site;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of sites with 'Run Dashboard' enabled
  */
+@ApplicationScoped
 public class SitesWithRunDashboardDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

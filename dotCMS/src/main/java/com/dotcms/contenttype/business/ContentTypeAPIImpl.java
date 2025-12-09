@@ -57,6 +57,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -73,6 +74,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 /**
@@ -754,9 +757,28 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-  public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
-    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : " + Integer.MAX_VALUE + "}"
-        + "     }" + "   }," + "   \"size\":0}";
+  public Map<String, Long> getEntriesByContentTypes(final String siteId) throws DotStateException {
+
+    StringBuilder queryBuilder = new StringBuilder();
+    queryBuilder.append("{");
+    if (UtilMethods.isSet(siteId)) {
+        queryBuilder.append("\"query\": {")
+                .append("\"bool\": {")
+                .append("\"filter\": [")
+                .append("{ \"term\": { \"conhost\": \"").append(siteId).append("\" } }")
+                .append("]")
+                .append("}")
+                .append("},");
+    }
+    queryBuilder.append("\"aggs\": {")
+            .append("\"entries\": {")
+            .append("\"terms\": { \"field\": \"contenttype_dotraw\",  \"size\": ").append(Integer.MAX_VALUE).append(" }")
+            .append("}")
+            .append("},")
+            .append("\"size\": 0")
+            .append("}");
+
+    String query = queryBuilder.toString();
 
     try {
       SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
@@ -778,6 +800,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
+  }
+
+  public Map<String, Long> getEntriesByContentTypes() throws DotStateException {
+    return getEntriesByContentTypes(null);
   }
 
 
@@ -850,11 +876,49 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                   orderBy, remainingLimit, offset, includedIds);
 
           returnTypes.addAll(searchResults);
+
+          // Sort the final merged results to maintain consistent ordering
+          // when ensure parameter is used, we need to re-sort the combined list
+          if (!returnTypes.isEmpty() && orderBy != null && !orderBy.trim().isEmpty()) {
+              final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+              final String orderByForComparator = ((ContentTypeFactoryImpl) this.contentTypeFactory)
+                      .extractOrderByForComparator(orderBy, sanitizedOrderBy.isEmpty() ? "mod_date" : sanitizedOrderBy);
+              returnTypes.sort(((ContentTypeFactoryImpl) this.contentTypeFactory)
+                      .createContentTypeComparator(orderByForComparator));
+          }
+
           return returnTypes;
 
       } catch (final DotSecurityException e) {
           Logger.error(this,
                   String.format("An error occurred when searching for Content Types: %s",
+                          ExceptionUtil.getErrorMessage(e)));
+          throw new DotStateException(e);
+      }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @WrapInTransaction
+  public List<ContentType> searchMultipleTypes(final String condition,
+                                                final java.util.Collection<BaseContentType> types,
+                                                final String orderBy, final int limit, final int offset,
+                                                final String siteId, final List<String> requestedContentTypes)
+          throws DotDataException {
+
+      // Delegate directly to the factory method which performs efficient UNION query
+      final List<ContentType> allResults = this.contentTypeFactory.searchMultipleTypes(
+              condition, types, orderBy, limit, offset, siteId, requestedContentTypes);
+
+      // Filter by permissions
+      try {
+          return this.perms.filterCollection(allResults, PermissionAPI.PERMISSION_READ,
+                  this.respectFrontendRoles, this.user);
+      } catch (final DotSecurityException e) {
+          Logger.error(this,
+                  String.format("An error occurred when filtering Content Types by permissions: %s",
                           ExceptionUtil.getErrorMessage(e)));
           throw new DotStateException(e);
       }
@@ -947,6 +1011,51 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     DotPreconditions.checkArgument(UtilMethods.isSet(pageIdentifier), "pageIdentifier is required");
 
     return contentTypeFactory.findUrlMappedPattern(pageIdentifier);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> findByUrlMapPattern(final String urlMap) throws DotDataException {
+    DotPreconditions.checkArgument(UtilMethods.isSet(urlMap), "urlMap is required");
+
+    // Get all content types that have URL map patterns
+    List<ContentType> urlMappedTypes = contentTypeFactory.findUrlMapped();
+
+    // Filter content types whose URL map patterns match the provided URL using regex
+    return urlMappedTypes.stream()
+        .filter(contentType -> {
+          String urlMapPattern = contentType.urlMapPattern();
+          if (!UtilMethods.isSet(urlMapPattern)) {
+            return false;
+          }
+
+          try {
+            // Convert URL map pattern to regex pattern
+            // Replace {variable} placeholders with regex groups
+            String regexPattern = urlMapPattern
+                .replaceAll("\\{[^}]+\\}", "([^/]+)")  // Replace {variable} with capturing group for path segments
+                .replaceAll("\\*", ".*");  // Replace * wildcards with .* regex
+
+            // Ensure pattern matches the full URL
+            if (!regexPattern.startsWith("^")) {
+              regexPattern = "^" + regexPattern;
+            }
+            if (!regexPattern.endsWith("$")) {
+              regexPattern = regexPattern + "$";
+            }
+
+            Pattern pattern = Pattern.compile(regexPattern);
+            Matcher matcher = pattern.matcher(urlMap);
+
+            return matcher.matches();
+
+          } catch (Exception e) {
+            Logger.warn(this, "Error matching URL map pattern '" + urlMapPattern +
+                "' against URL '" + urlMap + "': " + e.getMessage());
+            return false;
+          }
+        })
+        .collect(Collectors.toList());
   }
 
   @WrapInTransaction

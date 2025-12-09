@@ -2,12 +2,13 @@
 
 import { dotAnalyticsEnricherPlugin } from './dot-analytics.enricher.plugin';
 
-import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the utility functions
-jest.mock('../../shared/dot-content-analytics.utils', () => ({
+jest.mock('../../shared/utils/dot-analytics.utils', () => ({
     enrichPagePayloadOptimized: jest.fn(),
-    getLocalTime: jest.fn().mockReturnValue('2024-01-01T10:00:00.000Z')
+    getLocalTime: jest.fn()
 }));
 
 describe('dotAnalyticsEnricherPlugin', () => {
@@ -25,8 +26,8 @@ describe('dotAnalyticsEnricherPlugin', () => {
         plugin = dotAnalyticsEnricherPlugin();
 
         // Set default mock return values
-        mockGetLocalTime.mockReturnValue('2024-01-01T10:00:00.000Z');
         mockEnrichPagePayloadOptimized.mockReturnValue({} as any);
+        mockGetLocalTime.mockReturnValue('2024-01-01T10:00:00.000Z');
     });
 
     describe('Plugin Configuration', () => {
@@ -48,7 +49,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const mockPayload = { event: 'pageview', properties: { page: '/test' } } as any;
             mockEnrichPagePayloadOptimized.mockReturnValue({
                 context: {
-                    site_key: 'test',
+                    site_auth: 'test-auth',
                     session_id: 'session',
                     user_id: 'user',
                     device: {
@@ -70,12 +71,12 @@ describe('dotAnalyticsEnricherPlugin', () => {
             expect(mockEnrichPagePayloadOptimized).toHaveBeenCalledTimes(1);
         });
 
-        it('should return the result from enrichPagePayloadOptimized with device in context', () => {
+        it('should return enriched payload with page, utm, custom data, and local_time', () => {
             // Arrange
             const mockPayload = { event: 'pageview' } as any;
             const expectedEnriched = {
                 context: {
-                    site_key: 'test',
+                    site_auth: 'test-auth',
                     session_id: 'session',
                     user_id: 'user',
                     device: {
@@ -86,6 +87,8 @@ describe('dotAnalyticsEnricherPlugin', () => {
                     }
                 },
                 page: { url: 'test', title: 'Test' },
+                utm: { source: 'google', medium: 'cpc' },
+                custom: { custom_prop: 'value' },
                 local_time: '2024-01-01T10:00:00.000Z'
             };
             mockEnrichPagePayloadOptimized.mockReturnValue(expectedEnriched as any);
@@ -94,30 +97,105 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['page:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result).toEqual({
-                context: expectedEnriched.context,
-                events: [
-                    {
-                        event_type: 'pageview',
-                        local_time: expectedEnriched.local_time,
-                        data: {
-                            page: expectedEnriched.page
-                        }
-                    }
-                ]
-            });
+            // Plugin should return enriched data, NOT structured events
+            expect(result).toEqual(expectedEnriched);
+        });
+
+        it('should throw error if page data is missing', () => {
+            // Arrange
+            const mockPayload = { event: 'pageview' } as any;
+            mockEnrichPagePayloadOptimized.mockReturnValue({
+                context: { site_auth: 'test-auth', session_id: 'session', user_id: 'user' },
+                // page is undefined
+                local_time: '2024-01-01T10:00:00.000Z'
+            } as any);
+
+            // Act & Assert
+            expect(() => plugin['page:dot-analytics']({ payload: mockPayload })).toThrow(
+                'DotCMS Analytics: Missing required page data'
+            );
         });
     });
 
     describe('Track Event Enrichment', () => {
-        it('should create enriched track event with correct structure', () => {
+        let originalTitle: string;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        let originalHref: string;
+
+        beforeEach(() => {
+            // Save originals
+            originalTitle = document.title;
+            originalHref = window.location.href;
+
+            // Mock document title and window location
+            Object.defineProperty(document, 'title', {
+                value: 'Test Page',
+                writable: true,
+                configurable: true
+            });
+
+            // Mock window.location.href
+            delete (window as any).location;
+            (window as any).location = { href: 'http://localhost/test' };
+        });
+
+        afterEach(() => {
+            // Restore originals
+            Object.defineProperty(document, 'title', {
+                value: originalTitle,
+                writable: true,
+                configurable: true
+            });
+        });
+
+        it('should enrich content_impression events with page data', () => {
+            // Arrange
+            const mockPayload = {
+                event: DotCMSPredefinedEventType.CONTENT_IMPRESSION,
+                context: {
+                    site_auth: 'test-auth',
+                    session_id: 'session',
+                    user_id: 'user'
+                },
+                properties: {
+                    content: {
+                        identifier: 'content-123',
+                        inode: 'inode-456',
+                        title: 'Test Content',
+                        content_type: 'Blog'
+                    },
+                    position: {
+                        viewport_offset_pct: 25.5,
+                        dom_index: 2
+                    }
+                }
+            } as any;
+
+            // Act
+            const result = plugin['track:dot-analytics']({ payload: mockPayload });
+
+            // Assert
+            // Should NOT call enrichPagePayloadOptimized for track events
+            expect(mockEnrichPagePayloadOptimized).not.toHaveBeenCalled();
+            expect(result).toMatchObject({
+                ...mockPayload,
+                page: {
+                    title: 'Test Page',
+                    url: 'http://localhost/test'
+                }
+            });
+            expect(result.local_time).toBeDefined();
+            expect(typeof result.local_time).toBe('string');
+        });
+
+        it('should enrich custom events with only local_time', () => {
             // Arrange
             const mockPayload = {
                 event: 'button_click',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                context: { site_auth: 'test-auth', session_id: 'session', user_id: 'user' },
                 properties: {
                     button_id: 'submit-btn',
-                    page: '/contact'
+                    button_text: 'Submit'
                 }
             } as any;
 
@@ -125,33 +203,28 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(mockGetLocalTime).toHaveBeenCalledTimes(1);
-            expect(result).toEqual({
-                context: mockPayload.context,
-                events: [
-                    {
-                        event_type: 'button_click',
-                        local_time: '2024-01-01T10:00:00.000Z',
-                        data: {
-                            custom: {
-                                button_id: 'submit-btn',
-                                page: '/contact'
-                            }
-                        }
-                    }
-                ]
+            // Should NOT call enrichPagePayloadOptimized for custom events
+            expect(mockEnrichPagePayloadOptimized).not.toHaveBeenCalled();
+            // Custom events should only have local_time added, no page/utm/custom data
+            expect(result).toMatchObject({
+                ...mockPayload
             });
+            expect(result.local_time).toBeDefined();
+            expect(typeof result.local_time).toBe('string');
+            // Should NOT have page/utm/custom data
+            expect(result.page).toBeUndefined();
+            expect(result.utm).toBeUndefined();
+            expect(result.custom).toBeUndefined();
         });
 
-        it('should preserve existing properties in custom data', () => {
+        it('should pass through properties without modifying them for custom events', () => {
             // Arrange
             const mockPayload = {
                 event: 'form_submit',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                context: { site_auth: 'test-auth', session_id: 'session', user_id: 'user' },
                 properties: {
                     form_name: 'contact_form',
-                    validation_errors: 0,
-                    session_id: 'session_123'
+                    validation_errors: 0
                 }
             } as any;
 
@@ -159,129 +232,17 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.events[0].data).toEqual({
-                custom: {
-                    form_name: 'contact_form',
-                    validation_errors: 0,
-                    session_id: 'session_123'
-                }
-            });
-        });
-
-        it('should handle empty properties', () => {
-            // Arrange
-            const mockPayload = {
-                event: 'pageview',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                properties: {}
-            } as any;
-
-            // Act
-            const result = plugin['track:dot-analytics']({ payload: mockPayload });
-
-            // Assert
-            expect(result.events[0].data).toEqual({
-                custom: {}
-            });
-        });
-
-        it('should handle undefined properties', () => {
-            // Arrange
-            const mockPayload = {
-                event: 'custom_event',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' }
-                // properties is undefined
-            } as any;
-
-            // Act
-            const result = plugin['track:dot-analytics']({ payload: mockPayload });
-
-            // Assert
-            expect(result.events[0].data).toEqual({
-                custom: undefined
-            });
-        });
-
-        it('should use different local times when called multiple times', () => {
-            // Arrange
-            const mockPayload = {
-                event: 'test_event',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                properties: {}
-            } as any;
-            const time1 = '2024-01-01T10:00:00.000Z';
-            const time2 = '2024-01-01T11:00:00.000Z';
-
-            mockGetLocalTime.mockReturnValueOnce(time1).mockReturnValueOnce(time2);
-
-            // Act
-            const result1 = plugin['track:dot-analytics']({ payload: mockPayload });
-            const result2 = plugin['track:dot-analytics']({ payload: mockPayload });
-
-            // Assert
-            expect(result1.events[0].local_time).toBe(time1);
-            expect(result2.events[0].local_time).toBe(time2);
-            expect(mockGetLocalTime).toHaveBeenCalledTimes(2);
-        });
-    });
-
-    describe('Integration Scenarios', () => {
-        it('should handle real-world track event data', () => {
-            // Arrange
-            const realWorldPayload = {
-                event: 'content_interaction',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                properties: {
-                    contentId: 'article-123',
-                    contentType: 'blog-post',
-                    category: 'technology',
-                    utm_source: 'newsletter',
-                    utm_medium: 'email'
-                }
-            } as any;
-
-            // Act
-            const result = plugin['track:dot-analytics']({ payload: realWorldPayload });
-
-            // Assert
-            expect(result.events[0]).toMatchObject({
-                event_type: 'content_interaction',
-                data: {
-                    custom: {
-                        contentId: 'article-123',
-                        contentType: 'blog-post',
-                        category: 'technology',
-                        utm_source: 'newsletter',
-                        utm_medium: 'email'
-                    }
-                }
-            });
+            // Properties should remain unchanged
+            expect(result.properties).toEqual(mockPayload.properties);
         });
     });
 
     describe('Error Handling', () => {
-        it('should propagate getLocalTime errors', () => {
-            // Arrange
-            const mockPayload = {
-                event: 'test_event',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                properties: {}
-            } as any;
-            mockGetLocalTime.mockImplementation(() => {
-                throw new Error('Time service unavailable');
-            });
-
-            // Act & Assert
-            expect(() => plugin['track:dot-analytics']({ payload: mockPayload })).toThrow(
-                'Time service unavailable'
-            );
-        });
-
         it('should propagate enrichPagePayloadOptimized errors', () => {
             // Arrange
             const mockPayload = {
                 event: 'pageview',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
+                context: { site_auth: 'test-auth', session_id: 'session', user_id: 'user' },
                 properties: {}
             } as any;
             mockEnrichPagePayloadOptimized.mockImplementation(() => {
@@ -295,42 +256,6 @@ describe('dotAnalyticsEnricherPlugin', () => {
         });
     });
 
-    describe('Memory and Performance', () => {
-        it('should not mutate the original payload', () => {
-            // Arrange
-            const originalPayload = {
-                event: 'test_event',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                properties: { original: 'value' }
-            } as any;
-            const payloadCopy = JSON.parse(JSON.stringify(originalPayload));
-
-            // Act
-            plugin['track:dot-analytics']({ payload: originalPayload });
-
-            // Assert
-            expect(originalPayload).toEqual(payloadCopy);
-        });
-
-        it('should create new objects for each track call', () => {
-            // Arrange
-            const mockPayload = {
-                event: 'test_event',
-                context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                properties: {}
-            } as any;
-
-            // Act
-            const result1 = plugin['track:dot-analytics']({ payload: mockPayload });
-            const result2 = plugin['track:dot-analytics']({ payload: mockPayload });
-
-            // Assert
-            expect(result1).not.toBe(result2);
-            expect(result1.events).not.toBe(result2.events);
-            expect(result1.events[0]).not.toBe(result2.events[0]);
-        });
-    });
-
     describe('Plugin Behavior', () => {
         it('should maintain plugin instance properties', () => {
             // Arrange & Act
@@ -340,26 +265,6 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Assert
             expect(pluginInstance1.name).toBe(pluginInstance2.name);
             expect(pluginInstance1).not.toBe(pluginInstance2);
-        });
-
-        it('should handle different event types correctly', () => {
-            // Arrange
-            const events = ['click', 'scroll', 'form_submit', 'page_exit'];
-
-            events.forEach((eventType) => {
-                const payload = {
-                    event: eventType,
-                    context: { site_key: 'test', session_id: 'session', user_id: 'user' },
-                    properties: {}
-                } as any;
-
-                // Act
-                const result = plugin['track:dot-analytics']({ payload });
-
-                // Assert
-                expect(result.events[0].event_type).toBe(eventType);
-                expect(result.events[0].data).toEqual({ custom: {} });
-            });
         });
     });
 });

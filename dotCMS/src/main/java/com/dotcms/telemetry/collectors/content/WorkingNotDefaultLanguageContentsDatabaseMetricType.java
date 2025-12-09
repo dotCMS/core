@@ -3,11 +3,13 @@ package com.dotcms.telemetry.collectors.content;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of Contentlets that has at least one working version on any non-default language and that
  * also don't have live version on any non-default language
  */
+@ApplicationScoped
 public class WorkingNotDefaultLanguageContentsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {
