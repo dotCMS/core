@@ -3,7 +3,6 @@ package com.dotmarketing.filters;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -14,22 +13,29 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberOfTimeVisitedCounter;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-
-import java.util.Set;
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Optional;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class CMSFilter implements Filter {
 
-    private final HttpServletRequestThreadLocal  requestThreadLocal  = HttpServletRequestThreadLocal.INSTANCE;
-    private final HttpServletResponseThreadLocal responseThreadLocal = HttpServletResponseThreadLocal.INSTANCE;
+
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
     private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
@@ -74,8 +80,6 @@ public class CMSFilter implements Filter {
         } finally {
             DbConnectionFactory.closeSilently();
         }
-
-
     }
 
     private void doFilterInternal(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
@@ -86,8 +90,8 @@ public class CMSFilter implements Filter {
         final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
         // Set the request/response in the thread local.
-        this.requestThreadLocal.setRequest(request);
-        this.responseThreadLocal.setResponse(response);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
 
         // run rules engine for all requests
         RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
