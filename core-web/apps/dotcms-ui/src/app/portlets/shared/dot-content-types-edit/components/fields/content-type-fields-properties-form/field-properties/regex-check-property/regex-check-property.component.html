@@ -4,7 +4,8 @@
     </label>
     <div class="form__validation-input-container">
         <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
-        <p-dropdown (onChange)="templateSelect($event)"
+        <p-dropdown
+            (onChange)="templateSelect($event)"
             [style]="{ width: '125px' }"
             [options]="regexCheckTemplates"
             [formControlName]="property.name"

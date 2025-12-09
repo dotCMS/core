@@ -1,11 +1,13 @@
 @if (float) {
-    <p-button (click)="toggle($event)"
+    <p-button
+        (click)="toggle($event)"
         [icon]="icon || ''"
         class="dot-menu__button"
         styleClass="p-button-sm p-button-rounded"
         data-testid="dot-menu-button" />
 } @else {
-    <p-button (click)="toggle($event)"
+    <p-button
+        (click)="toggle($event)"
         [icon]="icon || ''"
         class="dot-menu__button"
         styleClass="p-button-sm p-button-rounded p-button-text"

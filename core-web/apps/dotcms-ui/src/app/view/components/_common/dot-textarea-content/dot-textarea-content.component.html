@@ -1,5 +1,6 @@
 @if (selectOptions.length > 1) {
-    <p-selectButton [(ngModel)]="selected"
+    <p-selectButton
+        [(ngModel)]="selected"
         [options]="selectOptions"
         class="textarea-content__select-field" />
 }
@@ -12,7 +13,8 @@
         class="textarea-content__plain-field"></textarea>
 }
 @if (selected === 'code') {
-    <ngx-monaco-editor (ngModelChange)="onModelChange($event)"
+    <ngx-monaco-editor
+        (ngModelChange)="onModelChange($event)"
         (keydown.enter)="onKeyEnter($event)"
         (init)="onInit($event)"
         [(ngModel)]="value"

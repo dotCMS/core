@@ -5,7 +5,8 @@
                 <div class="login__logo">
                     <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
                 </div>
-                <p-dropdown (onChange)="onLanguageChange($event.value)"
+                <p-dropdown
+                    (onChange)="onLanguageChange($event.value)"
                     [options]="languages"
                     [style]="{ width: '185px' }"
                     class="p-dropdown-sm"
@@ -33,7 +34,8 @@
                     formControlName="login"
                     autocomplete="username"
                     data-testId="userNameInput" />
-                <dot-field-validation-message [message]="
+                <dot-field-validation-message
+                    [message]="
                         loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
                             '{0}',
                             loginInfo.i18nMessagesMap['emailAddressLabel']
@@ -52,7 +54,8 @@
                     formControlName="password"
                     autocomplete="current-password"
                     data-testId="password" />
-                <dot-field-validation-message [message]="
+                <dot-field-validation-message
+                    [message]="
                         loginInfo.i18nMessagesMap['error.form.mandatory'].replace(
                             '{0}',
                             loginInfo.i18nMessagesMap['password']
@@ -61,7 +64,8 @@
                     [field]="loginForm.get('password')" />
             </div>
             <div class="login__password-settings field">
-                <p-checkbox [label]="loginInfo.i18nMessagesMap['remember-me']"
+                <p-checkbox
+                    [label]="loginInfo.i18nMessagesMap['remember-me']"
                     formControlName="rememberMe"
                     data-testId="rememberMe"
                     binary="true" />

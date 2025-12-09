@@ -14,7 +14,8 @@
     </div>
 </ng-container>
 @if (vm$ | async; as vm) {
-    <dot-asset-card-list (selectedItem)="addAsset.emit($event)"
+    <dot-asset-card-list
+        (selectedItem)="addAsset.emit($event)"
         (nextBatch)="offset$.next($event)"
         [contentlets]="vm.contentlets"
         [done]="vm.preventScroll"

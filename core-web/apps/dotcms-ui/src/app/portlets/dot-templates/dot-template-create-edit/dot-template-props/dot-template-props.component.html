@@ -26,7 +26,8 @@
             @if (form.get('theme')) {
                 <div class="field" data-testId="themeField">
                     <label for="theme">{{ 'templates.properties.form.label.theme' | dm }}</label>
-                    <dot-theme-selector-dropdown id="theme"
+                    <dot-theme-selector-dropdown
+                        id="theme"
                         formControlName="theme"
                         data-testId="templatePropsThemeField" />
                 </div>

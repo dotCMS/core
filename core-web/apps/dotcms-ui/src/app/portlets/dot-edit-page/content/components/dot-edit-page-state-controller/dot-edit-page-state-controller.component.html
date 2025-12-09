@@ -1,17 +1,20 @@
 @if (featureFlagEditURLContentMapIsOn) {
-    <p-menu (onHide)="dotTabButtons.resetDropdownById(dotPageMode.EDIT)"
+    <p-menu
+        (onHide)="dotTabButtons.resetDropdownById(dotPageMode.EDIT)"
         [model]="menuItems"
         [popup]="true"
         #menu
         appendTo="body" />
-    <dot-tab-buttons (openMenu)="handleMenuOpen($event)"
+    <dot-tab-buttons
+        (openMenu)="handleMenuOpen($event)"
         (clickOption)="stateSelectorHandler($event)"
         [activeId]="mode"
         [options]="options"
         #dotTabButtons
         data-testId="dot-tabs-buttons" />
 } @else {
-    <p-selectButton (onChange)="stateSelectorHandler({ optionId: $event.value })"
+    <p-selectButton
+        (onChange)="stateSelectorHandler({ optionId: $event.value })"
         [(ngModel)]="mode"
         [options]="options"
         class="p-button-tabbed"
@@ -19,7 +22,8 @@
         data-testId="selectButton" />
 }
 @if (!variant) {
-    <p-inputSwitch (click)="onLockerClick()"
+    <p-inputSwitch
+        (click)="onLockerClick()"
         (onChange)="lockPageHandler()"
         [(ngModel)]="lock"
         [class.warn]="lockWarn"
@@ -32,7 +36,5 @@
         [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
         #locker
         appendTo="target" />
-    <dot-edit-page-lock-info [pageState]="pageState"
-        #pageLockInfo
-        data-testId="lockInfo" />
+    <dot-edit-page-lock-info [pageState]="pageState" #pageLockInfo data-testId="lockInfo" />
 }

@@ -2,7 +2,8 @@
     <p-menu [model]="model" #menu appendTo="body" popup="popup" />
 }
 
-<p-button (click)="buttonOnClick($event)"
+<p-button
+    (click)="buttonOnClick($event)"
     [disabled]="disabled"
     [icon]="icon"
     data-testid="dot-action-button"

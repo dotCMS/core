@@ -2,7 +2,8 @@
     <dot-icon big name="devices" />
 
     <div class="device-selector__field flex-grow-1">
-        <p-dropdown (onChange)="change($event.value)"
+        <p-dropdown
+            (onChange)="change($event.value)"
             [(ngModel)]="value"
             [disabled]="disabled"
             [options]="options"

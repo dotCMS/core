@@ -7,7 +7,8 @@
     icon="pi pi-globe"
     data-testId="language-button"></button>
 <p-overlayPanel #op styleClass="edit-ema-selector" data-testId="language-op">
-    <p-listbox [options]="languages$ | async"
+    <p-listbox
+        [options]="languages$ | async"
         (onChange)="onChange($event); op.toggle($event)"
         #listbox
         optionLabel="label"

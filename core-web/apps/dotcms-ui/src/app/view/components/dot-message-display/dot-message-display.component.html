@@ -1,6 +1,7 @@
 <p-toast>
     <ng-template let-message pTemplate="message">
-        <dot-icon [name]="message.severity === 'success' ? 'check' : message.severity"
+        <dot-icon
+            [name]="message.severity === 'success' ? 'check' : message.severity"
             [class]="message.severity" />
         <span innerHTML="{{ message.detail }}"></span>
     </ng-template>

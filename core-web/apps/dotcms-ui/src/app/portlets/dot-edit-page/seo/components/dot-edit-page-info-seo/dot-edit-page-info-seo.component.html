@@ -1,6 +1,7 @@
 <h2>{{ title }}</h2>
 @if (url) {
-    <dot-copy-button [copy]="baseUrl + url"
+    <dot-copy-button
+        [copy]="baseUrl + url"
         [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
         [label]="'editpage.header.copy' | dm"
         data-testId="copy-button" />

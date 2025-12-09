@@ -1,14 +1,15 @@
 @if (pageState$ | async; as pageState) {
-    <dot-form-selector (pick)="onFormSelected($event)"
+    <dot-form-selector
+        (pick)="onFormSelected($event)"
         (shutdown)="editForm = false"
         [show]="editForm" />
     <dot-add-contentlet (custom)="onCustomEvent($event)" />
-    <dot-create-contentlet (custom)="onCustomEvent($event)"
-        (shutdown)="handleCloseAction()" />
+    <dot-create-contentlet (custom)="onCustomEvent($event)" (shutdown)="handleCloseAction()" />
     <dot-edit-contentlet (custom)="onCustomEvent($event)" />
     <dot-reorder-menu (shutdown)="onCloseReorderDialog()" [url]="reorderMenuUrl" />
     <ng-template #enabledComponent>
-        <dot-edit-page-toolbar-seo (actionFired)="reload($event)"
+        <dot-edit-page-toolbar-seo
+            (actionFired)="reload($event)"
             (backToExperiment)="backToExperiment()"
             (cancel)="onCancelToolbar()"
             (favoritePage)="showFavoritePageDialog($event)"
@@ -19,7 +20,8 @@
             class="dot-edit__toolbar" />
     </ng-template>
     <ng-template #disabledComponent>
-        <dot-edit-page-toolbar (actionFired)="reload($event)"
+        <dot-edit-page-toolbar
+            (actionFired)="reload($event)"
             (backToExperiment)="backToExperiment()"
             (cancel)="onCancelToolbar()"
             (favoritePage)="showFavoritePageDialog($event)"
@@ -29,7 +31,8 @@
             [variant]="variantData | async"
             class="dot-edit__toolbar" />
     </ng-template>
-    <ng-container *dotShowHideFeature="featureFlagSeo; alternate: disabledComponent"
+    <ng-container
+        *dotShowHideFeature="featureFlagSeo; alternate: disabledComponent"
         [ngTemplateOutlet]="enabledComponent" />
     <div
         [class.dot-edit-content__preview]="!isEditMode"
@@ -37,7 +40,8 @@
         data-testId="edit-content-wrapper">
         <dot-loading-indicator fullscreen="true" />
         @if (pageState.seoMedia) {
-            <dot-results-seo-tool [device]="pageState.viewAs.device"
+            <dot-results-seo-tool
+                [device]="pageState.viewAs.device"
                 [hostName]="pageState.page.hostName"
                 [seoMedia]="pageState.seoMedia"
                 [seoOGTagsResults]="seoOGTagsResults"
@@ -64,7 +68,8 @@
                             <dot-overlay-mask (click)="iframeOverlayService.hide()" />
                         }
                         @if (showWhatsChanged) {
-                            <dot-whats-changed [languageId]="pageState.viewAs.language.id"
+                            <dot-whats-changed
+                                [languageId]="pageState.viewAs.language.id"
                                 [pageId]="pageState.page.identifier" />
                         }
                         @if (showIframe) {
@@ -90,13 +95,13 @@
                 [class.collapsed]="paletteCollapsed"
                 [class.editMode]="isEditMode"
                 class="dot-edit-content__palette">
-                <dot-palette [allowedContent]="allowedContent"
-                    [languageId]="pageLanguageId" />
+                <dot-palette [allowedContent]="allowedContent" [languageId]="pageLanguageId" />
                 <div
                     (click)="paletteCollapsed = !paletteCollapsed"
                     class="dot-edit-content__palette-visibility"
                     data-testId="palette-visibility">
-                    <dot-icon [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"
+                    <dot-icon
+                        [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"
                         size="22" />
                 </div>
             </div>

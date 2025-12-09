@@ -7,13 +7,13 @@
             <dot-field-helper [message]="helpText" />
         }
     </div>
-    <dot-textarea-content [id]="property.name"
+    <dot-textarea-content
+        [id]="property.name"
         [formControlName]="property.name"
         [show]="['code']"
         #value
         height="15.7rem" />
-    <dot-field-validation-message [field]="group.controls[property.name]"
-        message="{{
-            'contenttypes.field.properties.value.message' | dm
-        }}" />
+    <dot-field-validation-message
+        [field]="group.controls[property.name]"
+        message="{{ 'contenttypes.field.properties.value.message' | dm }}" />
 </div>

@@ -6,7 +6,8 @@
         <div class="formgroup-inline">
             @for (radio of radioInputs; track radio) {
                 <div class="field-checkbox">
-                    <p-radioButton [label]="radio.text | dm"
+                    <p-radioButton
+                        [label]="radio.text | dm"
                         [name]="property.name"
                         [value]="radio.value"
                         [formControlName]="property.name" />

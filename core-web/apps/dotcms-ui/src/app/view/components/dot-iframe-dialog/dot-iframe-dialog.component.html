@@ -7,7 +7,8 @@
     width="90vw"
     height="90vh"
     #dialog>
-    <dot-iframe (charge)="onLoad($event)"
+    <dot-iframe
+        (charge)="onLoad($event)"
         (keyWasDown)="onKeyDown($event)"
         (custom)="custom.emit($event)"
         [src]="url"

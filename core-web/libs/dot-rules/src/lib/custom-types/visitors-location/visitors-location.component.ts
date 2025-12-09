@@ -38,7 +38,8 @@ const UNITS = {
     template: `
         @if (comparisonDropdown !== null) {
             <div flex layout="row" class="cw-visitors-location cw-condition-component-body">
-                <cw-input-dropdown (onDropDownChange)="comparisonChange.emit($event)"
+                <cw-input-dropdown
+                    (onDropDownChange)="comparisonChange.emit($event)"
                     [options]="comparisonDropdown.options"
                     [formControl]="comparisonDropdown.control"
                     [required]="true"
@@ -69,7 +70,8 @@ const UNITS = {
                 </div>
             </div>
         }
-        <cw-area-picker-dialog-component (circleUpdate)="onUpdate($event)"
+        <cw-area-picker-dialog-component
+            (circleUpdate)="onUpdate($event)"
             (cancel)="showingMap = !showingMap"
             [headerText]="'Select an area'"
             [hidden]="!showingMap"

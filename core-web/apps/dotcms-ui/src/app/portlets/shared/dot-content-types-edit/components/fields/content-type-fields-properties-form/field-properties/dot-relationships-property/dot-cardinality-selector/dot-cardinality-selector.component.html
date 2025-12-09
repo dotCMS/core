@@ -1,4 +1,5 @@
-<p-dropdown (onChange)="switch.emit($event.value)"
+<p-dropdown
+    (onChange)="switch.emit($event.value)"
     [ngModel]="value"
     [disabled]="disabled"
     [options]="options | async"

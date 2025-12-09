@@ -50,10 +50,7 @@ export class NoComponentProvided {
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if (contentComponent) {
-            <ng-container *ngComponentOutlet="
-                    contentComponent | async;
-                    inputs: { node: node }
-                " />
+            <ng-container *ngComponentOutlet="contentComponent | async; inputs: { node: node }" />
         } @else if (isDevMode) {
             <dotcms-no-component-provided [contentType]="$data()?.contentType" />
         }

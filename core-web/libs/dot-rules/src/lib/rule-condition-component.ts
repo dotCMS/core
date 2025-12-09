@@ -27,7 +27,8 @@ import { I18nService } from './services/system/locale/I18n';
                             aria-label="Swap And/Or"></button>
                     }
                 </div>
-                <cw-input-dropdown (onDropDownChange)="onTypeChange($event)"
+                <cw-input-dropdown
+                    (onDropDownChange)="onTypeChange($event)"
                     [options]="typeDropdown?.options"
                     [value]="condition.type?.key"
                     flex="25"
@@ -39,11 +40,13 @@ import { I18nService } from './services/system/locale/I18n';
                             <div class="cw-condition-component"></div>
                         }
                         @case ('VisitorsGeolocationConditionlet') {
-                            <cw-visitors-location-container (parameterValuesChange)="onParameterValuesChange($event)"
+                            <cw-visitors-location-container
+                                (parameterValuesChange)="onParameterValuesChange($event)"
                                 [componentInstance]="condition" />
                         }
                         @default {
-                            <cw-serverside-condition (parameterValueChange)="onParameterValueChange($event)"
+                            <cw-serverside-condition
+                                (parameterValueChange)="onParameterValueChange($event)"
                                 [componentInstance]="condition"
                                 class="cw-condition-component" />
                         }

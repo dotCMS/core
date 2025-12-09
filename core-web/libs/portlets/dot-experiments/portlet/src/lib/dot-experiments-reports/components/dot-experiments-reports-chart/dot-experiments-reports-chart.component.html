@@ -4,7 +4,8 @@
             <div class="legend-wrapper" data-testId="chart-legends"></div>
         </div>
         @if (!isEmpty) {
-            <p-chart [data]="data"
+            <p-chart
+                [data]="data"
                 [options]="options"
                 [plugins]="plugins"
                 id="{{ chartId }}"

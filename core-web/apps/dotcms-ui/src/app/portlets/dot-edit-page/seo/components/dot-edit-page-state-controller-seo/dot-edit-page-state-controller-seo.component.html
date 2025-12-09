@@ -1,4 +1,5 @@
-<dot-device-selector-seo (selected)="changeDeviceHandler($event)"
+<dot-device-selector-seo
+    (selected)="changeDeviceHandler($event)"
     (changeSeoMedia)="changeSeoMedia($event)"
     (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
     [apiLink]="apiLink"
@@ -6,13 +7,15 @@
     appendTo="body"
     data-testId="dot-device-selector" />
 @if (this.featureFlagEditURLContentMapIsOn) {
-    <p-menu (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
+    <p-menu
+        (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
         [model]="menuItems"
         [popup]="true"
         #menu
         appendTo="body" />
 }
-<dot-tab-buttons (openMenu)="handleMenuOpen($event)"
+<dot-tab-buttons
+    (openMenu)="handleMenuOpen($event)"
     (clickOption)="stateSelectorHandler($event)"
     [activeId]="mode"
     [options]="options"
@@ -27,7 +30,8 @@
         "
         tooltipPosition="bottom"
         data-testId="lock-container">
-        <p-inputSwitch (click)="onLockerClick()"
+        <p-inputSwitch
+            (click)="onLockerClick()"
             (onChange)="lockPageHandler()"
             [(ngModel)]="lock"
             [class.warn]="lockWarn"
@@ -38,6 +42,4 @@
     </span>
 }
 
-<dot-edit-page-lock-info-seo [pageState]="pageState"
-    #pageLockInfo
-    data-testId="lockInfo" />
+<dot-edit-page-lock-info-seo [pageState]="pageState" #pageLockInfo data-testId="lockInfo" />

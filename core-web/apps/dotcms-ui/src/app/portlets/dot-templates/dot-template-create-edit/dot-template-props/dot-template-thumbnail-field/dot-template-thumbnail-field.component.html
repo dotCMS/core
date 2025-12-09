@@ -1,4 +1,5 @@
-<dot-binary-file (dotValueChange)="onThumbnailChange($event)"
+<dot-binary-file
+    (dotValueChange)="onThumbnailChange($event)"
     [disabled]="loading"
     [previewImageUrl]="asset?.inode ? '/dA/' + asset?.inode : null"
     [previewImageName]="asset?.name"

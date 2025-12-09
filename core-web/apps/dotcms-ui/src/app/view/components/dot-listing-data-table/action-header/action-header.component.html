@@ -1,6 +1,7 @@
 <div [class.selected]="selectedItems.length" class="action-header">
     @if (options && options.primary) {
-        <dot-action-button (press)="handlePrimaryAction()"
+        <dot-action-button
+            (press)="handlePrimaryAction()"
             [model]="options.primary.model"
             class="action-header__primary-button" />
     }

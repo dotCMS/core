@@ -16,7 +16,8 @@
                         pInputText
                         type="text" />
                 </ng-template>
-                <dot-inline-edit [inlineEditContentTemplate]="inlineEditContentTemplate"
+                <dot-inline-edit
+                    [inlineEditContentTemplate]="inlineEditContentTemplate"
                     [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
                     #dotEditInline />
             </header>
@@ -24,11 +25,13 @@
 
         <div class="content-type__info">
             <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}" />
-            <dot-copy-button [copy]="contentType.id"
+            <dot-copy-button
+                [copy]="contentType.id"
                 [tooltipText]="contentType.id"
                 label="Copy ID"
                 data-testId="copyIdentifier" />
-            <dot-copy-button [copy]="contentType.variable"
+            <dot-copy-button
+                [copy]="contentType.variable"
                 label="{{ 'contenttypes.content.variable' | dm }}: {{ contentType.variable }}"
                 data-testId="copyVariableName" />
         </div>
@@ -60,7 +63,8 @@
                 <ng-content />
             </div>
             <div class="content-type__fields-sidebar">
-                <p-splitButton (onClick)="fireAddRowEvent()"
+                <p-splitButton
+                    (onClick)="fireAddRowEvent()"
                     [model]="actions"
                     icon="pi pi-plus"
                     label="{{ 'contenttypes.content.row' | dm }}" />
@@ -106,6 +110,5 @@
     }
 </p-tabView>
 @if (addToMenuContentType) {
-    <dot-add-to-menu (cancel)="addToMenuContentType = false"
-        [contentType]="contentType" />
+    <dot-add-to-menu (cancel)="addToMenuContentType = false" [contentType]="contentType" />
 }

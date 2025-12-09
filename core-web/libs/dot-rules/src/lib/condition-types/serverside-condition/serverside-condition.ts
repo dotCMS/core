@@ -31,7 +31,8 @@ import { Verify } from '../../services/validation/Verify';
                         <div flex class="cw-input cw-input-placeholder">&nbsp;</div>
                     }
                     @if (input.type === 'dropdown') {
-                        <cw-input-dropdown (touch)="onBlur(input)"
+                        <cw-input-dropdown
+                            (touch)="onBlur(input)"
                             [allowAdditions]="input.allowAdditions"
                             [class.cw-comparator-selector]="input.name === 'comparison'"
                             [class.cw-last]="islast"
@@ -51,7 +52,8 @@ import { Verify } from '../../services/validation/Verify';
                             layout-fill
                             layout="column"
                             class="cw-input">
-                            <cw-input-rest-dropdown (touch)="onBlur(input)"
+                            <cw-input-rest-dropdown
+                                (touch)="onBlur(input)"
                                 [value]="input.value"
                                 [formControl]="input.control"
                                 [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
@@ -106,7 +108,8 @@ import { Verify } from '../../services/validation/Verify';
                         </div>
                     }
                     @if (input.type === 'datetime') {
-                        <cw-input-date (blur)="onBlur(input)"
+                        <cw-input-date
+                            (blur)="onBlur(input)"
                             [formControl]="input.control"
                             [class.cw-last]="islast"
                             [placeholder]="input.placeholder | async"

@@ -1,7 +1,5 @@
 @if (vm$ | async; as vm) {
-    <p-contextMenu (onHide)="closedActionsContextMenu()"
-        [model]="vm.pages.menuActions"
-        #cm />
+    <p-contextMenu (onHide)="closedActionsContextMenu()" [model]="vm.pages.menuActions" #cm />
     <p-table
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
@@ -42,11 +40,13 @@
                                 role="button"></i>
                         }
                     </div>
-                    <p-dropdown (onChange)="setPagesLanguage($event.value)"
+                    <p-dropdown
+                        (onChange)="setPagesLanguage($event.value)"
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
                         class="dot-pages-listing-header__language-input" />
-                    <p-checkbox (onChange)="setPagesArchived($event.checked)"
+                    <p-checkbox
+                        (onChange)="setPagesArchived($event.checked)"
                         [(ngModel)]="vm.showArchivedValue"
                         [binary]="true"
                         [label]="'Show-Archived' | dm" />
@@ -110,9 +110,7 @@
                 </td>
                 <td>
                     <div class="dot-pages-table__status-field">
-                        <dot-state-icon [labels]="dotStateLabels"
-                            [state]="rowData"
-                            size="14px" />
+                        <dot-state-icon [labels]="dotStateLabels" [state]="rowData" size="14px" />
                         <dot-badge bordered="{true}">
                             {{ vm.languageLabels[rowData['languageId']] }}
                         </dot-badge>
@@ -124,7 +122,8 @@
                 </td>
                 <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
                 <td>
-                    <p-button (click)="
+                    <p-button
+                        (click)="
                             showActionsMenu.emit({
                                 event: $event,
                                 actionMenuDomId: 'pageActionButton-' + rowIndex,

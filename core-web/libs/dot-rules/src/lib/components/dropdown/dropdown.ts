@@ -29,7 +29,8 @@ import { isEmpty } from '@dotcms/utils';
     selector: 'cw-input-dropdown',
     template: `
         @if (maxSelections <= 1) {
-            <p-dropdown (onChange)="fireChange($event.value)"
+            <p-dropdown
+                (onChange)="fireChange($event.value)"
                 [(ngModel)]="modelValue"
                 [style]="{ width: '100%' }"
                 [required]="minSelections > 0"
@@ -43,7 +44,8 @@ import { isEmpty } from '@dotcms/utils';
                 appendTo="body" />
         }
         @if (maxSelections > 1) {
-            <dot-autocomplete-tags (onChange)="fireChange($event)"
+            <dot-autocomplete-tags
+                (onChange)="fireChange($event)"
                 [inputId]="name"
                 [value]="modelValue"
                 [options]="dropdownOptions | async"

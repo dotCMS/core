@@ -8,7 +8,8 @@
         <div
             class="content-type__new-content-banner"
             data-test-id="content-type__new-content-banner">
-            <p-checkbox class="p-checkbox-sm"
+            <p-checkbox
+                class="p-checkbox-sm"
                 formControlName="newEditContent"
                 binary="true"
                 inputId="newEditContentLabel" />
@@ -28,14 +29,13 @@
             name="name"
             formControlName="name"
             dotAutofocus />
-        <dot-field-validation-message [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
+        <dot-field-validation-message
+            [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')" />
     </div>
     <div class="field">
         <label for="content-type-form-description">{{ 'contenttypes.form.label.icon' | dm }}</label>
-        <dot-md-icon-selector [tabindex]="2"
-            id="content-type-form-icon"
-            formControlName="icon" />
+        <dot-md-icon-selector [tabindex]="2" id="content-type-form-icon" formControlName="icon" />
     </div>
 
     <div class="field">
@@ -54,7 +54,8 @@
         <label for="content-type-form-host">
             {{ 'contenttypes.form.field.host_folder.label' | dm }}
         </label>
-        <dot-site-selector-field [system]="true"
+        <dot-site-selector-field
+            [system]="true"
             [tabindex]="4"
             id="content-type-form-host"
             formControlName="host"
@@ -64,7 +65,8 @@
         <label for="content-type-form-workflow">
             {{ 'contenttypes.form.label.workflow' | dm }}
         </label>
-        <dot-workflows-selector-field [tabindex]="5"
+        <dot-workflows-selector-field
+            [tabindex]="5"
             id="content-type-form-workflow"
             formControlName="workflows" />
     </div>
@@ -72,7 +74,8 @@
         <label for="content-type-form-workflow">
             {{ 'contenttypes.form.label.workflow.actions' | dm }}
         </label>
-        <dot-workflows-actions-selector-field [tabindex]="6"
+        <dot-workflows-actions-selector-field
+            [tabindex]="6"
             [workflows]="workflowsSelected$ | async"
             formControlName="NEW" />
     </div>
@@ -86,7 +89,8 @@
             <label for="content-type-form-publish-date-field">
                 {{ 'contenttypes.form.label.publish.date.field' | dm }}
             </label>
-            <p-dropdown (onChange)="handleDateVarChange($event, 'publishDateVar')"
+            <p-dropdown
+                (onChange)="handleDateVarChange($event, 'publishDateVar')"
                 [options]="dateVarOptions"
                 [tabindex]="7"
                 [placeholder]="'contenttypes.form.date.field.placeholder' | dm"
@@ -100,7 +104,8 @@
             <label for="content-type-form-expire-date-field">
                 {{ 'contenttypes.form.field.expire.date.field' | dm }}
             </label>
-            <p-dropdown (onChange)="handleDateVarChange($event, 'expireDateVar')"
+            <p-dropdown
+                (onChange)="handleDateVarChange($event, 'expireDateVar')"
                 [showClear]="true"
                 [options]="dateVarOptions"
                 [tabindex]="8"
@@ -123,7 +128,8 @@
             <label for="content-type-form-detail-page">
                 {{ 'contenttypes.form.field.detail.page' | dm }}
             </label>
-            <dot-page-selector [tabindex]="9"
+            <dot-page-selector
+                [tabindex]="9"
                 id="content-type-form-detail-page"
                 formControlName="detailPage" />
         </div>

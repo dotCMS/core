@@ -1,5 +1,6 @@
 @if (status === 'SELECT') {
-    <p-fileUpload (onSelect)="onSelectFile($event.files)"
+    <p-fileUpload
+        (onSelect)="onSelectFile($event.files)"
         [accept]="type + '/*'"
         [customUpload]="true"
         chooseLabel="browse files"

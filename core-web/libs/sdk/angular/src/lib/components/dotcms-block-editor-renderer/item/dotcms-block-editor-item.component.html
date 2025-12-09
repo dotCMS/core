@@ -1,6 +1,7 @@
 @for (node of content; track node) {
     @if (customRenderers?.[node.type]) {
-        <ng-container *ngTemplateOutlet="
+        <ng-container
+            *ngTemplateOutlet="
                 customRender;
                 context: { customRender: customRenderers?.[node.type], node: node }
             " />

@@ -41,7 +41,8 @@
                         <p-tableHeaderCheckbox />
                     </th>
                 }
-                <ng-container [ngTemplateOutletContext]="{ columns: columns }"
+                <ng-container
+                    [ngTemplateOutletContext]="{ columns: columns }"
                     [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate" />
             </tr>
         }
@@ -69,7 +70,8 @@
                     }
                 </td>
             }
-            <ng-container [ngTemplateOutletContext]="{ rowData: rowData }"
+            <ng-container
+                [ngTemplateOutletContext]="{ rowData: rowData }"
                 [ngTemplateOutlet]="rowTemplate || defaultRowTemplate" />
         </tr>
     </ng-template>

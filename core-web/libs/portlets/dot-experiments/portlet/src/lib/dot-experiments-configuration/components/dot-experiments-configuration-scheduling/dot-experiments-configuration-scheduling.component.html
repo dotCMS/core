@@ -2,7 +2,8 @@
     <p-card>
         <ng-template pTemplate="title">
             <h2 class="flex align-items-center gap-1 uppercase" data-testId="scheduling-card-name">
-                <dot-icon [ngClass]="{ isDone: !!vm.scheduling?.endDate || !!vm.scheduling?.startDate }"
+                <dot-icon
+                    [ngClass]="{ isDone: !!vm.scheduling?.endDate || !!vm.scheduling?.startDate }"
                     [size]="16"
                     data-testId="schedule-step-done"
                     name="check_circle" />

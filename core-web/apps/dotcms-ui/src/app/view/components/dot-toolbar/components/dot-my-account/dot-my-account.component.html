@@ -70,7 +70,8 @@
             </div>
 
             <div class="field">
-                <p-checkbox [ngModel]="showStarter()"
+                <p-checkbox
+                    [ngModel]="showStarter()"
                     (ngModelChange)="showStarter.set($event); setShowStarter()"
                     [ngModelOptions]="{ standalone: true }"
                     data-testid="dot-my-account-show-starter-checkbox"
@@ -97,7 +98,8 @@
                 }
             </div>
             <div class="field">
-                <p-checkbox [ngModel]="changePasswordOption()"
+                <p-checkbox
+                    [ngModel]="changePasswordOption()"
                     (ngModelChange)="toggleChangePasswordOption()"
                     [ngModelOptions]="{ standalone: true }"
                     id="dot-my-account-change-password-option"

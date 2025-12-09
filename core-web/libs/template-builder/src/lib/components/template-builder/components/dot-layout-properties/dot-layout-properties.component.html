@@ -4,11 +4,13 @@
     styleClass="dot-layout-properties__overlayPanel"
     data-testId="template-layout-properties-panel">
     <div [formGroup]="group" class="field">
-        <dot-layout-properties-item [label]="'editpage.layout.properties.header' | dm"
+        <dot-layout-properties-item
+            [label]="'editpage.layout.properties.header' | dm"
             class="property-item__header"
             formControlName="header" />
 
-        <dot-layout-properties-item [label]="'editpage.layout.properties.footer' | dm"
+        <dot-layout-properties-item
+            [label]="'editpage.layout.properties.footer' | dm"
             class="property-item__footer"
             formControlName="footer" />
         <dot-layout-property-sidebar formControlName="sidebar" />

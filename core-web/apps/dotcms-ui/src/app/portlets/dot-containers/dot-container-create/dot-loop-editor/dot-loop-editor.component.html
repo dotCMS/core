@@ -15,7 +15,8 @@
             <label class="block" data-testId="label">
                 {{ 'message.containers.create.' + label | dm }}
             </label>
-            <dot-textarea-content (blur)="onTouched()"
+            <dot-textarea-content
+                (blur)="onTouched()"
                 (input)="onTouched()"
                 [formControl]="loopControl"
                 [show]="['code']"

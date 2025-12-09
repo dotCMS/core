@@ -20,7 +20,8 @@
                 data-widget-type="col"
                 data-testId="add-box" />
             <p-divider layout="vertical" />
-            <dotcms-template-builder-actions (selectTheme)="openThemeSelectorDynamicDialog()"
+            <dotcms-template-builder-actions
+                (selectTheme)="openThemeSelectorDynamicDialog()"
                 [layoutProperties]="vm.layoutProperties"
                 data-testId="template-builder-actions" />
             <ng-content select="[toolbar-actions-right]" />
@@ -85,7 +86,8 @@
                                     [attr.data-testId]="'box-' + $index"
                                     class="grid-stack-item sub"
                                     #boxElement>
-                                    <dotcms-template-builder-box (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                                    <dotcms-template-builder-box
+                                        (deleteColumn)="removeColumn(box, boxElement, row.id)"
                                         (addContainer)="addContainer(box, row.id, $event)"
                                         (deleteContainer)="deleteContainer(box, row.id, $event)"
                                         (editClasses)="editBoxStyleClasses(row.id, box)"

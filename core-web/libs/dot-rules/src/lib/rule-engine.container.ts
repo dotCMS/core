@@ -88,7 +88,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
     selector: 'cw-rule-engine-container',
     styleUrls: ['./styles/rule-engine.scss', './styles/angular-material.layouts.scss'],
     template: `
-        <cw-rule-engine (createRule)="onCreateRule($event)"
+        <cw-rule-engine
+            (createRule)="onCreateRule($event)"
             (deleteRule)="onDeleteRule($event)"
             (updateName)="onUpdateRuleName($event)"
             (updateFireOn)="onUpdateFireOn($event)"

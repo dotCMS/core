@@ -7,7 +7,8 @@
 
     <form [formGroup]="form">
         <dot-container-selector (swap)="containerChange($event)" />
-        <dot-textarea-content (monacoInit)="initEditor($event)"
+        <dot-textarea-content
+            (monacoInit)="initEditor($event)"
             [show]="['code']"
             formControlName="body"
             #value

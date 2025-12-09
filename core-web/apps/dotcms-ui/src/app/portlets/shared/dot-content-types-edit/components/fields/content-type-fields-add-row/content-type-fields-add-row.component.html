@@ -3,7 +3,8 @@
         <div
             [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
             class="dot-add-rows-button__container">
-            <p-splitButton (onClick)="setColumnSelect()"
+            <p-splitButton
+                (onClick)="setColumnSelect()"
                 [disabled]="disabled"
                 [model]="actions"
                 label="{{ 'contenttypes.dropzone.rows.add' | dm }}" />
@@ -15,7 +16,8 @@
             <div class="dot-add-rows-columns-list__title">
                 {{ 'contenttypes.content.add_column_title' | dm }}
             </div>
-            <p-button (click)="showAddView()"
+            <p-button
+                (click)="showAddView()"
                 icon="pi pi-times"
                 styleClass="p-button-rounded  p-button-text p-button-sm" />
             <ul

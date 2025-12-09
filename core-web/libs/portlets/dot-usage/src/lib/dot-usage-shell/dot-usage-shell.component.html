@@ -6,7 +6,8 @@
         </div>
 
         <div class="usage-header__actions">
-            <p-button icon="pi pi-refresh"
+            <p-button
+                icon="pi pi-refresh"
                 [text]="true"
                 [loading]="loading()"
                 [disabled]="loading()"
@@ -44,7 +45,8 @@
                             <strong>Error Loading Usage Data</strong>
                             <p>{{ error() }}</p>
                         </div>
-                        <p-button label="Retry"
+                        <p-button
+                            label="Retry"
                             severity="secondary"
                             size="small"
                             (onClick)="onRetry()"

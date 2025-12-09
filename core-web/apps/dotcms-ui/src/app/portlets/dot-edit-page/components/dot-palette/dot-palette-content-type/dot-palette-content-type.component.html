@@ -1,5 +1,4 @@
-<dot-palette-input-filter (filter)="filterContentTypes($event)"
-    #filterInput />
+<dot-palette-input-filter (filter)="filterContentTypes($event)" #filterInput />
 @if (items?.length && !loading) {
     <div class="dot-content-palette__items">
         @for (item of items; track item) {

@@ -1,6 +1,7 @@
 <ng-template #externalFilterTemplate>
     <div class="theme-selector__filters">
-        <dot-site-selector (switch)="siteChange($event)"
+        <dot-site-selector
+            (switch)="siteChange($event)"
             [system]="true"
             #siteSelector
             width="12.8rem"

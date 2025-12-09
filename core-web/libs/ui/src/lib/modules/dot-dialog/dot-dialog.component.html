@@ -12,7 +12,8 @@
             class="dialog__header">
             <h4 [textContent]="header" class="dialog__title"></h4>
             @if (closeable) {
-                <p-button (click)="close($event)"
+                <p-button
+                    (click)="close($event)"
                     icon="pi pi-times"
                     styleClass="p-button-rounded p-button-text"
                     data-testId="close-button" />

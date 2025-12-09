@@ -16,7 +16,8 @@
                             data-testId="thumbnailField">
                             @if (vm.renderThumbnail) {
                                 @if (vm.renderThumbnail) {
-                                    <dot-html-to-image [value]="vm.pageRenderedHtml"
+                                    <dot-html-to-image
+                                        [value]="vm.pageRenderedHtml"
                                         [width]="vm.imgWidth"
                                         [height]="vm.imgHeight" />
                                 }

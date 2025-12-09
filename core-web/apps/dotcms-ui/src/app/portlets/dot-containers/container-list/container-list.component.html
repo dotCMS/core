@@ -12,7 +12,8 @@
                 data-testId="query-input" />
             <div class="container-listing__header-options">
                 <div class="container-listing__filter-controls">
-                    <p-checkbox (onChange)="handleArchivedFilter($event.checked)"
+                    <p-checkbox
+                        (onChange)="handleArchivedFilter($event.checked)"
                         [label]="'Show-Archived' | dm"
                         [binary]="true"
                         data-testId="archiveCheckbox" />
@@ -27,7 +28,8 @@
                         pButton
                         icon="pi pi-ellipsis-v"
                         data-testId="bulkActions"></button>
-                    <p-menu [popup]="true"
+                    <p-menu
+                        [popup]="true"
                         [model]="vm.containerBulkActions"
                         #actionsMenu
                         appendTo="body" />
@@ -87,7 +89,8 @@
                         data-testClass="testTableRow">
                         <td (click)="$event.stopPropagation()">
                             @if (!rowData.disableInteraction) {
-                                <p-tableCheckbox (click)="$event.stopPropagation()"
+                                <p-tableCheckbox
+                                    (click)="$event.stopPropagation()"
                                     [value]="rowData"
                                     [attr.test-id]="rowData.friendlyName" />
                             }
@@ -100,7 +103,8 @@
                             }
                         </td>
                         <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
-                            <dot-state-icon [labels]="vm.stateLabels"
+                            <dot-state-icon
+                                [labels]="vm.stateLabels"
                                 [state]="getContainerState(rowData)"
                                 size="14px" />
                         </td>
@@ -112,7 +116,8 @@
                         </td>
                         <td style="width: 5%">
                             @if (!rowData.disableInteraction) {
-                                <dot-action-menu-button [attr.data-testid]="rowData.identifier"
+                                <dot-action-menu-button
+                                    [attr.data-testid]="rowData.identifier"
                                     [actions]="setContainerActions(rowData)"
                                     [item]="rowData"
                                     class="listing-datatable__action-button" />
@@ -128,7 +133,8 @@
             </p-table>
         }
         @if (vm.addToBundleIdentifier) {
-            <dot-add-to-bundle (cancel)="resetBundleIdentifier()"
+            <dot-add-to-bundle
+                (cancel)="resetBundleIdentifier()"
                 [assetIdentifier]="vm.addToBundleIdentifier" />
         }
     </dot-portlet-base>

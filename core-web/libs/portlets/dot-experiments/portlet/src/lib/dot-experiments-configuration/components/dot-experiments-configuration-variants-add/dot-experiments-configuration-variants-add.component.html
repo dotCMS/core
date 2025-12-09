@@ -1,6 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header [actionButtonTpl]="actionHeaderBtnTpl"
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.variants.add' | dm }}" />
         <div class="experiment-variant-add__form-wrapper">
             <form

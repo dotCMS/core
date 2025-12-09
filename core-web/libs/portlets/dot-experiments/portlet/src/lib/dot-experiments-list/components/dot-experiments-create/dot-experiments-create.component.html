@@ -1,6 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.sidebar.isOpen" dotSidebar>
-        <dot-sidebar-header [actionButtonTpl]="actionHeaderBtnTpl"
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}" />
         <div class="experiment-create__form-wrapper">
             <form

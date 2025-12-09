@@ -1,6 +1,4 @@
 <router-outlet />
-<dot-edit-page-nav [pageState]="pageState$ | async"
-    dotExperimentClass
-    dotNavbar />
+<dot-edit-page-nav [pageState]="pageState$ | async" dotExperimentClass dotNavbar />
 <dot-edit-contentlet (custom)="onCustomEvent($event)" />
 <dot-block-editor-sidebar />

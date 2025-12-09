@@ -14,7 +14,8 @@
 
     @if (!!experiment?.status) {
         <div class="flex flex-grow-1 align-items-center justify-content-end">
-            <p-chip [icon]="this.statusIcon"
+            <p-chip
+                [icon]="this.statusIcon"
                 [label]="
                     (experiment?.status | titlecase | dm) +
                     (experiment?.status === experimentStatus.RUNNING

@@ -3,6 +3,7 @@
         {{ 'contenttypes.field.properties.default_value.label' | dm }}
     </label>
     <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
-    <dot-field-validation-message [field]="group.controls[property.name]"
+    <dot-field-validation-message
+        [field]="group.controls[property.name]"
         [message]="this.errorLabel" />
 </div>

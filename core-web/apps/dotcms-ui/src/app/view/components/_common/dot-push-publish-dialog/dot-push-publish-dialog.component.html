@@ -5,7 +5,8 @@
     [header]="eventData?.title"
     [hideButtons]="!!eventData?.customCode">
     @if (eventData) {
-        <dot-push-publish-form (value)="formData = $event"
+        <dot-push-publish-form
+            (value)="formData = $event"
             (valid)="updateFormValid($event)"
             [data]="eventData" />
     }

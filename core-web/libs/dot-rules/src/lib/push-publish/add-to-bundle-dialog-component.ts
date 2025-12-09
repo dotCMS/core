@@ -26,11 +26,13 @@ import { IBundle } from '../services/bundle-service';
             header="Add to Bundle"
             appendTo="body">
             @if (errorMessage) {
-                <p-message [text]="errorMessage"
+                <p-message
+                    [text]="errorMessage"
                     style="margin-bottom: 16px; display: block;"
                     severity="error" />
             }
-            <cw-input-dropdown (onDropDownChange)="setSelectedBundle($event)"
+            <cw-input-dropdown
+                (onDropDownChange)="setSelectedBundle($event)"
                 (keyup.enter)="addToBundle.emit(selectedBundle)"
                 [focus]="!hidden"
                 [options]="options"

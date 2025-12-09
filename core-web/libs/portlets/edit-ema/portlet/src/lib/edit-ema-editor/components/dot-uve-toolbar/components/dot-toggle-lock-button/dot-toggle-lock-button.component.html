@@ -16,7 +16,8 @@
     </button>
 } @else {
     @if ($unlockButton(); as unlockButton) {
-        <p-button [disabled]="unlockButton.disabled"
+        <p-button
+            [disabled]="unlockButton.disabled"
             [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
             [escape]="false"
             tooltipPosition="bottom"

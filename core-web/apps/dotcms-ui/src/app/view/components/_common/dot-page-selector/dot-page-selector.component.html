@@ -32,7 +32,6 @@
         [class]="isError ? 'p-invalid' : 'p-info'"
         [textContent]="message"
         data-testId="message"></small>
-    <dot-field-helper [message]="
-            (folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm
-        " />
+    <dot-field-helper
+        [message]="(folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm" />
 </div>

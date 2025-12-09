@@ -59,7 +59,8 @@ const I8N_BASE = 'api.sites.ruleengine';
     selector: 'rule',
     template: `
         <form [formGroup]="formModel" let rf="ngForm">
-            <cw-add-to-bundle-dialog-container (close)="showAddToBundleDialog = false"
+            <cw-add-to-bundle-dialog-container
+                (close)="showAddToBundleDialog = false"
                 [assetId]="rule.key"
                 [hidden]="!showAddToBundleDialog" />
             <div
@@ -109,7 +110,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                                 </span>
                             }
                             @if (!hideFireOn) {
-                                <cw-input-dropdown (onDropDownChange)="
+                                <cw-input-dropdown
+                                    (onDropDownChange)="
                                         updateFireOn.emit({
                                             type: 'RULE_UPDATE_FIRE_ON',
                                             payload: { rule: rule, value: $event }
@@ -120,9 +122,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                     [options]="fireOn.options"
                                     class="cw-fire-on-dropdown"
                                     flex="none"
-                                    placeholder="{{
-                                        fireOn.placeholder | async
-                                    }}" />
+                                    placeholder="{{ fireOn.placeholder | async }}" />
                             }
                         </div>
                         <div
@@ -133,7 +133,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                             <span class="cw-rule-status-text" title="{{ statusText() }}">
                                 {{ statusText(30) }}
                             </span>
-                            <p-inputSwitch (onChange)="setRuleEnabledState($event)"
+                            <p-inputSwitch
+                                (onChange)="setRuleEnabledState($event)"
                                 [(ngModel)]="rule.enabled"
                                 [ngModelOptions]="{ standalone: true }"
                                 [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
@@ -156,7 +157,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                                     pButton
                                     icon="pi pi-plus"
                                     arial-label="Add Group"></button>
-                                <p-menu [model]="ruleActionOptions"
+                                <p-menu
+                                    [model]="ruleActionOptions"
                                     #ruleOptions
                                     appendTo="body"
                                     popup="true" />
@@ -167,7 +169,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                 @if (rule._expanded) {
                     <div class="cw-accordion-body">
                         @for (group of rule._conditionGroups; track group; let i = $index) {
-                            <condition-group (createCondition)="onCreateCondition($event)"
+                            <condition-group
+                                (createCondition)="onCreateCondition($event)"
                                 (deleteCondition)="onDeleteCondition($event, group)"
                                 (updateConditionGroupOperator)="
                                     onUpdateConditionGroupOperator($event, group)
@@ -180,9 +183,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                 [group]="group"
                                 [conditionTypes]="conditionTypes"
                                 [groupIndex]="i"
-                                [conditionTypePlaceholder]="
-                                    conditionTypePlaceholder
-                                " />
+                                [conditionTypePlaceholder]="conditionTypePlaceholder" />
                         }
                         <div class="cw-action-group">
                             <div class="cw-action-separator">
@@ -191,7 +192,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                             <div class="cw-rule-actions" flex layout="column">
                                 @for (ruleAction of ruleActions; track ruleAction; let i = $index) {
                                     <div class="cw-action-row" layout="row">
-                                        <rule-action (updateRuleActionType)="onUpdateRuleActionType($event)"
+                                        <rule-action
+                                            (updateRuleActionType)="onUpdateRuleActionType($event)"
                                             (updateRuleActionParameter)="
                                                 onUpdateRuleActionParameter($event)
                                             "

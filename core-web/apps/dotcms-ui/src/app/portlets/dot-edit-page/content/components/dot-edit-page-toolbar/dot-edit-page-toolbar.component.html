@@ -21,7 +21,8 @@
                 [url]="pageState.page.pageURI"
                 class="flex gap-2" />
             @if (showFavoritePageStar) {
-                <p-button (click)="favoritePage.emit(true)"
+                <p-button
+                    (click)="favoritePage.emit(true)"
                     [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
                     [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
                     class="flex gap-3"

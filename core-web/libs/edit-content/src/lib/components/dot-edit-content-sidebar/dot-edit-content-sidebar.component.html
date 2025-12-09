@@ -26,7 +26,8 @@
                 class="h-full">
                 <ng-template #sectionAction>
                     @if (!$store.isNew() && !$store.isCopyingLocale()) {
-                        <dot-copy-button [copy]="contentlet.identifier"
+                        <dot-copy-button
+                            [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
                             [tooltipText]="'Identifier' | dm" />
                     }

@@ -1,6 +1,7 @@
 <nav class="edit-ema-nav-bar">
     @for (item of items; track $index) {
-        <ng-container [ngTemplateOutlet]="!item.href?.length ? button : anchor"
+        <ng-container
+            [ngTemplateOutlet]="!item.href?.length ? button : anchor"
             [ngTemplateOutletContext]="{ item: item, index: $index }" />
     }
 </nav>
@@ -24,7 +25,8 @@
             queryParamsHandling="merge"
             tooltipPosition="left"
             rel="noopener">
-            <ng-container [ngTemplateOutlet]="item.icon ? icon : iconURL"
+            <ng-container
+                [ngTemplateOutlet]="item.icon ? icon : iconURL"
                 [ngTemplateOutletContext]="{ item: item }" />
             <span class="item__label" data-testId="nav-bar-item-label">
                 {{ item.label | dm }}
@@ -40,7 +42,8 @@
         [disabled]="item.isDisabled"
         class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
         data-testId="nav-bar-item">
-        <ng-container [ngTemplateOutlet]="item.icon ? icon : iconURL"
+        <ng-container
+            [ngTemplateOutlet]="item.icon ? icon : iconURL"
             [ngTemplateOutletContext]="{ item: item }" />
         <span class="item__label" data-testId="nav-bar-item-label">
             {{ item.label | dm }}

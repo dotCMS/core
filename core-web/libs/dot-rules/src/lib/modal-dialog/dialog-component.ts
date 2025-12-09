@@ -16,7 +16,8 @@ import { KeyCode } from '../services/util/key-util';
             [draggable]="false"
             appendTo="body">
             @if (errorMessage) {
-                <p-message [text]="errorMessage"
+                <p-message
+                    [text]="errorMessage"
                     style="margin-bottom: 16px; display: block;"
                     severity="error" />
             }

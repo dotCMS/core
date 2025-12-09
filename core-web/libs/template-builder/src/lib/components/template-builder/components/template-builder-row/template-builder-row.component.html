@@ -3,7 +3,8 @@
         <ng-content />
     </div>
     <div class="row__actions-container">
-        <p-button (onClick)="editClasses()"
+        <p-button
+            (onClick)="editClasses()"
             data-testid="row-style-class-button"
             styleClass="p-button-text p-button-sm p-button-rounded"
             icon="pi pi-palette" />
@@ -17,7 +18,8 @@
         </div>
         <dotcms-remove-confirm-dialog (deleteConfirmed)="deleteRow()" />
     </div>
-    <dotcms-template-builder-background-columns [ngStyle]="{
+    <dotcms-template-builder-background-columns
+        [ngStyle]="{
             opacity: isResizing ? 1 : 0
         }" />
 </div>

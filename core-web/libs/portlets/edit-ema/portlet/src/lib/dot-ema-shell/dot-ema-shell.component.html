@@ -37,12 +37,12 @@
     }
 
     <router-outlet />
-    <dot-edit-ema-navigation-bar [items]="$shellProps().items"
+    <dot-edit-ema-navigation-bar
+        [items]="$shellProps().items"
         (action)="handleItemAction($event)"
         data-testId="ema-nav-bar" />
     <p-toast position="top-center" data-testId="ema-toast" />
-    <dot-page-tools-seo [currentPageUrlParams]="$shellProps().seoParams"
-        #pageTools />
+    <dot-page-tools-seo [currentPageUrlParams]="$shellProps().seoParams" #pageTools />
 } @else {
     @if ($shellProps().error?.code === 401) {
         <dot-not-license />
@@ -51,11 +51,13 @@
     }
 }
 
-<dot-edit-ema-dialog (action)="handleNgEvent($event)"
+<dot-edit-ema-dialog
+    (action)="handleNgEvent($event)"
     (reloadFromDialog)="reloadFromDialog()"
     #dialog
     data-testId="ema-dialog" />
-<p-confirmDialog [style]="{
+<p-confirmDialog
+    [style]="{
         width: '400px'
     }"
     key="shell-confirm-dialog"

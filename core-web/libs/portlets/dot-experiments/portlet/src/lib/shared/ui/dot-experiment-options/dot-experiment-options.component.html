@@ -3,7 +3,8 @@
         [attr.data-testId]="'dot-options-item_' + item.val"
         [class.active]="expanded.has(i)"
         class="dot-options__item">
-        <ng-container [ngTemplateOutletContext]="{ $implicit: item, index: i }"
+        <ng-container
+            [ngTemplateOutletContext]="{ $implicit: item, index: i }"
             [ngTemplateOutlet]="defaultHeader" />
         @if (item?.content) {
             <div

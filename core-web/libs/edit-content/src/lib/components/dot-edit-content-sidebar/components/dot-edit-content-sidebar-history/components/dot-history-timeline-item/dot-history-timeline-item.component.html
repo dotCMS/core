@@ -93,7 +93,8 @@
 
             <!-- User Information Section -->
             <div class="dot-history-timeline-item__user-section">
-                <p-avatar dotGravatar
+                <p-avatar
+                    dotGravatar
                     [email]="$item().modUserName"
                     shape="circle"
                     styleClass="dot-history-timeline-item__avatar"
@@ -107,14 +108,12 @@
         <!-- Actions Button - Positioned independently -->
         @if ($menuItems().length > 0) {
             <div class="dot-history-timeline-item__actions">
-                <p-button icon="pi pi-ellipsis-v"
+                <p-button
+                    icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
                     (click)="versionMenu.toggle($event); $event.stopPropagation()"
                     data-testid="version-menu-button" />
-                <p-menu #versionMenu
-                    [appendTo]="'body'"
-                    [model]="$menuItems()"
-                    [popup]="true" />
+                <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
             </div>
         }
     </div>

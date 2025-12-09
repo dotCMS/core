@@ -54,7 +54,8 @@
         <!--Add new language-->
         <div class="field">
             <label for="localeType">{{ 'locales.type' | dm }}</label>
-            <p-dropdown (onChange)="handleTypeChange()"
+            <p-dropdown
+                (onChange)="handleTypeChange()"
                 [options]="localeType"
                 id="localeType"
                 #localeTypeDropdown

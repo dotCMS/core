@@ -1,7 +1,8 @@
 @if (vm$ | async; as vm) {
     <dot-portlet-base>
         <div class="px-3 py-2">
-            <p-breadcrumb (onItemClick)="updateBreadCrumb($event)"
+            <p-breadcrumb
+                (onItemClick)="updateBreadCrumb($event)"
                 [model]="vm.categoryBreadCrumbs"
                 [home]="breadCrumbHome" />
         </div>
@@ -36,7 +37,8 @@
                                 pButton
                                 icon="pi pi-ellipsis-v"
                                 data-testId="actions"></button>
-                            <p-menu [popup]="true"
+                            <p-menu
+                                [popup]="true"
                                 [model]="vm.categoriesBulkActions"
                                 #actionsMenu
                                 appendTo="body" />
@@ -126,7 +128,8 @@
                                                 <i
                                                     (click)="editText.deactivate()"
                                                     class="pi pi-times"></i>
-                                                <p-inputNumber [ngModel]="category.sortOrder"
+                                                <p-inputNumber
+                                                    [ngModel]="category.sortOrder"
                                                     inputStyleClass="category_listing__sortOrder__field" />
                                             </span>
                                         </ng-template>
@@ -137,7 +140,8 @@
                                     </p-inplace>
                                 } @else {
                                     @if (col.fieldName === 'Actions') {
-                                        <dot-action-menu-button (click)="$event.stopPropagation()"
+                                        <dot-action-menu-button
+                                            (click)="$event.stopPropagation()"
                                             [attr.data-testId]="category.categoryId"
                                             [actions]="vm.categoriesActions"
                                             [item]="category"
@@ -160,7 +164,8 @@
                                     {{ 'No-Results-Found' | dm }}
                                 </div>
                             } @else {
-                                <dot-empty-state [rows]="10"
+                                <dot-empty-state
+                                    [rows]="10"
                                     [colsTextWidth]="[60, 50, 60, 80]"
                                     [title]="'message.category.empty.title' | dm"
                                     [content]="'message.category.empty.content' | dm"

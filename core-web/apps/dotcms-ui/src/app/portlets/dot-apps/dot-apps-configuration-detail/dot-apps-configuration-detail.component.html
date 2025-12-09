@@ -25,7 +25,8 @@
     </div>
     <div class="dot-apps-configuration-detail__body">
         <div class="dot-apps-configuration-detail__form-content">
-            <dot-apps-configuration-detail-form (data)="formData = $event"
+            <dot-apps-configuration-detail-form
+                (data)="formData = $event"
                 (valid)="formValid = $event"
                 [appConfigured]="apps.sites[0].configured"
                 [formFields]="formFields" />

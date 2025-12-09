@@ -74,13 +74,14 @@
         </div>
         @if (vm.isContentTypeVisible) {
             <div class="dot-container-properties__code-loop-container" [@contentTypeAnimation]>
-                <dot-loop-editor (buttonClick)="showLoopInput()"
+                <dot-loop-editor
+                    (buttonClick)="showLoopInput()"
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     label="pre_loop"
                     formControlName="preLoop" />
-                <dot-container-code [contentTypes]="vm.contentTypes"
-                    [fg]="form" />
-                <dot-loop-editor (buttonClick)="showLoopInput()"
+                <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form" />
+                <dot-loop-editor
+                    (buttonClick)="showLoopInput()"
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     formControlName="postLoop"
                     label="post_loop" />
@@ -89,7 +90,8 @@
         @if (!vm.isContentTypeVisible) {
             <div class="field">
                 <label class="block" dotFieldRequired for="code">Code</label>
-                <dot-textarea-content [show]="['code']"
+                <dot-textarea-content
+                    [show]="['code']"
                     id="code"
                     data-testId="code"
                     formControlName="code"

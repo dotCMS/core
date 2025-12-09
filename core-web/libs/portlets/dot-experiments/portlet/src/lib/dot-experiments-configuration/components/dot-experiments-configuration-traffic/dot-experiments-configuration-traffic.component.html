@@ -2,7 +2,8 @@
     <p-card>
         <ng-template pTemplate="title">
             <h2 class="flex align-items-center gap-1 uppercase" data-testId="traffic-card-title">
-                <dot-icon [ngClass]="{ isDone: vm.trafficAllocation }"
+                <dot-icon
+                    [ngClass]="{ isDone: vm.trafficAllocation }"
                     [size]="16"
                     class="inline-flex"
                     data-testId="traffic-step-done"

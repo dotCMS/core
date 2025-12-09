@@ -37,7 +37,8 @@ const I8N_BASE = 'api.sites.ruleengine';
     providers: [DecimalPipe],
     selector: 'cw-visitors-location-container',
     template: `
-        <cw-visitors-location-component (comparisonChange)="onComparisonChange($event)"
+        <cw-visitors-location-component
+            (comparisonChange)="onComparisonChange($event)"
             (areaChange)="onUpdate($event)"
             [circle]="circle$ | async"
             [preferredUnit]="preferredUnit"

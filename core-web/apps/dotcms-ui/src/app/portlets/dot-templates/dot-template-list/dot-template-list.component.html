@@ -15,7 +15,8 @@
     dataKey="inode">
     <div class="template-listing__header-options">
         <div>
-            <p-checkbox (onChange)="handleArchivedFilter($event.checked)"
+            <p-checkbox
+                (onChange)="handleArchivedFilter($event.checked)"
                 [label]="'Show-Archived' | dm"
                 [binary]="true"
                 data-testid="archiveCheckbox" />
@@ -46,7 +47,8 @@
             {{ rowData.name }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
-            <dot-state-icon [labels]="setStateLabels()"
+            <dot-state-icon
+                [labels]="setStateLabels()"
                 [state]="getTemplateState(rowData)"
                 size="14px" />
         </td>

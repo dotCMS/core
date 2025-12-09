@@ -80,7 +80,8 @@
                     <div
                         class="dot-edit-content-actions__lock flex align-items-center gap-2"
                         [class.locked]="isContentLocked">
-                        <p-inputSwitch [ngModel]="isContentLocked"
+                        <p-inputSwitch
+                            [ngModel]="isContentLocked"
                             [disabled]="!canLock"
                             (onChange)="onContentLockChange($event)"
                             inputId="lockSwitch"

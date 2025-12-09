@@ -8,11 +8,13 @@
         <ng-template pTemplate="item" let-contentlet>
             <div class="card-list-row">
                 @if (contentlet[0]) {
-                    <dot-asset-card (click)="selectedItem.emit(contentlet[0])"
+                    <dot-asset-card
+                        (click)="selectedItem.emit(contentlet[0])"
                         [contentlet]="contentlet[0]" />
                 }
                 @if (contentlet[1]) {
-                    <dot-asset-card (click)="selectedItem.emit(contentlet[1])"
+                    <dot-asset-card
+                        (click)="selectedItem.emit(contentlet[1])"
                         [contentlet]="contentlet[1]" />
                 }
             </div>

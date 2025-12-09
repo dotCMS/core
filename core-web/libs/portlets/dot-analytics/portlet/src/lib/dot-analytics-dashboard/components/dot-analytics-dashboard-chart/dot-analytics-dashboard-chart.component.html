@@ -42,12 +42,8 @@
                         <!-- Y-axis labels skeleton -->
                         <div class="y-axis-skeleton">
                             <p-skeleton height="0.75rem" width="1.875rem" class="mb-4" />
-                            <p-skeleton height="0.75rem"
-                                width="1.5625rem"
-                                class="mb-4" />
-                            <p-skeleton height="0.75rem"
-                                width="2.1875rem"
-                                class="mb-4" />
+                            <p-skeleton height="0.75rem" width="1.5625rem" class="mb-4" />
+                            <p-skeleton height="0.75rem" width="2.1875rem" class="mb-4" />
                             <p-skeleton height="0.75rem" width="1.75rem" class="mb-4" />
                             <p-skeleton height="0.75rem" width="1.25rem" />
                         </div>
@@ -98,7 +94,8 @@
     } @else {
         <!-- Normal chart content -->
         <div class="chart-container" [style.height]="height">
-            <p-chart [type]="type"
+            <p-chart
+                [type]="type"
                 [data]="$chartData()"
                 [options]="$chartOptions()"
                 width="100%"

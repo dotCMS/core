@@ -22,7 +22,8 @@
                     </div>
                 } @else if (!$hasHistoryItems()) {
                     <!-- Empty state -->
-                    <dot-empty-container [configuration]="{
+                    <dot-empty-container
+                        [configuration]="{
                             title: '',
                             subtitle: 'edit.content.sidebar.history.empty.message' | dm,
                             icon: 'pi-folder-open'
@@ -40,7 +41,8 @@
                             styleClass="dot-edit-content-sidebar-history__scroller"
                             data-testid="history-timeline">
                             <ng-template pTemplate="item" let-item let-index="index">
-                                <dot-history-timeline-item [item]="item"
+                                <dot-history-timeline-item
+                                    [item]="item"
                                     [itemIndex]="getRealIndex(item)"
                                     [isActive]="historicalVersionInode === item.inode"
                                     (click)="
@@ -49,9 +51,7 @@
                                             item
                                         })
                                     "
-                                    (actionTriggered)="
-                                        timelineItemAction.emit($event)
-                                    " />
+                                    (actionTriggered)="timelineItemAction.emit($event)" />
                             </ng-template>
                         </p-scroller>
                     </div>
@@ -66,7 +66,8 @@
             <div
                 slot="header-content"
                 class="dot-edit-content-sidebar-history__push-publish__actions">
-                <p-button icon="pi pi-ellipsis-v"
+                <p-button
+                    icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
                     (click)="ppMenu.toggle($event); $event.stopPropagation()"
                     [disabled]="!$hasPushPublishHistoryItems()"
@@ -87,7 +88,8 @@
                     </div>
                 } @else if (!$hasPushPublishHistoryItems()) {
                     <!-- Empty state for push publish -->
-                    <dot-empty-container [configuration]="{
+                    <dot-empty-container
+                        [configuration]="{
                             title: '',
                             subtitle:
                                 'edit.content.sidebar.history.push.publish.empty.message' | dm,
@@ -106,7 +108,8 @@
                             styleClass="dot-edit-content-sidebar-history__scroller"
                             data-testid="push-publish-timeline">
                             <ng-template pTemplate="item" let-item let-index="index">
-                                <dot-pushpublish-timeline-item [item]="item"
+                                <dot-pushpublish-timeline-item
+                                    [item]="item"
                                     data-testid="pushpublish-timeline-item" />
                             </ng-template>
                         </p-scroller>

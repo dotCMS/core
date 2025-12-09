@@ -1,4 +1,5 @@
-<p-button (click)="hint.toggle($event); $event.preventDefault()"
+<p-button
+    (click)="hint.toggle($event); $event.preventDefault()"
     icon="pi pi-question-circle"
     styleClass="p-button-rounded p-button-sm p-button-text" />
 <p-overlayPanel [dismissable]="true" [style]="{ width: '350px' }" #hint appendTo="body">

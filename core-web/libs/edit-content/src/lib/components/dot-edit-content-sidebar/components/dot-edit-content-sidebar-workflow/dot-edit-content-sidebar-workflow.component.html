@@ -23,7 +23,8 @@
             {{ workflow.scheme?.name }}
 
             @if ($showWorkflowSelection()) {
-                <p-button data-testId="edit-workflow-button"
+                <p-button
+                    data-testId="edit-workflow-button"
                     (click)="showDialog()"
                     pButton
                     styleClass="p-button-link"
@@ -31,7 +32,8 @@
             }
 
             @if (workflow.resetAction) {
-                <p-button (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
+                <p-button
+                    (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
                     pButton
                     styleClass="p-button-link"
                     data-testId="reset-workflow-button"
@@ -84,7 +86,8 @@
                 <label for="workflow">
                     {{ 'edit.content.sidebar.workflow.dialog.title' | dm }}
                 </label>
-                <p-dropdown id="workflow"
+                <p-dropdown
+                    id="workflow"
                     appendTo="body"
                     [options]="workflowSelection.schemeOptions"
                     optionLabel="label"

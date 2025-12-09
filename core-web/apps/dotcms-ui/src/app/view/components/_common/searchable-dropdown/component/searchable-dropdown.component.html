@@ -56,7 +56,8 @@
         </div>
         @if (action) {
             <div class="searchable-dropdown__search-action">
-                <p-button (click)="action($event)"
+                <p-button
+                    (click)="action($event)"
                     icon="pi pi-plus"
                     styleClass="p-button-text p-button-rounded" />
             </div>
@@ -76,7 +77,8 @@
         [value]="options"
         class="searchable-dropdown__data-list">
         <ng-template let-data pTemplate="list">
-            <ng-container [ngTemplateOutletContext]="{
+            <ng-container
+                [ngTemplateOutletContext]="{
                     data: data,
                     selectedOptionValue: selectedOptionValue
                 }"
@@ -85,5 +87,6 @@
     </p-dataView>
 </p-overlayPanel>
 
-<ng-container [ngTemplateOutletContext]="{ item: value }"
+<ng-container
+    [ngTemplateOutletContext]="{ item: value }"
     [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate" />

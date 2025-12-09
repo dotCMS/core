@@ -6,7 +6,8 @@
     dotMaxlength="255"
     contenteditable="true"></div>
 
-<p-button (click)="removeItem($event)"
+<p-button
+    (click)="removeItem($event)"
     [pTooltip]="'contenttypes.action.delete' | dm"
     class="field__actions-delete"
     icon="pi pi-trash"

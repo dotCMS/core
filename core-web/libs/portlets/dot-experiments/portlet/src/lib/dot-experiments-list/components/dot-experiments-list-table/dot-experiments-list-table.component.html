@@ -25,7 +25,8 @@
                             {{ experiment.modDate | dotTimestampToDate }}
                         </td>
                         <td class="text-right" data-testId="experiment-row__actions">
-                            <p-menu [model]="experiment.actionsItemsMenu"
+                            <p-menu
+                                [model]="experiment.actionsItemsMenu"
                                 [popup]="true"
                                 #menu
                                 appendTo="body" />

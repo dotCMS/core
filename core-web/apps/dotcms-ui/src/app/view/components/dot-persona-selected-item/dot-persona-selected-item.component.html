@@ -3,7 +3,8 @@
     [tooltipPosition]="disabled ? 'bottom' : null"
     class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3">
     @if (persona) {
-        <p-avatar [text]="persona?.name"
+        <p-avatar
+            [text]="persona?.name"
             [image]="persona?.photo"
             [badgeDisabled]="!persona?.personalized"
             pBadge

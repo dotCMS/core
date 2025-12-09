@@ -11,7 +11,8 @@
             class="dot-nav__item-main"
             data-testid="nav-item-main"
             (click)="clickHandler($event, data)">
-            <dot-nav-icon [icon]="data.icon === labelImportantIcon ? (data.label | dotRandomIcon) : data.icon"
+            <dot-nav-icon
+                [icon]="data.icon === labelImportantIcon ? (data.label | dotRandomIcon) : data.icon"
                 aria-hidden="true" />
             <span class="dot-nav__item-label" data-testid="nav-item-label">{{ data.label }}</span>
         </div>
@@ -26,7 +27,8 @@
         </div>
     </div>
 </div>
-<dot-sub-nav (itemClick)="handleItemClick($event)"
+<dot-sub-nav
+    (itemClick)="handleItemClick($event)"
     [ngStyle]="customStyles"
     [data]="data"
     [collapsed]="collapsed"

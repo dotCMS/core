@@ -21,7 +21,8 @@
                     <p-skeleton borderRadius="0px" height="3.9rem" width="4rem" />
                 }
 
-                <p-menu [model]="menuItems"
+                <p-menu
+                    [model]="menuItems"
                     [popup]="true"
                     [style]="{
                         'max-height': '300px',
@@ -69,7 +70,8 @@
                         [label]="'add-variable' | dm"
                         class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
                         pButton></button>
-                    <dot-textarea-content (monacoInit)="monacoInit($event)"
+                    <dot-textarea-content
+                        (monacoInit)="monacoInit($event)"
                         [attr.data-testid]="containerContent.value.structureId"
                         [customStyles]="{ border: 'none', height: '500px' }"
                         [editorName]="containerContent.value.structureId"

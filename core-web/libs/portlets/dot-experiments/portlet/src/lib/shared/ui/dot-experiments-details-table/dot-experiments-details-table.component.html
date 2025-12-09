@@ -12,7 +12,8 @@
             }
             <div class="flex flex-column gap-3 details">
                 <div class="details__headers grid grid-nogutter">
-                    <ng-container *ngTemplateOutlet="
+                    <ng-container
+                        *ngTemplateOutlet="
                             headers || defaultHeaders;
                             context: { $implicit: data }
                         " />
@@ -20,7 +21,8 @@
                 <div class="details__rows-wrapper flex flex-column gap-2">
                     @for (row of data; track row) {
                         <div class="details__row grid grid-nogutter" data-testId="detail-row">
-                            <ng-container *ngTemplateOutlet="
+                            <ng-container
+                                *ngTemplateOutlet="
                                     rows || defaultRowsTemplate;
                                     context: { $implicit: row }
                                 " />

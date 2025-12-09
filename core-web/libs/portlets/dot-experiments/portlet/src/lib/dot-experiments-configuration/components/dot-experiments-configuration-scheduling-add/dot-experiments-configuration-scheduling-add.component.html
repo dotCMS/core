@@ -1,6 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header [actionButtonTpl]="actionHeaderBtnTpl"
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}" />
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
             <form [formGroup]="form" class="p-fluid" data-testId="add-scheduling-form" novalidate>
@@ -8,7 +9,8 @@
                     <label for="initialDate">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
-                    <p-calendar (onClear)="setDateBoundaries()"
+                    <p-calendar
+                        (onClear)="setDateBoundaries()"
                         (onSelect)="setDateBoundaries()"
                         [defaultDate]="initialDate"
                         [minDate]="today"
@@ -25,7 +27,8 @@
                     <label for="endTime">
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>
-                    <p-calendar [defaultDate]="minEndDate || initialDate"
+                    <p-calendar
+                        [defaultDate]="minEndDate || initialDate"
                         [maxDate]="maxEndDate"
                         [minDate]="minEndDate || initialDate"
                         [readonlyInput]="true"

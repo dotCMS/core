@@ -3,7 +3,8 @@
         <i class="material-icons">{{ url }}</i>
     } @else {
         @if (data?.contentlet) {
-            <dot-contentlet-thumbnail [contentlet]="data.contentlet"
+            <dot-contentlet-thumbnail
+                [contentlet]="data.contentlet"
                 [width]="42"
                 [height]="42"
                 [iconSize]="'42px'" />

@@ -16,16 +16,16 @@
                 pInputText
                 formControlName="title"
                 data-testId="titleMenu" />
-            <dot-field-validation-message [field]="form.get('title')"
-                message="{{
-                    'contenttypes.field.properties.name.error.required' | dm
-                }}" />
+            <dot-field-validation-message
+                [field]="form.get('title')"
+                message="{{ 'contenttypes.field.properties.name.error.required' | dm }}" />
         </div>
         <div class="field">
             <label dotFieldRequired for="menu" data-testId="menuOptionLabel">
                 {{ 'contenttypes.content.add_to_menu.show_under' | dm }}
             </label>
-            <p-dropdown [options]="menu$ | async"
+            <p-dropdown
+                [options]="menu$ | async"
                 id="menu"
                 data-testId="menuOption"
                 appendTo="body"
@@ -38,7 +38,8 @@
                 {{ 'contenttypes.content.add_to_menu.default_view' | dm }}
             </label>
             <div class="field">
-                <p-radioButton [label]="'custom.content.portlet.dataViewMode.card' | dm"
+                <p-radioButton
+                    [label]="'custom.content.portlet.dataViewMode.card' | dm"
                     id="cardViewMode"
                     data-testId="cardViewMode"
                     name="defaultView"
@@ -46,7 +47,8 @@
                     formControlName="defaultView" />
             </div>
             <div class="field">
-                <p-radioButton [label]="'custom.content.portlet.dataViewMode.list' | dm"
+                <p-radioButton
+                    [label]="'custom.content.portlet.dataViewMode.list' | dm"
                     data-testId="listViewMode"
                     name="defaultView"
                     value="list"

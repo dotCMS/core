@@ -41,7 +41,8 @@
                                         }}
                                     </ng-template>
                                 </p-dropdown>
-                                <p-selectButton (onChange)="changeDiff.emit($event.value)"
+                                <p-selectButton
+                                    (onChange)="changeDiff.emit($event.value)"
                                     [(ngModel)]="showDiff"
                                     [options]="displayOptions"
                                     class="p-button-compact"

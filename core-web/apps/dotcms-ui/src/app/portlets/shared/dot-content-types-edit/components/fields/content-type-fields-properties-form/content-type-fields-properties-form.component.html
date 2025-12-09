@@ -5,14 +5,16 @@
     novalidate>
     @for (property of fieldProperties; track property) {
         <div #properties>
-            <ng-container [propertyName]="property"
+            <ng-container
+                [propertyName]="property"
                 [field]="formFieldData"
                 [group]="form"
                 dotDynamicFieldProperty />
         </div>
     }
     @if (formFieldData?.relationships) {
-        <dot-relationship-tree [contentType]="contentType"
+        <dot-relationship-tree
+            [contentType]="contentType"
             [isParentField]="formFieldData.relationships.isParentField"
             [velocityVar]="formFieldData.relationships.velocityVar" />
     }

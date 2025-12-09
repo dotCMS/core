@@ -11,14 +11,16 @@
             data-drag-type="target"
             dragula="fields-bag">
             @if (!column.fields.length) {
-                <p-button (click)="remove(i)"
+                <p-button
+                    (click)="remove(i)"
                     [pTooltip]="'contenttypes.action.delete' | dm"
                     class="row-header__remove"
                     icon="pi pi-trash"
                     styleClass="p-button-rounded p-button-text p-button-sm p-button-danger" />
             }
             @for (field of column.fields; track field) {
-                <dot-content-type-field-dragabble-item (remove)="onRemoveField($event)"
+                <dot-content-type-field-dragabble-item
+                    (remove)="onRemoveField($event)"
                     (edit)="this.editField.emit(field)"
                     [field]="field"
                     [isSmall]="fieldRow.columns.length > 1" />

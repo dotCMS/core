@@ -28,7 +28,8 @@
                         icon="pi pi-trash"></button>
                 </div>
             </div>
-            <dot-apps-configuration-list (loadData)="loadData($event)"
+            <dot-apps-configuration-list
+                (loadData)="loadData($event)"
                 (edit)="gotoConfiguration($event)"
                 (export)="confirmExport($event)"
                 (delete)="deleteConfiguration($event)"
@@ -39,7 +40,8 @@
     </div>
 </div>
 
-<dot-apps-import-export-dialog (shutdown)="onClosedDialog()"
+<dot-apps-import-export-dialog
+    (shutdown)="onClosedDialog()"
     [app]="apps"
     [site]="siteSelected"
     [action]="importExportDialogAction"

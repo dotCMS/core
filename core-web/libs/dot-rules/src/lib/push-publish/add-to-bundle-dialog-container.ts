@@ -16,7 +16,8 @@ import { BundleService, IBundle } from '../services/bundle-service';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-add-to-bundle-dialog-container',
     template: `
-        <cw-add-to-bundle-dialog-component (cancel)="onClose()"
+        <cw-add-to-bundle-dialog-component
+            (cancel)="onClose()"
             (addToBundle)="addToBundle($event)"
             [bundleStores]="bundleService.bundles$ | async"
             [hidden]="hidden"

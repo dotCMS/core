@@ -6,7 +6,8 @@
         [actions]="dialogActions"
         [appendToBody]="true"
         width="500px">
-        <dot-create-persona-form (isValid)="handlerFormValidState($event)"
+        <dot-create-persona-form
+            (isValid)="handlerFormValidState($event)"
             [personaName]="personaName"
             #personaForm />
     </dot-dialog>

@@ -3,7 +3,8 @@
 }
 @if (actions.length === 1 && filteredActions.length === 1) {
     @if ($hasIcon()) {
-        <p-button (click)="filteredActions[0].command($event)"
+        <p-button
+            (click)="filteredActions[0].command($event)"
             [icon]="filteredActions[0].icon"
             [pTooltip]="filteredActions[0].label"
             styleClass="p-button-sm p-button-rounded p-button-text"

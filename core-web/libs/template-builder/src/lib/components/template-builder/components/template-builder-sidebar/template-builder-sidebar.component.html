@@ -1,13 +1,15 @@
 <div class="template-builder-sidebar__header">
     <h5 class="header__title">{{ 'dot.template.builder.sidebar.header.title' | dm }}</h5>
-    <p-dropdown (onChange)="widthChange($event)"
+    <p-dropdown
+        (onChange)="widthChange($event)"
         [options]="widthOptions"
         [ngModel]="width"
         data-testId="select-sidebar-width" />
 </div>
 
 <div class="template-builder-sidebar__body-container">
-    <dotcms-template-builder-box (addContainer)="addContainer($event)"
+    <dotcms-template-builder-box
+        (addContainer)="addContainer($event)"
         (deleteContainer)="deleteContainer($event)"
         [width]="4"
         [items]="containers"

@@ -1,12 +1,14 @@
 @if (vm$ | async; as vm) {
     <div (@inOut.done)="onAnimationDone($event)" [@inOut]="vm.viewContentlet" data-testId="wrapper">
-        <dot-palette-content-type (filter)="filterContentTypes($event)"
+        <dot-palette-content-type
+            (filter)="filterContentTypes($event)"
             (selected)="switchView($event)"
             [items]="vm.contentTypes"
             [loading]="vm.loading"
             [viewContentlet]="vm.viewContentlet"
             #contentTypes />
-        <dot-palette-contentlets (back)="switchView()"
+        <dot-palette-contentlets
+            (back)="switchView()"
             (filter)="filterContentlets($event)"
             (paginate)="paginateContentlets($event)"
             [items]="vm.contentlets"

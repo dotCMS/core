@@ -13,14 +13,16 @@
                 <label dotFieldRequired for="download-btn">
                     {{ 'download.bundle.i.want' | dm }}
                 </label>
-                <p-selectButton [options]="downloadOptions"
+                <p-selectButton
+                    [options]="downloadOptions"
                     class="p-button-tabbed"
                     id="download-btn"
                     formControlName="downloadOptionSelected" />
             </div>
             <div class="field">
                 <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
-                <p-dropdown [options]="filterOptions"
+                <p-dropdown
+                    [options]="filterOptions"
                     id="filterKey"
                     formControlName="filterKey"
                     appendTo="body" />

@@ -119,7 +119,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                     </div>
                 }
                 @for (rule of rules; track rule) {
-                    <rule (updateName)="updateName.emit($event)"
+                    <rule
+                        (updateName)="updateName.emit($event)"
                         (updateFireOn)="updateFireOn.emit($event)"
                         (updateEnabledState)="updateEnabledState.emit($event)"
                         (updateExpandedState)="updateExpandedState.emit($event)"
