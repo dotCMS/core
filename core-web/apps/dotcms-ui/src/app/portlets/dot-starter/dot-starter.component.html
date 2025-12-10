@@ -23,24 +23,6 @@
             </div>
             }
         </div>
-        <p-overlayPanel #frameworkInfoOverlay>
-            <div class="flex flex-column gap-3" style="max-width: 20rem">
-                <div>
-                    <span class="font-medium text-900 block mb-2">Ready to build with {{ selectedFrameworkInfo?.label }}?</span>
-                    <p class="text-600 m-0">
-                        The interactive guide is in development, but you can check out our fully configured {{ selectedFrameworkInfo?.label }} starter kit today
-                    </p>
-                </div>
-                <div>
-                    <a [href]="selectedFrameworkInfo?.githubUrl" target="_blank" rel="noopener noreferrer"
-                        class="flex align-items-center gap-2 text-primary no-underline">
-                        <i class="pi pi-github"></i>
-                        <span class="font-medium">View Starter Kit</span>
-                        <i class="pi pi-external-link text-sm"></i>
-                    </a>
-                </div>
-            </div>
-        </p-overlayPanel>
         <section class="dot-onboarding__steps">
             <p-accordion (activeIndexChange)="activeIndexChange($event)" [activeIndex]="state().activeAccordionIndex" [multiple]="false">
                 @for (step of content.steps; let i = $index; track step) {
@@ -118,3 +100,22 @@
         </div>
     </div>
 </section>
+
+<p-overlayPanel #frameworkInfoOverlay>
+    <div class="flex flex-column gap-3" style="max-width: 20rem">
+        <div>
+            <span class="font-medium text-900 block mb-2">Ready to build with {{ selectedFrameworkInfo?.label }}?</span>
+            <p class="text-600 m-0">
+                The interactive guide is in development, but you can check out our fully configured {{ selectedFrameworkInfo?.label }} starter kit today
+            </p>
+        </div>
+        <div>
+            <a [href]="selectedFrameworkInfo?.githubUrl" target="_blank" rel="noopener noreferrer"
+                class="flex align-items-center gap-2 text-primary no-underline">
+                <i class="pi pi-github"></i>
+                <span class="font-medium">View Starter Kit</span>
+                <i class="pi pi-external-link text-sm"></i>
+            </a>
+        </div>
+    </div>
+</p-overlayPanel>
