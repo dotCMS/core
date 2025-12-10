@@ -1,5 +1,5 @@
 import { normalizeForm } from './internal';
-import { styleEditorField, defineStyleEditorForm } from './public';
+import { styleEditorField, defineStyleEditorSchema } from './public';
 import { StyleEditorForm, StyleEditorFormSchema } from './types';
 
 // Mock the internal normalizeForm function
@@ -438,7 +438,7 @@ describe('styleEditorField', () => {
     });
 });
 
-describe('defineStyleEditorForm', () => {
+describe('defineStyleEditorSchema', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
@@ -481,7 +481,7 @@ describe('defineStyleEditorForm', () => {
             ]
         };
 
-        const result = defineStyleEditorForm(form);
+        const result = defineStyleEditorSchema(form);
 
         expect(normalizeForm).toHaveBeenCalledWith(form);
         expect(result).toEqual(mockSchema);
@@ -543,7 +543,7 @@ describe('defineStyleEditorForm', () => {
             ]
         };
 
-        const result = defineStyleEditorForm(form);
+        const result = defineStyleEditorSchema(form);
 
         expect(normalizeForm).toHaveBeenCalledWith(form);
         expect(result).toEqual(mockSchema);
@@ -596,7 +596,7 @@ describe('defineStyleEditorForm', () => {
             ]
         };
 
-        const result = defineStyleEditorForm(form);
+        const result = defineStyleEditorSchema(form);
 
         expect(normalizeForm).toHaveBeenCalledWith(form);
         expect(result).toEqual(mockSchema);
@@ -615,7 +615,7 @@ describe('defineStyleEditorForm', () => {
             sections: []
         };
 
-        const result = defineStyleEditorForm(form);
+        const result = defineStyleEditorSchema(form);
 
         expect(normalizeForm).toHaveBeenCalledWith(form);
         expect(result).toEqual(mockSchema);
@@ -634,7 +634,7 @@ describe('defineStyleEditorForm', () => {
             sections: []
         };
 
-        const result = defineStyleEditorForm(form);
+        const result = defineStyleEditorSchema(form);
 
         expect(result.contentType).toBe('custom-content-type');
     });

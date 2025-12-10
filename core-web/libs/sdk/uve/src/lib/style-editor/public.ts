@@ -37,7 +37,7 @@ import { sendMessageToUVE } from '../editor/public';
  *
  * @example
  * ```typescript
- * const form = defineStyleEditorForm({
+ * const form = defineStyleEditorSchema({
  *   contentType: 'my-content-type',
  *   sections: [
  *     {
@@ -285,7 +285,7 @@ export const styleEditorField = {
  *
  * @example
  * ```typescript
- * const formSchema = defineStyleEditorForm({
+ * const formSchema = defineStyleEditorSchema({
  *   contentType: 'my-content-type',
  *   sections: [
  *     {
@@ -325,7 +325,7 @@ export const styleEditorField = {
  * registerStyleEditorSchemas([formSchema]);
  * ```
  */
-export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSchema {
+export function defineStyleEditorSchema(form: StyleEditorForm): StyleEditorFormSchema {
     return normalizeForm(form);
 }
 
@@ -333,7 +333,7 @@ export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSch
  * Registers style editor form schemas with the UVE editor.
  *
  * Sends normalized style editor schemas to the UVE (Universal Visual Editor)
- * for registration. The schemas must be normalized using `defineStyleEditorForm`
+ * for registration. The schemas must be normalized using `defineStyleEditorSchema`
  * before being passed to this function.
  *
  * **Behavior:**
@@ -353,7 +353,7 @@ export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSch
  * @example
  * ```typescript
  * // Create and normalize a form schema
- * const formSchema = defineStyleEditorForm({
+ * const formSchema = defineStyleEditorSchema({
  *   contentType: 'my-content-type',
  *   sections: [
  *     {
@@ -373,8 +373,8 @@ export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSch
  * registerStyleEditorSchemas([formSchema]);
  *
  * // Register multiple schemas at once
- * const schema1 = defineStyleEditorForm({ ... });
- * const schema2 = defineStyleEditorForm({ ... });
+ * const schema1 = defineStyleEditorSchema({ ... });
+ * const schema2 = defineStyleEditorSchema({ ... });
  * registerStyleEditorSchemas([schema1, schema2]);
  * ```
  */
