@@ -423,7 +423,7 @@ export class DotStarterComponent implements OnInit {
         this.loadProgress();
     }
 
-    private updateActiveAccordionIndex(index: number) {
+    activeIndexChange(index: number) {
         patchState(state, (state) => ({
             ...state,
             activeAccordionIndex: index
@@ -448,10 +448,6 @@ export class DotStarterComponent implements OnInit {
         }, 500);
     }
 
-    activeIndexChange(value: number) {
-        this.updateActiveAccordionIndex(value);
-    }
-
     showFrameworkInfo(
         event: Event,
         framework: {
@@ -472,11 +468,11 @@ export class DotStarterComponent implements OnInit {
 
     completeStepAndOpenNext(index: number): void {
         const nextIndex = index + 1;
-        this.updateActiveAccordionIndex(nextIndex);
+        this.activeIndexChange(nextIndex);
     }
 
     resetProgress(): void {
-        this.updateActiveAccordionIndex(0);
+        this.activeIndexChange(0);
     }
 
     get progressPercentage(): number {
@@ -542,11 +538,11 @@ ${substep.code}
             const saved = localStorage.getItem(STORAGE_KEY);
 
             if (!saved) {
-                this.updateActiveAccordionIndex(0);
+                this.activeIndexChange(0);
                 return;
             }
 
-            this.updateActiveAccordionIndex(parseInt(saved));
+            this.activeIndexChange(parseInt(saved));
 
         } catch {
             localStorage.removeItem(STORAGE_KEY);
