@@ -5,7 +5,8 @@ import {
     StyleEditorField,
     StyleEditorForm,
     StyleEditorSection,
-    StyleEditorFieldInputType
+    StyleEditorFieldInputType,
+    StyleEditorCheckboxDefaultValue
 } from './types';
 
 /**
@@ -73,7 +74,7 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
             | string
             | number
             | boolean
-            | Record<string, boolean>;
+            | StyleEditorCheckboxDefaultValue;
     }
 
     if (field.type === 'dropdown' || field.type === 'radio') {

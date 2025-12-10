@@ -158,6 +158,23 @@ export type StyleEditorOption = string | StyleEditorOptionObject;
 export type StyleEditorRadioOption = string | StyleEditorRadioOptionObject;
 
 /**
+ * Default value type for checkbox group fields.
+ *
+ * A record mapping option values to their boolean checked state.
+ * Keys should match the option values, values indicate whether the option is checked.
+ *
+ * @example
+ * ```typescript
+ * const defaultState: StyleEditorCheckboxDefaultValue = {
+ *   'underline': true,
+ *   'overline': false,
+ *   'line-through': false
+ * };
+ * ```
+ */
+export type StyleEditorCheckboxDefaultValue = Record<string, boolean>;
+
+/**
  * Base field definition that all field types extend.
  *
  * Provides the common properties shared by all field types in the style editor.
@@ -383,7 +400,7 @@ export interface StyleEditorCheckboxGroupField extends StyleEditorBaseField {
      * Optional default checked state as a record mapping option values to boolean.
      * Keys should match the option values, values indicate whether the option is checked.
      */
-    defaultValue?: Record<string, boolean>;
+    defaultValue?: StyleEditorCheckboxDefaultValue;
 }
 
 /**
@@ -544,9 +561,9 @@ export interface StyleEditorFieldSchemaConfig {
      * Optional default value. Type depends on field type:
      * - Input fields: string or number
      * - Switch fields: boolean
-     * - Checkbox groups: Record<string, boolean>
+     * - Checkbox groups: StyleEditorCheckboxDefaultValue
      */
-    defaultValue?: string | number | boolean | Record<string, boolean>;
+    defaultValue?: string | number | boolean | StyleEditorCheckboxDefaultValue;
     /**
      * Number of columns to display options in (for radio fields).
      * - `1`: Single column list layout (default)
