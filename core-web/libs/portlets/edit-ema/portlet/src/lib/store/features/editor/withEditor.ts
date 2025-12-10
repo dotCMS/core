@@ -12,6 +12,7 @@ import { computed, inject, untracked } from '@angular/core';
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
     EditorProps,
@@ -19,7 +20,6 @@ import {
     PageData,
     PageDataContainer,
     ReloadEditorContent,
-    StyleSchema,
     UVE_PALETTE_TABS
 } from './models';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
@@ -277,7 +277,7 @@ export function withEditor() {
                 setEditorBounds(bounds: Container[]) {
                     patchState(store, { bounds });
                 },
-                setStyleSchemas(styleSchemas: StyleSchema[]) {
+                setStyleSchemas(styleSchemas: StyleEditorFormSchema[]) {
                     patchState(store, { styleSchemas });
                 },
                 resetEditorProperties() {

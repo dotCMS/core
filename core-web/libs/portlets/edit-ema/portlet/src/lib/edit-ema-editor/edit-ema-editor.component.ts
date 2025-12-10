@@ -93,7 +93,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { StyleSchema, UVE_PALETTE_TABS } from '../store/features/editor/models';
+import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -106,6 +106,7 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -1094,7 +1095,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
-            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: { schemas: StyleSchema[] }) => {
+
+            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
+                schemas: StyleEditorFormSchema[];
+            }) => {
                 const { schemas } = payload;
                 this.uveStore.setStyleSchemas(schemas);
             },
