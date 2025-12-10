@@ -11,7 +11,7 @@
                 [layout]="layout"
                 [loading]="loadingFields"
                 [contentType]="data"
-                #fieldsDropZone></dot-content-type-fields-drop-zone>
+                #fieldsDropZone />
         }
     </dot-content-type-layout>
 }
@@ -26,8 +26,7 @@
         <dot-content-types-form
             (valid)="setDialogOkButtonState($event)"
             (send)="handleFormSubmit($event)"
-            [layout]="layout"
-            [data]="data"
-            #form></dot-content-types-form>
+            [contentType]="data"
+            #form />
     }
 </dot-dialog>
