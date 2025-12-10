@@ -17,18 +17,15 @@ describe('useStyleEditorSchemas', () => {
         sections: [
             {
                 title: 'Typography',
-                columns: 1,
                 fields: [
-                    [
-                        {
-                            type: 'input',
-                            label: 'Font Size',
-                            config: {
-                                inputType: 'number',
-                                defaultValue: 16
-                            }
+                    {
+                        type: 'input',
+                        label: 'Font Size',
+                        config: {
+                            inputType: 'number',
+                            defaultValue: 1
                         }
-                    ]
+                    }
                 ]
             }
         ]
@@ -39,18 +36,15 @@ describe('useStyleEditorSchemas', () => {
         sections: [
             {
                 title: 'Colors',
-                columns: 1,
                 fields: [
-                    [
-                        {
-                            type: 'input',
-                            label: 'Background Color',
-                            config: {
-                                inputType: 'text',
-                                defaultValue: '#FFFFFF'
-                            }
+                    {
+                        type: 'input',
+                        label: 'Background Color',
+                        config: {
+                            inputType: 'text',
+                            defaultValue: '#FFFFFF'
                         }
-                    ]
+                    }
                 ]
             }
         ]
@@ -177,5 +171,75 @@ describe('useStyleEditorSchemas', () => {
 
         // Should not call again after unmount
         expect(registerStyleEditorSchemasMock).toHaveBeenCalledTimes(1);
+    });
+
+    describe('infinite loop prevention', () => {
+        test('should not cause infinite loop when inline object is passed on each render', () => {
+            // Simulate a component that passes inline forms on each render
+            // This creates a new reference each time, which could cause infinite loops
+            const { rerender } = renderHook(
+                () =>
+                    useStyleEditorSchemas([
+                        {
+                            contentType: 'InlineForm',
+                            sections: [
+                                {
+                                    title: 'Inline Section',
+                                    fields: [
+                                        {
+                                            type: 'input',
+                                            label: 'Inline Field',
+                                            config: { inputType: 'text' }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]),
+                {}
+            );
+
+            // First render
+            expect(registerStyleEditorSchemasMock).toHaveBeenCalledTimes(1);
+
+            // Simulate multiple re-renders (as would happen in a real component)
+            rerender();
+            rerender();
+            rerender();
+
+            // With current implementation, each rerender with inline object creates new reference
+            // This is expected behavior - the hook re-registers on each new reference
+            // The key is that it doesn't cause an INFINITE loop (exponential calls)
+            // It should be called once per render, not exponentially
+            const callCount = registerStyleEditorSchemasMock.mock.calls.length;
+
+            // Should be exactly 4 calls (1 initial + 3 rerenders), not exponentially growing
+            expect(callCount).toBe(4);
+
+            // Additional rerenders should add linearly, not exponentially
+            rerender();
+            rerender();
+
+            expect(registerStyleEditorSchemasMock).toHaveBeenCalledTimes(6);
+        });
+
+        test('should demonstrate stable reference prevents unnecessary re-registrations', () => {
+            // This test shows the recommended pattern: memoize forms to prevent re-registration
+            const stableForms = [mockForm1];
+
+            const { rerender } = renderHook(({ forms }) => useStyleEditorSchemas(forms), {
+                initialProps: { forms: stableForms }
+            });
+
+            expect(registerStyleEditorSchemasMock).toHaveBeenCalledTimes(1);
+
+            // Multiple rerenders with same reference should NOT re-register
+            rerender({ forms: stableForms });
+            rerender({ forms: stableForms });
+            rerender({ forms: stableForms });
+
+            // Should still be 1 - stable reference prevents re-registration
+            expect(registerStyleEditorSchemasMock).toHaveBeenCalledTimes(1);
+        });
     });
 });
