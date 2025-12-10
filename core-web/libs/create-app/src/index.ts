@@ -17,7 +17,7 @@ import {
     prepareDirectory
 } from './asks';
 import { DOTCMS_HEALTH_API, DOTCMS_HOST, DOTCMS_USER, FRAMEWORKS } from './constants';
-import { FaildToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
+import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import {
     fetchWithRetry,
@@ -26,7 +26,7 @@ import {
     getUVEConfigValue
 } from './utils';
 
-import type { SupprotedFrontEndFramworks } from './types';
+import type { SupportedFrontEndFrameworks } from './types';
 
 // Supported values
 
@@ -43,7 +43,7 @@ program
         '-f, --framework <framework>',
         `Choose frontend framework. Options: ${FRAMEWORKS.join(', ')}`,
         (value) => {
-            if (!FRAMEWORKS.includes(value as SupprotedFrontEndFramworks)) {
+            if (!FRAMEWORKS.includes(value as SupportedFrontEndFrameworks)) {
                 throw new Error(
                     `Invalid framework "${value}". Choose one of: ${FRAMEWORKS.join(', ')}`
                 );
@@ -92,7 +92,7 @@ program
             const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
             const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
-            spinner.start('Verifying if Dotcms is running...');
+            spinner.start('Verifying if DotCMS is running...');
 
             const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL);
 
@@ -221,14 +221,14 @@ program
         const ran = await runDockerCompose({ directory: finalDirectory });
         if (!ran.ok) {
             spinner.fail(
-                'Failed to start Dotcms with Docker Compose.Please make sure docker is installed and running.'
+                'Failed to start DotCMS with Docker Compose.Please make sure docker is installed and running.'
             );
             return;
         }
 
         spinner.succeed('Dotcms containers started successfully.');
 
-        spinner.start('Verifying if Dotcms is running...');
+        spinner.start('Verifying if DotCMS is running...');
 
         const checkIfDotcmsIsRunning = await isDotcmsRunning();
 
@@ -323,9 +323,9 @@ async function scaffoldFrontendProject({
     framework,
     directory
 }: {
-    framework: SupprotedFrontEndFramworks;
+    framework: SupportedFrontEndFrameworks;
     directory: string;
-}): Promise<Result<void, FaildToCreateFrontendProjectError>> {
+}): Promise<Result<void, FailedToCreateFrontendProjectError>> {
     try {
         await cloneFrontEndSample({ directory, framework });
         return Ok(undefined);
@@ -336,7 +336,7 @@ async function scaffoldFrontendProject({
                     JSON.stringify(err)
             )
         );
-        return Err(new FaildToCreateFrontendProjectError(framework));
+        return Err(new FailedToCreateFrontendProjectError(framework));
     }
 }
 
@@ -380,10 +380,10 @@ async function runDockerCompose({
 
 async function isDotcmsRunning(url?: string): Promise<boolean> {
     try {
-        // console.log(chalk.cyan("Waiting for dotcms to be up ...."));
+        // console.log(chalk.cyan("Waiting for DotCMS to be up ...."));
         const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, 20, 5000);
         if (res && res.status === 200) {
-            // console.log(chalk.green("✔ Dotcms container started sucessfully!\n"));
+            // console.log(chalk.green("✔ DotCMS container started sucessfully!\n"));
             return true;
         }
         return false;

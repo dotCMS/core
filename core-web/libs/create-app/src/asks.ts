@@ -5,13 +5,13 @@ import path from 'path';
 
 import { FRAMEWORKS_CHOICES } from './constants';
 
-import type { SupprotedFrontEndFramworks } from './types';
+import type { SupportedFrontEndFrameworks } from './types';
 
 /**
  * Ask interactively if framework not specified
  */
-export async function askFramework(): Promise<SupprotedFrontEndFramworks> {
-    const ans = await inquirer.prompt<{ frameworks: SupprotedFrontEndFramworks[] }>([
+export async function askFramework(): Promise<SupportedFrontEndFrameworks> {
+    const ans = await inquirer.prompt<{ frameworks: SupportedFrontEndFrameworks[] }>([
         {
             type: 'checkbox',
             name: 'frameworks',
@@ -44,7 +44,7 @@ export async function askDirectory() {
 }
 
 /**
- * Ask user the url of the dotcms instance
+ * Ask user the url of the DotCMS instance
  */
 export async function askDotcmsCloudUrl() {
     const ans = await inquirer.prompt([
@@ -59,7 +59,7 @@ export async function askDotcmsCloudUrl() {
 }
 
 /**
- * Ask user the username of the dotcms instance
+ * Ask user the username of the DotCMS instance
  */
 export async function askUserNameForDotcmsCloud() {
     const ans = await inquirer.prompt([
@@ -74,7 +74,7 @@ export async function askUserNameForDotcmsCloud() {
 }
 
 /**
- * Ask user the username of the dotcms instance
+ * Ask user the username of the DotCMS instance
  */
 export async function askPasswordForDotcmsCloud() {
     const ans = await inquirer.prompt([

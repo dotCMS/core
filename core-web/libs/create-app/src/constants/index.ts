@@ -1,4 +1,4 @@
-import type { FramworkChoices, SupprotedFrontEndFramworks } from '../types';
+import type { FrameworkChoices, SupportedFrontEndFrameworks } from '../types';
 
 export const DOTCMS_HOST = 'http://localhost:8082';
 export const DOTCMS_USER = {
@@ -13,7 +13,7 @@ export const DOTCMS_EMA_CONFIG_API = `${DOTCMS_HOST}/api/v1/apps/dotema-config-v
 export const DOTCMS_DEMO_SITE = `${DOTCMS_HOST}/api/v1/site/`;
 
 // App constants
-export const FRAMEWORKS: SupprotedFrontEndFramworks[] = [
+export const FRAMEWORKS: SupportedFrontEndFrameworks[] = [
     'nextjs',
     'astro',
     'vuejs',
@@ -21,7 +21,7 @@ export const FRAMEWORKS: SupprotedFrontEndFramworks[] = [
     'angular-ssr'
 ];
 
-export const FRAMEWORKS_CHOICES: FramworkChoices[] = [
+export const FRAMEWORKS_CHOICES: FrameworkChoices[] = [
     { name: 'Next.js', value: 'nextjs' },
     { name: 'Astro', value: 'astro' },
     { name: 'Vue', value: 'vuejs' },

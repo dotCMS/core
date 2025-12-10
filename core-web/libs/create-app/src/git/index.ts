@@ -5,13 +5,13 @@ import path from 'path';
 
 import { downloadFile } from '../utils';
 
-import type { SupprotedFrontEndFramworks } from '../types';
+import type { SupportedFrontEndFrameworks } from '../types';
 
 export const cloneFrontEndSample = async ({
     framework,
     directory
 }: {
-    framework: SupprotedFrontEndFramworks;
+    framework: SupportedFrontEndFrameworks;
     directory: string;
 }) => {
     // 1. Clone repository (sparse + blobless)

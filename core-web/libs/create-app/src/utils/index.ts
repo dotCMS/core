@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 
 import https from 'https';
 
-import type { SupprotedFrontEndFramworks } from '../types';
+import type { SupportedFrontEndFrameworks } from '../types';
 
 export async function fetchWithRetry(url: string, retries = 5, delay = 5000) {
     for (let i = 0; i < retries; i++) {
@@ -30,7 +30,7 @@ export function getUVEConfigValue(frontEndUrl: string) {
     });
 }
 
-export function getPortByFramework(framework: SupprotedFrontEndFramworks): string {
+export function getPortByFramework(framework: SupportedFrontEndFrameworks): string {
     switch (framework) {
         case 'angular':
             return '4200';

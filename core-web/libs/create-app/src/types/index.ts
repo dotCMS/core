@@ -1,8 +1,8 @@
-export type SupprotedFrontEndFramworks = 'nextjs' | 'astro' | 'vuejs' | 'angular' | 'angular-ssr';
+export type SupportedFrontEndFrameworks = 'nextjs' | 'astro' | 'vuejs' | 'angular' | 'angular-ssr';
 
-export type FramworkChoices = {
+export type FrameworkChoices = {
     name: string;
-    value: SupprotedFrontEndFramworks;
+    value: SupportedFrontEndFrameworks;
 };
 
 export interface GetUserTokenRequest {

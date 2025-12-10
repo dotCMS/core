@@ -4,8 +4,8 @@ A powerful scaffolding CLI that instantly generates modern frontend applications
 With a single command, you can bootstrap a fully functional frontend (Next.js,Vue,Angular, etc.) connected to dotCMS APIs — including the following:
 
 - Spinning up dotcms using docker
-- Uinversal Visual Editor pre configured
-- Generating site id and authenticaion token (just copy paste them in frontend .env and enjoy).
+- Universal Visual Editor pre configured
+- Generating site id and authentication token (just copy paste them in frontend .env and enjoy).
 ---
 
 ## ✨ What is `create-dotcms-app`?
