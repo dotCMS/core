@@ -3,10 +3,12 @@ package com.dotcms.telemetry.collectors.site;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of sites with permissions not inheriting from System Host
  */
+@ApplicationScoped
 public class CountOfSitesWithIndividualPermissionsMetricType implements DBMetricType {
 
 
