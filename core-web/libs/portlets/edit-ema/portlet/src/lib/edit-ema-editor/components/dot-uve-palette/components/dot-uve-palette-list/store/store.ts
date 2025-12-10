@@ -41,17 +41,14 @@ import {
     EMPTY_CONTENTLET_RESPONSE,
     EMPTY_CONTENTTYPE_RESPONSE,
     buildPaletteFavorite,
-    getPaletteState
+    getPaletteState,
+    EMPTY_PAGINATION
 } from '../../../utils';
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
     contentlets: [],
-    pagination: {
-        currentPage: 1,
-        perPage: DEFAULT_PER_PAGE,
-        totalEntries: 0
-    },
+    pagination: EMPTY_PAGINATION,
     searchParams: {
         pagePathOrId: '',
         language: 1,
@@ -65,8 +62,7 @@ export const DEFAULT_STATE: DotPaletteListState = {
     },
     currentView: DotUVEPaletteListView.CONTENT_TYPES,
     status: DotPaletteListStatus.LOADING,
-    layoutMode: 'grid',
-    initialLoad: true
+    layoutMode: 'grid'
 };
 
 export const DotPaletteListStore = signalStore(
@@ -94,15 +90,7 @@ export const DotPaletteListStore = signalStore(
             $currentSort: computed(() => ({
                 orderby: params.orderby(),
                 direction: params.direction()
-            })),
-            $shouldHideControls: computed(() => {
-                const initialLoad = store.initialLoad();
-                const isLoading = store.status() === DotPaletteListStatus.LOADING;
-                const isEmpty = store.status() === DotPaletteListStatus.EMPTY;
-
-                // Hide controls if: initialLoad is true AND (empty OR loading)
-                return initialLoad && (isEmpty || isLoading);
-            })
+            }))
         };
     }),
     withMethods((store) => {
@@ -143,7 +131,7 @@ export const DotPaletteListStore = signalStore(
             setLayoutMode(layoutMode: DotPaletteViewMode) {
                 patchState(store, { layoutMode });
             },
-            getContentTypes(params: Partial<DotPaletteSearchParams> = {}, initialLoad = false) {
+            getContentTypes(params: Partial<DotPaletteSearchParams> = {}) {
                 patchState(store, {
                     searchParams: {
                         ...store.searchParams(),
@@ -151,8 +139,7 @@ export const DotPaletteListStore = signalStore(
                         selectedContentType: '' // Ensure we're in content types view
                     },
                     status: DotPaletteListStatus.LOADING,
-                    currentView: DotUVEPaletteListView.CONTENT_TYPES,
-                    initialLoad
+                    currentView: DotUVEPaletteListView.CONTENT_TYPES
                 });
 
                 return getData()
@@ -168,20 +155,18 @@ export const DotPaletteListStore = signalStore(
                         patchState(store, {
                             contenttypes,
                             pagination,
-                            status: getPaletteState(contenttypes),
-                            initialLoad: false // Mark initial load as complete
+                            status: getPaletteState(contenttypes)
                         });
                     });
             },
-            getContentlets(params: Partial<DotPaletteSearchParams> = {}, initialLoad = false) {
+            getContentlets(params: Partial<DotPaletteSearchParams> = {}) {
                 const searchParams = { ...store.searchParams(), ...params };
                 const esParams = buildESContentParams(searchParams);
                 const offset = Number(esParams.offset);
                 patchState(store, {
                     searchParams,
                     status: DotPaletteListStatus.LOADING,
-                    currentView: DotUVEPaletteListView.CONTENTLETS,
-                    initialLoad
+                    currentView: DotUVEPaletteListView.CONTENTLETS
                 });
 
                 dotESContentService
@@ -195,9 +180,7 @@ export const DotPaletteListStore = signalStore(
                             return of(EMPTY_CONTENTLET_RESPONSE);
                         })
                     )
-                    .subscribe((response) =>
-                        patchState(store, { ...response, initialLoad: false })
-                    );
+                    .subscribe((response) => patchState(store, { ...response }));
             }
         };
     }),

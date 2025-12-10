@@ -1,3 +1,5 @@
+import { signalMethod } from '@ngrx/signals';
+
 import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -12,7 +14,7 @@ import {
     untracked,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { MenuItem, MessageService } from 'primeng/api';
@@ -26,7 +28,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, take } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -62,6 +64,8 @@ const EMPTY_SEARCH_PARAMS: Partial<DotPaletteSearchParams> = {
     filter: '',
     page: 1
 };
+
+const DEBOUNCE_TIME = 300;
 
 /**
  * Component for displaying and managing a list of content types in the UVE palette.
@@ -121,6 +125,8 @@ export class DotUvePaletteListComponent implements OnInit {
 
     protected readonly $skipNextSearch = signal(false);
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
+    protected readonly $isSearching = signal<boolean>(false);
+    protected readonly $shouldHideControls = signal<boolean>(true);
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
     protected readonly $pagination = this.#paletteListStore.pagination;
@@ -132,16 +138,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isContentletsView = this.#paletteListStore.$isContentletsView;
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
-    protected readonly $shouldHideControls = this.#paletteListStore.$shouldHideControls;
-
-    /**
-     * Signal to determine if the search field has text.
-     * @returns True if the search field has non-whitespace content, false otherwise.
-     */
-    protected readonly $hasSearchText = toSignal(
-        this.searchControl.valueChanges.pipe(map((value) => value.trim().length > 0)),
-        { initialValue: false }
-    );
+    protected readonly status$ = toObservable(this.#paletteListStore.status);
 
     /**
      * Computed signal to determine the start index for the pagination.
@@ -191,7 +188,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @returns The empty message object.
      */
     protected readonly $emptyState = computed(() => {
-        if (this.$hasSearchText()) {
+        if (this.$isSearching()) {
             return EMPTY_MESSAGE_SEARCH;
         }
 
@@ -200,6 +197,16 @@ export class DotUvePaletteListComponent implements OnInit {
         }
 
         return EMPTY_MESSAGES[this.$type()];
+    });
+
+    /**
+     * Updates controls visibility whenever the current view changes between content types and contentlets.
+     *
+     * Automatically triggered when `$currentView` signal changes to ensure controls are only shown
+     * when the palette has loaded items, following UX/UI design requirements.
+     */
+    protected readonly $handleViewChange = signalMethod<() => void>((_view) => {
+        this.#updateControlsVisibility();
     });
 
     constructor() {
@@ -213,21 +220,24 @@ export class DotUvePaletteListComponent implements OnInit {
             };
 
             // Use untracked to prevent writes during effect
-            untracked(() => this.#paletteListStore.getContentTypes(params, true));
+            untracked(() => this.#paletteListStore.getContentTypes(params));
         });
+
+        this.$handleViewChange(this.$currentView);
     }
 
     ngOnInit() {
-        // Set up debounced search with distinctUntilChanged to avoid duplicate calls
         this.searchControl.valueChanges
             .pipe(
-                tap((value) => this.#handleSearchValueChange(value)),
-                debounceTime(300),
+                debounceTime(DEBOUNCE_TIME),
                 distinctUntilChanged(),
                 filter(() => this.#shouldRunSearch()),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((filter) => this.#loadItems({ filter, page: 1 }));
+            .subscribe((filter) => {
+                this.$isSearching.set(filter.trim().length > 0);
+                this.#loadItems({ filter, page: 1 });
+            });
     }
 
     /**
@@ -273,10 +283,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @param contentTypeName - The name of the content type to drill into
      */
     protected onSelectContentType(selectedContentType: string) {
-        this.#paletteListStore.getContentlets(
-            { ...EMPTY_SEARCH_PARAMS, selectedContentType },
-            true
-        );
+        this.#paletteListStore.getContentlets({ ...EMPTY_SEARCH_PARAMS, selectedContentType });
         this.#resetSearch();
     }
 
@@ -285,7 +292,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Store handles filter reset and page reset automatically.
      */
     protected onBackToContentTypes() {
-        this.#paletteListStore.getContentTypes(EMPTY_SEARCH_PARAMS, true);
+        this.#paletteListStore.getContentTypes(EMPTY_SEARCH_PARAMS);
         this.#resetSearch();
     }
 
@@ -345,24 +352,11 @@ export class DotUvePaletteListComponent implements OnInit {
     }
 
     /**
-     * Handles search value changes before debouncing.
-     * Sets the store status to LOADING when the search is cleared to show loading state
-     * while the full content list is being fetched.
-     *
-     * @param value - The current search input value
-     */
-    #handleSearchValueChange(value: string) {
-        if (value.trim().length === 0) {
-            this.#paletteListStore.setStatus(DotPaletteListStatus.LOADING);
-        }
-    }
-
-    /**
      * Clears the search input without triggering another request.
      * Keeps debounced listeners quiet when switching views manually.
      */
     #resetSearch() {
-        if (!this.$hasSearchText()) {
+        if (!this.$isSearching()) {
             // Search is already empty, nothing to do
             return;
         }
@@ -397,5 +391,32 @@ export class DotUvePaletteListComponent implements OnInit {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Updates the visibility of palette controls based on the current load status.
+     *
+     * This method listens for status changes (EMPTY or LOADED) and toggles the controls visibility:
+     * - Hides controls when the palette is empty (no items to manage)
+     * - Shows controls when the palette has loaded items
+     *
+     * Called automatically whenever the view changes between content types and contentlets views,
+     * ensuring controls are only displayed when they make sense from a UX/UI perspective.
+     *
+     * @private
+     */
+    #updateControlsVisibility() {
+        this.status$
+            .pipe(
+                filter(
+                    (status) =>
+                        status === DotPaletteListStatus.EMPTY ||
+                        status === DotPaletteListStatus.LOADED
+                ),
+                take(1)
+            )
+            .subscribe((status) => {
+                this.$shouldHideControls.set(status === DotPaletteListStatus.EMPTY);
+            });
     }
 }
