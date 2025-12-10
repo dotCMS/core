@@ -3363,8 +3363,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Response body contains\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -3651,10 +3651,7 @@
                   "",
                   "pm.test(\"Response body contains\", function () {",
                   "    pm.expect(pm.response.text()).to.include(\"Page '2c12fe7e6-d338-49d5-973b-2d974d57015b' not found\");",
-                  "});",
-                  "",
-                  "",
-                  ""
+                  "});"
                 ],
                 "type": "text/javascript",
                 "packages": {}
