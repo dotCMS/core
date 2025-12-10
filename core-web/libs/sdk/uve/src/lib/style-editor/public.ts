@@ -7,7 +7,9 @@ import {
     StyleEditorInputField,
     StyleEditorDropdownField,
     StyleEditorRadioField,
-    StyleEditorCheckboxGroupField
+    StyleEditorCheckboxGroupField,
+    StyleEditorFieldInputType,
+    StyleEditorInputFieldConfig
 } from './types';
 
 import { getUVEState } from '../core/core.utils';
@@ -18,9 +20,20 @@ import { sendMessageToUVE } from '../editor/public';
  *
  * Provides type-safe factory functions for creating different types of form fields
  * used in the style editor. Each function creates a field definition with the
- * appropriate type property automatically set.
+ * appropriate `type` property automatically set, eliminating the need to manually
+ * specify the type discriminator.
  *
- * @experimental This method is experimental and may be subject to change.
+ * **Available Field Types:**
+ * - `input`: Text or number input fields
+ * - `dropdown`: Single-value selection from a dropdown list
+ * - `radio`: Single-value selection from radio button options (supports visual options with images)
+ * - `checkboxGroup`: Multiple-value selection from checkbox options
+ *
+ * These factory functions ensure type safety by inferring the correct field type
+ * based on the configuration provided, and they automatically set the `type` property
+ * to match the factory function used.
+ *
+ * @experimental This API is experimental and may be subject to change.
  *
  * @example
  * ```typescript
@@ -39,6 +52,11 @@ import { sendMessageToUVE } from '../editor/public';
  *           label: 'Font Family',
  *           options: ['Arial', 'Helvetica'],
  *           defaultValue: 'Arial'
+ *         }),
+ *         styleEditorField.radio({
+ *           label: 'Alignment',
+ *           options: ['Left', 'Center', 'Right'],
+ *           defaultValue: 'Left'
  *         })
  *       ]
  *     }
@@ -48,42 +66,55 @@ import { sendMessageToUVE } from '../editor/public';
  */
 export const styleEditorField = {
     /**
-     * Creates an input field definition.
+     * Creates an input field definition with type-safe default values.
      *
-     * Supports both text and number input types. The defaultValue type is
-     * automatically inferred based on the inputType:
-     * - When inputType is 'number', defaultValue must be a number
-     * - When inputType is 'text', defaultValue must be a string
+     * Supports both text and number input types. The `defaultValue` type is
+     * enforced based on the `inputType` using TypeScript generics:
+     * - When `inputType` is `'number'`, `defaultValue` must be a `number`
+     * - When `inputType` is `'text'`, `defaultValue` must be a `string`
+     *
+     * This provides compile-time type checking to prevent mismatched types,
+     * such as passing a string when a number is expected.
      *
      * @experimental This method is experimental and may be subject to change.
      *
-     * @param config - Input field configuration (without the 'type' property)
+     * @typeParam T - The input type ('text' or 'number'), inferred from `config.inputType`
+     * @param config - Input field configuration
      * @param config.label - The label displayed for this input field
      * @param config.inputType - The type of input ('text' or 'number')
      * @param config.placeholder - Optional placeholder text for the input
-     * @param config.defaultValue - Optional default value (type depends on inputType)
+     * @param config.defaultValue - Optional default value (type enforced based on inputType)
      * @returns A complete input field definition with type 'input'
      *
      * @example
      * ```typescript
-     * // Number input
+     * // Number input - defaultValue must be a number
      * styleEditorField.input({
      *   label: 'Font Size',
      *   inputType: 'number',
      *   placeholder: 'Enter font size',
-     *   defaultValue: 16
+     *   defaultValue: 16 // ✓ Correct: number
      * })
      *
-     * // Text input
+     * // Text input - defaultValue must be a string
      * styleEditorField.input({
      *   label: 'Font Name',
      *   inputType: 'text',
      *   placeholder: 'Enter font name',
-     *   defaultValue: 'Arial'
+     *   defaultValue: 'Arial' // ✓ Correct: string
+     * })
+     *
+     * // TypeScript error - type mismatch
+     * styleEditorField.input({
+     *   label: 'Font Size',
+     *   inputType: 'number',
+     *   defaultValue: '16' // ✗ Error: Type 'string' is not assignable to type 'number'
      * })
      * ```
      */
-    input: (config: Omit<StyleEditorInputField, 'type'>): StyleEditorInputField =>
+    input: <T extends StyleEditorFieldInputType>(
+        config: StyleEditorInputFieldConfig<T>
+    ): StyleEditorInputField =>
         ({
             type: 'input',
             ...config
@@ -222,14 +253,21 @@ export const styleEditorField = {
  *
  * Converts the developer-friendly form structure into the schema format
  * expected by UVE (Universal Visual Editor). This function processes the
- * form definition, validates it, and transforms it into the normalized
- * schema format.
+ * form definition and transforms it into the normalized schema format where:
+ *
+ * - All field-specific properties are moved into `config` objects
+ * - String options are normalized to `{ label, value }` objects
+ * - Sections are organized into the multi-dimensional array structure required by UVE
+ *
+ * The normalization process ensures consistency and type safety in the schema
+ * format sent to UVE. After normalization, use `registerStyleEditorSchemas`
+ * to register the schema with the UVE editor.
  *
  * @experimental This method is experimental and may be subject to change.
  *
  * @param form - The style editor form definition containing contentType and sections
  * @param form.contentType - The content type identifier for this form
- * @param form.sections - Array of sections, each containing a title and fields
+ * @param form.sections - Array of sections, each containing a title and fields array
  * @returns The normalized form schema ready to be sent to UVE
  *
  * @example
@@ -254,26 +292,24 @@ export const styleEditorField = {
  *     },
  *     {
  *       title: 'Colors',
- *       columns: 2,
  *       fields: [
- *         [
- *           styleEditorField.input({
- *             label: 'Primary Color',
- *             inputType: 'text',
- *             defaultValue: '#000000'
- *           })
- *         ],
- *         [
- *           styleEditorField.input({
- *             label: 'Secondary Color',
- *             inputType: 'text',
- *             defaultValue: '#FFFFFF'
- *           })
- *         ]
+ *         styleEditorField.input({
+ *           label: 'Primary Color',
+ *           inputType: 'text',
+ *           defaultValue: '#000000'
+ *         }),
+ *         styleEditorField.input({
+ *           label: 'Secondary Color',
+ *           inputType: 'text',
+ *           defaultValue: '#FFFFFF'
+ *         })
  *       ]
  *     }
  *   ]
  * });
+ *
+ * // Register the schema with UVE
+ * registerStyleEditorSchemas([formSchema]);
  * ```
  */
 export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSchema {
@@ -281,13 +317,53 @@ export function defineStyleEditorForm(form: StyleEditorForm): StyleEditorFormSch
 }
 
 /**
- * Registers style editor forms with the UVE editor.
+ * Registers style editor form schemas with the UVE editor.
+ *
+ * Sends normalized style editor schemas to the UVE (Universal Visual Editor)
+ * for registration. The schemas must be normalized using `defineStyleEditorForm`
+ * before being passed to this function.
+ *
+ * **Behavior:**
+ * - Only registers schemas when UVE is in EDIT mode
+ * - Validates that each schema has a `contentType` property
+ * - Skips schemas without `contentType` and logs a warning
+ * - Sends the validated schemas to UVE via the `REGISTER_STYLE_SCHEMAS` action
+ *
+ * **Note:** This function will silently return early if UVE is not in EDIT mode,
+ * so it's safe to call even when the editor is not active.
  *
  * @experimental This method is experimental and may be subject to change.
  *
- * @param forms - Array of style editor form schemas to register
- * @param options - Optional configuration
- * @param options.force - Force re-registration even if forms already registered
+ * @param schemas - Array of normalized style editor form schemas to register with UVE
+ * @returns void - This function does not return a value
+ *
+ * @example
+ * ```typescript
+ * // Create and normalize a form schema
+ * const formSchema = defineStyleEditorForm({
+ *   contentType: 'my-content-type',
+ *   sections: [
+ *     {
+ *       title: 'Typography',
+ *       fields: [
+ *         styleEditorField.input({
+ *           label: 'Font Size',
+ *           inputType: 'number',
+ *           defaultValue: 16
+ *         })
+ *       ]
+ *     }
+ *   ]
+ * });
+ *
+ * // Register the schema with UVE
+ * registerStyleEditorSchemas([formSchema]);
+ *
+ * // Register multiple schemas at once
+ * const schema1 = defineStyleEditorForm({ ... });
+ * const schema2 = defineStyleEditorForm({ ... });
+ * registerStyleEditorSchemas([schema1, schema2]);
+ * ```
  */
 export function registerStyleEditorSchemas(schemas: StyleEditorFormSchema[]): void {
     const { mode } = getUVEState() || {};
@@ -299,7 +375,7 @@ export function registerStyleEditorSchemas(schemas: StyleEditorFormSchema[]): vo
     const validatedSchemas = schemas.filter((schema, index) => {
         if (!schema.contentType) {
             console.warn(
-                `[registerStyleEditorSchemas] Skipping form with index [${index}] for not having a contentType`
+                `[registerStyleEditorSchemas] Skipping schema with index [${index}] for not having a contentType`
             );
             return false;
         }

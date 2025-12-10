@@ -11,26 +11,50 @@ import {
 /**
  * Normalizes a field definition into the schema format expected by UVE.
  *
- * Converts developer-friendly field definitions into a normalized structure:
- * - Extracts type-specific configuration properties
- * - Normalizes string options to { label, value } objects for dropdown, radio, and checkboxGroup fields
- * - Preserves additional properties like backgroundImage, width, and height for radio options
- * - Sets default values for optional properties (e.g., inputType defaults to 'text')
+ * Converts developer-friendly field definitions into a normalized structure where
+ * all type-specific configuration properties are moved into a `config` object.
+ * This transformation ensures consistency in the schema format sent to UVE.
+ *
+ * **Field Type Handling:**
+ * - **Input fields**: Extracts `inputType`, `placeholder`, and `defaultValue` into config
+ * - **Dropdown fields**: Normalizes options (strings become `{ label, value }` objects),
+ *   extracts `placeholder` and `defaultValue` into config
+ * - **Radio fields**: Normalizes options (preserves image properties like `imageURL`, `width`, `height`),
+ *   extracts `defaultValue` into config
+ * - **Checkbox group fields**: Normalizes options and extracts `defaultValue` (as Record<string, boolean>) into config
  *
  * @experimental This method is experimental and may be subject to change.
  *
- * @param field - The field definition to normalize
- * @returns The normalized field schema ready to be sent to UVE
+ * @param field - The field definition to normalize. Must be one of: input, dropdown, radio, or checkboxGroup
+ * @returns The normalized field schema with type, label, and config properties ready to be sent to UVE
  *
  * @example
  * ```typescript
+ * // Input field normalization
  * normalizeField({
  *   type: 'input',
  *   label: 'Font Size',
  *   inputType: 'number',
- *   default: 16
+ *   defaultValue: 16,
+ *   placeholder: 'Enter size'
  * })
- * // Returns: { type: 'input', label: 'Font Size', config: { inputType: 'number', defaultValue: 16 } }
+ * // Returns: {
+ * //   type: 'input',
+ * //   label: 'Font Size',
+ * //   config: { inputType: 'number', defaultValue: 16, placeholder: 'Enter size' }
+ * // }
+ *
+ * // Dropdown field with string options normalization
+ * normalizeField({
+ *   type: 'dropdown',
+ *   label: 'Font Family',
+ *   options: ['Arial', 'Helvetica']
+ * })
+ * // Returns: {
+ * //   type: 'dropdown',
+ * //   label: 'Font Family',
+ * //   config: { options: [{ label: 'Arial', value: 'Arial' }, { label: 'Helvetica', value: 'Helvetica' }] }
+ * // }
  * ```
  */
 function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
@@ -75,59 +99,52 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
 /**
  * Normalizes a section definition into the schema format expected by UVE.
  *
- * Handles both single-column and multi-column layouts:
- * - Single column (columns = 1): Wraps the fields array in a nested array structure
- * - Multi-column (columns > 1): Validates that fields is already a multi-dimensional array
+ * Converts a section with a flat array of fields into the normalized schema format
+ * where fields are organized as a multi-dimensional array (array of column arrays).
+ * Currently, all sections are normalized to a single-column layout structure.
+ *
+ * **Normalization Process:**
+ * 1. Normalizes each field in the section using `normalizeField`
+ * 2. Wraps the normalized fields array in an outer array to create the column structure
+ * 3. Preserves the section title
+ *
+ * The output format always uses a multi-dimensional array structure (`fields: StyleEditorFieldSchema[][]`),
+ * even for single-column layouts, ensuring consistency in the UVE schema format.
  *
  * @experimental This method is experimental and may be subject to change.
  *
- * @param section - The section definition to normalize
- * @returns The normalized section schema with fields organized by columns
- * @throws {Error} If columns > 1 but fields is not a multi-dimensional array
+ * @param section - The section definition to normalize, containing a title and array of fields
+ * @param section.title - The section title displayed to users
+ * @param section.fields - Array of field definitions to normalize
+ * @returns The normalized section schema with fields organized as a single-column array structure
  *
  * @example
  * ```typescript
- * // Single column
  * normalizeSection({
  *   title: 'Typography',
- *   fields: [field1, field2]
+ *   fields: [
+ *     { type: 'input', label: 'Font Size', inputType: 'number' },
+ *     { type: 'dropdown', label: 'Font Family', options: ['Arial'] }
+ *   ]
  * })
- * // Returns: { title: 'Typography', columns: 1, fields: [[field1, field2]] }
- *
- * // Multi-column
- * normalizeSection({
- *   title: 'Layout',
- *   columns: 2,
- *   fields: [[field1], [field2]]
- * })
- * // Returns: { title: 'Layout', columns: 2, fields: [[field1], [field2]] }
+ * // Returns: {
+ * //   title: 'Typography',
+ * //   fields: [
+ * //     [
+ * //       { type: 'input', label: 'Font Size', config: { inputType: 'number' } },
+ * //       { type: 'dropdown', label: 'Font Family', config: { options: [...] } }
+ * //     ]
+ * //   ]
+ * // }
  * ```
  */
 function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema {
-    const columns = section.columns || 1;
-
     // Determine if fields is multi-column or single column
-    let normalizedFields: StyleEditorFieldSchema[][];
-
-    if (columns === 1) {
-        // Single column: wrap in array
-        normalizedFields = [(section.fields as StyleEditorField[]).map(normalizeField)];
-    } else {
-        // Multi-column: fields should already be array of arrays
-        if (!Array.isArray(section.fields[0])) {
-            throw new Error(
-                `Section "${section.title}" has columns=${columns} but fields is not a multi-dimensional array`
-            );
-        }
-        normalizedFields = (section.fields as StyleEditorField[][]).map((column) =>
-            column.map(normalizeField)
-        );
-    }
+    const normalizedFields: StyleEditorFieldSchema[] = section.fields.map(normalizeField);
 
     return {
         title: section.title,
-        columns,
-        fields: normalizedFields
+        fields: [normalizedFields]
     };
 }
 
@@ -135,13 +152,26 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
  * Normalizes a complete form definition into the schema format expected by UVE.
  *
  * This is the main entry point for converting a developer-friendly form definition
- * into the normalized schema structure. It processes all sections and their fields,
- * applying normalization rules to ensure consistency.
+ * into the normalized schema structure that UVE (Universal Visual Editor) can consume.
+ * The normalization process transforms the entire form hierarchy:
+ *
+ * **Normalization Process:**
+ * 1. Preserves the `contentType` identifier
+ * 2. Processes each section using `normalizeSection`, which:
+ *    - Normalizes all fields in the section using `normalizeField`
+ *    - Organizes fields into the required multi-dimensional array structure
+ * 3. Returns a fully normalized schema with consistent structure across all sections
+ *
+ * The resulting schema has all field-specific properties moved into `config` objects
+ * and all sections using the consistent single-column array structure, regardless
+ * of the input format.
  *
  * @experimental This method is experimental and may be subject to change.
  *
  * @param form - The complete form definition to normalize
- * @returns The normalized form schema ready to be sent to UVE
+ * @param form.contentType - The content type identifier this form is associated with
+ * @param form.sections - Array of section definitions, each containing a title and fields
+ * @returns The normalized form schema ready to be sent to UVE, with all fields and sections normalized
  *
  * @example
  * ```typescript
@@ -151,11 +181,40 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
  *     {
  *       title: 'Typography',
  *       fields: [
- *         { type: 'input', label: 'Font Size', inputType: 'number' }
+ *         { type: 'input', label: 'Font Size', inputType: 'number', defaultValue: 16 },
+ *         { type: 'dropdown', label: 'Font Family', options: ['Arial', 'Helvetica'] }
+ *       ]
+ *     },
+ *     {
+ *       title: 'Colors',
+ *       fields: [
+ *         { type: 'input', label: 'Primary Color', inputType: 'text', defaultValue: '#000000' }
  *       ]
  *     }
  *   ]
  * });
+ * // Returns: {
+ * //   contentType: 'my-content-type',
+ * //   sections: [
+ * //     {
+ * //       title: 'Typography',
+ * //       fields: [
+ * //         [
+ * //           { type: 'input', label: 'Font Size', config: { inputType: 'number', defaultValue: 16 } },
+ * //           { type: 'dropdown', label: 'Font Family', config: { options: [...] } }
+ * //         ]
+ * //       ]
+ * //     },
+ * //     {
+ * //       title: 'Colors',
+ * //       fields: [
+ * //         [
+ * //           { type: 'input', label: 'Primary Color', config: { inputType: 'text', defaultValue: '#000000' } }
+ * //         ]
+ * //       ]
+ * //     }
+ * //   ]
+ * // }
  * ```
  */
 export function normalizeForm(form: StyleEditorForm): StyleEditorFormSchema {
