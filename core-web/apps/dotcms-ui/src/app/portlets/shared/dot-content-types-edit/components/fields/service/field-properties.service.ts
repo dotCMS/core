@@ -1,12 +1,18 @@
 import { Injectable, Type, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ValidationErrors } from '@angular/forms';
 
+import { map, tap } from 'rxjs/operators';
+
+import { DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
     DotDynamicFieldComponent,
     DotRenderModes,
-    NEW_RENDER_MODE_VARIABLE_KEY
+    NEW_RENDER_MODE_VARIABLE_KEY,
+    FeaturedFlags,
+    FEATURE_FLAG_NOT_FOUND
 } from '@dotcms/dotcms-models';
 
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
@@ -21,6 +27,16 @@ import { FieldType } from '../models';
 @Injectable()
 export class FieldPropertyService {
     private fieldTypes = new Map<string, FieldType>();
+    private dotPropertiesService = inject(DotPropertiesService);
+
+    $newRenderModeDefault = toSignal(
+        this.dotPropertiesService
+            .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_RENDER_MODE_DEFAULT)
+            .pipe(
+                map((value) => (value === FEATURE_FLAG_NOT_FOUND ? DotRenderModes.IFRAME : value))
+            ),
+        { initialValue: DotRenderModes.IFRAME }
+    );
 
     constructor() {
         const fieldService = inject(FieldService);
@@ -83,11 +99,11 @@ export class FieldPropertyService {
      * @memberof FieldPropertyService
      */
     getValue(field: DotCMSContentTypeField, propertyName: string): unknown {
-        if (propertyName === 'newRenderMode') {
+        if (propertyName === NEW_RENDER_MODE_VARIABLE_KEY) {
             const fieldVariable = field?.fieldVariables?.find(
-                (variable) => variable.key === 'newRenderMode'
+                (variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY
             );
-            return fieldVariable?.value || DotRenderModes.IFRAME;
+            return fieldVariable?.value || this.$newRenderModeDefault();
         }
         return field[propertyName];
     }
