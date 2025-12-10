@@ -107,15 +107,15 @@ export class DotContentDriveDialogFolderComponent {
 
         if (folder && assetType) {
             this.folderForm.patchValue({
-                title: folder?.title,
-                path: folder?.path,
-                sortOrder: folder?.sortOrder,
+                title: folder.title,
+                path: folder.path,
+                sortOrder: folder.sortOrder,
                 allowedFileExtensions: folder.filesMasks.trim().length
                     ? folder.filesMasks.split(',')
                     : [],
                 defaultFileAssetType: assetType.variable,
-                showOnMenu: folder?.showOnMenu,
-                url: this.#getSlugTitle(folder?.title)
+                showOnMenu: folder.showOnMenu,
+                url: this.#getSlugTitle(folder.title)
             });
         }
     });
