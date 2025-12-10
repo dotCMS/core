@@ -41,7 +41,7 @@ import { state } from './store';
         TooltipModule
     ]
 })
-export class DotOnboardingDev implements OnInit {
+export class DotOnboardingDevComponent implements OnInit {
     readonly state = state;
     readonly content = ONBOARDING_CONTENT;
 

@@ -1,12 +1,13 @@
 import { Component } from "@angular/core"
 
-import { DotOnboardingDev } from "./components/onboarding-dev/onboarding-dev.component";
+import { DotOnboardingAuthorComponent } from "./components/onboarding-author/onboarding-author.component";
+import { DotOnboardingDevComponent } from "./components/onboarding-dev/onboarding-dev.component";
 
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
     styleUrls: ['./dot-starter.component.scss'],
-    imports: [DotOnboardingDev]
+    imports: [DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent {
 
