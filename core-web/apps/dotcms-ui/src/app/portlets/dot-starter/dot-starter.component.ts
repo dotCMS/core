@@ -35,6 +35,14 @@ interface OnboardingContent {
     steps: OnboardingStep[];
 }
 
+interface OnboardingFramework {
+    id: string;
+    label: string;
+    logo: string;
+    disabled?: boolean;
+    githubUrl?: string;
+}
+
 const STORAGE_KEY = 'dotcmsDeveloperOnboarding';
 
 const ONBOARDING_CONTENT: OnboardingContent = {
@@ -364,7 +372,7 @@ export class DotStarterComponent implements OnInit {
     readonly content = ONBOARDING_CONTENT;
 
     selectedFramework = 'nextjs';
-    frameworks = [
+    frameworks: OnboardingFramework[] = [
         {
             id: 'nextjs',
             label: 'Next.js',
@@ -410,69 +418,11 @@ export class DotStarterComponent implements OnInit {
     @ViewChild('onboardingContainer', { read: ElementRef })
     onboardingContainer?: ElementRef<HTMLElement>;
     @ViewChild('frameworkInfoOverlay') frameworkInfoOverlay?: OverlayPanel;
-    selectedFrameworkInfo?: {
-        id: string;
-        label: string;
-        logo: string;
-        disabled?: boolean;
-        githubUrl?: string;
-    };
+    selectedFrameworkInfo?: OnboardingFramework;
     private readonly platformId = inject(PLATFORM_ID);
 
     ngOnInit(): void {
         this.loadProgress();
-    }
-
-    activeIndexChange(index: number) {
-        patchState(state, (state) => ({
-            ...state,
-            activeAccordionIndex: index
-        }));
-
-        this.persistProgress();
-        this.updateProgress();
-
-        setTimeout(() => {
-            if (!isPlatformBrowser(this.platformId) || !this.onboardingContainer?.nativeElement) {
-                return;
-            }
-            const container = this.onboardingContainer.nativeElement;
-            const activeTab = container.querySelector('.p-accordion-tab-active .p-accordion-header') as HTMLElement;
-
-            if (activeTab) {
-                activeTab.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        }, 500);
-    }
-
-    showFrameworkInfo(
-        event: Event,
-        framework: {
-            id: string;
-            label: string;
-            logo: string;
-            disabled?: boolean;
-            githubUrl?: string;
-        }
-    ): void {
-        this.selectedFrameworkInfo = framework;
-        this.frameworkInfoOverlay?.toggle(event);
-    }
-
-    isStepCompleted(index: number): boolean {
-        return index <= state.activeAccordionIndex();
-    }
-
-    completeStepAndOpenNext(index: number): void {
-        const nextIndex = index + 1;
-        this.activeIndexChange(nextIndex);
-    }
-
-    resetProgress(): void {
-        this.activeIndexChange(0);
     }
 
     get progressPercentage(): number {
@@ -529,6 +479,40 @@ ${substep.code}
 \`\`\``;
     }
 
+    activeIndexChange(index: number) {
+        patchState(state, (state) => ({
+            ...state,
+            activeAccordionIndex: index
+        }));
+
+        this.persistProgress();
+        this.updateProgress();
+
+        setTimeout(() => {
+            this.scrollToActiveTab();
+        }, 500);
+    }
+
+    showFrameworkInfo(
+        event: Event,
+        framework: OnboardingFramework
+    ): void {
+        this.selectedFrameworkInfo = framework;
+        this.frameworkInfoOverlay?.toggle(event);
+    }
+
+    isStepCompleted(index: number): boolean {
+        return index <= state.activeAccordionIndex();
+    }
+
+    completeStepAndOpenNext(index: number): void {
+        const nextIndex = index + 1;
+        this.activeIndexChange(nextIndex);
+    }
+    resetProgress(): void {
+        this.activeIndexChange(0);
+    }
+
     private loadProgress(): void {
         if (!isPlatformBrowser(this.platformId)) {
             return;
@@ -562,5 +546,17 @@ ${substep.code}
             ...state,
             progress: Math.round(this.progressPercentage)
         }));
+    }
+
+    private scrollToActiveTab(): void {
+        if (!isPlatformBrowser(this.platformId) || !this.onboardingContainer?.nativeElement) {
+            return;
+        }
+        const container = this.onboardingContainer.nativeElement;
+        const activeTab = container.querySelector('.p-accordion-tab-active .p-accordion-header') as HTMLElement;
+        activeTab.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
     }
 }
