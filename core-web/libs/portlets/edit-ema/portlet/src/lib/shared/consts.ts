@@ -18,6 +18,8 @@ export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
 
+export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
+
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
 export const COMMON_ERRORS: CommonErrorsInfo = {

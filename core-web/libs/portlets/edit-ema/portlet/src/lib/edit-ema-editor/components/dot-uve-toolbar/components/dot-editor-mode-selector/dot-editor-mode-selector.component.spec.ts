@@ -23,7 +23,7 @@ describe('DotEditorModeSelectorComponent', () => {
     let component: DotEditorModeSelectorComponent;
 
     const mockStoreState = {
-        canEditPage: true,
+        $hasAccessToEditMode: true,
         pageAPIResponse: {
             ...MOCK_RESPONSE_HEADLESS,
             page: {
@@ -37,7 +37,7 @@ describe('DotEditorModeSelectorComponent', () => {
     };
 
     const mockStore = {
-        canEditPage: signal(mockStoreState.canEditPage),
+        $hasAccessToEditMode: signal(mockStoreState.$hasAccessToEditMode),
         pageAPIResponse: signal(mockStoreState.pageAPIResponse),
         pageParams: signal(mockStoreState.pageParams),
         $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
@@ -84,7 +84,7 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should exclude EDIT mode when user cannot edit page', () => {
-            mockStore.canEditPage.set(false);
+            mockStore.$hasAccessToEditMode.set(false);
             spectator.detectChanges();
             const menuItems = component.$menuItems();
             expect(menuItems).toHaveLength(2);
@@ -132,13 +132,13 @@ describe('DotEditorModeSelectorComponent', () => {
     describe('$modeGuardEffect', () => {
         beforeEach(() => {
             // Reset mock store to initial state
-            mockStore.canEditPage.set(true);
+            mockStore.$hasAccessToEditMode.set(true);
             mockStore.pageParams.set(pageParams);
             jest.clearAllMocks();
         });
 
         it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
-            mockStore.canEditPage.set(false);
+            mockStore.$hasAccessToEditMode.set(false);
             mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
 
             spectator.detectChanges();
@@ -153,7 +153,7 @@ describe('DotEditorModeSelectorComponent', () => {
     describe('Menu Interactions', () => {
         beforeEach(() => {
             // Reset the store state
-            mockStore.canEditPage.set(true);
+            mockStore.$hasAccessToEditMode.set(true);
             mockStore.pageAPIResponse.set(MOCK_RESPONSE_HEADLESS);
             mockStore.pageParams.set(pageParams);
             mockStore.$hasLiveVersion.set(true);

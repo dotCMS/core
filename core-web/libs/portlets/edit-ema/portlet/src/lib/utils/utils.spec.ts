@@ -9,7 +9,7 @@ import {
     getPersonalization,
     getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
-    computePageIsLocked,
+    computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
@@ -551,7 +551,7 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computePageIsLocked', () => {
+    describe('computeIsPageLocked', () => {
         describe('with legacy behavior (feature flag disabled)', () => {
             it('should return false when the page is unlocked', () => {
                 const { page, currentUser } = generatePageAndUser({
@@ -560,7 +560,7 @@ describe('utils functions', () => {
                     userId: '123'
                 });
 
-                const result = computePageIsLocked(page, currentUser, false);
+                const result = computeIsPageLocked(page, currentUser, false);
 
                 expect(result).toBe(false);
             });
@@ -572,7 +572,7 @@ describe('utils functions', () => {
                     userId: '123'
                 });
 
-                const result = computePageIsLocked(page, currentUser, false);
+                const result = computeIsPageLocked(page, currentUser, false);
 
                 expect(result).toBe(false);
             });
@@ -584,7 +584,7 @@ describe('utils functions', () => {
                     userId: '456'
                 });
 
-                const result = computePageIsLocked(page, currentUser, false);
+                const result = computeIsPageLocked(page, currentUser, false);
 
                 expect(result).toBe(true);
             });
@@ -598,7 +598,7 @@ describe('utils functions', () => {
                     userId: '123'
                 });
 
-                const result = computePageIsLocked(page, currentUser, true);
+                const result = computeIsPageLocked(page, currentUser, true);
 
                 expect(result).toBe(false);
             });
@@ -610,7 +610,7 @@ describe('utils functions', () => {
                     userId: '123'
                 });
 
-                const result = computePageIsLocked(page, currentUser, true);
+                const result = computeIsPageLocked(page, currentUser, true);
 
                 expect(result).toBe(true);
             });
@@ -622,7 +622,7 @@ describe('utils functions', () => {
                     userId: '456'
                 });
 
-                const result = computePageIsLocked(page, currentUser, true);
+                const result = computeIsPageLocked(page, currentUser, true);
 
                 expect(result).toBe(true);
             });
