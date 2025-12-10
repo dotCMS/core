@@ -1,9 +1,21 @@
 import { patchState } from '@ngrx/signals';
+import { MarkdownModule } from 'ngx-markdown';
 
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
-import { OverlayPanel } from 'primeng/overlaypanel';
+import { AccordionModule } from 'primeng/accordion';
+import { ButtonModule } from 'primeng/button';
+import { KnobModule } from 'primeng/knob';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { ButtonCopyComponent } from '@dotcms/ui';
 
 import { ONBOARDING_CONTENT, STORAGE_KEY } from './content';
 import { OnboardingFramework, OnboardingSubstep } from './models';
@@ -13,7 +25,21 @@ import { state } from './store';
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
     styleUrls: ['./dot-starter.component.scss'],
-    standalone: false
+    imports: [
+        AccordionModule,
+        ButtonCopyComponent,
+        ButtonModule,
+        CommonModule,
+        FormsModule,
+        KnobModule,
+        MarkdownModule,
+        OverlayPanelModule,
+        ProgressBarModule,
+        RadioButtonModule,
+        RouterModule,
+        TagModule,
+        TooltipModule
+    ]
 })
 export class DotStarterComponent implements OnInit {
     readonly state = state;

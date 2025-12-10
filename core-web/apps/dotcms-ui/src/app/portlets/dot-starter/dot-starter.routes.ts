@@ -4,7 +4,7 @@ import { DotStarterComponent } from './dot-starter.component';
 
 export const dotStarterRoutes: Routes = [
     {
-        component: DotStarterComponent,
-        path: ''
+        path: '',
+        component: DotStarterComponent
     }
 ];
