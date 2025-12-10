@@ -26,7 +26,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged, filter, map } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -39,6 +39,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPaletteListStore } from './store/store';
 
 import {
+    DotPaletteListStatus,
     DotPaletteSearchParams,
     DotPaletteSortOption,
     DotPaletteViewMode,
@@ -55,6 +56,12 @@ import {
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
+
+const EMPTY_SEARCH_PARAMS: Partial<DotPaletteSearchParams> = {
+    selectedContentType: '',
+    filter: '',
+    page: 1
+};
 
 /**
  * Component for displaying and managing a list of content types in the UVE palette.
@@ -125,6 +132,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isContentletsView = this.#paletteListStore.$isContentletsView;
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
+    protected readonly $shouldHideControls = this.#paletteListStore.$shouldHideControls;
 
     /**
      * Signal to determine if the search field has text.
@@ -143,14 +151,6 @@ export class DotUvePaletteListComponent implements OnInit {
         const currentPage = this.$pagination().currentPage;
         const perPage = this.$pagination().perPage;
         return (currentPage - 1) * perPage;
-    });
-
-    /**
-     * Computed signal to determine if the search and action button should be hidden.
-     * @returns True if the search and action button should be hidden, false otherwise.
-     */
-    protected readonly $hideControls = computed(() => {
-        return (this.$isEmpty() || this.$isLoading()) && !this.$hasSearchText();
     });
 
     /**
@@ -213,7 +213,7 @@ export class DotUvePaletteListComponent implements OnInit {
             };
 
             // Use untracked to prevent writes during effect
-            untracked(() => this.#paletteListStore.getContentTypes(params));
+            untracked(() => this.#paletteListStore.getContentTypes(params, true));
         });
     }
 
@@ -221,6 +221,7 @@ export class DotUvePaletteListComponent implements OnInit {
         // Set up debounced search with distinctUntilChanged to avoid duplicate calls
         this.searchControl.valueChanges
             .pipe(
+                tap((value) => this.#handleSearchValueChange(value)),
                 debounceTime(300),
                 distinctUntilChanged(),
                 filter(() => this.#shouldRunSearch()),
@@ -272,11 +273,10 @@ export class DotUvePaletteListComponent implements OnInit {
      * @param contentTypeName - The name of the content type to drill into
      */
     protected onSelectContentType(selectedContentType: string) {
-        this.#paletteListStore.getContentlets({
-            selectedContentType,
-            filter: '',
-            page: 1
-        });
+        this.#paletteListStore.getContentlets(
+            { ...EMPTY_SEARCH_PARAMS, selectedContentType },
+            true
+        );
         this.#resetSearch();
     }
 
@@ -285,11 +285,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Store handles filter reset and page reset automatically.
      */
     protected onBackToContentTypes() {
-        this.#paletteListStore.getContentTypes({
-            selectedContentType: '',
-            filter: '',
-            page: 1
-        });
+        this.#paletteListStore.getContentTypes(EMPTY_SEARCH_PARAMS, true);
         this.#resetSearch();
     }
 
@@ -346,6 +342,19 @@ export class DotUvePaletteListComponent implements OnInit {
             detail: this.#dotMessageService.get('uve.palette.favorite.add.success.detail'),
             life: 3000
         });
+    }
+
+    /**
+     * Handles search value changes before debouncing.
+     * Sets the store status to LOADING when the search is cleared to show loading state
+     * while the full content list is being fetched.
+     *
+     * @param value - The current search input value
+     */
+    #handleSearchValueChange(value: string) {
+        if (value.trim().length === 0) {
+            this.#paletteListStore.setStatus(DotPaletteListStatus.LOADING);
+        }
     }
 
     /**

@@ -44,9 +44,11 @@ const mockStore = {
     currentView: signal(DotUVEPaletteListView.CONTENT_TYPES),
     status: signal(DotPaletteListStatus.LOADING),
     layoutMode: signal('grid' as 'grid' | 'list'),
+    initialLoad: signal(false),
     $isLoading: signal(false),
     $isEmpty: signal(false),
     $showListLayout: signal(false),
+    $shouldHideControls: signal(false),
     $currentSort: signal({
         orderby: 'name' as 'name' | 'usage',
         direction: 'ASC' as 'ASC' | 'DESC'
@@ -282,11 +284,14 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             // Verify getContentlets was called with correct arguments
-            expect(store.getContentlets).toHaveBeenCalledWith({
-                selectedContentType: 'Blog',
-                filter: '',
-                page: 1
-            });
+            expect(store.getContentlets).toHaveBeenCalledWith(
+                {
+                    selectedContentType: 'Blog',
+                    filter: '',
+                    page: 1
+                },
+                true
+            );
 
             // Verify search input was cleared in the DOM
             const searchInput = spectator.query(
@@ -355,11 +360,14 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             // Verify getContentTypes was called with correct arguments
-            expect(store.getContentTypes).toHaveBeenCalledWith({
-                selectedContentType: '',
-                filter: '',
-                page: 1
-            });
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                {
+                    selectedContentType: '',
+                    filter: '',
+                    page: 1
+                },
+                true
+            );
 
             // Verify search input was cleared in the DOM
             expect(searchInput.value).toBe('');

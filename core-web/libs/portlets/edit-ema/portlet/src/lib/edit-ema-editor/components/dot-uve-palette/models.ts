@@ -122,6 +122,8 @@ export interface DotPaletteListState {
     status: DotPaletteListStatus;
     /** Layout mode (grid or list) */
     layoutMode: DotPaletteViewMode;
+    /** Tracks if this is the initial load (before first data fetch completes) */
+    initialLoad: boolean;
 }
 
 /**

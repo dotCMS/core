@@ -281,6 +281,38 @@ describe('DotPaletteListStore', () => {
     });
 
     describe('Methods', () => {
+        describe('setStatus', () => {
+            it('should update status to LOADING', () => {
+                expect(store.status()).toBe(DotPaletteListStatus.LOADING);
+
+                store.setStatus(DotPaletteListStatus.LOADED);
+                expect(store.status()).toBe(DotPaletteListStatus.LOADED);
+
+                store.setStatus(DotPaletteListStatus.LOADING);
+                expect(store.status()).toBe(DotPaletteListStatus.LOADING);
+            });
+
+            it('should update status to EMPTY', () => {
+                store.setStatus(DotPaletteListStatus.EMPTY);
+
+                expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+            });
+
+            it('should affect computed signals $isLoading and $isEmpty', () => {
+                store.setStatus(DotPaletteListStatus.LOADING);
+                expect(store.$isLoading()).toBe(true);
+                expect(store.$isEmpty()).toBe(false);
+
+                store.setStatus(DotPaletteListStatus.EMPTY);
+                expect(store.$isLoading()).toBe(false);
+                expect(store.$isEmpty()).toBe(true);
+
+                store.setStatus(DotPaletteListStatus.LOADED);
+                expect(store.$isLoading()).toBe(false);
+                expect(store.$isEmpty()).toBe(false);
+            });
+        });
+
         describe('setLayoutMode', () => {
             it('should update layoutMode to list', () => {
                 expect(store.layoutMode()).toBe('grid');
@@ -522,6 +554,25 @@ describe('DotPaletteListStore', () => {
                     totalEntries: 50
                 });
             });
+
+            it('should set initialLoad to false by default', () => {
+                expect(store.initialLoad()).toBe(true); // Default state
+
+                store.getContentTypes();
+
+                expect(store.initialLoad()).toBe(false);
+            });
+
+            it('should set initialLoad to true when passed as parameter', () => {
+                // First call sets it to false
+                store.getContentTypes();
+                expect(store.initialLoad()).toBe(false);
+
+                // Second call with initialLoad: true should set it back to true, then false after load
+                store.getContentTypes({}, true);
+
+                expect(store.initialLoad()).toBe(false); // After data loads
+            });
         });
 
         describe('getContentlets', () => {
@@ -638,6 +689,40 @@ describe('DotPaletteListStore', () => {
                 expect(searchParams.language).toBe(2);
                 expect(searchParams.orderby).toBe('usage');
                 expect(searchParams.selectedContentType).toBe('Blog');
+            });
+
+            it('should set initialLoad to false by default', () => {
+                expect(store.initialLoad()).toBe(true); // Default state
+
+                store.getContentlets({ selectedContentType: 'Blog' });
+
+                expect(store.initialLoad()).toBe(false);
+            });
+
+            it('should set initialLoad to true when passed as parameter', () => {
+                // First call sets it to false
+                store.getContentlets({ selectedContentType: 'Blog' });
+                expect(store.initialLoad()).toBe(false);
+
+                // Second call with initialLoad: true should set it back to true, then false after load
+                store.getContentlets({ selectedContentType: 'News' }, true);
+
+                expect(store.initialLoad()).toBe(false); // After data loads
+            });
+
+            it('should keep initialLoad true during loading when passed as true', () => {
+                // Use a spy to check the state during the loading phase
+                let initialLoadDuringLoading: boolean | undefined;
+
+                dotESContentService.get.mockImplementationOnce(() => {
+                    initialLoadDuringLoading = store.initialLoad();
+                    return of(mockESResponse);
+                });
+
+                store.getContentlets({ selectedContentType: 'Blog' }, true);
+
+                expect(initialLoadDuringLoading).toBe(true);
+                expect(store.initialLoad()).toBe(false); // After completion
             });
         });
     });

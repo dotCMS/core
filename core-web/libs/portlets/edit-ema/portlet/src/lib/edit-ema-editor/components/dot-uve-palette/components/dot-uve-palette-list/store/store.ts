@@ -65,7 +65,8 @@ export const DEFAULT_STATE: DotPaletteListState = {
     },
     currentView: DotUVEPaletteListView.CONTENT_TYPES,
     status: DotPaletteListStatus.LOADING,
-    layoutMode: 'grid'
+    layoutMode: 'grid',
+    initialLoad: true
 };
 
 export const DotPaletteListStore = signalStore(
@@ -93,7 +94,15 @@ export const DotPaletteListStore = signalStore(
             $currentSort: computed(() => ({
                 orderby: params.orderby(),
                 direction: params.direction()
-            }))
+            })),
+            $shouldHideControls: computed(() => {
+                const initialLoad = store.initialLoad();
+                const isLoading = store.status() === DotPaletteListStatus.LOADING;
+                const isEmpty = store.status() === DotPaletteListStatus.EMPTY;
+
+                // Hide controls if: initialLoad is true AND (empty OR loading)
+                return initialLoad && (isEmpty || isLoading);
+            })
         };
     }),
     withMethods((store) => {
@@ -134,7 +143,7 @@ export const DotPaletteListStore = signalStore(
             setLayoutMode(layoutMode: DotPaletteViewMode) {
                 patchState(store, { layoutMode });
             },
-            getContentTypes(params: Partial<DotPaletteSearchParams> = {}) {
+            getContentTypes(params: Partial<DotPaletteSearchParams> = {}, initialLoad = false) {
                 patchState(store, {
                     searchParams: {
                         ...store.searchParams(),
@@ -142,7 +151,8 @@ export const DotPaletteListStore = signalStore(
                         selectedContentType: '' // Ensure we're in content types view
                     },
                     status: DotPaletteListStatus.LOADING,
-                    currentView: DotUVEPaletteListView.CONTENT_TYPES
+                    currentView: DotUVEPaletteListView.CONTENT_TYPES,
+                    initialLoad
                 });
 
                 return getData()
@@ -158,18 +168,20 @@ export const DotPaletteListStore = signalStore(
                         patchState(store, {
                             contenttypes,
                             pagination,
-                            status: getPaletteState(contenttypes)
+                            status: getPaletteState(contenttypes),
+                            initialLoad: false // Mark initial load as complete
                         });
                     });
             },
-            getContentlets(params: Partial<DotPaletteSearchParams> = {}) {
+            getContentlets(params: Partial<DotPaletteSearchParams> = {}, initialLoad = false) {
                 const searchParams = { ...store.searchParams(), ...params };
                 const esParams = buildESContentParams(searchParams);
                 const offset = Number(esParams.offset);
                 patchState(store, {
                     searchParams,
                     status: DotPaletteListStatus.LOADING,
-                    currentView: DotUVEPaletteListView.CONTENTLETS
+                    currentView: DotUVEPaletteListView.CONTENTLETS,
+                    initialLoad
                 });
 
                 dotESContentService
@@ -183,7 +195,9 @@ export const DotPaletteListStore = signalStore(
                             return of(EMPTY_CONTENTLET_RESPONSE);
                         })
                     )
-                    .subscribe((response) => patchState(store, response));
+                    .subscribe((response) =>
+                        patchState(store, { ...response, initialLoad: false })
+                    );
             }
         };
     }),
@@ -204,9 +218,30 @@ export const DotPaletteListStore = signalStore(
         );
 
         return {
+            /**
+             * Manually sets the loading status of the palette.
+             * Used when transitioning states or showing loading indicators before data fetches.
+             *
+             * @param status - The status to set (LOADING, LOADED, or EMPTY)
+             */
+            setStatus(status: DotPaletteListStatus) {
+                patchState(store, { status });
+            },
+            /**
+             * Sets the content types from a favorite list.
+             * Used when updating the favorite state of a content type.
+             *
+             * @param contentTypes - The content types to set
+             */
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
                 updateFavoriteState(contentTypes);
             },
+            /**
+             * Adds a content type to the favorite list.
+             * If the list is a favorites list, updates the favorite state.
+             *
+             * @param contentType - The content type to add
+             */
             addFavorite(contentType: DotCMSContentType) {
                 const response = dotFavoriteContentTypeService.add(contentType);
 
@@ -215,6 +250,12 @@ export const DotPaletteListStore = signalStore(
                     updateFavoriteState(response);
                 }
             },
+            /**
+             * Removes a content type from the favorite list.
+             * If the list is a favorites list, updates the favorite state.
+             *
+             * @param contentTypeId - The content type ID to remove
+             */
             removeFavorite(contentTypeId: string) {
                 const response = dotFavoriteContentTypeService.remove(contentTypeId);
 
