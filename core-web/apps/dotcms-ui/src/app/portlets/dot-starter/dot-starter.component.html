@@ -92,7 +92,7 @@
                         </div>
 
                         <button class="dot-step__next-button" type="button" pButton label="Next Step"
-                            (click)="completeStepAndOpenNext(i)"></button>
+                            (click)="activeIndexChange(i + 1)"></button>
 
                     </div>
                 </p-accordionTab>
@@ -106,7 +106,7 @@
     <div class="dot-onboarding__progress-container">
         <div class="dot-onboarding__progress-left">
             <p class="dot-onboarding__current-title">
-                {{ currentStepLabel }}
+                {{ state.currentStateLabel() }}
             </p>
         </div>
 
