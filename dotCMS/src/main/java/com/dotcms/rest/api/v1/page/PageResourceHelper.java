@@ -148,7 +148,7 @@ public class PageResourceHelper implements Serializable {
      * @throws DotDataException An error occurred when interacting with the data source.
      */
     @WrapInTransaction
-    public List<Map<String, Object>> saveContent(final String pageId,
+    public void saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
 
             final Language language, String variantName) throws DotDataException {
@@ -212,32 +212,6 @@ public class PageResourceHelper implements Serializable {
                     multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
         }
-
-        // MultiTrees as a flattened list
-        final List<MultiTree> savedMultiTrees = multiTreesMap.values().stream()
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-
-        // Response with container, contentlet and styleProperties
-        return savedContent(savedMultiTrees);
-    }
-
-    /**
-     * Returns a list of the saved MultiTrees with the containerId, uuid, contentletId and styleProperties.
-     * @param savedMultiTrees The list of saved MultiTrees.
-     * @return A list of the saved MultiTrees with the containerId, uuid, contentletId and styleProperties.
-     */
-    private List<Map<String, Object>> savedContent(List<MultiTree> savedMultiTrees) {
-        return savedMultiTrees.stream()
-                .map(multiTree -> {
-                    final Map<String, Object> contentInfo = new HashMap<>();
-                    contentInfo.put("containerId", multiTree.getContainer());
-                    contentInfo.put("uuid", multiTree.getRelationType());
-                    contentInfo.put("contentletId", multiTree.getContentlet());
-                    contentInfo.put("styleProperties", multiTree.getStyleProperties());
-                    return contentInfo;
-                })
-                .collect(Collectors.toList());
     }
 
     public void saveMultiTree(final String containerId,
