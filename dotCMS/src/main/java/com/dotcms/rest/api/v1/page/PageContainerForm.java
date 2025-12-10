@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -10,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,8 +141,17 @@ public class PageContainerForm {
             this.id = id;
             this.uuid = uuid;
             this.personaTag  = personaTag;
-            this.contentIds = contentIds;
-            this.stylePropertiesMap = stylePropertiesMap != null ? stylePropertiesMap : new HashMap<>();
+
+            // Defensive copy of contentIds
+            this.contentIds = UtilMethods.isSet(contentIds) ? new ArrayList<>(contentIds) : new ArrayList<>();
+
+            // Defensive deep copy of style properties
+            this.stylePropertiesMap = new HashMap<>();
+            if (UtilMethods.isSet(stylePropertiesMap)) {
+                stylePropertiesMap.forEach((key, value) -> {
+                    this.stylePropertiesMap.put(key, new HashMap<>(value));
+                });
+            }
         }
 
         public String getPersonaTag() {
@@ -152,7 +163,7 @@ public class PageContainerForm {
         }
 
         public List<String> getContentIds() {
-            return contentIds;
+            return Collections.unmodifiableList(contentIds);
         }
 
         public void addContentId(final String contentId) {
@@ -164,11 +175,15 @@ public class PageContainerForm {
         }
 
         public Map<String, Map<String, Object>> getStylePropertiesMap() {
-            return stylePropertiesMap;
+            return Collections.unmodifiableMap(stylePropertiesMap);
         }
 
         public void setStyleProperties(final String contentletId, final Map<String, Object> styleProperties) {
-            this.stylePropertiesMap.put(contentletId, styleProperties);
+            if (styleProperties == null) {
+                this.stylePropertiesMap.remove(contentletId);
+                return;
+            }
+            this.stylePropertiesMap.put(contentletId, new HashMap<>(styleProperties));
         }
 
     }
