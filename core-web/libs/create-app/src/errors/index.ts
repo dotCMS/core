@@ -26,12 +26,12 @@ export class FailedToGetDotcmsTokenError extends Error {
 
 export class FailedToSetUpUVEConfig extends Error {
     constructor() {
-        super(`Failed to set up UVE configuration in Dotcms.`);
+        super(`Failed to set up UVE configuration in DotCMS.`);
     }
 }
 
 export class FailedToGetDemoSiteIdentifierError extends Error {
     constructor() {
-        super(`Failed to get demo site identifier from Dotcms.`);
+        super(`Failed to get demo site identifier from DotCMS.`);
     }
 }
