@@ -10,7 +10,7 @@ export async function fetchWithRetry(url: string, retries = 5, delay = 5000) {
         try {
             return await axios.get(url);
         } catch (err) {
-            console.log(`DotCMS still not up 😴 ${i + 1}. Retrying in ${delay / 1000}s...`);
+            console.log(`dotCMS still not up 😴 ${i + 1}. Retrying in ${delay / 1000}s...`);
 
             if (i === retries - 1) throw err; // throw after last attempt
 

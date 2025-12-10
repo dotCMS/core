@@ -34,7 +34,7 @@ const program = new Command();
 
 program
     .name('dotcms-create-app')
-    .description('DotCMS CLI for creating applications')
+    .description('dotCMS CLI for creating applications')
     .version('0.1.0');
 
 program
@@ -92,20 +92,20 @@ program
             const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
             const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
-            spinner.start('Verifying if DotCMS is running...');
+            spinner.start('Verifying if dotCMS is running...');
 
             const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL);
 
             if (!checkIfDotcmsIsRunning) {
                 spinner.fail(
-                    'Dotcms is not running on the following url ' +
+                    'dotCMS is not running on the following url ' +
                         urlDotcmsInstance +
                         '. Please check the url and try again.'
                 );
                 return;
             }
 
-            spinner.succeed('Dotcms is running.');
+            spinner.succeed('dotCMS is running.');
 
             const dotcmsToken = await DotCMSApi.getAuthToken({
                 payload: {
@@ -178,7 +178,7 @@ program
             // FINAL MESSAGE
             console.log(
                 chalk.greenBright(
-                    "🎉 You're all set! Start building your app with DotCMS + your chosen frontend framework.\n"
+                    "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
                 )
             );
 
@@ -200,7 +200,7 @@ program
 
         spinner.succeed(`Frontend project (${framework}) scaffolded successfully.`);
 
-        spinner.start('Setting up DotCMS with Docker Compose...');
+        spinner.start('Setting up dotCMS with Docker Compose...');
 
         // STEP 2 — Download docker-compose
         const downloaded = await downloadTheDockerCompose({
@@ -214,30 +214,30 @@ program
         spinner.succeed('Docker Compose Download completed.');
 
         spinner.start(
-            'Starting DotCMS with Docker Compose (This may take sometime enjoy a coffee ☕️ )...'
+            'Starting dotCMS with Docker Compose (This may take sometime enjoy a coffee ☕️ )...'
         );
 
         // STEP 3 — Run docker-compose
         const ran = await runDockerCompose({ directory: finalDirectory });
         if (!ran.ok) {
             spinner.fail(
-                'Failed to start DotCMS with Docker Compose.Please make sure docker is installed and running.'
+                'Failed to start dotCMS with Docker Compose.Please make sure docker is installed and running.'
             );
             return;
         }
 
-        spinner.succeed('Dotcms containers started successfully.');
+        spinner.succeed('dotCMS containers started successfully.');
 
-        spinner.start('Verifying if DotCMS is running...');
+        spinner.start('Verifying if dotCMS is running...');
 
         const checkIfDotcmsIsRunning = await isDotcmsRunning();
 
         if (!checkIfDotcmsIsRunning) {
-            spinner.fail('Dotcms is not running. Please check the docker containers.');
+            spinner.fail('dotCMS is not running. Please check the docker containers.');
             return;
         }
 
-        spinner.succeed('Dotcms is running.');
+        spinner.succeed('dotCMS is running.');
 
         const dotcmsToken = await DotCMSApi.getAuthToken({
             payload: {
@@ -306,7 +306,7 @@ program
         // FINAL MESSAGE
         console.log(
             chalk.greenBright(
-                "🎉 You're all set! Start building your app with DotCMS + your chosen frontend framework.\n"
+                "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
             )
         );
     });

@@ -20,7 +20,7 @@ export class FailedToDownloadDockerComposeError extends Error {
 
 export class FailedToGetDotcmsTokenError extends Error {
     constructor() {
-        super(`Failed to get DotCMS API token. Please make sure if DotCMS container is running.`);
+        super(`Failed to get dotCMS API token. Please make sure if dotCMS container is running.`);
     }
 }
 

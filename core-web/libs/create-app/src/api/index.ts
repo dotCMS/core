@@ -33,7 +33,7 @@ export class DotCMSApi {
             const res = await axios.post<GetUserTokenResponse>(endpoint, payload);
             return Ok(res.data.entity.token);
         } catch (err) {
-            console.error('DotCMS failed to get token' + JSON.stringify(err));
+            console.error('dotCMS failed to get token' + JSON.stringify(err));
             return Err(new FailedToGetDotcmsTokenError());
         }
     }

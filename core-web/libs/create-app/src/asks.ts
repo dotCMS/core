@@ -44,14 +44,14 @@ export async function askDirectory() {
 }
 
 /**
- * Ask user the url of the DotCMS instance
+ * Ask user the url of the dotCMS instance
  */
 export async function askDotcmsCloudUrl() {
     const ans = await inquirer.prompt([
         {
             type: 'input',
             name: 'url',
-            message: 'What’s the URL of your DotCMS cloud instance?',
+            message: 'What’s the URL of your dotCMS cloud instance?',
             default: `https://demo.dotcms.com`
         }
     ]);
@@ -59,14 +59,14 @@ export async function askDotcmsCloudUrl() {
 }
 
 /**
- * Ask user the username of the DotCMS instance
+ * Ask user the username of the dotCMS instance
  */
 export async function askUserNameForDotcmsCloud() {
     const ans = await inquirer.prompt([
         {
             type: 'input',
             name: 'username',
-            message: 'What’s the username of your DotCMS cloud instance?',
+            message: 'What’s the username of your dotCMS cloud instance?',
             default: `admin@dotcms.com`
         }
     ]);
@@ -74,14 +74,14 @@ export async function askUserNameForDotcmsCloud() {
 }
 
 /**
- * Ask user the username of the DotCMS instance
+ * Ask user the username of the dotCMS instance
  */
 export async function askPasswordForDotcmsCloud() {
     const ans = await inquirer.prompt([
         {
             type: 'input',
             name: 'password',
-            message: 'What’s the password of your DotCMS cloud instance?',
+            message: 'What’s the password of your dotCMS cloud instance?',
             default: ``
         }
     ]);
@@ -98,7 +98,7 @@ export async function askCloudOrLocalInstance(): Promise<boolean> {
         {
             type: 'confirm',
             name: 'confirm',
-            message: `Do you want to use a DotCMS Cloud instance? (Otherwise a local DotCMS will be used using docker)`,
+            message: `Do you want to use a dotCMS Cloud instance? (Otherwise a local DotCMS will be used using docker)`,
             default: false
         }
     ]);
