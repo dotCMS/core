@@ -110,7 +110,8 @@ ${substep.code}
     activeIndexChange(newIndex: number) {
         const totalSteps = this.content.steps.length;
 
-        const progress = Math.round((newIndex / totalSteps) * 100);
+        // newIndex is 0-based, so we need to subtract 1 to get the correct progress
+        const progress = Math.round((newIndex / (totalSteps - 1)) * 100);
 
         let title = 'All steps complete';
 
