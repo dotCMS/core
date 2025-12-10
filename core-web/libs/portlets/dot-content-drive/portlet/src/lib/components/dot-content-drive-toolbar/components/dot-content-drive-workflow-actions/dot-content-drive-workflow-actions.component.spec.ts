@@ -620,7 +620,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 '_self'
             );
             expect(windowSpy).toHaveBeenCalledWith(
-                expect.stringContaining(mockAsset.fileAsset),
+                expect.stringContaining(mockAsset['fileAsset'] as string),
                 '_self'
             );
 
@@ -695,7 +695,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
 
             // Should use assetVersion if available
             expect(windowSpy).toHaveBeenCalledWith(
-                expect.stringContaining(mockAsset.assetVersion),
+                expect.stringContaining(mockAsset['assetVersion'] as string),
                 '_self'
             );
 
@@ -727,7 +727,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
 
             // Should use fileAssetVersion if available
             expect(windowSpy).toHaveBeenCalledWith(
-                expect.stringContaining(mockAsset.fileAssetVersion),
+                expect.stringContaining(mockAsset['fileAssetVersion'] as string),
                 '_self'
             );
 

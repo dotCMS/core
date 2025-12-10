@@ -132,6 +132,14 @@ export class DotFolderListViewComponent implements OnInit {
     dragEnd = output<void>();
 
     /**
+     * An output that emits the drop event.
+     *
+     * @type {Output<DotContentDriveItem>} the target value
+     * @alias drop
+     */
+    drop = output<DotContentDriveItem>();
+
+    /**
      * An array of selected items.
      *
      * @type {DotContentDriveItem[]}
@@ -163,7 +171,8 @@ export class DotFolderListViewComponent implements OnInit {
     readonly state = signalState({
         isDragging: false,
         currentPageFirstRowIndex: 0,
-        languagesMap: new Map<number, DotLanguage>()
+        languagesMap: new Map<number, DotLanguage>(),
+        dragOverRowId: null as string | null
     });
 
     /**
@@ -275,6 +284,42 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
+     * Handles drag over a content item to show hover effect
+     * @param event The drag over event
+     * @param targetItem The content item being dragged over
+     */
+    onDragOver(event: DragEvent, targetItem: DotContentDriveItem) {
+        // Only handle internal drags (item to item)
+        const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
+        if (isInternalDrag) {
+            event.preventDefault();
+            patchState(this.state, { dragOverRowId: targetItem.identifier });
+        }
+    }
+
+    /**
+     * Handles drop on a content item
+     * Only handles internal drags (item to item). External file drops are allowed to bubble up to the dropzone.
+     * @param event The drop event
+     * @param targetItem The content item that was dropped
+     */
+    onDrop(event: DragEvent, targetItem: DotContentDriveItem) {
+        // If this is an external file drop, let it bubble up to the dropzone
+        const hasFiles = event.dataTransfer?.files && event.dataTransfer.files.length > 0;
+        const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
+
+        // Only handle internal drags (item to item), not file drops
+        if (hasFiles || !isInternalDrag) {
+            return; // Let the event bubble up to the dropzone
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        patchState(this.state, { dragOverRowId: null });
+        this.drop.emit(targetItem);
+    }
+
+    /**
      * Creates drag image from actual rendered thumbnails (img/icon elements)
      * @param items The items to create the drag image from
      * @param totalCount The total number of items
@@ -293,7 +338,7 @@ export class DotFolderListViewComponent implements OnInit {
             // Note: Using querySelector here as Renderer2 doesn't provide query methods
             // This is acceptable since drag operations are client-side only
             const thumbnail = document.querySelector(
-                `[data-id="${item.identifier}"]`
+                `[data-table-id="${item.identifier}"]`
             ) as HTMLElement;
 
             if (!thumbnail) {
@@ -347,8 +392,8 @@ export class DotFolderListViewComponent implements OnInit {
      * Handles drag end on a content item
      */
     onDragEnd() {
-        // Reset dragging state to false
-        patchState(this.state, { isDragging: false });
+        // Reset dragging state to false and clear drag over
+        patchState(this.state, { isDragging: false, dragOverRowId: null });
         this.dragEnd.emit();
     }
 }

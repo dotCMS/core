@@ -13,6 +13,7 @@ import { SUCCESS_MESSAGE_LIFE } from '../../../../shared/constants';
 import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveNavigationService } from '../../../../shared/services';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
+import { isFolder } from '../../../../utils/functions';
 import {
     ActionShowConditions,
     ContentDriveWorkflowAction,
@@ -98,7 +99,7 @@ export class DotContentDriveWorkflowActionsComponent {
      */
     private gotToEditContentlet() {
         const item = this.$selectedItems()[0];
-        if (!item) return;
+        if (!item || isFolder(item)) return;
         this.#navigationService.editContent(item);
     }
 
@@ -108,7 +109,7 @@ export class DotContentDriveWorkflowActionsComponent {
      */
     private gotToEditPage() {
         const item = this.$selectedItems()[0];
-        if (!item) return;
+        if (!item || isFolder(item)) return;
         this.#navigationService.editPage(item);
     }
 
@@ -177,7 +178,7 @@ export class DotContentDriveWorkflowActionsComponent {
     download() {
         const asset = this.$selectedItems()[0];
 
-        if (!asset) return;
+        if (!asset || isFolder(asset)) return;
 
         const assetLink = getImageAssetUrl(asset);
 

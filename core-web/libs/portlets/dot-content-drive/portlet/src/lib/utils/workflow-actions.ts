@@ -1,5 +1,7 @@
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
+import { isFolder } from './functions';
+
 export const WORKFLOW_ACTION_ID = {
     NEW: 'NEW',
     SAVE_AS_DRAFT: 'EDIT',
@@ -21,6 +23,7 @@ export type WORKFLOW_ACTION_ID = (typeof WORKFLOW_ACTION_ID)[keyof typeof WORKFL
 
 type SelectionStats = {
     total: number;
+    folders: number;
     archived: number;
     live: number;
     working: number;
@@ -34,6 +37,7 @@ export interface ActionShowConditions {
     hasSelection?: boolean;
     isSingleSelection?: boolean;
     allAreAssets?: boolean;
+    allAreFolders?: boolean;
     allArchived?: boolean;
     allLive?: boolean;
     allWorking?: boolean;
@@ -42,8 +46,10 @@ export interface ActionShowConditions {
     noneLive?: boolean;
     noneWorking?: boolean;
     noneLocked?: boolean;
+    noneFolder?: boolean;
     isPage?: boolean;
     isContentlet?: boolean;
+    isFolder?: boolean;
 }
 
 export interface ContentDriveWorkflowAction {
@@ -64,7 +70,8 @@ const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
     showWhen: {
         isSingleSelection: true,
         noneArchived: true,
-        isContentlet: true
+        isContentlet: true,
+        noneFolder: true
     }
 };
 
@@ -74,7 +81,8 @@ const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
     showWhen: {
         isSingleSelection: true,
         noneArchived: true,
-        isPage: true
+        isPage: true,
+        noneFolder: true
     }
 };
 
@@ -82,7 +90,8 @@ const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
     name: 'content.drive.worflow.action.save-draft',
     id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
     showWhen: {
-        noneArchived: true
+        noneArchived: true,
+        noneFolder: true
     }
 };
 
@@ -91,7 +100,8 @@ const PUBLISH_ACTION: ContentDriveWorkflowAction = {
     id: WORKFLOW_ACTION_ID.PUBLISH,
     showWhen: {
         noneArchived: true,
-        noneLive: true
+        noneLive: true,
+        noneFolder: true
     }
 };
 
@@ -101,7 +111,8 @@ const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
     // Unpublish: showOn: ["LISTING", "LOCKED", "PUBLISHED", "UNLOCKED"]
     showWhen: {
         noneArchived: true,
-        allLive: true
+        allLive: true,
+        noneFolder: true
     }
 };
 
@@ -110,7 +121,8 @@ const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
     id: WORKFLOW_ACTION_ID.ARCHIVE,
     // Archive: showOn: ["LISTING", "ARCHIVED", "UNPUBLISHED", "UNLOCKED"]
     showWhen: {
-        noneArchived: true
+        noneArchived: true,
+        noneFolder: true
     },
     confirmationMessage: 'content.drive.worflow.action.archive.confirm'
 };
@@ -119,7 +131,8 @@ const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
     name: 'Default-Action-Unarchive',
     id: WORKFLOW_ACTION_ID.UNARCHIVE,
     showWhen: {
-        allArchived: true
+        allArchived: true,
+        noneFolder: true
     },
     confirmationMessage: 'content.drive.worflow.action.unarchive.confirm'
 };
@@ -128,7 +141,8 @@ const DELETE_ACTION: ContentDriveWorkflowAction = {
     name: 'Default-Action-Delete',
     id: WORKFLOW_ACTION_ID.DELETE,
     showWhen: {
-        allArchived: true
+        allArchived: true,
+        noneFolder: true
     },
     confirmationMessage: 'content.drive.worflow.action.delete.confirm'
 };
@@ -138,7 +152,8 @@ const RENAME_ACTION: ContentDriveWorkflowAction = {
     id: WORKFLOW_ACTION_ID.RENAME,
     showWhen: {
         isSingleSelection: true,
-        noneArchived: true
+        noneArchived: true,
+        noneFolder: true
     }
 };
 
@@ -147,7 +162,8 @@ const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
     id: WORKFLOW_ACTION_ID.DOWNLOAD,
     showWhen: {
         allAreAssets: true,
-        isSingleSelection: true
+        isSingleSelection: true,
+        noneFolder: true
     }
 };
 
@@ -192,24 +208,38 @@ export const getActionConditions = (selectedItems: DotContentDriveItem[]): Actio
             noneLocked: false,
             allAreAssets: false,
             isPage: false,
-            isContentlet: false
+            isContentlet: false,
+            allAreFolders: false,
+            isFolder: false,
+            noneFolder: false
         };
     }
+
+    // For "none" properties, only set to true if there are no folders AND the counter is 0
+    // Folders don't have archived/live/working/locked properties, so if folders exist, these should be false
+    const nonFolderCount = stats.total - stats.folders;
+    const noneArchived = stats.folders === 0 && stats.archived === 0;
+    const noneLive = stats.folders === 0 && stats.live === 0;
+    const noneWorking = stats.folders === 0 && stats.working === 0;
+    const noneLocked = stats.folders === 0 && stats.locked === 0;
 
     return {
         hasSelection: true,
         isSingleSelection: stats.total === 1,
-        allArchived: stats.archived === stats.total,
-        allLive: stats.live === stats.total,
-        allWorking: stats.working === stats.total,
-        allLocked: stats.locked === stats.total,
-        noneArchived: stats.archived === 0,
-        noneLive: stats.live === 0,
-        noneWorking: stats.working === 0,
-        noneLocked: stats.locked === 0,
+        allAreFolders: stats.folders === stats.total,
+        allArchived: nonFolderCount > 0 && stats.archived === nonFolderCount,
+        allLive: nonFolderCount > 0 && stats.live === nonFolderCount,
+        allWorking: nonFolderCount > 0 && stats.working === nonFolderCount,
+        allLocked: nonFolderCount > 0 && stats.locked === nonFolderCount,
+        noneArchived,
+        noneLive,
+        noneWorking,
+        noneLocked,
         allAreAssets: stats.assets === stats.total,
         isPage: stats.pages === stats.total,
-        isContentlet: stats.contentlets === stats.total
+        isContentlet: stats.contentlets === stats.total,
+        isFolder: stats.folders === stats.total,
+        noneFolder: stats.folders === 0
     };
 };
 
@@ -226,6 +256,10 @@ const countSelectionStats = (items: DotContentDriveItem[]): SelectionStats => {
 
     const counters = items.reduce(
         (acc, item) => {
+            if (isFolder(item)) {
+                acc.folders++;
+                return acc;
+            }
             if (item.archived) acc.archived++;
             if (item.live) acc.live++;
             if (item.working) acc.working++;
@@ -235,7 +269,16 @@ const countSelectionStats = (items: DotContentDriveItem[]): SelectionStats => {
             if (['FILEASSET', 'DOTASSET'].includes(item.baseType)) acc.assets++;
             return acc;
         },
-        { archived: 0, live: 0, working: 0, locked: 0, assets: 0, pages: 0, contentlets: 0 }
+        {
+            archived: 0,
+            live: 0,
+            working: 0,
+            locked: 0,
+            assets: 0,
+            pages: 0,
+            contentlets: 0,
+            folders: 0
+        }
     );
 
     return { total, ...counters };
