@@ -90,7 +90,6 @@ describe('DotStarterComponent', () => {
         const removeSpy = jest.spyOn(Storage.prototype, 'removeItem');
         const { component, fixture } = createComponent();
 
-        component.toggleStepCompletion('step-1');
         fixture.detectChanges();
 
         component.resetProgress();

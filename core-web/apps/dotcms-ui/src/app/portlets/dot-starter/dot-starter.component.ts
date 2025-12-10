@@ -7,8 +7,6 @@ import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { state } from './store';
 
-
-
 interface OnboardingSubstepExplanation {
     title: string;
     description: string;
@@ -25,7 +23,6 @@ interface OnboardingSubstep {
 }
 
 interface OnboardingStep {
-    id: string;
     number: number;
     title: string;
     description: string;
@@ -46,7 +43,6 @@ const ONBOARDING_CONTENT: OnboardingContent = {
         'Select your preferred framework to get started. Learn how to connect to dotCMS, handle authentication, and enable visual editing in under 30 minutes',
     steps: [
         {
-            id: 'step-1',
             number: 1,
             title: 'Set up your Next.js app',
             description:
@@ -90,7 +86,6 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             ]
         },
         {
-            id: 'step-2',
             number: 2,
             title: 'Install dotCMS libraries',
             description:
@@ -110,7 +105,6 @@ const ONBOARDING_CONTENT: OnboardingContent = {
             ]
         },
         {
-            id: 'step-3',
             number: 3,
             title: 'Authenticate dotCMS (create your API Key)',
             description:
@@ -152,7 +146,6 @@ DOTCMS_TOKEN=your-api-key-here`,
             ]
         },
         {
-            id: 'step-4',
             number: 4,
             title: 'Fetch content from dotCMS',
             description:
@@ -194,7 +187,6 @@ export default async function Home() {
             ]
         },
         {
-            id: 'step-5',
             number: 5,
             title: 'Render content with DotCMSLayoutBody',
             description:
@@ -303,7 +295,6 @@ The server fetches the data securely, and the client component renders it. This 
             ]
         },
         {
-            id: 'step-6',
             number: 6,
             title: 'Configure Universal Visual Editor',
             description:
@@ -330,7 +321,6 @@ The server fetches the data securely, and the client component renders it. This 
             ]
         },
         {
-            id: 'step-7',
             number: 7,
             title: 'Edit your page visually',
             description:
@@ -355,7 +345,6 @@ Watch your Next.js app update instantly!`
             ]
         },
         {
-            id: 'step-8',
             number: 8,
             title: 'You Did It!',
             description:
@@ -415,28 +404,23 @@ export class DotStarterComponent implements OnInit {
             logo: 'assets/logos/dot-net.png',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
-        },
+        }
     ];
 
     @ViewChild('onboardingContainer', { read: ElementRef })
     onboardingContainer?: ElementRef<HTMLElement>;
     @ViewChild('frameworkInfoOverlay') frameworkInfoOverlay?: OverlayPanel;
-    selectedFrameworkInfo?: { id: string; label: string; logo: string; disabled?: boolean; githubUrl?: string };
-    private completedSteps = new Set<string>();
+    selectedFrameworkInfo?: {
+        id: string;
+        label: string;
+        logo: string;
+        disabled?: boolean;
+        githubUrl?: string;
+    };
     private readonly platformId = inject(PLATFORM_ID);
 
     ngOnInit(): void {
         this.loadProgress();
-        this.updateProgress();
-
-        // Open the accordion to the first incomplete step
-        const firstIncompleteIndex = this.content.steps.findIndex(
-            (step) => !this.isStepCompleted(step.id)
-        );
-
-        if (firstIncompleteIndex !== -1) {
-            this.updateActiveAccordionIndex(firstIncompleteIndex);
-        }
     }
 
     private updateActiveAccordionIndex(index: number) {
@@ -444,120 +428,63 @@ export class DotStarterComponent implements OnInit {
             ...state,
             activeAccordionIndex: index
         }));
+
+        this.persistProgress();
+        this.updateProgress();
+
+        setTimeout(() => {
+            if (!isPlatformBrowser(this.platformId) || !this.onboardingContainer?.nativeElement) {
+                return;
+            }
+            const container = this.onboardingContainer.nativeElement;
+            const activeTab = container.querySelector('.p-accordion-tab-active .p-accordion-header') as HTMLElement;
+
+            if (activeTab) {
+                activeTab.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }, 500);
     }
 
     activeIndexChange(value: number) {
         this.updateActiveAccordionIndex(value);
-
-        // Complete all previous steps that aren't already completed
-        if (value !== null && value !== undefined && value >= 0 && value < this.content.steps.length) {
-            let hasChanges = false;
-            for (let i = 0; i < value; i++) {
-                const step = this.content.steps[i];
-                if (step && !this.isStepCompleted(step.id)) {
-                    this.completedSteps.add(step.id);
-                    hasChanges = true;
-                }
-            }
-
-            if (hasChanges) {
-                this.persistProgress();
-                this.updateProgress();
-            }
-
-            // Check if the newly opened step is completed
-            const openedStep = this.content.steps[value];
-            if (openedStep && this.isStepCompleted(openedStep.id)) {
-                // Automatically undo this step and all subsequent steps
-                this.undoStepAndSubsequent(openedStep.id);
-            }
-        }
     }
 
-
-    showFrameworkInfo(event: Event, framework: { id: string; label: string; logo: string; disabled?: boolean; githubUrl?: string }): void {
+    showFrameworkInfo(
+        event: Event,
+        framework: {
+            id: string;
+            label: string;
+            logo: string;
+            disabled?: boolean;
+            githubUrl?: string;
+        }
+    ): void {
         this.selectedFrameworkInfo = framework;
         this.frameworkInfoOverlay?.toggle(event);
     }
 
-    isStepCompleted(stepId: string): boolean {
-        return this.completedSteps.has(stepId);
+    isStepCompleted(index: number): boolean {
+        return index <= state.activeAccordionIndex();
     }
 
-    toggleStepCompletion(stepId: string): void {
-        if (this.completedSteps.has(stepId)) {
-            this.completedSteps.delete(stepId);
-        } else {
-            this.completedSteps.add(stepId);
-        }
-
-        this.persistProgress();
-        this.updateProgress();
-    }
-
-    completeStepAndOpenNext(stepId: string): void {
-        // Mark current step as completed
-        if (!this.completedSteps.has(stepId)) {
-            this.completedSteps.add(stepId);
-            this.persistProgress();
-            this.updateProgress();
-        }
-
-        // Find and open the next step
-        const currentIndex = this.content.steps.findIndex((step) => step.id === stepId);
-        if (currentIndex !== -1 && currentIndex < this.content.steps.length - 1) {
-            const nextIndex = currentIndex + 1;
-            this.updateActiveAccordionIndex(nextIndex);
-            // Scroll to the accordion item after it opens
-            setTimeout(() => {
-                if (
-                    !isPlatformBrowser(this.platformId) ||
-                    !this.onboardingContainer?.nativeElement
-                ) {
-                    return;
-                }
-                const container = this.onboardingContainer.nativeElement;
-                const activeTab = container.querySelector('.p-accordion-tab-active') as HTMLElement;
-                if (activeTab) {
-                    const tabTop = activeTab.offsetTop - container.offsetTop - 24;
-                    container.scrollTo({
-                        top: tabTop,
-                        behavior: 'smooth'
-                    });
-                }
-            }, 300);
-        }
-    }
-
-    undoStepAndSubsequent(stepId: string): void {
-        // Find the current step index
-        const currentIndex = this.content.steps.findIndex((step) => step.id === stepId);
-
-        if (currentIndex === -1) {
-            return;
-        }
-
-        // Remove current step and all subsequent steps from completedSteps
-        for (let i = currentIndex; i < this.content.steps.length; i++) {
-            this.completedSteps.delete(this.content.steps[i].id);
-        }
-
-        this.persistProgress();
-        this.updateProgress();
+    completeStepAndOpenNext(index: number): void {
+        const nextIndex = index + 1;
+        this.updateActiveAccordionIndex(nextIndex);
     }
 
     resetProgress(): void {
-        this.completedSteps.clear();
-        this.persistProgress();
-        this.updateProgress();
+        this.updateActiveAccordionIndex(0);
     }
 
     get progressPercentage(): number {
-        if (!this.content.steps.length) {
+        if (!this.totalSteps) {
             return 0;
         }
 
-        return (this.completedSteps.size / this.content.steps.length) * 100;
+        return ((state.activeAccordionIndex() + 1) / (this.totalSteps)) * 100;
     }
 
     get totalSteps(): number {
@@ -565,21 +492,19 @@ export class DotStarterComponent implements OnInit {
     }
 
     get currentStep(): OnboardingStep | null {
-        if (!this.content.steps.length) {
+        if (!this.totalSteps) {
             return null;
         }
 
-        const nextStep = this.content.steps.find((step) => !this.completedSteps.has(step.id));
-
-        return nextStep ?? this.content.steps[this.content.steps.length - 1];
+        return this.content.steps[state.activeAccordionIndex()];
     }
 
     get currentStepLabel(): string {
-        if (!this.content.steps.length) {
+        if (!this.totalSteps) {
             return 'No steps available';
         }
 
-        if (this.completedSteps.size >= this.totalSteps) {
+        if (state.activeAccordionIndex() >= this.totalSteps) {
             return 'All steps complete';
         }
 
@@ -593,27 +518,11 @@ export class DotStarterComponent implements OnInit {
     }
 
     get currentStepPosition(): number {
-        if (!this.content.steps.length) {
-            return 0;
-        }
-
-        if (this.completedSteps.size >= this.totalSteps) {
-            return this.totalSteps;
-        }
-
-        const step = this.currentStep;
-
-        if (!step) {
-            return 0;
-        }
-
-        const index = this.content.steps.findIndex((item) => item.id === step.id);
-
-        return index === -1 ? 0 : index + 1;
+        return state.activeAccordionIndex();
     }
 
     get hasProgress(): boolean {
-        return this.completedSteps.size > 0;
+        return state.activeAccordionIndex() > 0;
     }
 
     formatSubstep(substep: OnboardingSubstep): string {
@@ -633,12 +542,12 @@ ${substep.code}
             const saved = localStorage.getItem(STORAGE_KEY);
 
             if (!saved) {
+                this.updateActiveAccordionIndex(0);
                 return;
             }
 
-            const parsed = JSON.parse(saved) as string[];
+            this.updateActiveAccordionIndex(parseInt(saved));
 
-            parsed.forEach((id) => this.completedSteps.add(id));
         } catch {
             localStorage.removeItem(STORAGE_KEY);
         }
@@ -649,15 +558,7 @@ ${substep.code}
             return;
         }
 
-        const values = Array.from(this.completedSteps);
-
-        if (!values.length) {
-            localStorage.removeItem(STORAGE_KEY);
-
-            return;
-        }
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+        localStorage.setItem(STORAGE_KEY, state.activeAccordionIndex().toString());
     }
 
     private updateProgress(): void {

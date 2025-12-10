@@ -1,5 +1,3 @@
-{{ state() | json }}
-
 <div class="dot-onboarding" #onboardingContainer>
     <div class="dot-onboarding__content">
         <header>
@@ -45,11 +43,11 @@
         </p-overlayPanel>
         <section class="dot-onboarding__steps">
             <p-accordion (activeIndexChange)="activeIndexChange($event)" [activeIndex]="state().activeAccordionIndex" [multiple]="false">
-                @for (step of content.steps; track step) {
+                @for (step of content.steps; let i = $index; track step) {
                 <p-accordionTab>
                     <ng-template pTemplate="header">
                         <div class="flex gap-2 align-items-center w-full">
-                            @if (isStepCompleted(step.id)) {
+                            @if (isStepCompleted(i)) {
                             <i class="pi pi-circle-on dot-onboarding__step-completed"></i>
                             } @else {
                             <i class="pi pi-circle-off"></i>
@@ -94,7 +92,7 @@
                         </div>
 
                         <button class="dot-step__next-button" type="button" pButton label="Next Step"
-                            (click)="completeStepAndOpenNext(step.id)"></button>
+                            (click)="completeStepAndOpenNext(i)"></button>
 
                     </div>
                 </p-accordionTab>
@@ -116,7 +114,7 @@
             <span class="dot-onboarding__progress-percentage">
                 {{ state().progress | number: '1.0-0' }}%
             </span>
-            <p-knob [(ngModel)]="state().progress" [readonly]="true" [size]="24" [strokeWidth]="4" valueTemplate=" "></p-knob>
+            <p-knob [(ngModel)]="state().progress" [readonly]="true" [size]="24" [strokeWidth]="6" valueTemplate=" "></p-knob>
         </div>
     </div>
 </section>
