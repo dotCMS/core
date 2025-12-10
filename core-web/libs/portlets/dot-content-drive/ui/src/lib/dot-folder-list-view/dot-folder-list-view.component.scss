@@ -102,6 +102,15 @@
     .container-thumbnail {
         background-color: $color-palette-primary-100;
         // min-width: 72px;
+
+        .folder-icon {
+            font-size: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
     }
 
     .truncate-text {

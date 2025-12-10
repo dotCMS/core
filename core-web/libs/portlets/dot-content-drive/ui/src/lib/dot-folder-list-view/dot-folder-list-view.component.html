@@ -76,18 +76,22 @@
                     <div
                         class="container-thumbnail hoverable"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
-                        <dot-contentlet-thumbnail
-                            [fieldVariable]="item?.contentType"
-                            [iconSize]="'36px'"
-                            [contentlet]="item"
-                            data-testId="contentlet-thumbnail"
-                            [attr.data-table-id]="item.identifier" />
+                        @if (!isFolder) {
+                            <dot-contentlet-thumbnail
+                                [fieldVariable]="item?.contentType"
+                                [iconSize]="'36px'"
+                                [contentlet]="item"
+                                data-testId="contentlet-thumbnail"
+                                [attr.data-table-id]="item.identifier" />
+                        } @else {
+                            <i class="pi pi-folder folder-icon" data-testId="folder-icon"></i>
+                        }
                     </div>
                     <span
                         data-testId="item-title-text"
                         class="truncate-text hoverable"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
-                        {{ item.title }}
+                        {{ isFolder ? item.name : item.title }}
                     </span>
                     <span data-testId="lock-hint">
                         @if (!isFolder) {

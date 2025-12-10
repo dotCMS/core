@@ -391,6 +391,14 @@ describe('DotFolderListViewComponent', () => {
             expect(contentletThumbnail).toBeTruthy();
         });
 
+        it('should show contentlet thumbnail instead of folder icon for non-folder items', () => {
+            const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+            const folderIcon = spectator.query(byTestId('folder-icon'));
+
+            expect(contentletThumbnail).toBeTruthy();
+            expect(folderIcon).toBeFalsy();
+        });
+
         it('should have a contentlet title', () => {
             const contentletTitle = spectator.query(byTestId('item-title'));
 
@@ -552,10 +560,12 @@ describe('DotFolderListViewComponent', () => {
                 expect(titleColumn?.textContent?.trim()).toContain('Test Folder');
             });
 
-            it('should have contentlet thumbnail for folders', () => {
+            it('should show folder icon instead of contentlet thumbnail for folders', () => {
                 const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+                const folderIcon = spectator.query(byTestId('folder-icon'));
 
-                expect(contentletThumbnail).toBeTruthy();
+                expect(contentletThumbnail).toBeFalsy();
+                expect(folderIcon).toBeTruthy();
             });
 
             it('should have kebab menu button for folders', () => {
