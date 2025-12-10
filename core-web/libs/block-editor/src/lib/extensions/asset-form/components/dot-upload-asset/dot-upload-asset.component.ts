@@ -193,7 +193,7 @@ export class DotUploadAssetComponent implements OnDestroy {
 
         console.error(error);
 
-        return throwError(error);
+        return throwError(() => error);
     }
 
     private cancelUploading(): void {

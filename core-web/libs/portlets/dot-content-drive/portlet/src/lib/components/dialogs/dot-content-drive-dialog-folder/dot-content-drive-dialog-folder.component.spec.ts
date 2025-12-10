@@ -347,7 +347,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should show error message on creation failure', () => {
             folderService.createFolder.mockReturnValue(
-                throwError({ error: { message: 'Creation failed' } })
+                throwError(() => ({ error: { message: 'Creation failed' } }))
             );
 
             const createButton = spectator.query(

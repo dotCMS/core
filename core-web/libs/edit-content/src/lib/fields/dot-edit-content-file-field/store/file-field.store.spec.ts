@@ -199,7 +199,7 @@ describe('FileFieldStore', () => {
         }));
 
         it('should set state properly with an error calling uploadFile', () => {
-            service.uploadFile.mockReturnValue(throwError('error'));
+            service.uploadFile.mockReturnValue(throwError(() => 'error'));
 
             const file = new File([''], 'filename', { type: 'text/plain' });
             store.handleUploadFile(file);
@@ -238,7 +238,7 @@ describe('FileFieldStore', () => {
         });
 
         it('should set state properly with an error calling getAssetData', () => {
-            service.getContentById.mockReturnValue(throwError('error'));
+            service.getContentById.mockReturnValue(throwError(() => 'error'));
 
             store.getAssetData('id');
 

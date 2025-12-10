@@ -158,9 +158,9 @@ describe('LongPollingProtocol', () => {
 
     it('should trigger a error', (done) => {
         spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-            return throwError({
+            return throwError(() => ({
                 entity: {}
-            });
+            }));
         });
 
         longPollingProtocol.error$().subscribe(() => {

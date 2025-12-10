@@ -223,7 +223,7 @@ export class DotExperimentsListStore
                 this.dotExperimentsService.getAll(pageId).pipe(
                     tapResponse(
                         (experiments) => this.setExperiments(experiments),
-                        (error: HttpErrorResponse) => throwError(error),
+                        (error: HttpErrorResponse) => throwError(() => error),
                         () => this.setComponentStatus(ComponentStatus.LOADED)
                     )
                 )
@@ -301,7 +301,7 @@ export class DotExperimentsListStore
                             });
                             this.deleteExperimentById(experiment.id);
                         },
-                        (error) => throwError(error),
+                        (error) => throwError(() => error),
                         () => this.setComponentStatus(ComponentStatus.LOADED)
                     ),
                     catchError(() => EMPTY)
@@ -383,7 +383,7 @@ export class DotExperimentsListStore
                             });
                             this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
-                        (error) => throwError(error),
+                        (error) => throwError(() => error),
                         () => this.setComponentStatus(ComponentStatus.LOADED)
                     ),
                     catchError(() => EMPTY)
