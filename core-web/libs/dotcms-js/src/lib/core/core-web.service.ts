@@ -64,7 +64,7 @@ export class CoreWebService {
     private router = inject(Router);
     private http = inject(HttpClient);
 
-    private httpErrosSubjects: Subject<any>[] = [];
+    private httpErrosSubjects: Record<number, Subject<void>> = {};
 
     /**
      *
@@ -194,7 +194,7 @@ export class CoreWebService {
             catchError((err: HttpErrorResponse) => {
                 this.emitHttpError(err.status);
 
-                return throwError(this.handleResponseHttpErrors(err));
+                return throwError(() => this.handleResponseHttpErrors(err));
             })
         );
     }
@@ -208,7 +208,7 @@ export class CoreWebService {
      */
     subscribeToHttpError(httpErrorCode: number): Observable<void> {
         if (!this.httpErrosSubjects[httpErrorCode]) {
-            this.httpErrosSubjects[httpErrorCode] = new Subject();
+            this.httpErrosSubjects[httpErrorCode] = new Subject<void>();
         }
 
         return this.httpErrosSubjects[httpErrorCode].asObservable();

@@ -2,9 +2,9 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, toArray } from 'rxjs/operators';
 
-import { ApiRoot, CoreWebService, ResponseView } from '@dotcms/dotcms-js';
+import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
     DotCurrentUser,
@@ -53,7 +53,7 @@ export class PushPublishService {
                     url: `${this.pushEnvironementsUrl}/${user.roleId}`
                 });
             }),
-            pluck<ResponseView<DotEnvironment[]>, DotEnvironment[]>('bodyJsonObject'),
+            map((res) => res.entity),
             mergeMap((environments: DotEnvironment[]) => environments),
             filter((environment: DotEnvironment) => environment.name !== ''),
             toArray()

@@ -1,21 +1,20 @@
-import { fromEvent, Subject } from 'rxjs';
+import { fromEvent } from 'rxjs';
 
 import {
     Component,
+    DestroyRef,
     ElementRef,
     EventEmitter,
     Input,
-    OnDestroy,
     OnInit,
     Output,
     inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FocusTrapModule } from 'primeng/focustrap';
-
-import { takeUntil } from 'rxjs/operators';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
@@ -25,12 +24,11 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     templateUrl: './dot-form-dialog.component.html',
     styleUrls: ['./dot-form-dialog.component.scss']
 })
-export class DotFormDialogComponent implements OnInit, OnDestroy {
+export class DotFormDialogComponent implements OnInit {
     private dynamicDialog = inject(DynamicDialogRef);
     private el = inject(ElementRef);
 
-    destroy = new Subject();
-    destroy$ = this.destroy.asObservable();
+    readonly #destroyRef = inject(DestroyRef);
 
     @Input()
     saveButtonDisabled: boolean;
@@ -48,7 +46,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');
 
         fromEvent(content, 'scroll')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((e: Event) => {
                 const pos = this.getYPosition(e);
                 const target = e.target as HTMLDivElement;
@@ -56,7 +54,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
             });
 
         fromEvent(this.el.nativeElement, 'keydown')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((keyboardEvent: KeyboardEvent) => {
                 const nodeName = (keyboardEvent.target as Element).nodeName;
                 if (
@@ -69,10 +67,6 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
                     this.save.emit(keyboardEvent);
                 }
             });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy.next();
     }
 
     /**

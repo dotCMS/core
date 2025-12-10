@@ -3,12 +3,13 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotActionBulkRequestOptions,
     DotCMSContentlet,
-    DotActionBulkResult
+    DotActionBulkResult,
+    DotCMSResponse
 } from '@dotcms/dotcms-models';
 
 export interface DotActionRequestOptions {
@@ -71,8 +72,10 @@ export class DotWorkflowActionsFireService {
         const url = `${this.BASE_URL}/actions/${actionId}/fire`;
 
         return this.httpClient
-            .put(url, data, { headers: this.defaultHeaders, params: urlParams })
-            .pipe(pluck('entity'));
+            .put<
+                DotCMSResponse<DotCMSContentlet>
+            >(url, data, { headers: this.defaultHeaders, params: urlParams })
+            .pipe(map((res) => res.entity));
     }
 
     /**
@@ -91,8 +94,10 @@ export class DotWorkflowActionsFireService {
         };
 
         return this.httpClient
-            .post(url, body, { headers: this.defaultHeaders, params: urlParams })
-            .pipe(pluck('entity'));
+            .post<
+                DotCMSResponse<DotCMSContentlet[]>
+            >(url, body, { headers: this.defaultHeaders, params: urlParams })
+            .pipe(map((res) => res.entity));
     }
 
     /**
@@ -104,10 +109,14 @@ export class DotWorkflowActionsFireService {
      */
     bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
         return this.httpClient
-            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data, {
-                headers: this.defaultHeaders
-            })
-            .pipe(pluck('entity'));
+            .put<DotCMSResponse<DotActionBulkResult>>(
+                `${this.BASE_URL}/contentlet/actions/bulk/fire`,
+                data,
+                {
+                    headers: this.defaultHeaders
+                }
+            )
+            .pipe(map((res) => res.entity));
     }
 
     /**
@@ -239,9 +248,12 @@ export class DotWorkflowActionsFireService {
         }
 
         return this.httpClient
-            .put(url, formData ? formData : bodyRequest, {
+            .put<DotCMSResponse<T>>(url, formData ? formData : bodyRequest, {
                 headers: formData ? new HttpHeaders() : this.defaultHeaders
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((res) => res.entity)
+            );
     }
 }

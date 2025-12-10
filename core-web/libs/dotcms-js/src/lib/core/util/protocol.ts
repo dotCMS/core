@@ -4,7 +4,7 @@ import { LoggerService } from '../logger.service';
 
 export abstract class Protocol {
     protected _open: Subject<any> = new Subject<any>();
-    protected _close: Subject<any> = new Subject<any>();
+    protected _close = new Subject<void>();
     protected _message: Subject<any> = new Subject<any>();
     protected _error: Subject<any> = new Subject<any>();
 

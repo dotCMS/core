@@ -86,7 +86,7 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
 export class DotLicenseService {
     private readonly http = inject(HttpClient);
 
-    unlicenseData: Subject<DotUnlicensedPortletData> = new BehaviorSubject({
+    unlicenseData = new BehaviorSubject<DotUnlicensedPortletData>({
         icon: '',
         titleKey: '',
         url: ''

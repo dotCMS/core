@@ -3,9 +3,9 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { DotPageTool, DotPageTools } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotPageTool, DotPageTools } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotPageToolsService {
@@ -18,6 +18,8 @@ export class DotPageToolsService {
      * @returns {Observable<DotPageTool[]>}
      */
     get(): Observable<DotPageTool[]> {
-        return this.http.get<{ entity: DotPageTools }>(this.seoToolsUrl).pipe(pluck('pageTools'));
+        return this.http
+            .get<DotCMSResponse<DotPageTools>>(this.seoToolsUrl)
+            .pipe(map((res) => res.entity.pageTools));
     }
 }

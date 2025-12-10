@@ -52,8 +52,8 @@ export class LongPollingProtocol extends Protocol {
                 params: lastCallBack ? { lastCallBack: lastCallBack } : {}
             })
             .pipe(pluck('entity'), take(1))
-            .subscribe(
-                (data) => {
+            .subscribe({
+                next: (data) => {
                     this.loggerService.debug('new Events', data);
                     this.triggerOpen();
 
@@ -69,11 +69,11 @@ export class LongPollingProtocol extends Protocol {
                         this.connectLongPooling(this.getLastCallback(data));
                     }
                 },
-                (e) => {
+                error: (e) => {
                     this.loggerService.info('A error occur connecting through long polling');
                     this._error.next(e);
                 }
-            );
+            });
     }
 
     private triggerOpen(): void {

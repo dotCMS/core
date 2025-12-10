@@ -71,9 +71,9 @@ export class LoginService {
         return this._auth$.asObservable();
     }
 
-    private _logout$: Subject<any> = new Subject<any>();
+    private _logout$ = new Subject<void>();
 
-    get logout$(): Observable<any> {
+    get logout$() {
         return this._logout$.asObservable();
     }
 
@@ -176,7 +176,7 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.serverInfo
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((res) => res.entity));
     }
 
     /**
