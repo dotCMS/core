@@ -463,14 +463,6 @@ export class DotStarterComponent implements OnInit {
         return step.title;
     }
 
-    get currentStepPosition(): number {
-        return state.activeAccordionIndex();
-    }
-
-    get hasProgress(): boolean {
-        return state.activeAccordionIndex() > 0;
-    }
-
     formatSubstep(substep: OnboardingSubstep): string {
         const language = substep.language || '';
 
