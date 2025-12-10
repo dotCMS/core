@@ -17,7 +17,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ButtonCopyComponent } from '@dotcms/ui';
 
 import { DotStarterComponent } from './dot-starter.component';
-import { OnboardingSubstep } from './models';
 import { state } from './store';
 
 describe('DotStarterComponent', () => {
