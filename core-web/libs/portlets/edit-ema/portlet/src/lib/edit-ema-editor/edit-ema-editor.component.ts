@@ -58,6 +58,7 @@ import {
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
@@ -106,7 +107,6 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 @Component({
     selector: 'dot-edit-ema-editor',
