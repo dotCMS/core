@@ -10,18 +10,24 @@ import {
     Output,
     SimpleChanges,
     ViewChild,
-    inject
+    computed,
+    inject,
+    input
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSClazzes, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    FeaturedFlags,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
-
-const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
@@ -39,7 +45,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     @Input() formFieldData: DotCMSContentTypeField;
 
-    @Input() contentType: DotCMSContentType;
+    readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
     @ViewChild('properties') propertiesContainer;
 
@@ -49,6 +55,11 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     private originalValue: DotCMSContentTypeField;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    $isNewContentEditorEnabled = computed(() => {
+        const contentType = this.$contentType();
+        return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
+    });
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData?.currentValue && this.formFieldData) {
@@ -139,6 +150,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         if (properties) {
             properties
                 .filter((property) => this.fieldPropertyService.existsComponent(property))
+                .filter((property) => {
+                    if (property === NEW_RENDER_MODE_VARIABLE_KEY) {
+                        return this.$isNewContentEditorEnabled();
+                    }
+                    return true;
+                })
                 .forEach((property) => {
                     formFields[property] = [
                         {
@@ -181,6 +198,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
             .filter((property) => this.fieldPropertyService.existsComponent(property))
+            .filter((property) => {
+                if (property === NEW_RENDER_MODE_VARIABLE_KEY) {
+                    return this.$isNewContentEditorEnabled();
+                }
+                return true;
+            })
             .sort(
                 (property1, property2) =>
                     this.fieldPropertyService.getOrder(property1) -
