@@ -78,6 +78,86 @@ export interface StyleEditorInputFieldConfig<T extends StyleEditorFieldInputType
 }
 
 /**
+ * Base option object with label and value properties.
+ *
+ * Used in dropdown, radio, and checkbox group fields to define
+ * selectable options with separate display labels and values.
+ *
+ * @property label - Display label shown to users
+ * @property value - Value returned when this option is selected
+ */
+export interface StyleEditorOptionObject {
+    /** Display label shown to users */
+    label: string;
+    /** Value returned when this option is selected */
+    value: string;
+}
+
+/**
+ * Extended option object for radio fields with visual properties.
+ *
+ * Extends the base option with optional image properties for
+ * creating visual radio button options (e.g., layout selectors with preview images).
+ *
+ * @property label - Display label shown to users
+ * @property value - Value returned when this option is selected
+ * @property imageURL - Optional URL to an image displayed for this option
+ * @property width - Optional width of the image in pixels
+ * @property height - Optional height of the image in pixels
+ */
+export interface StyleEditorRadioOptionObject extends StyleEditorOptionObject {
+    /** Optional URL to an image displayed for this option */
+    imageURL?: string;
+    /** Optional width of the image in pixels */
+    width?: number;
+    /** Optional height of the image in pixels */
+    height?: number;
+}
+
+/**
+ * Option type for dropdown and checkbox group fields.
+ *
+ * Can be a simple string (used as both label and value)
+ * or an object with separate label and value properties.
+ *
+ * @example
+ * ```typescript
+ * // String option - 'Arial' is used as both label and value
+ * const stringOption: StyleEditorOption = 'Arial';
+ *
+ * // Object option - separate label and value
+ * const objectOption: StyleEditorOption = {
+ *   label: 'Times New Roman',
+ *   value: 'times'
+ * };
+ * ```
+ */
+export type StyleEditorOption = string | StyleEditorOptionObject;
+
+/**
+ * Option type for radio fields with visual support.
+ *
+ * Can be a simple string (used as both label and value)
+ * or an object with label, value, and optional image properties.
+ *
+ * @example
+ * ```typescript
+ * // String option
+ * const stringOption: StyleEditorRadioOption = 'Left';
+ *
+ * // Object option with image
+ * const imageOption: StyleEditorRadioOption = {
+ *   label: 'Left Layout',
+ *   value: 'left',
+ *   imageURL: 'https://example.com/left-layout.png',
+ *   width: 80,
+ *   height: 50
+ * };
+ * ```
+ */
+export type StyleEditorRadioOption = string | StyleEditorRadioOptionObject;
+
+/**
  * Base field definition that all field types extend.
  *
  * Provides the common properties shared by all field types in the style editor.
@@ -185,7 +265,7 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
     /** Discriminator: must be 'dropdown' */
     type: 'dropdown';
     /** Array of selectable options. Can be strings or objects with label and value properties */
-    options: Array<string | { label: string; value: string }>;
+    options: StyleEditorOption[];
     /** Optional default selected value (must match one of the option values) */
     defaultValue?: string;
     /** Optional placeholder text shown when no value is selected */
@@ -254,21 +334,7 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
      * - Simple strings (used as both label and value)
      * - Objects with label, value, and optional imageURL, width, height for visual options
      */
-    options: Array<
-        | string
-        | {
-              /** Display label for the option */
-              label: string;
-              /** Value returned when this option is selected */
-              value: string;
-              /** Optional URL to an image displayed for this option */
-              imageURL?: string;
-              /** Optional width of the image in pixels */
-              width?: number;
-              /** Optional height of the image in pixels */
-              height?: number;
-          }
-    >;
+    options: StyleEditorRadioOption[];
     /** Optional default selected value (must match one of the option values) */
     defaultValue?: string;
     /**
@@ -312,7 +378,7 @@ export interface StyleEditorCheckboxGroupField extends StyleEditorBaseField {
     /** Discriminator: must be 'checkboxGroup' */
     type: 'checkboxGroup';
     /** Array of selectable options. Can be strings or objects with label and value properties */
-    options: Array<string | { label: string; value: string }>;
+    options: StyleEditorOption[];
     /**
      * Optional default checked state as a record mapping option values to boolean.
      * Keys should match the option values, values indicate whether the option is checked.
@@ -452,6 +518,44 @@ export interface StyleEditorForm {
  */
 
 /**
+ * Configuration object for normalized field schemas.
+ *
+ * Contains all possible field-specific properties after normalization.
+ * This interface is used by `StyleEditorFieldSchema` to define the `config` property.
+ *
+ * **Note:** All properties are optional since different field types use different subsets:
+ * - Input fields use: `inputType`, `placeholder`, `defaultValue`
+ * - Dropdown fields use: `options`, `placeholder`, `defaultValue`
+ * - Radio fields use: `options`, `columns`, `defaultValue`
+ * - Checkbox fields use: `options`, `defaultValue`
+ */
+export interface StyleEditorFieldSchemaConfig {
+    /** Optional input type for input fields ('text' or 'number') */
+    inputType?: StyleEditorFieldInputType;
+    /** Optional placeholder text shown when the field is empty */
+    placeholder?: string;
+    /**
+     * Optional array of normalized options for dropdown, radio, and checkbox fields.
+     * In the normalized schema, options are always in object form (strings are converted).
+     * Uses `StyleEditorRadioOptionObject` as the superset that supports all option properties.
+     */
+    options?: StyleEditorRadioOptionObject[];
+    /**
+     * Optional default value. Type depends on field type:
+     * - Input fields: string or number
+     * - Switch fields: boolean
+     * - Checkbox groups: Record<string, boolean>
+     */
+    defaultValue?: string | number | boolean | Record<string, boolean>;
+    /**
+     * Number of columns to display options in (for radio fields).
+     * - `1`: Single column list layout (default)
+     * - `2`: Two-column grid layout
+     */
+    columns?: 1 | 2;
+}
+
+/**
  * Normalized field schema sent to UVE.
  *
  * This is the transformed format of field definitions after normalization.
@@ -467,13 +571,6 @@ export interface StyleEditorForm {
  * @property type - The field type identifier (discriminator for field types)
  * @property label - The human-readable label displayed for this field
  * @property config - Object containing all field-specific configuration properties
- * @property config.inputType - Optional input type for input fields ('text' or 'number')
- * @property config.placeholder - Optional placeholder text shown when the field is empty
- * @property config.min - Optional minimum value constraint for number inputs
- * @property config.max - Optional maximum value constraint for number inputs
- * @property config.pattern - Optional regex pattern for text input validation
- * @property config.options - Optional array of normalized options for dropdown/radio/checkbox fields
- * @property config.defaultValue - Optional default value (type varies by field type)
  */
 export interface StyleEditorFieldSchema {
     /** The field type identifier */
@@ -481,47 +578,7 @@ export interface StyleEditorFieldSchema {
     /** The field label */
     label: string;
     /** Object containing all field-specific configuration */
-    config: {
-        /** Optional input type for input fields ('text' or 'number') */
-        inputType?: StyleEditorFieldInputType;
-        /** Optional placeholder text shown when the field is empty */
-        placeholder?: string;
-        /** Optional minimum value constraint for number inputs */
-        min?: number;
-        /** Optional maximum value constraint for number inputs */
-        max?: number;
-        /** Optional regex pattern for text input validation */
-        pattern?: string;
-        /**
-         * Optional array of options for dropdown, radio, and checkbox fields.
-         * Each option can include label, value, and optional image properties.
-         */
-        options?: Array<{
-            /** Display label for the option */
-            label: string;
-            /** Value returned when this option is selected */
-            value: string;
-            /** Optional URL to an image displayed for this option */
-            imageURL?: string;
-            /** Optional width of the image in pixels */
-            width?: number;
-            /** Optional height of the image in pixels */
-            height?: number;
-        }>;
-        /**
-         * Optional default value. Type depends on field type:
-         * - Input fields: string or number
-         * - Switch fields: boolean
-         * - Checkbox groups: Record<string, boolean>
-         */
-        defaultValue?: string | number | boolean | Record<string, boolean>;
-        /**
-         * Number of columns to display options in (for radio fields).
-         * - `1`: Single column list layout (default)
-         * - `2`: Two-column grid layout
-         */
-        columns?: 1 | 2;
-    };
+    config: StyleEditorFieldSchemaConfig;
 }
 
 /**
