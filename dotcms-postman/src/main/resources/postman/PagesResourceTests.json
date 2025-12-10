@@ -2785,12 +2785,18 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "var jsonData = pm.response.json();",
+                      "const json = pm.response.json();",
                       "",
-                      "pm.test(\"Check response\", function () {",
-                      "    ",
-                      "    pm.expect(jsonData.entity).to.eql('ok');",
-                      "    ",
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Response is JSON\", function () {",
+                      "    pm.response.to.be.json;",
+                      "});",
+                      "",
+                      "pm.test(\"Entity array exists\", function () {",
+                      "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -3806,9 +3812,7 @@
                   "",
                   "pm.test(\"Duplicated contentlets were merged correctly\", function () {",
                   "    pm.expect(json.entity.length).to.eql(2);",
-                  "});",
-                  "",
-                  ""
+                  "});"
                 ],
                 "type": "text/javascript",
                 "packages": {}
