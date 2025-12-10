@@ -46,13 +46,13 @@
                 @for (step of content.steps; let i = $index; track step) {
                 <p-accordionTab>
                     <ng-template pTemplate="header">
-                        <div class="flex gap-2 align-items-center w-full">
-                            @if (isStepCompleted(i)) {
+                        <div class="flex gap-2 justify-content-between w-full">
+                            <h2>{{ step.number + '. ' + step.title }}</h2>
+                             @if (isStepCompleted(i)) {
                             <i class="pi pi-circle-on dot-onboarding__step-completed"></i>
                             } @else {
                             <i class="pi pi-circle-off"></i>
                             }
-                            <h2>{{ step.number + '. ' + step.title }}</h2>
                         </div>
                     </ng-template>
                     <div class="dot-step">
