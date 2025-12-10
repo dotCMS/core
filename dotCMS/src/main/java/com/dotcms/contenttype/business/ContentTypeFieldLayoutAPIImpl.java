@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -41,43 +42,58 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     }
 
     /**
-     * Update a field.
+     * Updates a field in the specified {@link ContentType}. If, before the update, the
+     * {@link ContentType} has an invalid layout, it will be fixed before the update.
+     * <p>The {@code fieldToUpdate}'s sort order attribute will be ignored. If you want to change
+     * such a value for any field, you must call the
+     * {@link ContentTypeFieldLayoutAPI#moveFields(ContentType, FieldLayout, User)} method. If the
+     * {@code fieldToUpdate}'s sort order needs to be changed to fix a problem in the
+     * {@link ContentType}, then this method will replace it with the right value.</p>
      *
-     * If before the update the {@link ContentType} already has a wrong layout then it is fix before the update.
+     * @param contentType   The {@link ContentType} that the updated field belongs to.
+     * @param fieldToUpdate The {@link Field} being updated.
+     * @param user          The {@link User} that is updating the Field.
      *
-     * The fieldToUpdate's sortOrder attribute will be ignore, if you want to change any field's sortOrder then use
-     * {@link this#moveFields(ContentType, FieldLayout, User)} method.
-     * If the fieldToUpdate's sortOtder need to be changed to fix the {@link ContentType},
-     * then it would be change for the right value by this method.
+     * @return The {@link FieldLayout} object with the updated Field.
      *
-     * @param contentType field's {@link ContentType}
-     * @param fieldToUpdate field to update
-     * @param user who is making the change
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @throws DotSecurityException The User does not have the required permissions for execute this
+     *                              action.
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws NotFoundException    The field to update was not found in the Content Type or in the
+     *                              Field Layout.
      */
     @WrapInTransaction
     @Override
     public FieldLayout updateField(final ContentType contentType, final Field fieldToUpdate, final User user)
             throws DotSecurityException, DotDataException {
-
+        if (null == fieldToUpdate) {
+            throw new IllegalArgumentException("Field to update cannot be null");
+        }
+        if (null == contentType) {
+            throw new IllegalArgumentException("Content type cannot be null");
+        }
         final Optional<Field> optionalField = checkFieldExists(fieldToUpdate, contentType);
 
         if (optionalField.isPresent()) {
-            final FieldLayout fieldLayout = this.fixLayoutIfNecessary(contentType, user);
-            final Optional<Field> fielFromFixLayout = fieldLayout.getFields()
+            final FieldLayout fixedFieldLayout = this.fixLayoutIfNecessary(contentType, user);
+            final Optional<Field> fieldFromFixedLayout = fixedFieldLayout.getFields()
                     .stream()
-                    .filter(field -> fieldToUpdate.id().equals(field.id()))
+                    .filter(field -> Objects.equals(fieldToUpdate.id(), field.id()))
                     .findFirst();
-
-            final Field fieldToUpdateWithSortOrder = setRightSortOrder(fielFromFixLayout.get(), fieldToUpdate);
-
-            fieldAPI.save(fieldToUpdateWithSortOrder, user);
-
-            return fieldLayout.update(list(fieldToUpdateWithSortOrder));
+            if (fieldFromFixedLayout.isPresent()) {
+                final Field fieldToUpdateWithSortOrder = setRightSortOrder(fieldFromFixedLayout.get(), fieldToUpdate);
+                final Field savedField = fieldAPI.save(fieldToUpdateWithSortOrder, user);
+                fieldAPI.save(fieldToUpdate.fieldVariables(), savedField);
+                // Re-load the updated field from the database
+                final Field updatedWithFieldVars = fieldAPI.find(savedField.id());
+                return Objects.nonNull(updatedWithFieldVars)
+                        ? fixedFieldLayout.update(list(updatedWithFieldVars))
+                        : fixedFieldLayout;
+            } else {
+                throw new NotFoundException(String.format("Field '%s' was not found in Field Layout", fieldToUpdate.variable()));
+            }
         } else {
-            throw new NotFoundException(String.format("Field %s does not exists", fieldToUpdate.variable()));
+            throw new NotFoundException(String.format("Field '%s' does not exist", fieldToUpdate.variable()));
         }
     }
 

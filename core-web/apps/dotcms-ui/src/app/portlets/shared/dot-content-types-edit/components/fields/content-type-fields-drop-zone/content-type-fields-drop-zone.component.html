@@ -10,19 +10,19 @@
                     (editField)="editFieldHandler($event)"
                     (removeField)="removeField($event)"
                     (removeRow)="removeFieldRow($event, i)"
-                    [fieldRow]="row"></dot-content-type-fields-row>
+                    [fieldRow]="row" />
             } @else {
                 <dot-content-type-fields-tab
                     (editTab)="saveFieldsHandler($event)"
                     (removeTab)="removeTab($event, i)"
                     [fieldTab]="row"
-                    class="row-header__drag"></dot-content-type-fields-tab>
+                    class="row-header__drag" />
             }
         }
-        <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
+        <dot-add-rows (selectColums)="addRow($event)" />
     </div>
 
-    <dot-loading-indicator [fullscreen]="true"></dot-loading-indicator>
+    <dot-loading-indicator [fullscreen]="true" />
 </div>
 
 <dot-dialog
@@ -41,7 +41,7 @@
                 <dot-convert-to-block-info
                     (action)="scrollTo($event)"
                     [currentFieldType]="currentFieldType"
-                    [currentField]="currentField"></dot-convert-to-block-info>
+                    [currentField]="currentField" />
             }
             <div class="wrapper">
                 <dot-content-type-fields-properties-form
@@ -49,7 +49,7 @@
                     (valid)="setDialogOkButtonState($event)"
                     [formFieldData]="currentField"
                     [contentType]="contentType"
-                    #fieldPropertiesForm></dot-content-type-fields-properties-form>
+                    #fieldPropertiesForm />
                 @if (
                     !!currentField?.id &&
                     currentFieldType?.clazz ===
@@ -57,7 +57,7 @@
                 ) {
                     <dot-convert-wysiwyg-to-block
                         (convert)="convertWysiwygToBlock($event)"
-                        [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                        [currentFieldType]="currentFieldType" />
                 }
             </div>
         </p-tabPanel>
@@ -70,7 +70,7 @@
                             (save)="toggleDialog()"
                             (valid)="setDialogOkButtonState($event)"
                             [field]="currentField"
-                            [isVisible]="panel.selected"></dot-block-editor-settings>
+                            [isVisible]="panel.selected" />
                     }
                     @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
                         <dot-binary-settings
@@ -78,7 +78,7 @@
                             (valid)="setDialogOkButtonState($event)"
                             (changeControls)="changesDialogActions($event)"
                             [field]="currentField"
-                            [isVisible]="panel.selected"></dot-binary-settings>
+                            [isVisible]="panel.selected" />
                     }
                 }
             </p-tabPanel>
@@ -91,7 +91,7 @@
             <ng-template pTemplate="content">
                 <dot-content-type-fields-variables
                     [showTable]="panel.selected"
-                    [field]="currentField"></dot-content-type-fields-variables>
+                    [field]="currentField" />
             </ng-template>
         </p-tabPanel>
     </p-tabView>
