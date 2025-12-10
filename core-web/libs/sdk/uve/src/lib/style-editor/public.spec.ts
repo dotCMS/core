@@ -449,18 +449,15 @@ describe('defineStyleEditorForm', () => {
             sections: [
                 {
                     title: 'Typography',
-                    columns: 1,
                     fields: [
-                        [
-                            {
-                                type: 'input',
-                                label: 'Font Size',
-                                config: {
-                                    inputType: 'number',
-                                    defaultValue: 16
-                                }
+                        {
+                            type: 'input',
+                            label: 'Font Size',
+                            config: {
+                                inputType: 'number',
+                                defaultValue: 16
                             }
-                        ]
+                        }
                     ]
                 }
             ]
@@ -496,28 +493,24 @@ describe('defineStyleEditorForm', () => {
             sections: [
                 {
                     title: 'Typography',
-                    columns: 1,
+
                     fields: [
-                        [
-                            {
-                                type: 'input',
-                                label: 'Font Size',
-                                config: { inputType: 'number', defaultValue: 16 }
-                            }
-                        ]
+                        {
+                            type: 'input',
+                            label: 'Font Size',
+                            config: { inputType: 'number', defaultValue: 16 }
+                        }
                     ]
                 },
                 {
                     title: 'Colors',
-                    columns: 1,
+
                     fields: [
-                        [
-                            {
-                                type: 'dropdown',
-                                label: 'Primary Color',
-                                config: { options: [{ label: 'Red', value: 'red' }] }
-                            }
-                        ]
+                        {
+                            type: 'dropdown',
+                            label: 'Primary Color',
+                            config: { options: [{ label: 'Red', value: 'red' }] }
+                        }
                     ]
                 }
             ]
@@ -562,22 +555,19 @@ describe('defineStyleEditorForm', () => {
             sections: [
                 {
                     title: 'Layout',
-                    columns: 2,
+
                     fields: [
-                        [
-                            {
-                                type: 'input',
-                                label: 'Width',
-                                config: { inputType: 'number' }
-                            }
-                        ],
-                        [
-                            {
-                                type: 'input',
-                                label: 'Height',
-                                config: { inputType: 'number' }
-                            }
-                        ]
+                        {
+                            type: 'input',
+                            label: 'Width',
+                            config: { inputType: 'number' }
+                        },
+
+                        {
+                            type: 'input',
+                            label: 'Height',
+                            config: { inputType: 'number' }
+                        }
                     ]
                 }
             ]
@@ -590,90 +580,16 @@ describe('defineStyleEditorForm', () => {
             sections: [
                 {
                     title: 'Layout',
-                    columns: 2,
-                    fields: [
-                        [
-                            styleEditorField.input({
-                                label: 'Width',
-                                inputType: 'number'
-                            })
-                        ],
-                        [
-                            styleEditorField.input({
-                                label: 'Height',
-                                inputType: 'number'
-                            })
-                        ]
-                    ]
-                }
-            ]
-        };
 
-        const result = defineStyleEditorForm(form);
-
-        expect(normalizeForm).toHaveBeenCalledWith(form);
-        expect(result).toEqual(mockSchema);
-    });
-
-    it('should normalize a form with all field types', () => {
-        const mockSchema: StyleEditorFormSchema = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'All Fields',
-                    columns: 1,
-                    fields: [
-                        [
-                            {
-                                type: 'input',
-                                label: 'Input Field',
-                                config: { inputType: 'text', defaultValue: 'test' }
-                            },
-                            {
-                                type: 'dropdown',
-                                label: 'Dropdown Field',
-                                config: { options: [{ label: 'Option', value: 'option' }] }
-                            },
-                            {
-                                type: 'radio',
-                                label: 'Radio Field',
-                                config: { options: [{ label: 'Option', value: 'option' }] }
-                            },
-                            {
-                                type: 'checkboxGroup',
-                                label: 'Checkbox Field',
-                                config: { options: [{ label: 'Option', value: 'option' }] }
-                            }
-                        ]
-                    ]
-                }
-            ]
-        };
-
-        (normalizeForm as jest.Mock).mockReturnValue(mockSchema);
-
-        const form: StyleEditorForm = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'All Fields',
                     fields: [
                         styleEditorField.input({
-                            label: 'Input Field',
-                            inputType: 'text',
-                            defaultValue: 'test'
+                            label: 'Width',
+                            inputType: 'number'
                         }),
-                        styleEditorField.dropdown({
-                            label: 'Dropdown Field',
-                            options: [{ label: 'Option', value: 'option' }]
-                        }),
-                        styleEditorField.radio({
-                            label: 'Radio Field',
-                            options: [{ label: 'Option', value: 'option' }]
-                        }),
-                        styleEditorField.checkboxGroup({
-                            label: 'Checkbox Field',
-                            options: [{ label: 'Option', value: 'option' }]
+
+                        styleEditorField.input({
+                            label: 'Height',
+                            inputType: 'number'
                         })
                     ]
                 }

@@ -200,27 +200,49 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
  * Options can be provided as simple strings or as objects with label,
  * value, and optional image properties.
  *
+ * **Layout Options:**
+ * - `columns: 1` (default): Single column list layout
+ * - `columns: 2`: Two-column grid layout, ideal for visual options with images
+ *
  * @property type - Must be 'radio'
  * @property options - Array of selectable options. Can be strings or objects with label, value, and optional image properties
  * @property defaultValue - Optional default selected value (must match one of the option values)
+ * @property columns - Optional number of columns for layout (1 or 2). Defaults to 1
  *
  * @example
  * ```typescript
+ * // Single column layout (default)
  * const radioField: StyleEditorRadioField = {
  *   type: 'radio',
- *   label: 'Theme',
+ *   label: 'Alignment',
+ *   options: ['Left', 'Center', 'Right'],
+ *   defaultValue: 'left'
+ * };
+ *
+ * // Two-column grid layout with images
+ * const layoutField: StyleEditorRadioField = {
+ *   type: 'radio',
+ *   label: 'Layout',
+ *   columns: 2,
  *   options: [
  *     {
- *       label: 'Light',
- *       value: 'light',
- *       imageURL: 'https://example.com/light-theme.png',
- *       width: 100,
- *       height: 60
+ *       label: 'Left',
+ *       value: 'left',
+ *       imageURL: 'https://example.com/layout-left.png',
+ *       width: 80,
+ *       height: 50
  *     },
- *     { label: 'Dark', value: 'dark' },
- *     'Auto' // Simple string options also supported
+ *     {
+ *       label: 'Right',
+ *       value: 'right',
+ *       imageURL: 'https://example.com/layout-right.png',
+ *       width: 80,
+ *       height: 50
+ *     },
+ *     { label: 'Center', value: 'center' },
+ *     { label: 'Overlap', value: 'overlap' }
  *   ],
- *   defaultValue: 'light'
+ *   defaultValue: 'right'
  * };
  * ```
  */
@@ -249,6 +271,12 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
     >;
     /** Optional default selected value (must match one of the option values) */
     defaultValue?: string;
+    /**
+     * Number of columns to display options in.
+     * - `1`: Single column list layout (default)
+     * - `2`: Two-column grid layout
+     */
+    columns?: 1 | 2;
 }
 
 /**
@@ -487,6 +515,12 @@ export interface StyleEditorFieldSchema {
          * - Checkbox groups: Record<string, boolean>
          */
         defaultValue?: string | number | boolean | Record<string, boolean>;
+        /**
+         * Number of columns to display options in (for radio fields).
+         * - `1`: Single column list layout (default)
+         * - `2`: Two-column grid layout
+         */
+        columns?: 1 | 2;
     };
 }
 
@@ -526,7 +560,7 @@ export interface StyleEditorSectionSchema {
     /** The section title displayed to users */
     title: string;
     /** Two-dimensional array where each inner array contains normalized field schemas for a column */
-    fields: StyleEditorFieldSchema[][];
+    fields: StyleEditorFieldSchema[];
 }
 
 /**

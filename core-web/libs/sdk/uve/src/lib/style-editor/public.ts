@@ -168,38 +168,51 @@ export const styleEditorField = {
      * options with background images for enhanced UI. Options can be provided
      * as simple strings or as objects with label, value, and optional image properties.
      *
+     * **Layout Options:**
+     * - `columns: 1` (default): Single column list layout
+     * - `columns: 2`: Two-column grid layout, ideal for visual options with images
+     *
      * @experimental This method is experimental and may be subject to change.
      *
      * @param config - Radio field configuration (without the 'type' property)
      * @param config.label - The label displayed for this radio group
      * @param config.options - Array of options. Can be strings or objects with label, value, and optional imageURL, width, height
      * @param config.defaultValue - Optional default selected value (must match one of the option values)
+     * @param config.columns - Optional number of columns (1 or 2). Defaults to 1 (single column)
      * @returns A complete radio field definition with type 'radio'
      *
      * @example
      * ```typescript
-     * // Simple string options
+     * // Simple string options (single column)
      * styleEditorField.radio({
      *   label: 'Alignment',
      *   options: ['Left', 'Center', 'Right'],
      *   defaultValue: 'Left'
      * })
      *
-     * // Options with images
+     * // Two-column grid layout with images
      * styleEditorField.radio({
-     *   label: 'Theme',
+     *   label: 'Layout',
+     *   columns: 2,
      *   options: [
      *     {
-     *       label: 'Light',
-     *       value: 'light',
-     *       imageURL: 'https://example.com/light-theme.png',
-     *       width: 100,
-     *       height: 60
+     *       label: 'Left',
+     *       value: 'left',
+     *       imageURL: 'https://example.com/layout-left.png',
+     *       width: 80,
+     *       height: 50
      *     },
-     *     { label: 'Dark', value: 'dark' },
-     *     'Auto' // string options also supported
+     *     {
+     *       label: 'Right',
+     *       value: 'right',
+     *       imageURL: 'https://example.com/layout-right.png',
+     *       width: 80,
+     *       height: 50
+     *     },
+     *     { label: 'Center', value: 'center' },
+     *     { label: 'Overlap', value: 'overlap' }
      *   ],
-     *   defaultValue: 'light'
+     *   defaultValue: 'right'
      * })
      * ```
      */

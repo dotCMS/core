@@ -83,6 +83,11 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
         );
         config.placeholder = field.type === 'dropdown' ? field.placeholder : undefined;
         config.defaultValue = field.defaultValue;
+
+        // Handle radio-specific properties
+        if (field.type === 'radio') {
+            config.columns = field.columns;
+        }
     }
 
     if (field.type === 'checkboxGroup') {
@@ -144,7 +149,7 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
 
     return {
         title: section.title,
-        fields: [normalizedFields]
+        fields: normalizedFields
     };
 }
 
