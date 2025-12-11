@@ -304,9 +304,13 @@ export class DotContentDriveDialogFolderComponent {
             data
         };
     }
-
+    /**
+     * Sanitizes a string to be a valid slug
+     * - Converts to lowercase
+     * - Replaces spaces with hyphens
+     */
     #getSlugTitle(title: string): string {
-        return title.toLowerCase().replace(/ /g, '-');
+        return title?.toLowerCase()?.replace(/ /g, '-');
     }
 
     /**
