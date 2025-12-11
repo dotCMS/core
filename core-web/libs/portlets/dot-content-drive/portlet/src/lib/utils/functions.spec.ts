@@ -2,7 +2,12 @@ import { describe, it, expect } from '@jest/globals';
 import { of, Observable } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotFolder } from '@dotcms/dotcms-models';
+import {
+    DotFolder,
+    DotContentDriveFolder,
+    DotContentDriveItem,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { createFakeSite } from '@dotcms/utils-testing';
 
 import {
@@ -12,7 +17,8 @@ import {
     buildContentDriveQuery,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
-    escapeLuceneSpecialChars
+    escapeLuceneSpecialChars,
+    isFolder
 } from './functions';
 
 import { SYSTEM_HOST } from '../shared/constants';
@@ -162,6 +168,21 @@ describe('Utility Functions', () => {
 
         it('should ignore filters with empty string values', () => {
             const result = encodeFilters({ contentType: ['Blog'], status: '' });
+            expect(result).toBe('contentType:Blog');
+        });
+
+        it('should handle empty arrays by encoding them', () => {
+            const result = encodeFilters({ contentType: [], baseType: ['1'] });
+            // Empty arrays are encoded as "key:" (empty value after colon) since join(',') on empty array returns ''
+            expect(result).toBe('contentType:;baseType:1');
+        });
+
+        it('should handle filters with null or undefined values', () => {
+            const result = encodeFilters({
+                contentType: ['Blog'],
+                status: undefined,
+                title: null as unknown as string
+            });
             expect(result).toBe('contentType:Blog');
         });
 
@@ -541,8 +562,34 @@ describe('Utility Functions', () => {
                 currentSite: SYSTEM_HOST
             });
 
+            // When current site is SYSTEM_HOST, it should use simple conhost filter without OR clause
             expect(result).toContain(
-                `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
+                `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
+            );
+            // Should NOT include the OR clause when site is SYSTEM_HOST
+            expect(result).not.toContain(
+                `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier})`
+            );
+        });
+
+        it('should differentiate between SYSTEM_HOST and regular site in query', () => {
+            const systemHostResult = buildContentDriveQuery({
+                currentSite: SYSTEM_HOST
+            });
+
+            const regularSiteResult = buildContentDriveQuery({
+                currentSite: mockSite
+            });
+
+            // SYSTEM_HOST should use simple filter
+            expect(systemHostResult).toContain(
+                `+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`
+            );
+            expect(systemHostResult).not.toContain('OR conhost:');
+
+            // Regular site should use OR clause to include both site and SYSTEM_HOST
+            expect(regularSiteResult).toContain(
+                `+(conhost:${mockSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
             );
         });
 
@@ -671,8 +718,7 @@ describe('Utility Functions', () => {
 
         beforeEach(() => {
             mockDotFolderService = {
-                getFolders: jest.fn(),
-                createFolder: jest.fn()
+                getFolders: jest.fn()
             } as unknown as jest.Mocked<DotFolderService>;
         });
 
@@ -758,6 +804,39 @@ describe('Utility Functions', () => {
                 }
             });
         });
+
+        it('should handle root path', (done) => {
+            const testPath = '/';
+            // Root path has no parent paths, so generateAllParentPaths returns empty array
+            // and the function should return empty array without calling service
+
+            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
+                next: (result) => {
+                    expect(result).toEqual([]);
+                    expect(mockDotFolderService.getFolders).not.toHaveBeenCalled();
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should handle empty path', (done) => {
+            const testPath = '';
+            const mockFolders: DotFolder[] = [];
+
+            // Empty path should result in no paths generated, so no service calls
+            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
+
+            getFolderHierarchyByPath(testPath, mockDotFolderService).subscribe({
+                next: (result) => {
+                    // Empty path generates no parent paths, so result should be empty array
+                    expect(result).toEqual([]);
+                    expect(mockDotFolderService.getFolders).not.toHaveBeenCalled();
+                    done();
+                },
+                error: done
+            });
+        });
     });
 
     describe('getFolderNodesByPath', () => {
@@ -765,8 +844,7 @@ describe('Utility Functions', () => {
 
         beforeEach(() => {
             mockDotFolderService = {
-                getFolders: jest.fn(),
-                createFolder: jest.fn()
+                getFolders: jest.fn()
             } as unknown as jest.Mocked<DotFolderService>;
         });
 
@@ -891,6 +969,35 @@ describe('Utility Functions', () => {
             });
         });
 
+        it('should handle root path', (done) => {
+            const testPath = '/';
+            const mockRootFolder: DotFolder = {
+                id: 'root',
+                hostName: 'test.com',
+                path: '/',
+                addChildrenAllowed: true
+            };
+            const mockChildFolder: DotFolder = {
+                id: 'child-1',
+                hostName: 'test.com',
+                path: '/child1/',
+                addChildrenAllowed: true
+            };
+
+            const mockFolders = [mockRootFolder, mockChildFolder];
+            mockDotFolderService.getFolders.mockReturnValue(of(mockFolders));
+
+            getFolderNodesByPath(testPath, mockDotFolderService).subscribe({
+                next: (result) => {
+                    expect(result.parent).toEqual(mockRootFolder);
+                    expect(result.folders).toHaveLength(1);
+                    expect(result.folders[0].key).toBe('child-1');
+                    done();
+                },
+                error: done
+            });
+        });
+
         it('should transform folders with correct tree node structure', (done) => {
             const testPath = '/test';
             const mockParentFolder: DotFolder = {
@@ -928,6 +1035,107 @@ describe('Utility Functions', () => {
                 },
                 error: done
             });
+        });
+    });
+
+    describe('isFolder', () => {
+        it('should return true for a folder item', () => {
+            const folderItem: DotContentDriveFolder = {
+                __icon__: 'folderIcon',
+                defaultFileType: '',
+                description: '',
+                extension: 'folder',
+                filesMasks: '',
+                hasTitleImage: false,
+                hostId: 'host-123',
+                iDate: 1234567890,
+                identifier: 'folder-123',
+                inode: 'inode-123',
+                mimeType: 'folder',
+                modDate: 1234567890,
+                name: 'Test Folder',
+                owner: 'admin',
+                parent: '/',
+                path: '/test-folder/',
+                permissions: [],
+                showOnMenu: true,
+                sortOrder: 0,
+                title: 'Test Folder',
+                type: 'folder'
+            };
+
+            expect(isFolder(folderItem)).toBe(true);
+        });
+
+        it('should return false for a contentlet item', () => {
+            const contentletItem: DotCMSContentlet = {
+                identifier: 'content-123',
+                title: 'Test Content',
+                baseType: 'CONTENT',
+                contentType: 'Blog'
+            } as DotCMSContentlet;
+
+            expect(isFolder(contentletItem)).toBe(false);
+        });
+
+        it('should return false for an item without type property', () => {
+            const itemWithoutType = {
+                identifier: 'item-123',
+                title: 'Test Item'
+            } as DotContentDriveItem;
+
+            expect(isFolder(itemWithoutType)).toBe(false);
+        });
+
+        it('should return false for an item with type property but not "folder"', () => {
+            const itemWithWrongType = {
+                identifier: 'item-123',
+                title: 'Test Item',
+                type: 'content'
+            } as unknown as DotContentDriveItem;
+
+            expect(isFolder(itemWithWrongType)).toBe(false);
+        });
+
+        it('should work as a type guard', () => {
+            const folderItem: DotContentDriveFolder = {
+                __icon__: 'folderIcon',
+                defaultFileType: '',
+                description: '',
+                extension: 'folder',
+                filesMasks: '',
+                hasTitleImage: false,
+                hostId: 'host-123',
+                iDate: 1234567890,
+                identifier: 'folder-123',
+                inode: 'inode-123',
+                mimeType: 'folder',
+                modDate: 1234567890,
+                name: 'Test Folder',
+                owner: 'admin',
+                parent: '/',
+                path: '/test-folder/',
+                permissions: [],
+                showOnMenu: true,
+                sortOrder: 0,
+                title: 'Test Folder',
+                type: 'folder'
+            };
+
+            const item: DotContentDriveItem = folderItem;
+
+            if (isFolder(item)) {
+                // TypeScript should narrow the type here
+                expect(item.type).toBe('folder');
+                expect(item.extension).toBe('folder');
+            } else {
+                fail('Type guard should have narrowed to DotContentDriveFolder');
+            }
+        });
+
+        it('should return false for null or undefined', () => {
+            expect(isFolder(null as unknown as DotContentDriveItem)).toBe(false);
+            expect(isFolder(undefined as unknown as DotContentDriveItem)).toBe(false);
         });
     });
 });
