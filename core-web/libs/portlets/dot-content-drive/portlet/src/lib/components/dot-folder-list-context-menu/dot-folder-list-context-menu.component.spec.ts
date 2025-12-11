@@ -10,6 +10,7 @@ import { MenuItemCommandEvent, MessageService } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 
 import {
+    DotContentDriveService,
     DotContentletService,
     DotFolderService,
     DotMessageService,
@@ -21,11 +22,16 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotContentDriveItem } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotContentDriveFolder,
+    DotContentDriveItem
+} from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
+import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -57,6 +63,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
         component: DotFolderListViewContextMenuComponent,
         componentProviders: [DotContentDriveStore],
         providers: [
+            mockProvider(DotContentDriveService, {
+                search: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ list: [], contentTotalCount: 0, folderCount: 0, contentCount: 0 })
+                    )
+            }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn().mockReturnValue(of(mockWorkflowActions))
             }),
@@ -259,6 +272,111 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(items).not.toContain({
                 label: 'Move',
                 command: expect.any(Function)
+            });
+        });
+
+        describe('folder handling', () => {
+            const mockFolder: DotContentDriveFolder = {
+                __icon__: 'folderIcon',
+                defaultFileType: 'FileAsset',
+                description: 'Test folder',
+                extension: 'folder',
+                filesMasks: '*',
+                hasTitleImage: false,
+                hostId: 'host-123',
+                iDate: Date.now(),
+                identifier: 'folder-123',
+                inode: 'folder-inode-123',
+                mimeType: 'folder',
+                modDate: Date.now(),
+                name: 'Test Folder',
+                owner: 'admin',
+                parent: '/',
+                path: '/documents/',
+                permissions: [],
+                showOnMenu: true,
+                sortOrder: 0,
+                title: 'Test Folder',
+                type: 'folder'
+            };
+
+            const mockFolderContextMenuData: DotContentDriveContextMenu = {
+                triggeredEvent: mockEvent,
+                contentlet: mockFolder,
+                showAddToBundle: false
+            };
+
+            it('should build menu items for folder with only edit folder action', async () => {
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                const items = component.$items();
+                expect(items).toHaveLength(1);
+                expect(items[0].label).toBe('content-drive.context-menu.edit-folder');
+            });
+
+            it('should not call workflowsActionsService for folders', async () => {
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                expect(workflowsActionsService.getByInode).not.toHaveBeenCalled();
+            });
+
+            it('should not call dotContentletService.canLock for folders', async () => {
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                expect(dotContentletService.canLock).not.toHaveBeenCalled();
+            });
+
+            it('should open folder dialog when edit folder action is triggered', async () => {
+                jest.spyOn(store, 'setDialog');
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                const items = component.$items();
+                items[0].command?.({} as unknown as MenuItemCommandEvent);
+
+                expect(store.setDialog).toHaveBeenCalledWith({
+                    type: DIALOG_TYPE.FOLDER,
+                    header: 'content-drive.dialog.folder.header.edit',
+                    payload: mockFolder
+                });
+            });
+
+            it('should show context menu for folders', async () => {
+                const mockContextMenu = {
+                    show: jest.fn(),
+                    visible: jest.fn().mockReturnValue(false)
+                } as unknown as ContextMenu;
+
+                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                expect(mockContextMenu.show).toHaveBeenCalledWith(mockEvent);
+            });
+
+            it('should memoize folder menu items', async () => {
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                expect(component.$memoizedMenuItems()[mockFolder.inode]).toBeDefined();
+                expect(component.$memoizedMenuItems()[mockFolder.inode]).toHaveLength(1);
+            });
+
+            it('should use memoized folder menu items on second call', async () => {
+                const mockContextMenu = {
+                    show: jest.fn(),
+                    visible: jest.fn().mockReturnValue(false)
+                } as unknown as ContextMenu;
+
+                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+                // First call
+                await component.getMenuItems(mockFolderContextMenuData);
+                const firstCallCount = workflowsActionsService.getByInode.mock.calls.length;
+
+                // Second call
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
+                expect(component.$items()).toHaveLength(1);
             });
         });
 
