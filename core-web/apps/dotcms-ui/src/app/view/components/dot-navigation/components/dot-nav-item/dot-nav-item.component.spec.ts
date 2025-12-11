@@ -13,7 +13,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotSystemConfigService } from '@dotcms/data-access';
 import { MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotIconComponent } from '@dotcms/ui';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
 
@@ -78,29 +77,35 @@ describe('DotNavItemComponent', () => {
 
     // Mock getClientRects globally to avoid undefined errors
     beforeAll(() => {
-        Element.prototype.getClientRects = jest.fn(() => [
-            {
-                bottom: 1000,
-                height: 200,
-                top: 800,
-                left: 0,
-                right: 200,
-                width: 200,
-                x: 0,
-                y: 800
-            }
-        ]);
+        Element.prototype.getClientRects = jest.fn(
+            () =>
+                [
+                    {
+                        bottom: 1000,
+                        height: 200,
+                        top: 800,
+                        left: 0,
+                        right: 200,
+                        width: 200,
+                        x: 0,
+                        y: 800
+                    }
+                ] as unknown as DOMRectList
+        );
 
-        Element.prototype.getBoundingClientRect = jest.fn(() => ({
-            bottom: 1000,
-            height: 200,
-            top: 800,
-            left: 0,
-            right: 200,
-            width: 200,
-            x: 0,
-            y: 800
-        }));
+        Element.prototype.getBoundingClientRect = jest.fn(
+            () =>
+                ({
+                    bottom: 1000,
+                    height: 200,
+                    top: 800,
+                    left: 0,
+                    right: 200,
+                    width: 200,
+                    x: 0,
+                    y: 800
+                }) as unknown as DOMRect
+        );
     });
 
     beforeEach(waitForAsync(() => {
@@ -110,7 +115,6 @@ describe('DotNavItemComponent', () => {
                 DotNavItemComponent,
                 DotSubNavComponent,
                 DotNavIconComponent,
-                DotIconComponent,
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 TooltipModule,

@@ -2,7 +2,7 @@
     <div class="main-toolbar-left flex items-center">
         <div class="content-type__title">
             <header>
-                <dot-icon name="{{ contentType.icon }}"></dot-icon>
+                <dot-icon name="{{ contentType.icon }}" />
                 <ng-template #inlineEditDisplayTemplate>
                     <h4 (click)="editInlineActivate($event)">{{ contentType.name }}</h4>
                 </ng-template>
@@ -19,21 +19,21 @@
                 <dot-inline-edit
                     [inlineEditContentTemplate]="inlineEditContentTemplate"
                     [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
-                    #dotEditInline></dot-inline-edit>
+                    #dotEditInline />
             </header>
         </div>
 
         <div class="content-type__info">
-            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
+            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}" />
             <dot-copy-button
                 [copy]="contentType.id"
                 [tooltipText]="contentType.id"
                 label="Copy ID"
-                data-testId="copyIdentifier"></dot-copy-button>
+                data-testId="copyIdentifier" />
             <dot-copy-button
                 [copy]="contentType.variable"
                 label="{{ 'contenttypes.content.variable' | dm }}: {{ contentType.variable }}"
-                data-testId="copyVariableName"></dot-copy-button>
+                data-testId="copyVariableName" />
         </div>
     </div>
     <div class="main-toolbar-right">
@@ -95,14 +95,14 @@
         @if (contentType) {
             <p-tabpanel [value]="1" class="content-type__relationships">
                 <dot-portlet-box>
-                    <dot-iframe [src]="relationshipURL"></dot-iframe>
+                    <dot-iframe [src]="relationshipURL" />
                 </dot-portlet-box>
             </p-tabpanel>
         }
         @if (contentType && showPermissionsTab | async) {
             <p-tabpanel [value]="2" class="content-type__permissions">
                 <dot-portlet-box>
-                    <dot-iframe [src]="permissionURL"></dot-iframe>
+                    <dot-iframe [src]="permissionURL" />
                 </dot-portlet-box>
             </p-tabpanel>
         }
@@ -111,14 +111,12 @@
                 [value]="contentType && (showPermissionsTab | async) ? 3 : 2"
                 class="content-type__push_history">
                 <dot-portlet-box>
-                    <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+                    <dot-iframe [src]="pushHistoryURL" />
                 </dot-portlet-box>
             </p-tabpanel>
         }
     </p-tabpanels>
 </p-tabs>
 @if (addToMenuContentType) {
-    <dot-add-to-menu
-        (cancel)="addToMenuContentType = false"
-        [contentType]="contentType"></dot-add-to-menu>
+    <dot-add-to-menu (cancel)="addToMenuContentType = false" [contentType]="contentType" />
 }

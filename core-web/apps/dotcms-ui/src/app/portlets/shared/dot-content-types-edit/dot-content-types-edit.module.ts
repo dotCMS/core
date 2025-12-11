@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
@@ -120,6 +121,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         ContentTypesLayoutComponent,
         ContentTypesFormComponent,
         ButtonModule,
+        CardModule,
         CheckboxModule,
         ConfirmDialogModule,
         CommonModule,

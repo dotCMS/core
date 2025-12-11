@@ -16,7 +16,6 @@
     border-radius: common.$border-radius-md;
     background: colors.$white;
     cursor: pointer;
-    transition: all $basic-speed ease-in-out;
 
     &:hover {
         border-color: colors.$color-palette-primary;

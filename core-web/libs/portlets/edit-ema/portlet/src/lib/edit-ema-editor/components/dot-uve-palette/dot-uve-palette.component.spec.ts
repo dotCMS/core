@@ -1,43 +1,46 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockComponent, ngMocks } from 'ng-mocks';
 
-import { Component, DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
-
-import { Tabs } from 'primeng/tabs';
+import { Component } from '@angular/core';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
 import { DotUVEPaletteListTypes } from './models';
 
+import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
+
 /**
  * Helper function to trigger tab change event
- * Simulates the onChange event that p-tabs emits when a tab is clicked
+ * Simulates the onChange event that p-tabs (PrimeNG v21) emits when a tab is clicked
  */
 function triggerTabChange(
     spectator: SpectatorHost<DotUvePaletteComponent, TestHostComponent>,
     index: number
 ): void {
-    const tabViewDebugElement: DebugElement = spectator.debugElement.query(By.directive(Tabs));
-    const tabViewComponent: Tabs = tabViewDebugElement?.componentInstance;
-
-    if (tabViewComponent && tabViewComponent.onChange) {
-        tabViewComponent.onChange.emit({ value: index });
-        spectator.detectChanges();
-    }
+    // PrimeNG v21 p-tabs onChange event structure
+    // Directly call the component's handleTabChange method to simulate the event
+    (spectator.component as any).handleTabChange({ value: index });
+    spectator.detectChanges();
 }
 
 @Component({
     selector: 'dot-test-host',
     standalone: false,
     template: `
-        <dot-uve-palette [languageId]="languageId" [pagePath]="pagePath" [variantId]="variantId" />
+        <dot-uve-palette
+            [languageId]="languageId"
+            [pagePath]="pagePath"
+            [variantId]="variantId"
+            [activeTab]="activeTab"
+            (onTabChange)="onTabChange($event)" />
     `
 })
 class TestHostComponent {
     languageId = 1;
     pagePath = '/test/page/path';
     variantId = 'DEFAULT';
+    activeTab = UVE_PALETTE_TABS.CONTENT_TYPES;
+    onTabChange = jest.fn();
 }
 
 describe('DotUvePaletteComponent', () => {
@@ -50,8 +53,16 @@ describe('DotUvePaletteComponent', () => {
     });
 
     beforeEach(() => {
+        // Mock scrollIntoView for PrimeNG TabView
+        Element.prototype.scrollIntoView = jest.fn();
+
         spectator = createHost(
-            `<dot-uve-palette [languageId]="languageId" [pagePath]="pagePath" [variantId]="variantId" />`
+            `<dot-uve-palette
+                [languageId]="languageId"
+                [pagePath]="pagePath"
+                [variantId]="variantId"
+                [activeTab]="activeTab"
+                (onTabChange)="onTabChange($event)" />`
         );
     });
 
@@ -65,8 +76,8 @@ describe('DotUvePaletteComponent', () => {
             expect(paletteList).toBeTruthy();
         });
 
-        it('should have current index set to 0 by default', () => {
-            expect(spectator.component.$currentIndex()).toBe(0);
+        it('should have active tab set to 0 by default', () => {
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
         });
     });
 
@@ -77,10 +88,10 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should update rendering when switching to Widget tab via onChange event', () => {
-            // Trigger the onChange event from p-tabs
-            triggerTabChange(spectator, 1);
+            // Trigger the onChange event from p-tabs (PrimeNG v21)
+            triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
 
-            expect(spectator.component.$currentIndex()).toBe(1);
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
 
             // Palette list should still be rendered
             const paletteList = spectator.query('dot-uve-palette-list');
@@ -88,24 +99,26 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should update rendering when switching to Favorites tab via onChange event', () => {
-            // Trigger the onChange event from p-tabs
-            triggerTabChange(spectator, 2);
+            // Trigger the onChange event from p-tabs (PrimeNG v21)
+            triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
 
-            expect(spectator.component.$currentIndex()).toBe(2);
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.FAVORITES);
 
             // Palette list should still be rendered
             const paletteList = spectator.query('dot-uve-palette-list');
             expect(paletteList).toBeTruthy();
         });
 
-        it('should switch back to Content tab when onChange emits 0', () => {
+        it('should switch back to Content tab when activeTab changes', () => {
             // First go to Widget tab
-            triggerTabChange(spectator, 1);
-            expect(spectator.component.$currentIndex()).toBe(1);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.WIDGETS });
+            spectator.detectChanges();
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
 
             // Then go back to Content tab
-            triggerTabChange(spectator, 0);
-            expect(spectator.component.$currentIndex()).toBe(0);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.CONTENT_TYPES });
+            spectator.detectChanges();
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
         });
 
         it('should always render exactly one dot-uve-palette-list regardless of active tab', () => {
@@ -113,32 +126,37 @@ describe('DotUvePaletteComponent', () => {
             let paletteLists = spectator.queryAll('dot-uve-palette-list');
             expect(paletteLists).toHaveLength(1);
 
-            // Switch to Widget tab via event
-            triggerTabChange(spectator, 1);
+            // Switch to Widget tab
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.WIDGETS });
+            spectator.detectChanges();
             paletteLists = spectator.queryAll('dot-uve-palette-list');
             expect(paletteLists).toHaveLength(1);
 
-            // Switch to Favorites tab via event
-            triggerTabChange(spectator, 2);
+            // Switch to Favorites tab
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.FAVORITES });
+            spectator.detectChanges();
             paletteLists = spectator.queryAll('dot-uve-palette-list');
             expect(paletteLists).toHaveLength(1);
         });
 
-        it('should navigate through all tabs sequentially via events', () => {
+        it('should navigate through all tabs sequentially', () => {
             // Start at Content (0)
-            expect(spectator.component.$currentIndex()).toBe(0);
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
 
             // Move to Widget (1)
-            triggerTabChange(spectator, 1);
-            expect(spectator.component.$currentIndex()).toBe(1);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.WIDGETS });
+            spectator.detectChanges();
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
 
             // Move to Favorites (2)
-            triggerTabChange(spectator, 2);
-            expect(spectator.component.$currentIndex()).toBe(2);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.FAVORITES });
+            spectator.detectChanges();
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.FAVORITES);
 
             // Move back to Content (0)
-            triggerTabChange(spectator, 0);
-            expect(spectator.component.$currentIndex()).toBe(0);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.CONTENT_TYPES });
+            spectator.detectChanges();
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
         });
     });
 
@@ -147,33 +165,51 @@ describe('DotUvePaletteComponent', () => {
             expect(spectator.component.$languageId()).toBe(1);
             expect(spectator.component.$pagePath()).toBe('/test/page/path');
             expect(spectator.component.$variantId()).toBe('DEFAULT');
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
         });
 
         it('should update signal inputs when host inputs change', () => {
             spectator.setHostInput({
                 languageId: 5,
                 pagePath: '/updated/path',
-                variantId: 'test-variant'
+                variantId: 'test-variant',
+                activeTab: UVE_PALETTE_TABS.FAVORITES
             });
             spectator.detectChanges();
 
             expect(spectator.component.$languageId()).toBe(5);
             expect(spectator.component.$pagePath()).toBe('/updated/path');
             expect(spectator.component.$variantId()).toBe('test-variant');
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.FAVORITES);
         });
     });
 
-    describe('Current Index Signal', () => {
-        it('should initialize currentIndex to 0', () => {
-            expect(spectator.component.$currentIndex()).toBe(0);
+    describe('onTabChange Output', () => {
+        it('should emit onTabChange when user clicks tab', () => {
+            // Trigger the onChange event from p-tabs (PrimeNG v21) by simulating user interaction
+            triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
+
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.WIDGETS);
         });
 
-        it('should be writable to simulate tab changes', () => {
-            // This tests that the signal can be updated (simulating p-tabs onChange)
-            spectator.component.$currentIndex.set(2);
-            spectator.detectChanges();
+        it('should emit correct tab index when switching tabs', () => {
+            // Switch to Favorites tab
+            triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
 
-            expect(spectator.component.$currentIndex()).toBe(2);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.FAVORITES);
+        });
+
+        it('should emit when switching back to Content tab', () => {
+            // First go to Widget tab
+            triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.WIDGETS);
+
+            // Clear the mock
+            spectator.hostComponent.onTabChange.mockClear();
+
+            // Then go back to Content tab
+            triggerTabChange(spectator, UVE_PALETTE_TABS.CONTENT_TYPES);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.CONTENT_TYPES);
         });
     });
 
@@ -192,7 +228,8 @@ describe('DotUvePaletteComponent', () => {
 
         it('should pass correct inputs to Widget tab palette list', () => {
             // Switch to Widget tab
-            triggerTabChange(spectator, 1);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.WIDGETS });
+            spectator.detectChanges();
 
             // Find the mocked component DebugElement
             const paletteListDebugEl = ngMocks.find(DotUvePaletteListComponent);
@@ -207,7 +244,8 @@ describe('DotUvePaletteComponent', () => {
 
         it('should pass correct inputs to Favorites tab palette list', () => {
             // Switch to Favorites tab
-            triggerTabChange(spectator, 2);
+            spectator.setHostInput({ activeTab: UVE_PALETTE_TABS.FAVORITES });
+            spectator.detectChanges();
 
             // Find the mocked component DebugElement
             const paletteListDebugEl = ngMocks.find(DotUvePaletteListComponent);
@@ -246,11 +284,12 @@ describe('DotUvePaletteComponent', () => {
 
         it('should pass updated inputs after switching tabs and changing host inputs', () => {
             // Change host inputs
-            spectator.setHostInput({ languageId: 3, pagePath: '/updated/path' });
+            spectator.setHostInput({
+                languageId: 3,
+                pagePath: '/updated/path',
+                activeTab: UVE_PALETTE_TABS.WIDGETS
+            });
             spectator.detectChanges();
-
-            // Switch to Widget tab
-            triggerTabChange(spectator, 1);
 
             // Find the mocked component DebugElement
             const paletteListDebugEl = ngMocks.find(DotUvePaletteListComponent);
