@@ -363,6 +363,7 @@ export class DotUvePaletteListComponent implements OnInit {
 
         // Search has text, clear it and skip the debounced search trigger
         this.$skipNextSearch.set(true);
+        this.$isSearching.set(false);
         this.searchControl.setValue('');
     }
 

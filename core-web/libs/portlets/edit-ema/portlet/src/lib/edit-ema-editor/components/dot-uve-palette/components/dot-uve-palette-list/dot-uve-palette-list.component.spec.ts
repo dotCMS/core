@@ -555,7 +555,7 @@ describe('DotUvePaletteListComponent', () => {
     });
 
     describe('control visibility behavior', () => {
-        it('should hide controls initially when status is Fisrt LOADING', () => {
+        it('should hide controls initially when status is first LOADING', () => {
             mockStore.status.set(DotPaletteListStatus.LOADING);
             spectator.detectChanges();
 
