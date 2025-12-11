@@ -43,6 +43,54 @@ public interface MetricType {
 
     Optional<Object> getValue();
 
+    /**
+     * Returns a human-readable display label for this metric.
+     * Used by UI components to display user-friendly names instead of technical metric names.
+     * 
+     * <p>Default implementation generates a short label from the metric name by:
+     * <ul>
+     *   <li>Converting underscores to spaces</li>
+     *   <li>Removing common prefixes like "COUNT_OF_", "TOTAL_", etc.</li>
+     *   <li>Capitalizing words appropriately</li>
+     * </ul>
+     * 
+     * <p>For better control, metrics should override this method to provide
+     * concise, user-friendly labels (typically 2-4 words).</p>
+     * 
+     * @return the display label for this metric
+     */
+    default String getDisplayLabel() {
+        final String name = getName();
+        if (name == null || name.isEmpty()) {
+            return "Metric";
+        }
+        
+        // Convert name to a readable format
+        String label = name
+                .replace("COUNT_OF_", "")
+                .replace("COUNT_", "")
+                .replace("TOTAL_", "")
+                .replace("_", " ")
+                .toLowerCase();
+        
+        // Capitalize first letter of each word
+        final StringBuilder result = new StringBuilder();
+        final String[] words = label.split("\\s+");
+        for (int i = 0; i < words.length; i++) {
+            if (i > 0) {
+                result.append(" ");
+            }
+            if (!words[i].isEmpty()) {
+                result.append(Character.toUpperCase(words[i].charAt(0)));
+                if (words[i].length() > 1) {
+                    result.append(words[i].substring(1));
+                }
+            }
+        }
+        
+        return result.toString();
+    }
+
     default Metric getMetric() {
         return new Metric.Builder()
                 .name(getName())

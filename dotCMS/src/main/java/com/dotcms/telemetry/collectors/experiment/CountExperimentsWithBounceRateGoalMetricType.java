@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count the experiments with bounce rate goal
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountExperimentsWithBounceRateGoalMetricType implements DBMetricType {
 
@@ -21,6 +24,11 @@ public class CountExperimentsWithBounceRateGoalMetricType implements DBMetricTyp
     @Override
     public String getDescription() {
         return "Count of experiments with bounce rate goal";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Experiments with bounce rate goal";
     }
 
     @Override

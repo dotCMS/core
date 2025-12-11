@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count pages with archived experiments
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountPagesWithArchivedExperimentsMetricType implements DBMetricType {
 
@@ -21,6 +24,11 @@ public class CountPagesWithArchivedExperimentsMetricType implements DBMetricType
     @Override
     public String getDescription() {
         return "Count of pages with archived experiments";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Pages with archived experiments";
     }
 
     @Override

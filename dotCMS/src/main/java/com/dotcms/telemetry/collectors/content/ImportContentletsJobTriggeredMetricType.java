@@ -2,10 +2,13 @@ package com.dotcms.telemetry.collectors.content;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
+@MetricsProfile(ProfileType.FULL)
 public class ImportContentletsJobTriggeredMetricType implements DBMetricType {
     @Override
     public String getName() {
@@ -14,6 +17,11 @@ public class ImportContentletsJobTriggeredMetricType implements DBMetricType {
 
     @Override
     public String getDescription() {
+        return "Customer have used the Import Contentlets Job";
+    }
+
+    @Override
+    public String getDisplayLabel() {
         return "Customer have used the Import Contentlets Job";
     }
 

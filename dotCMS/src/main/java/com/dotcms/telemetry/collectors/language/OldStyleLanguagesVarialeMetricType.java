@@ -12,11 +12,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of old style Language Variables
  */
 
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class OldStyleLanguagesVarialeMetricType implements MetricType {
 
@@ -28,6 +31,11 @@ public class OldStyleLanguagesVarialeMetricType implements MetricType {
     @Override
     public String getDescription() {
         return "Count of old-style Language variables";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Old-style Language variables";
     }
 
     @Override

@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of aliases on all active sites
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalAliasesActiveSitesDatabaseMetricType implements DBMetricType {
     @Override
@@ -18,6 +21,11 @@ public class TotalAliasesActiveSitesDatabaseMetricType implements DBMetricType {
     @Override
     public String getDescription() {
         return "Count of aliases on all active sites";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Aliases on all active sites";
     }
 
     @Override

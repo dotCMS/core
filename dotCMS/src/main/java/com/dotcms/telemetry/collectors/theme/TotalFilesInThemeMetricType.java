@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the total of Number of LIVE/WORKING files in themes
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalFilesInThemeMetricType implements DBMetricType {
 
@@ -19,6 +22,11 @@ public class TotalFilesInThemeMetricType implements DBMetricType {
     @Override
     public String getDescription() {
         return "Count of Number of WORKING and LIVE files in themes";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Number of WORKING and LIVE files in themes";
     }
 
     @Override

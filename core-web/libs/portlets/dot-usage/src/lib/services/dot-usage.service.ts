@@ -6,55 +6,47 @@ import { Injectable, inject, signal } from '@angular/core';
 import { catchError, map, tap } from 'rxjs/operators';
 
 /**
- * Content-related metrics for the usage dashboard
+ * Metric metadata structure containing name, value, and display label.
  */
-export interface ContentMetrics {
-    readonly totalContent: number;
-    readonly contentTypes: number;
-    readonly recentlyEdited: number;
-    readonly contentTypesWithWorkflows: number;
-    readonly lastContentEdited: string;
+export interface MetricData {
+    readonly name: string;
+    readonly value: number | string;
+    readonly displayLabel: string;
 }
 
 /**
- * Site-related metrics for the usage dashboard
- */
-export interface SiteMetrics {
-    readonly totalSites: number;
-    readonly activeSites: number;
-    readonly templates: number;
-    readonly siteAliases: number;
-}
-
-/**
- * User activity metrics for the usage dashboard
- */
-export interface UserMetrics {
-    readonly activeUsers: number;
-    readonly totalUsers: number;
-    readonly recentLogins: number;
-    readonly lastLogin: string;
-}
-
-/**
- * System configuration metrics for the usage dashboard
- */
-export interface SystemMetrics {
-    readonly languages: number;
-    readonly workflowSchemes: number;
-    readonly workflowSteps: number;
-    readonly liveContainers: number;
-    readonly builderTemplates: number;
-}
-
-/**
- * Complete usage summary containing all metric categories
+ * Dynamic usage summary that adapts to available metrics based on profile.
+ *
+ * Metrics are organized by category (e.g., "content", "site", "user", "system")
+ * as defined by their @DashboardMetric annotation. Each category contains a map
+ * of metric names to their metadata (name, value, displayLabel). Only metrics
+ * available for the active profile (MINIMAL, STANDARD, FULL) are included.
  */
 export interface UsageSummary {
-    readonly contentMetrics: ContentMetrics;
-    readonly siteMetrics: SiteMetrics;
-    readonly userMetrics: UserMetrics;
-    readonly systemMetrics: SystemMetrics;
+    /**
+     * Metrics organized by category. Each category contains a map of
+     * metric names to their metadata. Only metrics available for the
+     * active profile are included.
+     *
+     * Example structure:
+     * {
+     *   "content": {
+     *     "COUNT_CONTENT": {
+     *       "name": "COUNT_CONTENT",
+     *       "value": 12345,
+     *       "displayLabel": "Total Content"
+     *     }
+     *   },
+     *   "site": {
+     *     "COUNT_OF_SITES": {
+     *       "name": "COUNT_OF_SITES",
+     *       "value": 10,
+     *       "displayLabel": "Total Sites"
+     *     }
+     *   }
+     * }
+     */
+    readonly metrics: Record<string, Record<string, MetricData>>;
     readonly lastUpdated: string;
 }
 

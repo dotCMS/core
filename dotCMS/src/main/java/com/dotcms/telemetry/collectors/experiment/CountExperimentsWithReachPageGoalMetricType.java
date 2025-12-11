@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count the experiments with reach page goal
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountExperimentsWithReachPageGoalMetricType implements DBMetricType {
 
@@ -21,6 +24,11 @@ public class CountExperimentsWithReachPageGoalMetricType implements DBMetricType
     @Override
     public String getDescription() {
         return "Count of experiments with Reach Page Goal";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Experiments with Reach Page Goal";
     }
 
     @Override

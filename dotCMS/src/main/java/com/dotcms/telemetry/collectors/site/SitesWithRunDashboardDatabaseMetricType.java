@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of sites with 'Run Dashboard' enabled
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class SitesWithRunDashboardDatabaseMetricType implements DBMetricType {
     @Override
@@ -18,6 +21,11 @@ public class SitesWithRunDashboardDatabaseMetricType implements DBMetricType {
     @Override
     public String getDescription() {
         return "Count of sites with 'Run Dashboard' enabled";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Sites with 'Run Dashboard' enabled";
     }
 
     @Override

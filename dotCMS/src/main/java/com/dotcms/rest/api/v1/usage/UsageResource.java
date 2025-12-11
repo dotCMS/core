@@ -152,89 +152,100 @@ public class UsageResource {
 
         Logger.debug(this, () -> String.format("Collected %d metric values from %d dashboard metrics", metricMap.size(), keyMetrics.size()));
 
-        // Build summary from collected metrics
+        // Build dynamic summary organized by category
+        final Map<String, Map<String, Object>> metricsByCategory = buildMetricsByCategory(keyMetrics, metricMap);
+
+        Logger.debug(this, () -> String.format("Organized metrics into %d categories", metricsByCategory.size()));
+
         return UsageSummary.builder()
-                .contentMetrics(buildContentMetrics(metricMap))
-                .siteMetrics(buildSiteMetrics(metricMap))
-                .userMetrics(buildUserMetrics(metricMap))
-                .systemMetrics(buildSystemMetrics(metricMap))
+                .metrics(metricsByCategory)
                 .lastUpdated(Instant.now())
                 .build();
     }
 
-    private UsageSummary.ContentMetrics buildContentMetrics(final Map<String, MetricValue> metricMap) {
-        final long totalContent = getMetricValueAsLong(metricMap, "COUNT_CONTENT", 0L);
-        final long recentlyEdited = getMetricValueAsLong(metricMap, "CONTENTS_RECENTLY_EDITED", 0L);
-        final long contentTypesWithWorkflows = getMetricValueAsLong(metricMap, "CONTENT_TYPES_ASSIGNED", 0L);
-        final String lastContentEdited = getMetricValueAsString(metricMap, "LAST_CONTENT_EDITED", "N/A");
+    /**
+     * Organizes metrics by their category as defined by @DashboardMetric annotation.
+     * Only includes metrics that were successfully collected (present in metricMap).
+     * Uses the mapped metric name (e.g., "COUNT_CONTENT" instead of "COUNT") for consistency.
+     * Includes display labels from @DashboardMetric annotation.
+     * 
+     * @param keyMetrics the list of dashboard metrics with their annotations
+     * @param metricMap the collected metric values keyed by mapped metric name
+     * @return map of category names to maps of metric metadata (name, value, displayLabel)
+     */
+    private Map<String, Map<String, Object>> buildMetricsByCategory(
+            final Collection<MetricType> keyMetrics,
+            final Map<String, MetricValue> metricMap) {
         
-        // For now, using totalContent as contentTypes placeholder - can be enhanced later
-        final long contentTypes = totalContent > 0 ? 1 : 0;
-
-        Logger.debug(this, () -> String.format("Content metrics - totalContent: %d, recentlyEdited: %d, contentTypesWithWorkflows: %d",
-                totalContent, recentlyEdited, contentTypesWithWorkflows));
-
-        return new UsageSummary.ContentMetrics(totalContent, contentTypes, recentlyEdited, contentTypesWithWorkflows, lastContentEdited);
-    }
-
-    private UsageSummary.SiteMetrics buildSiteMetrics(final Map<String, MetricValue> metricMap) {
-        final long totalSites = getMetricValueAsLong(metricMap, "COUNT_OF_SITES", 0L);
-        final long activeSites = getMetricValueAsLong(metricMap, "COUNT_OF_ACTIVE_SITES", totalSites);
-        final long templates = getMetricValueAsLong(metricMap, "COUNT_OF_TEMPLATES", 0L);
-        final long siteAliases = getMetricValueAsLong(metricMap, "ALIASES_SITES_COUNT", 0L);
-
-        Logger.debug(this, () -> String.format("Site metrics - totalSites: %d, activeSites: %d, templates: %d, aliases: %d",
-                totalSites, activeSites, templates, siteAliases));
-
-        return new UsageSummary.SiteMetrics(totalSites, activeSites, templates, siteAliases);
-    }
-
-    private UsageSummary.UserMetrics buildUserMetrics(final Map<String, MetricValue> metricMap) {
-        final long activeUsers = getMetricValueAsLong(metricMap, "ACTIVE_USERS_COUNT", 0L);
-        final long totalUsers = getMetricValueAsLong(metricMap, "COUNT_OF_USERS", 0L);
-        // LAST_LOGIN_COUNT metric doesn't exist, using 0 as default
-        final long recentLogins = 0L;
-        final String lastLogin = getMetricValueAsString(metricMap, "LAST_LOGIN", "N/A");
-
-        Logger.debug(this, () -> String.format("User metrics - activeUsers: %d, totalUsers: %d, lastLogin: %s",
-                activeUsers, totalUsers, lastLogin));
-
-        return new UsageSummary.UserMetrics(activeUsers, totalUsers, recentLogins, lastLogin);
-    }
-
-    private UsageSummary.SystemMetrics buildSystemMetrics(final Map<String, MetricValue> metricMap) {
-        final long languages = getMetricValueAsLong(metricMap, "COUNT_LANGUAGES", 1L);
-        final long workflowSchemes = getMetricValueAsLong(metricMap, "SCHEMES_COUNT", 0L);
-        final long workflowSteps = getMetricValueAsLong(metricMap, "STEPS_COUNT", 0L);
-        final long liveContainers = getMetricValueAsLong(metricMap, "COUNT_OF_LIVE_CONTAINERS", 0L);
-        final long builderTemplates = getMetricValueAsLong(metricMap, "COUNT_OF_TEMPLATE_BUILDER_TEMPLATES", 0L);
-
-        Logger.debug(this, () -> String.format("System metrics - languages: %d, workflowSchemes: %d, workflowSteps: %d, liveContainers: %d, builderTemplates: %d",
-                languages, workflowSchemes, workflowSteps, liveContainers, builderTemplates));
-
-        return new UsageSummary.SystemMetrics(languages, workflowSchemes, workflowSteps, liveContainers, builderTemplates);
-    }
-
-    private long getMetricValueAsLong(final Map<String, MetricValue> metricMap, final String metricName, final long defaultValue) {
-        final MetricValue metric = metricMap.get(metricName);
-        if (metric == null) {
-            return defaultValue;
-        }
+        final Map<String, Map<String, Object>> categoryMap = new HashMap<>();
         
-        try {
-            final Object value = metric.getValue();
-            if (value instanceof Number) {
-                return ((Number) value).longValue();
+        for (final MetricType metricType : keyMetrics) {
+            final String originalName = metricType.getName();
+            
+            // Get the mapped key (e.g., "COUNT" -> "COUNT_CONTENT" for CONTENTLETS feature)
+            final String mapKey = getMappedMetricName(metricType);
+            
+            // Get the category from @DashboardMetric annotation, or use "other" as default
+            final String category = getCategoryFromMetric(metricType);
+            
+            // Get the display label from MetricType interface
+            final String displayLabel = metricType.getDisplayLabel();
+            
+            // Only include metrics that were successfully collected
+            final MetricValue metricValue = metricMap.get(mapKey);
+            if (metricValue != null) {
+                // Use raw value to preserve numeric types for JSON serialization
+                // This allows the frontend to properly format numbers (K, M suffixes, etc.)
+                final Object rawValue = metricValue.getRawValue();
+                
+                // Create metric metadata object with name, value, and displayLabel
+                final Map<String, Object> metricData = new HashMap<>();
+                metricData.put("name", mapKey);
+                metricData.put("value", rawValue);
+                metricData.put("displayLabel", displayLabel);
+                
+                categoryMap.computeIfAbsent(category, k -> new HashMap<>())
+                        .put(mapKey, metricData);
+                
+                Logger.debug(this, () -> String.format("Added metric %s (mapped from %s) to category %s with value %s, label: %s",
+                        mapKey, originalName, category, metricValue.getValue(), displayLabel));
             }
-            return Long.parseLong(value.toString());
-        } catch (NumberFormatException e) {
-            Logger.warn(this, "Unable to parse metric value as long: " + metricName + " = " + metric.getValue());
-            return defaultValue;
         }
+        
+        return categoryMap;
     }
 
-    private String getMetricValueAsString(final Map<String, MetricValue> metricMap, final String metricName, final String defaultValue) {
-        final MetricValue metric = metricMap.get(metricName);
-        return metric != null ? metric.getValue().toString() : defaultValue;
+
+    /**
+     * Gets the mapped metric name, handling special cases like "COUNT" -> "COUNT_CONTENT".
+     */
+    private String getMappedMetricName(final MetricType metricType) {
+        final String metricName = metricType.getName();
+        
+        // Handle duplicate "COUNT" keys by mapping to specific names based on feature
+        if ("COUNT".equals(metricName)) {
+            switch (metricType.getFeature()) {
+                case CONTENTLETS:
+                    return "COUNT_CONTENT";
+                case LANGUAGES:
+                    return "COUNT_LANGUAGES";
+                default:
+                    return metricName;
+            }
+        }
+        
+        return metricName;
     }
+
+    /**
+     * Extracts the category from a metric's @DashboardMetric annotation.
+     * If no category is specified, returns "other".
+     */
+    private String getCategoryFromMetric(final MetricType metricType) {
+        final DashboardMetricsProvider metricsProvider = CDIUtils.getBeanThrows(DashboardMetricsProvider.class);
+        final String category = metricsProvider.getCategory(metricType);
+        return category != null && !category.isEmpty() ? category : "other";
+    }
+
+
 }

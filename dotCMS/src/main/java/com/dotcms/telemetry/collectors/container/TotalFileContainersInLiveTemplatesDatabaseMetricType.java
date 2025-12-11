@@ -5,10 +5,13 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Total of FILE containers used in LIVE templates
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalFileContainersInLiveTemplatesDatabaseMetricType extends TotalContainersInLiveTemplatesDatabaseMetricType {
 
@@ -25,6 +28,11 @@ public class TotalFileContainersInLiveTemplatesDatabaseMetricType extends TotalC
     @Override
     public String getDescription() {
         return "Total of FILE containers used in LIVE templates";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "FILE containers used in LIVE templates";
     }
 
     @Override

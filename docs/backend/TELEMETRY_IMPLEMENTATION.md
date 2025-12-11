@@ -59,10 +59,13 @@ Marker annotation to include metrics in the Usage API dashboard endpoint (`/v1/u
 - `category` (String): Optional grouping for organizing metrics (e.g., "content", "site", "user", "system")
 - `priority` (int): Display order (lower values appear first, default: 0)
 
+**Purpose:** "What to show" - Declares display intent and metadata for dashboard presentation.
+
 **Example:**
 ```java
 @ApplicationScoped
-@DashboardMetric(category = "content", priority = 1)
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})  // Performance control
+@DashboardMetric(category = "content", priority = 1)  // Display intent
 public class TotalContentsDatabaseMetricType implements DBMetricType {
     // ...
 }
@@ -72,6 +75,56 @@ public class TotalContentsDatabaseMetricType implements DBMetricType {
 - Declarative configuration (no code changes needed to add/remove metrics from dashboard)
 - Automatic discovery via CDI
 - No hardcoded metric lists in API code
+
+#### `@MetricsProfile` Annotation
+**Required annotation** that declares which performance profiles a metric supports (MINIMAL, STANDARD, FULL).
+
+**Purpose:** "When to collect" - Controls performance by restricting metric collection based on active profile.
+
+**Attributes:**
+- `value` (ProfileType[]): Array of profiles this metric supports
+
+**Example:**
+```java
+@ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})  // Supports MINIMAL, STANDARD, and FULL
+@DashboardMetric(category = "site", priority = 1)
+public class TotalSitesDatabaseMetricType implements DBMetricType {
+    // ...
+}
+```
+
+**Important:** <strong>All metrics must have `@MetricsProfile` annotation.</strong> Metrics without this annotation will be excluded from collection. An error will be logged for missing `@MetricsProfile` annotations.
+
+#### Relationship Between Annotations
+
+These annotations work together in a **two-stage filtering process**:
+
+1. **Stage 1: `@DashboardMetric` Filter**
+   - Filters metrics for dashboard display
+   - Provides display metadata (category, priority)
+   - Purpose: "What to show"
+
+2. **Stage 2: `@MetricsProfile` Filter**
+   - Filters metrics by active performance profile
+   - Controls when metrics are collected
+   - Purpose: "When to collect"
+   - **Required:** All metrics must have this annotation
+
+**Best Practice:** Always use both annotations together:
+```java
+@ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})  // Performance: supports all profiles
+@DashboardMetric(category = "site", priority = 1)  // Display: site category, priority 1
+public class TotalSitesDatabaseMetricType implements DBMetricType {
+    // ...
+}
+```
+
+**Profile Guidelines:**
+- **MINIMAL**: Fast, simple queries (< 500ms). Core metrics only (10-15 metrics).
+- **STANDARD**: Moderate complexity (~50 metrics). Includes MINIMAL plus additional valuable metrics.
+- **FULL**: All metrics (128+). Background collection only.
 
 ## Creating New Metrics
 
@@ -118,21 +171,25 @@ public class MyNewMetricType implements DBMetricType {
 }
 ```
 
-### Step 2: Add to Dashboard (Optional)
+### Step 2: Add Required `@MetricsProfile` Annotation
 
-To include the metric in the Usage API dashboard, add the `@DashboardMetric` annotation:
+**All metrics must have `@MetricsProfile` annotation.** To include the metric in the Usage API dashboard, add both `@MetricsProfile` and `@DashboardMetric` annotations:
 
 ```java
 @ApplicationScoped
-@DashboardMetric(category = "content", priority = 5)
+@MetricsProfile({ProfileType.STANDARD, ProfileType.FULL})  // Performance control (required)
+@DashboardMetric(category = "content", priority = 5)        // Display intent (optional)
 public class MyNewMetricType implements DBMetricType {
     // ...
 }
 ```
 
+**Important:** <strong>All metrics require `@MetricsProfile` annotation.</strong> Metrics without this annotation will be excluded from collection. For dashboard metrics, also include `@DashboardMetric` to control display.
+
 The metric will automatically:
 - Be discovered by `MetricStatsCollector` for general telemetry
-- Be included in dashboard via `DashboardMetricsProvider`
+- Be filtered by active profile via `ProfileFilter`
+- Be included in dashboard via `DashboardMetricsProvider` (if profile matches)
 - Appear in `/v1/usage/summary` endpoint response
 - Be sorted by priority within its category
 
@@ -144,13 +201,73 @@ For common patterns, extend base classes:
 - **`ApiMetricType`**: For API call count metrics
 - **Abstract classes**: Various abstract base classes for specific metric families (see package structure)
 
+## Profile System
+
+### Overview
+
+The profile system controls which metrics are collected based on performance requirements. This enables fast dashboard loading while still collecting comprehensive metrics for background jobs.
+
+### Profile Types
+
+- **MINIMAL**: 10-15 core metrics, < 5 seconds total collection time. Used for fast dashboard loading.
+- **STANDARD**: ~50 metrics, < 15 seconds total collection time. Future implementation.
+- **FULL**: All 128+ metrics. Background collection only. Used by scheduled cron jobs.
+
+### Configuration
+
+Two separate profile settings:
+
+```properties
+# Dashboard/API profile (default: MINIMAL)
+telemetry.default.profile=MINIMAL
+
+# Cron job profile (default: FULL)
+telemetry.cron.profile=FULL
+```
+
+### How It Works
+
+1. **Dashboard/API**: Uses `telemetry.default.profile` (typically MINIMAL)
+   - Fast loading with core metrics only
+   - Filtered via `DashboardMetricsProvider`
+
+2. **Cron Jobs**: Uses `telemetry.cron.profile` (typically FULL)
+   - Collects all metrics for persistence
+   - Filtered via `MetricStatsCollector.getStatsAndCleanUp(ProfileType)`
+
+### Annotating Metrics
+
+**All metrics must include `@MetricsProfile` annotation.** Dashboard metrics should also include `@DashboardMetric`:
+
+```java
+@ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})  // Fast, core metric
+@DashboardMetric(category = "site", priority = 1)
+public class TotalSitesDatabaseMetricType implements DBMetricType {
+    // ...
+}
+
+@ApplicationScoped
+@MetricsProfile({ProfileType.STANDARD, ProfileType.FULL})  // More complex metric
+@DashboardMetric(category = "content", priority = 2)
+public class RecentlyEditedContentDatabaseMetricType implements DBMetricType {
+    // ...
+}
+```
+
+**Profile Selection Guidelines:**
+- **MINIMAL**: Simple queries (< 500ms), single table, core business value
+- **STANDARD**: Moderate complexity, simple joins, valuable but not critical
+- **FULL**: Complex aggregations, multi-table queries, comprehensive analysis
+
 ## Configuration
 
 ### Adding Metrics to Dashboard
 
-1. Annotate the metric class with `@DashboardMetric`
-2. Optionally set `category` and `priority`
-3. No code changes needed in `UsageResource` or other API classes
+1. **Always annotate the metric class with `@MetricsProfile`** (required for all metrics)
+2. Optionally annotate with `@DashboardMetric` to include in dashboard
+3. Optionally set `category` and `priority` in `@DashboardMetric`
+4. No code changes needed in `UsageResource` or other API classes
 
 ### Removing Metrics from Dashboard
 

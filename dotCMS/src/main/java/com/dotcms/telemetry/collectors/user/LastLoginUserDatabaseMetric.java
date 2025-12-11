@@ -2,6 +2,8 @@ package com.dotcms.telemetry.collectors.user;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -9,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Email address of the last logged-in user
  */
 @ApplicationScoped
+@MetricsProfile(ProfileType.FULL)
 public class LastLoginUserDatabaseMetric implements UsersDatabaseMetricType  {
 
     @Override
@@ -18,6 +21,11 @@ public class LastLoginUserDatabaseMetric implements UsersDatabaseMetricType  {
 
     @Override
     public String getDescription() {
+        return "Email address of the Last login User";
+    }
+
+    @Override
+    public String getDisplayLabel() {
         return "Email address of the Last login User";
     }
 

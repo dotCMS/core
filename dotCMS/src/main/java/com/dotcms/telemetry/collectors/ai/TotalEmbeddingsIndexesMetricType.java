@@ -9,7 +9,10 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.Map;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalEmbeddingsIndexesMetricType implements MetricType {
 
@@ -21,6 +24,11 @@ public class TotalEmbeddingsIndexesMetricType implements MetricType {
     @Override
     public String getDescription() {
         return "Total number of Embeddings/Indexes in dotAI";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Embeddings/Indexes in dotAI";
     }
 
     @Override
