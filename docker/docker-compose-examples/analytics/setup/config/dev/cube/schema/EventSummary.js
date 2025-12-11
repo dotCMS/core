@@ -31,8 +31,8 @@ cube(`EventSummary`, {
         eventType,
         customerId,
         clusterId,
-        contextSiteId,
-        contextUserId,
+        siteId,
+        userId,
         identifier,
         title
       ]
@@ -50,8 +50,8 @@ cube(`EventSummary`, {
         day,
         customerId,
         clusterId,
-        contextSiteId,
-        contextUserId,
+        siteId,
+        userId,
         identifier,
         title
       ]
