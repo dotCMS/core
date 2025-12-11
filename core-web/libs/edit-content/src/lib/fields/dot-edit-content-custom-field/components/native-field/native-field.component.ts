@@ -26,7 +26,7 @@ import { WINDOW } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-native-field',
-    template: '<div #container [innerHTML]="$templateCode()"></div>',
+    template: '<div #container></div>',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
@@ -60,7 +60,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      */
     $templateCode = computed(() => {
         const rendered = this.$field().rendered;
-        return this.#domSanitizer.bypassSecurityTrustHtml(rendered);
+        return rendered;
     });
     /**
      * The form bridge to communicate with the custom field.
@@ -118,8 +118,6 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
         if (!templateCode) {
             return;
         }
-
-        console.log('templateCode', templateCode);
 
         const hostElement = this.$container().nativeElement;
 
