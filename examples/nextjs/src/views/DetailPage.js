@@ -78,11 +78,12 @@ export function DetailPage({ pageContent }) {
 
 const customRenderers = {
     Activity: (props) => {
-        const { title, contentType } = props.node.attrs?.data || {};
+        const { title, description, contentType } = props.node.attrs?.data || {};
 
         return (
             <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
                 <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="line-clamp-2">{description}</p>
                 <p className="text-sm text-cyan-700">{contentType}</p>
             </div>
         );
@@ -93,6 +94,7 @@ const customRenderers = {
         return (
             <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
                 <h2 className="text-2xl font-bold">{title}</h2>
+                <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: description }} />
                 <p className="text-sm text-blue-500">{contentType}</p>
             </div>
         );
