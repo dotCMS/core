@@ -7,18 +7,14 @@ import {
     inject,
     input,
     viewChild,
-    forwardRef,
     computed,
     NgZone,
     OnInit,
-    signal
+    signal,
+    OnDestroy
 } from '@angular/core';
-import {
-    ControlContainer,
-    NG_VALUE_ACCESSOR,
-    ReactiveFormsModule,
-    FormGroupDirective
-} from '@angular/forms';
+import { ControlContainer, ReactiveFormsModule, FormGroupDirective } from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -30,7 +26,7 @@ import { WINDOW } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-native-field',
-    template: '<div #container></div>',
+    template: '<div #container [innerHTML]="$templateCode()"></div>',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
@@ -40,18 +36,17 @@ import { WINDOW } from '@dotcms/utils';
     ],
     providers: [
         {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => NativeFieldComponent),
-            multi: true
-        },
-        {
             provide: WINDOW,
             useValue: window
         }
     ],
     imports: [ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
-export class NativeFieldComponent implements OnInit {
+export class NativeFieldComponent implements OnInit, OnDestroy {
+    /**
+     * The DOM sanitizer to sanitize the template code.
+     */
+    #domSanitizer = inject(DomSanitizer);
     /**
      * The field to render.
      */
@@ -61,17 +56,16 @@ export class NativeFieldComponent implements OnInit {
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
     /**
-     * The variable id of the field.
-     */
-    $variableId = computed(() => this.$field().variable);
-    /**
      * The template code of the field.
      */
-    $templateCode = computed(() => this.$field().rendered);
+    $templateCode = computed(() => {
+        const rendered = this.$field().rendered;
+        return this.#domSanitizer.bypassSecurityTrustHtml(rendered);
+    });
     /**
      * The form bridge to communicate with the custom field.
      */
-    #formBridge: FormBridge;
+    #formBridge: FormBridge = null;
     /**
      * The zone to run the code in.
      */
@@ -88,7 +82,6 @@ export class NativeFieldComponent implements OnInit {
      * The container element to render the custom field in.
      */
     $container = viewChild.required<ElementRef>('container');
-
     /**
      * Whether the custom field is mounted.
      */
@@ -100,10 +93,6 @@ export class NativeFieldComponent implements OnInit {
 
     ngOnInit() {
         this.initializeFormBridge();
-    }
-
-    get form() {
-        return this.#controlContainer.value;
     }
 
     private initializeFormBridge(): void {
@@ -139,7 +128,7 @@ export class NativeFieldComponent implements OnInit {
 
         // 2. Parse the template code as HTML
         const parser = new DOMParser();
-        const doc = parser.parseFromString(templateCode, 'text/html');
+        const doc = parser.parseFromString(templateCode as string, 'text/html');
 
         // 3. Get the scripts
         const scripts = Array.from(doc.querySelectorAll('script'));
@@ -172,4 +161,10 @@ export class NativeFieldComponent implements OnInit {
             hostElement.appendChild(scriptElement);
         });
     });
+
+    ngOnDestroy(): void {
+        if (this.#formBridge) {
+            this.#formBridge.destroy();
+        }
+    }
 }

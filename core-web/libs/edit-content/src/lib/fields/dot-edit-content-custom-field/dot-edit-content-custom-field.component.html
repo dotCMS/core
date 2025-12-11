@@ -9,13 +9,13 @@
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        @if ($renderMode() === 'iframe') {
-            <dot-native-field [field]="field" [contentlet]="$contentlet()" />
-        } @else {
+        @if ($isIframeStrategy()) {
             <dot-iframe-field
                 [field]="field"
                 [contentType]="$contentType()"
                 [contentlet]="$contentlet()" />
+        } @else {
+            <dot-native-field [field]="field" [contentlet]="$contentlet()" />
         }
     </dot-card-field-content>
     @if (field.hint) {

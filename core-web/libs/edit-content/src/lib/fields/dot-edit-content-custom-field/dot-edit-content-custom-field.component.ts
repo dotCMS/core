@@ -5,10 +5,15 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotRenderModes,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 
-import { IframeFieldComponent } from './components/iframe-field/iframe-field.components';
-import { NativeFieldComponent } from './components/native-field/native-field.compoment';
+import { IframeFieldComponent } from './components/iframe-field/iframe-field.component';
+import { NativeFieldComponent } from './components/native-field/native-field.component';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -55,11 +60,15 @@ export class DotEditContentCustomFieldComponent extends BaseWrapperField {
      */
     $renderMode = computed(() => {
         const field = this.$field();
-        if (!field) return 'iframe';
+        if (!field) return DotRenderModes.IFRAME;
 
-        const newRenderMode = field.fieldVariables?.find(
-            (variable) => variable.key === 'newRenderMode'
+        const renderMode = field.fieldVariables?.find(
+            (variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY
         )?.value;
-        return newRenderMode || 'iframe';
+        return renderMode || DotRenderModes.IFRAME;
     });
+    /**
+     * Whether the render mode is IFRAME.
+     */
+    $isIframeStrategy = computed(() => this.$renderMode() === DotRenderModes.IFRAME);
 }

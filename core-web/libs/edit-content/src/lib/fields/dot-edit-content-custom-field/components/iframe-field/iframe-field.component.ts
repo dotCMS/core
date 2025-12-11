@@ -26,6 +26,7 @@ import { CustomFieldConfig } from '../../../../models/dot-edit-content-custom-fi
 import { DEFAULT_CUSTOM_FIELD_CONFIG } from '../../../../models/dot-edit-content-field.constant';
 import { createCustomFieldConfig } from '../../../../utils/functions.util';
 import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
+import { DomSanitizer } from '@angular/platform-browser';
 
 /**
  * This component is used to render a custom field in the DotCMS content editor.
