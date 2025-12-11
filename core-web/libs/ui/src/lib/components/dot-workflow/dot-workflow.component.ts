@@ -13,10 +13,14 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
-import { SelectModule } from 'primeng/select';
+import { SelectLazyLoadEvent, SelectModule } from 'primeng/select';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
+    itemsNeeded: number;
+}
 
 @Component({
     selector: 'dot-workflow',
@@ -124,7 +128,7 @@ export class DotWorkflowComponent implements ControlValueAccessor {
     onDropdownShow(): void {
         // Load first page if no items are loaded
         if (this.contentTypes().length === 0) {
-            this.onLazyLoad({ first: 0, rows: this.pageSize });
+            this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
     }
 
@@ -132,24 +136,18 @@ export class DotWorkflowComponent implements ControlValueAccessor {
      * Parses lazy load event and calculates items needed
      *
      * @private
-     * @param event Lazy load event with first (offset) and either rows (page size) or last (last index)
+     * @param event Lazy load event with first (offset) and last (last index)
      * @returns Object with parsed values and calculated itemsNeeded
      */
-    private parseLazyLoadEvent(event: { first: number; rows?: number; last?: number }): {
-        first: number;
-        last?: number;
-        rows?: number;
-        itemsNeeded: number;
-    } {
+    private parseLazyLoadEvent(event: SelectLazyLoadEvent): ParsedSelectLazyLoadEvent {
         const first = Number(event?.first) || 0;
         // PrimeNG 21 uses 'last' instead of 'rows' - last is the last index (inclusive)
         const last = event?.last !== undefined ? Number(event.last) : undefined;
-        const rows = event?.rows !== undefined ? Number(event.rows) : undefined;
 
-        // Calculate items needed: if 'last' is provided, use it; otherwise use 'rows'
-        const itemsNeeded = last !== undefined ? last + 1 : (rows !== undefined ? first + rows : this.pageSize);
+        // Calculate items needed: if 'last' is provided, use it; otherwise use page size
+        const itemsNeeded = last !== undefined ? last + 1 : this.pageSize;
 
-        return { first, last, rows, itemsNeeded };
+        return { first, last, itemsNeeded };
     }
 
     /**
@@ -178,9 +176,9 @@ export class DotWorkflowComponent implements ControlValueAccessor {
     /**
      * Handles lazy loading of content types from PrimeNG Select
      *
-     * @param event Lazy load event with first (offset) and either rows (page size) or last (last index)
+     * @param event Lazy load event with first (offset) and last (last index)
      */
-    onLazyLoad(event: { first: number; rows?: number; last?: number }): void {
+    onLazyLoad(event: SelectLazyLoadEvent): void {
         const parsed = this.parseLazyLoadEvent(event);
         const currentCount = this.contentTypes().length;
         const totalEntries = this.totalRecords();
@@ -202,7 +200,7 @@ export class DotWorkflowComponent implements ControlValueAccessor {
      * @param totalEntries Total number of entries available (0 if unknown)
      */
     private loadContentTypesLazy(
-        parsed: { first: number; last?: number; rows?: number; itemsNeeded: number },
+        parsed: ParsedSelectLazyLoadEvent,
         currentCount: number,
         totalEntries: number
     ): void {
