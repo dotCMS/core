@@ -135,19 +135,19 @@ export class DotContentDriveDialogFolderComponent {
     });
 
     /**
-     * Effect that automatically sets the URL field value based on the title
-     * Only runs when the URL field has not been manually touched by the user
-     * Converts the title to a URL-friendly slug format and sets it as the URL value
+     * Effect that automatically generates a navigation label based on the name
+     * Only runs when the navigation label field has not been manually edited by the user
+     * Converts the name to a navigation label-friendly format and sets it as the navigation label value
      */
-    readonly urlEffect = effect(() => {
-        if (this.folderForm.get('name')?.touched || !!this.$folder()) {
+    readonly navigationLabelEffect = effect(() => {
+        if (this.folderForm.get('title')?.dirty || !!this.$folder()) {
             return;
         }
 
-        const title = this.$title();
-        const titleSlug = this.#getSlugTitle(title || '');
+        const name = this.$name();
+        const navigationLabel = this.#getNavigationLabel(name || '');
 
-        this.folderForm.get('name')?.setValue(titleSlug);
+        this.folderForm.get('title')?.setValue(navigationLabel || '');
     });
 
     /**
@@ -308,9 +308,29 @@ export class DotContentDriveDialogFolderComponent {
      * Sanitizes a string to be a valid slug
      * - Converts to lowercase
      * - Replaces spaces with hyphens
+     * - Returns an empty string if the title is null or undefined
      */
     #getSlugTitle(title: string): string {
-        return title?.toLowerCase()?.replace(/ /g, '-');
+        return title?.trim()?.toLowerCase()?.replace(/ /g, '-') ?? '';
+    }
+
+    /**
+     * Generates a navigation label from a given name
+     * Converts a slug to a human-readable format
+     * - Converts hyphens to spaces
+     * - Capitalizes the first letter of each word
+     * - Returns an empty string if the name is null or undefined
+     *
+     * @param {string} name - The name of the folder
+     * @returns {string} The navigation label
+     */
+    #getNavigationLabel(name: string): string {
+        return (
+            name
+                ?.trim()
+                ?.replace(/-/g, ' ')
+                ?.replace(/(^[a-zA-Z])|\s([a-zA-Z])/g, (char) => char.toUpperCase()) ?? ''
+        );
     }
 
     /**
@@ -330,6 +350,10 @@ export class DotContentDriveDialogFolderComponent {
      */
     #getAssetPath(name: string) {
         const slugName = this.#getSlugTitle(name);
+
+        if (!slugName) {
+            return `//${this.#hostName}/`;
+        }
 
         const path = this.#store.path();
         let finalPath = this.#hostName;
