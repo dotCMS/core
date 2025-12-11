@@ -3,7 +3,9 @@ package com.dotcms.telemetry.collectors.content;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
+@ApplicationScoped
 public class ImportContentletsJobTriggeredMetricType implements DBMetricType {
     @Override
     public String getName() {
