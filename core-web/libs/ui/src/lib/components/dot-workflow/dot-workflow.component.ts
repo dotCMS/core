@@ -56,6 +56,7 @@ export class DotWorkflowComponent implements ControlValueAccessor {
     loading = signal<boolean>(false);
     totalRecords = signal<number>(0);
     private readonly pageSize = 40;
+    private loadedPages = new Set<number>();
 
     // ControlValueAccessor callback functions
     private onChangeCallback = (_value: DotCMSContentType | null) => {
@@ -93,20 +94,18 @@ export class DotWorkflowComponent implements ControlValueAccessor {
 
     /**
      * Ensures the given content type is in the contentTypes list.
-     * Since writeValue receives the full DotCMSContentType object, we can just add it directly.
      *
      * @private
      * @param contentType The content type to ensure is in the list
      */
     private ensureContentTypeInList(contentType: DotCMSContentType): void {
         const currentContentTypes = this.contentTypes();
-        const exists = currentContentTypes.some(
-            (ct) => ct.id === contentType.id || ct.variable === contentType.variable
-        );
+        const exists = currentContentTypes.some((ct) => ct.variable === contentType.variable);
 
         if (!exists) {
-            // We have the full object, so just add it directly to the list
-            this.contentTypes.set([...currentContentTypes, contentType]);
+            const updated = [...currentContentTypes, contentType];
+            updated.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            this.contentTypes.set(updated);
         }
     }
 
@@ -215,21 +214,17 @@ export class DotWorkflowComponent implements ControlValueAccessor {
         const lastIndexNeeded = last !== undefined ? last : itemsNeeded - 1;
         const pageToLoad = Math.floor(lastIndexNeeded / this.pageSize) + 1;
 
+        // Check if we already loaded this page
+        if (this.loadedPages.has(pageToLoad)) {
+            return;
+        }
+
         // If we know the total, check if we're requesting beyond it
         if (totalEntries > 0) {
             const maxPage = Math.ceil(totalEntries / this.pageSize);
             if (pageToLoad > maxPage) {
-                return; // Already have all pages
+                return;
             }
-        }
-
-        // Check if we already have this page loaded
-        // Page N contains items from index (N-1)*pageSize to N*pageSize - 1
-        const pageEndIndex = pageToLoad * this.pageSize;
-
-        // If we already have enough items to cover this page, return
-        if (currentCount >= pageEndIndex) {
-            return;
         }
 
         this.loading.set(true);
@@ -247,24 +242,20 @@ export class DotWorkflowComponent implements ControlValueAccessor {
                         this.totalRecords.set(pagination.totalEntries);
                     }
 
-                    // Append new content types, avoiding duplicates
-                    const existingIds = new Set(
-                        currentContentTypes.map((ct) => ct.id || ct.variable)
-                    );
-                    const newContentTypes = contentTypes.filter(
-                        (ct) => !existingIds.has(ct.id || ct.variable)
-                    );
+                    // Filter out duplicates - variable is unique, so just check variable
+                    const existingVariables = new Set(currentContentTypes.map((ct) => ct.variable));
+                    const newContentTypes = contentTypes.filter((ct) => !existingVariables.has(ct.variable));
 
                     if (newContentTypes.length > 0) {
-                        // Merge and sort to maintain order
                         const merged = [...currentContentTypes, ...newContentTypes];
                         merged.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                         this.contentTypes.set(merged);
                     }
 
+                    this.loadedPages.add(pageToLoad);
                     this.loading.set(false);
 
-                    // After loading, ensure current value is in the list
+                    // Ensure current value is in the list
                     const currentValue = this.value();
                     if (currentValue) {
                         this.ensureContentTypeInList(currentValue);
