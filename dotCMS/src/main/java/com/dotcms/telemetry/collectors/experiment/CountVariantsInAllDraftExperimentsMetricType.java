@@ -4,11 +4,13 @@ import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Metric type to count the variants on draft experiments
  * @author jsanca
  */
+@ApplicationScoped
 public class CountVariantsInAllDraftExperimentsMetricType   implements DBMetricType {
     @Override
     public String getName() {
