@@ -89,7 +89,7 @@ const customRenderers = {
         );
     },
     Product: (props) => {
-        const { title, contentType } = props.node.attrs?.data || {};
+        const { title, description, contentType } = props.node.attrs?.data || {};
 
         return (
             <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
