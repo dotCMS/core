@@ -41,17 +41,14 @@ import {
     EMPTY_CONTENTLET_RESPONSE,
     EMPTY_CONTENTTYPE_RESPONSE,
     buildPaletteFavorite,
-    getPaletteState
+    getPaletteState,
+    EMPTY_PAGINATION
 } from '../../../utils';
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
     contentlets: [],
-    pagination: {
-        currentPage: 1,
-        perPage: DEFAULT_PER_PAGE,
-        totalEntries: 0
-    },
+    pagination: EMPTY_PAGINATION,
     searchParams: {
         pagePathOrId: '',
         language: 1,
@@ -183,7 +180,7 @@ export const DotPaletteListStore = signalStore(
                             return of(EMPTY_CONTENTLET_RESPONSE);
                         })
                     )
-                    .subscribe((response) => patchState(store, response));
+                    .subscribe((response) => patchState(store, { ...response }));
             }
         };
     }),
@@ -204,9 +201,30 @@ export const DotPaletteListStore = signalStore(
         );
 
         return {
+            /**
+             * Manually sets the loading status of the palette.
+             * Used when transitioning states or showing loading indicators before data fetches.
+             *
+             * @param status - The status to set (LOADING, LOADED, or EMPTY)
+             */
+            setStatus(status: DotPaletteListStatus) {
+                patchState(store, { status });
+            },
+            /**
+             * Sets the content types from a favorite list.
+             * Used when updating the favorite state of a content type.
+             *
+             * @param contentTypes - The content types to set
+             */
             setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
                 updateFavoriteState(contentTypes);
             },
+            /**
+             * Adds a content type to the favorite list.
+             * If the list is a favorites list, updates the favorite state.
+             *
+             * @param contentType - The content type to add
+             */
             addFavorite(contentType: DotCMSContentType) {
                 const response = dotFavoriteContentTypeService.add(contentType);
 
@@ -215,6 +233,12 @@ export const DotPaletteListStore = signalStore(
                     updateFavoriteState(response);
                 }
             },
+            /**
+             * Removes a content type from the favorite list.
+             * If the list is a favorites list, updates the favorite state.
+             *
+             * @param contentTypeId - The content type ID to remove
+             */
             removeFavorite(contentTypeId: string) {
                 const response = dotFavoriteContentTypeService.remove(contentTypeId);
 

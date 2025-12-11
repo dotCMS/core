@@ -31,8 +31,8 @@ cube(`EventSummary`, {
         eventType,
         customerId,
         clusterId,
-        contextSiteId,
-        contextUserId,
+        siteId,
+        userId,
         identifier,
         title
       ]
@@ -50,8 +50,8 @@ cube(`EventSummary`, {
         day,
         customerId,
         clusterId,
-        contextSiteId,
-        contextUserId,
+        siteId,
+        userId,
         identifier,
         title
       ]
@@ -92,7 +92,7 @@ cube(`EventSummary`, {
       description: 'The ID or name of the customer environment where the event was created.'
     },
 
-    contextSiteId: {
+    siteId: {
       sql: `context_site_id`,
       type: `string`,
       title: 'Site ID',
@@ -106,7 +106,7 @@ cube(`EventSummary`, {
       description: 'Type of tracked event (pageview, content_impression, content_click, etc.).'
     },
 
-    contextUserId: {
+    userId: {
       sql: `context_user_id`,
       type: `string`,
       title: 'User ID',
