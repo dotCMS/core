@@ -1,7 +1,7 @@
 import { DotFolderListViewColumn, DotFolderTreeNodeItem } from './models';
 
 export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
-    { field: 'title', header: 'title', width: '40%', order: 1, sortable: true },
+    { field: 'title', header: 'name', width: '40%', order: 1, sortable: true },
     { field: 'live', header: 'status', width: '5%', order: 2 },
     { field: 'languageId', header: 'locale', width: '10%', order: 3, sortable: true },
     { field: 'contentType', header: 'type', sortable: true, width: '15%', order: 4 },

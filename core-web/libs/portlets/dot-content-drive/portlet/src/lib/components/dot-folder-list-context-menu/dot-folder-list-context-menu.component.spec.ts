@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -238,11 +238,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(store.contextMenu().showAddToBundle).toBe(true);
         });
 
-        it('should memoize menu items after first load', async () => {
+        it('should memoize menu items after first load using inode as key for contentlets', async () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(1);
             expect(component.$memoizedMenuItems()[mockContentlet.inode]).toBeDefined();
+            expect(component.$memoizedMenuItems()[mockContentlet.identifier]).toBeUndefined();
         });
 
         it('should use memoized items on second call without fetching', async () => {
@@ -353,11 +354,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(mockContextMenu.show).toHaveBeenCalledWith(mockEvent);
             });
 
-            it('should memoize folder menu items', async () => {
+            it('should memoize folder menu items using identifier as key', async () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
-                expect(component.$memoizedMenuItems()[mockFolder.inode]).toBeDefined();
-                expect(component.$memoizedMenuItems()[mockFolder.inode]).toHaveLength(1);
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(1);
             });
 
             it('should use memoized folder menu items on second call', async () => {
@@ -377,6 +378,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
                 expect(component.$items()).toHaveLength(1);
+            });
+
+            it('should use identifier as memoization key for folders, not inode', async () => {
+                await component.getMenuItems(mockFolderContextMenuData);
+
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
+                expect(component.$memoizedMenuItems()[mockFolder.inode]).toBeUndefined();
             });
         });
 
@@ -656,6 +664,301 @@ describe('DotFolderListViewContextMenuComponent', () => {
             dotWizardService.open.mockReturnValue(of({}));
 
             expect(workflowsActionsFireService.fireTo).toHaveBeenCalled();
+        });
+    });
+
+    describe('workflow actions', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+
+        it('should execute workflow action without wizard when action has no inputs', async () => {
+            const mockWorkflowWithoutInputs = [
+                {
+                    ...mockWorkflowActions[1], // "Save" action
+                    actionInputs: []
+                }
+            ];
+
+            workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            // Save action is at index 2 (Edit at 0, Lock/Unlock at 1, Save at 2)
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
+
+            expect(dotWizardService.open).not.toHaveBeenCalled();
+            expect(workflowsActionsFireService.fireTo).toHaveBeenCalledWith({
+                actionId: mockWorkflowWithoutInputs[0].id,
+                inode: mockContentlet.inode,
+                data: undefined
+            });
+        });
+
+        it('should show success message when workflow action succeeds', async () => {
+            jest.useFakeTimers();
+            const mockWorkflowWithoutInputs = [
+                {
+                    ...mockWorkflowActions[1],
+                    actionInputs: []
+                }
+            ];
+
+            workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
+            workflowsActionsFireService.fireTo.mockReturnValue(of(mockContentlet));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'content-drive.toast.workflow-executed'
+            });
+
+            jest.useRealTimers();
+        });
+
+        it('should show error message when workflow action fails', async () => {
+            jest.useFakeTimers();
+            const mockWorkflowWithoutInputs = [
+                {
+                    ...mockWorkflowActions[1],
+                    actionInputs: []
+                }
+            ];
+            const mockError = new Error('Workflow action failed');
+
+            workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
+            workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: 'content-drive.toast.workflow-error',
+                life: 4500
+            });
+
+            jest.useRealTimers();
+        });
+
+        it('should set status to LOADED when workflow action fails', async () => {
+            jest.useFakeTimers();
+            const mockWorkflowWithoutInputs = [
+                {
+                    ...mockWorkflowActions[1],
+                    actionInputs: []
+                }
+            ];
+            const mockError = new Error('Workflow action failed');
+
+            workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
+            workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+
+            jest.useRealTimers();
+        });
+
+        it('should reload content drive when workflow action succeeds', async () => {
+            jest.useFakeTimers();
+            const mockWorkflowWithoutInputs = [
+                {
+                    ...mockWorkflowActions[1],
+                    actionInputs: []
+                }
+            ];
+            const reloadSpy = jest.spyOn(store, 'reloadContentDrive');
+
+            workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
+            workflowsActionsFireService.fireTo.mockReturnValue(of(mockContentlet));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(reloadSpy).toHaveBeenCalled();
+
+            jest.useRealTimers();
+        });
+
+        it('should set status to LOADING when workflow action is triggered', async () => {
+            const mockWorkflowWithoutInputs = [
+                {
+                    ...mockWorkflowActions[1],
+                    actionInputs: []
+                }
+            ];
+
+            workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
+            workflowsActionsFireService.fireTo.mockReturnValue(of(mockContentlet));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            items[2].command?.({} as unknown as MenuItemCommandEvent);
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+    });
+
+    describe('lock/unlock error handling', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+
+        it('should show error message when lock action fails', async () => {
+            jest.useFakeTimers();
+            const mockError = new Error('Lock failed');
+
+            dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
+            dotContentletService.lockContent.mockReturnValue(throwError(() => mockError));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            const lockItem = items.find((item) => item.label === 'content-drive.context-menu.lock');
+
+            lockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: 'content-drive.toast.lock-error',
+                detail: 'content-drive.toast.lock-error-detail',
+                life: 4500
+            });
+
+            jest.useRealTimers();
+        });
+
+        it('should show error message when unlock action fails', async () => {
+            jest.useFakeTimers();
+            const mockError = new Error('Unlock failed');
+
+            dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
+            dotContentletService.unlockContent.mockReturnValue(throwError(() => mockError));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            const unlockItem = items.find(
+                (item) => item.label === 'content-drive.context-menu.unlock'
+            );
+
+            unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: 'content-drive.toast.unlock-error',
+                detail: 'content-drive.toast.unlock-error-detail',
+                life: 4500
+            });
+
+            jest.useRealTimers();
+        });
+
+        it('should reload content drive when lock succeeds', async () => {
+            jest.useFakeTimers();
+            const reloadSpy = jest.spyOn(store, 'reloadContentDrive');
+
+            dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
+            dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            const lockItem = items.find((item) => item.label === 'content-drive.context-menu.lock');
+
+            lockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(reloadSpy).toHaveBeenCalled();
+
+            jest.useRealTimers();
+        });
+
+        it('should reload content drive when unlock succeeds', async () => {
+            jest.useFakeTimers();
+            const reloadSpy = jest.spyOn(store, 'reloadContentDrive');
+
+            dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
+            dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const items = component.$items();
+            const unlockItem = items.find(
+                (item) => item.label === 'content-drive.context-menu.unlock'
+            );
+
+            unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+
+            expect(reloadSpy).toHaveBeenCalled();
+
+            jest.useRealTimers();
         });
     });
 });

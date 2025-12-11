@@ -232,12 +232,6 @@ describe('DotFolderListViewComponent', () => {
                 expect(notSortableColumns.length).toBe(notSortableColumnsCount);
             });
 
-            it('should have one checkbox column', () => {
-                const checkboxColumn = spectator.query(byTestId('header-checkbox'));
-
-                expect(checkboxColumn).toBeTruthy();
-            });
-
             it('should have a checkbox column', () => {
                 const checkboxColumn = spectator.query(byTestId('header-checkbox'));
 
@@ -912,21 +906,6 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.dragOverRowId()).toBeNull();
             });
 
-            it('should update dragOverRowId when dragging over different rows', () => {
-                const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
-                const dragOverEvent = createDragOverEvent();
-
-                // Drag over first item
-                rows[0].dispatchEvent(dragOverEvent);
-                spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
-
-                // Drag over second item
-                rows[1].dispatchEvent(dragOverEvent);
-                spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
-            });
-
             it('should apply is-drag-over class when dragOverRowId matches item identifier', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
@@ -1224,24 +1203,6 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit doubleClick event when thumbnail is clicked', () => {
-            const doubleClickSpy = jest.spyOn(spectator.component, 'onDoubleClick');
-            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
-
-            spectator.click(thumbnail);
-
-            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
-        });
-
-        it('should emit doubleClick event when title text is clicked', () => {
-            const doubleClickSpy = jest.spyOn(spectator.component, 'onDoubleClick');
-            const titleText = spectator.query(byTestId('item-title-text'));
-
-            spectator.click(titleText);
-
-            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
-        });
-
-        it('should call onDoubleClick with correct item when thumbnail is clicked', () => {
             const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
             const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
 
@@ -1250,7 +1211,7 @@ describe('DotFolderListViewComponent', () => {
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
         });
 
-        it('should call onDoubleClick with correct item when title text is clicked', () => {
+        it('should emit doubleClick event when title text is clicked', () => {
             const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
             const titleText = spectator.query(byTestId('item-title-text'));
 

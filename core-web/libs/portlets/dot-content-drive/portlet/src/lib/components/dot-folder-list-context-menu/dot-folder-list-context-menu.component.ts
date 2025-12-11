@@ -126,8 +126,10 @@ export class DotFolderListViewContextMenuComponent {
         this.$items.set([]);
         const memoizedMenuItems = this.$memoizedMenuItems();
 
-        if (memoizedMenuItems[contentlet.inode]) {
-            this.$items.set(memoizedMenuItems[contentlet.inode]);
+        const key = isFolder(contentlet) ? contentlet.identifier : contentlet.inode;
+
+        if (memoizedMenuItems[key]) {
+            this.$items.set(memoizedMenuItems[key]);
             this.contextMenu()?.show(triggeredEvent);
             return;
         }
@@ -150,7 +152,7 @@ export class DotFolderListViewContextMenuComponent {
             this.$items.set(folderMenuItems);
             this.$memoizedMenuItems.set({
                 ...this.$memoizedMenuItems(),
-                [contentlet.inode]: folderMenuItems
+                [key]: folderMenuItems
             });
             this.contextMenu()?.show(triggeredEvent);
             return;
@@ -209,7 +211,7 @@ export class DotFolderListViewContextMenuComponent {
         this.$items.set(actionsMenu);
         this.$memoizedMenuItems.set({
             ...this.$memoizedMenuItems(),
-            [contentlet.inode]: this.$items()
+            [key]: this.$items()
         });
         this.contextMenu()?.show(triggeredEvent);
     }

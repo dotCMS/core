@@ -3,25 +3,53 @@
         [header]="'content-drive.dialog.folder.general.header' | dm"
         class="folder-dialog-tab-content">
         <div class="folder-dialog-field">
+            <label [checkIsRequiredControl]="'name'" for="name" dotFieldRequired>
+                {{ 'content-drive.dialog.folder.field.name' | dm }}
+            </label>
+            <input
+                pInputText
+                id="name"
+                aria-describedby="name-help"
+                formControlName="name"
+                [autofocus]="true" />
+        </div>
+        <div class="folder-dialog-field">
             <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
                 {{ 'content-drive.dialog.folder.field.title' | dm }}
             </label>
             <input
                 pInputText
                 id="title"
-                aria-describedby="title-help"
-                formControlName="title"
-                [autofocus]="true" />
+                aria-describedby="navigation-title-help"
+                formControlName="title" />
+        </div>
+
+        <div class="folder-dialog-field">
+            <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
+            <p class="folder-dialog-path">{{ $finalPath() }}</p>
         </div>
     </p-tabPanel>
     <p-tabPanel
         [header]="'content-drive.dialog.folder.advanced.header' | dm"
         class="folder-dialog-tab-content">
         <div class="folder-dialog-field">
-            <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
+            <label
+                [checkIsRequiredControl]="'defaultFileAssetType'"
+                for="defaultFileAssetType"
+                dotFieldRequired>
+                {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
             </label>
-            <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
+            <p-dropdown
+                [options]="$fileAssetTypes()"
+                optionLabel="name"
+                optionValue="variable"
+                [loading]="false"
+                id="defaultFileAssetType"
+                aria-describedby="defaultFileAssetType-help"
+                [placeholder]="
+                    'content-drive.dialog.folder.field.default-file-asset-type.help' | dm
+                "
+                formControlName="defaultFileAssetType" />
         </div>
 
         <div class="folder-dialog-field">
@@ -44,35 +72,10 @@
         </div>
 
         <div class="folder-dialog-field">
-            <label
-                [checkIsRequiredControl]="'defaultFileAssetType'"
-                for="defaultFileAssetType"
-                dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
+            <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
+                {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
             </label>
-            <p-dropdown
-                [options]="$fileAssetTypes()"
-                optionLabel="name"
-                optionValue="variable"
-                [loading]="false"
-                id="defaultFileAssetType"
-                aria-describedby="defaultFileAssetType-help"
-                [placeholder]="
-                    'content-drive.dialog.folder.field.default-file-asset-type.help' | dm
-                "
-                formControlName="defaultFileAssetType" />
-        </div>
-
-        <div class="folder-dialog-field">
-            <label [checkIsRequiredControl]="'name'" for="name" dotFieldRequired>
-                {{ 'content-drive.dialog.folder.field.name' | dm }}
-            </label>
-            <input pInputText id="name" aria-describedby="name-help" formControlName="name" />
-        </div>
-
-        <div class="folder-dialog-field">
-            <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
-            <p class="folder-dialog-path">{{ $finalPath() }}</p>
+            <p-inputNumber inputId="minmax" mode="decimal" [min]="0" formControlName="sortOrder" />
         </div>
 
         <div class="folder-dialog-field">
