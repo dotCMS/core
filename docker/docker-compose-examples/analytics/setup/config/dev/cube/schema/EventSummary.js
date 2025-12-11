@@ -113,7 +113,7 @@ cube(`EventSummary`, {
       description: 'The ID of the User tha triggered the creation of the event.'
     },
 
-    contentIdentifier: {
+    identifier: {
       sql: `identifier`,
       type: `string`,
       title: 'Identifier',
