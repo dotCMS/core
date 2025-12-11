@@ -153,7 +153,8 @@ public class UsageResource {
         Logger.debug(this, () -> String.format("Collected %d metric values from %d dashboard metrics", metricMap.size(), keyMetrics.size()));
 
         // Build dynamic summary organized by category
-        final Map<String, Map<String, Object>> metricsByCategory = buildMetricsByCategory(keyMetrics, metricMap);
+        // Pass metricsProvider to avoid repeated CDI lookups in the loop
+        final Map<String, Map<String, Object>> metricsByCategory = buildMetricsByCategory(keyMetrics, metricMap, metricsProvider);
 
         Logger.debug(this, () -> String.format("Organized metrics into %d categories", metricsByCategory.size()));
 
@@ -167,15 +168,17 @@ public class UsageResource {
      * Organizes metrics by their category as defined by @DashboardMetric annotation.
      * Only includes metrics that were successfully collected (present in metricMap).
      * Uses the mapped metric name (e.g., "COUNT_CONTENT" instead of "COUNT") for consistency.
-     * Includes display labels from @DashboardMetric annotation.
+     * Includes display labels from MetricType.getDisplayLabel().
      * 
      * @param keyMetrics the list of dashboard metrics with their annotations
      * @param metricMap the collected metric values keyed by mapped metric name
+     * @param metricsProvider the DashboardMetricsProvider instance (reused to avoid repeated CDI lookups)
      * @return map of category names to maps of metric metadata (name, value, displayLabel)
      */
     private Map<String, Map<String, Object>> buildMetricsByCategory(
             final Collection<MetricType> keyMetrics,
-            final Map<String, MetricValue> metricMap) {
+            final Map<String, MetricValue> metricMap,
+            final DashboardMetricsProvider metricsProvider) {
         
         final Map<String, Map<String, Object>> categoryMap = new HashMap<>();
         
@@ -186,7 +189,8 @@ public class UsageResource {
             final String mapKey = getMappedMetricName(metricType);
             
             // Get the category from @DashboardMetric annotation, or use "other" as default
-            final String category = getCategoryFromMetric(metricType);
+            // Pass metricsProvider to avoid repeated CDI lookups
+            final String category = getCategoryFromMetric(metricType, metricsProvider);
             
             // Get the display label from MetricType interface
             final String displayLabel = metricType.getDisplayLabel();
@@ -240,9 +244,12 @@ public class UsageResource {
     /**
      * Extracts the category from a metric's @DashboardMetric annotation.
      * If no category is specified, returns "other".
+     * 
+     * @param metricType the metric to get the category for
+     * @param metricsProvider the DashboardMetricsProvider instance (passed to avoid repeated CDI lookups)
+     * @return the category name, or "other" if not specified
      */
-    private String getCategoryFromMetric(final MetricType metricType) {
-        final DashboardMetricsProvider metricsProvider = CDIUtils.getBeanThrows(DashboardMetricsProvider.class);
+    private String getCategoryFromMetric(final MetricType metricType, final DashboardMetricsProvider metricsProvider) {
         final String category = metricsProvider.getCategory(metricType);
         return category != null && !category.isEmpty() ? category : "other";
     }
