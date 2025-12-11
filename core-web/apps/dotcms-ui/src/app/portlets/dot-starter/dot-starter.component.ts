@@ -7,7 +7,13 @@ import { ActivatedRoute } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
 
-import { DotCurrentUser, DotCMSContentType, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
+import {
+    DotCurrentUser,
+    DotCMSClazzes,
+    DotCMSContentType,
+    DotPermissionsType,
+    PermissionsType
+} from '@dotcms/dotcms-models';
 
 import { DotAccountService } from '../../api/services/dot-account-service';
 
@@ -35,7 +41,101 @@ export class DotStarterComponent implements OnInit {
     showCreateTemplateLink: boolean;
 
     // Test properties for dot-workflow component
-    selectedContentType: DotCMSContentType | null = null;
+    selectedContentType: DotCMSContentType | null = {
+        baseType: 'CONTENT',
+        clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,
+        defaultType: false,
+        fields: [],
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        folderPath: '/',
+        host: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d',
+        iDate: 1765477561000,
+        icon: 'event_note',
+        id: 'e2537ac7bc0c4b9c5e4e987aecb1aba7',
+        layout: [
+            {
+                divider: {
+                    id: 'row-field-id',
+                    variable: 'rowField',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    contentTypeId: 'e2537ac7bc0c4b9c5e4e987aecb1aba7',
+                    dataType: 'SYSTEM',
+                    fieldContentTypeProperties: [],
+                    fieldType: 'Row',
+                    fieldTypeLabel: 'Row',
+                    fieldVariables: [],
+                    fixed: false,
+                    forceIncludeInApi: false,
+                    iDate: 1765492714000,
+                    indexed: false,
+                    listed: false,
+                    modDate: 1765492714000,
+                    name: 'Row Field',
+                    readOnly: false,
+                    required: false,
+                    searchable: false,
+                    sortOrder: -1,
+                    unique: false
+                },
+                columns: [
+                    {
+                        columnDivider: {
+                            id: 'column-field-id',
+                            variable: 'columnField',
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            contentTypeId: 'e2537ac7bc0c4b9c5e4e987aecb1aba7',
+                            dataType: 'SYSTEM',
+                            fieldContentTypeProperties: [],
+                            fieldType: 'Column',
+                            fieldTypeLabel: 'Column',
+                            fieldVariables: [],
+                            fixed: false,
+                            forceIncludeInApi: false,
+                            iDate: 1765492714000,
+                            indexed: false,
+                            listed: false,
+                            modDate: 1765492714000,
+                            name: 'Column Field',
+                            readOnly: false,
+                            required: false,
+                            searchable: false,
+                            sortOrder: -1,
+                            unique: false
+                        },
+                        fields: []
+                    }
+                ]
+            }
+        ],
+        metadata: {
+            CONTENT_EDITOR2_ENABLED: false
+        },
+        modDate: 1765477561000,
+        multilingualable: false,
+        nEntries: 0,
+        name: 'Test 124',
+        siteName: 'default',
+        sortOrder: 0,
+        system: false,
+        variable: 'Test124',
+        versionable: true,
+        workflows: [
+            {
+                archived: false,
+                creationDate: new Date(1765478128761),
+                defaultScheme: false,
+                description: '',
+                entryActionId: null,
+                id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                mandatory: false,
+                modDate: new Date(1765476157839),
+                name: 'System Workflow',
+                system: true,
+                variableName: 'SystemWorkflow'
+            }
+        ]
+    } as DotCMSContentType;
     isDisabled = false;
     isInitiallyDisabled = true;
     contentTypeControl = new FormControl<DotCMSContentType | null>(null);
