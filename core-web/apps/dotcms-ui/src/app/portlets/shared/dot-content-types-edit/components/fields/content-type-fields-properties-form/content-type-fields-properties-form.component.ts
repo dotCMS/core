@@ -86,7 +86,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.transformFormValue(this.form.value));
+            const transformedValue = this.transformFormValue(this.form.value);
+            this.saveField.emit(transformedValue);
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }

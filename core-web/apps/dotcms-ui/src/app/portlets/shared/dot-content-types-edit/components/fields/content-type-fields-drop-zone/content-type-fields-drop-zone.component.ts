@@ -269,7 +269,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             );
         }
 
-        this.currentField = { ...this.currentField, ...fieldToSave };
+        Object.assign(this.currentField, fieldToSave);
 
         if (fieldToSave.id) {
             this.editField.emit(this.currentField);
