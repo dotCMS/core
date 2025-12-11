@@ -8,7 +8,7 @@ import { Activity } from '../../../../../types/contentlet.model';
   template: `
     <div class="w-full p-4 my-2 bg-white rounded-lg border border-slate-400">
         <h4 class="text-lg font-bold">{{ contentlet().title }}</h4>
-        <span class="text-sm text-slate-500">{{ contentlet().contentType }}</span>
+        <span class="text-sm text-cyan-700">{{ contentlet().contentType }}</span>
     </div>
   `,
   standalone: true,
