@@ -58,6 +58,7 @@ import {
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
@@ -93,7 +94,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { StyleSchema, UVE_PALETTE_TABS } from '../store/features/editor/models';
+import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -1094,7 +1095,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
                 this.#handleInlineEditingEvent(payload),
-            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: { schemas: StyleSchema[] }) => {
+
+            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
+                schemas: StyleEditorFormSchema[];
+            }) => {
                 const { schemas } = payload;
                 this.uveStore.setStyleSchemas(schemas);
             },
