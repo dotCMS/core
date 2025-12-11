@@ -159,7 +159,7 @@ program
 
             // ENV BLOCK — nicely spaced + grouped
             console.log(chalk.white('──────────────────────────────────────────────'));
-            console.log(chalk.white('🌐  Host (site):      ') + chalk.green(DOTCMS_HOST));
+            console.log(chalk.white('🌐  Host (site):      ') + chalk.green(urlDotcmsInstance));
             console.log(
                 chalk.white('🏷️  Site ID:          ') + chalk.green(demoSite.val.entity.identifier)
             );

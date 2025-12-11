@@ -29,7 +29,7 @@ export class DotCMSApi {
         url?: string;
     }): Promise<Result<string, FailedToGetDotcmsTokenError>> {
         try {
-            const endpoint = url ?? this.defaultTokenApi;
+            const endpoint = url || this.defaultTokenApi;
             const res = await axios.post<GetUserTokenResponse>(endpoint, payload);
             return Ok(res.data.entity.token);
         } catch (err) {
@@ -49,7 +49,7 @@ export class DotCMSApi {
         url?: string;
     }): Promise<Result<DemoSiteResponse, FailedToGetDemoSiteIdentifierError>> {
         try {
-            const endpoint = (url ?? this.defaultDemoSiteApi) + siteName;
+            const endpoint = (url || this.defaultDemoSiteApi) + siteName;
             const res = await axios.get<DemoSiteResponse>(endpoint, {
                 headers: { Authorization: `Bearer ${authenticationToken}` }
             });
@@ -73,7 +73,7 @@ export class DotCMSApi {
         url?: string;
     }): Promise<Result<'Ok', FailedToSetUpUVEConfig>> {
         try {
-            const endpoint = (url ?? this.defaultUveConfigApi) + siteId;
+            const endpoint = (url || this.defaultUveConfigApi) + siteId;
             const res = await axios.post<UVEConfigResponse>(endpoint, payload, {
                 headers: { Authorization: `Bearer ${authenticationToken}` }
             });
