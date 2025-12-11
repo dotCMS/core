@@ -3,6 +3,8 @@ package com.dotcms.telemetry.collectors.template;
 import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -10,6 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Collects the total count of builder templates, it means excluding File, Advanced, and Layout templates
  */
 @ApplicationScoped
+@MetricsProfile({ProfileType.STANDARD, ProfileType.FULL})
 @DashboardMetric(category = "system", priority = 5)
 public class TotalBuilderTemplatesDatabaseMetricType implements DBMetricType {
     @Override
@@ -20,6 +23,11 @@ public class TotalBuilderTemplatesDatabaseMetricType implements DBMetricType {
     @Override
     public String getDescription() {
         return "Total count of Builder templates, excluding File, Advanced, and Layout templates";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Builder Templates";
     }
 
     @Override

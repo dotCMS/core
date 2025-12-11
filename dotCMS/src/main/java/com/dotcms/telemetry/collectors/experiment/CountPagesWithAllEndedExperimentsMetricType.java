@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count pages with ended experiments
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountPagesWithAllEndedExperimentsMetricType implements DBMetricType {
 
@@ -21,6 +24,11 @@ public class CountPagesWithAllEndedExperimentsMetricType implements DBMetricType
     @Override
     public String getDescription() {
         return "Count of pages with ended experiments";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Pages with ended experiments";
     }
 
     @Override

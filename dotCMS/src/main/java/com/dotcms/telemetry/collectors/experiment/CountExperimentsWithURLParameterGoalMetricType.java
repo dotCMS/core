@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count the experiments with url parameter goal
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountExperimentsWithURLParameterGoalMetricType implements DBMetricType {
 
@@ -21,6 +24,11 @@ public class CountExperimentsWithURLParameterGoalMetricType implements DBMetricT
     @Override
     public String getDescription() {
         return "Count of experiments with url parameter goal";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Experiments with url parameter goal";
     }
 
     @Override

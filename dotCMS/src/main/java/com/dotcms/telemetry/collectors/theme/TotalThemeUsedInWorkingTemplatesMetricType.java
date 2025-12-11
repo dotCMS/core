@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the total count of themes used by WORKING templates
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalThemeUsedInWorkingTemplatesMetricType implements DBMetricType {
     @Override
@@ -18,6 +21,11 @@ public class TotalThemeUsedInWorkingTemplatesMetricType implements DBMetricType 
     @Override
     public String getDescription() {
         return "Count of themes used by templates";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Themes used by templates";
     }
 
     @Override

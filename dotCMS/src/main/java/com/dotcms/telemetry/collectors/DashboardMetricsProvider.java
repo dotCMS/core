@@ -2,6 +2,9 @@ package com.dotcms.telemetry.collectors;
 
 import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricType;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
+import com.dotcms.telemetry.cache.MetricCacheConfig;
 import com.dotmarketing.util.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -39,6 +42,9 @@ public class DashboardMetricsProvider {
     @Inject
     private Instance<MetricType> allMetrics;
     
+    @Inject
+    private MetricCacheConfig config;
+    
     /**
      * Returns all metrics annotated with {@link DashboardMetric}, sorted by priority.
      * 
@@ -54,6 +60,10 @@ public class DashboardMetricsProvider {
      */
     public List<MetricType> getDashboardMetrics() {
         Logger.debug(this, "Starting dashboard metrics discovery via CDI BeanManager");
+
+        // Get active profile from configuration
+        final ProfileType activeProfile = config.getActiveProfile();
+        Logger.debug(this, () -> String.format("Filtering dashboard metrics for profile: %s", activeProfile));
 
         try {
             // Use BeanManager to get all MetricType beans - this gives us Bean objects
@@ -74,18 +84,33 @@ public class DashboardMetricsProvider {
                 if (beanClass.isAnnotationPresent(DashboardMetric.class)) {
                     final DashboardMetric annotation = beanClass.getAnnotation(DashboardMetric.class);
                     
+                    // Validate: All metrics must have @MetricsProfile annotation
+                    if (!beanClass.isAnnotationPresent(MetricsProfile.class)) {
+                        Logger.error(this, String.format(
+                            "Dashboard metric %s has @DashboardMetric but missing required @MetricsProfile annotation. " +
+                            "This metric will be excluded from collection. " +
+                            "Please add @MetricsProfile annotation to the metric class.",
+                            beanClass.getName()));
+                    }
+                    
                     // Get the actual bean instance from CDI
                     final MetricType metric = (MetricType) beanManager.getReference(
                             bean, MetricType.class, beanManager.createCreationalContext(bean));
                     
-                    dashboardMetricsWithAnnotation.add(new MetricWithAnnotation(metric, annotation));
-                    Logger.debug(this, () -> String.format("Found dashboard metric: %s (category: %s, priority: %d)",
-                            beanClass.getName(), annotation.category(), annotation.priority()));
+                    // Apply profile filter
+                    if (ProfileFilter.matches(metric, activeProfile)) {
+                        dashboardMetricsWithAnnotation.add(new MetricWithAnnotation(metric, annotation));
+                        Logger.debug(this, () -> String.format("Found dashboard metric: %s (category: %s, priority: %d)",
+                                beanClass.getName(), annotation.category(), annotation.priority()));
+                    } else {
+                        Logger.debug(this, () -> String.format("Excluding dashboard metric %s (does not match profile %s)",
+                                beanClass.getName(), activeProfile));
+                    }
                 }
             }
 
-            Logger.debug(this, () -> String.format("CDI discovered %d total MetricType beans, %d annotated with @DashboardMetric",
-                    allBeans.size(), dashboardMetricsWithAnnotation.size()));
+            Logger.debug(this, () -> String.format("CDI discovered %d total MetricType beans, %d annotated with @DashboardMetric, %d match profile %s",
+                    allBeans.size(), dashboardMetricsWithAnnotation.size(), dashboardMetricsWithAnnotation.size(), activeProfile));
             
             // Sort by priority (from @DashboardMetric annotation)
             dashboardMetricsWithAnnotation.sort(Comparator.comparingInt(m -> m.annotation.priority()));
@@ -108,12 +133,25 @@ public class DashboardMetricsProvider {
      */
     private List<MetricType> getDashboardMetricsFallback() {
         Logger.warn(this, "Falling back to Instance-based discovery");
+        final ProfileType activeProfile = config.getActiveProfile();
         final List<MetricType> dashboardMetrics = new ArrayList<>();
         
         for (MetricType metric : allMetrics) {
             final Class<?> actualClass = getBeanClass(metric);
             if (actualClass.isAnnotationPresent(DashboardMetric.class)) {
-                dashboardMetrics.add(metric);
+                // Validate: All metrics must have @MetricsProfile annotation
+                if (!actualClass.isAnnotationPresent(MetricsProfile.class)) {
+                    Logger.error(this, String.format(
+                        "Dashboard metric %s has @DashboardMetric but missing required @MetricsProfile annotation. " +
+                        "This metric will be excluded from collection. " +
+                        "Please add @MetricsProfile annotation to the metric class.",
+                        actualClass.getName()));
+                }
+                
+                // Apply profile filter
+                if (ProfileFilter.matches(metric, activeProfile)) {
+                    dashboardMetrics.add(metric);
+                }
             }
         }
         
@@ -175,7 +213,13 @@ public class DashboardMetricsProvider {
                 .orElse(null);
     }
     
-    private String getCategory(final MetricType metric) {
+    /**
+     * Gets the category for a metric from its @DashboardMetric annotation.
+     * 
+     * @param metric the metric instance
+     * @return the category name, or null if not specified
+     */
+    public String getCategory(final MetricType metric) {
         final Class<?> metricClass = getBeanClass(metric);
         final DashboardMetric annotation = metricClass.getAnnotation(DashboardMetric.class);
         if (annotation != null) {

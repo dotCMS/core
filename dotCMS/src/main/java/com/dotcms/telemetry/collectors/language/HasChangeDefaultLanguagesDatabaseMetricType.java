@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Checks if the default language was changed from English
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class HasChangeDefaultLanguagesDatabaseMetricType implements DBMetricType {
     @Override
@@ -17,6 +20,11 @@ public class HasChangeDefaultLanguagesDatabaseMetricType implements DBMetricType
 
     @Override
     public String getDescription() {
+        return "Has default language been changed from English?";
+    }
+
+    @Override
+    public String getDisplayLabel() {
         return "Has default language been changed from English?";
     }
 

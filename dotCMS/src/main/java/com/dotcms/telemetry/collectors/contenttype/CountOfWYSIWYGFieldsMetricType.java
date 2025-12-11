@@ -2,7 +2,10 @@ package com.dotcms.telemetry.collectors.contenttype;
 
 import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountOfWYSIWYGFieldsMetricType extends ContentTypeFieldsMetricType {
     boolean filterCondition(Map<String, Object> map) {
@@ -17,5 +20,10 @@ public class CountOfWYSIWYGFieldsMetricType extends ContentTypeFieldsMetricType 
     @Override
     public String getDescription() {
         return "Count the number of WYSIWYG fields";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "WYSIWYG Fields";
     }
 }

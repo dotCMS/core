@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Count Variants in All Scheduled Experiments Metric Type
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountVariantsInAllScheduledExperimentsMetricType implements DBMetricType {
 
@@ -21,6 +24,11 @@ public class CountVariantsInAllScheduledExperimentsMetricType implements DBMetri
     @Override
     public String getDescription() {
         return "Count of pages with scheduled experiments";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Pages with scheduled experiments";
     }
 
     @Override

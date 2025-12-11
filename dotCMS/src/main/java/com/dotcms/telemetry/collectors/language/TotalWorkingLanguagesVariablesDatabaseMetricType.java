@@ -5,10 +5,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collect the count of Language Variable that does not have Live Version.
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalWorkingLanguagesVariablesDatabaseMetricType implements DBMetricType {
     @Override
@@ -19,6 +22,11 @@ public class TotalWorkingLanguagesVariablesDatabaseMetricType implements DBMetri
     @Override
     public String getDescription() {
         return "Count of Working Language Variables";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Working Language Variables";
     }
 
     @Override

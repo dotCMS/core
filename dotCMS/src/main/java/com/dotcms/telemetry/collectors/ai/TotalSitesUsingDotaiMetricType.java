@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalSitesUsingDotaiMetricType implements MetricType {
 
@@ -30,6 +33,11 @@ public class TotalSitesUsingDotaiMetricType implements MetricType {
     @Override
     public String getDescription() {
         return "Total number of Sites using dotAI";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Sites using dotAI";
     }
 
     @Override

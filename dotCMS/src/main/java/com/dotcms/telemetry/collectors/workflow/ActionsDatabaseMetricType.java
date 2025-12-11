@@ -2,6 +2,8 @@ package com.dotcms.telemetry.collectors.workflow;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -9,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Collect the count of Workflow Actions
  */
 @ApplicationScoped
+@MetricsProfile(ProfileType.FULL)
 public class ActionsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {
@@ -18,6 +21,11 @@ public class ActionsDatabaseMetricType implements DBMetricType {
     @Override
     public String getDescription() {
         return "Count of workflow actions in all schemes";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Workflow actions in all schemes";
     }
 
     @Override

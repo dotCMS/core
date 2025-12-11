@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the total all templates used in LIVE pages
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalTemplatesInLivePagesDatabaseMetricType implements DBMetricType {
     @Override
@@ -18,6 +21,11 @@ public class TotalTemplatesInLivePagesDatabaseMetricType implements DBMetricType
     @Override
     public String getDescription() {
         return "Count of all templates used in LIVE pages";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "All templates used in LIVE pages";
     }
 
     @Override

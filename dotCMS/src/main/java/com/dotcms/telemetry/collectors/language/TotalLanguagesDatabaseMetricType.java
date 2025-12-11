@@ -3,6 +3,8 @@ package com.dotcms.telemetry.collectors.language;
 import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -10,6 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Collects the total count of languages
  */
 @ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})
 @DashboardMetric(category = "system", priority = 1)
 public class TotalLanguagesDatabaseMetricType implements DBMetricType {
     @Override
@@ -20,6 +23,11 @@ public class TotalLanguagesDatabaseMetricType implements DBMetricType {
     @Override
     public String getDescription() {
         return "Count of configured dotCMS Languages";
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "Languages";
     }
 
     @Override
