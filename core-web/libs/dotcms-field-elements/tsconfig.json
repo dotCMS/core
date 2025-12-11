@@ -12,7 +12,10 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "jsx": "react",
-        "jsxFactory": "h"
+        "jsxFactory": "h",
+        "types": ["node"],
+        "skipLibCheck": true
     },
-    "include": ["src"]
+    "exclude": ["**/*.spec.ts", "**/*.spec.tsx", "**/*.e2e.ts", "**/*.e2e.tsx"],
+    "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "stencil-types.d.ts"]
 }

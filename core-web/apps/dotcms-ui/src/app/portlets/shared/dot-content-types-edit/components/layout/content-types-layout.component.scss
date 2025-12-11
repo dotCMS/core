@@ -5,7 +5,9 @@
 @use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
 @use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
-$top-height: ($toolbar-height + theme-variables.$tabview-nav-height + $dot-secondary-toolbar-main-height);
+$top-height: (
+    $toolbar-height + theme-variables.$tabview-nav-height + $dot-secondary-toolbar-main-height
+);
 
 :host {
     ::ng-deep {

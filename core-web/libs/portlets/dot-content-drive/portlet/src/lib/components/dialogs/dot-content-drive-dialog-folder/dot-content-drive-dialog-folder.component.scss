@@ -22,7 +22,8 @@
             max-height: 0;
             opacity: 0;
             display: none;
-            transition: max-height common.$content-drive-animation-speed common.$content-drive-animation-ease;
+            transition: max-height common.$content-drive-animation-speed
+                common.$content-drive-animation-ease;
             padding: 0 spacing.$spacing-4;
         }
 

@@ -71,7 +71,7 @@ p-autocomplete.p-inputwrapper-focus {
     // Disabled state styles
     &.p-disabled,
     &:disabled {
-        @extend #form-field-disabled;
+        @extend #form-field-disabled !optional;
         cursor: not-allowed;
 
         .p-autocomplete-input.p-component,

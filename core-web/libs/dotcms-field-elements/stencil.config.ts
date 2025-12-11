@@ -18,19 +18,6 @@ export const config: Config = {
             type: 'www',
             dir: '../../dist/libs/dotcms-field-elements/www',
             serviceWorker: null // disable service workers
-        },
-        {
-            type: 'dist',
-            esmLoaderPath: '../loader',
-            dir: '../../dist/libs/dotcms-field-elements/dist'
-        },
-        {
-            type: 'docs-readme'
-        },
-        {
-            type: 'www',
-            dir: '../../dist/libs/dotcms-field-elements/www',
-            serviceWorker: null
         }
     ],
 

@@ -162,6 +162,7 @@
         "@babel/plugin-proposal-private-methods": "^7.18.6",
         "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
         "@babel/preset-react": "^7.14.5",
+        "@babel/runtime": "^7.28.4",
         "@compodoc/compodoc": "^1.1.24",
         "@faker-js/faker": "8.4.1",
         "@happy-dom/jest-environment": "^15.7.4",
@@ -181,12 +182,12 @@
         "@nx/vite": "20.5.1",
         "@nx/web": "20.5.1",
         "@nx/workspace": "20.5.1",
-        "@nxext/stencil": "20.1.0",
+        "@nxext/stencil": "21.0.0",
         "@playwright/test": "^1.36.0",
         "@rollup/plugin-url": "^8.0.2",
         "@schematics/angular": "21.0.2",
-        "@stencil/core": "^2.22.2",
-        "@stencil/sass": "^2.0.3",
+        "@stencil/core": "^4.39.0",
+        "@stencil/sass": "^3.2.3",
         "@storybook/addon-docs": "8.6.9",
         "@storybook/addon-essentials": "8.6.9",
         "@storybook/angular": "8.6.9",
@@ -211,6 +212,7 @@
         "@types/googlemaps": "3.40.3",
         "@types/jest": "^29.5.14",
         "@types/md5": "^2.3.5",
+        "@types/minimatch": "^5.1.2",
         "@types/node": "^18.16.9",
         "@types/puppeteer": "^5.4.2",
         "@types/react": "18.3.1",
@@ -295,7 +297,11 @@
     "resolutions": {
         "http-cache-semantics": "^4.1.1",
         "pdfjs-dist": "^4.2.67",
-        "stylus": "github:stylus/stylus#0.59.0"
+        "stylus": "github:stylus/stylus#0.59.0",
+        "@babel/runtime": "^7.28.4"
+    },
+    "overrides": {
+        "@babel/runtime": "^7.28.4"
     },
     "nx": {
         "includedScripts": []
