@@ -1,10 +1,10 @@
 import { Component, computed, Input } from '@angular/core';
 import { BlockEditorNode } from '@dotcms/types';
 
-import { Activity } from '../../../../../types/contentlet.model';
+import { Product } from '../../../../../types/contentlet.model';
 
 @Component({
-  selector: 'app-activity',
+  selector: 'app-product',
   template: `
     <div class="w-full p-4 my-2 bg-white rounded-lg border border-slate-400">
         <h4 class="text-lg font-bold">{{ contentlet().title }}</h4>
@@ -13,10 +13,10 @@ import { Activity } from '../../../../../types/contentlet.model';
   `,
   standalone: true,
 })
-export class ActivityComponent {
+export class ProductComponent {
   @Input() node!: BlockEditorNode;
 
   contentlet = computed(() => {
-    return this.node.attrs?.['data'] as Activity;
+    return this.node.attrs?.['data'] as Product;
   });
 }

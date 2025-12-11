@@ -1,22 +1,23 @@
 import { Component, computed, Input } from '@angular/core';
 import { BlockEditorNode } from '@dotcms/types';
 
-import { Activity } from '../../../../../types/contentlet.model';
+import { Destination } from '../../../../../types/contentlet.model';
 
 @Component({
-  selector: 'app-activity',
-  template: `
+    selector: 'app-destination',
+    standalone: true,
+    template: `
     <div class="w-full p-4 my-2 bg-white rounded-lg border border-slate-400">
         <h4 class="text-lg font-bold">{{ contentlet().title }}</h4>
         <span class="text-sm text-slate-500">{{ contentlet().contentType }}</span>
     </div>
   `,
-  standalone: true,
 })
-export class ActivityComponent {
-  @Input() node!: BlockEditorNode;
+export class DestinationComponent {
+    @Input() node!: BlockEditorNode;
 
-  contentlet = computed(() => {
-    return this.node.attrs?.['data'] as Activity;
-  });
+    contentlet = computed(() => {
+        return this.node.attrs?.['data'] as Destination;
+    });
 }
+

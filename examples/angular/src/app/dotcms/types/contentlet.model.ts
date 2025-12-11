@@ -58,7 +58,7 @@ export interface Destination extends Contentlet {
   modDate: string;
   url: string;
   shortDescription?: string;
-  activities?: string[];
+  activities?: Activity[];
   selectValue?: string;
 }
 
