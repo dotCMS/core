@@ -6,6 +6,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
     Container,
@@ -19,7 +20,7 @@ import { Orientation } from '../../models';
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
-    styleSchemas: StyleSchema[];
+    styleSchemas: StyleEditorFormSchema[];
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
     activeContentlet?: ContentletPayload;
@@ -110,11 +111,6 @@ export interface UVEToolbarProps {
 export interface PersonaSelectorProps {
     pageId: string;
     value: DotCMSViewAsPersona;
-}
-
-export interface StyleSchema {
-    contentType: string;
-    [key: string]: unknown; // I need to Sync with Kevin's PR to add the specific type
 }
 
 export enum UVE_PALETTE_TABS {

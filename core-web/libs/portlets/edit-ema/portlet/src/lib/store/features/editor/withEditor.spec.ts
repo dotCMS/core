@@ -270,7 +270,7 @@ describe('withEditor', () => {
             it('should return matching schema when contentType matches', () => {
                 const mockSchema = {
                     contentType: 'testContentType',
-                    styles: { color: 'red' }
+                    sections: []
                 };
 
                 patchState(store, {
@@ -287,9 +287,9 @@ describe('withEditor', () => {
             });
 
             it('should return correct schema when multiple schemas exist', () => {
-                const schema1 = { contentType: 'type1', styles: {} };
-                const schema2 = { contentType: 'type2', styles: {} };
-                const schema3 = { contentType: 'type3', styles: {} };
+                const schema1 = { contentType: 'type1', sections: [] };
+                const schema2 = { contentType: 'type2', sections: [] };
+                const schema3 = { contentType: 'type3', sections: [] };
 
                 patchState(store, {
                     activeContentlet: {
@@ -307,7 +307,7 @@ describe('withEditor', () => {
             it('should return undefined when contentType does not match any schema', () => {
                 const mockSchema = {
                     contentType: 'differentType',
-                    styles: {}
+                    sections: []
                 };
 
                 patchState(store, {
