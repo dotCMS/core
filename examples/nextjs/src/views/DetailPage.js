@@ -77,23 +77,34 @@ export function DetailPage({ pageContent }) {
 }
 
 const customRenderers = {
-    Activity: (props) => {
-        const { title, description } = props.attrs?.data || {};
+    Destination: (props) => {
+        const { title, shortDescription, activities } = props.node.attrs?.data || {};
 
         return (
-            <div>
-                <h1>{title}</h1>
-                <p>{description}</p>
+            <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="line-clamp-2">{shortDescription}</p>
+                <h3 className="text-lg font-semibold mb-4">Activities</h3>
+                <ul>
+                    {activities.map((activity) => (
+                        <li key={activity.identifier}>{activity.title}</li>
+                    ))}
+                </ul>
             </div>
         );
     },
     Product: (props) => {
-        const { title, description } = props.attrs?.data || {};
+        const { title, description } = props.node.attrs?.data || {};
 
         return (
-            <div>
-                <h1>{title}</h1>
-                <div dangerouslySetInnerHTML={{ __html: description }} />
+            <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
+                <h2 className="mb-3 text-xl font-bold text-slate-800 line-clamp-2">
+                    {title}
+                </h2>
+                <div
+                    className="text-sm text-slate-600 line-clamp-4"
+                    dangerouslySetInnerHTML={{ __html: description }}
+                />
             </div>
         );
     },
