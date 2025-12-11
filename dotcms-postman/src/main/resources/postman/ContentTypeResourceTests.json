@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "cfd7ce55-36a7-42dc-91e2-26439ca6abd8",
+		"_postman_id": "30d46914-6f91-4571-8d15-66db98193e91",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -15365,6 +15365,163 @@
 											]
 										},
 										"description": "Attempts to retrieves the rendered output for a specific Custom Field in a dotCMS Content Type for a given contentlet. However, the required Field Variable for that has NOT been set, so no rendered field should be returned."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Is New Edit Mode Enabled?",
+					"item": [
+						{
+							"name": "Generate Test Data",
+							"item": [
+								{
+									"name": "Create Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Content Type with Custom Field was created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    ",
+													"    pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My CT With New Edit Mode\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"My CT With New Edit Mode {{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"metadata\": {\n        \"CONTENT_EDITOR2_ENABLED\": true\n    },\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"My Custom Field\",\n            \"fixed\": true,\n            \"fieldVariables\": [\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                    \"key\": \"newRenderMode\",\n                    \"value\": \"component\"\n                }\n            ],\n            \"values\": \"## This is some sample code\\r\\n<p>New Edit Mode Enabled? $structures.isNewEditModeEnabled()</p>\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a new dotCMS Content Type with a custom field via the Content Type API. This request demonstrates creating a Simple Content Type that includes a standard Title field and a Custom Field with inline Velocity code in the values property.\n\nNotice how the Field Variable named 'newRenderMode' has been set in order to render the Velocity code in the Custom Field.\n\nAdditionally, the metadata attribute has a value that indicates that this Content Type is going to be displayed in the UI using the new Edit Content Mode."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Test Rendered Data Copy",
+							"item": [
+								{
+									"name": "Get Rendered Custom Field",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that the ViewTool in the Custom Field is rendering correctly\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.not.equal(undefined, \"The 'rendered' attribute is missing\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.equal(\"<p>New Edit Mode Enabled? true</p>\", \"The output code is NOT the expected one\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/render/id/{{contentTypeID}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"render",
+												"id",
+												"{{contentTypeID}}"
+											]
+										},
+										"description": "## Overview\n\nReturns the Content Type definition where the Custom Field is being rendered by dotCMS. That is, its Velocity code is parsed and added as a new attribute in the JSON response."
 									},
 									"response": []
 								}
