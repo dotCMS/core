@@ -173,6 +173,14 @@ public class HostAssetsJobImpl extends ParentProxy{
 			Config.getIntProperty("SITE_COPY_BATCH_PAUSE_MS", 100));
 
 	/**
+	 * Configuration property to control the maximum initial capacity for the HTML pages collection
+	 * during site copy. This prevents excessive memory allocation for sites with very large numbers
+	 * of contentlets but relatively few HTML pages. Default: 100000
+	 */
+	private static final Lazy<Integer> HTML_PAGES_MAX_INITIAL_CAPACITY = Lazy.of(() ->
+			Config.getIntProperty("SITE_COPY_HTML_PAGES_MAX_CAPACITY", 100000));
+
+	/**
 	 * Creates an instance of the Site Copy Job.
 	 *
 	 * @param siteCopyStatus Status object used to keep track of the Site Copy process.
@@ -684,7 +692,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 							sourceContentlets.size(), batchSize, relationshipBatchSize, batchPauseMs));
 
 					// Strategy: Process simple content immediately, collect HTML pages for later processing
-					final List<String> htmlPageInodes = new ArrayList<>();
+					final ArrayList<String> htmlPageInodes = new ArrayList<>(
+                            Math.min(HTML_PAGES_MAX_INITIAL_CAPACITY.get(), (int) sourceContentlets.size()));
 					int simpleContentCount = 0;
 
                     Logger.info(this, "-> Processing contentlets (simple content first, then HTML pages)");
@@ -728,6 +737,9 @@ public class HostAssetsJobImpl extends ParentProxy{
                         }
                     }
                     Logger.info(this, String.format("-> %d simple contents have been copied", simpleContentCount));
+
+                    // Trim the ArrayList to actual size to free unused capacity
+                    htmlPageInodes.trimToSize();
 
                     // Now process HTML Pages that were collected during first pass
                     // Processing them second makes it easier to associate page contents when updating the multi-tree
