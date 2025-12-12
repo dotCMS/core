@@ -18,5 +18,20 @@
             height: '300px'
         }
     }"
-    filterBy="name"
-    class="w-full" />
+    class="w-full">
+    <ng-template pTemplate="filter" let-options>
+        <p-iconfield>
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="filterValue() || ''"
+                [placeholder]="'Search content types...'"
+                (input)="onFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+            <p-inputicon class="pi pi-search" />
+        </p-iconfield>
+    </ng-template>
+</p-select>

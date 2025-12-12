@@ -14,6 +14,9 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule } from 'primeng/select';
 
 import { DotContentTypeService } from '@dotcms/data-access';
@@ -25,7 +28,14 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
 
 @Component({
     selector: 'dot-content-type',
-    imports: [CommonModule, FormsModule, SelectModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SelectModule,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule
+    ],
     templateUrl: './dot-content-type.component.html',
     styleUrl: './dot-content-type.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,8 +66,10 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     contentTypes = signal<DotCMSContentType[]>([]);
     loading = signal<boolean>(false);
     totalRecords = signal<number>(0);
+    filterValue = signal<string>('');
     private readonly pageSize = 40;
     private loadedPages = new Set<number>();
+    private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     // ControlValueAccessor callback functions
     private onChangeCallback = (_value: DotCMSContentType | null) => {
@@ -111,6 +123,60 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         }
 
         this.loadContentTypesLazy(parsed, totalEntries);
+    }
+
+    /**
+     * Handles filter changes from the custom filter template
+     * Resets loaded data and loads the first page with the new filter
+     * Uses debouncing to avoid excessive API calls while typing
+     *
+     * @param filter The filter text value
+     */
+    onFilterChange(filter: string): void {
+        if (!filter || filter.trim() === '') {
+            this.resetFilter();
+            return;
+        }
+
+        if (this.filterDebounceTimeout) {
+            clearTimeout(this.filterDebounceTimeout);
+        }
+
+        this.filterValue.set(filter);
+
+        this.filterDebounceTimeout = setTimeout(() => {
+            this.loadedPages.clear();
+            this.contentTypes.set([]);
+            this.totalRecords.set(0);
+
+            // Load first page with the new filter
+            this.loadContentTypesLazy(
+                { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
+                0
+            );
+
+            this.filterDebounceTimeout = null;
+        }, 300);
+    }
+
+    /**
+     * Resets the filter and reloads all content types
+     */
+    resetFilter(): void {
+        if (this.filterDebounceTimeout) {
+            clearTimeout(this.filterDebounceTimeout);
+            this.filterDebounceTimeout = null;
+        }
+
+        this.filterValue.set('');
+        this.loadedPages.clear();
+        this.contentTypes.set([]);
+        this.totalRecords.set(0);
+
+        this.loadContentTypesLazy(
+            { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
+            0
+        );
     }
 
     // ControlValueAccessor implementation
@@ -234,10 +300,12 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         }
 
         this.loading.set(true);
+        const filter = this.filterValue().trim();
         this.contentTypeService
             .getContentTypesWithPagination({
                 page: pageToLoad,
-                per_page: this.pageSize
+                per_page: this.pageSize,
+                ...(filter ? { filter } : {})
             })
             .subscribe({
                 next: ({ contentTypes, pagination }) => {
