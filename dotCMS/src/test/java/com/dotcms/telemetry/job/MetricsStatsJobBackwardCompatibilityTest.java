@@ -113,13 +113,12 @@ public class MetricsStatsJobBackwardCompatibilityTest {
         final Collection<MetricValue> notNumericStats = new java.util.ArrayList<>();
         
         // Create mock metrics
+        // Use lenient stubbing since some tests only check sizes, not metric names
         for (int i = 0; i < metricCount; i++) {
             final MetricValue mockMetric = mock(MetricValue.class);
             final com.dotcms.telemetry.Metric mockMetricMetadata = mock(com.dotcms.telemetry.Metric.class);
-            when(mockMetric.getMetric()).thenReturn(mockMetricMetadata);
-            when(mockMetricMetadata.getName()).thenReturn("METRIC_" + i);
-            when(mockMetric.isNumeric()).thenReturn(true);
-            when(mockMetric.getValue()).thenReturn(i);
+            lenient().when(mockMetric.getMetric()).thenReturn(mockMetricMetadata);
+            lenient().when(mockMetricMetadata.getName()).thenReturn("METRIC_" + i);
             stats.add(mockMetric);
         }
         
@@ -142,8 +141,6 @@ public class MetricsStatsJobBackwardCompatibilityTest {
             final com.dotcms.telemetry.Metric mockMetricMetadata = mock(com.dotcms.telemetry.Metric.class);
             when(mockMetric.getMetric()).thenReturn(mockMetricMetadata);
             when(mockMetricMetadata.getName()).thenReturn(metricName);
-            when(mockMetric.isNumeric()).thenReturn(true);
-            when(mockMetric.getValue()).thenReturn(1);
             stats.add(mockMetric);
         }
         
