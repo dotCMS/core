@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import type { BlockEditorNode } from "@dotcms/types";
 import { enableBlockEditorInline } from "@dotcms/uve";
 import {
     DotCMSBlockEditorRenderer,
@@ -68,22 +67,35 @@ export function DetailPage({ pageResponse }: { pageResponse: DotCMSCustomDetailP
 const customRenderers = {
     Activity: (props: CustomRendererProps) => {
         const { node } = props;
-        const { title, description } = node.attrs?.data || {};
+        const { title, description, contentType } = node.attrs?.data || {};
 
         return (
-            <div>
-                <h1>{title}</h1>
-                <p>{description}</p>
+            <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="line-clamp-2">{description}</p>
+                <p className="text-sm text-cyan-700">{contentType}</p>
             </div>
         );
     },
     Product: (props: CustomRendererProps) => {
-        const { title, description } = props.node.attrs?.data || {};
+        const { title, description, contentType } = props.node.attrs?.data || {};
 
         return (
-            <div>
-                <h1>{title}</h1>
-                <div dangerouslySetInnerHTML={{ __html: description }} />
+            <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: description }} />
+                <p className="text-sm text-blue-500">{contentType}</p>
+            </div>
+        );
+    },
+    Destination: (props: CustomRendererProps) => {
+        const { title, shortDescription, contentType } = props.node.attrs?.data || {};
+
+        return (
+            <div className="p-6 mb-4 rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="line-clamp-2">{shortDescription}</p>
+                <p className="text-sm text-indigo-700">{contentType}</p>
             </div>
         );
     }
