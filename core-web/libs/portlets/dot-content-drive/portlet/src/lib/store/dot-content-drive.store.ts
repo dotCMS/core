@@ -133,7 +133,10 @@ export const DotContentDriveStore = signalStore(
             removeFilter(filter: string) {
                 const { [filter]: removedFilter, ...restFilters } = store.filters();
                 if (removedFilter) {
-                    patchState(store, { filters: restFilters });
+                    patchState(store, {
+                        filters: restFilters,
+                        pagination: { ...store.pagination(), offset: 0 }
+                    });
                 }
             },
             setPagination(pagination: DotContentDrivePagination) {
@@ -162,7 +165,6 @@ export const DotContentDriveStore = signalStore(
                 }
 
                 // Since we are using scored search for the title we need to sort by score desc
-
                 dotContentDriveService
                     .search(request)
                     .pipe(

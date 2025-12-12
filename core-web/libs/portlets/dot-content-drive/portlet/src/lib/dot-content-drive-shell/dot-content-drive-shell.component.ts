@@ -96,6 +96,7 @@ export class DotContentDriveShellComponent {
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+    readonly $offset = this.#store.pagination.offset;
     readonly $contextMenuData = this.#store.contextMenu;
 
     readonly $dialog = this.#store.dialog;

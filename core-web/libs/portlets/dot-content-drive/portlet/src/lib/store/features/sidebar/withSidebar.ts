@@ -105,7 +105,10 @@ export function withSidebar() {
              * Sets the selected node
              */
             setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
-                patchState(store, { selectedNode });
+                patchState(store, {
+                    selectedNode,
+                    pagination: { ...store.pagination(), offset: 0 }
+                });
             },
 
             /**
