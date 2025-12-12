@@ -59,21 +59,20 @@ export function withSave() {
                                               );
 
                                     return pageRequest.pipe(
-                                        tapResponse(
-                                            (pageAPIResponse: DotCMSPageAsset) => {
+                                        tapResponse({
+                                            next: (pageAPIResponse: DotCMSPageAsset) => {
                                                 patchState(store, {
                                                     status: UVE_STATUS.LOADED,
                                                     pageAPIResponse: pageAPIResponse
                                                 });
                                             },
-                                            (e) => {
+                                            error: (e) => {
                                                 console.error(e);
-
                                                 patchState(store, {
                                                     status: UVE_STATUS.ERROR
                                                 });
                                             }
-                                        )
+                                        })
                                     );
                                 }),
                                 catchError((e) => {
