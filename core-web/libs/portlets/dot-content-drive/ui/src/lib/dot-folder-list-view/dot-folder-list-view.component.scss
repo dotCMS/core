@@ -64,6 +64,12 @@
                             cursor: grabbing;
                         }
 
+                        &.is-drag-over:not(.p-highlight) {
+                            color: $text-color-hover;
+                            background-color: $color-palette-primary-100;
+                            transition: background-color ease-in $basic-speed;
+                        }
+
                         &:focus:not(.p-highlight) {
                             background-color: colors.$white;
                         }
@@ -97,6 +103,20 @@
     align-items: center;
     gap: spacing.$spacing-3;
     width: 100%;
+
+    .container-thumbnail {
+        background-color: $color-palette-primary-100;
+        // min-width: 72px;
+
+        .folder-icon {
+            font-size: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+    }
 
     .truncate-text {
         max-width: 100%;

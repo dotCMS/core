@@ -90,6 +90,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     requestColumnDelete() {
+        // TODO: The 'emit' function requires a mandatory void argument
         this.deleteColumn.emit();
     }
 

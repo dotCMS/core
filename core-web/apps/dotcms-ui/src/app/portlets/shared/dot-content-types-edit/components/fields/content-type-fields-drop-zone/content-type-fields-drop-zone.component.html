@@ -10,19 +10,19 @@
                     (editField)="editFieldHandler($event)"
                     (removeField)="removeField($event)"
                     (removeRow)="removeFieldRow($event, i)"
-                    [fieldRow]="row"></dot-content-type-fields-row>
+                    [fieldRow]="row" />
             } @else {
                 <dot-content-type-fields-tab
                     (editTab)="saveFieldsHandler($event)"
                     (removeTab)="removeTab($event, i)"
                     [fieldTab]="row"
-                    class="row-header__drag"></dot-content-type-fields-tab>
+                    class="row-header__drag" />
             }
         }
-        <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
+        <dot-add-rows (selectColums)="addRow($event)" />
     </div>
 
-    <dot-loading-indicator [fullscreen]="true"></dot-loading-indicator>
+    <dot-loading-indicator [fullscreen]="true" />
 </div>
 
 <p-dialog
@@ -63,7 +63,7 @@
                     (valid)="setDialogOkButtonState($event)"
                     [formFieldData]="currentField"
                     [contentType]="contentType"
-                    #fieldPropertiesForm></dot-content-type-fields-properties-form>
+                    #fieldPropertiesForm />
                 @if (
                     !!currentField?.id &&
                     currentFieldType?.clazz ===
@@ -71,7 +71,7 @@
                 ) {
                     <dot-convert-wysiwyg-to-block
                         (convert)="convertWysiwygToBlock($event)"
-                        [currentFieldType]="currentFieldType"></dot-convert-wysiwyg-to-block>
+                        [currentFieldType]="currentFieldType" />
                 }
             </p-tabpanel>
             @if (!!currentField?.id && isFieldWithSettings) {

@@ -24,7 +24,6 @@
         z-index: 1;
         visibility: visible;
     }
-
     ::ng-deep {
         .p-button-raised {
             background-color: colors.$white;
@@ -55,6 +54,42 @@
     position: absolute;
     pointer-events: none;
     outline: solid 2px colors.$color-palette-primary-500;
+    background-color: transparent;
+    container-type: inline-size;
+
+    .add-button-top,
+    .add-button-bottom {
+        position: absolute;
+        left: 50%;
+        z-index: 1;
+        pointer-events: all;
+    }
+
+    .add-button-top {
+        top: 0px;
+        transform: translate(-50%, -50%);
+    }
+
+    .add-button-bottom {
+        bottom: 0px;
+        transform: translate(-50%, 50%);
+    }
+
+    .actions {
+        position: absolute;
+        right: spacing.$spacing-1;
+        top: 0px;
+        transform: translate(0, -50%);
+        pointer-events: all;
+        z-index: 1;
+    }
+
+    @container (max-width: 400px) {
+        .add-button-top {
+            left: 0;
+            transform: translate(0, -50%);
+        }
+    }
 }
 
 .actions {

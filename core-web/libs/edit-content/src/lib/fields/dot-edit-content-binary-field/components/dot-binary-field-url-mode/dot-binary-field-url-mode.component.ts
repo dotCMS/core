@@ -115,6 +115,7 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
      */
     cancelUpload(): void {
         this.abortController?.abort();
+        // TODO: The 'emit' function requires a mandatory void argument
         this.cancel.emit();
     }
 

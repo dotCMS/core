@@ -9,6 +9,7 @@ import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
 
+import { SYSTEM_HOST } from '../../../shared/constants';
 import {
     DotContentDriveSortOrder,
     DotContentDriveState,
@@ -293,6 +294,43 @@ describe('withSidebar - null site scenarios', () => {
 
     const createService = createServiceFactory({
         service: nullSiteStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        folderService = spectator.inject(DotFolderService);
+    });
+
+    describe('loadFolders with null site', () => {
+        it('should not load folders when currentSite is null', () => {
+            store.loadFolders();
+
+            expect(folderService.getFolders).not.toHaveBeenCalled();
+        });
+    });
+});
+describe('withSidebar - system host scenarios', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+    let folderService: jest.Mocked<DotFolderService>;
+
+    const systemHostStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            currentSite: SYSTEM_HOST
+        }),
+
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: systemHostStoreMock,
         providers: [
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of(mockFolders))
