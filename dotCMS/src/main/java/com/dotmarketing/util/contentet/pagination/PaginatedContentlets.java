@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
 public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable {
 
     /**
-     * Configuration property to control when to use Scroll API instead of offset pagination.
+     * Default configuration property to control when to use Scroll API instead of offset pagination.
      * If the total result count exceeds this threshold, Scroll API will be used automatically.
      * Default: 10000
      */
-    private static final Lazy<Integer> SCROLL_API_THRESHOLD = Lazy.of(() ->
+    private static final Lazy<Integer> DEFAULT_SCROLL_API_THRESHOLD = Lazy.of(() ->
             Config.getIntProperty("ES_SCROLL_API_THRESHOLD", 10000));
 
     private static final int NOT_LOAD = -1;
@@ -55,6 +55,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
     private final ContentletAPI contentletAPI;
     private final String luceneQuery;
     private final boolean respectFrontendRoles;
+    private final int scrollApiThreshold;
 
     private final String SORT_BY = "title asc";
     private final int perPage;
@@ -74,14 +75,16 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
      * @param respectFrontendRoles true if you want to respect Front end roles
      * @param perPage Page size limit
      * @param contentletAPI ContentletAPI instance
+     * @param scrollApiThreshold Threshold for using Scroll API (use 0 or negative for default)
      */
     PaginatedContentlets(final String luceneQuery, final User user, final boolean respectFrontendRoles,
-            final int perPage, final ContentletAPI contentletAPI) {
+            final int perPage, final ContentletAPI contentletAPI, final int scrollApiThreshold) {
         this.user = user;
         this.luceneQuery = luceneQuery;
         this.contentletAPI = contentletAPI;
         this.respectFrontendRoles = respectFrontendRoles;
         this.perPage = perPage;
+        this.scrollApiThreshold = scrollApiThreshold > 0 ? scrollApiThreshold : DEFAULT_SCROLL_API_THRESHOLD.get();
 
         try {
             currentPageContentletInodes = loadFirstPage();
@@ -123,8 +126,13 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
         }
     }
 
+    PaginatedContentlets(final String luceneQuery, final User user, final boolean respectFrontendRoles,
+            final int perPage, final ContentletAPI contentletAPI) {
+        this(luceneQuery, user, respectFrontendRoles, perPage, contentletAPI, -1);
+    }
+
     PaginatedContentlets(final String luceneQuery, final User user, final boolean respectFrontendRoles, final int perPage) {
-        this(luceneQuery, user, respectFrontendRoles, perPage, APILocator.getContentletAPI());
+        this(luceneQuery, user, respectFrontendRoles, perPage, APILocator.getContentletAPI(), -1);
     }
 
     @Override
@@ -141,13 +149,13 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
         totalHits = this.contentletAPI.indexCount(this.luceneQuery, this.user, this.respectFrontendRoles);
 
         Logger.debug(this.getClass(),
-            () -> String.format("Query result count: %d (threshold: %d)", totalHits, SCROLL_API_THRESHOLD.get()));
+            () -> String.format("Query result count: %d (threshold: %d)", totalHits, this.scrollApiThreshold));
 
         // Decide whether to use Scroll API based on total hits
-        if (totalHits > SCROLL_API_THRESHOLD.get()) {
+        if (totalHits > this.scrollApiThreshold) {
             Logger.debug(this.getClass(),
                 String.format("Result set size (%d) exceeds threshold (%d). Using Scroll API for query: %s",
-                    totalHits, SCROLL_API_THRESHOLD.get(), luceneQuery));
+                    totalHits, this.scrollApiThreshold, luceneQuery));
             useScrollApi = true;
 
             // CRITICAL: Use ContentletAPI to create scroll query with proper permissions applied
@@ -160,7 +168,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
         } else {
             Logger.debug(this.getClass(),
                 () -> String.format("Using standard pagination for %d results (threshold: %d)",
-                    totalHits, SCROLL_API_THRESHOLD.get()));
+                    totalHits, this.scrollApiThreshold));
             // Load first page using standard pagination
             return loadNextPageWithOffset(0);
         }
