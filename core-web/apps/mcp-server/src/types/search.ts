@@ -74,7 +74,7 @@ export const EntitySchema = z.object({
 export const SearchResponseSchema = z.object({
     entity: EntitySchema,
     errors: z.array(z.unknown()),
-    i18nMessagesMap: z.record(z.unknown()),
+    i18nMessagesMap: z.record(z.string(), z.unknown()),
     messages: z.array(z.unknown()),
     pagination: z.unknown().nullable(),
     permissions: z.array(z.unknown())

@@ -167,7 +167,7 @@ export class DotUploadAssetComponent implements OnDestroy {
      */
     private setFile(file: File, buffer: string | ArrayBuffer): void {
         // Convert the buffer to a blob:
-        const videoBlob = new Blob([new Uint8Array(buffer as ArrayBufferLike)], {
+        const videoBlob = new Blob([new Uint8Array(buffer as ArrayBuffer)], {
             type: 'video/mp4'
         });
 

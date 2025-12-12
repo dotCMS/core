@@ -87,13 +87,11 @@ const KnownFieldClazzEnum = z.enum([
 ]);
 
 // Flexible field clazz that accepts known types or any string matching the dotCMS field pattern
-const FieldClazzEnum = z.union([
+export const FieldClazzEnum = z.union([
     KnownFieldClazzEnum,
-    z
-        .string()
-        .refine((val) => /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/.test(val), {
-            message: 'Field clazz must be a valid dotCMS field type'
-        })
+    z.string().regex(/^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/, {
+        message: 'Field clazz must be a valid dotCMS field type'
+    })
 ]);
 
 const DividerSchema = z.object({
@@ -103,7 +101,7 @@ const DividerSchema = z.object({
     fieldContentTypeProperties: z.array(z.any()).optional(),
     fieldType: z.string(),
     fieldTypeLabel: z.string(),
-    fieldVariables: z.array(z.record(z.any())),
+    fieldVariables: z.array(z.record(z.string(), z.any())),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     iDate: z.number(),
@@ -127,7 +125,7 @@ const ColumnDividerSchema = z.object({
     fieldContentTypeProperties: z.array(z.any()).optional(),
     fieldType: z.string(),
     fieldTypeLabel: z.string(),
-    fieldVariables: z.array(z.record(z.any())),
+    fieldVariables: z.array(z.object({ name: z.string(), value: z.any() })),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     iDate: z.number(),
@@ -150,7 +148,7 @@ const ContentTypeFieldSchema = z.object({
     dataType: z.string(),
     fieldType: z.string(),
     fieldTypeLabel: z.string(),
-    fieldVariables: z.array(z.record(z.any())),
+    fieldVariables: z.array(z.record(z.string(), z.any())),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     hint: z.string().optional(),
@@ -195,7 +193,7 @@ export const ContentTypeSchema = z.object({
     icon: z.string().optional(),
     id: z.string(),
     layout: z.array(LayoutSchema),
-    metadata: z.record(z.any()),
+    metadata: z.record(z.string(), z.any()),
     modDate: z.number(),
     multilingualable: z.boolean(),
     name: z.string(),
@@ -205,7 +203,7 @@ export const ContentTypeSchema = z.object({
     variable: z.string(),
     versionable: z.boolean(),
     workflows: z.array(WorkflowSchema).optional(),
-    systemActionMappings: z.union([z.record(z.any()), z.array(z.any())]).optional(),
+    systemActionMappings: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
     owner: z.string().optional(),
     nEntries: z.number().optional(),
     detailPage: z.string().optional(),

@@ -4,19 +4,20 @@
     "projectType": "library",
     "sourceRoot": "libs/edit-content/src",
     "prefix": "dotcms",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/edit-content/jest.config.ts",
-                "verbose": false
+                "verbose": false,
+                "tsConfig": "libs/edit-content/tsconfig.spec.json"
             }
         },
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"]
+    }
 }

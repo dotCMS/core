@@ -14,7 +14,7 @@ export const WorkflowActionResponseSchema = z.object({
         .catchall(z.any()),
     errors: z.array(z.string()),
     messages: z.array(z.string()),
-    i18nMessagesMap: z.record(z.string()),
+    i18nMessagesMap: z.record(z.string(), z.unknown()),
     // TODO: Add pagination schema
     pagination: z.any(),
     permissions: z.array(z.string())
@@ -62,7 +62,7 @@ export const WorkflowSchemeSchema = z.object({
 export const WorkflowSchemesResponseSchema = z.object({
     entity: z.array(WorkflowSchemeSchema),
     errors: z.array(z.string()),
-    i18nMessagesMap: z.record(z.string()),
+    i18nMessagesMap: z.record(z.string(), z.unknown()),
     messages: z.array(z.string()),
     pagination: z.any().nullable(),
     permissions: z.array(z.string())

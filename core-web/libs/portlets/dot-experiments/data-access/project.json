@@ -4,19 +4,20 @@
     "projectType": "library",
     "sourceRoot": "libs/portlets/dot-experiments/data-access/src",
     "prefix": "dotcms",
+    "tags": ["type:data-access", "scope:dotcms-ui", "portlet:experiments"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/portlets/dot-experiments/data-access/jest.config.ts",
-                "passWithNoTests": false
+                "passWithNoTests": false,
+                "tsConfig": "libs/portlets/dot-experiments/data-access/tsconfig.spec.json"
             }
         },
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": ["type:data-access", "scope:dotcms-ui", "portlet:experiments"]
+    }
 }

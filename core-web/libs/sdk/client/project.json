@@ -3,6 +3,7 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/client/src",
     "projectType": "library",
+    "tags": [],
     "targets": {
         "build": {
             "executor": "@nx/rollup:rollup",
@@ -13,7 +14,13 @@
                 "additionalEntryPoints": ["libs/sdk/client/src/internal.ts"],
                 "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/client",
-                "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
+                "assets": [
+                    {
+                        "input": "libs/sdk/client",
+                        "output": ".",
+                        "glob": "*.md"
+                    }
+                ],
                 "main": "libs/sdk/client/src/index.ts",
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json"
             }
@@ -67,6 +74,5 @@
                 }
             }
         }
-    },
-    "tags": []
+    }
 }
