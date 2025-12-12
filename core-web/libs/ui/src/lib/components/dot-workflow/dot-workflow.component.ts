@@ -38,7 +38,6 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
     ]
 })
 export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
-
     private contentTypeService = inject(DotContentTypeService);
 
     placeholder = input<string>('');
@@ -83,10 +82,35 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
         }
     }
 
+    /**
+     * Handles the event when the selected content type changes.
+     * - Updates the model value with the selected content type.
+     * - Calls the registered onTouched callback (for ControlValueAccessor interface).
+     * - Emits the onChange output event to notify consumers of the new value.
+     *
+     * @param contentType The selected content type, or null if cleared
+     */
     onContentTypeChange(contentType: DotCMSContentType | null): void {
         this.value.set(contentType);
         this.onTouchedCallback();
         this.onChange.emit(contentType);
+    }
+
+    /**
+     * Handles lazy loading of content types from PrimeNG Select
+     *
+     * @param event Lazy load event with first (offset) and last (last index)
+     */
+    onLazyLoad(event: SelectLazyLoadEvent): void {
+        const parsed = this.parseLazyLoadEvent(event);
+        const currentCount = this.contentTypes().length;
+        const totalEntries = this.totalRecords();
+
+        if (!this.shouldLoadMore(parsed.itemsNeeded, currentCount, totalEntries)) {
+            return;
+        }
+
+        this.loadContentTypesLazy(parsed, totalEntries);
     }
 
     // ControlValueAccessor implementation
@@ -98,6 +122,18 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
         if (value) {
             this.ensureContentTypeInList(value);
         }
+    }
+
+    registerOnChange(fn: (value: DotCMSContentType | null) => void): void {
+        this.onChangeCallback = fn;
+    }
+
+    registerOnTouched(fn: () => void): void {
+        this.onTouchedCallback = fn;
+    }
+
+    setDisabledState(isDisabled: boolean): void {
+        this.$isDisabled.set(isDisabled);
     }
 
     /**
@@ -115,18 +151,6 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
             updated.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             this.contentTypes.set(updated);
         }
-    }
-
-    registerOnChange(fn: (value: DotCMSContentType | null) => void): void {
-        this.onChangeCallback = fn;
-    }
-
-    registerOnTouched(fn: () => void): void {
-        this.onTouchedCallback = fn;
-    }
-
-    setDisabledState(isDisabled: boolean): void {
-        this.$isDisabled.set(isDisabled);
     }
 
     /**
@@ -157,7 +181,11 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
      * @param totalEntries Total number of entries available (0 if unknown)
      * @returns true if we need to load more, false otherwise
      */
-    private shouldLoadMore(itemsNeeded: number, currentCount: number, totalEntries: number): boolean {
+    private shouldLoadMore(
+        itemsNeeded: number,
+        currentCount: number,
+        totalEntries: number
+    ): boolean {
         // If we already have all items, no need to load
         if (totalEntries > 0 && currentCount >= totalEntries) {
             return false;
@@ -172,23 +200,6 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
     }
 
     /**
-     * Handles lazy loading of content types from PrimeNG Select
-     *
-     * @param event Lazy load event with first (offset) and last (last index)
-     */
-    onLazyLoad(event: SelectLazyLoadEvent): void {
-        const parsed = this.parseLazyLoadEvent(event);
-        const currentCount = this.contentTypes().length;
-        const totalEntries = this.totalRecords();
-
-        if (!this.shouldLoadMore(parsed.itemsNeeded, currentCount, totalEntries)) {
-            return;
-        }
-
-        this.loadContentTypesLazy(parsed, totalEntries);
-    }
-
-    /**
      * Loads content types with pagination support
      * Converts PrimeNG's offset-based lazy loading to page-based API calls
      *
@@ -197,10 +208,7 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
      * @param currentCount Current number of items loaded
      * @param totalEntries Total number of entries available (0 if unknown)
      */
-    private loadContentTypesLazy(
-        parsed: ParsedSelectLazyLoadEvent,
-        totalEntries: number
-    ): void {
+    private loadContentTypesLazy(parsed: ParsedSelectLazyLoadEvent, totalEntries: number): void {
         if (this.loading()) {
             return;
         }
@@ -242,7 +250,9 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
 
                     // Filter out duplicates - variable is unique, so just check variable
                     const existingVariables = new Set(currentContentTypes.map((ct) => ct.variable));
-                    const newContentTypes = contentTypes.filter((ct) => !existingVariables.has(ct.variable));
+                    const newContentTypes = contentTypes.filter(
+                        (ct) => !existingVariables.has(ct.variable)
+                    );
 
                     if (newContentTypes.length > 0) {
                         const merged = [...currentContentTypes, ...newContentTypes];
