@@ -40,7 +40,7 @@ export class DotStarterComponent implements OnInit {
     showCreatePageLink: boolean;
     showCreateTemplateLink: boolean;
 
-    // Test properties for dot-workflow component
+    // Test properties for dot-content-type component
     selectedContentType: DotCMSContentType | null = {
         baseType: 'CONTENT',
         clazz: DotCMSClazzes.SIMPLE_CONTENT_TYPE,

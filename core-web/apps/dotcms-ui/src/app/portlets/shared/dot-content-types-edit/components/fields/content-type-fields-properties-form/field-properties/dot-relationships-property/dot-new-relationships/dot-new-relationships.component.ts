@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe, DotWorkflowComponent } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe, DotContentTypeComponent } from '@dotcms/ui';
 
 import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
@@ -21,7 +21,7 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
     templateUrl: './dot-new-relationships.component.html',
     styleUrls: ['./dot-new-relationships.component.scss'],
     imports: [
-        DotWorkflowComponent,
+        DotContentTypeComponent,
         DotCardinalitySelectorComponent,
         FormsModule,
         DotMessagePipe,
@@ -53,7 +53,7 @@ export class DotNewRelationshipsComponent implements OnChanges {
     }
 
     /**
-     * Handle content type change from dot-workflow component
+     * Handle content type change from dot-content-type component
      *
      * @param contentType The selected content type
      * @memberof DotNewRelationshipsComponent

@@ -24,20 +24,20 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
 }
 
 @Component({
-    selector: 'dot-workflow',
+    selector: 'dot-content-type',
     imports: [CommonModule, FormsModule, SelectModule],
-    templateUrl: './dot-workflow.component.html',
-    styleUrl: './dot-workflow.component.scss',
+    templateUrl: './dot-content-type.component.html',
+    styleUrl: './dot-content-type.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotWorkflowComponent),
+            useExisting: forwardRef(() => DotContentTypeComponent),
             multi: true
         }
     ]
 })
-export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
+export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     private contentTypeService = inject(DotContentTypeService);
 
     placeholder = input<string>('');

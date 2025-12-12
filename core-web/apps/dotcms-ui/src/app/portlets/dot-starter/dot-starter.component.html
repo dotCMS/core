@@ -3,7 +3,7 @@
 
     <div style="margin-bottom: 2rem;">
         <h3>1. Enabled State</h3>
-        <dot-workflow
+        <dot-content-type
             [(ngModel)]="selectedContentType"
             [placeholder]="'Select a content type'"
             (onChange)="onContentTypeChange($event)"
@@ -13,7 +13,7 @@
 
     <!-- <div style="margin-bottom: 2rem;">
         <h3>2. Disabled State</h3>
-        <dot-workflow
+        <dot-content-type
             [(ngModel)]="selectedContentType"
             [disabled]="true"
             [placeholder]="'Disabled field'"
@@ -25,7 +25,7 @@
         <button (click)="isDisabled = !isDisabled" style="margin-bottom: 1rem;">
             {{ isDisabled ? 'Enable' : 'Disable' }} Field
         </button>
-        <dot-workflow
+        <dot-content-type
             [(ngModel)]="selectedContentType"
             [disabled]="isDisabled"
             [placeholder]="'Toggle disabled state'"
@@ -37,7 +37,7 @@
         <button (click)="isInitiallyDisabled = !isInitiallyDisabled" style="margin-bottom: 1rem;">
             {{ isInitiallyDisabled ? 'Enable' : 'Disable' }} Field
         </button>
-        <dot-workflow
+        <dot-content-type
             [(ngModel)]="selectedContentType"
             [disabled]="isInitiallyDisabled"
             [placeholder]="'Initially disabled'"
@@ -46,7 +46,7 @@
 
     <div style="margin-bottom: 2rem;">
         <h3>5. Form Control Integration</h3>
-        <dot-workflow
+        <dot-content-type
             [formControl]="contentTypeControl"
             [placeholder]="'Form control'"
             style="width: 100%; margin-bottom: 1rem;" />
