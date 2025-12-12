@@ -1033,8 +1033,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     .saveContentlet({ contentlet })
                     .pipe(
                         take(1),
-                        tapResponse(
-                            () => {
+                        tapResponse({
+                            next: () => {
                                 this.messageService.add({
                                     severity: 'success',
                                     summary: this.dotMessageService.get('message.content.saved'),
@@ -1044,7 +1044,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                                     life: 2000
                                 });
                             },
-                            (e) => {
+                            error: (e) => {
                                 console.error(e);
                                 this.messageService.add({
                                     severity: 'error',
@@ -1054,7 +1054,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                                     life: 2000
                                 });
                             }
-                        )
+                        })
                     )
                     .subscribe(() => this.uveStore.reloadCurrentPage());
             },

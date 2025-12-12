@@ -510,12 +510,12 @@
   optionalDependencies:
     lmdb "3.4.2"
 
-"@angular/cdk@19.2.9":
-  version "19.2.9"
-  resolved "https://registry.yarnpkg.com/@angular/cdk/-/cdk-19.2.9.tgz#382819c88fa33ad4f955e3e4b5a90131ffb3b38f"
-  integrity sha512-4If3BjWQPwW/xqRUCL7Mx0dHS0SuZY7Tq/Ocf7liwYTYCmSv8Ew7NqaiPA4RS3FnyUJcZW/UAd231uWI/ZHChg==
+"@angular/cdk@20.2.9":
+  version "20.2.9"
+  resolved "https://registry.yarnpkg.com/@angular/cdk/-/cdk-20.2.9.tgz#219b6d1b97a982241037c8c04c63c5741934760c"
+  integrity sha512-rbY1AMz9389WJI29iAjWp4o0QKRQHCrQQUuP0ctNQzh1tgWpwiRLx8N4yabdVdsCA846vPsyKJtBlSNwKMsjJA==
   dependencies:
-    parse5 "^7.1.2"
+    parse5 "^8.0.0"
     tslib "^2.3.0"
 
 "@angular/cli@~20.3.0":
@@ -4873,24 +4873,24 @@
     replace-in-file "6.2.0"
     tslib "^2.6.2"
 
-"@ngrx/component-store@19.2.1":
-  version "19.2.1"
-  resolved "https://registry.yarnpkg.com/@ngrx/component-store/-/component-store-19.2.1.tgz#ed0f1f181f64a309cae138c5492444d4df703931"
-  integrity sha512-a1ghKdR1O2YNQSQfbwC472u+SFK41PDJZuvRIJ8k6B0MKoUWD6LyD4owyrPCUMxtMz9PLoAkch7FUD5qxgY23Q==
+"@ngrx/component-store@20.1.0":
+  version "20.1.0"
+  resolved "https://registry.yarnpkg.com/@ngrx/component-store/-/component-store-20.1.0.tgz#ea1a783a43e9c4d490cb691a314cab9b61845b87"
+  integrity sha512-hInHO7bwyxlUfJTSgdZ+8i0aiE3Ll0D5Y5qGy1heebrNG1Y3nrmLaGh1Yeq/dXeXJiN4Z9owEro+BaCfGOEn+Q==
   dependencies:
     tslib "^2.0.0"
 
-"@ngrx/operators@19.2.1":
-  version "19.2.1"
-  resolved "https://registry.yarnpkg.com/@ngrx/operators/-/operators-19.2.1.tgz#69956f9f23648ae2e73240623297a306418d69f3"
-  integrity sha512-umjSny5nWe7+a3XPeyMfE8vjhXD4ec6nA/KSV7bQA43Yt3eW8cQQr5ng7UZOkC0rbqcBGpSsJPt5thTeXiMXQg==
+"@ngrx/operators@20.1.0":
+  version "20.1.0"
+  resolved "https://registry.yarnpkg.com/@ngrx/operators/-/operators-20.1.0.tgz#5ecb070435dc0980662246abf4e7a8104608e7c8"
+  integrity sha512-soNrLfWaAjV3BJnZ2gYOQ2jLniGMQB444Jeiu5Vs1RCHQ9KEB40OrznJkynUOMUIie4I19cHXb/O/FVaDIPIRQ==
   dependencies:
     tslib "^2.3.0"
 
-"@ngrx/signals@19.2.1":
-  version "19.2.1"
-  resolved "https://registry.yarnpkg.com/@ngrx/signals/-/signals-19.2.1.tgz#c31042956dc7d04d165cb593f090c3066025b7f7"
-  integrity sha512-Tajd2TVjkxxyFMhnMSWLa5pAWfynjP0VM0B/BCMaLiBrwBBxybxRVENoUDU5tGyiKSax/2tBJC3+sOglmxm27A==
+"@ngrx/signals@20.1.0":
+  version "20.1.0"
+  resolved "https://registry.yarnpkg.com/@ngrx/signals/-/signals-20.1.0.tgz#2bd40de7aab321aab85471b18d43174531e1adec"
+  integrity sha512-ARAHp5yA131Sw6FEtY8XtYcdGcwW5lgpZaJoDIRxc6i12VO3ZDZYp3M/FQhpIDMDXkXHR+pDqoitrqvzI69aQA==
   dependencies:
     tslib "^2.3.0"
 
