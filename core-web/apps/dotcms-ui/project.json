@@ -64,6 +64,8 @@
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ],
                 "scripts": [],
