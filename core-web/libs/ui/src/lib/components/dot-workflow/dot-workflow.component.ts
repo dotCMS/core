@@ -185,7 +185,7 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
             return;
         }
 
-        this.loadContentTypesLazy(parsed, currentCount, totalEntries);
+        this.loadContentTypesLazy(parsed, totalEntries);
     }
 
     /**
