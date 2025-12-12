@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7f12ca96-680c-4f5f-9a57-51c83294f338",
+		"_postman_id": "30d46914-6f91-4571-8d15-66db98193e91",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -914,6 +914,241 @@
 										}
 									},
 									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Updating Fields",
+					"item": [
+						{
+							"name": "Generate Test Data",
+							"item": [
+								{
+									"name": "Create Test Content Type",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"pm.collectionVariables.set(\"typeNameWithMetadata\", \"test-type-\" + \"{{$randomInt}}\");"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Content Type was created successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity[0];",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Content Type\");",
+													"    pm.collectionVariables.set(\"contentTypeId\", entity.id);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n    \"name\": \"My Test CT\",\n    \"metadata\": {\n        \"edit_mode\": true\n    },\n    \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Execute tests",
+							"item": [
+								{
+									"name": "Add Field",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"const jsonData = pm.response.json();",
+													"const entity = pm.response.json().entity;",
+													"",
+													"pm.test(\"Checking that the Field was added successfully\", function () {",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when adding a new field to the Test Content Type\");",
+													"    pm.collectionVariables.set(\"fieldId\", entity[0].columns[0].fields[0].id);",
+													"});",
+													"",
+													"pm.test(\"Checking that the Field Variable in the Field was added successfully\", function () {",
+													"    pm.expect(entity[0].columns[0].fields[0].fieldVariables[0].value).to.equal(\"new\", \"Field Variable value does not have the expected value\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"layout\": [\n        {\n            \"divider\": {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n                \"contentTypeId\": \"{{contentTypeId}}\",\n                \"dataType\": \"SYSTEM\",\n                \"fieldContentTypeProperties\": [],\n                \"fieldType\": \"Row\",\n                \"fieldTypeLabel\": \"Row\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"forceIncludeInApi\": false,\n                \"indexed\": false,\n                \"listed\": false,\n                \"name\": \"Row Field\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": false,\n                \"sortOrder\": -1,\n                \"unique\": false\n            },\n            \"columns\": [\n                {\n                    \"columnDivider\": {\n                        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"dataType\": \"SYSTEM\",\n                        \"fieldContentTypeProperties\": [],\n                        \"fieldType\": \"Column\",\n                        \"fieldTypeLabel\": \"Column\",\n                        \"fieldVariables\": [],\n                        \"fixed\": false,\n                        \"forceIncludeInApi\": false,\n                        \"indexed\": false,\n                        \"listed\": false,\n                        \"name\": \"Column Field\",\n                        \"readOnly\": false,\n                        \"required\": false,\n                        \"searchable\": false,\n                        \"sortOrder\": -1,\n                        \"unique\": false\n                    },\n                    \"fields\": [\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\": \"Description\",\n                            \"dataType\": \"TEXT\",\n                            \"fieldVariables\": [\n                                {\n                                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                                    \"key\": \"myFieldVar\",\n                                    \"value\": \"new\"\n                                }\n                            ],\n                            \"regexCheck\": \"\",\n                            \"defaultValue\": \"\",\n                            \"hint\": \"\",\n                            \"required\": false,\n                            \"searchable\": true,\n                            \"listed\": false,\n                            \"unique\": false,\n                            \"id\": null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/move",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v3",
+												"contenttype",
+												"{{contentTypeId}}",
+												"fields",
+												"move"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Field",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"const jsonData = pm.response.json();",
+													"const entity = pm.response.json().entity;",
+													"",
+													"pm.test(\"Checking that the Field was updated successfully\", function () {",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when updating the field in the Test Content Type\");",
+													"    pm.expect(entity[0].columns[0].fields[0].name).to.equal(\"Description UPDATED NAME\", \"Updated field name does not have the expected value\");",
+													"});",
+													"",
+													"pm.test(\"Checking that the Field Variable in the Field was updated successfully\", function () {",
+													"    pm.expect(entity[0].columns[0].fields[0].fieldVariables[0].value).to.equal(\"updated value\", \"Updated Field Variable value does not have the expected value\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"field\": {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n        \"contentTypeId\": \"{{contentTypeId}}\",\n        \"dataType\": \"TEXT\",\n        \"fieldType\": \"Text\",\n        \"fieldTypeLabel\": \"Text\",\n        \"id\": \"{{fieldId}}\",\n        \"fieldVariables\": [\n            {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                \"key\": \"myFieldVar\",\n                \"value\": \"updated value\"\n            }\n        ],\n        \"fixed\": false,\n        \"forceIncludeInApi\": false,\n        \"indexed\": true,\n        \"listed\": false,\n        \"name\": \"Description UPDATED NAME\",\n        \"readOnly\": false,\n        \"required\": false,\n        \"searchable\": true,\n        \"sortOrder\": 3,\n        \"unique\": false,\n        \"variable\": \"description\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/{{fieldId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v3",
+												"contenttype",
+												"{{contentTypeId}}",
+												"fields",
+												"{{fieldId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
 								}
 							]
 						}
@@ -14747,7 +14982,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My CT With Custom Field\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"My CT With Custom Field {{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"sortOrder\": 3,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"My Custom Field\",\n            \"fixed\": true,\n            \"fieldVariables\": [\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                    \"key\": \"newRenderMode\",\n                    \"value\": \"iframe\"\n                }\n            ],\n            \"values\": \"## This is some sample code\\r\\n#set($content = $dotcontent.find($request.getParameter(\\\"inode\\\")))\\r\\n#set($paramOne = 1)\\r\\n#set($paramTwo = 2)\\r\\n#set($total = $math.add($paramOne, $paramTwo))\\r\\n<h1>Title from Rich Text = '$!content.title'</h1><h3>My Custom Field</h3><p>Total = $total</p>\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My CT With Custom Field\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"My CT With Custom Field {{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"sortOrder\": 3,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"My Custom Field\",\n            \"fixed\": true,\n            \"fieldVariables\": [\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                    \"key\": \"newRenderMode\",\n                    \"value\": \"component\"\n                }\n            ],\n            \"values\": \"## This is some sample code\\r\\n#set($content = $dotcontent.find($request.getParameter(\\\"inode\\\")))\\r\\n#set($paramOne = 1)\\r\\n#set($paramTwo = 2)\\r\\n#set($total = $math.add($paramOne, $paramTwo))\\r\\n<h1>Title from Rich Text = '$!content.title'</h1><h3>My Custom Field</h3><p>Total = $total</p>\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
 										},
 										"url": {
 											"raw": "{{serverURL}}/api/v1/contenttype",
@@ -15130,6 +15365,163 @@
 											]
 										},
 										"description": "Attempts to retrieves the rendered output for a specific Custom Field in a dotCMS Content Type for a given contentlet. However, the required Field Variable for that has NOT been set, so no rendered field should be returned."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Is New Edit Mode Enabled?",
+					"item": [
+						{
+							"name": "Generate Test Data",
+							"item": [
+								{
+									"name": "Create Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Content Type with Custom Field was created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    ",
+													"    pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My CT With New Edit Mode\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"My CT With New Edit Mode {{$randomBankAccount}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"metadata\": {\n        \"CONTENT_EDITOR2_ENABLED\": true\n    },\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.CustomField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"My Custom Field\",\n            \"fixed\": true,\n            \"fieldVariables\": [\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n                    \"key\": \"newRenderMode\",\n                    \"value\": \"component\"\n                }\n            ],\n            \"values\": \"## This is some sample code\\r\\n<p>New Edit Mode Enabled? $structures.isNewEditModeEnabled()</p>\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a new dotCMS Content Type with a custom field via the Content Type API. This request demonstrates creating a Simple Content Type that includes a standard Title field and a Custom Field with inline Velocity code in the values property.\n\nNotice how the Field Variable named 'newRenderMode' has been set in order to render the Velocity code in the Custom Field.\n\nAdditionally, the metadata attribute has a value that indicates that this Content Type is going to be displayed in the UI using the new Edit Content Mode."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Test Rendered Data Copy",
+							"item": [
+								{
+									"name": "Get Rendered Custom Field",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that the ViewTool in the Custom Field is rendering correctly\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"There must be no errors\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.not.equal(undefined, \"The 'rendered' attribute is missing\");",
+													"    pm.expect(jsonData.entity.fields[3].rendered).to.equal(\"<p>New Edit Mode Enabled? true</p>\", \"The output code is NOT the expected one\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/render/id/{{contentTypeID}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"render",
+												"id",
+												"{{contentTypeID}}"
+											]
+										},
+										"description": "## Overview\n\nReturns the Content Type definition where the Custom Field is being rendered by dotCMS. That is, its Velocity code is parsed and added as a new attribute in the JSON response."
 									},
 									"response": []
 								}

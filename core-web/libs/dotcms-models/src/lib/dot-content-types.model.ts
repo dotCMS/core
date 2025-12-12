@@ -47,8 +47,10 @@ export const DotCMSClazzes = {
  */
 export const DotRenderModes = {
     IFRAME: 'iframe',
-    COMPONENTS: 'components'
+    COMPONENT: 'component'
 } as const;
+
+export const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
 
 /**
  * Union type representing all possible DotCMS class names

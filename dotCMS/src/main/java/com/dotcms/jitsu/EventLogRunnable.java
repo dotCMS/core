@@ -21,10 +21,13 @@ import org.apache.http.HttpStatus;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * POSTs events to established endpoint in EVENT_LOG_POSTING_URL config property using the token set in
@@ -94,26 +97,38 @@ public class EventLogRunnable implements Runnable {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
-        for (EventPayload payload : eventPayload.get().payloads()) {
+        Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + eventPayload.get().payloads());
 
-            Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + payload);
-
-            sendEvent(builder, payload).ifPresent(response -> {
-                Logger.debug(EventLogRunnable.class, "Jitsu Event Response: " + response.getStatusCode() +
-                 ", message: " + response.getResponse());
-
-                if (response.getStatusCode() != HttpStatus.SC_OK) {
-                    Logger.warn(
-                            this.getClass(),
-                            String.format(
-                                    "Failed to post event to %s, got a %d : %s",
-                                    url,
-                                    response.getStatusCode(),
-                                    response.getResponse()));
-                    Logger.warn(this.getClass(), String.format("Failed log: %s", payload));
-                }
-            });
+        if (eventPayload.get().payloads().isEmpty()){
+            Logger.warn(EventLogRunnable.class, "Not Jitsu Events Payload to be sent");
+            return;
         }
+
+        final EventPayload firstPayload = eventPayload.get().payloads().stream().findFirst().orElse(null);
+
+        if (firstPayload == null) {
+            Logger.warn(EventLogRunnable.class, "Not Jitsu Events Payload to be sent");
+            return;
+        }
+
+        final String userAgent = firstPayload.contains(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME) ?
+                firstPayload.get(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME).toString() : null;
+
+        sendEvent(builder, eventPayload.get().payloads(), userAgent).ifPresent(response -> {
+            Logger.debug(EventLogRunnable.class, "Jitsu Event Response: " + response.getStatusCode() +
+             ", message: " + response.getResponse());
+
+            if (response.getStatusCode() != HttpStatus.SC_OK) {
+                Logger.warn(
+                        this.getClass(),
+                        String.format(
+                                "Failed to post event to %s, got a %d : %s",
+                                url,
+                                response.getStatusCode(),
+                                response.getResponse()));
+                Logger.warn(this.getClass(), String.format("Failed log: number of events to be send %s", eventPayload.get().payloads().size()));
+            }
+        });
     }
 
 
@@ -128,9 +143,9 @@ public class EventLogRunnable implements Runnable {
     }
 
 
-    public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
-        final String userAgent = payload.contains(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME) ?
-                payload.get(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME).toString() : null;
+    public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder,
+                                                final Collection<EventPayload> payload,
+                                                final String userAgent) {
 
         final CircuitBreakerUrlBuilder circuitBreakerUrlBuilder = builder.setRawData(payload.toString());
 
@@ -153,7 +168,7 @@ public class EventLogRunnable implements Runnable {
         final Map<String, Object> testObject = Map.of("test", "test");
 
         return sendEvent(builder,
-                new EventPayload(new JSONObject(testObject)));
+                list( new EventPayload(new JSONObject(testObject))), "dotcms/test");
 
     }
 }
