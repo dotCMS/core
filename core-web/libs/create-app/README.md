@@ -1,5 +1,7 @@
 # 🚀 create-dotcms-app
-A powerful scaffolding CLI that instantly generates modern frontend applications pre-configured to work seamlessly with **dotCMS** in headless mode.
+
+> 🚧 **Beta Notice:**
+> This CLI is currently in **beta**. Features and APIs may change as we continue improving the tool.
 
 With a single command, you can bootstrap a fully functional frontend (Next.js,Vue,Angular, etc.) connected to dotCMS APIs — including the following:
 

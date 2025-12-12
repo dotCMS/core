@@ -52,6 +52,14 @@ program
         }
     )
     .action(async (projectName, options) => {
+        // <-- Add beta notice here
+        console.log(chalk.bgYellow.black(' ⚠️  Beta Version Notice  ⚠️ '));
+        console.log(
+            chalk.yellow(
+                'This CLI is currently in beta. Features may change and some bugs may be present.\n'
+            )
+        );
+
         let { framework } = options;
 
         // console.log(chalk.cyan("📁 Preparing project..."));

@@ -16,7 +16,6 @@ export const DOTCMS_DEMO_SITE = `${DOTCMS_HOST}/api/v1/site/`;
 export const FRAMEWORKS: SupportedFrontEndFrameworks[] = [
     'nextjs',
     'astro',
-    'vuejs',
     'angular',
     'angular-ssr'
 ];
@@ -24,7 +23,6 @@ export const FRAMEWORKS: SupportedFrontEndFrameworks[] = [
 export const FRAMEWORKS_CHOICES: FrameworkChoices[] = [
     { name: 'Next.js', value: 'nextjs' },
     { name: 'Astro', value: 'astro' },
-    { name: 'Vue', value: 'vuejs' },
     { name: 'Angular', value: 'angular' },
     { name: 'Angular (SSR)', value: 'angular-ssr' }
 ];
