@@ -4,6 +4,8 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-ui/src",
     "prefix": "dot",
+    "tags": [],
+    "implicitDependencies": ["dotcms-webcomponents"],
     "targets": {
         "build": {
             "executor": "@nx/angular:browser-esbuild",
@@ -126,7 +128,8 @@
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development"
-            }
+            },
+            "continuous": true
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -143,7 +146,8 @@
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "apps/dotcms-ui/jest.config.ts",
-                "passWithNoTests": false
+                "passWithNoTests": false,
+                "tsConfig": "apps/dotcms-ui/tsconfig.spec.json"
             }
         },
         "storybook": {
@@ -175,7 +179,5 @@
                 }
             }
         }
-    },
-    "tags": [],
-    "implicitDependencies": ["dotcms-webcomponents"]
+    }
 }
