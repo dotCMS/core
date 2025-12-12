@@ -243,30 +243,6 @@ export class DojoFormBridge implements FormBridge {
                 } catch (error) {
                     console.warn('Error disabling field:', error);
                 }
-            },
-
-            show: (): void => {
-                try {
-                    const element = document.getElementById(fieldId);
-                    if (element) {
-                        element.removeAttribute('data-bridge-hidden');
-                        element.style.display = '';
-                    }
-                } catch (error) {
-                    console.warn('Error showing field:', error);
-                }
-            },
-
-            hide: (): void => {
-                try {
-                    const element = document.getElementById(fieldId);
-                    if (element) {
-                        element.setAttribute('data-bridge-hidden', 'true');
-                        element.style.display = 'none';
-                    }
-                } catch (error) {
-                    console.warn('Error hiding field:', error);
-                }
             }
         };
     }

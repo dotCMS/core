@@ -22,8 +22,12 @@ import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.componen
 import { BaseWrapperField } from '../shared/base-wrapper-field';
 
 /**
- * This component is used to render a custom field in the DotCMS content editor.
- * It uses an iframe to render the custom field and provides a form bridge to communicate with the custom field.
+ * This component renders custom fields in the DotCMS content editor.
+ * Supports two render modes:
+ * - IFRAME: Legacy VTL-based fields rendered in an iframe (with modal/inline options)
+ * - NATIVE: Modern web components rendered directly in the DOM
+ *
+ * The render mode is determined by the 'newRenderMode' field variable.
  */
 @Component({
     selector: 'dot-edit-content-custom-field',

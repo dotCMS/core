@@ -25,6 +25,11 @@ import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models'
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
+/**
+ * Renders custom fields using the native web components approach.
+ * Supports both inline and modal display modes based on field configuration.
+ * Provides a FormBridge API for bidirectional communication with custom field.
+ */
 @Component({
     selector: 'dot-native-field',
     template: '<div #container></div>',

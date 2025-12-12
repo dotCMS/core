@@ -46,7 +46,6 @@ export class DotEditContentService {
         id: string;
         languageId?: number;
         depth?: DotContentletDepth;
-        render?: boolean;
     }): Observable<DotCMSContentlet> {
         const { id, languageId, depth } = params;
         let httpParams = new HttpParams();

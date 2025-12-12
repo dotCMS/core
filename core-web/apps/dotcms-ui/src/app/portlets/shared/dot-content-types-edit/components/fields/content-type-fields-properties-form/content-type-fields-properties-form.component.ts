@@ -143,7 +143,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                 fieldVariables: [
                     ...otherVariables,
                     {
-                        ...existingNewRenderMode,
+                        ...existingNewRenderMode, // Preserve existing properties (id, etc.)
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: NEW_RENDER_MODE_VARIABLE_KEY,
                         value: value.newRenderMode

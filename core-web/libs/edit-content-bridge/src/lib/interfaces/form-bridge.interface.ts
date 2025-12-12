@@ -31,16 +31,6 @@ export interface FormFieldAPI {
      * Disables the field, preventing user interaction.
      */
     disable(): void;
-
-    /**
-     * Shows the field, making it visible.
-     */
-    show(): void;
-
-    /**
-     * Hides the field, making it invisible.
-     */
-    hide(): void;
 }
 
 /**

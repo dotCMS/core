@@ -213,16 +213,6 @@ export class AngularFormBridge implements FormBridge {
                         control.disable({ emitEvent: true });
                     }
                 });
-            },
-
-            show: (): void => {
-                // TODO: Implement show method
-                console.warn('AngularFormBridge: show method not implemented');
-            },
-
-            hide: (): void => {
-                // TODO: Implement hide method
-                console.warn('AngularFormBridge: hide method not implemented');
             }
         };
     }

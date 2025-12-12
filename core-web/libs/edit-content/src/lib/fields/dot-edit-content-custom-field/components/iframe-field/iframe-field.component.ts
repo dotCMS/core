@@ -28,8 +28,9 @@ import { createCustomFieldConfig } from '../../../../utils/functions.util';
 import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
 
 /**
- * This component is used to render a custom field in the DotCMS content editor.
- * It uses an iframe to render the custom field and provides a form bridge to communicate with the custom field.
+ * Renders custom fields using the legacy iframe-based approach (VTL templates).
+ * Supports both inline and modal display modes based on field configuration.
+ * Provides a FormBridge API for bidirectional communication with iframe content.
  */
 @Component({
     selector: 'dot-iframe-field',
