@@ -165,9 +165,9 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
                 this.#domSanitizer.sanitize(SecurityContext.HTML, templateCode);
                 // Sanitization check completed - scripts/styles would be removed by sanitizer
                 // but we proceed as they are required for custom field functionality
-            } catch {
-                // Sanitization errors are expected when scripts/styles are present
-                // This is informational only - we proceed regardless
+            } catch (error) {
+                console.error('[NativeFieldComponent] Sanitization error:', error);
+                return false;
             }
 
             return true;
