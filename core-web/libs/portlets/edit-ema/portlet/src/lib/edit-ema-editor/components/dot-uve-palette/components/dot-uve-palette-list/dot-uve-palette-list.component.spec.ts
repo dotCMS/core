@@ -17,6 +17,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUvePaletteListComponent } from './dot-uve-palette-list.component';
@@ -167,6 +168,10 @@ const basicContentlet = {
     contentType: 'Blog'
 } as DotCMSContentlet;
 
+const mockGlobalStore = {
+    currentSiteId: signal('demo.dotcms.com')
+};
+
 describe('DotUvePaletteListComponent', () => {
     let spectator: Spectator<DotUvePaletteListComponent>;
     let store: jest.Mocked<InstanceType<typeof DotPaletteListStore>>;
@@ -175,6 +180,10 @@ describe('DotUvePaletteListComponent', () => {
         component: DotUvePaletteListComponent,
         imports: [HttpClientTestingModule],
         providers: [
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
+            },
             {
                 provide: DotPageContentTypeService,
                 useValue: {
@@ -232,6 +241,8 @@ describe('DotUvePaletteListComponent', () => {
 
     beforeEach(() => {
         jest.useFakeTimers();
+        // Reset mockGlobalStore signal
+        mockGlobalStore.currentSiteId.set('demo.dotcms.com');
         spectator = createComponent({
             providers: [mockProvider(DotPaletteListStore, mockStore)],
             detectChanges: false
@@ -630,6 +641,104 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+    });
+
+    describe('host parameter (from $siteId)', () => {
+        it('should pass host parameter from $siteId to getContentTypes on initialization', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/test-page',
+                    language: 1,
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
+        });
+
+        it('should pass updated host when $siteId changes', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear previous calls
+            jest.clearAllMocks();
+
+            // Update the siteId
+            mockGlobalStore.currentSiteId.set('new-site.dotcms.com');
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'new-site.dotcms.com',
+                    pagePathOrId: '/test-page',
+                    language: 1,
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
+        });
+
+        it('should include host parameter when sorting content types', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear initial calls
+            jest.clearAllMocks();
+
+            // Trigger sort
+            spectator.component['onSortSelect']({ orderby: 'usage', direction: 'DESC' });
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    orderby: 'usage',
+                    direction: 'DESC',
+                    page: 1
+                })
+            );
+        });
+
+        it('should pass host parameter with other input changes (languageId)', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear initial calls
+            jest.clearAllMocks();
+
+            // Change languageId
+            spectator.fixture.componentRef.setInput('languageId', 2);
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'demo.dotcms.com',
+                    language: 2,
+                    pagePathOrId: '/test-page',
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
+        });
+
+        it('should pass host parameter with other input changes (pagePath)', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear initial calls
+            jest.clearAllMocks();
+
+            // Change pagePath
+            spectator.fixture.componentRef.setInput('pagePath', '/new-page');
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/new-page',
+                    language: 1,
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
         });
     });
 });
