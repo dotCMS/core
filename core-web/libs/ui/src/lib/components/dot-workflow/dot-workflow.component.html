@@ -3,7 +3,6 @@
     [appendTo]="'body'"
     (onChange)="onContentTypeChange($event.value)"
     (onLazyLoad)="onLazyLoad($event)"
-    (onShow)="onDropdownShow()"
     [ngModel]="value()"
     (ngModelChange)="value.set($event)"
     [disabled]="$disabled()"

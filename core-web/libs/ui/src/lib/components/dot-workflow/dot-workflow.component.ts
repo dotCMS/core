@@ -9,7 +9,8 @@ import {
     signal,
     effect,
     forwardRef,
-    computed
+    computed,
+    OnInit
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
@@ -36,7 +37,8 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
         }
     ]
 })
-export class DotWorkflowComponent implements ControlValueAccessor {
+export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
+
     private contentTypeService = inject(DotContentTypeService);
 
     placeholder = input<string>('');
@@ -73,6 +75,12 @@ export class DotWorkflowComponent implements ControlValueAccessor {
             const currentValue = this.value();
             this.onChangeCallback(currentValue);
         });
+    }
+
+    ngOnInit(): void {
+        if (this.contentTypes().length === 0) {
+            this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
+        }
     }
 
     onContentTypeChange(contentType: DotCMSContentType | null): void {
@@ -119,16 +127,6 @@ export class DotWorkflowComponent implements ControlValueAccessor {
 
     setDisabledState(isDisabled: boolean): void {
         this.$isDisabled.set(isDisabled);
-    }
-
-    /**
-     * Handles dropdown show event to ensure initial data is loaded
-     */
-    onDropdownShow(): void {
-        // Load first page if no items are loaded
-        if (this.contentTypes().length === 0) {
-            this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
-        }
     }
 
     /**
