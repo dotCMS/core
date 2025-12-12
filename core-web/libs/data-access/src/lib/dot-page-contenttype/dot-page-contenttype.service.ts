@@ -167,10 +167,6 @@ export class DotPageContentTypeService {
             });
         }
 
-        if (params.host) {
-            httpParams = httpParams.set('host', params.host);
-        }
-
         return this.http
             .get<
                 DotCMSAPIResponse<DotCMSContentType[]>

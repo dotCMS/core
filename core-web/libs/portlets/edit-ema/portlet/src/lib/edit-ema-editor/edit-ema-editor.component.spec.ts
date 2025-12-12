@@ -86,6 +86,7 @@ import {
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -143,6 +144,7 @@ const createRouting = () =>
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
+            MockComponent(DotUvePaletteComponent),
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent)

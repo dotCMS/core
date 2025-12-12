@@ -334,7 +334,6 @@ describe('DotPageContentTypeService', () => {
                     return (
                         request.url === CONTENTTYPE_PAGE_API_URL &&
                         request.params.get('pagePathOrId') === '/test-page' &&
-                        request.params.get('host') === 'demo.dotcms.com' &&
                         request.params.get('language') === '1' &&
                         request.params.get('filter') === 'blog' &&
                         request.params.get('page') === '2' &&
@@ -705,24 +704,6 @@ describe('DotPageContentTypeService', () => {
                 req.flush(MOCK_API_RESPONSE);
             });
 
-            it('should include host parameter when provided', () => {
-                const params: DotContentTypeQueryParams = {
-                    host: 'demo.dotcms.com'
-                };
-
-                spectator.service.getAllContentTypes(params).subscribe();
-
-                const req = httpMock.expectOne((request) => {
-                    return (
-                        request.url === CONTENTTYPE_API_URL &&
-                        request.params.get('host') === 'demo.dotcms.com'
-                    );
-                });
-
-                expect(req.request.params.get('host')).toBe('demo.dotcms.com');
-                req.flush(MOCK_API_RESPONSE);
-            });
-
             it('should not include host parameter when not provided', () => {
                 const params: DotContentTypeQueryParams = {};
 
@@ -751,7 +732,6 @@ describe('DotPageContentTypeService', () => {
                 const req = httpMock.expectOne((request) => {
                     return (
                         request.url === CONTENTTYPE_API_URL &&
-                        request.params.get('host') === 'demo.dotcms.com' &&
                         request.params.get('language') === '1' &&
                         request.params.get('filter') === 'test' &&
                         request.params.get('page') === '2' &&
@@ -945,7 +925,6 @@ describe('DotPageContentTypeService', () => {
 
             const allReq = httpMock.expectOne((request) => request.url === '/api/v1/contenttype');
 
-            expect(allReq.request.params.get('host')).toBe('demo.dotcms.com');
             expect(allReq.request.params.get('language')).toBe('1');
             expect(allReq.request.params.get('filter')).toBe('test');
             expect(allReq.request.params.get('orderby')).toBe('name');
