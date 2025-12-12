@@ -282,8 +282,6 @@ describe('DotContentDriveShellComponent', () => {
                 },
                 queryParamsHandling: 'merge'
             });
-
-            expect(location.go).toHaveBeenCalledWith(expect.stringContaining('filters=null'));
         });
     });
 

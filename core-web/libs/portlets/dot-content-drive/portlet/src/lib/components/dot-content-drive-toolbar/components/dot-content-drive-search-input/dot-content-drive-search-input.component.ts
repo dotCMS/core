@@ -34,7 +34,7 @@ export class DotContentDriveSearchInputComponent implements OnInit {
     readonly searchControl = new FormControl('');
 
     readonly cleanTextEffect = effect(() => {
-        const searchValue = this.#store.getFilterValue('title');
+        const searchValue = this.#store.getFilterValue('title') || '';
 
         if (searchValue !== this.searchControl.value) {
             this.searchControl.setValue(searchValue as string, { emitEvent: false });
