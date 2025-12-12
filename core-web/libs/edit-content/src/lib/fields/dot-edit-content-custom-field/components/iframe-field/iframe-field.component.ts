@@ -37,6 +37,12 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
     templateUrl: './iframe-field.component.html',
     styleUrls: ['./iframe-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
     providers: [
         {
             provide: WINDOW,
