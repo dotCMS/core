@@ -437,6 +437,17 @@ describe('DotUveToolbarComponent', () => {
                     life: 3000
                 });
             });
+
+            it('should have rel="noreferrer noopener" on URL links for security', () => {
+                const urlLinks = spectator.queryAll('.url-value a');
+
+                expect(urlLinks.length).toBeGreaterThan(0);
+
+                urlLinks.forEach((link) => {
+                    expect(link.getAttribute('rel')).toBe('noreferrer noopener');
+                    expect(link.getAttribute('target')).toBe('_blank');
+                });
+            });
         });
 
         describe('$pageURLS computed signal', () => {
