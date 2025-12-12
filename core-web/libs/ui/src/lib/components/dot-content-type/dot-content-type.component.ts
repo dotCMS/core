@@ -203,6 +203,17 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     }
 
     /**
+     * Sets content types with automatic sorting by name
+     *
+     * @private
+     * @param contentTypes The content types to set
+     */
+    private setContentTypes(contentTypes: DotCMSContentType[]): void {
+        const sorted = [...contentTypes].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        this.contentTypes.set(sorted);
+    }
+
+    /**
      * Ensures the given content type is in the contentTypes list.
      *
      * @private
@@ -213,9 +224,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         const exists = currentContentTypes.some((ct) => ct.variable === contentType.variable);
 
         if (!exists) {
-            const updated = [...currentContentTypes, contentType];
-            updated.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-            this.contentTypes.set(updated);
+            this.setContentTypes([...currentContentTypes, contentType]);
         }
     }
 
@@ -310,30 +319,38 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             .subscribe({
                 next: ({ contentTypes, pagination }) => {
                     const currentContentTypes = this.contentTypes();
+                    const isFiltering = filter.length > 0;
+                    const isFirstPage = pageToLoad === 1;
 
                     // Update total records from pagination
                     if (pagination.totalEntries) {
                         this.totalRecords.set(pagination.totalEntries);
                     }
 
-                    // Filter out duplicates - variable is unique, so just check variable
-                    const existingVariables = new Set(currentContentTypes.map((ct) => ct.variable));
-                    const newContentTypes = contentTypes.filter(
-                        (ct) => !existingVariables.has(ct.variable)
-                    );
+                    // Replace on first page (initial load or filter change clears list first)
+                    // Merge on subsequent pages (lazy loading pagination)
+                    if (isFirstPage) {
+                        this.setContentTypes(contentTypes);
+                    } else {
+                        // For subsequent pages, merge with existing (lazy loading)
+                        const existingVariables = new Set(currentContentTypes.map((ct) => ct.variable));
+                        const newContentTypes = contentTypes.filter(
+                            (ct) => !existingVariables.has(ct.variable)
+                        );
 
-                    if (newContentTypes.length > 0) {
-                        const merged = [...currentContentTypes, ...newContentTypes];
-                        merged.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-                        this.contentTypes.set(merged);
+                        if (newContentTypes.length > 0) {
+                            this.setContentTypes([...currentContentTypes, ...newContentTypes]);
+                        }
                     }
 
                     this.loadedPages.add(pageToLoad);
                     this.loading.set(false);
 
-                    // Ensure current value is in the list
+                    // Ensure current value is in the list only when not filtering
+                    // When filtering, don't add selected value if it doesn't match the filter
+                    // This allows "No results found" to display correctly
                     const currentValue = this.value();
-                    if (currentValue) {
+                    if (currentValue && !isFiltering) {
                         this.ensureContentTypeInList(currentValue);
                     }
                 },
