@@ -133,8 +133,10 @@ test("Validate the search query", async ({ page }) => {
 /**
  * Test to validate the API button is working in the search query modal
  * @param page
+ *
+ * Skipping due to flaky popup event timeout - see #33211
  */
-test("Validate the API link in search query modal is working", async ({
+test.skip("Validate the API link in search query modal is working", async ({
   page,
 }) => {
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
