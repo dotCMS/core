@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -7,7 +6,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-seo-image-preview',
     templateUrl: './dot-seo-image-preview.component.html',
     styleUrls: ['./dot-seo-image-preview.component.scss'],
-    imports: [DotMessagePipe, CommonModule],
+    imports: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSeoImagePreviewComponent {

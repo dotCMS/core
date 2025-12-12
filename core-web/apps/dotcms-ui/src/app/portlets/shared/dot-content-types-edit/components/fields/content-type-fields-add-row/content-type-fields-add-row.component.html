@@ -7,7 +7,7 @@
                 (onClick)="setColumnSelect()"
                 [disabled]="disabled"
                 [model]="actions"
-                label="{{ 'contenttypes.dropzone.rows.add' | dm }}"></p-splitButton>
+                label="{{ 'contenttypes.dropzone.rows.add' | dm }}" />
         </div>
     }
 
@@ -19,7 +19,7 @@
             <p-button
                 (click)="showAddView()"
                 icon="pi pi-times"
-                styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
+                styleClass="p-button-rounded  p-button-text p-button-sm" />
             <ul
                 [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
                 class="dot-add-rows-columns-list"
@@ -36,7 +36,7 @@
                             {{ setColumnValue(i) }}
                         </span>
                         <div class="dot-add-rows-columns-list__item-container">
-                            @for (i of numberOfCols(colNum); track i) {
+                            @for (col of numberOfCols(colNum); track $index) {
                                 <div class="dot-add-rows-columns-list__item-col"></div>
                             }
                         </div>

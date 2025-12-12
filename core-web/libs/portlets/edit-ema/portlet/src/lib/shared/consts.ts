@@ -1,4 +1,4 @@
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { CommonErrors } from './enums';
@@ -17,6 +17,8 @@ export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
+
+export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
@@ -67,7 +69,10 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 };
 
 // Add the Feature flags we want to fetch for UVE
-export const UVE_FEATURE_FLAGS = [];
+export const UVE_FEATURE_FLAGS = [
+    FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
+];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',

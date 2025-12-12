@@ -1,12 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-analytics-state-message',
-    standalone: true,
-    imports: [CommonModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     template: `
         <div
             class="flex flex-column justify-content-center align-items-center h-full text-center gap-3"

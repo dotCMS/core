@@ -1,0 +1,107 @@
+@use "sass:math";
+@use "variables" as *;
+
+:host {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    border: 1px solid $color-palette-border-light;
+    border-radius: $border-radius-md;
+    background: $white;
+    cursor: pointer;
+    height: 4rem;
+    gap: $spacing-1;
+    justify-content: space-between;
+    padding: 0 $spacing-1;
+    overflow: hidden;
+
+    &:hover {
+        border-color: $color-palette-primary;
+        background: $color-palette-primary-100;
+        box-shadow: $shadow-s;
+
+        .drag-handle,
+        .chevron {
+            opacity: 1;
+        }
+    }
+
+    // Child elements
+    .content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        flex: 1;
+        gap: $spacing-1;
+        min-width: 0;
+    }
+
+    .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-gray-800;
+        max-width: 3.375rem; // 54px
+        min-width: 3.375rem;
+        height: 2.25rem; // 36px - fixed height for consistency
+        flex-shrink: 0;
+        overflow: hidden;
+
+        dot-contentlet-thumbnail {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 0.125rem;
+            pointer-events: none; //To disable drag event on the image
+            object-fit: cover;
+            display: block;
+        }
+    }
+
+    .name {
+        font-size: $font-size-md;
+        color: $color-palette-bluegray-800;
+        font-weight: $font-weight-semi-bold;
+        line-height: 1.2;
+        flex: 1;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .drag-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-bluegray-300;
+        width: 0.875rem;
+        height: 0.875rem;
+        cursor: grab;
+        opacity: 0;
+        transition: opacity $basic-speed ease-in-out;
+
+        .pi:first-child {
+            margin-right: -$spacing-1;
+        }
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    .chevron {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-gray-300;
+        width: 0.875rem;
+        height: 0.875rem;
+        opacity: 0;
+        transition: opacity $basic-speed ease-in-out;
+        .pi {
+            color: $color-palette-bluegray-300;
+        }
+    }
+}

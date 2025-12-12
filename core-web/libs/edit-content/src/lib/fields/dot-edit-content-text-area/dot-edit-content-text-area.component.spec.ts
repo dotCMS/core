@@ -1,14 +1,20 @@
-import { expect, it, test } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { DotLanguagesService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-import { createFakeTextAreaField } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    createFakeTextAreaField,
+    DotLanguagesServiceMock,
+    MockDotMessageService,
+    monacoMock
+} from '@dotcms/utils-testing';
 
 import { DotEditContentTextAreaComponent } from './dot-edit-content-text-area.component';
 import {
@@ -17,143 +23,229 @@ import {
 } from './dot-edit-content-text-area.constants';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
-import { createFormGroupDirectiveMock } from '../../utils/mocks';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).monaco = monacoMock;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).monaco = monacoMock;
 
 const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
     variable: 'someTextArea'
 });
 
+@Component({
+    standalone: false,
+    selector: 'dot-custom-host',
+    template: ''
+})
+export class MockFormComponent {
+    // Host Props
+    formGroup: FormGroup;
+    field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+}
+
 describe('DotEditContentTextAreaComponent', () => {
-    let spectator: Spectator<DotEditContentTextAreaComponent>;
+    let spectator: SpectatorHost<DotEditContentTextAreaComponent, MockFormComponent>;
     let textArea: Element;
-    let component: DotEditContentTextAreaComponent;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotEditContentTextAreaComponent,
-
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false,
         componentMocks: [
             DotLanguageVariableSelectorComponent,
             DotEditContentMonacoEditorControlComponent
         ],
-        componentViewProviders: [
-            {
-                provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            }
-        ],
         providers: [
-            FormGroupDirective,
-            mockProvider(DotLanguagesService),
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             provideHttpClient(),
-            provideHttpClientTesting()
+            provideHttpClientTesting(),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
         ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: TEXT_AREA_FIELD_MOCK,
-                contentlet: {
-                    [TEXT_AREA_FIELD_MOCK.variable]: '',
-                    disabledWYSIWYG: []
-                } as DotCMSContentlet
-            } as unknown,
-            detectChanges: false
+    describe('should have the variable as id', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [TEXT_AREA_FIELD_MOCK.variable]: ''
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+            textArea = spectator.query(byTestId(TEXT_AREA_FIELD_MOCK.variable));
         });
-        spectator.detectChanges();
 
-        component = spectator.component;
-        textArea = spectator.query(byTestId(TEXT_AREA_FIELD_MOCK.variable));
-    });
+        it('should have the variable as id', () => {
+            expect(textArea.getAttribute('id')).toBe(TEXT_AREA_FIELD_MOCK.variable);
+        });
 
-    test.each([
-        {
-            variable: TEXT_AREA_FIELD_MOCK.variable,
-            attribute: 'id'
-        },
-        {
-            variable: TEXT_AREA_FIELD_MOCK.variable,
-            attribute: 'ng-reflect-name'
-        }
-    ])('should have the $variable as $attribute', ({ variable, attribute }) => {
-        expect(textArea.getAttribute(attribute)).toBe(variable);
-    });
+        it('should have min height as 9.375rem and resize as vertical', () => {
+            expect(textArea.getAttribute('style')).toBe('min-height: 9.375rem; resize: vertical;');
+        });
 
-    it('should have min height as 9.375rem and resize as vertical', () => {
-        expect(textArea.getAttribute('style')).toBe('min-height: 9.375rem; resize: vertical;');
-    });
+        it('should have editor selector dropdown', () => {
+            const editorDropdown = spectator.query(byTestId('editor-selector'));
+            expect(editorDropdown).toBeTruthy();
+        });
 
-    it('should have editor selector dropdown', () => {
-        const editorDropdown = spectator.query(byTestId('editor-selector'));
-        expect(editorDropdown).toBeTruthy();
-    });
+        it('should have editor selector with correct options', () => {
+            const dropdown = spectator.query(byTestId('editor-selector'));
+            expect(dropdown).toBeTruthy();
 
-    it('should have editor selector with correct options', () => {
-        const dropdown = spectator.query(byTestId('editor-selector'));
-        expect(dropdown).toBeTruthy();
+            // Verify dropdown options
+            const options = TextAreaEditorOptions;
+            expect(options.length).toBe(2);
+            expect(options).toEqual([
+                { label: 'Plain Text', value: AvailableEditorTextArea.PlainText },
+                { label: 'Code', value: AvailableEditorTextArea.Monaco }
+            ]);
+        });
 
-        // Verify dropdown options
-        const options = TextAreaEditorOptions;
-        expect(options.length).toBe(2);
-        expect(options).toEqual([
-            { label: 'Plain Text', value: AvailableEditorTextArea.PlainText },
-            { label: 'Code', value: AvailableEditorTextArea.Monaco }
-        ]);
-    });
+        it('should have language variable selector component', () => {
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            expect(languageVariableSelector).toBeTruthy();
+        });
 
-    it('should have language variable selector component', () => {
-        const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
-        expect(languageVariableSelector).toBeTruthy();
-    });
+        it('should change editor when dropdown value changes', () => {
+            // Initial state
+            expect(spectator.component.$displayedEditor()).toBe(AvailableEditorTextArea.PlainText);
 
-    it('should change editor when dropdown value changes', () => {
-        // Initial state
-        expect(component.$displayedEditor()).toBe(AvailableEditorTextArea.PlainText);
+            // Simulate editor change
+            spectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+            spectator.detectChanges();
 
-        // Simulate editor change
-        component.onEditorChange(AvailableEditorTextArea.Monaco);
-        spectator.detectChanges();
+            // Verify state change
+            expect(spectator.component.$displayedEditor()).toBe(AvailableEditorTextArea.Monaco);
+        });
 
-        // Verify state change
-        expect(component.$displayedEditor()).toBe(AvailableEditorTextArea.Monaco);
-    });
+        it('should update contentlet disabledWYSIWYG property when switching editors', () => {
+            // Arrange: Spy on the output event
+            const disabledWYSIWYGChangeSpy = jest.fn();
+            spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
-    it('should update contentlet disabledWYSIWYG property when switching editors', () => {
-        // Arrange: Spy on the output event
-        const disabledWYSIWYGChangeSpy = jest.fn();
-        spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+            // Act: Switch to Monaco editor
+            spectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
 
-        // Act: Switch to Monaco editor
-        component.onEditorChange(AvailableEditorTextArea.Monaco);
+            // Assert: Event should be emitted with updated array
+            expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
+                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+            ]);
+        });
 
-        // Assert: Event should be emitted with updated array
-        expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
-            `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
-        ]);
+        it('should call onSelectLanguageVariable when language variable is selected', () => {
+            // Spy on component method
+            const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+
+            // Get language variable selector component
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+
+            // Trigger onSelectLanguageVariable event
+            const testVariable = '${languageVariable}';
+            languageVariableSelector.onSelectLanguageVariable.emit(testVariable);
+
+            // Verify method called with correct parameter
+            expect(spy).toHaveBeenCalledWith(testVariable);
+        });
+
+        it('should switch to Monaco editor when user selects Code Editor option', () => {
+            // Arrange: Spy on the method
+            const spy = jest.spyOn(spectator.component, 'onEditorChange');
+
+            // Act: Simulate user selecting Monaco editor from dropdown
+            spectator.component.$selectedEditorDropdown.set(AvailableEditorTextArea.PlainText); // Initial state
+
+            // Simulate onChange event without triggering detectChanges
+            spectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+
+            // Assert: Method called and editor switched
+            expect(spy).toHaveBeenCalledWith(AvailableEditorTextArea.Monaco);
+            expect(spectator.component.$displayedEditor()).toBe(AvailableEditorTextArea.Monaco);
+        });
+
+        it('should handle inserting language variable when user selects it in plaintext mode', () => {
+            // Mock the insertLanguageVariableInTextarea private method
+            const insertLanguageVariableInTextareaMock = jest.fn();
+            spectator.component['insertLanguageVariableInTextarea'] =
+                insertLanguageVariableInTextareaMock;
+
+            // Keep in PlainText mode
+            spectator.component.$displayedEditor.set(AvailableEditorTextArea.PlainText);
+
+            spectator.detectChanges();
+
+            // Act: Simulate language variable selection
+            const testVariable = '${testLanguageVariable}';
+            spectator.component.onSelectLanguageVariable(testVariable);
+            spectator.detectChanges();
+
+            // Assert: Private method called with correct parameters
+            expect(insertLanguageVariableInTextareaMock).toHaveBeenCalled();
+            expect(insertLanguageVariableInTextareaMock.mock.calls[0][1]).toBe(testVariable);
+        });
+
+        it('should insert language variable into Monaco editor when in Monaco mode', () => {
+            // Mock the insertLanguageVariableInMonaco private method
+            const insertLanguageVariableInMonacoMock = jest.fn();
+            spectator.component['insertLanguageVariableInMonaco'] =
+                insertLanguageVariableInMonacoMock;
+
+            // Switch to Monaco editor mode
+            spectator.component.$displayedEditor.set(AvailableEditorTextArea.Monaco);
+
+            // Act: Simulate language variable selection
+            const testVariable = '${monacoTestVariable}';
+            spectator.component.onSelectLanguageVariable(testVariable);
+
+            // Assert: Private method called with correct parameter
+            expect(insertLanguageVariableInMonacoMock).toHaveBeenCalledWith(testVariable);
+        });
     });
 
     it('should preserve existing disabledWYSIWYG entries when updating editor', () => {
         // Arrange: Create a new spectator with existing disabledWYSIWYG entries
         const existingEntries = ['otherField', 'wysiwygField'];
-        const contentletWithEntries = {
-            [TEXT_AREA_FIELD_MOCK.variable]: '',
-            disabledWYSIWYG: existingEntries
-        } as DotCMSContentlet;
 
-        const preserveSpectator = createComponent({
-            props: {
-                field: TEXT_AREA_FIELD_MOCK,
-                contentlet: contentletWithEntries
-            } as unknown
-        });
-        preserveSpectator.component.disabledWYSIWYGField.setValue(existingEntries);
-        preserveSpectator.detectChanges();
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                        disabledWYSIWYG: new FormControl(existingEntries)
+                    }),
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: createFakeContentlet({
+                        disabledWYSIWYG: existingEntries,
+                        [TEXT_AREA_FIELD_MOCK.variable]: ''
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
 
         const disabledWYSIWYGChangeSpy = jest.fn();
-        preserveSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+        spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch to Monaco editor
-        preserveSpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+        spectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
 
         // Assert: Should preserve existing entries and add new one
         const expectedEntries = [
@@ -165,27 +257,34 @@ describe('DotEditContentTextAreaComponent', () => {
 
     it('should clear disabledWYSIWYG when switching back to PlainText editor', () => {
         // Arrange: Create a new spectator with Monaco editor as active
-        const contentletWithMonaco = {
-            [TEXT_AREA_FIELD_MOCK.variable]: '',
-            disabledWYSIWYG: [`${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`]
-        } as DotCMSContentlet;
 
-        const clearSpectator = createComponent({
-            props: {
-                field: TEXT_AREA_FIELD_MOCK,
-                contentlet: contentletWithMonaco
-            } as unknown
-        });
-        clearSpectator.component.disabledWYSIWYGField.setValue([
-            `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
-        ]);
-        clearSpectator.detectChanges();
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                        disabledWYSIWYG: new FormControl([
+                            `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+                        ])
+                    }),
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: createFakeContentlet({
+                        disabledWYSIWYG: [`${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`],
+                        [TEXT_AREA_FIELD_MOCK.variable]: ''
+                    })
+                }
+            }
+        );
+        spectator.detectChanges();
 
         const disabledWYSIWYGChangeSpy = jest.fn();
-        clearSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+        spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch back to PlainText editor
-        clearSpectator.component.onEditorChange(AvailableEditorTextArea.PlainText);
+        spectator.component.onEditorChange(AvailableEditorTextArea.PlainText);
 
         // Assert: Should clear disabledWYSIWYG
         expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([]);
@@ -193,25 +292,33 @@ describe('DotEditContentTextAreaComponent', () => {
 
     it('should handle contentlet without disabledWYSIWYG property gracefully', () => {
         // Arrange: Create a new spectator with contentlet without disabledWYSIWYG property
-        const contentletWithoutProperty = {
+        const contentletWithoutProperty = createFakeContentlet({
             [TEXT_AREA_FIELD_MOCK.variable]: ''
-        } as DotCMSContentlet;
+        });
         // Explicitly remove the property to simulate real scenarios
         delete contentletWithoutProperty.disabledWYSIWYG;
 
-        const noPropertySpectator = createComponent({
-            props: {
-                field: TEXT_AREA_FIELD_MOCK,
-                contentlet: contentletWithoutProperty
-            } as unknown
-        });
-        noPropertySpectator.detectChanges();
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [TEXT_AREA_FIELD_MOCK.variable]: new FormControl()
+                    }),
+                    field: TEXT_AREA_FIELD_MOCK,
+                    contentlet: contentletWithoutProperty
+                }
+            }
+        );
+        spectator.detectChanges();
 
         const disabledWYSIWYGChangeSpy = jest.fn();
-        noPropertySpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
+        spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch to Monaco editor
-        noPropertySpectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
+        spectator.component.onEditorChange(AvailableEditorTextArea.Monaco);
 
         // Assert: Should emit the new disabledWYSIWYG value
         expect(disabledWYSIWYGChangeSpy).toHaveBeenCalledWith([
@@ -219,86 +326,29 @@ describe('DotEditContentTextAreaComponent', () => {
         ]);
     });
 
-    it('should call onSelectLanguageVariable when language variable is selected', () => {
-        // Spy on component method
-        const spy = jest.spyOn(component, 'onSelectLanguageVariable');
-
-        // Get language variable selector component
-        const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
-
-        // Trigger onSelectLanguageVariable event
-        const testVariable = '${languageVariable}';
-        languageVariableSelector.onSelectLanguageVariable.emit(testVariable);
-
-        // Verify method called with correct parameter
-        expect(spy).toHaveBeenCalledWith(testVariable);
-    });
-
-    it('should switch to Monaco editor when user selects Code Editor option', () => {
-        // Arrange: Spy on the method
-        const spy = jest.spyOn(component, 'onEditorChange');
-
-        // Act: Simulate user selecting Monaco editor from dropdown
-        component.$selectedEditorDropdown.set(AvailableEditorTextArea.PlainText); // Initial state
-
-        // Simulate onChange event without triggering detectChanges
-        component.onEditorChange(AvailableEditorTextArea.Monaco);
-
-        // Assert: Method called and editor switched
-        expect(spy).toHaveBeenCalledWith(AvailableEditorTextArea.Monaco);
-        expect(component.$displayedEditor()).toBe(AvailableEditorTextArea.Monaco);
-    });
-
-    it('should handle inserting language variable when user selects it in plaintext mode', () => {
-        // Mock the insertLanguageVariableInTextarea private method
-        const insertLanguageVariableInTextareaMock = jest.fn();
-        component['insertLanguageVariableInTextarea'] = insertLanguageVariableInTextareaMock;
-
-        // Keep in PlainText mode
-        component.$displayedEditor.set(AvailableEditorTextArea.PlainText);
-
-        spectator.detectChanges();
-
-        // Act: Simulate language variable selection
-        const testVariable = '${testLanguageVariable}';
-        component.onSelectLanguageVariable(testVariable);
-        spectator.detectChanges();
-
-        // Assert: Private method called with correct parameters
-        expect(insertLanguageVariableInTextareaMock).toHaveBeenCalled();
-        expect(insertLanguageVariableInTextareaMock.mock.calls[0][1]).toBe(testVariable);
-    });
-
-    it('should insert language variable into Monaco editor when in Monaco mode', () => {
-        // Mock the insertLanguageVariableInMonaco private method
-        const insertLanguageVariableInMonacoMock = jest.fn();
-        component['insertLanguageVariableInMonaco'] = insertLanguageVariableInMonacoMock;
-
-        // Switch to Monaco editor mode
-        component.$displayedEditor.set(AvailableEditorTextArea.Monaco);
-
-        // Act: Simulate language variable selection
-        const testVariable = '${monacoTestVariable}';
-        component.onSelectLanguageVariable(testVariable);
-
-        // Assert: Private method called with correct parameter
-        expect(insertLanguageVariableInMonacoMock).toHaveBeenCalledWith(testVariable);
-    });
-
     describe('disabledWYSIWYGChange', () => {
         it('should emit disabledWYSIWYGChange when switching from PlainText to Monaco editor', () => {
             // Arrange: Create a contentlet with empty content and no disabled settings
-            const contentletMock = {
+            const contentletMock = createFakeContentlet({
                 [TEXT_AREA_FIELD_MOCK.variable]: '',
                 disabledWYSIWYG: []
-            } as DotCMSContentlet;
-
-            const switchSpectator = createComponent({
-                props: {
-                    field: TEXT_AREA_FIELD_MOCK,
-                    contentlet: contentletMock
-                } as unknown
             });
+
+            const switchSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                            disabledWYSIWYG: new FormControl([])
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: contentletMock
+                    }
+                }
+            );
             switchSpectator.detectChanges();
 
             // Spy on the output event
@@ -319,17 +369,28 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should emit disabledWYSIWYGChange when switching from Monaco back to PlainText editor', () => {
             // Arrange: Create a contentlet with Monaco editor already enabled
-            const contentletMock = {
+            const contentletMock = createFakeContentlet({
                 [TEXT_AREA_FIELD_MOCK.variable]: '',
                 disabledWYSIWYG: [`${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`]
-            } as DotCMSContentlet;
-
-            const switchBackSpectator = createComponent({
-                props: {
-                    field: TEXT_AREA_FIELD_MOCK,
-                    contentlet: contentletMock
-                } as unknown
             });
+
+            const switchBackSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                            disabledWYSIWYG: new FormControl([
+                                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+                            ])
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: contentletMock
+                    }
+                }
+            );
             switchBackSpectator.detectChanges();
 
             // Spy on the output event
@@ -348,17 +409,28 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should correctly initialize with Monaco editor when contentlet has preference set', () => {
             // Arrange: Contentlet with Monaco editor preference already set
-            const contentletWithMonaco = {
+            const contentletWithMonaco = createFakeContentlet({
                 [TEXT_AREA_FIELD_MOCK.variable]: '',
                 disabledWYSIWYG: [`${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`]
-            } as DotCMSContentlet;
-
-            const initSpectator = createComponent({
-                props: {
-                    field: TEXT_AREA_FIELD_MOCK,
-                    contentlet: contentletWithMonaco
-                } as unknown
             });
+
+            const initSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                            disabledWYSIWYG: new FormControl([
+                                `${TEXT_AREA_FIELD_MOCK.variable}@ToggleEditor`
+                            ])
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: contentletWithMonaco
+                    }
+                }
+            );
             initSpectator.detectChanges();
 
             // Assert: Should initialize with Monaco editor
@@ -373,21 +445,26 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should preserve other field entries when updating current field editor preference', () => {
             // Arrange: Contentlet with existing entries for other fields
-            const contentletMock = {
+            const contentletMock = createFakeContentlet({
                 [TEXT_AREA_FIELD_MOCK.variable]: '',
                 disabledWYSIWYG: ['otherField', 'wysiwygField']
-            } as DotCMSContentlet;
-
-            const preserveSpectator = createComponent({
-                props: {
-                    field: TEXT_AREA_FIELD_MOCK,
-                    contentlet: contentletMock
-                } as unknown
             });
-            preserveSpectator.component.disabledWYSIWYGField.setValue([
-                'otherField',
-                'wysiwygField'
-            ]);
+
+            const preserveSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                            disabledWYSIWYG: new FormControl(['otherField', 'wysiwygField'])
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: contentletMock
+                    }
+                }
+            );
             preserveSpectator.detectChanges();
 
             // Spy on the output event
@@ -407,18 +484,26 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should handle smooth editor switching workflow without conflicts', () => {
             // Arrange: Start with clean contentlet
-            const contentletEmpty = {
+            const contentletEmpty = createFakeContentlet({
                 [TEXT_AREA_FIELD_MOCK.variable]: '',
                 disabledWYSIWYG: []
-            } as DotCMSContentlet;
-
-            const workflowSpectator = createComponent({
-                props: {
-                    field: TEXT_AREA_FIELD_MOCK,
-                    contentlet: contentletEmpty
-                } as unknown
             });
-            workflowSpectator.component.disabledWYSIWYGField.setValue([]);
+
+            const workflowSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                            disabledWYSIWYG: new FormControl([])
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: contentletEmpty
+                    }
+                }
+            );
             workflowSpectator.detectChanges();
 
             const disabledWYSIWYGChangeSpy = jest.fn();
@@ -447,19 +532,27 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should handle contentlet without disabledWYSIWYG property', () => {
             // Arrange: Create a contentlet without disabledWYSIWYG property
-            const contentletMock = {
+            const contentletMock = createFakeContentlet({
                 [TEXT_AREA_FIELD_MOCK.variable]: ''
-            } as DotCMSContentlet;
+            });
             // Explicitly remove the property to simulate real scenarios
             delete contentletMock.disabledWYSIWYG;
 
-            const noPropertySpectator = createComponent({
-                props: {
-                    field: TEXT_AREA_FIELD_MOCK,
-                    contentlet: contentletMock
-                } as unknown
-            });
-            noPropertySpectator.component.disabledWYSIWYGField.setValue([]);
+            const noPropertySpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet"/>
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [TEXT_AREA_FIELD_MOCK.variable]: new FormControl(),
+                            disabledWYSIWYG: new FormControl([])
+                        }),
+                        field: TEXT_AREA_FIELD_MOCK,
+                        contentlet: contentletMock
+                    }
+                }
+            );
             noPropertySpectator.detectChanges();
 
             // Spy on the output event

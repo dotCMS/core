@@ -2,17 +2,12 @@ import { of, throwError } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -37,16 +32,7 @@ describe('ForgotPasswordComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [ForgotPasswordComponent],
-            imports: [
-                BrowserAnimationsModule,
-                FormsModule,
-                ReactiveFormsModule,
-                ButtonModule,
-                InputTextModule,
-                DotFieldValidationMessageComponent,
-                RouterTestingModule
-            ],
+            imports: [ForgotPasswordComponent, BrowserAnimationsModule, RouterTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -90,14 +76,15 @@ describe('ForgotPasswordComponent', () => {
 
         const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
 
-        spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
-        spyOn(window, 'confirm').and.returnValue(true);
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
         fixture.detectChanges();
 
         expect(requestPasswordButton.nativeElement.disabled).toBeFalsy();
         requestPasswordButton.triggerEventHandler('click', {});
 
         expect(loginService.recoverPassword).toHaveBeenCalledWith('test');
+        expect(loginService.recoverPassword).toHaveBeenCalledTimes(1);
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
             queryParams: {
                 resetEmailSent: true,
@@ -124,8 +111,8 @@ describe('ForgotPasswordComponent', () => {
 
     it('should show error message', () => {
         const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
-        spyOn(window, 'confirm').and.returnValue(true);
-        spyOn(loginService, 'recoverPassword').and.returnValue(
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(
             throwError({ error: { errors: [{ message: 'error message' }] } })
         );
         const input: HTMLInputElement = de.query(By.css('[data-testid="input"]')).nativeElement;
@@ -134,15 +121,15 @@ describe('ForgotPasswordComponent', () => {
         requestPasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
-            .innerText;
+            .textContent;
         expect(errorMessage).toEqual('error message');
     });
 
     it('should show go to login if submit is success', () => {
         const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
 
-        spyOn(window, 'confirm').and.returnValue(true);
-        spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
+        jest.spyOn(window, 'confirm').mockReturnValue(true);
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
         component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         fixture.detectChanges();
         requestPasswordButton.triggerEventHandler('click', {});
@@ -160,5 +147,6 @@ describe('ForgotPasswordComponent', () => {
         cancelButton.triggerEventHandler('click', {});
 
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith(undefined);
+        expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
     });
 });

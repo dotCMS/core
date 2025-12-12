@@ -1,4 +1,4 @@
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
@@ -15,18 +15,19 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -36,6 +37,7 @@ import {
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
+    DotPushPublishDialogService,
     LoggerService,
     LoginService,
     StringUtils,
@@ -43,15 +45,16 @@ import {
 } from '@dotcms/dotcms-js';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
-import { DotContentletsModule } from './dot-contentlets/dot-contentlets.module';
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
-import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
 
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../api/services/dot-menu.service';
-import { DotUiColorsService } from '../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../test/dot-test-bed';
-import { DotDownloadBundleDialogModule } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
+import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
@@ -91,16 +94,19 @@ describe('DotPortletDetailComponent', () => {
                 DotEventsService,
                 DotGenerateSecurePasswordService,
                 DotLicenseService,
+                DotContentletEditorService,
+                DotWorkflowTaskDetailService,
+                DotDownloadBundleDialogService,
+                DotPushPublishDialogService,
+                IframeOverlayService,
                 mockProvider(DotContentTypeService)
             ],
-            declarations: [DotPortletDetailComponent],
             imports: [
-                DotWorkflowTaskModule,
-                DotContentletsModule,
+                DotPortletDetailComponent,
+                HttpClientTestingModule,
                 RouterTestingModule,
                 BrowserAnimationsModule,
-                DotDownloadBundleDialogModule,
-                HttpClientTestingModule
+                DotDownloadBundleDialogComponent
             ]
         });
     }));
@@ -113,14 +119,17 @@ describe('DotPortletDetailComponent', () => {
 
     it('should not have dot-workflow-task', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: ''
+        Object.defineProperty(router, 'parent', {
+            value: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            id: ''
+                        }
                     }
                 }
-            }
+            },
+            writable: true
         });
 
         fixture.detectChanges();
@@ -130,14 +139,17 @@ describe('DotPortletDetailComponent', () => {
 
     it('should have dot-workflow-task', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: 'workflow'
+        Object.defineProperty(router, 'parent', {
+            value: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            id: 'workflow'
+                        }
                     }
                 }
-            }
+            },
+            writable: true
         });
 
         fixture.detectChanges();
@@ -147,14 +159,17 @@ describe('DotPortletDetailComponent', () => {
 
     it('should have dot-contentlets', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: 'content'
+        Object.defineProperty(router, 'parent', {
+            value: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            id: 'content'
+                        }
                     }
                 }
-            }
+            },
+            writable: true
         });
 
         fixture.detectChanges();

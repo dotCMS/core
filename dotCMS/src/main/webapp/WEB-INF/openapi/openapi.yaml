@@ -36,6 +36,9 @@ tags:
   name: Browser Tree
 - description: Endpoints for managing Container objects and their content
   name: Containers
+- description: Endpoints for managing content and contentlets - the core data objects
+    in dotCMS
+  name: Content
 - description: Returns the content types valid for a page based on the container/types
     on the layout
   name: getPagesContentTypes
@@ -70,6 +73,8 @@ tags:
   name: System Monitoring
 - description: Endpoints for managing page templates and layouts
   name: Templates
+- description: Provides business intelligence metrics for dashboard usage
+  name: Usage
 - description: Endpoints for managing content variants
   name: Variants
 - description: Content type field definitions and configuration
@@ -85,8 +90,6 @@ tags:
   name: Categories
 - description: Cluster nodes and distributed system management
   name: Cluster Management
-- description: Endpoints for managing content and contentlets
-  name: Content
 - description: Content delivery and rendering
   name: Content Delivery
 - description: Content reporting and analytics
@@ -171,6 +174,23 @@ paths:
         default:
           content:
             text/xml: {}
+          description: default response
+      tags:
+      - Publishing
+  /auditPublishing/getAll:
+    post:
+      operationId: getAll
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        default:
+          content:
+            application/json: {}
           description: default response
       tags:
       - Publishing
@@ -1852,7 +1872,7 @@ paths:
       - JavaScript
   /license/all/{params}:
     get:
-      operationId: getAll
+      operationId: getAll_1
       parameters:
       - in: path
         name: params
@@ -2982,88 +3002,12 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/analytics/content:
-    post:
-      description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using Path Parameters instead of a CubeJS JSON\
-        \ query. This helps abstract the complexity of the underlying JSON format\
-        \ for users that need an easier way to query for specific data."
-      operationId: postContentAnalyticsSimpleQuery
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
-                type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                measures: request.count request.totalSessions
-                dimensions: request.host request.whatAmI request.url
-                timeDimensions: request.createdAt:day:Last month
-                filters: "request.totalRequest gt 0:request.whatAmI contains PAGE,FILE"
-                order: request.count asc:request.createdAt asc
-                limit: 15
-                offset: 0
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Returns Content Analytics data
-      tags:
-      - Content Analytics
-  /v1/analytics/content/_query:
-    post:
-      description: Returns information of specific dotCMS objects whose health and
-        engagement data is tracked. This method takes a specific less verbose JSON
-        format to query the data.
-      operationId: postContentAnalyticsQuery
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/QueryForm"
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                query:
-                  measures:
-                  - request.count
-                  order: request.count DESC
-                  dimensions:
-                  - request.url
-                  - request.pageId
-                  - request.pageTitle
-                  filters: "request.whatAmI = ['PAGE']"
-                  limit: 100
-                  offset: 1
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "403":
-          description: Forbidden
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Retrieve Content Analytics data
-      tags:
-      - Content Analytics
   /v1/analytics/content/_query/cube:
     post:
       description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query."
-      operationId: postContentAnalyticsQuery_1
+        \ engagement data is tracked, using a CubeJS JSON query. **Note:** This endpoint\
+        \ is in **beta** and may change."
+      operationId: postContentAnalyticsQuery
       requestBody:
         content:
           application/json:
@@ -3086,12 +3030,13 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Retrieve Content Analytics data
+      summary: Retrieve Content Analytics data **(Beta)**
       tags:
       - Content Analytics
   /v1/analytics/content/event:
     post:
-      description: receives a custom event payload and fires the event to the collectors
+      description: receives a custom event payload and fires the event to the collectors.
+        **Note:** This endpoint is in **beta** and may change.
       operationId: fireUserCustomEvent
       requestBody:
         content:
@@ -3114,14 +3059,14 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire an user custom event.
+      summary: Fire an user custom event **(Beta)**.
       tags:
       - Content Analytics
-  /v1/analytics/content/sitekey/generate/{siteId}:
+  /v1/analytics/content/siteauth/generate/{siteId}:
     get:
       description: Generates and returns a Site Key that must be used by the client-side
         JS code to send custom Content Analytics Events
-      operationId: generateSiteKey
+      operationId: generateSiteAuth
       parameters:
       - in: path
         name: siteId
@@ -3141,7 +3086,7 @@ paths:
           description: Method Not Allowed
         "500":
           description: Internal Server Error
-      summary: Generate Site Key
+      summary: Generate Site Auth
       tags:
       - Content Analytics
   /v1/announcements:
@@ -3826,21 +3771,33 @@ paths:
       - Apps
   /v1/assets:
     post:
+      description: Retrieve detailed information and metadata for an asset (file or
+        folder) using its path
       operationId: getAssetsInfo
       requestBody:
         content:
           '*/*':
             schema:
-              $ref: "#/components/schemas/AssetInfoRequestForm"
+              $ref: "#/components/schemas/AssetLookupRequestForm"
+        description: Asset path information
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAssetEntityView"
+          description: Asset information retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+      summary: Get asset information by path
       tags:
       - Web Assets
     put:
+      description: Upload a new asset file or update an existing one at the specified
+        path using multipart form data
       operationId: saveUpdateAsset
       requestBody:
         content:
@@ -3855,75 +3812,221 @@ paths:
                 file:
                   $ref: "#/components/schemas/FormDataContentDisposition"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAssetEntityView"
+          description: Asset uploaded/updated successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid file or path
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Upload or update asset file
       tags:
       - Web Assets
   /v1/assets/_archive:
     post:
+      description: Archive an asset (file) to make it inactive while preserving it
+        in the system.
       operationId: archiveAsset
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
-              $ref: "#/components/schemas/AssetInfoRequestForm"
+              $ref: "#/components/schemas/AssetArchiveRequestForm"
+        description: Asset archive request information
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Asset archived successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to archive asset
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+      summary: Archive asset
       tags:
       - Web Assets
   /v1/assets/_delete:
     post:
+      description: Permanently delete an asset (file) from the system using its path
       operationId: deleteAsset
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
-              $ref: "#/components/schemas/AssetInfoRequestForm"
+              $ref: "#/components/schemas/AssetDeletionRequestForm"
+        description: Asset deletion request information
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Asset deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to delete asset
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+      summary: Delete asset permanently
       tags:
       - Web Assets
   /v1/assets/_download:
     post:
+      description: "Download the binary content of an asset file by path, language\
+        \ and version"
       operationId: download
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/AssetsRequestForm"
+        description: Asset download request information
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/octet-stream: {}
+          description: Asset file download started successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+      summary: Download asset file
+      tags:
+      - Web Assets
+  /v1/assets/folders:
+    post:
+      description: Create a new folder at the specified path with the provided configuration
+        details
+      operationId: createFolder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewFolderForm"
+        description: New folder creation request with path and configuration
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Folder created successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request data or folder path
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "409":
+          content:
+            application/json: {}
+          description: Folder already exists at the specified path
+      summary: Create new folder
+      tags:
+      - Web Assets
+    put:
+      description: Update an existing folder's configuration details and optionally
+        rename it
+      operationId: updateFolder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFolderForm"
+        description: Folder update request with path and new configuration details
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Folder updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request data or folder path
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to update folder
+        "404":
+          content:
+            application/json: {}
+          description: Folder not found at the specified path
+      summary: Update existing folder
       tags:
       - Web Assets
   /v1/assets/folders/_delete:
     post:
+      description: Permanently delete a folder and all its contents from the system
+        using its path
       operationId: deleteFolder
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
-              $ref: "#/components/schemas/AssetInfoRequestForm"
+              $ref: "#/components/schemas/FolderDeletionRequestForm"
+        description: Folder deletion request information
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Folder deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to delete folder
+        "404":
+          content:
+            application/json: {}
+          description: Folder not found
+      summary: Delete folder permanently
       tags:
       - Web Assets
   /v1/authentication:
@@ -5424,7 +5527,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityContentletView"
           description: Draft saved successfully
         "400":
           description: Bad request - Invalid content data
@@ -6303,6 +6406,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: The Language ID that the history will be filtered by
+        in: query
+        name: languageId
+        required: true
+        schema:
+          type: string
       - description: Specified whether the history must be grouped by language or
           not
         in: query
@@ -6347,7 +6456,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: The identifier path parameter was not specified.
+          description: "The identifier path parameter was not specified, or one of\
+            \ the specified parameters is invalid."
         "401":
           content:
             application/json: {}
@@ -6402,7 +6512,7 @@ paths:
         which languages have content versions
       operationId: checkContentLanguageVersions
       parameters:
-      - description: Content identifier
+      - description: Identifier of contentlet whose language status to display.
         in: path
         name: identifier
         required: true
@@ -6422,6 +6532,51 @@ paths:
             application/json: {}
           description: Not found - contentlet identifier not found
       summary: Check content language versions
+      tags:
+      - Content
+  /v1/content/{identifier}/push/history:
+    get:
+      description: Returns the push history of a contentlet
+      operationId: getPushHistory
+      parameters:
+      - description: ID of the Contentlet whose push history will be retrieved.
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: "Maximum number or results being returned, for pagination purposes."
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: "Page number of the results being returned, for pagination purposes."
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: History data retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required.
+        "404":
+          content:
+            application/json: {}
+          description: The specified identifier does not match any contentlet.
+        "500":
+          content:
+            application/json: {}
+          description: An internal dotCMS error has occurred.
+      summary: Contentlet Push History
       tags:
       - Content
   /v1/content/{identifier}/references/count:
@@ -6735,7 +6890,7 @@ paths:
         in: query
         name: type
         schema:
-          type: string
+          type: array
           enum:
           - ANY
           - CONTENT
@@ -6747,6 +6902,20 @@ paths:
           - VANITY_URL
           - KEY_VALUE
           - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host
@@ -6756,6 +6925,12 @@ paths:
           \ or keys."
         in: query
         name: sites
+        schema:
+          type: string
+      - description: "Guarantee Content Types to be included in the response: Comma-separated\
+          \ content type keys (e.g. `activity, blog, product`)."
+        in: query
+        name: ensure
         schema:
           type: string
       responses:
@@ -6995,7 +7170,8 @@ paths:
             application/json:
               example:
                 entity:
-                - label: string
+                - index: int
+                  label: string
                   name: string
                   types: null
                 errors: []
@@ -7056,7 +7232,7 @@ paths:
       - description: |-
           The ID or Velocity variable name of the content type to retrieve.
 
-          Example: `htmlpageasset` (Default page content type)
+          Variable name example: `htmlpageasset` (Default page content type)
         in: path
         name: idOrVar
         required: true
@@ -7286,6 +7462,36 @@ paths:
           enum:
           - ASC
           - DESC
+      - description: "List of variable names of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+        in: query
+        name: type
+        schema:
+          type: array
+          enum:
+          - ANY
+          - CONTENT
+          - WIDGET
+          - FORM
+          - FILEASSET
+          - HTMLPAGE
+          - PERSONA
+          - VANITY_URL
+          - KEY_VALUE
+          - DOTASSET
+          items:
+            type: string
+            enum:
+            - ANY
+            - CONTENT
+            - WIDGET
+            - FORM
+            - FILEASSET
+            - HTMLPAGE
+            - PERSONA
+            - VANITY_URL
+            - KEY_VALUE
+            - DOTASSET
+        style: form
       - description: Filter by site identifier.
         in: query
         name: host
@@ -7336,6 +7542,82 @@ paths:
       summary: Retrieves a list of content types for a page
       tags:
       - getPagesContentTypes
+      - Content Type
+  /v1/contenttype/render/id/{idOrVar}:
+    get:
+      description: "Returns a content type based on the provided ID or Velocity variable\
+        \ name. Additionally, the Velocity code in all of its custom fields will be\
+        \ parsed."
+      operationId: getContentTypeIdVar_1
+      parameters:
+      - description: |-
+          The ID or Velocity variable name of the content type to retrieve.
+
+          Variable name example: `htmlpageasset` (Default page content type)
+        in: path
+        name: idOrVar
+        required: true
+        schema:
+          type: string
+      - description: The language ID for localization.
+        in: query
+        name: languageId
+        schema:
+          type: integer
+          format: int64
+      - description: Determines whether live versions of language variables are used
+          in the returned object.
+        in: query
+        name: live
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fields: []
+                  fixed: false
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  systemActionMappings: {}
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content type retrieved successfully
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a single content type with their rendered custom fields
+      tags:
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:
@@ -9333,6 +9615,7 @@ paths:
       - Folders
   /v1/folder/{siteName}:
     delete:
+      description: Delete one or more path for a site if they exist
       operationId: deleteFolders
       parameters:
       - in: path
@@ -9348,11 +9631,25 @@ paths:
               items:
                 type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - /folder-1/folder-2/target-folder
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Folders deleted successfully
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Insufficient permissions to delete folders
+        "404":
+          description: Folders not found
+      summary: Delete one or more path for a site
       tags:
       - Folders
   /v1/forgotpassword:
@@ -9579,152 +9876,229 @@ paths:
       - Health
   /v1/jobs:
     get:
+      description: Fetches a paginated list of all jobs regardless of state. Results
+        can be paginated using query parameters.
       operationId: listJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have necessary permissions to view\
+            \ jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves jobs
       tags:
       - Job Queue
   /v1/jobs/abandoned:
     get:
-      operationId: abandonedJobs
+      description: Fetches a paginated list of abandoned jobs. Results can be paginated
+        using query parameters.
+      operationId: getAbandonedJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of abandoned jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have necessary permissions to view\
+            \ jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves abandoned jobs
       tags:
       - Job Queue
   /v1/jobs/active:
     get:
-      operationId: activeJobs
+      description: Fetches a paginated list of active jobs. Results can be paginated
+        using query parameters.
+      operationId: getActiveJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of active jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have necessary permissions to view\
+            \ jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves active jobs
       tags:
       - Job Queue
   /v1/jobs/canceled:
     get:
-      operationId: canceledJobs
+      description: Fetches a paginated list of canceled jobs. Results can be paginated
+        using query parameters.
+      operationId: getCanceledJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of canceled jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User lacks permission to view jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves canceled jobs
       tags:
       - Job Queue
   /v1/jobs/completed:
     get:
-      operationId: completedJobs
+      description: Fetches a paginated list of completed jobs. Results can be paginated
+        using query parameters.
+      operationId: getCompletedJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of completed jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have necessary permissions to view\
+            \ jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves completed jobs
       tags:
       - Job Queue
   /v1/jobs/failed:
     get:
-      operationId: failedJobs
+      description: Fetches a paginated list of failed jobs. Results can be paginated
+        using query parameters.
+      operationId: getFailedJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of failed jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have necessary permissions to view\
+            \ jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves failed jobs
       tags:
       - Job Queue
   /v1/jobs/queues:
@@ -9750,63 +10124,114 @@ paths:
       - Job Queue
   /v1/jobs/successful:
     get:
-      operationId: successfulJobs
+      description: Fetches a paginated list of successful jobs. Results can be paginated
+        using query parameters.
+      operationId: getSuccessfulJobs
       parameters:
-      - in: query
+      - description: Page number to retrieve (1-based).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved the paginated list of successful jobs.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have necessary permissions to view\
+            \ jobs."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves successful jobs
       tags:
       - Job Queue
   /v1/jobs/{jobId}/cancel:
     post:
-      operationId: cancelJob
+      description: Sends an asynchronous cancellation request for the specified job.
+        The job may still complete if it has already finished or cannot be interrupted.
+      operationId: cancelJobQueueJob
       parameters:
-      - in: path
+      - description: Unique identifier (UUID) of the job to cancel.
+        in: path
         name: jobId
         required: true
         schema:
           type: string
+          format: uuid
+          example: e6d9bae8-657b-4e2f-8524-c0222db66355
       responses:
-        default:
+        "200":
           content:
             application/json:
+              example:
+                entity: Cancellation request successfully sent to job e6d9bae8-657b-4e2f-8524-c0222db66355
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewString"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cancellation request accepted.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have permission to cancel this job."
+        "404":
+          description: "Not Found: Job with the specified ID does not exist or is\
+            \ already completed/cancelled."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ attempting to cancel the job."
+      summary: Cancel a job
       tags:
       - Job Queue
   /v1/jobs/{jobId}/monitor:
     get:
+      description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
+        \ progress of a specific  job in real-time. This endpoint will continuously\
+        \ send updates as the job progresses, including status changes and completion\
+        \ information."
       operationId: monitorJob
       parameters:
-      - in: path
+      - description: The unique identifier (UUID) of the job whose status is to be
+          retrieved.
+        in: path
         name: jobId
         required: true
         schema:
           type: string
+          format: uuid
+          example: e6d9bae8-657b-4e2f-8524-c0222db66355
       responses:
-        default:
+        "200":
           content:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: default response
+          description: Server-Sent Events stream established successfully. Events
+            will be sent as the job progresses.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have permissions to monitor the specified\
+            \ job."
+        "404":
+          description: "Not Found: Job with the specified ID could not be found."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ establishing the monitoring connection."
+      summary: Monitor a job in real time
       tags:
       - Job Queue
   /v1/jobs/{jobId}/status:
@@ -9815,12 +10240,14 @@ paths:
         \ progress, state, and results."
       operationId: getJobStatus_1
       parameters:
-      - description: Unique identifier of the job
+      - description: Unique identifier (UUID) of the job.
         in: path
         name: jobId
         required: true
         schema:
           type: string
+          format: uuid
+          example: e6d9bae8-657b-4e2f-8524-c0222db66355
       responses:
         "200":
           content:
@@ -9853,6 +10280,7 @@ paths:
         required: true
         schema:
           type: string
+          example: image-processing
       requestBody:
         content:
           application/json:
@@ -9865,48 +10293,143 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                entity:
+                  jobId: e6d9bae8-657b-4e2f-8524-c0222db66355
+                  statusUrl: http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
               schema:
                 $ref: "#/components/schemas/ResponseEntityJobStatusView"
           description: Job created successfully
         "400":
-          description: Bad request - Invalid job parameters or queue name
+          description: "Bad Request: Invalid parameters or malformed JSON."
         "401":
-          description: Unauthorized - User not authenticated
+          description: "Unauthorized: Invalid or missing user authentication."
         "403":
-          description: Forbidden - User lacks required permissions
+          description: "Forbidden: User lacks permission to enqueue jobs in the specified\
+            \ queue."
+        "404":
+          description: "Not Found: Queue with the specified name does not exist."
         "500":
-          description: Internal server error
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ creating the job."
       summary: Creates a new job with JSON parameters
       tags:
       - Job Queue
   /v1/jobs/{queueName}/active:
     get:
-      operationId: activeJobs_1
+      description: Fetches a paginated list of active jobs. Results can be paginated
+        using query parameters.for the specified queue.
+      operationId: getActiveJobsByQueue
       parameters:
-      - in: path
+      - description: Logical name of the queue.
+        in: path
         name: queueName
         required: true
         schema:
           type: string
-      - in: query
+          example: image-processing
+      - description: Page number to retrieve (1-based indexing).
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: Number of records per page.
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successfully retrieved active jobs for the queue.
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have permission to view jobs in this\
+            \ queue."
+        "404":
+          description: "Not Found: Queue with the specified name does not exist."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ retrieving jobs."
+      summary: Retrieves active jobs in a queue
+      tags:
+      - Job Queue
+  /v1/jobs/{queueName}/upload:
+    post:
+      description: Creates and queues a new background job with multipart form data
+        parameters. Returns the job ID and initial status information.
+      operationId: createJobWithFormData
+      parameters:
+      - description: Name of the job queue to submit to
+        in: path
+        name: queueName
+        required: true
+        schema:
+          type: string
+          example: image-processing
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/JobParamsSchema"
+        description: |-
+          This endpoint accepts a `multipart/form-data` request with two fields:
+
+          | **Field** | **Type** | **Required** | **Description** |
+          |-----------|----------|--------------|-----------------|
+          | `file`    | File     | ❌ No        | The file to be processed by the queue.|
+          | `form`    | String   | ❌ No        | A JSON string containing job-specific parameters.|
+
+          **Example `form` value:**
+
+          ```json
+          {
+           "contentType":"CustomContentType", "workflowActionId":"Workflow-UUID", "language":"en-us", "stopOnError":true,
+          }
+          ```
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  jobId: e6d9bae8-657b-4e2f-8524-c0222db66355
+                  statusUrl: http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job created successfully
+        "400":
+          description: "Bad Request: Invalid parameters, malformed multipart payload,\
+            \ or file issues."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User lacks permission to enqueue jobs in the specified\
+            \ queue."
+        "404":
+          description: "Not Found: Queue with the specified name does not exist."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ creating the job."
+      summary: Creates a new job with form data
       tags:
       - Job Queue
   /v1/jvm:
@@ -10967,6 +11490,29 @@ paths:
           description: default response
       tags:
       - Page
+  /v1/permissions:
+    get:
+      description: Returns available permission levels and scopes that can be assigned
+        to users and roles
+      operationId: getPermissionMetadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPermissionMetadataView"
+          description: Permission metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - frontend user attempted access (backend user required)
+      summary: Get permission metadata
+      tags:
+      - Permissions
   /v1/permissions/_bycontent:
     get:
       description: "Retrieves permissions for a specific contentlet by its identifier.\
@@ -11062,6 +11608,64 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Get permissions by permission type
+      tags:
+      - Permissions
+  /v1/permissions/user/{userId}/asset/{assetId}:
+    put:
+      description: "Saves permissions for a user's individual role on a specific asset\
+        \ (host or folder). This endpoint assigns permissions directly to the user's\
+        \ individual role. If the asset inherits permissions, inheritance will be\
+        \ broken automatically before saving. Optionally cascade permissions to descendants\
+        \ (removes their individual permissions). Only admin users can update permissions."
+      operationId: updateUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Asset identifier (host ID or folder inode)
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveUserPermissionsForm"
+        description: Permission updates to apply. Use empty arrays to remove all permissions
+          for a scope.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySaveUserPermissionsView"
+          description: User permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid input (see error message for details)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required or user lacks EDIT_PERMISSIONS
+            on asset
+        "404":
+          content:
+            application/json: {}
+          description: User or asset not found
+      summary: Update user permissions on asset
       tags:
       - Permissions
   /v1/personalization/pagepersonas:
@@ -13046,7 +13650,7 @@ paths:
       - System Storage
   /v1/system-table:
     get:
-      operationId: getAll_1
+      operationId: getAll_2
       responses:
         default:
           content:
@@ -13876,6 +14480,27 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/usage/summary:
+    get:
+      description: "Retrieves key business metrics optimized for dashboard display\
+        \ including content, sites, users, and system metrics"
+      operationId: getSummary
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUsageSummaryView"
+          description: Dashboard summary retrieved successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Get usage dashboard summary
+      tags:
+      - Usage
   /v1/users:
     post:
       description: "Creates a new user. Requires admin privileges or access to Users\
@@ -14325,6 +14950,64 @@ paths:
                 $ref: "#/components/schemas/ResponseUserDeletedEntityView"
           description: If the user to update does not exist
       summary: Deletes an existing user.
+      tags:
+      - Users
+    get:
+      description: Returns an user
+      operationId: findUser
+      parameters:
+      - description: Identifier of user to retrieve
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseUserMapEntityView"
+          description: User retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Find an user
+      tags:
+      - Users
+  /v1/users/{userId}/permissions:
+    get:
+      description: "Retrieves permissions for a user's individual role, organized\
+        \ by asset type and permission scope"
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
+          description: User permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid user id
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Get user permissions
       tags:
       - Users
   /v1/variants:
@@ -14933,8 +15616,6 @@ paths:
   /v1/workflow/actions/default/firemultipart/{systemAction}:
     put:
       description: |-
-        (**Construction notice:** Still needs request body documentation. Coming soon!)
-
         Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) on target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
@@ -15017,7 +15698,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire default action (multipart form) 🚧
+      summary: Fire default action (multipart form)
       tags:
       - Workflow
   /v1/workflow/actions/fire:
@@ -15118,9 +15799,7 @@ paths:
   /v1/workflow/actions/firemultipart:
     put:
       description: |-
-        (**Construction notice:** Still needs request body documentation. Coming soon!)
-
-        Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
+        (Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
       operationId: putFireActionByNameMultipart
@@ -15187,7 +15866,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire action by name (multipart form) 🚧
+      summary: Fire action by name (multipart form)
       tags:
       - Workflow
   /v1/workflow/actions/separator:
@@ -15637,8 +16316,6 @@ paths:
   /v1/workflow/actions/{actionId}/firemultipart:
     put:
       description: |-
-        (**Construction notice:** Still needs request body documentation. Coming soon!)
-
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
@@ -15715,7 +16392,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire action by ID (multipart form) 🚧
+      summary: Fire action by ID (multipart form)
       tags:
       - Workflow
   /v1/workflow/contentlet/actions/_bulkfire:
@@ -17306,6 +17983,54 @@ paths:
       summary: Find default system actions by workflow action id
       tags:
       - Workflow
+  /v1/workflow/tasks:
+    post:
+      description: "Retrieve the [workflow tasks](https://dev.dotcms.com/docs/workflow-tasks)\
+        \ that match the parameters included in the request body."
+      operationId: getWorkflowTasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowSearcherForm"
+        description: |-
+          Body consists of a JSON object containing workflow task search parameters:
+
+          | Property | Type | Description |
+          |-|-|-|
+          | `keywords` | string | Search keywords to filter tasks by content |
+          | `assignedTo` | string | User ID to filter tasks assigned to specific user |
+          | `daysOld` | integer | Filter tasks by age in days (-1 for no limit, default: -1) |
+          | `schemeId` | string | Workflow scheme identifier to filter tasks |
+          | `stepId` | string | Workflow step identifier to filter tasks |
+          | `open` | boolean | Include open tasks in results (default: false) |
+          | `closed` | boolean | Include closed tasks in results (default: false) |
+          | `createdBy` | string | User ID who created the content to filter tasks |
+          | `show4all` | boolean | Show tasks for all users (admin privilege required, default: false) |
+          | `orderBy` | string | Field to order results by (e.g., 'created_date', 'title') |
+          | `count` | integer | Number of results per page (default: 20) |
+          | `page` | integer | Page number for pagination (default: 0) |
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityWorkflowTasksView"
+          description: Action(s) returned successfully
+        "400":
+          description: Bad Request
+        "401":
+          description: Invalid User
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow tasks based on filter parameters
+      tags:
+      - Workflow
   /v1/workflow/tasks/history/comments/{contentletIdentifier}:
     get:
       description: |-
@@ -17863,65 +18588,112 @@ paths:
       - Internationalization
   /v2/tags:
     get:
-      description: "Lists all tags based on provided criteria. If a tag name is provided,\
-        \ performs a search-by-name (like) operation that can be delimited by site\
-        \ ID. If no matches are found against the site ID, searches global tags."
+      description: "Searches and lists tags with filtering, pagination, and sorting.\
+        \ The filter parameter performs a case-insensitive search with wildcards on\
+        \ both sides (e.g., \"market\" matches \"Marketing\", \"marketplace\", \"\
+        supermarket\"). When using the filter, results are ordered by match length\
+        \ (shortest first) to prioritize exact matches. The site parameter accepts\
+        \ either a site ID or site name for filtering by specific sites."
       operationId: list_14
       parameters:
-      - description: Name of the tag to search for (optional)
+      - description: Tag name filter (LIKE search)
+        example: market
         in: query
-        name: name
+        name: filter
         schema:
           type: string
-      - description: ID of the site where the tag lives (optional)
+      - description: Include system/global tags
+        example: true
         in: query
-        name: siteId
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: "Filter by site (ID, name, or SYSTEM_HOST)"
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: site
         schema:
           type: string
+      - description: Page number
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Items per page
+        example: 25
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+      - description: Sort field
+        example: tagname
+        in: query
+        name: orderBy
+        schema:
+          type: string
+          default: tagname
+      - description: Sort direction
+        example: ASC
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: Tags retrieved successfully
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Tags retrieved successfully with pagination metadata
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid parameters
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: Unauthorized - Authentication required
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags portlet
+          description: Forbidden - Insufficient permissions
         "500":
           content:
             application/json: {}
-          description: Internal server error
-      summary: List tags
+          description: Internal Server Error
+      summary: List/Search Tags
       tags:
       - Tags
     post:
-      description: "Creates a single tag. This operation is idempotent - if the tag\
-        \ already exists, it will return the existing tag."
-      operationId: createSingleTag
+      description: "Creates one or more tags. Single tag = list with one element,\
+        \ multiple tags = list with multiple elements. This operation is idempotent\
+        \ - existing tags are returned without error."
+      operationId: createTags
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SingleTagForm"
-        description: Single tag data to create
+              $ref: "#/components/schemas/TagForm"
+        description: "List of tag data to create. Single tag = list with one element,\
+          \ multiple tags = list with multiple elements."
         required: true
       responses:
         "201":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagView"
-          description: Tag created or retrieved successfully
+                $ref: "#/components/schemas/ResponseEntityRestTagListView"
+          description: Tags created successfully
         "400":
           content:
             application/json: {}
-          description: Bad Request - Invalid tag data
+          description: Bad Request - Invalid tag data with field-level error details
         "401":
           content:
             application/json: {}
@@ -17934,124 +18706,130 @@ paths:
           content:
             application/json: {}
           description: Internal Server Error - Database or system error
-      summary: Create single tag
+      summary: Create tags
       tags:
       - Tags
-    put:
-      description: "Updates the information belonging to a specific tag. Requires\
-        \ tag ID, site ID, and new tag name."
-      operationId: updateTag_1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateTagForm"
-        description: "Update tag form containing tag ID, site ID, and new tag name"
-        required: true
+  /v2/tags/export:
+    get:
+      description: Export tags to CSV or JSON format. Supports the same filtering
+        as list/search endpoint with configurable export format.
+      operationId: exportTags
+      parameters:
+      - description: Export format
+        example: csv
+        in: query
+        name: format
+        schema:
+          type: string
+          default: csv
+          enum:
+          - csv
+          - json
+      - description: Include global tags
+        example: false
+        in: query
+        name: global
+        schema:
+          type: boolean
+          default: false
+      - description: Filter by specific host/site
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: query
+        name: siteId
+        schema:
+          type: string
+      - description: Tag name filter (LIKE search)
+        example: market
+        in: query
+        name: filter
+        schema:
+          type: string
       responses:
         "200":
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: Tag updated successfully
+            application/json: {}
+            text/csv: {}
+          description: File download initiated with appropriate content type
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid or incomplete tag data
+          description: Invalid parameters
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: Unauthorized - Authentication required
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to update tags
-        "404":
-          content:
-            application/json: {}
-          description: Tag not found
+          description: Forbidden - Insufficient permissions
         "500":
           content:
             application/json: {}
           description: Internal server error
-      summary: Update tag
+      summary: Export tags
       tags:
       - Tags
-  /v2/tags/_bulk:
-    post:
-      description: Creates multiple tags in bulk with optional owner assignment. Tags
-        can be created with site-specific scoping.
-      operationId: addTag_1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TagForm"
-        description: Tag form containing tags to create with optional owner assignment
-        required: true
+  /v2/tags/export/template:
+    get:
+      description: Download a CSV template file with headers and example data for
+        tag imports. No parameters required.
+      operationId: downloadTemplate
       responses:
         "200":
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: Tags created successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid tag data or parameters
+            text/csv: {}
+          description: CSV template file download
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: Unauthorized - Authentication required
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to create tags
+          description: Forbidden - Insufficient permissions
         "500":
           content:
             application/json: {}
-          description: Internal server error
-      summary: Create multiple tags
+          description: Template generation error
+      summary: Download tag import template
       tags:
       - Tags
   /v2/tags/import:
     post:
-      description: Imports tags from a CSV file. The CSV file should contain tag data
-        in the expected format for bulk tag creation.
+      description: Imports tags from a CSV file with row-level error reporting. Returns
+        detailed statistics and error information for each failed row.
       operationId: importTags_1
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
-        description: CSV file containing tag data for import
+        description: "CSV file with tag data in format: tag_name,host_id"
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: Tags imported successfully
+                $ref: "#/components/schemas/ResponseEntityTagOperationView"
+          description: Import completed with detailed results
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid CSV file format or data
+          description: Bad Request - Invalid file format or content
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: Unauthorized - Authentication required
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to import tags
+          description: Forbidden - User does not have access to Tags portlet
         "500":
           content:
             application/json: {}
-          description: Internal server error
-      summary: Import tags from CSV
+          description: Internal Server Error - Database or system error
+      summary: Import tags from CSV file
       tags:
       - Tags
   /v2/tags/inode/{inode}:
@@ -18217,10 +18995,70 @@ paths:
       summary: Get tags by user ID
       tags:
       - Tags
+  /v2/tags/{idOrName}:
+    put:
+      description: "Updates a tag's name and site assignment. You can identify the\
+        \ tag by its UUID or by its name. When using a tag name, you must specify\
+        \ which site's tag you want to update via the siteId query parameter."
+      operationId: updateTag_1
+      parameters:
+      - description: Tag UUID or tag name
+        in: path
+        name: idOrName
+        required: true
+        schema:
+          type: string
+      - description: Site ID for name-based lookups. Required when idOrName is a tag
+          name
+        in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTagForm"
+        description: Updated tag data
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRestTagView"
+          description: Tag updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - Invalid input data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - User does not have access to Tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - Tag name already exists on target site
+        "500":
+          content:
+            application/json: {}
+          description: Internal Server Error - Database or system error
+      summary: Update tag
+      tags:
+      - Tags
   /v2/tags/{nameOrId}:
     get:
       description: "Retrieves a single tag by its name or UUID. For name-based searches,\
-        \ uses site context for disambiguation with SYSTEM_HOST fallback."
+        \ uses site context for disambiguation."
       operationId: getTagsByNameOrId_1
       parameters:
       - description: Tag name or UUID
@@ -18241,23 +19079,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityRestTagView"
-          description: Tag retrieved successfully
+          description: Tag found successfully
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: Unauthorized - Authentication required
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: Forbidden - User does not have access to Tags portlet
         "404":
           content:
             application/json: {}
-          description: Tag not found by the specified name or ID
+          description: Tag not found
         "500":
           content:
             application/json: {}
-          description: Internal server error
+          description: Internal Server Error
       summary: Get tag by name or ID
       tags:
       - Tags
@@ -18418,7 +19256,10 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
-      operationId: moveFields
+      description: "Moves or adds a field to a Content Type. This endpoint is called\
+        \ when dragging-and-dropping a new field to a Content Type, or when moving\
+        \ such a field around in the Content Type's layout."
+      operationId: moveOrAddContentTypeField
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -18431,23 +19272,136 @@ paths:
             schema:
               $ref: "#/components/schemas/MoveFieldsForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - divider:
+                    clazz: com.dotcms.contenttype.model.field.ImmutableRowField
+                    contentTypeId: 3b70f386cf65117a675f284eea928415
+                    dataType: SYSTEM
+                    fieldContentTypeProperties: []
+                    fieldType: Row
+                    fieldTypeLabel: Row
+                    fieldVariables: []
+                    fixed: false
+                    forceIncludeInApi: false
+                    iDate: 1763758144000
+                    id: 1b950209ec7b1a5e6901f7fe277e0a6a
+                    indexed: false
+                    listed: false
+                    modDate: 1763758164000
+                    name: fields-0
+                    readOnly: false
+                    required: false
+                    searchable: false
+                    sortOrder: 0
+                    unique: false
+                    variable: fields0
+                  columns:
+                  - columnDivider:
+                      clazz: com.dotcms.contenttype.model.field.ImmutableColumnField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: SYSTEM
+                      fieldContentTypeProperties: []
+                      fieldType: Column
+                      fieldTypeLabel: Column
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758144000
+                      id: 6515a7a25deb3b99711398c14bfe3062
+                      indexed: false
+                      listed: false
+                      modDate: 1763758164000
+                      name: fields-1
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 1
+                      unique: false
+                      variable: fields1
+                    fields:
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables: []
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1763758164000
+                      id: ba34f109c9e86793384387e2619267ea
+                      indexed: false
+                      listed: false
+                      modDate: 1763761740000
+                      name: title
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 2
+                      unique: false
+                      variable: title
+                    - clazz: com.dotcms.contenttype.model.field.ImmutableTextField
+                      contentTypeId: 3b70f386cf65117a675f284eea928415
+                      dataType: TEXT
+                      fieldType: Text
+                      fieldTypeLabel: Text
+                      fieldVariables:
+                      - clazz: com.dotcms.contenttype.model.field.ImmutableFieldVariable
+                        fieldId: e39533a92ee05d8c083f7e6a1a5ee5e5
+                        id: 7844f04c-0481-4b0d-aa22-95e1a097bb30
+                        key: My Field Var
+                        value: My value
+                      fixed: false
+                      forceIncludeInApi: false
+                      iDate: 1764008792000
+                      id: e39533a92ee05d8c083f7e6a1a5ee5e5
+                      indexed: true
+                      listed: true
+                      modDate: 1764018597000
+                      name: Description
+                      readOnly: false
+                      required: false
+                      searchable: false
+                      sortOrder: 7
+                      unique: false
+                      variable: description
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Field was added or moved successfully
+        "400":
+          description: Invalid JSON body
+        "401":
+          description: User not specified
+        "404":
+          description: Content Type ID not found
+        "415":
+          description: Body must be a JSON object
+        "500":
+          description: Internal Server Error
+      summary: Moves or adds a field to a Content Type
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:
     put:
-      operationId: updateField
+      description: "Updates a field in a Content Type. The request body must have\
+        \ the follow syntax:"
+      operationId: updateContentTypeField
       parameters:
-      - in: path
+      - description: The ID or Velocity Variable Name of the Content Type that the
+          updated field belongs to.
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: The ID of the Field that is being updated.
+        in: path
         name: id
         required: true
         schema:
@@ -18457,12 +19411,135 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateFieldForm"
+        description: The object containing the updated attributes of the Field.
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              example: |-
+                {
+                    "entity": [
+                        {
+                            "divider": {
+                                "clazz": "com.dotcms.contenttype.model.field.ImmutableRowField",
+                                "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                "dataType": "SYSTEM",
+                                "fieldContentTypeProperties": [],
+                                "fieldType": "Row",
+                                "fieldTypeLabel": "Row",
+                                "fieldVariables": [],
+                                "fixed": false,
+                                "forceIncludeInApi": false,
+                                "iDate": 1764268372000,
+                                "id": "1b950209ec7b1a5e6901f7fe277e0a6a",
+                                "indexed": false,
+                                "listed": false,
+                                "modDate": 1764268380000,
+                                "name": "fields-0",
+                                "readOnly": false,
+                                "required": false,
+                                "searchable": false,
+                                "sortOrder": 0,
+                                "unique": false,
+                                "variable": "fields0"
+                            },
+                            "columns": [
+                                {
+                                    "columnDivider": {
+                                        "clazz": "com.dotcms.contenttype.model.field.ImmutableColumnField",
+                                        "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                        "dataType": "SYSTEM",
+                                        "fieldContentTypeProperties": [],
+                                        "fieldType": "Column",
+                                        "fieldTypeLabel": "Column",
+                                        "fieldVariables": [],
+                                        "fixed": false,
+                                        "forceIncludeInApi": false,
+                                        "iDate": 1764268372000,
+                                        "id": "6515a7a25deb3b99711398c14bfe3062",
+                                        "indexed": false,
+                                        "listed": false,
+                                        "modDate": 1764268380000,
+                                        "name": "fields-1",
+                                        "readOnly": false,
+                                        "required": false,
+                                        "searchable": false,
+                                        "sortOrder": 1,
+                                        "unique": false,
+                                        "variable": "fields1"
+                                    },
+                                    "fields": [
+                                        {
+                                            "clazz": "com.dotcms.contenttype.model.field.ImmutableTextField",
+                                            "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                            "dataType": "TEXT",
+                                            "fieldType": "Text",
+                                            "fieldTypeLabel": "Text",
+                                            "fieldVariables": [],
+                                            "fixed": false,
+                                            "forceIncludeInApi": false,
+                                            "iDate": 1764268380000,
+                                            "id": "ba34f109c9e86793384387e2619267ea",
+                                            "indexed": true,
+                                            "listed": true,
+                                            "modDate": 1764277924000,
+                                            "name": "Title",
+                                            "readOnly": false,
+                                            "required": false,
+                                            "searchable": false,
+                                            "sortOrder": 2,
+                                            "unique": false,
+                                            "variable": "title"
+                                        },
+                                        {
+                                            "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+                                            "contentTypeId": "3b70f386cf65117a675f284eea928415",
+                                            "dataType": "LONG_TEXT",
+                                            "fieldType": "Custom-Field",
+                                            "fieldTypeLabel": "Custom Field",
+                                            "fieldVariables": [
+                                                {
+                                                    "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+                                                    "fieldId": "803d40e80721ae61196dc566a15c7ea5",
+                                                    "id": "6f96be03-6c35-4ced-b825-dd52715b9b06",
+                                                    "key": "newRenderMode",
+                                                    "value": "component"
+                                                }
+                                            ],
+                                            "fixed": false,
+                                            "forceIncludeInApi": false,
+                                            "iDate": 1764433985000,
+                                            "id": "803d40e80721ae61196dc566a15c7ea5",
+                                            "indexed": false,
+                                            "listed": false,
+                                            "modDate": 1764687322000,
+                                            "name": "My Custom Field",
+                                            "readOnly": false,
+                                            "required": false,
+                                            "searchable": false,
+                                            "sortOrder": 3,
+                                            "unique": false,
+                                            "values": "## This is a VTL comment block                            "variable": "myCustomField"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                }
+          description: The updated Content Type's layout.
+        "401":
+          description: Unauthorized access
+        "404":
+          description: The ID of the specified Field was not found
+        "500":
+          description: Internal Server Error
+      summary: Updates a field in a Content Type
       tags:
       - Content Type Field
   /vtl/dynamic:
@@ -19024,31 +20101,6 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
-    AnalyticsQuery:
-      type: object
-      properties:
-        dimensions:
-          type: array
-          items:
-            type: string
-          uniqueItems: true
-        filters:
-          type: string
-        limit:
-          type: integer
-          format: int64
-        measures:
-          type: array
-          items:
-            type: string
-          uniqueItems: true
-        offset:
-          type: integer
-          format: int64
-        order:
-          type: string
-        timeDimensions:
-          type: string
     Announcement:
       type: object
       properties:
@@ -19092,20 +20144,56 @@ components:
           type: boolean
         userId:
           type: string
-    AssetInfoRequestForm:
+    AssetArchiveRequestForm:
       type: object
       properties:
         assetPath:
           type: string
+          description: Full path to the asset (file) to be archived
+          example: //demo.dotcms.com/temp/temp-presentation.pptx
+      required:
+      - assetPath
+    AssetDeletionRequestForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+          description: Full path to the asset (file) to be deleted permanently
+          example: //demo.dotcms.com/uploads/old-document.pdf
+      required:
+      - assetPath
+    AssetLookupRequestForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+          description: Full path to the asset (file or folder) to retrieve information
+            for
+          example: //demo.dotcms.com/documents/annual-report.pdf
+      required:
+      - assetPath
     AssetsRequestForm:
       type: object
       properties:
         assetPath:
           type: string
+          description: Full path to the asset (file or folder) including site and
+            folder structure. Folders must end-up with `/`
+          example: //demo.dotcms.com/application/containers/default/banner.vtl
         language:
           type: string
+          default: System default language
+          description: Language identifier for the asset. Uses system default language
+            if not specified
+          example: en-US
         live:
           type: boolean
+          default: false
+          description: Whether to retrieve the live version (true) or working version
+            (false) of the asset
+          example: false
+      required:
+      - assetPath
     AssignCommentBean:
       type: object
       properties:
@@ -19134,6 +20222,9 @@ components:
     BaseContentTypesView:
       type: object
       properties:
+        index:
+          type: integer
+          format: int32
         label:
           type: string
         name:
@@ -20073,6 +21164,23 @@ components:
       required:
       - file
       - form
+    ContentMetrics:
+      type: object
+      properties:
+        contentTypes:
+          type: integer
+          format: int64
+        contentTypesWithWorkflows:
+          type: integer
+          format: int64
+        lastContentEdited:
+          type: string
+        recentlyEdited:
+          type: integer
+          format: int64
+        totalContent:
+          type: integer
+          format: int64
     ContentReferenceView:
       type: object
       properties:
@@ -20170,6 +21278,10 @@ components:
           type: string
         relationType:
           type: string
+        styleProperties:
+          type: object
+          additionalProperties:
+            type: object
         treeOrder:
           type: integer
           format: int32
@@ -21336,6 +22448,59 @@ components:
           type: string
         whereToSend:
           type: string
+    FolderDeletionRequestForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+          description: Full path to the folder to be deleted permanently (must end
+            with /)
+          example: //demo.dotcms.com/old-projects/
+      required:
+      - assetPath
+    FolderDetail:
+      type: object
+      description: Folder configuration details
+      properties:
+        defaultAssetType:
+          type: string
+          description: Default asset type for files uploaded to this folder
+          example: FileAsset
+        fileMasks:
+          type: array
+          description: "List of file patterns that are allowed in this folder (e.g.,\
+            \ *.jpg, *.pdf)"
+          example:
+          - '*.jpg'
+          - '*.png'
+          - '*.pdf'
+          items:
+            type: string
+            description: "List of file patterns that are allowed in this folder (e.g.,\
+              \ *.jpg, *.pdf)"
+            example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        showOnMenu:
+          type: boolean
+          description: Whether the folder should be visible in navigation menus
+          example: true
+        sortOrder:
+          type: integer
+          format: int32
+          description: Sort order for the folder within its parent directory
+          example: 100
+        title:
+          type: string
+          description: Display title for the folder
+          example: My Documents Folder
+      required:
+      - title
     ForbiddenException:
       type: object
       properties:
@@ -22189,6 +23354,26 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListString:
+      type: array
+      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
+        \ *.pdf)"
+      example:
+      - '*.jpg'
+      - '*.png'
+      - '*.pdf'
+      items:
+        type: string
+        description: "List of file patterns that are allowed in this folder (e.g.,\
+          \ *.jpg, *.pdf)"
+        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: string
+        last:
+          type: string
     ImmutableListVariantResult:
       type: array
       items:
@@ -22230,6 +23415,40 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableMapStringSetString:
+      type: object
+      additionalProperties:
+        type: array
+        description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+          \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+          \ CAN_ADD_CHILDREN)"
+        example:
+          INDIVIDUAL:
+          - READ
+          - WRITE
+          - PUBLISH
+          HOST:
+          - READ
+        items:
+          type: string
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\":[\"\
+            READ\"]}"
+        uniqueItems: true
+      description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to sets\
+        \ of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)"
+      example:
+        INDIVIDUAL:
+        - READ
+        - WRITE
+        - PUBLISH
+        HOST:
+        - READ
+      properties:
+        empty:
+          type: boolean
     ImmutableMapStringString:
       type: object
       additionalProperties:
@@ -22237,6 +23456,28 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableSetString:
+      type: array
+      description: Available permission scopes (asset types) that support permissions
+      example:
+      - INDIVIDUAL
+      - HOST
+      - FOLDER
+      - CONTENT
+      - TEMPLATE
+      - PAGE
+      - CONTAINER
+      - CONTENT_TYPE
+      - CATEGORY
+      items:
+        type: string
+        description: Available permission scopes (asset types) that support permissions
+        example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\",\"\
+          PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+      properties:
+        empty:
+          type: boolean
+      uniqueItems: true
     JSONObject:
       type: object
       additionalProperties:
@@ -22320,6 +23561,19 @@ components:
         total:
           type: integer
           format: int64
+    JobParamsSchema:
+      type: object
+      description: Schema for multipart job queue parameters.
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The file to be processed by the job.
+        params:
+          type: string
+          description: JSON string with job-specific parameters.
+          example: "{\"contentType\":\"CustomContentType\",\"workflowActionId\":\"\
+            Workflow-UUID\",\"language\":\"en-us\",\"stopOnError\":true}"
     JobResult:
       type: object
       properties:
@@ -22912,6 +24166,19 @@ components:
             type: string
           variable:
             type: string
+    NewFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+          description: Full path where the folder should be created or updated including
+            site and folder structure. Must end with '/'
+          example: //demo.dotcms.com/my-new-folder/
+        data:
+          $ref: "#/components/schemas/FolderDetail"
+      required:
+      - assetPath
+      - data
     OpenFolderForm:
       type: object
       properties:
@@ -23080,6 +24347,54 @@ components:
           type: string
         type:
           type: string
+    PermissionMetadataView:
+      type: object
+      properties:
+        levels:
+          type: array
+          description: Available permission levels that can be assigned to users and
+            roles
+          example:
+          - READ
+          - WRITE
+          - PUBLISH
+          - EDIT_PERMISSIONS
+          - CAN_ADD_CHILDREN
+          items:
+            type: string
+            description: Available permission levels that can be assigned to users
+              and roles
+            example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
+              ]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+        scopes:
+          type: array
+          description: Available permission scopes (asset types) that support permissions
+          example:
+          - INDIVIDUAL
+          - HOST
+          - FOLDER
+          - CONTENT
+          - TEMPLATE
+          - PAGE
+          - CONTAINER
+          - CONTENT_TYPE
+          - CATEGORY
+          items:
+            type: string
+            description: Available permission scopes (asset types) that support permissions
+            example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
+              ,\"PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+      required:
+      - levels
+      - scopes
     PermissionTabField:
       type: object
       allOf:
@@ -23431,11 +24746,6 @@ components:
         quantile:
           type: number
           format: double
-    QueryForm:
-      type: object
-      properties:
-        query:
-          $ref: "#/components/schemas/AnalyticsQuery"
     RadioField:
       type: object
       allOf:
@@ -23987,6 +25297,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentletView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -24710,6 +26045,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityPermissionMetadataView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PermissionMetadataView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityPermissionView:
       type: object
       properties:
@@ -24769,6 +26127,31 @@ components:
           type: array
           items:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRestTagListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestTag"
         errors:
           type: array
           items:
@@ -24890,6 +26273,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RoleView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySaveUserPermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SaveUserPermissionsView"
         errors:
           type: array
           items:
@@ -25082,6 +26488,79 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityTagOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityUsageSummaryView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/UsageSummary"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityUserPermissionsView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -25725,6 +27204,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityWorkflowTasksView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/WorkflowSearchResultsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseHostVariableEntityView:
       type: object
       properties:
@@ -26176,6 +27678,66 @@ components:
           properties:
             empty:
               type: boolean
+    SaveUserPermissionsForm:
+      type: object
+      properties:
+        cascade:
+          type: boolean
+          default: false
+          description: Whether to cascade permissions to all children assets
+          example: false
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+              \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+            items:
+              type: string
+              description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+                \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"HOST\":[\"READ\"]}"
+            uniqueItems: true
+          description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+            \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+      required:
+      - permissions
+    SaveUserPermissionsView:
+      type: object
+      properties:
+        asset:
+          $ref: "#/components/schemas/UserPermissionAssetView"
+        cascadeInitiated:
+          type: boolean
+          description: Whether permission cascade to children was initiated
+        roleId:
+          type: string
+          description: User's individual role identifier
+          example: abc-123-def-456
+        userId:
+          type: string
+          description: User identifier
+          example: admin@dotcms.com
+      required:
+      - asset
+      - cascadeInitiated
+      - roleId
+      - userId
     Scheduling:
       type: object
       properties:
@@ -26480,19 +28042,6 @@ components:
           type: string
         value:
           type: string
-    SingleTagForm:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 255
-          minLength: 1
-        ownerId:
-          type: string
-        siteId:
-          type: string
-      required:
-      - name
     SiteForm:
       type: object
       properties:
@@ -26535,6 +28084,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
+    SiteMetrics:
+      type: object
+      properties:
+        activeSites:
+          type: integer
+          format: int64
+        siteAliases:
+          type: integer
+          format: int64
+        templates:
+          type: integer
+          format: int64
+        totalSites:
+          type: integer
+          format: int64
     SiteVariableForm:
       type: object
       properties:
@@ -26667,6 +28231,24 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
+    SystemMetrics:
+      type: object
+      properties:
+        builderTemplates:
+          type: integer
+          format: int64
+        languages:
+          type: integer
+          format: int64
+        liveContainers:
+          type: integer
+          format: int64
+        workflowSchemes:
+          type: integer
+          format: int64
+        workflowSteps:
+          type: integer
+          format: int64
     TabDividerField:
       type: object
       allOf:
@@ -26798,14 +28380,16 @@ components:
     TagForm:
       type: object
       properties:
+        name:
+          type: string
         ownerId:
           type: string
-        tags:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/RestTag"
+        persona:
+          type: boolean
+        siteId:
+          type: string
       required:
-      - tags
+      - name
     TagInode:
       type: object
       properties:
@@ -27251,9 +28835,73 @@ components:
       properties:
         field:
           $ref: "#/components/schemas/Field"
+    UpdateFolderDetail:
+      type: object
+      description: Folder configuration details
+      properties:
+        defaultAssetType:
+          type: string
+          description: Default asset type for files uploaded to this folder
+          example: FileAsset
+        fileMasks:
+          type: array
+          description: "List of file patterns that are allowed in this folder (e.g.,\
+            \ *.jpg, *.pdf)"
+          example:
+          - '*.jpg'
+          - '*.png'
+          - '*.pdf'
+          items:
+            type: string
+            description: "List of file patterns that are allowed in this folder (e.g.,\
+              \ *.jpg, *.pdf)"
+            example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        name:
+          type: string
+          description: "New name for the folder. If provided, the folder will be renamed.\
+            \ The name is derived from the path if not specified"
+          example: my-renamed-folder
+        showOnMenu:
+          type: boolean
+          description: Whether the folder should be visible in navigation menus
+          example: true
+        sortOrder:
+          type: integer
+          format: int32
+          description: Sort order for the folder within its parent directory
+          example: 100
+        title:
+          type: string
+          description: Display title for the folder
+          example: My Documents Folder
+      required:
+      - name
+      - title
+    UpdateFolderForm:
+      type: object
+      properties:
+        assetPath:
+          type: string
+          description: Full path where the folder should be created or updated including
+            site and folder structure. Must end with '/'
+          example: //demo.dotcms.com/my-new-folder/
+        data:
+          $ref: "#/components/schemas/UpdateFolderDetail"
+      required:
+      - assetPath
+      - data
     UpdateTagForm:
       type: object
       properties:
+        name:
+          type: string
         siteId:
           type: string
         tagId:
@@ -27262,7 +28910,6 @@ components:
           type: string
       required:
       - siteId
-      - tagId
       - tagName
     UpgradeTaskForm:
       type: object
@@ -27271,6 +28918,20 @@ components:
           type: string
       required:
       - upgradeTaskClass
+    UsageSummary:
+      type: object
+      properties:
+        contentMetrics:
+          $ref: "#/components/schemas/ContentMetrics"
+        lastUpdated:
+          type: string
+          format: date-time
+        siteMetrics:
+          $ref: "#/components/schemas/SiteMetrics"
+        systemMetrics:
+          $ref: "#/components/schemas/SystemMetrics"
+        userMetrics:
+          $ref: "#/components/schemas/UserMetrics"
     User:
       type: object
       properties:
@@ -27520,6 +29181,101 @@ components:
       - email
       - firstName
       - lastName
+    UserMetrics:
+      type: object
+      properties:
+        activeUsers:
+          type: integer
+          format: int64
+        lastLogin:
+          type: string
+        recentLogins:
+          type: integer
+          format: int64
+        totalUsers:
+          type: integer
+          format: int64
+    UserPermissionAssetView:
+      type: object
+      description: The updated asset with new permission assignments
+      properties:
+        canEditPermissions:
+          type: boolean
+          description: Whether the requesting user can edit permissions on this asset
+          example: true
+        hostId:
+          type: string
+          description: "Host identifier (same as id for HOST type, parent host for\
+            \ FOLDER type)"
+          example: abc-123-def-456
+        id:
+          type: string
+          description: "Asset identifier (host identifier for HOST type, folder inode\
+            \ for FOLDER type)"
+          example: abc-123-def-456
+        inheritsPermissions:
+          type: boolean
+          description: Whether this asset inherits permissions from its parent
+          example: false
+        name:
+          type: string
+          description: "Asset name (hostname for HOST, folder name for FOLDER)"
+          example: demo.dotcms.com
+        path:
+          type: string
+          description: Full path to the asset
+          example: /demo.dotcms.com/application
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+              \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              HOST:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+              - PUBLISH
+            items:
+              type: string
+              description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.)\
+                \ to sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"HOST\"\
+                :[\"READ\"]}"
+            uniqueItems: true
+          description: "Map of permission types (INDIVIDUAL, HOST, FOLDER, etc.) to\
+            \ sets of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            HOST:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+            - PUBLISH
+          properties:
+            empty:
+              type: boolean
+        type:
+          type: string
+          description: Asset type
+          enum:
+          - HOST
+          - FOLDER
+          example: HOST
+      required:
+      - canEditPermissions
+      - hostId
+      - id
+      - inheritsPermissions
+      - name
+      - path
+      - permissions
+      - type
     VanityUrlContentType:
       type: object
       allOf:
@@ -27631,6 +29387,31 @@ components:
         weight:
           type: number
           format: float
+    WebAssetEntityView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/WebAssetView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    WebAssetView:
+      type: object
     WidgetContentType:
       type: object
       allOf:
@@ -28209,6 +29990,46 @@ components:
           uniqueItems: true
       required:
       - schemes
+    WorkflowSearchResultsView:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        workflowTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowTaskView"
+    WorkflowSearcherForm:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+        closed:
+          type: boolean
+        count:
+          type: integer
+          format: int32
+        createdBy:
+          type: string
+        daysOld:
+          type: integer
+          format: int32
+        keywords:
+          type: string
+        open:
+          type: boolean
+        orderBy:
+          type: string
+        page:
+          type: integer
+          format: int32
+        schemeId:
+          type: string
+        show4all:
+          type: boolean
+        stepId:
+          type: string
     WorkflowStep:
       type: object
       properties:
@@ -28335,9 +30156,44 @@ components:
           type: string
         webasset:
           type: string
+    WorkflowTaskView:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+        assignedUserName:
+          type: string
+        belongsTo:
+          type: string
+        createdBy:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        id:
+          type: string
+        languageId:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        title:
+          type: string
     WorkflowTimelineItemView:
       type: object
       properties:
+        action:
+          type: object
+          additionalProperties:
+            type: string
         commentDescription:
           type: string
         createdDate:
@@ -28347,6 +30203,10 @@ components:
           type: string
         roleId:
           type: string
+        step:
+          type: object
+          additionalProperties:
+            type: string
         taskId:
           type: string
         type:

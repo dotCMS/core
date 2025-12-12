@@ -97,3 +97,26 @@ export interface DotContentletCanLock {
     locked: boolean;
     lockedBy: string;
 }
+
+/**
+ * Represents a contentlet version history item from the history endpoint.
+ * This interface is specifically for the /api/v1/content/versions/id/<identifier>/history endpoint.
+ */
+export interface DotCMSContentletVersion {
+    archived: boolean;
+    country: string;
+    countryCode: string;
+    experimentVariant: boolean;
+    inode: string;
+    isoCode: string;
+    language: string;
+    languageCode: string;
+    languageFlag: string;
+    languageId: number;
+    live: boolean;
+    modDate: number;
+    modUser: string;
+    modUserName: string;
+    title: string;
+    working: boolean;
+}

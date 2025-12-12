@@ -1,0 +1,57 @@
+@if (hasProducts()) {
+  <div>
+    <h2 class="text-4xl font-bold mb-4">{{ contentlet().widgetTitle }}</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (product of productsWithDiscount(); track product.identifier) {
+        <div class="group relative" (click)="onProductClick(product.title)">
+          <div
+            class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full"
+          >
+            <div
+              class="relative aspect-square w-full overflow-hidden bg-gray-100"
+            >
+              <img
+                [ngSrc]="product.inode"
+                [alt]="product.title"
+                fill
+                class="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+
+            <div class="p-4 flex flex-col flex-grow">
+              <h3
+                class="text-gray-900 font-medium text-sm mb-2 line-clamp-2 group-hover:text-red-500 transition-colors"
+              >
+                {{ product.title }}
+              </h3>
+
+              <div class="mt-auto pt-2 flex items-center justify-between">
+                @if (product?.hasDiscount) {
+                  <div>
+                    <span class="text-red-600 font-semibold mr-2">
+                      ${{ product.salePrice }}
+                    </span>
+                    <span class="text-gray-500 text-sm line-through">
+                      ${{ product.retailPrice }}
+                    </span>
+                  </div>
+                } @else {
+                  <span class="text-gray-900 font-semibold"
+                    >${{ product.retailPrice }}</span
+                  >
+                }
+                @if (product?.hasDiscount) {
+                  <span
+                    class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full"
+                  >
+                    {{ product.discountPercentage }}% OFF
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

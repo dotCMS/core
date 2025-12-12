@@ -1,92 +1,124 @@
-import { useCallback, useContext, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
-import { isInsideUVE } from '../internal';
+import { getUVEState } from '@dotcms/uve';
+
+import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from '../../core/shared/models';
+import { initializeAnalytics } from '../internal';
 
 /**
- * Custom hook that handles analytics tracking for anonymous users.
+ * React hook for tracking user interactions and page views in your DotCMS application.
+ *
+ * Use this hook to add analytics tracking to your React components. It automatically
+ * handles user sessions, device information, and UTM campaign parameters.
+ *
+ * **Important:** Tracking is automatically disabled when editing content in DotCMS to avoid
+ * polluting your analytics data with editor activity.
  *
  * @example
+ * Basic usage - Track custom events
  * ```tsx
- * function Button({ title, urlTitle }) {
- *   const { track } = useContentAnalytics();
+ * function ProductCard({ title, price }) {
+ *   const { track } = useContentAnalytics({
+ *     server: 'https://demo.dotcms.com',
+ *     siteAuth: 'my-site-auth',
+ *     debug: false
+ *   });
  *
- *   // Track button click with custom properties
- *   return (
- *     <button onClick={() => track('btn-click', { title, urlTitle })}>
- *       See Details →
- *     </button>
- *   );
+ *   const handleAddToCart = () => {
+ *     track('add-to-cart', {
+ *       product: title,
+ *       price: price
+ *     });
+ *   };
+ *
+ *   return <button onClick={handleAddToCart}>Add to Cart</button>;
  * }
  * ```
  *
  * @example
+ * Track page views manually
  * ```tsx
- * // Session debugging example
- * function AnalyticsDebugComponent() {
- *   const { getAnonymousUserId, getSessionInfo, updateSessionActivity } = useContentAnalytics();
+ * function ArticlePage({ article }) {
+ *   const { pageView } = useContentAnalytics({
+ *     server: 'https://demo.dotcms.com',
+ *     siteKey: 'your-site-key'
+ *   });
  *
- *   const handleManualActivity = () => {
- *     updateSessionActivity();
- *     // Manual activity updated
- *   };
- *
- *   // Debug session info in development
- *   const debugInfo = () => {
- *     if (process.env.NODE_ENV === 'development') {
- *       console.log('Anonymous ID:', getAnonymousUserId());
- *       console.log('Session info:', getSessionInfo());
- *     }
- *   };
- *
- *   return (
- *     <div>
- *       <button onClick={handleManualActivity}>Update Activity</button>
- *       <button onClick={debugInfo}>Debug Session</button>
- *       <p>User ID: {getAnonymousUserId()}</p>
- *     </div>
- *   );
+ *   useEffect(() => {
+ *     pageView({
+ *       category: article.category,
+ *       author: article.author
+ *     });
+ *   }, [article.id]);
  * }
  * ```
  *
- * @returns {DotCMSAnalytics} - The analytics instance with tracking capabilities for anonymous users
- * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
+ * @param config - Configuration object with server URL and site key
+ * @param config.server - The URL of your DotCMS Analytics server
+ * @param config.siteKey - Your unique site key for authentication
+ * @param config.debug - Optional. Set to true to see analytics events in the console
+ * @returns Object with `track()` and `pageView()` methods for analytics tracking
+ * @throws {Error} If the configuration is invalid (missing server or siteKey)
  */
-export const useContentAnalytics = (): DotCMSAnalytics => {
-    const instance = useContext(DotContentAnalyticsContext);
-    const lastPathRef = useRef<string | null>(null);
+export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
+    // Memoize instance based on server and siteAuth (the critical config values)
+    // Only re-initialize if these change
+    const instance = useMemo(() => initializeAnalytics(config), [config.server, config.siteAuth]);
+
+    // Memoize UVE state check to avoid repeated calls
+    // UVE state is determined by URL params and window context, so it's stable during component lifecycle
+    const isInUVE = useMemo(() => {
+        return Boolean(getUVEState());
+    }, []);
 
     if (!instance) {
         throw new Error(
-            'useContentAnalytics must be used within a DotContentAnalyticsProvider and analytics must be successfully initialized'
+            'DotCMS Analytics: Failed to initialize. Please verify the required configuration (server and siteAuth).'
         );
     }
 
     const track = useCallback(
-        (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!isInsideUVE()) {
-                instance.track(eventName, {
-                    ...payload,
-                    timestamp: new Date().toISOString()
-                });
+        (eventName: string, payload: JsonObject = {}) => {
+            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
+            // with editor interactions and preview activities
+            if (isInUVE) {
+                return;
             }
+
+            instance.track(eventName, payload);
         },
-        [instance]
+        [instance, isInUVE]
     );
 
-    const pageView = useCallback(() => {
-        if (!isInsideUVE()) {
-            const currentPath = window.location.pathname;
-            if (currentPath !== lastPathRef.current) {
-                lastPathRef.current = currentPath;
-                instance.pageView();
+    const pageView = useCallback(
+        (payload: JsonObject = {}) => {
+            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
+            // with editor interactions and preview activities
+            if (isInUVE) {
+                return;
             }
-        }
-    }, [instance]);
+
+            instance.pageView(payload);
+        },
+        [instance, isInUVE]
+    );
+
+    const conversion = useCallback(
+        (name: string, options: JsonObject = {}) => {
+            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
+            // with editor interactions and preview activities
+            if (isInUVE) {
+                return;
+            }
+
+            instance.conversion(name, options);
+        },
+        [instance, isInUVE]
+    );
 
     return {
         track,
-        pageView
+        pageView,
+        conversion
     };
 };

@@ -25,7 +25,6 @@ import {
     ContentTypeSelectField,
     ContentTypeTagField,
     DotCMSClazzes,
-    DotCMSClazz,
     ContentTypeTabDividerField,
     ContentTypeColumnBreakField,
     DotCMSContentType,
@@ -36,10 +35,10 @@ import {
     ContentTypeKeyValueField,
     ContentTypeConstantField,
     ContentTypeHiddenField,
-    DotCMSContentTypeField
+    DotCMSContentTypeField,
+    DotCMSAPIResponse
 } from '@dotcms/dotcms-models';
-
-import { EMPTY_FIELD } from '@dotcms/utils';
+import { EMPTY_SYSTEM_FIELD } from '@dotcms/utils';
 
 export const dotcmsContentTypeBasicMock = {
     baseType: null,
@@ -70,7 +69,7 @@ export const dotcmsContentTypeBasicMock = {
 } as unknown as DotCMSContentType;
 
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
-    ...EMPTY_FIELD
+    ...EMPTY_SYSTEM_FIELD
 };
 
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
@@ -764,3 +763,70 @@ export function createFakeKeyValueField(
         ...overrides
     };
 }
+
+export const MOCK_CONTENT_TYPE_1: DotCMSContentType = {
+    id: 'content-type-1',
+    name: 'Blog Post',
+    variable: 'blogPost',
+    description: 'A blog post content type',
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: 'default',
+    owner: 'admin',
+    system: false,
+    baseType: 'CONTENT'
+} as DotCMSContentType;
+
+export const MOCK_CONTENT_TYPE_2: DotCMSContentType = {
+    id: 'content-type-2',
+    name: 'News Article',
+    variable: 'newsArticle',
+    description: 'A news article content type',
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: 'default',
+    owner: 'admin',
+    system: false,
+    baseType: 'CONTENT'
+} as DotCMSContentType;
+
+export const MOCK_CONTENT_TYPE_3: DotCMSContentType = {
+    id: 'content-type-3',
+    name: 'Product',
+    variable: 'product',
+    description: 'A product content type',
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: 'default',
+    owner: 'admin',
+    system: false,
+    baseType: 'CONTENT'
+} as DotCMSContentType;
+
+export const MOCK_API_RESPONSE: DotCMSAPIResponse<DotCMSContentType[]> = {
+    entity: [MOCK_CONTENT_TYPE_1, MOCK_CONTENT_TYPE_2, MOCK_CONTENT_TYPE_3],
+    pagination: {
+        currentPage: 1,
+        perPage: 30,
+        totalEntries: 3
+    },
+    errors: [],
+    messages: [],
+    permissions: [],
+    i18nMessagesMap: {}
+};
+
+export const CONTENT_TYPE_MOCK_FOR_EDITOR = [
+    {
+        name: 'Test Content Type',
+        variable: 'Test1',
+        icon: 'icon',
+        baseType: 'CONTENT'
+    },
+    {
+        name: 'Test Content Type 2',
+        variable: 'Test2',
+        icon: 'icon',
+        baseType: 'CONTENT'
+    }
+];

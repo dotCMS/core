@@ -16,8 +16,8 @@ describe('ActionButtonComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotActionButtonComponent],
             imports: [
+                DotActionButtonComponent,
                 BrowserAnimationsModule,
                 MenuModule,
                 ButtonModule,
@@ -63,7 +63,7 @@ describe('ActionButtonComponent', () => {
         comp.label = 'Hello World';
         fixture.detectChanges();
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(label.nativeElement.innerText).toBe('Hello World');
+        expect(label.nativeElement.textContent.trim()).toBe('Hello World');
     });
 
     it('should have p-menu and pass the model to it', () => {
@@ -114,7 +114,7 @@ describe('ActionButtonComponent', () => {
         comp.model = model;
         fixture.detectChanges();
 
-        spyOn(comp.menu, 'toggle');
+        jest.spyOn(comp.menu, 'toggle');
 
         const button = fixture.debugElement.query(By.css('p-button'));
         button.nativeNode.click();
@@ -127,7 +127,7 @@ describe('ActionButtonComponent', () => {
         fixture.detectChanges();
         const button = fixture.debugElement.query(By.css('p-button'));
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(button.componentInstance.disabled).toBeTrue();
+        expect(button.componentInstance.disabled).toBe(true);
         expect(label.nativeElement.classList).toContain(
             'action-button__label--disabled',
             'Label disabled class'

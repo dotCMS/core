@@ -224,7 +224,8 @@ public class ContentVersionResource {
             @ApiResponse(responseCode = "200", description = "History data retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
-            @ApiResponse(responseCode = "400", description = "The identifier path parameter was not specified.",
+            @ApiResponse(responseCode = "400", description = "The identifier path parameter was not specified, or one " +
+                    "of the specified parameters is invalid.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "Authentication required.",
                     content = @Content(mediaType = "application/json")),
@@ -240,21 +241,23 @@ public class ContentVersionResource {
     public ResponseEntityPaginatedDataView history(@Context final HttpServletRequest request,
                                                    @Context final HttpServletResponse response,
                                                    @Parameter(description = "The Identifier of the Contentlet whose history will be retrieved", required = true)
-                                                        @PathParam("identifier") final String identifier,
+                                                       @PathParam("identifier") final String identifier,
+                                                   @Parameter(description = "The Language ID that the history will be filtered by", required = true)
+                                                       @QueryParam("languageId") final String languageId,
                                                    @Parameter(description = "Specified whether the history must be grouped by language or not")
-                                                        @QueryParam("groupByLang") @DefaultValue("false") final boolean groupByLanguage,
+                                                       @QueryParam("groupByLang") @DefaultValue("false") final boolean groupByLanguage,
                                                    @Parameter(description = "Specified whether the history must include old versions or not")
-                                                        @QueryParam("bringOldVersions") @DefaultValue("true") final boolean bringOldVersions,
+                                                       @QueryParam("bringOldVersions") @DefaultValue("true") final boolean bringOldVersions,
                                                    @Parameter(description = "Sort direction: Choose between ascending or descending.",
                                                            schema = @Schema(
                                                                    type = "string",
                                                                    allowableValues = {"ASC", "DESC"},
                                                                    defaultValue = "DESC"))
-                                                        @QueryParam(PaginationUtil.DIRECTION) @DefaultValue("DESC") final String direction,
+                                                       @QueryParam(PaginationUtil.DIRECTION) @DefaultValue("DESC") final String direction,
                                                    @Parameter(description = "Maximum number or results being returned, for pagination purposes.")
-                                                        @QueryParam("limit") final int limit,
+                                                       @QueryParam("limit") final int limit,
                                                    @Parameter(description = "Page number of the results being returned, for pagination purposes.")
-                                                        @QueryParam("offset") final int offset)
+                                                       @QueryParam("offset") final int offset)
             throws DotDataException, DotStateException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
@@ -270,10 +273,16 @@ public class ContentVersionResource {
             throw new NotFoundException(getFormattedMessage(user.getLocale(),
                     BAD_REQUEST_ERROR_MESSAGE_KEY));
         }
+        final Optional<Language> languageOpt = APILocator.getLanguageAPI().getLanguageByIdOrIsoCode(languageId);
+        if (UtilMethods.isSet(languageId) && languageOpt.isEmpty()) {
+            throw new BadRequestException(getFormattedMessage(user.getLocale(), String.format("Language ID " +
+                    "'%s' was not found", languageId)));
+        }
         final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
         final PaginationUtil paginationUtil = new PaginationUtil(new ContentHistoryPaginator());
         final Map<String, Object> extraParams = Map.of(
                 ContentHistoryPaginator.IDENTIFIER, identifierObj,
+                ContentHistoryPaginator.LANGUAGE_ID, languageOpt.map(Language::getId).orElse(-1L),
                 ContentHistoryPaginator.RESPECT_FRONTEND_ROLES, respectFrontendRoles,
                 ContentHistoryPaginator.GROUP_BY_LANG, groupByLanguage,
                 ContentHistoryPaginator.BRING_OLD_VERSIONS, bringOldVersions);

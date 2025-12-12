@@ -10,9 +10,11 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.SearchForm;
 import com.dotcms.rest.SearchView;
@@ -21,6 +23,8 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.variant.VariantAPI;
@@ -53,6 +57,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -68,6 +73,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -101,7 +107,7 @@ import java.util.stream.Collectors;
  */
 @SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/content")
-@Tag(name = "Content")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets - the core data objects in dotCMS")
 public class ContentResource {
 
     private final WebResource    webResource;
@@ -138,6 +144,59 @@ public class ContentResource {
         this.contentHelper = contentHelper;
     }
 
+
+
+    @Operation(
+            summary = "Contentlet Push History",
+            description = "Returns the push history of a contentlet"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "History data retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required.",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "The specified identifier does not match any contentlet.",
+            content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "An internal dotCMS error has occurred.",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/{identifier}/push/history")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityPaginatedDataView getPushHistory(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "ID of the Contentlet whose push history will be retrieved.")
+                @PathParam("identifier") final String contentId,
+            @Parameter(description = "Maximum number or results being returned, for pagination purposes.")
+                @QueryParam("limit") final int limit,
+            @Parameter(description = "Page number of the results being returned, for pagination purposes.")
+                @QueryParam("offset") final int offset) throws DotDataException {
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentId);
+        if (!UtilMethods.isSet(contentlet)) {
+            throw new ResourceNotFoundException(String.format("Content ID '%s' does not exist", contentId));
+        }
+        Logger.debug(this, String.format("Retrieving Push History for Content ID '%s' / limit = %s / offset = %s",
+                contentId, limit, offset));
+        final PaginationUtil paginationUtil = new PaginationUtil(new ContentPushHistoryPaginator());
+
+        final PaginationUtilParams<Map<String, Object>, PaginatedArrayList<?>> params =
+                new PaginationUtilParams.Builder<Map<String, Object>, PaginatedArrayList<?>>()
+                        .withFilter(contentId)
+                        .withRequest(request)
+                        .withResponse(response)
+                        .withPage(offset)
+                        .withPerPage(limit)
+                        .build();
+
+        return paginationUtil.getPageView(params);
+    }
+
     /**
      * Executes a "Save as Draft" action on the specified Contentlet. For more information on how the save-as-draft
      * works in dotCMS, see {@link ContentletAPI#saveDraft(Contentlet, Map, List, List, User, boolean)}.
@@ -157,7 +216,7 @@ public class ContentResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON})
     @Operation(
             operationId = "saveDraft",
             summary = "Saves a content draft",
@@ -167,7 +226,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Draft saved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityMapView.class))),
+                                    schema = @Schema(implementation = ResponseEntityContentletView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid content data"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks write permissions"),
@@ -175,7 +234,7 @@ public class ContentResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public final ResponseEntityMapView saveDraft(@Context final HttpServletRequest request,
+    public final ResponseEntityContentletView saveDraft(@Context final HttpServletRequest request,
                                                      @Parameter(description = "Content inode for existing content") @QueryParam("inode") final String inode,
                                                      @Parameter(description = "Content identifier for existing content") @QueryParam("identifier") final String identifier,
                                                      @Parameter(description = "Index policy (DEFER_UNTIL_PUBLISH, FORCE, WAIT_FOR)") @QueryParam("indexPolicy") final String indexPolicy,
@@ -204,7 +263,7 @@ public class ContentResource {
         APILocator.getContentletAPI().saveDraft(contentlet,
                 (ContentletRelationships) contentlet.get(Contentlet.RELATIONSHIP_KEY), categories.orElse(null), null,
                 initDataObject.getUser(), false);
-        return new ResponseEntityMapView(
+        return new ResponseEntityContentletView(
                 new DotTransformerBuilder().defaultOptions().content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap()));
     }
 
@@ -386,14 +445,14 @@ public class ContentResource {
         description = "Retrieves the total number of references to a specific contentlet by its identifier"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
+        @ApiResponse(responseCode = "200",
                     description = "References count retrieved successfully",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityCountView.class))),
-        @ApiResponse(responseCode = "401", 
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404", 
+        @ApiResponse(responseCode = "404",
                     description = "Not found - contentlet with identifier not found",
                     content = @Content(mediaType = "application/json"))
     })
@@ -436,14 +495,14 @@ public class ContentResource {
         description = "Retrieves all references to a specific contentlet, including pages, containers, and personas that reference it"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
+        @ApiResponse(responseCode = "200",
                     description = "References retrieved successfully",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityContentReferenceListView.class))),
-        @ApiResponse(responseCode = "401", 
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404", 
+        @ApiResponse(responseCode = "404",
                     description = "Not found - contentlet not found",
                     content = @Content(mediaType = "application/json"))
     })
@@ -805,23 +864,23 @@ public class ContentResource {
         description = "Retrieves related content for a contentlet based on relationship field configuration and query conditions"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
+        @ApiResponse(responseCode = "200",
                     description = "Related content retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityListMapView.class))),
-        @ApiResponse(responseCode = "400", 
+        @ApiResponse(responseCode = "400",
                     description = "Bad request - contentlet does not have a relationship field",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "401", 
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404", 
+        @ApiResponse(responseCode = "404",
                     description = "Not found - contentlet not found",
                     content = @Content(mediaType = "application/json"))
     })
     public Response pullRelated(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
-                               @RequestBody(description = "Pull related content request parameters", 
+                               @RequestBody(description = "Pull related content request parameters",
                                           required = true,
                                           content = @Content(schema = @Schema(implementation = PullRelatedForm.class)))
                                final PullRelatedForm pullRelatedForm) throws DotDataException, DotSecurityException {
@@ -898,13 +957,13 @@ public class ContentResource {
         description = "Retrieves all available languages for a contentlet and indicates which languages have content versions"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
+        @ApiResponse(responseCode = "200",
                     description = "Language versions retrieved successfully",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "401", 
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404", 
+        @ApiResponse(responseCode = "404",
                     description = "Not found - contentlet identifier not found",
                     content = @Content(mediaType = "application/json"))
     })
@@ -915,8 +974,7 @@ public class ContentResource {
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityView<List<ExistingLanguagesForContentletView>> checkContentLanguageVersions(@Context final HttpServletRequest request,
                                                                                                      @Context final HttpServletResponse response,
-                                                                                                     @Parameter(description = "Content identifier", required = true)
-                                                                                                     @PathParam("identifier") final String identifier) throws DotDataException {
+                                                                                                     @Parameter(description = "Identifier of contentlet whose language status to display.") @PathParam("identifier") final String identifier) throws DotDataException {
         Logger.debug(this, () -> String.format("Check the languages that Contentlet '%s' is " +
                 "available on", identifier));
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)

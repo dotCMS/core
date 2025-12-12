@@ -7,10 +7,12 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collect the total size in Mb of all the Site Search indices.
  */
+@ApplicationScoped
 public class TotalSizeSiteSearchIndicesMetricType extends IndicesSiteSearchMetricType {
 
 

@@ -15,7 +15,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotDialogModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -26,10 +26,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
-import { DotCreatePersonaFormModule } from './dot-create-persona-form/dot-create-persona-form.module';
+import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-create-persona-form.component';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { SiteSelectorFieldModule } from '../_common/dot-site-selector-field/dot-site-selector-field.module';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -55,13 +54,13 @@ describe('DotAddPersonaDialogComponent', () => {
         const siteServiceMock = new SiteServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotAddPersonaDialogComponent, TestFieldValidationMessageComponent],
+            declarations: [TestFieldValidationMessageComponent],
             imports: [
+                DotAddPersonaDialogComponent,
+                DotCreatePersonaFormComponent,
                 BrowserAnimationsModule,
-                DotDialogModule,
+                DotDialogComponent,
                 FileUploadModule,
-                SiteSelectorFieldModule,
-                DotCreatePersonaFormModule,
                 DotMessagePipe
             ],
             providers: [
@@ -113,11 +112,11 @@ describe('DotAddPersonaDialogComponent', () => {
                 accept: {
                     label: 'Accept',
                     disabled: true,
-                    action: jasmine.any(Function)
+                    action: expect.any(Function)
                 },
                 cancel: {
                     label: 'Cancel',
-                    action: jasmine.any(Function)
+                    action: expect.any(Function)
                 }
             });
         });
@@ -128,7 +127,7 @@ describe('DotAddPersonaDialogComponent', () => {
         });
 
         it('should reset persona form, disable accept button and set visible to false on closeDialog', () => {
-            spyOn(component.personaForm, 'resetForm');
+            jest.spyOn(component.personaForm, 'resetForm');
             component.closeDialog();
 
             expect(component.personaForm.resetForm).toHaveBeenCalled();
@@ -137,7 +136,7 @@ describe('DotAddPersonaDialogComponent', () => {
         });
 
         it('should call closeDialog on dotDialog hide', () => {
-            spyOn(component, 'closeDialog');
+            jest.spyOn(component, 'closeDialog');
             dotDialog.componentInstance.hide.emit();
             expect(component.closeDialog).toHaveBeenCalled();
         });
@@ -166,17 +165,20 @@ describe('DotAddPersonaDialogComponent', () => {
                 de = fixture.debugElement;
                 dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
                 dotWorkflowActionsFireService = de.injector.get(DotWorkflowActionsFireService);
-                spyOn(component.createdPersona, 'emit');
-                spyOnProperty(component.personaForm.form, 'valid').and.returnValue(true);
+                jest.spyOn(component.createdPersona, 'emit');
+                Object.defineProperty(component.personaForm.form, 'valid', {
+                    value: true,
+                    writable: true
+                });
                 dialog = de.query(By.css('dot-dialog'));
             });
 
             it('should create and emit the new persona, disable accept button and close dialog if form is valid', () => {
-                spyOn(component, 'closeDialog');
-                spyOn(
+                jest.spyOn(component, 'closeDialog');
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(observableOf(mockDotPersona));
+                ).mockReturnValue(observableOf(mockDotPersona));
 
                 submitForm();
 
@@ -191,24 +193,26 @@ describe('DotAddPersonaDialogComponent', () => {
                     tags: null
                 });
                 expect(component.createdPersona.emit).toHaveBeenCalledWith(mockDotPersona);
+                expect(component.createdPersona.emit).toHaveBeenCalledTimes(1);
                 expect(component.closeDialog).toHaveBeenCalled();
                 expect(component.dialogActions.accept.disabled).toEqual(true);
             });
 
             it('should call dotHttpErrorManagerService if endpoint fails, since form is valid, accept button should not be enable', () => {
                 const fake500Response = mockResponseView(500);
-                spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+                jest.spyOn(dotHttpErrorManagerService, 'handle');
                 component.dialogActions.accept.disabled = true;
-                spyOn(
+                jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).and.returnValue(throwError(fake500Response));
+                ).mockReturnValue(throwError(fake500Response));
 
                 submitForm();
 
                 expect(component.createdPersona.emit).not.toHaveBeenCalled();
                 expect(component.dialogActions.accept.disabled).toEqual(false);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
         });
     });

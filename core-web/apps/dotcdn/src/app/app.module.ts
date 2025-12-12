@@ -24,7 +24,7 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconComponent, DotSpinnerComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 import { DotCDNStore } from './dotcdn.component.store';
@@ -49,10 +49,10 @@ const dotEventSocketURLFactory = () => {
         ChartModule,
         InputTextareaModule,
         ButtonModule,
-        DotIconModule,
+        DotIconComponent,
         FormsModule,
         SkeletonModule,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         ReactiveFormsModule
     ],
     providers: [

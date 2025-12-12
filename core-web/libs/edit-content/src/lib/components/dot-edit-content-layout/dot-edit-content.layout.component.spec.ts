@@ -26,11 +26,15 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
@@ -81,13 +85,17 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotEditContentService),
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowService),
-            mockProvider(DotContentletService)
+            mockProvider(DotContentletService),
+            mockProvider(DotVersionableService)
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
             mockProvider(MessageService),
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            GlobalStore,
             {
                 provide: DotCurrentUserService,
                 useValue: {
@@ -132,6 +140,7 @@ describe('EditContentLayoutComponent', () => {
 
         // Mock the initial UI state
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,

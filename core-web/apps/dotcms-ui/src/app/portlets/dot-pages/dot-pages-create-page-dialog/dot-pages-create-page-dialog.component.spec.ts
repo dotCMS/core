@@ -146,7 +146,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
                     {
                         provide: DynamicDialogRef,
                         useValue: {
-                            close: jasmine.createSpy()
+                            close: jest.fn()
                         }
                     },
                     {
@@ -154,7 +154,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
                         useValue: {
                             data: {
                                 contentTypeVariable: 'contentType',
-                                onSave: jasmine.createSpy()
+                                onSave: jest.fn()
                             }
                         }
                     },
@@ -179,7 +179,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
             .compileComponents();
 
         store = TestBed.inject(DotPageStore);
-        spyOn(store, 'getPageTypes');
+        jest.spyOn(store, 'getPageTypes');
         fixture = TestBed.createComponent(DotPagesCreatePageDialogComponent);
         de = fixture.debugElement;
         dotRouterService = TestBed.inject(DotRouterService);

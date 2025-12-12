@@ -7,18 +7,16 @@ import {
 } from '@dotcms/dotcms-models';
 import { createFakeContentType } from '@dotcms/utils-testing';
 
-import { DotContentDriveContentType } from './models';
-
 export const MOCK_ITEMS: DotContentDriveItem[] = [
-    { identifier: '123', title: 'Test Content 1' } as DotContentDriveItem,
-    { identifier: '456', title: 'Test Content 2' } as DotContentDriveItem
+    { identifier: '123', title: 'Test Content 1', inode: 'inode-123' } as DotContentDriveItem,
+    { identifier: '456', title: 'Test Content 2', inode: 'inode-456' } as DotContentDriveItem
 ];
 
 export const MOCK_SEARCH_RESPONSE = {
-    jsonObjectView: {
-        contentlets: MOCK_ITEMS
-    },
-    resultsSize: 2
+    list: MOCK_ITEMS,
+    contentTotalCount: 2,
+    folderCount: 0,
+    contentCount: 2
 };
 
 export const MOCK_ROUTE = {
@@ -240,24 +238,12 @@ export const MOCK_CONTENT_TYPES: DotCMSContentType[] = [
     }
 ].map(createFakeContentType);
 
-export const MOCK_CONTENT_TYPES_WITH_SELECTED: DotContentDriveContentType[] = [
-    {
-        ...MOCK_CONTENT_TYPES[0],
-        selected: false
-    },
-    {
-        ...MOCK_CONTENT_TYPES[1],
-        selected: false
-    },
-    {
-        ...MOCK_CONTENT_TYPES[2],
-        selected: false
-    },
-    {
-        ...MOCK_CONTENT_TYPES[3],
-        selected: true
-    }
-];
+export const SELECTED_CONTENT_TYPES: DotCMSContentType[] = [
+    MOCK_CONTENT_TYPES[0],
+    MOCK_CONTENT_TYPES[1],
+    MOCK_CONTENT_TYPES[2],
+    MOCK_CONTENT_TYPES[3]
+].filter((ct) => ct.baseType !== DotCMSBaseTypesContentTypes.FORM); // Select only content types that are not form
 
 export const MOCK_BASE_TYPES: StructureTypeView[] = [
     { name: 'Content', label: 'Content', types: null },

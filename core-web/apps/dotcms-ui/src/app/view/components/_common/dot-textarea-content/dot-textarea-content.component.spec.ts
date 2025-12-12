@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MonacoEditorComponent } from '@materia-ui/ngx-monaco-editor';
 
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -26,8 +27,7 @@ function cleanOptionText(option) {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MonacoEditorMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 class MonacoEditorMockComponent {
     @Input() options: any;
@@ -46,9 +46,25 @@ describe('DotTextareaContentComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotTextareaContentComponent, MonacoEditorMockComponent],
-            imports: [SelectButtonModule, InputTextareaModule, FormsModule]
-        }).compileComponents();
+            imports: [
+                DotTextareaContentComponent,
+                SelectButtonModule,
+                InputTextareaModule,
+                FormsModule,
+                MonacoEditorMockComponent
+            ]
+        })
+            .overrideComponent(DotTextareaContentComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        FormsModule,
+                        SelectButtonModule,
+                        MonacoEditorMockComponent
+                    ]
+                }
+            })
+            .compileComponents();
 
         fixture = TestBed.createComponent(DotTextareaContentComponent);
         component = fixture.componentInstance;
@@ -168,7 +184,7 @@ describe('DotTextareaContentComponent', () => {
     });
 
     it('should not propagate enter keyboard event', async () => {
-        const spy = jasmine.createSpy('stopPropagation');
+        const spy = jest.fn();
         component.show = ['plain', 'code'];
         component.selected = 'plain';
 
@@ -195,7 +211,7 @@ describe('DotTextareaContentComponent', () => {
     it('should init editor with the correct value', () => {
         const mockEditor = { test: 'editor' };
         component.editorName = 'testName';
-        spyOn(component.monacoInit, 'emit');
+        jest.spyOn(component.monacoInit, 'emit');
         fixture.detectChanges();
         component.onInit(mockEditor);
         expect(component.monacoInit.emit).toHaveBeenCalledWith({

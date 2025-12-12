@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { MockProvider } from 'ng-mocks';
+import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -34,13 +34,13 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
-import { DotDialogModule } from '@dotcms/ui';
+import { DotDialogComponent } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';
 
 import { DotParseHtmlService } from '../../../../api/services/dot-parse-html/dot-parse-html.service';
-import { DotContainerReferenceModule } from '../../../directives/dot-container-reference/dot-container-reference.module';
+import { DotContainerReferenceDirective } from '../../../directives/dot-container-reference/dot-container-reference.directive';
 import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
@@ -105,17 +105,12 @@ describe('DotWizardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotWizardComponent,
-                DotCommentAndAssignFormComponent,
-                DotPushPublishFormComponent,
-                FormOneComponent,
-                FormTwoComponent
-            ],
+            declarations: [FormOneComponent, FormTwoComponent],
             imports: [
-                DotDialogModule,
+                DotWizardComponent,
+                DotDialogComponent,
                 CommonModule,
-                DotContainerReferenceModule,
+                DotContainerReferenceDirective,
                 HttpClientTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
@@ -123,7 +118,9 @@ describe('DotWizardComponent', () => {
                 DropdownModule,
                 BrowserAnimationsModule,
                 DialogModule,
-                ButtonModule
+                ButtonModule,
+                MockComponent(DotCommentAndAssignFormComponent),
+                MockComponent(DotPushPublishFormComponent)
             ],
             providers: [
                 LoggerService,
@@ -163,12 +160,12 @@ describe('DotWizardComponent', () => {
 
     describe('multiple steps', () => {
         let formOneFirst: DebugElement;
-        let formOneFirstSPy: jasmine.Spy;
+        let formOneFirstSPy: jest.SpyInstance;
 
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);
             component = fixture.componentInstance;
-            spyOn(component, 'getWizardComponent').and.callFake((type: string) => {
+            jest.spyOn(component, 'getWizardComponent').mockImplementation((type: string) => {
                 return MOCK_WIZARD_COMPONENT_MAP[type];
             });
             fixture.detectChanges();
@@ -178,7 +175,7 @@ describe('DotWizardComponent', () => {
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
             tick(0); // interval time to render the elements.
             formOneFirst = fixture.debugElement.query(By.css('.formOneFirst'));
-            formOneFirstSPy = spyOn(formOneFirst.nativeElement, 'focus');
+            formOneFirstSPy = jest.spyOn(formOneFirst.nativeElement, 'focus');
             tick(1001); // interval time to focus first element.
             fixture.detectChanges();
             acceptButton = fixture.debugElement.query(
@@ -202,8 +199,8 @@ describe('DotWizardComponent', () => {
         });
 
         it('should load buttons', () => {
-            expect(acceptButton.nativeElement.innerText).toEqual('Next');
-            expect(closeButton.nativeElement.innerText).toEqual('Previous');
+            expect(acceptButton.nativeElement.textContent).toEqual('Next');
+            expect(closeButton.nativeElement.textContent).toEqual('Previous');
             expect(closeButton.nativeElement.disabled).toEqual(true);
             expect(acceptButton.nativeElement.disabled).toEqual(true);
         });
@@ -215,8 +212,8 @@ describe('DotWizardComponent', () => {
         });
 
         it('should focus next/send action, after tab in the last item of the form', () => {
-            const preventDefaultSpy = jasmine.createSpy('spy');
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const preventDefaultSpy = jest.fn();
+            const stopPropagationSpy = jest.fn();
             const mockEvent = {
                 target: 'match',
                 composedPath: () => [
@@ -234,7 +231,7 @@ describe('DotWizardComponent', () => {
                 preventDefault: preventDefaultSpy,
                 stopPropagation: stopPropagationSpy
             };
-            spyOn(acceptButton.nativeElement, 'focus');
+            jest.spyOn(acceptButton.nativeElement, 'focus');
             formsContainer.triggerEventHandler('keydown.tab', { ...mockEvent });
             expect(preventDefaultSpy).toHaveBeenCalled();
             expect(acceptButton.nativeElement.focus).toHaveBeenCalled();
@@ -245,11 +242,11 @@ describe('DotWizardComponent', () => {
             form2.valid.emit(true);
             acceptButton.triggerEventHandler('click', {});
             fixture.detectChanges();
-            expect(acceptButton.nativeElement.innerText).toEqual('Send');
+            expect(acceptButton.nativeElement.textContent).toEqual('Send');
             expect(acceptButton.nativeElement.disabled).toEqual(false);
         });
         it('should consolidate forms values and send them on send ', () => {
-            spyOn(dotWizardService, 'output$');
+            jest.spyOn(dotWizardService, 'output$');
 
             const commentAndAssignFormValue = {
                 assign: 'Jose',

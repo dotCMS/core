@@ -2,8 +2,13 @@
 
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
+
+import { DotSystemConfigService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 
@@ -15,10 +20,9 @@ class AppsServicesMock {
     }
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
+const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+    'toString'
+]);
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('DotAppsConfigurationListResolver', () => {
@@ -33,7 +37,14 @@ describe('DotAppsConfigurationListResolver', () => {
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: activatedRouteSnapshotMock
-                }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
         dotAppsServices = TestBed.inject(DotAppsService);
@@ -62,7 +73,7 @@ describe('DotAppsConfigurationListResolver', () => {
         };
 
         activatedRouteSnapshotMock.paramMap.get = () => '123';
-        spyOn<any>(dotAppsServices, 'getConfigurationList').and.returnValue(of(response));
+        jest.spyOn<any>(dotAppsServices, 'getConfigurationList').mockReturnValue(of(response));
 
         dotAppsConfigurationListResolver
             .resolve(activatedRouteSnapshotMock)
@@ -70,5 +81,6 @@ describe('DotAppsConfigurationListResolver', () => {
                 expect(fakeContentType).toEqual(response);
             });
         expect(dotAppsServices.getConfigurationList).toHaveBeenCalledWith('123');
+        expect(dotAppsServices.getConfigurationList).toHaveBeenCalledTimes(1);
     });
 });

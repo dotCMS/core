@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -16,18 +17,19 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotFormatDateService,
     DotGenerateSecurePasswordService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLicenseService,
     DotMessageDisplayService,
     DotRouterService,
-    DotWorkflowActionsFireService,
-    DotGlobalMessageService,
-    DotIframeService,
+    DotUiColorsService,
     DotWizardService,
+    DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -41,20 +43,20 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContentletsComponent } from './dot-contentlets.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotUiColorsService } from '../../../api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
-import { DotContentletEditorModule } from '../../../view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
+import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Injectable()
 class MockDotContentletEditorService {
-    edit = jasmine.createSpy('edit');
+    edit = jest.fn();
 }
 
 describe('DotContentletsComponent', () => {
@@ -68,8 +70,12 @@ describe('DotContentletsComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentletsComponent],
-            imports: [DotContentletEditorModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [
+                DotEditContentletComponent,
+                RouterTestingModule,
+                HttpClientTestingModule,
+                DotContentletsComponent
+            ],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
@@ -96,7 +102,13 @@ describe('DotContentletsComponent', () => {
                 },
                 DotWorkflowEventHandlerService,
                 PushPublishService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: CoreWebService,
+                    useValue: {
+                        request: jest.fn().mockReturnValue(of({})),
+                        requestView: jest.fn().mockReturnValue(of({ entity: {} }))
+                    }
+                },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 PushPublishService,
@@ -123,7 +135,16 @@ describe('DotContentletsComponent', () => {
                 LoginService,
                 DotGenerateSecurePasswordService,
                 DotDownloadBundleDialogService,
-                mockProvider(DotContentTypeService)
+                mockProvider(DotContentTypeService),
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false),
+                        show: jest.fn(),
+                        hide: jest.fn(),
+                        toggle: jest.fn()
+                    }
+                }
             ]
         });
 
@@ -134,7 +155,7 @@ describe('DotContentletsComponent', () => {
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
 
@@ -146,6 +167,7 @@ describe('DotContentletsComponent', () => {
         };
         await fixture.whenStable();
         expect(dotContentletEditorService.edit).toHaveBeenCalledWith(params);
+        expect(dotContentletEditorService.edit).toHaveBeenCalledTimes(1);
     });
 
     it('should go current portlet and reload data when modal closed', () => {
@@ -155,14 +177,16 @@ describe('DotContentletsComponent', () => {
             queryParamsHandling: 'preserve'
         });
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
-        const edit = de.query(By.css('dot-edit-contentlet'));
-        edit.triggerEventHandler('custom', { data: 'test' });
-        expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
-            data: 'test'
+        jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {
+            /* mock implementation */
         });
+        const edit = de.query(By.css('dot-edit-contentlet'));
+        const mockEvent = { detail: { name: 'test-event', data: 'test' } };
+        edit.triggerEventHandler('custom', mockEvent);
+        expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

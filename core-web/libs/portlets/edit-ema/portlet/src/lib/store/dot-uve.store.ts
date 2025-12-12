@@ -2,13 +2,15 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
-import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
+import { DotCMSPageAsset } from '@dotcms/types';
 
 import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';
+import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
+import { withPageContext } from './features/withPageContext';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
@@ -28,14 +30,43 @@ const initialState: UVEState = {
     viewParams: null,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
     isClientReady: false
 };
 
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
+    // Make common computed available through all the features
+    withPageContext(),
+    withMethods((store) => {
+        return {
+            setUveStatus(status: UVE_STATUS) {
+                patchState(store, {
+                    status
+                });
+            },
+            updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
+                patchState(store, {
+                    status: UVE_STATUS.LOADED,
+                    pageAPIResponse
+                });
+            },
+            patchViewParams(viewParams: Partial<DotUveViewParams>) {
+                patchState(store, {
+                    viewParams: {
+                        ...store.viewParams(),
+                        ...viewParams
+                    }
+                });
+            }
+        };
+    }),
+    withSave(),
+    withLayout(),
+    withEditor(),
+    withTrack(),
+    withFlags(UVE_FEATURE_FLAGS),
+    withLock(),
     withComputed(
         ({
             pageAPIResponse,
@@ -138,15 +169,6 @@ export const UVEStore = signalStore(
                         ]
                     };
                 }),
-                $languageId: computed<number>(() => {
-                    return pageAPIResponse()?.viewAs.language?.id || 1;
-                }),
-                $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.mode === UVE_MODE.PREVIEW;
-                }),
-                $isLiveMode: computed<boolean>(() => {
-                    return pageParams()?.mode === UVE_MODE.LIVE;
-                }),
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(pageParams() ?? {}),
@@ -157,34 +179,5 @@ export const UVEStore = signalStore(
                 })
             };
         }
-    ),
-    withMethods((store) => {
-        return {
-            setUveStatus(status: UVE_STATUS) {
-                patchState(store, {
-                    status
-                });
-            },
-            updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
-                patchState(store, {
-                    status: UVE_STATUS.LOADED,
-                    pageAPIResponse
-                });
-            },
-            patchViewParams(viewParams: Partial<DotUveViewParams>) {
-                patchState(store, {
-                    viewParams: {
-                        ...store.viewParams(),
-                        ...viewParams
-                    }
-                });
-            }
-        };
-    }),
-    // withLoad(),
-    withSave(),
-    withLayout(),
-    withEditor(),
-    withTrack(),
-    withFlags(UVE_FEATURE_FLAGS)
+    )
 );

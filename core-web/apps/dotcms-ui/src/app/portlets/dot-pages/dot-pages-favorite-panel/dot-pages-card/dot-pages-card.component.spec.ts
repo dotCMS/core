@@ -1,19 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { TooltipModule } from 'primeng/tooltip';
-
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotIconModule,
-    DotMessagePipe,
-    DotPagesFavoritePageEmptySkeletonComponent,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
@@ -29,17 +18,7 @@ describe('DotPagesCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                CommonModule,
-                CardModule,
-                DotIconModule,
-                DotPagesFavoritePageEmptySkeletonComponent,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                ButtonModule,
-                DotMessagePipe
-            ],
-            declarations: [DotPagesCardComponent],
+            imports: [DotPagesCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     }));
@@ -58,8 +37,8 @@ describe('DotPagesCardComponent', () => {
             component.url = '/index';
             component.ownerPage = true;
 
-            spyOn(component.goTo, 'emit').and.callThrough();
-            spyOn(component.edit, 'emit').and.callThrough();
+            jest.spyOn(component.goTo, 'emit');
+            jest.spyOn(component.edit, 'emit');
 
             fixture.detectChanges();
         });
@@ -69,12 +48,12 @@ describe('DotPagesCardComponent', () => {
                 fixture.debugElement
                     .query(By.css('[data-testid="favoriteCardImageContainer"]'))
                     .nativeElement.style['background-image'].includes(component.imageUri)
-            ).toBeTrue();
+            ).toBe(true);
             expect(
                 fixture.debugElement
                     .query(By.css('.dot-pages-favorite-card-content__image img'))
                     .nativeElement.src.includes(component.imageUri)
-            ).toBeTrue();
+            ).toBe(true);
         });
 
         it('should set title and url as content', () => {
@@ -97,6 +76,7 @@ describe('DotPagesCardComponent', () => {
             });
 
             expect(component.goTo.emit).toHaveBeenCalledWith(true);
+            expect(component.goTo.emit).toHaveBeenCalledTimes(1);
             expect(component.edit.emit).not.toHaveBeenCalledWith(true);
         });
     });

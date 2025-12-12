@@ -25,11 +25,28 @@ export default defineConfig({
         react(),
         nxViteTsPaths(),
         dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') }),
-        copyReadme
+        copyReadme,
+        // Ensure the React entry is tagged as a Client Component in the emitted bundle
+        {
+            name: 'preserve-use-client-react-entry',
+            generateBundle(_options, bundle) {
+                for (const [fileName, chunk] of Object.entries(bundle)) {
+                    if (chunk.type !== 'chunk') continue;
+                    const isReactEntry =
+                        (chunk as any).facadeModuleId?.endsWith('src/lib/react/index.ts') ||
+                        fileName === 'react/index.js';
+                    if (isReactEntry && !chunk.code.startsWith('"use client"')) {
+                        chunk.code = '"use client";\n' + chunk.code;
+                    }
+                }
+            }
+        }
     ],
 
     build: {
-        outDir: '../../../dist/libs/sdk/analytics',
+        // Explicitly resolve outDir to prevent output from going to external dist folders
+        // This ensures reproducible builds regardless of current working directory
+        outDir: path.resolve(__dirname, '../../../dist/libs/sdk/analytics'),
         emptyOutDir: true,
         reportCompressedSize: true,
         commonjsOptions: {
@@ -50,7 +67,10 @@ export default defineConfig({
                 'react/jsx-runtime',
                 'analytics',
                 '@analytics/core',
-                '@analytics/storage-utils'
+                '@analytics/storage-utils',
+                '@analytics/queue-utils',
+                '@analytics/router-utils',
+                /^next\//
             ],
             output: {
                 exports: 'named',

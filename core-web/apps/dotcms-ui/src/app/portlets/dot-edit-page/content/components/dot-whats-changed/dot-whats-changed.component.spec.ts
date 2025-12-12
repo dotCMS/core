@@ -3,13 +3,23 @@ import { of } from 'rxjs';
 import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
-import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotEditPageService,
+    DotHttpErrorManagerService,
+    DotIframeService,
+    DotRouterService,
+    DotUiColorsService
+} from '@dotcms/data-access';
+import { DotcmsEventsService, LoggerService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
 
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
 
 @Component({
@@ -40,14 +50,14 @@ describe('DotWhatsChangedComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
+            declarations: [TestDotIframeComponent, TestHostComponent],
             providers: [
                 {
                     provide: DotEditPageService,
                     useValue: {
-                        whatChange: jasmine
-                            .createSpy()
-                            .and.returnValue(
+                        whatChange: jest
+                            .fn()
+                            .mockReturnValue(
                                 of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
                             )
                     }
@@ -55,19 +65,66 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotDOMHtmlUtilService,
                     useValue: {
-                        createStyleElement: jasmine
-                            .createSpy()
-                            .and.returnValue(document.createElement('style'))
+                        createStyleElement: jest
+                            .fn()
+                            .mockReturnValue(document.createElement('style'))
                     }
                 },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy()
+                        handle: jest.fn()
+                    }
+                },
+                {
+                    provide: DotIframeService,
+                    useValue: {
+                        get: jest.fn().mockReturnValue(of({})),
+                        reloaded: jest.fn().mockReturnValue(of({})),
+                        ran: jest.fn().mockReturnValue(of({})),
+                        reloadedColors: jest.fn().mockReturnValue(of({}))
+                    }
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: {}
+                },
+                {
+                    provide: DotUiColorsService,
+                    useValue: {}
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useValue: {
+                        subscribeToEvents: jest.fn().mockReturnValue(of({})),
+                        subscribeTo: jest.fn().mockReturnValue(of({}))
+                    }
+                },
+                {
+                    provide: LoggerService,
+                    useValue: {}
+                },
+                {
+                    provide: DotLoadingIndicatorService,
+                    useValue: {
+                        show: jest.fn(),
+                        hide: jest.fn()
+                    }
+                },
+                {
+                    provide: IframeOverlayService,
+                    useValue: {
+                        overlay: of(false)
+                    }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { params: {} }
                     }
                 }
             ],
-            imports: [DotMessagePipe]
+            imports: [DotWhatsChangedComponent, DotMessagePipe]
         });
 
         fixture = TestBed.createComponent(TestHostComponent);
@@ -84,8 +141,11 @@ describe('DotWhatsChangedComponent', () => {
     });
 
     it('should load content based on the pageId and URL', () => {
-        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledOnceWith(SHOW_DIFF_STYLES);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledWith(SHOW_DIFF_STYLES);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledTimes(1);
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledTimes(1);
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '1');
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(1);
         expect(dotIframe.iframeElement.nativeElement.contentDocument.body.innerHTML).toContain(
             'ABC<ins class="diffins">&nbsp;DEF</ins>'
         );
@@ -96,6 +156,8 @@ describe('DotWhatsChangedComponent', () => {
         fixture.detectChanges();
 
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '2');
+        // The service is called twice: once in ngOnInit and once when languageId changes
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(2);
     });
 
     it('should load content when pageId is change', () => {
@@ -103,5 +165,7 @@ describe('DotWhatsChangedComponent', () => {
         fixture.detectChanges();
 
         expect(dotEditPageService.whatChange).toHaveBeenCalledWith('abc-123', '1');
+        // The service is called twice: once in ngOnInit and once when pageId changes
+        expect(dotEditPageService.whatChange).toHaveBeenCalledTimes(2);
     });
 });

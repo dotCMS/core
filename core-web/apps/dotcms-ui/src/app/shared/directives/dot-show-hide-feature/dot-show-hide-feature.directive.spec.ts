@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -31,8 +31,6 @@ describe('DotShowHideFeatureDirective', () => {
             declarations: [TestComponent],
             imports: [DotShowHideFeatureDirective],
             providers: [
-                ViewContainerRef,
-                TemplateRef,
                 { provide: DotPropertiesService, useValue: { getFeatureFlag: () => of(true) } }
             ]
         });
@@ -55,7 +53,7 @@ describe('DotShowHideFeatureDirective', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
+            jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
             fixture.detectChanges();
         });
 
@@ -97,8 +95,6 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
             declarations: [TestWithAlternateTemplateComponent],
             imports: [DotShowHideFeatureDirective],
             providers: [
-                ViewContainerRef,
-                TemplateRef,
                 {
                     provide: DotPropertiesService,
                     useValue: { getFeatureFlag: () => of(true) }
@@ -132,7 +128,7 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
+            jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
             fixture.detectChanges();
         });
 

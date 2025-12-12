@@ -18,6 +18,8 @@ import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -53,7 +55,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -486,7 +488,7 @@ public class WebAssetHelperIntegrationTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");
@@ -936,6 +938,339 @@ public class WebAssetHelperIntegrationTest {
         Assert.assertEquals(1,
                 withMultipleVersions.versions().stream().filter(assetView -> !assetView.working()).count());
 
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#normalize(String)}
+     * Given Scenario: Test the normalize method with various input patterns
+     * Expected Result: The method should properly normalize paths according to the rules:
+     * - Remove whitespace and trailing dots
+     * - Replace multiple slashes with single slash
+     * - Ensure path starts with //
+     * - Ensure path ends with /
+     */
+    @Test
+    public void Test_Normalize_Path() {
+        // Test basic normalization
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("site/folder"));
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("/site/folder"));
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("//site/folder"));
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("//site/folder/"));
+        
+        // Test whitespace removal
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize(" site / folder "));
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("\t site \n / \t folder \n"));
+        
+        // Test multiple slash replacement
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("///site////folder///"));
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("//site//folder//"));
+        
+        // Test trailing dots removal
+        Assert.assertEquals("//site/folder/", WebAssetHelper.normalize("site/folder..."));
+
+        // Test complex cases
+        Assert.assertEquals("//", WebAssetHelper.normalize(""));
+        Assert.assertEquals("//", WebAssetHelper.normalize("/"));
+        Assert.assertEquals("//", WebAssetHelper.normalize("//"));
+        Assert.assertEquals("//", WebAssetHelper.normalize("   "));
+        
+        // Test edge cases
+        Assert.assertEquals("//a/", WebAssetHelper.normalize("a"));
+        Assert.assertEquals("//a/b/c/", WebAssetHelper.normalize("a/b/c"));
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Create a new folder with valid path and folder details
+     * Expected Result: Folder should be created successfully and return a FolderView
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Save_New_Folder_Success() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String folderName = "new-test-folder-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+        
+        final FolderDetail folderDetail = FolderDetail.builder()
+                .title("Test Folder Title")
+                .showOnMenu(true)
+                .sortOrder(100)
+                .fileMasks(List.of("*.jpg", "*.png"))
+                .defaultAssetType("FileAsset")
+                .build();
+
+        final FolderView result = webAssetHelper.saveNewFolder(folderPath, folderDetail, APILocator.systemUser());
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(folderName, result.name());
+        Assert.assertEquals("Test Folder Title", result.title());
+        Assert.assertEquals(true, result.showOnMenu());
+        Assert.assertNotNull("Sort Order must not be null ",result.sortOrder());
+        Assert.assertEquals(100, (int)result.sortOrder());
+        Assert.assertEquals("*.jpg,*.png", result.filesMasks());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Try to create a folder with a path that already exists
+     * Expected Result: Should throw ConflictException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = ConflictException.class)
+    public void Test_Save_New_Folder_Conflict() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String existingFolderPath = String.format("//%s/%s/", host.getHostname(), foo.getName());
+        
+        final FolderDetail folderDetail = FolderDetail.builder()
+                .title("Should Not Be Created")
+                .build();
+
+        webAssetHelper.saveNewFolder(existingFolderPath, folderDetail, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Try to create a folder using a UUID as path
+     * Expected Result: Should throw BadRequestException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = BadRequestException.class)
+    public void Test_Save_New_Folder_With_UUID_Path() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String uuidPath = UUIDGenerator.generateUuid();
+        
+        final FolderDetail folderDetail = FolderDetail.builder()
+                .title("Should Not Be Created")
+                .build();
+
+        webAssetHelper.saveNewFolder(uuidPath, folderDetail, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)}
+     * Given Scenario: Create a nested folder structure
+     * Expected Result: Should create the folder structure and return the deepest folder view
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Save_New_Nested_Folder() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String parentFolderName = "parent-" + RandomStringUtils.randomAlphabetic(5);
+        final String childFolderName = "child-" + RandomStringUtils.randomAlphabetic(5);
+        final String nestedPath = String.format("//%s/%s/%s/", host.getHostname(), parentFolderName, childFolderName);
+        
+        final FolderDetail folderDetail = FolderDetail.builder()
+                .title("Nested Test Folder")
+                .showOnMenu(false)
+                .build();
+
+        final FolderView result = webAssetHelper.saveNewFolder(nestedPath, folderDetail, APILocator.systemUser());
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(childFolderName, result.name());
+        Assert.assertEquals("Nested Test Folder", result.title());
+        Assert.assertEquals(false, result.showOnMenu());
+        Assert.assertTrue(result.path().contains(parentFolderName));
+        Assert.assertTrue(result.path().contains(childFolderName));
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
+     * Given Scenario: Update an existing folder using its path
+     * Expected Result: Folder should be updated successfully
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Update_Folder_By_Path() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        
+        // First create a folder to update
+        final String folderName = "update-test-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+        
+        final FolderDetail createDetail = FolderDetail.builder()
+                .title("Original Title")
+                .showOnMenu(false)
+                .sortOrder(0)
+                .build();
+
+        final FolderView createdFolder = webAssetHelper.saveNewFolder(folderPath, createDetail, APILocator.systemUser());
+        Assert.assertNotNull(createdFolder);
+
+        // Now update the folder
+        final UpdateFolderDetail updateDetail = UpdateFolderDetail.builder()
+                .title("Updated Title")
+                .showOnMenu(true)
+                .sortOrder(200)
+                .fileMasks(List.of("*.pdf", "*.docx"))
+                .build();
+
+        final FolderView updatedFolder = webAssetHelper.updateFolder(folderPath, updateDetail, APILocator.systemUser());
+
+        Assert.assertNotNull(updatedFolder);
+        Assert.assertEquals(folderName, updatedFolder.name());
+        Assert.assertEquals("Updated Title", updatedFolder.title());
+        Assert.assertEquals(true, updatedFolder.showOnMenu());
+        Assert.assertNotNull("Sort Order must not be null ",updatedFolder.sortOrder());
+        Assert.assertEquals(200, (int)updatedFolder.sortOrder());
+        Assert.assertEquals("*.pdf,*.docx", updatedFolder.filesMasks());
+        Assert.assertEquals(createdFolder.inode(), updatedFolder.inode()); // Same folder, same inode
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
+     * Given Scenario: Update an existing folder using its inode
+     * Expected Result: Folder should be updated successfully
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Update_Folder_By_Inode() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        
+        // First create a folder to update
+        final String folderName = "update-inode-test-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+        
+        final FolderDetail createDetail = FolderDetail.builder()
+                .title("Original Title")
+                .build();
+
+        final FolderView createdFolder = webAssetHelper.saveNewFolder(folderPath, createDetail, APILocator.systemUser());
+        Assert.assertNotNull(createdFolder);
+
+        // Update using the inode
+        final UpdateFolderDetail updateDetail = UpdateFolderDetail.builder()
+                .title("Updated via Inode")
+                .showOnMenu(true)
+                .build();
+
+        final FolderView updatedFolder = webAssetHelper.updateFolder(createdFolder.inode(), updateDetail, APILocator.systemUser());
+
+        Assert.assertNotNull(updatedFolder);
+        Assert.assertEquals("Updated via Inode", updatedFolder.title());
+        Assert.assertEquals(true, updatedFolder.showOnMenu());
+        Assert.assertEquals(createdFolder.inode(), updatedFolder.inode());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
+     * Given Scenario: Try to rename a folder to a name that already exists
+     * Expected Result: Should throw ConflictException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = ConflictException.class)
+    public void Test_Update_Folder_Name_Conflict() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        
+        // Create first folder
+        final String folder1Name = "conflict-test1-" + RandomStringUtils.randomAlphabetic(5);
+        final String folder1Path = String.format("//%s/%s/", host.getHostname(), folder1Name);
+        final FolderDetail folder1Detail = FolderDetail.builder().title("Folder 1").build();
+        webAssetHelper.saveNewFolder(folder1Path, folder1Detail, APILocator.systemUser());
+
+        // Create second folder
+        final String folder2Name = "conflict-test2-" + RandomStringUtils.randomAlphabetic(5);
+        final String folder2Path = String.format("//%s/%s/", host.getHostname(), folder2Name);
+        final FolderDetail folder2Detail = FolderDetail.builder().title("Folder 2").build();
+        webAssetHelper.saveNewFolder(folder2Path, folder2Detail, APILocator.systemUser());
+
+        // Try to rename folder2 to folder1's name - should fail
+        final UpdateFolderDetail conflictUpdate = UpdateFolderDetail.builder()
+                .name(folder1Name)
+                .build();
+
+        webAssetHelper.updateFolder(folder2Path, conflictUpdate, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
+     * Given Scenario: Try to update a folder that doesn't exist
+     * Expected Result: Should throw IllegalArgumentException which on upper layer translates to a BadRequest
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = NotFoundInDbException.class)
+    public void Test_Update_Non_Existing_Folder() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final String nonExistentPath = String.format("//%s/non-existent-%s/", 
+                host.getHostname(), RandomStringUtils.randomAlphabetic(10));
+        
+        final UpdateFolderDetail updateDetail = UpdateFolderDetail.builder()
+                .title("Should Not Work")
+                .build();
+
+        webAssetHelper.updateFolder(nonExistentPath, updateDetail, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#updateFolder(String, AbstractUpdateFolderDetail, User)}
+     * Given Scenario: Update folder with minimal data (only name change)
+     * Expected Result: Should update only the name while preserving other properties
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Update_Folder_Name_Only() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        
+        // Create folder with full details
+        final String originalName = "rename-test-" + RandomStringUtils.randomAlphabetic(5);
+        final String originalPath = String.format("//%s/%s/", host.getHostname(), originalName);
+        
+        final FolderDetail createDetail = FolderDetail.builder()
+                .title("Original Title")
+                .showOnMenu(true)
+                .sortOrder(150)
+                .fileMasks(List.of("*.txt"))
+                .build();
+
+        final FolderView originalFolder = webAssetHelper.saveNewFolder(originalPath, createDetail, APILocator.systemUser());
+
+        // Update only the name
+        final String newName = "renamed-" + RandomStringUtils.randomAlphabetic(5);
+        final UpdateFolderDetail updateDetail = UpdateFolderDetail.builder()
+                .name(newName)
+                .build();
+
+        final FolderView renamedFolder = webAssetHelper.updateFolder(originalPath, updateDetail, APILocator.systemUser());
+
+        Assert.assertNotNull(renamedFolder);
+        Assert.assertTrue("Folder name should be the same, despite casing",newName.equalsIgnoreCase(renamedFolder.name()));
+        Assert.assertEquals("Original Title", renamedFolder.title()); // Should preserve the original title
+        Assert.assertEquals(true, renamedFolder.showOnMenu()); // Should preserve original showOnMenu
+        Assert.assertNotNull("Sort Order must not be null ",renamedFolder.sortOrder());
+        Assert.assertEquals(150, (int)renamedFolder.sortOrder()); // Should preserve original sortOrder
+        Assert.assertEquals("*.txt", renamedFolder.filesMasks()); // Should preserve original fileMasks
+    }
+
+    /**
+     * Method to test: {@link WebAssetHelper#saveNewFolder(String, AbstractFolderDetail, User)} with limited user
+     * Given Scenario: Try to create folder with a user that has no permissions
+     * Expected Result: Should throw DotSecurityException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void Test_Save_New_Folder_Limited_User() throws DotDataException, DotSecurityException {
+        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        
+        final String folderName = "restricted-" + RandomStringUtils.randomAlphabetic(5);
+        final String folderPath = String.format("//%s/%s/", host.getHostname(), folderName);
+        
+        final FolderDetail folderDetail = FolderDetail.builder()
+                .title("Should Not Be Created")
+                .build();
+
+        // This should fail due to lack of permissions
+        webAssetHelper.saveNewFolder(folderPath, folderDetail, limitedUser);
     }
 
 }

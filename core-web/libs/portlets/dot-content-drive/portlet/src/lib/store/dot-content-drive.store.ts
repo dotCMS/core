@@ -6,20 +6,28 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
+import { EMPTY } from 'rxjs';
 
 import { computed, effect, EffectRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
-import { QueryBuilder } from '@dotcms/query-builder';
+import { catchError, take } from 'rxjs/operators';
+
+import { DotContentDriveService } from '@dotcms/data-access';
+import { DotContentDriveItem, DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
+import { withContextMenu } from './features/context-menu/withContextMenu';
+import { withDialog } from './features/dialog/withDialog';
+import { withDragging } from './features/dragging/withDragging';
+import { withSidebar } from './features/sidebar/withSidebar';
+
 import {
-    BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    MAP_NUMBERS_TO_BASE_TYPES,
     SYSTEM_HOST
 } from '../shared/constants';
 import {
@@ -30,13 +38,14 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { decodeFilters } from '../utils/functions';
+import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
-    currentSite: SYSTEM_HOST,
+    currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
     filters: {},
     items: [],
+    selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
@@ -46,75 +55,42 @@ const initialState: DotContentDriveState = {
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite }) => {
+    withComputed(({ path, filters, currentSite, pagination, sort }) => {
         return {
-            $query: computed(() => {
-                const query = new QueryBuilder();
-
-                const baseQuery = query.raw(BASE_QUERY);
-
-                let modifiedQuery = baseQuery;
-
-                const pathValue = path();
-                const currentSiteValue = currentSite();
-                const filtersValue = filters();
-                const filtersEntries = Object.entries(filtersValue ?? {});
-
-                if (pathValue) {
-                    modifiedQuery = modifiedQuery.field('parentPath').equals(pathValue);
-                }
-
-                modifiedQuery = modifiedQuery
-                    .field('conhost')
-                    .equals(currentSiteValue?.identifier)
-                    .or()
-                    .equals(SYSTEM_HOST.identifier);
-
-                filtersEntries
-                    // Remove filters that are undefined
-                    .filter(([_key, value]) => value !== undefined)
-                    .forEach(([key, value]) => {
-                        // Handle multiselectors
-                        if (Array.isArray(value)) {
-                            // Chain with OR
-                            const orChain = value.join(' OR ');
-
-                            // Build the query, if the value is a single value, we don't need to wrap it in parentheses
-                            const orQuery =
-                                value.length > 1 ? `+${key}:(${orChain})` : `+${key}:${orChain}`;
-
-                            // Add the query to the modified query
-                            modifiedQuery = modifiedQuery.raw(orQuery);
-                            return;
-                        }
-
-                        // Handle raw search for title
-                        if (key === 'title') {
-                            // This is a indexed field, so we need to search by boosting terms https://dev.dotcms.com/docs/content-search-syntax#Boost
-                            // We search by catchall, title_dotraw boosting 5 and title boosting 15, giving more weight to the title
-                            modifiedQuery = modifiedQuery.raw(
-                                `+catchall:*${value}* title_dotraw:*${value}*^5 title:'${value}'^15`
-                            );
-
-                            // If the value has multiple words, we need to search for each word and boost them by 5
-                            value
-                                .split(' ')
-                                .filter((word) => word.trim().length > 0)
-                                .forEach((word) => {
-                                    modifiedQuery = modifiedQuery.raw(`title:${word}^5`);
-                                });
-
-                            return;
-                        }
-
-                        modifiedQuery = modifiedQuery.field(key).equals(value);
-                    });
-
-                return modifiedQuery.build();
+            $request: computed<DotContentDriveSearchRequest>(() => ({
+                assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                includeSystemHost: true,
+                filters: {
+                    text: filters()?.title || '',
+                    filterFolders: true
+                },
+                language: filters()?.languageId,
+                contentTypes: filters()?.contentType,
+                baseTypes: filters()?.baseType?.map(
+                    (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                ),
+                offset: pagination()?.offset,
+                maxResults: pagination()?.limit,
+                sortBy: sort()?.field + ':' + sort()?.order,
+                archived: false,
+                showFolders:
+                    !filters()?.baseType?.length &&
+                    !filters()?.contentType?.length &&
+                    !filters()?.languageId?.length
+            })),
+            // We will need this for the global select all in the future, so I'll leave it here for now
+            // https://github.com/dotCMS/core/issues/33338
+            $query: computed<string>(() => {
+                return buildContentDriveQuery({
+                    path: path(),
+                    currentSite: currentSite() ?? SYSTEM_HOST,
+                    filters: filters()
+                });
             })
         };
     }),
     withMethods((store) => {
+        const dotContentDriveService = inject(DotContentDriveService);
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -130,6 +106,20 @@ export const DotContentDriveStore = signalStore(
             },
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
+            },
+            setGlobalSearch(searchValue: string) {
+                patchState(store, {
+                    filters: searchValue
+                        ? {
+                              title: searchValue
+                          }
+                        : {},
+                    pagination: {
+                        ...store.pagination(),
+                        offset: 0
+                    },
+                    path: DEFAULT_PATH
+                });
             },
             patchFilters(filters: DotContentDriveFilters) {
                 patchState(store, {
@@ -157,6 +147,44 @@ export const DotContentDriveStore = signalStore(
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
+            },
+            setSelectedItems(items: DotContentDriveItem[]) {
+                patchState(store, { selectedItems: items });
+            },
+            loadItems() {
+                const request = store.$request();
+                const currentSite = store.currentSite();
+                patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
+
+                // Avoid fetching content for SYSTEM_HOST sites
+                if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                    return;
+                }
+
+                // Since we are using scored search for the title we need to sort by score desc
+
+                dotContentDriveService
+                    .search(request)
+                    .pipe(
+                        take(1),
+                        catchError(() => {
+                            patchState(store, { status: DotContentDriveStatus.ERROR });
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((response) => {
+                        patchState(store, {
+                            items: response.list,
+                            totalItems: response.contentTotalCount,
+                            status: DotContentDriveStatus.LOADED
+                        });
+                    });
+            },
+            reloadContentDrive() {
+                this.loadItems();
+            },
+            setPath(path: string) {
+                patchState(store, { path });
             }
         };
     }),
@@ -164,6 +192,7 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         let initEffect: EffectRef;
+        let searchEffect: EffectRef;
 
         return {
             onInit() {
@@ -182,10 +211,24 @@ export const DotContentDriveStore = signalStore(
                         isTreeExpanded: queryTreeExpanded == 'true'
                     });
                 });
+
+                /**
+                 * Effect that triggers a content reload when search parameters change.
+                 * loadItems internally uses $searchParams signal, so it will be triggered
+                 * whenever query, pagination or sort changes.
+                 */
+                searchEffect = effect(() => {
+                    store.loadItems();
+                });
             },
             onDestroy() {
                 initEffect?.destroy();
+                searchEffect?.destroy();
             }
         };
-    })
+    }),
+    withContextMenu(),
+    withDialog(),
+    withSidebar(),
+    withDragging()
 );

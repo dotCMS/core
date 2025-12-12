@@ -8,6 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+
 import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -40,11 +42,8 @@ export class DotContentDriveSearchInputComponent implements OnInit {
             )
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
-                if (searchValue) {
-                    this.#store.patchFilters({ title: searchValue });
-                } else {
-                    this.#store.removeFilter('title');
-                }
+                this.#store.setGlobalSearch(searchValue);
+                this.#store.setSelectedNode(ALL_FOLDER);
             });
     }
 }

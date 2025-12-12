@@ -11,7 +11,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     mockDotDevices,
@@ -53,20 +53,32 @@ describe('DotDeviceSelectorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotDeviceSelectorComponent],
-            imports: [BrowserAnimationsModule, DotIconModule, DotMessagePipe],
+            declarations: [TestHostComponent],
+            imports: [
+                DotDeviceSelectorComponent,
+                BrowserAnimationsModule,
+                DotIconComponent,
+                DotMessagePipe
+            ],
             providers: [
-                {
-                    provide: DotDevicesService,
-                    useClass: DotDevicesServiceMock
-                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
-        }).compileComponents();
+        })
+            .overrideComponent(DotDeviceSelectorComponent, {
+                set: {
+                    providers: [
+                        {
+                            provide: DotDevicesService,
+                            useClass: DotDevicesServiceMock
+                        }
+                    ]
+                }
+            })
+            .compileComponents();
     });
     beforeEach(() => {
         fixtureHost = TestBed.createComponent(TestHostComponent);
@@ -74,7 +86,7 @@ describe('DotDeviceSelectorComponent', () => {
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-device-selector'));
         component = de.componentInstance;
-        dotDeviceService = TestBed.inject(DotDevicesService);
+        dotDeviceService = de.injector.get(DotDevicesService);
     });
 
     it('should have icon', () => {
@@ -87,8 +99,8 @@ describe('DotDeviceSelectorComponent', () => {
     it('should emmit the selected Device', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change').and.callThrough();
+        jest.spyOn(component.selected, 'emit');
+        jest.spyOn(component, 'change');
 
         pDropDown.triggerEventHandler('onChange', { value: mockDotDevices });
 
@@ -112,7 +124,7 @@ describe('DotDeviceSelectorComponent', () => {
     });
 
     it('should reload options when value change', () => {
-        spyOn(dotDeviceService, 'get').and.callThrough();
+        jest.spyOn(dotDeviceService, 'get');
 
         componentHost.value = {
             ...mockDotDevices[1]
@@ -123,7 +135,7 @@ describe('DotDeviceSelectorComponent', () => {
 
     describe('disabled', () => {
         beforeEach(() => {
-            spyOn(dotDeviceService, 'get').and.returnValue(of([]));
+            jest.spyOn(dotDeviceService, 'get').mockReturnValue(of([]));
             fixtureHost.detectChanges();
         });
         it('should disabled dropdown when just have just one device', () => {

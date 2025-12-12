@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User
@@ -80,22 +81,25 @@ public class UserAPIImpl implements UserAPI {
     @Override
     public User loadUserById(final String userId, final User user, final boolean respectFrontEndRoles)
             throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
-
         if(!UtilMethods.isSet(userId)){
-            throw new DotDataException("You must specifiy an userId to search for");
+            throw new DotDataException("User ID is null or empty");
         }
 
-        final User u = userFactory.loadUserById(userId);
-        if(!UtilMethods.isSet(u)){
-            throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+        final User retrievedUser = userFactory.loadUserById(userId);
+        if (!UtilMethods.isSet(retrievedUser)) {
+            throw new com.dotmarketing.business.NoSuchUserException(String.format("No user matches User ID '%s'",
+                    userId));
         }
-        if(user!=null && user.getUserId().equals(u.getUserId())) {
-            return u;
+        if (user != null && user.getUserId().equals(retrievedUser.getUserId())) {
+            return retrievedUser;
         }
-        if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
-            return u;
-        }else{
-            throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
+        if (permissionAPI.doesUserHavePermission(
+                userProxyAPI.getUserProxy(retrievedUser, APILocator.getUserAPI().getSystemUser(),
+                        DONT_RESPECT_FRONT_END_ROLES), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)) {
+            return retrievedUser;
+        } else {
+            throw new DotSecurityException(String.format("User '%s' does not have permissions to return data from User ID " +
+                    "'%s'", null != user ? user.getUserId() : "N/A", userId));
         }
     }
 

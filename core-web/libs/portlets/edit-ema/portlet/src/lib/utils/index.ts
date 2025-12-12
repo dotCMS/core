@@ -243,19 +243,19 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 }
 
 /**
- * Sanitizes a URL by:
- * 1. Removing extra leading/trailing slashes
- * 2. Preserving 'index' in the URL path
- *
- * @param {string} url
- * @return {*}  {string}
+ * Sanitizes a URL by removing query parameters and cleaning up multiple slashes
+ * @param url The URL to sanitize
+ * @returns The sanitized URL path
  */
 export function sanitizeURL(url?: string): string {
     if (!url || url === '/') {
         return '/';
     }
 
-    return url.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
+    // Remove query params if present
+    const path = url.split('?')[0];
+
+    return path.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
 /**
@@ -434,7 +434,7 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
         paramsCopy['host_id'] = siteId;
     }
 
-    const clientHost = paramsCopy?.clientHost ?? window.location.origin;
+    const clientHost = paramsCopy?.clientHost || window.location.origin;
     const url = paramsCopy?.url;
 
     // Clean the params that are not needed for the page
@@ -450,41 +450,81 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
 }
 
 /**
- * Check if the page can be edited
+ * Checks if a page is locked by a different user (not the current user).
  *
- * @export
- * @param {DotPage} page
- * @param {CurrentUser} currentUser
- * @param {DotExperiment} [experiment]
- * @return {*}  {boolean}
+ * @param {DotCMSPage} page - The page to check
+ * @param {CurrentUser} currentUser - The current user
+ * @return {boolean} True if page is locked by another user
+ */
+export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUser): boolean {
+    return !!page?.locked && page?.lockedBy !== currentUser?.userId;
+}
+
+/**
+ * Checks if the page is locked.
+ *
+ * With feature flag enabled: Returns true if page is locked by ANY user
+ * With feature flag disabled: Returns true if page is locked by ANOTHER user
+ *
+ * @param {DotCMSPage} page - The page to check
+ * @param {CurrentUser} currentUser - The current user
+ * @param {boolean} isFeatureFlagEnabled - Whether the lock toggle feature is enabled
+ * @return {boolean} True if page is considered locked based on feature flag
+ */
+export function computeIsPageLocked(
+    page: DotCMSPage,
+    currentUser: CurrentUser,
+    isFeatureFlagEnabled: boolean
+): boolean {
+    if (isFeatureFlagEnabled) {
+        return !!page?.locked;
+    }
+
+    // This is the legacy behavior, only show "locked" button if it is locked by another user
+    const isLocked = isPageLockedByOtherUser(page, currentUser);
+    return isLocked;
+}
+
+/**
+ * Determines if the current user can edit the page.
+ *
+ * Editing is allowed when ALL of the following are true:
+ * - User has edit permission on the page
+ * - Page is not locked (or locked by current user with feature flag enabled)
+ * - No experiment is running or scheduled
+ *
+ * @param {DotCMSPage} page - The page to check
+ * @param {CurrentUser} currentUser - The current user
+ * @param {DotExperiment} [experiment] - Optional experiment data
+ * @param {boolean} [isFeatureFlagEnabled=false] - Whether the lock toggle feature is enabled
+ * @return {boolean} True if user can edit the page
  */
 export function computeCanEditPage(
     page: DotCMSPage,
     currentUser: CurrentUser,
-    experiment?: DotExperiment
+    experiment?: DotExperiment,
+    isFeatureFlagEnabled = false
 ): boolean {
-    const pageCanBeEdited = page?.canEdit;
+    const hasEditPermission = !!page?.canEdit;
 
-    const isLocked = computePageIsLocked(page, currentUser);
-
-    const editingBlockedByExperiment = [
+    const isBlockedByExperiment = [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.SCHEDULED
     ].includes(experiment?.status);
 
-    return !!pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
-}
+    if (!hasEditPermission || isBlockedByExperiment) {
+        return false;
+    }
 
-/**
- * Check if the page is locked
- *
- * @export
- * @param {DotPage} page
- * @param {CurrentUser} currentUser
- * @return {*}
- */
-export function computePageIsLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
-    return !!page?.locked && page?.lockedBy !== currentUser?.userId;
+    if (isFeatureFlagEnabled) {
+        // Always can access to Draft mode (edit) if feature flag is enabled
+        return true;
+    }
+
+    // Legacy behavior: user can access to Draft mode (edit) if page is not locked by another user
+    const isLocked = computeIsPageLocked(page, currentUser, isFeatureFlagEnabled);
+    // If the page is locked, the user cannot access to Draft mode (edit)
+    return !isLocked;
 }
 
 /**
@@ -821,6 +861,29 @@ export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) =
 
     // Optionally remove milliseconds
     return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+};
+
+/**
+ * Converts a Date object (representing a UTC time) to a Local Date object
+ * where the Local time matches the UTC time of the input.
+ * This is the inverse of convertLocalTimeToUTC.
+ * @param {Date} date - Reference Date object (treated as UTC)
+ * @returns {Date} Date object where Local time matches input's UTC time
+ */
+export const convertUTCToLocalTime = (date: Date) => {
+    if (!(date instanceof Date)) {
+        throw new Error('Parameter must be a Date object');
+    }
+
+    return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+        date.getUTCMilliseconds()
+    );
 };
 
 export const removeUndefinedValues = (params: DotPageAssetParams) => {

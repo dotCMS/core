@@ -75,7 +75,9 @@ import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappi
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
@@ -2498,9 +2500,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+    @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form)",
+            description = "(Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by name, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
@@ -3890,9 +3891,8 @@ public class WorkflowResource {
     @NoCache
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form)",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
@@ -4039,9 +4039,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Operation(operationId = "putFireDefaultActionMultipart", summary = "Fire default action (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+    @Operation(operationId = "putFireDefaultActionMultipart", summary = "Fire default action (multipart form)",
+            description = "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "on target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
@@ -5569,6 +5568,85 @@ public class WorkflowResource {
     }
 
     /**
+     * Returns the workflow tasks based on the {@link WorkflowSearcherForm}
+     *
+     * @param request         The current instance of the {@link HttpServletRequest}.
+     * @param response        The current instance of the {@link HttpServletResponse}.
+     * @param workflowSearcherForm body will all filter parameters
+     *
+     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     *
+     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotSecurityException      The User calling this endpoint does not have required
+     *                                   permissions to do so.
+     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     */
+    @POST
+    @Path("/tasks")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on filter parameters",
+            description = "Retrieve the [workflow tasks](https://dev.dotcms.com/docs/workflow-tasks) that match the parameters included in the request body.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityWorkflowTasksView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request")
+            }
+    )
+    public final ResponseEntityWorkflowTasksView getWorkflowTasks(@Context final HttpServletRequest request,
+                                                                            @Context final HttpServletResponse response,
+                                                                            @RequestBody(
+                                                                                    description = "Body consists of a JSON object containing workflow task search parameters:\n\n" +
+                                                                                            "| Property | Type | Description |\n" +
+                                                                                            "|-|-|-|\n" +
+                                                                                            "| `keywords` | string | Search keywords to filter tasks by content |\n" +
+                                                                                            "| `assignedTo` | string | User ID to filter tasks assigned to specific user |\n" +
+                                                                                            "| `daysOld` | integer | Filter tasks by age in days (-1 for no limit, default: -1) |\n" +
+                                                                                            "| `schemeId` | string | Workflow scheme identifier to filter tasks |\n" +
+                                                                                            "| `stepId` | string | Workflow step identifier to filter tasks |\n" +
+                                                                                            "| `open` | boolean | Include open tasks in results (default: false) |\n" +
+                                                                                            "| `closed` | boolean | Include closed tasks in results (default: false) |\n" +
+                                                                                            "| `createdBy` | string | User ID who created the content to filter tasks |\n" +
+                                                                                            "| `show4all` | boolean | Show tasks for all users (admin privilege required, default: false) |\n" +
+                                                                                            "| `orderBy` | string | Field to order results by (e.g., 'created_date', 'title') |\n" +
+                                                                                            "| `count` | integer | Number of results per page (default: 20) |\n" +
+                                                                                            "| `page` | integer | Page number for pagination (default: 0) |",
+                                                                                    required = true,
+                                                                                    content = @Content(
+                                                                                            mediaType = "application/json",
+                                                                                            schema = @Schema(implementation = WorkflowSearcherForm.class)
+                                                                                    )
+                                                                            ) final WorkflowSearcherForm workflowSearcherForm)
+            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
+
+        if (null == workflowSearcherForm) {
+
+            throw new BadRequestException("the body could not be null");
+        }
+
+        Logger.debug(this, String.format("Retrieving Workflow tasks based on the '%s'", workflowSearcherForm.toString()));
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true) // todo: check if here may need more than that
+                .requiredBackendUser(true).requiredFrontendUser(false).init();
+
+        final User user = initDataObject.getUser();
+        final WorkflowSearcher workflowSearcher = this.workflowHelper.toWorkflowSearcher(workflowSearcherForm, user);
+        final List<WorkflowTask> workflowTasks = workflowSearcher.findTasks();
+        final List<WorkflowTaskView> workflowTaskViews = this.workflowHelper.toWorkflowTasksView(workflowTasks);
+        return new ResponseEntityWorkflowTasksView(new WorkflowSearchResultsView(workflowSearcher.getTotalCount(),
+                workflowTaskViews));
+    }
+
+    /**
      * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
      * summary:
      * <ul>
@@ -5660,9 +5738,30 @@ public class WorkflowResource {
 
     private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
 
+        final WorkflowStep step = wfTimeLine instanceof WorkflowHistory && UtilMethods.isSet(wfTimeLine.stepId())?
+                Try.of(()->this.workflowHelper.findStepById(wfTimeLine.stepId())).getOrNull():null;
+        final WorkflowAction action = wfTimeLine instanceof WorkflowHistory &&  UtilMethods.isSet(wfTimeLine.actionId())?
+                Try.of(()->this.workflowHelper.findAction(wfTimeLine.actionId(), APILocator.systemUser())).getOrNull():null;
+
+        final Map<String, String> minimalStepViewMap = new HashMap<>();
+        if (Objects.nonNull(step)) {
+
+            minimalStepViewMap.put("id",step.getId());
+            minimalStepViewMap.put("name",step.getName());
+            minimalStepViewMap.put("schemeId",step.getSchemeId());
+        }
+
+        final Map<String, String> minimalActionViewMap = new HashMap<>();
+        if (Objects.nonNull(action)) {
+
+            minimalActionViewMap.put("id",action.getId());
+            minimalActionViewMap.put("name",action.getName());
+            minimalActionViewMap.put("schemeId",action.getSchemeId());
+        }
+
         final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
         return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
-                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type(), minimalStepViewMap, minimalActionViewMap);
     }
 
     /**

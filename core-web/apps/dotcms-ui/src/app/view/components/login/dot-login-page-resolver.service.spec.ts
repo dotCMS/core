@@ -18,9 +18,9 @@ export class MockDotLoginPageStateService {
         }
     });
 
-    set = jasmine.createSpy('set').and.returnValue(this.mockLoginInfo);
-    get = jasmine.createSpy('get').and.returnValue(this.mockLoginInfo);
-    update = jasmine.createSpy('update');
+    set = jest.fn().mockReturnValue(this.mockLoginInfo);
+    get = jest.fn().mockReturnValue(this.mockLoginInfo);
+    update = jest.fn();
 }
 
 describe('DotLoginPageResolver', () => {
@@ -28,7 +28,7 @@ describe('DotLoginPageResolver', () => {
     let dotLoginPageResolver: DotLoginPageResolver;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotLoginPageResolver,
                 {
@@ -38,12 +38,13 @@ describe('DotLoginPageResolver', () => {
             ],
             imports: []
         });
-        dotLoginPageResolver = testbed.get(DotLoginPageResolver);
-        dotLoginPageStateService = testbed.get(DotLoginPageStateService);
+        dotLoginPageResolver = TestBed.inject(DotLoginPageResolver);
+        dotLoginPageStateService = TestBed.inject(DotLoginPageStateService);
     });
 
     it('should set the dotLoginPageStateService with the correct values ', () => {
         dotLoginPageResolver.resolve();
         expect(dotLoginPageStateService.set).toHaveBeenCalledWith('');
+        expect(dotLoginPageStateService.set).toHaveBeenCalledTimes(1);
     });
 });

@@ -3,12 +3,13 @@ import { Component, inject, Input, OnChanges, ViewChild } from '@angular/core';
 import { DotRouterService } from '@dotcms/data-access';
 
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 
 @Component({
     selector: 'dot-container-history',
     templateUrl: './dot-container-history.component.html',
     styleUrls: ['./dot-container-history.component.scss'],
-    standalone: false
+    imports: [DotPortletBoxComponent, IframeComponent]
 })
 export class DotContainerHistoryComponent implements OnChanges {
     @Input() containerId: string;

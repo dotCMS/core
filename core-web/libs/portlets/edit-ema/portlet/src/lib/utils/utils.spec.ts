@@ -9,7 +9,7 @@ import {
     getPersonalization,
     getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
-    computePageIsLocked,
+    computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
@@ -20,7 +20,8 @@ import {
     createReorderMenuURL,
     getOrientation,
     getWrapperMeasures,
-    normalizeQueryParams
+    normalizeQueryParams,
+    convertUTCToLocalTime
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -459,6 +460,20 @@ describe('utils functions', () => {
             expect(sanitizeURL('//index////')).toEqual('/index/');
         });
 
+        it('should clean query params from the url', () => {
+            expect(sanitizeURL('hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                'hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi'
+            );
+
+            expect(sanitizeURL('/hello-there/general-kenobi/?test=1&test2=2')).toEqual(
+                '/hello-there/general-kenobi/'
+            );
+        });
+
         describe('nested url', () => {
             it('should leave as it is for a nested valid url', () => {
                 expect(sanitizeURL('hello-there/general-kenobi/')).toEqual(
@@ -536,41 +551,81 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computePageIsLocked', () => {
-        it('should return false when the page is unlocked', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: false,
-                lockedBy: '123',
-                userId: '123'
+    describe('computeIsPageLocked', () => {
+        describe('with legacy behavior (feature flag disabled)', () => {
+            it('should return false when the page is unlocked', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const result = computeIsPageLocked(page, currentUser, false);
+
+                expect(result).toBe(false);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return false when the page is locked and is the same user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '123'
+                });
 
-            expect(result).toBe(false);
+                const result = computeIsPageLocked(page, currentUser, false);
+
+                expect(result).toBe(false);
+            });
+
+            it('should return true when the page is locked and is not the same user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '456'
+                });
+
+                const result = computeIsPageLocked(page, currentUser, false);
+
+                expect(result).toBe(true);
+            });
         });
 
-        it('should return false when the page is locked and is the same user', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: true,
-                lockedBy: '123',
-                userId: '123'
+        describe('with new behavior (feature flag enabled)', () => {
+            it('should return false when the page is unlocked', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const result = computeIsPageLocked(page, currentUser, true);
+
+                expect(result).toBe(false);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return true when the page is locked by current user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '123'
+                });
 
-            expect(result).toBe(false);
-        });
+                const result = computeIsPageLocked(page, currentUser, true);
 
-        it('should return true when the page is locked and is not the same user', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: true,
-                lockedBy: '123',
-                userId: '456'
+                expect(result).toBe(true);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return true when the page is locked by another user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '456'
+                });
 
-            expect(result).toBe(true);
+                const result = computeIsPageLocked(page, currentUser, true);
+
+                expect(result).toBe(true);
+            });
         });
     });
 
@@ -1051,6 +1106,66 @@ describe('utils functions', () => {
 
                 expect(result).toEqual(params);
             });
+        });
+    });
+
+    describe('convertUTCToLocalTime', () => {
+        it('should convert UTC time to local time representation', () => {
+            // Create a date representing "2025-11-19T17:13:00.000Z" (5:13 PM UTC)
+            const utcDate = new Date('2025-11-19T17:13:00.000Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            // The local time should show 17:13 (5:13 PM) in local timezone
+            expect(result.getHours()).toBe(17);
+            expect(result.getMinutes()).toBe(13);
+            expect(result.getSeconds()).toBe(0);
+            expect(result.getFullYear()).toBe(2025);
+            expect(result.getMonth()).toBe(10); // November (0-indexed)
+            expect(result.getDate()).toBe(19);
+        });
+
+        it('should preserve all time components including milliseconds', () => {
+            const utcDate = new Date('2025-11-19T14:30:45.123Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(14);
+            expect(result.getMinutes()).toBe(30);
+            expect(result.getSeconds()).toBe(45);
+            expect(result.getMilliseconds()).toBe(123);
+        });
+
+        it('should handle midnight UTC correctly', () => {
+            const utcDate = new Date('2025-11-19T00:00:00.000Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(0);
+            expect(result.getMinutes()).toBe(0);
+            expect(result.getSeconds()).toBe(0);
+        });
+
+        it('should handle end of day UTC correctly', () => {
+            const utcDate = new Date('2025-11-19T23:59:59.999Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(23);
+            expect(result.getMinutes()).toBe(59);
+            expect(result.getSeconds()).toBe(59);
+            expect(result.getMilliseconds()).toBe(999);
+        });
+
+        it('should handle leap year dates correctly', () => {
+            const utcDate = new Date('2024-02-29T12:00:00.000Z'); // Leap year
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getFullYear()).toBe(2024);
+            expect(result.getMonth()).toBe(1); // February (0-indexed)
+            expect(result.getDate()).toBe(29);
+            expect(result.getHours()).toBe(12);
         });
     });
 });

@@ -1,7 +1,12 @@
 package com.dotcms;
 
+import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.contenttype.business.StoryBlockValidationTest;
+import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
@@ -12,14 +17,15 @@ import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperim
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricTypeTest;
-import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeTest;
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.business.SecondaryCategoryPermissionTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
+import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -27,7 +33,6 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     RuleAPITest.class,
         DeterministicIdentifierAPITest.class,
-        ExperimentFeatureFlagMetricTypeTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
@@ -43,8 +48,16 @@ import org.junit.runners.Suite;
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class,
-        Task250826AddIndexesToUniqueFieldsTableTest.class
+        Task250826AddIndexesToUniqueFieldsTableTest.class,
+        SecondaryCategoryPermissionTest.class,
+        OpenAIVisionAPIImplTest.class,
+        ContentDriveHelperContentletAPIComparisonTest.class,
+        AppsAPIImplTest.class,
+        Task251103AddStylePropertiesColumnInMultiTreeTest.class,
+        StoryBlockValidationTest.class,
+        StoryBlockUtilTest.class
 })
 
 public class MainSuite3a {
+
 }

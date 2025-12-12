@@ -37,6 +37,6 @@ export class RowComponent implements OnChanges {
     customClasses = signal('');
 
     ngOnChanges() {
-        this.customClasses.set(combineClasses([this.row.styleClass || 'dot-row']));
+        this.customClasses.set(combineClasses([this.row.styleClass ?? '', 'dot-row']));
     }
 }

@@ -15,12 +15,12 @@ import { MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContainerHistoryComponent } from './dot-container-history.component';
 
-import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 
 @Component({
     selector: 'dot-iframe',
-    template: '',
-    standalone: false
+    template: ''
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -47,10 +47,15 @@ describe('ContainerHistoryComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContainerHistoryComponent, IframeMockComponent, DotTestHostComponent],
-            imports: [DotPortletBoxModule],
+            declarations: [DotTestHostComponent],
+            imports: [DotContainerHistoryComponent, DotPortletBoxComponent, IframeMockComponent],
             providers: [{ provide: DotRouterService, useClass: MockDotRouterService }]
-        }).compileComponents();
+        })
+            .overrideComponent(DotContainerHistoryComponent, {
+                remove: { imports: [IframeComponent] },
+                add: { imports: [IframeMockComponent] }
+            })
+            .compileComponents();
 
         fixture = TestBed.createComponent(DotTestHostComponent);
         de = fixture.debugElement;
@@ -92,6 +97,7 @@ describe('ContainerHistoryComponent', () => {
             historyIframe.custom.emit(customEvent);
 
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith('456');
+            expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -1,18 +1,25 @@
+import {
+    DotHttpClient,
+    DotRequestOptions,
+    DotHttpError,
+    DotCMSClientConfig,
+    DotErrorContent
+} from '@dotcms/types';
+
+import { BaseApiClient } from '../../../base/base-api';
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
     BuildQuery,
     SortBy,
     GetCollectionRawResponse,
-    GetCollectionError,
     OnFullfilled,
     OnRejected
 } from '../../shared/types';
-import { sanitizeQueryForContentType } from '../../shared/utils';
+import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
-
-export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
+import { sanitizeQuery } from '../query/utils';
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.
@@ -21,7 +28,7 @@ export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
  * @class CollectionBuilder
  * @template T Represents the type of the content type to fetch. Defaults to unknown.
  */
-export class CollectionBuilder<T = unknown> {
+export class CollectionBuilder<T = unknown> extends BaseApiClient {
     #page = 1;
     #limit = 10;
     #depth = 0;
@@ -34,19 +41,21 @@ export class CollectionBuilder<T = unknown> {
     #languageId: number | string = 1;
     #draft = false;
 
-    #serverUrl: string;
-    #requestOptions: ClientOptions;
-
     /**
      * Creates an instance of CollectionBuilder.
      * @param {ClientOptions} requestOptions Options for the client request.
-     * @param {string} serverUrl The server URL.
+     * @param {DotCMSClientConfig} config The client configuration.
      * @param {string} contentType The content type to fetch.
+     * @param {DotHttpClient} httpClient HTTP client for making requests.
      * @memberof CollectionBuilder
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string) {
-        this.#requestOptions = requestOptions;
-        this.#serverUrl = serverUrl;
+    constructor(
+        requestOptions: DotRequestOptions,
+        config: DotCMSClientConfig,
+        contentType: string,
+        httpClient: DotHttpClient
+    ) {
+        super(config, requestOptions, httpClient);
         this.#contentType = contentType;
 
         // Build the default query with the contentType field
@@ -83,7 +92,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     private get url() {
-        return `${this.#serverUrl}${CONTENT_API_URL}`;
+        return `${this.config.dotcmsUrl}${CONTENT_API_URL}`;
     }
 
     /**
@@ -322,31 +331,58 @@ export class CollectionBuilder<T = unknown> {
      *
      * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful.
      * @param {OnRejected} [onrejected] A callback that is called when the fetch fails.
-     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects with an error.
+     * @return {Promise<GetCollectionResponse<T> | DotErrorContent>} A promise that resolves to the content or rejects with an error.
      * @memberof CollectionBuilder
      */
     then(
         onfulfilled?: OnFullfilled<T>,
         onrejected?: OnRejected
-    ): Promise<GetCollectionResponse<T> | GetCollectionError> {
-        return this.fetch().then(async (response) => {
-            const data = await response.json();
-            if (response.ok) {
+    ): Promise<GetCollectionResponse<T> | DotErrorContent> {
+        return this.fetch().then(
+            (data) => {
                 const formattedResponse = this.formatResponse<T>(data);
 
-                const finalResponse =
-                    typeof onfulfilled === 'function'
-                        ? onfulfilled(formattedResponse)
-                        : formattedResponse;
+                if (typeof onfulfilled === 'function') {
+                    const result = onfulfilled(formattedResponse);
+                    // Ensure we always return a value, fallback to formattedResponse if callback returns undefined
+                    return result ?? formattedResponse;
+                }
 
-                return finalResponse;
-            } else {
-                return {
-                    status: response.status,
-                    ...data
-                };
+                return formattedResponse;
+            },
+            (error: unknown) => {
+                // Wrap error in DotCMSContentError
+                let contentError: DotErrorContent;
+
+                if (error instanceof DotHttpError) {
+                    contentError = new DotErrorContent(
+                        `Content API failed for '${this.#contentType}' (fetch): ${error.message}`,
+                        this.#contentType,
+                        'fetch',
+                        error,
+                        this.getFinalQuery()
+                    );
+                } else {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    contentError = new DotErrorContent(
+                        `Content API failed for '${this.#contentType}' (fetch): ${errorMessage}`,
+                        this.#contentType,
+                        'fetch',
+                        undefined,
+                        this.getFinalQuery()
+                    );
+                }
+
+                if (typeof onrejected === 'function') {
+                    const result = onrejected(contentError);
+                    // Ensure we always return a value, fallback to original error if callback returns undefined
+                    return result ?? contentError;
+                }
+
+                // Throw the wrapped error to trigger .catch()
+                throw contentError;
             }
-        }, onrejected);
+        );
     }
 
     /**
@@ -380,26 +416,21 @@ export class CollectionBuilder<T = unknown> {
      * Calls the content API to fetch the content.
      *
      * @private
-     * @return {Promise<Response>} The fetch response.
+     * @return {Promise<GetCollectionRawResponse<T>>} The fetch response data.
+     * @throws {DotHttpError} When the HTTP request fails.
      * @memberof CollectionBuilder
      */
-    private fetch(): Promise<Response> {
-        const finalQuery = this.currentQuery
-            .field('languageId')
-            .equals(this.#languageId.toString())
-            .field('live')
-            .equals((!this.#draft).toString())
-            .build();
-
+    private fetch(): Promise<GetCollectionRawResponse<T>> {
+        const finalQuery = this.getFinalQuery();
         const sanitizedQuery = sanitizeQueryForContentType(finalQuery, this.#contentType);
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return fetch(this.url, {
-            ...this.#requestOptions,
+        return this.httpClient.request<GetCollectionRawResponse<T>>(this.url, {
+            ...this.requestOptions,
             method: 'POST',
             headers: {
-                ...this.#requestOptions.headers,
+                ...this.requestOptions.headers,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -413,5 +444,64 @@ export class CollectionBuilder<T = unknown> {
                 //allCategoriesInfo: This exist but we currently don't use it
             })
         });
+    }
+
+    /**
+     * Builds the final Lucene query string by combining the base query with required system constraints.
+     *
+     * This method constructs the complete query by:
+     * 1. Adding language ID filter to ensure content matches the specified language
+     * 2. Adding live/draft status filter based on the draft flag
+     * 3. Optionally adding site ID constraint if conditions are met
+     *
+     * Site ID constraint is added only when:
+     * - Query doesn't already contain a positive site constraint (+conhost)
+     * - Query doesn't explicitly exclude the current site ID (-conhost:currentSiteId)
+     * - Site ID is configured in the system
+     *
+     * @private
+     * @returns {string} The complete Lucene query string ready for the Content API
+     * @memberof CollectionBuilder
+     *
+     * @example
+     * // For live content in language 1 with site ID 123:
+     * // Returns: "+contentType:Blog +languageId:1 +live:true +conhost:123"
+     *
+     * @example
+     * // For draft content without site constraint:
+     * // Returns: "+contentType:Blog +languageId:1 +(live:false AND working:true AND deleted:false)"
+     *
+     * @example
+     * // For content with explicit exclusion of current site (site ID 123):
+     * // Query: "+contentType:Blog -conhost:123"
+     * // Returns: "+contentType:Blog -conhost:123 +languageId:1 +live:true" (no site ID added)
+     *
+     * @example
+     * // For content with exclusion of different site (site ID 456, current is 123):
+     * // Query: "+contentType:Blog -conhost:456"
+     * // Returns: "+contentType:Blog -conhost:456 +languageId:1 +live:true +conhost:123" (site ID still added)
+     */
+    private getFinalQuery(): string {
+        // Build base query with language and live/draft constraints
+        let baseQuery = this.currentQuery.field('languageId').equals(this.#languageId.toString());
+
+        if (this.#draft) {
+            baseQuery = baseQuery.raw('+(live:false AND working:true AND deleted:false)');
+        } else {
+            baseQuery = baseQuery.field('live').equals('true');
+        }
+
+        const builtQuery = baseQuery.build();
+
+        // Check if site ID constraint should be added using utility function
+        const shouldAddSiteId = shouldAddSiteIdConstraint(builtQuery, this.siteId);
+
+        // Add site ID constraint if needed
+        if (shouldAddSiteId) {
+            const queryWithSiteId = `${builtQuery} +conhost:${this.siteId}`;
+            return sanitizeQuery(queryWithSiteId);
+        }
+
+        return builtQuery;
     }
 }

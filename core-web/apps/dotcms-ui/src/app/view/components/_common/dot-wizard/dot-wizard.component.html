@@ -1,6 +1,7 @@
 @let data = $data();
 
 <p-dialog
+    #dialog
     (visibleChange)="close()"
     [visible]="!!data"
     [header]="data?.title"

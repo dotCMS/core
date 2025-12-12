@@ -15,6 +15,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -34,6 +35,7 @@ import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
+    dotPropertiesServiceMock,
     getNewVanityUrl,
     getVanityUrl,
     HEADLESS_BASE_QUERY_PARAMS,
@@ -77,8 +79,6 @@ const initialState: UVEState = {
     pageParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
     isClientReady: false
 };
 
@@ -104,6 +104,10 @@ describe('withLoad', () => {
                 useValue: {
                     getByInode: () => of([])
                 }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: dotPropertiesServiceMock
             },
             {
                 provide: DotPageApiService,
@@ -173,7 +177,6 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(false);
                 expect(store.isClientReady()).toBe(false);
@@ -191,7 +194,6 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(true);
                 expect(store.isClientReady()).toBe(true);

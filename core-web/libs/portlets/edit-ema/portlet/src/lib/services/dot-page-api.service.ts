@@ -6,8 +6,8 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
-import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
+import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
+import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPageAssetParams, SavePagePayload } from '../shared/models';
@@ -49,13 +49,7 @@ export interface GetPersonasParams {
 
 export interface GetPersonasResponse {
     data: DotPersona[];
-    pagination: PaginationData;
-}
-
-export interface PaginationData {
-    currentPage: number;
-    perPage: number;
-    totalEntries: number;
+    pagination: DotPagination;
 }
 
 @Injectable()
@@ -111,8 +105,8 @@ export class DotPageApiService {
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
-            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+        return this.http.get<{ entity: DotPersona[]; pagination: DotPagination }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: DotPagination }) => ({
                 data: res.entity,
                 pagination: res.pagination
             }))
@@ -143,8 +137,10 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        // indexPolicy=WAIT_FOR ensures the contentlet is indexed before returning, preventing stale data.
+        // Note: We'll replace this with optimistic updates for better UX.
         return this.http.put(
-            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}&indexPolicy=WAIT_FOR`,
             { contentlet }
         );
     }
@@ -172,17 +168,21 @@ export class DotPageApiService {
             dotcachettl: '0'
         };
 
-        return this.http.post<{ data }>('/api/v1/graphql', { query, variables }, { headers }).pipe(
-            pluck('data'),
-            map(({ page, ...content }) => {
-                const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
+        return this.http
+            .post<{
+                data: { page: DotCMSGraphQLPage };
+            }>('/api/v1/graphql', { query, variables }, { headers })
+            .pipe(
+                pluck('data'),
+                map(({ page, ...content }) => {
+                    const pageEntity = graphqlToPageEntity(page);
 
-                return {
-                    pageAsset: pageEntity,
-                    content
-                };
-            })
-        );
+                    return {
+                        pageAsset: pageEntity,
+                        content
+                    };
+                })
+            );
     }
 
     private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {

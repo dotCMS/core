@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -13,8 +15,10 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.DetailPageTransformerImpl;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -29,22 +33,34 @@ import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappi
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.web.VelocityWebUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * Contentlet helper.
@@ -437,40 +453,103 @@ public class ContentTypeHelper implements Serializable {
      */
     public Map<String, Object> contentTypeToMap(final ContentType contentType, final User user)
             throws DotDataException, DotSecurityException {
-        return contentTypeToMap(contentType, null, user);
+        return contentTypeToMap(contentType, null, false, user);
     }
 
     /**
      * Converts a ContentType object to a Map representation for use as a response.
      *
-     * @param contentType                     The ContentType object to convert.
-     * @param contentTypeInternationalization The ContentTypeInternationalization object.
-     * @param user                            The user making the request.
-     * @return The converted ContentType object as a Map.
-     * @throws DotDataException     If an error occurs while accessing data.
+     * @param contentType                     The {@link ContentType} object to convert.
+     * @param contentTypeInternationalization The {@link ContentTypeInternationalization} object
+     *                                        with the parameters to internationalize the Content
+     *                                        Type's fields.
+     * @param renderCustomFields              Defaults to {@code false}. If Custom Fields must
+     *                                        include an attribute with their Velocity code parsed,
+     *                                        set this to {@code true}.
+     * @param user                            The {@link User} requesting this information.
+     *
+     * @return The Map with properties from the specified Content Type.
+     *
+     * @throws DotDataException     An error occurred while interacting with the database.
      * @throws DotSecurityException If there are security restrictions preventing the conversion.
      */
     public Map<String, Object> contentTypeToMap(final ContentType contentType,
-            final ContentTypeInternationalization contentTypeInternationalization, final User user)
+                                                final ContentTypeInternationalization contentTypeInternationalization,
+                                                final boolean renderCustomFields, final User user)
             throws DotDataException, DotSecurityException {
-
         // Transform the content type to a map
         var contentTypeMap = new JsonContentTypeTransformer(
                 contentType, contentTypeInternationalization
         ).mapObject();
-
+        if (renderCustomFields) {
+            this.includeRenderedCustomFields(contentTypeMap);
+        }
         try {
             // Add the detail page path to the map
             final var pageDetailURIOptional = new DetailPageTransformerImpl(
                     contentType, user).idToUri();
             pageDetailURIOptional.ifPresent(s -> contentTypeMap.put(DETAIL_PAGE_PATH, s));
-        } catch (DoesNotExistException e) {
+        } catch (final DoesNotExistException e) {
             // The idToUri method throws a DoesNotExistException and logs a warning if the detail
             // page is not found.
             contentTypeMap.remove(DETAIL_PAGE);
         }
-
         return contentTypeMap;
+    }
+
+    /**
+     * Inspects the fields inside a Content Type, and parses the Velocity code in every single
+     * Custom Field. When it does that, it adds a new attribute named {@code 'rendered'} with the
+     * generated HTML/JavaScript code.
+     *
+     * @param contentTypeMap The {@link Map} containing all the Content Type's properties, including
+     *                       its fields.
+     */
+    @SuppressWarnings("unchecked")
+    private void includeRenderedCustomFields(final Map<String, Object> contentTypeMap) {
+        final List<Map<String, Object>> fieldsMap = (List<Map<String, Object>>) contentTypeMap.get("fields");
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        fieldsMap.forEach(field -> {
+            if (field.get("clazz").equals(ImmutableCustomField.class.getName())
+                    && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.COMPONENT)) {
+                try {
+                    final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
+                    final String textValue = (String) field.getOrDefault("values", BLANK);
+                    final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
+                    field.put("rendered", htmlString);
+                } catch (final Exception e) {
+                    Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
+                            "'%s': %s", field.get("variable"), ExceptionUtil.getErrorMessage(e)));
+                }
+            }
+        });
+    }
+
+    /**
+     * Tries to get the render mode for the specified Custom Field. Such a mode is set via Field
+     * Variable. If it exists, then the specified mode is returned.
+     *
+     * @param fieldData A map with all the properties and attributes of the Custom Field.
+     *
+     * @return The render mode for the specified Custom Field, as specified by the
+     * {@link CustomField.RenderMode} enum.
+     */
+    @SuppressWarnings("unchecked")
+    private CustomField.RenderMode getCustomFieldRenderMode(final Map<String, Object> fieldData) {
+        final List<Map<String, Object>> fieldVariables =
+                (List<Map<String, Object>>) fieldData.get(JsonFieldTransformer.FIELDS_VARIABLES_PROPERTY_NAME);
+        if (!fieldVariables.isEmpty()) {
+            final Optional<Map<String, Object>> renderMode = fieldVariables.stream()
+                    .filter(fieldVariable -> fieldVariable.get("key").equals("newRenderMode"))
+                    .findFirst();
+            if (renderMode.isPresent()) {
+                return Try.of(
+                        () -> CustomField.RenderMode.valueOf(renderMode.get().get("value").toString().trim().toUpperCase()))
+                        .getOrElse(CustomField.RenderMode.COMPONENT);
+            }
+        }
+        return CustomField.RenderMode.IFRAME;
     }
 
     /**
@@ -671,14 +750,18 @@ public class ContentTypeHelper implements Serializable {
      * @throws LanguageException
      */
     public List<BaseContentTypesView> getTypes(HttpServletRequest request)
-            throws LanguageException {
+            throws LanguageException, IllegalArgumentException{
         List<BaseContentTypesView> result = list();
 
         Locale locale = LocaleUtil.getLocale(request);
         Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
 
-        for(Map.Entry<String,String> baseType : baseContentTypeNames.entrySet()){
-            result.add(new BaseContentTypesView(baseType.getKey(),baseType.getValue(),null));
+        for (Map.Entry<String, String> baseType : baseContentTypeNames.entrySet()) {
+            result.add(new BaseContentTypesView(
+                    baseType.getKey(),
+                    baseType.getValue(),
+                    null,
+                    this.getBaseTypeIndex(baseType.getKey())));
         }
 
         return result;
@@ -709,6 +792,29 @@ public class ContentTypeHelper implements Serializable {
         return contentTypesLabelsMap;
 
     } // getBaseContentTypeNames.
+
+    /**
+     * Retrieves the index for a given base content type name.
+     * <p>
+     * This method searches for a match in the predefined {@BaseContentType} enum
+     * and returns its corresponding index.
+     * <p>
+     * @param baseTypeName The name of the base content type to find. (e.g., "CONTENT", "WIDGET").
+     * @return The integer corresponding to the base type, otherwise throws an IllegalArgumentException.
+     * @see BaseContentType
+     */
+    public int getBaseTypeIndex(String baseTypeName) throws IllegalArgumentException {
+        try {
+            return BaseContentType.getBaseContentType(baseTypeName).getType();
+        } catch (IllegalArgumentException e) {
+            final var message = String.format(
+                    "No enum BaseContentType with name [%s] was found",
+                    baseTypeName
+            );
+            Logger.warn(this, message);
+            throw new IllegalArgumentException(message);
+        }
+    }
 
     @VisibleForTesting
     boolean isStandardOrEnterprise() {
@@ -741,6 +847,22 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return key;
+    }
+
+    /**
+     * Maps a comma-separated Content Types (String) to a List of Content Types (List<String>)
+     * <p>
+     *
+     * @param ensuredContentTypes List of Content Types requested to be included in the response
+     * @return List of Content Types names in lowercase (e.g. [video, content]).
+     */
+    public List<String> getEnsuredContentTypes(final String ensuredContentTypes) {
+        return ensuredContentTypes == null || ensuredContentTypes.isBlank()
+                ? Collections.emptyList()
+                : Arrays.stream(ensuredContentTypes.split("\\s*,\\s*"))
+                        .map(s -> s.trim().toLowerCase())
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
     }
 
 } // E:O:F:ContentTypeHelper.

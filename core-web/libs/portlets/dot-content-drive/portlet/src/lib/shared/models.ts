@@ -1,4 +1,12 @@
-import { DotCMSContentType, DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveFolder,
+    DotContentDriveItem,
+    DotFolder,
+    SiteEntity
+} from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+
+import { DIALOG_TYPE } from './constants';
 
 /**
  * The status of the content drive.
@@ -59,6 +67,24 @@ export interface DotContentDriveInit {
 }
 
 /**
+ * The context menu data for the content drive.
+ *
+ * @export
+ * @interface DotContentDriveContextMenu
+ */
+export interface DotContentDriveContextMenu {
+    triggeredEvent: Event;
+    contentlet: DotContentDriveItem;
+    showAddToBundle: boolean;
+}
+
+export interface DotContentDriveDialog {
+    type: keyof typeof DIALOG_TYPE;
+    header: string;
+    payload?: DotContentDriveFolder;
+}
+
+/**
  * The state of the content drive.
  *
  * @export
@@ -66,10 +92,12 @@ export interface DotContentDriveInit {
  */
 export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];
+    selectedItems: DotContentDriveItem[];
     status: DotContentDriveStatus;
     totalItems: number;
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
+    contextMenu?: DotContentDriveContextMenu;
 }
 
 /**
@@ -82,6 +110,7 @@ export type DotKnownContentDriveFilters = {
     baseType: string[];
     contentType: string[];
     title: string;
+    languageId: string[];
 };
 
 /**
@@ -103,11 +132,13 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
 
 /**
- * The contentType of the content drive, with the selected property.
+ * The parameters for the buildTreeFolderNodes function.
  *
  * @export
- * @interface DotContentDriveContentType
+ * @interface buildTreeFolderNodesParams
  */
-export type DotContentDriveContentType = DotCMSContentType & {
-    selected: boolean;
-};
+export interface BuildTreeFolderNodesParams {
+    folderHierarchyLevels: DotFolder[][];
+    targetPath: string;
+    rootNode: DotFolderTreeNodeItem;
+}

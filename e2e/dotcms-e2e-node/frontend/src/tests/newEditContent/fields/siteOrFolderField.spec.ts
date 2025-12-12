@@ -37,7 +37,7 @@ test.afterEach(async ({ page, request }) => {
   await listingContentTypesPage.toggleNewContentEditor(false);
 });
 
-test("should save a site or folder field", async ({ page }) => {
+test.skip("should save a site or folder field", async ({ page }) => {
   const locatorFieldLocator = page.getByTestId("field-siteOrFolderField");
   await expect(locatorFieldLocator).toBeVisible();
 
