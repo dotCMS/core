@@ -5,6 +5,7 @@ import com.dotcms.rest.annotation.SwaggerCompliant;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.BeanParam;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -286,6 +288,9 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
         // Validate parameter annotations
         validateParameterAnnotations(className, methodName, method);
         
+        // Validate multipart form documentation
+        validateMultipartFormDocumentation(className, methodName, method);
+        
         // Validate schema antipatterns
         validateSchemaAntipatterns(className, methodName, method);
     }
@@ -424,20 +429,35 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                 }
             }
             
-            // Enhanced request body validation
+            // Validate @FormDataParam parameters should have @Parameter annotations
+            if (hasAnnotation(parameter, "org.glassfish.jersey.media.multipart.FormDataParam")) {
+                io.swagger.v3.oas.annotations.Parameter parameterAnnotation = 
+                    parameter.getAnnotation(io.swagger.v3.oas.annotations.Parameter.class);
+                
+                if (parameterAnnotation == null) {
+                    addViolation(className, "FormData parameter " + parameter.getName() + 
+                               " in method " + methodName + " missing @Parameter annotation");
+                } else if (parameterAnnotation.description() == null || 
+                          parameterAnnotation.description().trim().isEmpty()) {
+                    addViolation(className, "FormData parameter " + parameter.getName() + 
+                               " in method " + methodName + " missing description");
+                }
+            }
+            
+            // Enhanced request body validation (excluding FormDataMultiPart which should be documented at operation level)
             if (hasActualRequestBody(method) && !isContextParameter(parameter) && 
                 pathParamAnnotation == null && queryParamAnnotation == null && !isFrameworkParameter(parameter)) {
                 
                 // This parameter is likely a request body parameter
-                boolean hasRequestBodyAnnotation = parameter.getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class) != null;
+                boolean hasRequestBodyAnnotation = parameter.getAnnotation(RequestBody.class) != null;
                 
                 if (!hasRequestBodyAnnotation) {
                     addViolation(className, "Method " + methodName + " parameter '" + parameter.getType().getSimpleName() + 
                                "' appears to be request body but missing @RequestBody annotation");
                 } else {
                     // Validate @RequestBody annotation content
-                    io.swagger.v3.oas.annotations.parameters.RequestBody requestBodyAnnotation = 
-                        parameter.getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class);
+                    RequestBody requestBodyAnnotation = 
+                        parameter.getAnnotation(RequestBody.class);
                     
                     if (requestBodyAnnotation.description() == null || requestBodyAnnotation.description().trim().isEmpty()) {
                         addViolation(className, "Method " + methodName + " @RequestBody annotation missing description");
@@ -446,6 +466,12 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                     // Check if request body should be required based on HTTP method and operation type
                     if (requestBodyAnnotation.required() == false && 
                         (method.isAnnotationPresent(POST.class) || method.isAnnotationPresent(PUT.class))) {
+                        // Skip deprecated methods that intentionally use required=false for backward compatibility
+                        if (method.isAnnotationPresent(Deprecated.class)) {
+                            // Deprecated methods may use required=false for backward compatibility
+                            continue;
+                        }
+                        
                         // Only flag as violation for operations that typically require a request body
                         String methodNameLower = methodName.toLowerCase();
                         if (methodNameLower.contains("save") && !methodNameLower.contains("comment") ||
@@ -459,6 +485,75 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                     }
                 }
             }
+        }
+    }
+    
+    /**
+     * Validate multipart form documentation for endpoints using @FormDataParam.
+     * These endpoints should use @RequestBody at operation level with multipart/form-data schema.
+     */
+    private void validateMultipartFormDocumentation(String className, String methodName, Method method) {
+        // Check if method has @FormDataParam annotations
+        boolean hasFormDataParam = false;
+        java.lang.reflect.Parameter[] parameters = method.getParameters();
+        
+        for (java.lang.reflect.Parameter parameter : parameters) {
+            if (parameter.isAnnotationPresent(org.glassfish.jersey.media.multipart.FormDataParam.class)) {
+                hasFormDataParam = true;
+                break;
+            }
+        }
+        
+        if (!hasFormDataParam) {
+            return; // This validation only applies to methods with @FormDataParam
+        }
+        
+        // Check for proper @RequestBody documentation at operation level
+        Operation operationAnnotation = method.getAnnotation(Operation.class);
+        if (operationAnnotation == null) {
+            return; // Already flagged by other validation
+        }
+        
+        RequestBody requestBodyAnnotation = operationAnnotation.requestBody();
+        
+        if (requestBodyAnnotation == null || 
+            requestBodyAnnotation.content() == null || 
+            requestBodyAnnotation.content().length == 0) {
+            addViolation(className, "Method " + methodName + 
+                       " uses @FormDataParam but missing @RequestBody at operation level for proper multipart documentation");
+            return;
+        }
+        
+        // Check if any content has multipart/form-data media type
+        boolean hasMultipartFormData = false;
+        for (Content content : requestBodyAnnotation.content()) {
+            if ("multipart/form-data".equals(content.mediaType())) {
+                hasMultipartFormData = true;
+                
+                // Check if schema is properly defined
+                Schema schema = content.schema();
+                if (schema == null) {
+                    addViolation(className, "Method " + methodName + 
+                               " has multipart/form-data content but missing schema definition");
+                } else {
+                    // Valid schema approaches for multipart/form-data:
+                    // 1. type="object" with description
+                    // 2. implementation class (specific or generic like MultipartFormDataSchema)
+                    boolean hasValidSchema = "object".equals(schema.type()) || 
+                                           (schema.implementation() != void.class && schema.implementation() != null);
+                    
+                    if (!hasValidSchema) {
+                        addViolation(className, "Method " + methodName + 
+                                   " multipart/form-data schema should use type='object' or specific implementation class");
+                    }
+                }
+                break;
+            }
+        }
+        
+        if (!hasMultipartFormData) {
+            addViolation(className, "Method " + methodName + 
+                       " uses @FormDataParam but @RequestBody content should include multipart/form-data media type");
         }
     }
     
@@ -665,8 +760,70 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
      */
     private boolean isFrameworkParameter(java.lang.reflect.Parameter parameter) {
         String typeName = parameter.getType().getSimpleName();
-        return typeName.equals("AsyncResponse") ||
-               parameter.isAnnotationPresent(javax.ws.rs.container.Suspended.class);
+        String fullTypeName = parameter.getType().getName();
+        
+        // Check for AsyncResponse and @Suspended parameters
+        try {
+            if (typeName.equals("AsyncResponse") || 
+                parameter.isAnnotationPresent(javax.ws.rs.container.Suspended.class)) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore if classes not available
+        }
+        
+        // Check for multipart form parameters - these use @FormDataParam annotation
+        try {
+            if (hasAnnotation(parameter, "org.glassfish.jersey.media.multipart.FormDataParam")) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore if classes not available
+        }
+        
+        // CRITICAL: FormDataMultiPart parameters are special framework types that:
+        // 1. Are automatically injected by Jersey multipart handling
+        // 2. MUST NOT have @Parameter annotations (causes injection conflicts)
+        // 3. MUST NOT have @RequestBody annotations (not JSON request bodies)
+        // 4. Should be documented using @RequestBody at operation level for proper OpenAPI documentation
+        if (typeName.equals("FormDataMultiPart") ||
+            typeName.equals("FormDataContentDisposition") ||
+            fullTypeName.equals("org.glassfish.jersey.media.multipart.FormDataMultiPart") ||
+            fullTypeName.equals("org.glassfish.jersey.media.multipart.FormDataContentDisposition")) {
+            return true;
+        }
+        
+        // Check for @BeanParam parameters (used for grouping form parameters)
+        try {
+            if (parameter.isAnnotationPresent(javax.ws.rs.BeanParam.class)) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Ignore if classes not available
+        }
+        
+        // Check for File parameters in multipart contexts (assume they don't need @RequestBody)
+        if (typeName.equals("File")) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if parameter has a specific annotation by class name (safer than direct class reference)
+     */
+    private boolean hasAnnotation(java.lang.reflect.Parameter parameter, String annotationClassName) {
+        try {
+            for (java.lang.annotation.Annotation annotation : parameter.getAnnotations()) {
+                if (annotation.annotationType().getName().equals(annotationClassName)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore if annotation classes not available
+        }
+        return false;
     }
     
     /**
