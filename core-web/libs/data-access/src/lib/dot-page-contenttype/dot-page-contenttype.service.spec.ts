@@ -281,9 +281,44 @@ describe('DotPageContentTypeService', () => {
                 req.flush(MOCK_API_RESPONSE);
             });
 
+            it('should include host parameter when provided', () => {
+                const params: DotPageContentTypeQueryParams = {
+                    pagePathOrId: '/test-page',
+                    host: 'demo.dotcms.com'
+                };
+
+                spectator.service.get(params).subscribe();
+
+                const req = httpMock.expectOne((request) => {
+                    return (
+                        request.url === CONTENTTYPE_PAGE_API_URL &&
+                        request.params.get('host') === 'demo.dotcms.com'
+                    );
+                });
+
+                expect(req.request.params.get('host')).toBe('demo.dotcms.com');
+                req.flush(MOCK_API_RESPONSE);
+            });
+
+            it('should not include host parameter when not provided', () => {
+                const params: DotPageContentTypeQueryParams = {
+                    pagePathOrId: '/test-page'
+                };
+
+                spectator.service.get(params).subscribe();
+
+                const req = httpMock.expectOne(
+                    (request) => request.url === CONTENTTYPE_PAGE_API_URL
+                );
+
+                expect(req.request.params.has('host')).toBe(false);
+                req.flush(MOCK_API_RESPONSE);
+            });
+
             it('should include all optional parameters when provided', () => {
                 const params: DotPageContentTypeQueryParams = {
                     pagePathOrId: '/test-page',
+                    host: 'demo.dotcms.com',
                     language: 1,
                     filter: 'blog',
                     page: 2,
@@ -299,6 +334,7 @@ describe('DotPageContentTypeService', () => {
                     return (
                         request.url === CONTENTTYPE_PAGE_API_URL &&
                         request.params.get('pagePathOrId') === '/test-page' &&
+                        request.params.get('host') === 'demo.dotcms.com' &&
                         request.params.get('language') === '1' &&
                         request.params.get('filter') === 'blog' &&
                         request.params.get('page') === '2' &&
@@ -669,8 +705,38 @@ describe('DotPageContentTypeService', () => {
                 req.flush(MOCK_API_RESPONSE);
             });
 
+            it('should include host parameter when provided', () => {
+                const params: DotContentTypeQueryParams = {
+                    host: 'demo.dotcms.com'
+                };
+
+                spectator.service.getAllContentTypes(params).subscribe();
+
+                const req = httpMock.expectOne((request) => {
+                    return (
+                        request.url === CONTENTTYPE_API_URL &&
+                        request.params.get('host') === 'demo.dotcms.com'
+                    );
+                });
+
+                expect(req.request.params.get('host')).toBe('demo.dotcms.com');
+                req.flush(MOCK_API_RESPONSE);
+            });
+
+            it('should not include host parameter when not provided', () => {
+                const params: DotContentTypeQueryParams = {};
+
+                spectator.service.getAllContentTypes(params).subscribe();
+
+                const req = httpMock.expectOne((request) => request.url === CONTENTTYPE_API_URL);
+
+                expect(req.request.params.has('host')).toBe(false);
+                req.flush(MOCK_API_RESPONSE);
+            });
+
             it('should include all optional parameters when provided', () => {
                 const params: DotContentTypeQueryParams = {
+                    host: 'demo.dotcms.com',
                     language: 1,
                     filter: 'test',
                     page: 2,
@@ -685,6 +751,7 @@ describe('DotPageContentTypeService', () => {
                 const req = httpMock.expectOne((request) => {
                     return (
                         request.url === CONTENTTYPE_API_URL &&
+                        request.params.get('host') === 'demo.dotcms.com' &&
                         request.params.get('language') === '1' &&
                         request.params.get('filter') === 'test' &&
                         request.params.get('page') === '2' &&
@@ -846,6 +913,7 @@ describe('DotPageContentTypeService', () => {
 
         it('should handle same optional parameters in both methods', () => {
             const sharedParams = {
+                host: 'demo.dotcms.com',
                 language: 1,
                 filter: 'test',
                 page: 1,
@@ -866,6 +934,7 @@ describe('DotPageContentTypeService', () => {
                 request.url.includes('/api/v1/contenttype/page')
             );
 
+            expect(pageReq.request.params.get('host')).toBe('demo.dotcms.com');
             expect(pageReq.request.params.get('language')).toBe('1');
             expect(pageReq.request.params.get('filter')).toBe('test');
             expect(pageReq.request.params.get('orderby')).toBe('name');
@@ -876,6 +945,7 @@ describe('DotPageContentTypeService', () => {
 
             const allReq = httpMock.expectOne((request) => request.url === '/api/v1/contenttype');
 
+            expect(allReq.request.params.get('host')).toBe('demo.dotcms.com');
             expect(allReq.request.params.get('language')).toBe('1');
             expect(allReq.request.params.get('filter')).toBe('test');
             expect(allReq.request.params.get('orderby')).toBe('name');
@@ -952,6 +1022,42 @@ describe('DotPageContentTypeService', () => {
             );
 
             expect(req.request.params.get('page')).toBe('1');
+            req.flush(MOCK_API_RESPONSE);
+        });
+
+        it('should handle special characters in host parameter', (done) => {
+            const specialHost = 'demo-site.dotcms.com';
+            const params: DotPageContentTypeQueryParams = {
+                pagePathOrId: '/test-page',
+                host: specialHost
+            };
+
+            spectator.service.get(params).subscribe((response) => {
+                expect(response.contenttypes).toBeDefined();
+                done();
+            });
+
+            const req = httpMock.expectOne((request) =>
+                request.url.includes('/api/v1/contenttype/page')
+            );
+            expect(req.request.params.get('host')).toBe(specialHost);
+            req.flush(MOCK_API_RESPONSE);
+        });
+
+        it('should not include host parameter when empty string', () => {
+            const params: DotPageContentTypeQueryParams = {
+                pagePathOrId: '/test-page',
+                host: ''
+            };
+
+            spectator.service.get(params).subscribe();
+
+            const req = httpMock.expectOne((request) =>
+                request.url.includes('/api/v1/contenttype/page')
+            );
+
+            // Empty host should not be added as a parameter (falsy value)
+            expect(req.request.params.has('host')).toBe(false);
             req.flush(MOCK_API_RESPONSE);
         });
     });

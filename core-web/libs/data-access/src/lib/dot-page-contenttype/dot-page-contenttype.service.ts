@@ -19,6 +19,8 @@ const DEFAULT_PER_PAGE = 30;
  * Used by the content type service for API requests.
  */
 export interface DotContentTypeQueryParams {
+    /** Site identifier for context-aware filtering */
+    host?: string;
     /** Language ID for content type filtering (default: 1) */
     language?: number;
     /** Filter content types by name or description */
@@ -107,6 +109,10 @@ export class DotPageContentTypeService {
             });
         }
 
+        if (params.host) {
+            httpParams = httpParams.set('host', params.host);
+        }
+
         return this.http
             .get<
                 DotCMSAPIResponse<DotCMSContentType[]>
@@ -159,6 +165,10 @@ export class DotPageContentTypeService {
             params.types.forEach((type: DotCMSBaseTypesContentTypes) => {
                 httpParams = httpParams.append('type', type);
             });
+        }
+
+        if (params.host) {
+            httpParams = httpParams.set('host', params.host);
         }
 
         return this.http

@@ -9,7 +9,7 @@ import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -60,6 +60,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -131,6 +132,10 @@ const messagesMock = {
     'message.content.saved': 'Content saved',
     'message.content.note.already.published':
         'Note: If you edit auto-published content, changes apply immediately.'
+};
+
+const mockGlobalStore = {
+    currentSiteId: signal('demo.dotcms.com')
 };
 
 const createRouting = () =>
@@ -237,6 +242,10 @@ const createRouting = () =>
             }
         ],
         providers: [
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
+            },
             Router,
             DotSeoMetaTagsUtilService,
             DialogService,
