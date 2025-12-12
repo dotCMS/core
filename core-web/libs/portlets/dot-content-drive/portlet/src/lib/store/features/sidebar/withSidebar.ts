@@ -105,7 +105,9 @@ export function withSidebar() {
              * Sets the selected node
              */
             setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
-                patchState(store, { selectedNode });
+                patchState(store, {
+                    selectedNode
+                });
             },
 
             /**
