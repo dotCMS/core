@@ -1,6 +1,6 @@
 import { ChartDataset } from 'chart.js';
 
-import { MenuItem } from 'primeng/api';
+import type { MenuItem } from 'primeng/api';
 
 import {
     BayesianStatusResponse,

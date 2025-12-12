@@ -1,14 +1,17 @@
-<div style="padding: 2rem; max-width: 800px;">
+<div style="padding: 2rem; max-width: 800px">
     <h2>Dot Workflow Component Test</h2>
 
-    <div style="margin-bottom: 2rem;">
+    <div style="margin-bottom: 2rem">
         <h3>1. Enabled State</h3>
         <dot-workflow
             [(ngModel)]="selectedContentType"
             [placeholder]="'Select a content type'"
             (onChange)="onContentTypeChange($event)"
-            style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedContentType?.name || 'None' }}</p>
+            style="width: 100%; margin-bottom: 1rem" />
+        <p>
+            <strong>Selected:</strong>
+            {{ selectedContentType?.name || 'None' }}
+        </p>
     </div>
 
     <!-- <div style="margin-bottom: 2rem;">

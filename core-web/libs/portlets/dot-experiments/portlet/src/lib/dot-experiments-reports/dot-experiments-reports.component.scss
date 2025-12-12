@@ -14,7 +14,8 @@
 }
 
 .dot-experiment-report__wrapper {
-    padding: spacing.$spacing-3 calc(spacing.$spacing-5 + experiment.$nav-size) spacing.$spacing-5 spacing.$spacing-5;
+    padding: spacing.$spacing-3 calc(spacing.$spacing-5 + experiment.$nav-size) spacing.$spacing-5
+        spacing.$spacing-5;
     row-gap: spacing.$spacing-3;
     width: 100%;
     overflow-y: scroll;

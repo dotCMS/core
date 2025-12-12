@@ -1,6 +1,13 @@
 // Ticket: https://github.com/dotCMS/core/issues/30759
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { User } from '@dotcms/dotcms-js';
+/**
+ * Minimal user shape required by the rendered page state.
+ *
+ * Note: This is intentionally defined in `dotcms-models` to avoid coupling the
+ * models package to `dotcms-js` (which pulls in Angular/runtime concerns).
+ */
+export interface User {
+    userId: string;
+}
 
 import { DotPageContainerStructure } from './dot-container.model';
 import { DotCMSContentlet } from './dot-contentlet.model';

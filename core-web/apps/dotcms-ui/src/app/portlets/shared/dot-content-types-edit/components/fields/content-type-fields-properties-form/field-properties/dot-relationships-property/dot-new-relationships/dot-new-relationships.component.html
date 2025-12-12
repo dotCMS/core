@@ -5,7 +5,9 @@
     <dot-workflow
         [(ngModel)]="contentType"
         [disabled]="editing"
-        [placeholder]="'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm"
+        [placeholder]="
+            'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm
+        "
         (onChange)="onContentTypeChange($event)"
         id="contentType"
         class="w-full" />

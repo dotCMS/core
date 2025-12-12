@@ -1,4 +1,4 @@
-import { SelectItem } from 'primeng/api';
+import type { SelectItem } from 'primeng/api';
 
 export enum dialogAction {
     IMPORT = 'Import',

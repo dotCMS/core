@@ -16,8 +16,7 @@
         [style]="{ width: width() }"
         [styleClass]="'site-selector__field ' + (cssClass() || '')"
         appendTo="body"
-        class="site-selector__select">
-    </p-select>
+        class="site-selector__select"></p-select>
 } @else {
     <span class="site-selector__title">{{ $currentSite()?.hostname }}</span>
 }

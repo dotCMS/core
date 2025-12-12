@@ -293,8 +293,10 @@ export class DotWorkflowComponent implements ControlValueAccessor {
                     // If we still need more pages for the viewport, load the next page
                     const updatedCount = this.contentTypes().length;
                     const stillNeeded = first + rows * 2;
-                    if (updatedCount < stillNeeded &&
-                        (totalEntries === 0 || updatedCount < totalEntries)) {
+                    if (
+                        updatedCount < stillNeeded &&
+                        (totalEntries === 0 || updatedCount < totalEntries)
+                    ) {
                         // Load the next page if needed
                         setTimeout(() => {
                             this.loadContentTypesLazy(event);

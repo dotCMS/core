@@ -4,19 +4,23 @@
 @use "../../../shared/fonts";
 
 #inputtext-normal-border {
-    box-shadow: 0 theme-variables.$field-normal-border-size 0 theme-variables.$field-normal-border-color;
+    box-shadow: 0 theme-variables.$field-normal-border-size 0
+        theme-variables.$field-normal-border-color;
 }
 
 #inputtext-hover-border {
-    box-shadow: 0 theme-variables.$field-hover-border-size 0 theme-variables.$field-hover-border-color;
+    box-shadow: 0 theme-variables.$field-hover-border-size 0
+        theme-variables.$field-hover-border-color;
 }
 
 #inputtext-active-border {
-    box-shadow: 0 theme-variables.$field-active-border-size 0 theme-variables.$field-active-border-color;
+    box-shadow: 0 theme-variables.$field-active-border-size 0
+        theme-variables.$field-active-border-color;
 }
 
 #inputtext-disabled-border {
-    box-shadow: 0 theme-variables.$field-disabled-border-size 0 theme-variables.$field-disabled-border-color;
+    box-shadow: 0 theme-variables.$field-disabled-border-size 0
+        theme-variables.$field-disabled-border-color;
 }
 
 #inputtext-error-border {

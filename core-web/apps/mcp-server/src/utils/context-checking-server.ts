@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol';
-import { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types';
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
 
 import { getContextStore } from './context-store';
 import { Logger } from './logger';
