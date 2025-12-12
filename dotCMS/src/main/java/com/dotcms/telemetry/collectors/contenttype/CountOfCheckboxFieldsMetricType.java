@@ -21,9 +21,4 @@ public class CountOfCheckboxFieldsMetricType extends ContentTypeFieldsMetricType
     public String getDescription() {
         return "Count the number of checkbox fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Checkbox Fields";
-    }
 }

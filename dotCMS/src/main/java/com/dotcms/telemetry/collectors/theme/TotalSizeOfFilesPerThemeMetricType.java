@@ -50,11 +50,6 @@ public class TotalSizeOfFilesPerThemeMetricType extends ThemeDataMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Total size of all files under every Theme in all Sites";
-    }
-
-    @Override
     Optional<Object> getValue(final List<Theme> themes) {
         final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
         final Map<String, Object> data = new HashMap<>();

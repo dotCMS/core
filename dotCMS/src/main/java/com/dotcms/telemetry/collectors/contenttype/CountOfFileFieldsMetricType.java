@@ -21,9 +21,4 @@ public class CountOfFileFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of file fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "File Fields";
-    }
 }

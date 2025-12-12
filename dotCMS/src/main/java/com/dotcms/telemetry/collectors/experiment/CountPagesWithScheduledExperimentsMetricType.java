@@ -27,11 +27,6 @@ public class CountPagesWithScheduledExperimentsMetricType implements DBMetricTyp
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Pages with scheduled experiments";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "select count(*) as Value from experiment where scheduling IS NOT NULL AND status = '"+ AbstractExperiment.Status.SCHEDULED.name() + "'";
     }

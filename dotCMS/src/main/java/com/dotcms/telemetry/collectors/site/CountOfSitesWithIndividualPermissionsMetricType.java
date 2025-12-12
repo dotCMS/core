@@ -26,11 +26,6 @@ public class CountOfSitesWithIndividualPermissionsMetricType implements DBMetric
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Sites with permissions not inheriting from System Host";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

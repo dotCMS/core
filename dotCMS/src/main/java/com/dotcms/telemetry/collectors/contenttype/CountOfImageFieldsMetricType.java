@@ -21,9 +21,4 @@ public class CountOfImageFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of image fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Image Fields";
-    }
 }

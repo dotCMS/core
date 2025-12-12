@@ -24,11 +24,6 @@ public class SitesWithNoDefaultTagStorageDatabaseMetricType implements DBMetricT
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Sites With Not Default value on the tagStorage attribute";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

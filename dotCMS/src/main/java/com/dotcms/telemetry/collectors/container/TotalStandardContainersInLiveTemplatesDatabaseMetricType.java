@@ -31,11 +31,6 @@ public class TotalStandardContainersInLiveTemplatesDatabaseMetricType extends To
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "STANDARD containers used in LIVE templates";
-    }
-
-    @Override
     boolean filterContainer(final String containerId) {
         return !FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId);
     }

@@ -21,11 +21,6 @@ public class ImportContentletsJobTriggeredMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Customer have used the Import Contentlets Job";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

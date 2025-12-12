@@ -21,9 +21,4 @@ public class CountOfTextFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of text fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Text Fields";
-    }
 }

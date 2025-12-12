@@ -27,11 +27,6 @@ public class TotalEmbeddingsIndexesMetricType implements MetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Embeddings/Indexes in dotAI";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

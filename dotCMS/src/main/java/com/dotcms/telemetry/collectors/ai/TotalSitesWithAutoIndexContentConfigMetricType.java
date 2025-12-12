@@ -38,11 +38,6 @@ public class TotalSitesWithAutoIndexContentConfigMetricType implements MetricTyp
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Sites with Auto Index Content Configuration set in its configuration";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

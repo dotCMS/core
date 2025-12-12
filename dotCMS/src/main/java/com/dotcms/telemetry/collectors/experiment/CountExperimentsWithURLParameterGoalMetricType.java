@@ -27,11 +27,6 @@ public class CountExperimentsWithURLParameterGoalMetricType implements DBMetricT
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Experiments with url parameter goal";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "SELECT COUNT(*) AS Value FROM experiment WHERE goals->'primary'->>'type' = '" + MetricType.URL_PARAMETER.name() + "'";
     }

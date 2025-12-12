@@ -21,9 +21,4 @@ public class CountOfTagFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of tag fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Tag Fields";
-    }
 }

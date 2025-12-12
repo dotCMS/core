@@ -31,11 +31,6 @@ public class TotalStandardContainersInLivePageDatabaseMetricType extends TotalCo
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "STANDARD containers used in LIVE pages";
-    }
-
-    @Override
     boolean filterContainer(final String containerId) {
         return !FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId);
     }

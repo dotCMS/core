@@ -36,11 +36,6 @@ public class TotalSitesUsingDotaiMetricType implements MetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Sites using dotAI";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

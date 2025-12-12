@@ -21,9 +21,4 @@ public class CountOfSelectFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of select fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Select Fields";
-    }
 }

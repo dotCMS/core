@@ -26,11 +26,6 @@ public class CountPagesWithDraftExperimentsMetricType  implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Pages with draft experiments";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "select count(*) as Value from experiment where status = '" + AbstractExperiment.Status.DRAFT.name()  +"'";
     }

@@ -21,9 +21,4 @@ public class CountOfRadioFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of radio fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Radio Fields";
-    }
 }

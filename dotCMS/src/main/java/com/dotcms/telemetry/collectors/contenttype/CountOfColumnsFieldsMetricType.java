@@ -21,9 +21,4 @@ public class CountOfColumnsFieldsMetricType extends ContentTypeFieldsMetricType 
     public String getDescription() {
         return "Count the number of column fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Column Fields";
-    }
 }

@@ -26,11 +26,6 @@ public class ActiveUsersDatabaseMetricType implements UsersDatabaseMetricType  {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Active Users";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

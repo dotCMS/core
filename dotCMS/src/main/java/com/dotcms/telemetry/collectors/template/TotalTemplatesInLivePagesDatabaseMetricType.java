@@ -24,11 +24,6 @@ public class TotalTemplatesInLivePagesDatabaseMetricType implements DBMetricType
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "All templates used in LIVE pages";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

@@ -22,9 +22,4 @@ public class CountOfDateFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of date fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Date Fields";
-    }
 }

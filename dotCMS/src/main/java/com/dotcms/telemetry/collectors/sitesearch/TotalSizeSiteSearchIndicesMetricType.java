@@ -30,11 +30,6 @@ public class TotalSizeSiteSearchIndicesMetricType extends IndicesSiteSearchMetri
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Total size of indexes";
-    }
-
-    @Override
     public Optional<Object> getValue(Collection<IndexStats> indices) throws DotDataException {
         return Optional.of(new ByteSizeValue(
                 indices.stream().collect(Collectors.summingLong(IndexStats::getSizeRaw))).toString()

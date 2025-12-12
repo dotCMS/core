@@ -21,9 +21,4 @@ public class CountOfTimeFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of time fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Time Fields";
-    }
 }

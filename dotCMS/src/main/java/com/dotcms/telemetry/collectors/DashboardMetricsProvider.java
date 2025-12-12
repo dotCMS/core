@@ -47,6 +47,7 @@ public class DashboardMetricsProvider {
     
     /**
      * Returns all metrics annotated with {@link DashboardMetric}, sorted by priority.
+     * Uses the default profile from configuration.
      * 
      * <p>Uses CDI's {@link BeanManager} to query for beans with the annotation,
      * which is the proper CDI way to discover annotated beans. This avoids
@@ -59,11 +60,31 @@ public class DashboardMetricsProvider {
      * @return list of dashboard-available metrics, sorted by priority (lowest first)
      */
     public List<MetricType> getDashboardMetrics() {
+        return getDashboardMetrics(null);
+    }
+    
+    /**
+     * Returns all metrics annotated with {@link DashboardMetric}, filtered by the specified profile.
+     * If profile is null, uses the default profile from configuration.
+     * 
+     * <p>Uses CDI's {@link BeanManager} to query for beans with the annotation,
+     * which is the proper CDI way to discover annotated beans. This avoids
+     * issues with proxy classes and leverages CDI's built-in capabilities.</p>
+     * 
+     * <p>This method is called by {@link com.dotcms.rest.api.v1.usage.UsageResource}
+     * to collect metrics for the dashboard. The returned list is sorted by
+     * {@link DashboardMetric#priority()} in ascending order.</p>
+     * 
+     * @param profileOverride optional profile to use instead of the configured default (null = use default)
+     * @return list of dashboard-available metrics, sorted by priority (lowest first)
+     */
+    public List<MetricType> getDashboardMetrics(final ProfileType profileOverride) {
         Logger.debug(this, "Starting dashboard metrics discovery via CDI BeanManager");
 
-        // Get active profile from configuration
-        final ProfileType activeProfile = config.getActiveProfile();
-        Logger.debug(this, () -> String.format("Filtering dashboard metrics for profile: %s", activeProfile));
+        // Get active profile - use override if provided, otherwise use configuration default
+        final ProfileType activeProfile = profileOverride != null ? profileOverride : config.getActiveProfile();
+        Logger.debug(this, () -> String.format("Filtering dashboard metrics for profile: %s%s", 
+                activeProfile, profileOverride != null ? " (overridden)" : " (from config)"));
 
         try {
             // Use BeanManager to get all MetricType beans - this gives us Bean objects
@@ -123,17 +144,18 @@ public class DashboardMetricsProvider {
         } catch (Exception e) {
             Logger.error(this, "Error discovering dashboard metrics via BeanManager", e);
             // Fallback to Instance-based discovery if BeanManager fails
-            return getDashboardMetricsFallback();
+            return getDashboardMetricsFallback(activeProfile);
         }
     }
     
     /**
      * Fallback method using Instance injection if BeanManager approach fails.
      * This method handles proxy classes by checking superclasses.
+     * 
+     * @param activeProfile the profile to filter metrics by
      */
-    private List<MetricType> getDashboardMetricsFallback() {
+    private List<MetricType> getDashboardMetricsFallback(final ProfileType activeProfile) {
         Logger.warn(this, "Falling back to Instance-based discovery");
-        final ProfileType activeProfile = config.getActiveProfile();
         final List<MetricType> dashboardMetrics = new ArrayList<>();
         
         for (MetricType metric : allMetrics) {
@@ -187,12 +209,24 @@ public class DashboardMetricsProvider {
     
     /**
      * Returns dashboard metrics filtered by {@link DashboardMetric#category()}.
+     * Uses the default profile from configuration.
      * 
      * @param category the category to filter by (case-insensitive)
      * @return list of metrics in the specified category, sorted by priority
      */
     public List<MetricType> getDashboardMetricsByCategory(final String category) {
-        return getDashboardMetrics().stream()
+        return getDashboardMetricsByCategory(category, null);
+    }
+    
+    /**
+     * Returns dashboard metrics filtered by {@link DashboardMetric#category()}.
+     * 
+     * @param category the category to filter by (case-insensitive)
+     * @param profileOverride optional profile to use instead of the configured default (null = use default)
+     * @return list of metrics in the specified category, sorted by priority
+     */
+    public List<MetricType> getDashboardMetricsByCategory(final String category, final ProfileType profileOverride) {
+        return getDashboardMetrics(profileOverride).stream()
                 .filter(metric -> {
                     final String metricCategory = getCategory(metric);
                     return metricCategory != null && metricCategory.equalsIgnoreCase(category);

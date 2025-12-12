@@ -22,9 +22,4 @@ public class CountOfKeyValueFieldsMetricType extends ContentTypeFieldsMetricType
     public String getDescription() {
         return "Count the number of key/value fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Key/Value Fields";
-    }
 }

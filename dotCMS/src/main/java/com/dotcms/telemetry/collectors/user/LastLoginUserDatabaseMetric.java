@@ -25,11 +25,6 @@ public class LastLoginUserDatabaseMetric implements UsersDatabaseMetricType  {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Email address of the Last login User";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

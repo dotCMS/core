@@ -25,11 +25,6 @@ public class WorkingNotDefaultLanguageContentsDatabaseMetricType implements DBMe
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Working Content items with non-default Language versions";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

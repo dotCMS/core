@@ -28,11 +28,6 @@ public class CountSiteSearchIndicesMetricType extends IndicesSiteSearchMetricTyp
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Indexes";
-    }
-
-    @Override
     public Optional<Object> getValue(Collection<IndexStats> indices) throws DotDataException {
         return Optional.of(indices.size());
     }

@@ -27,11 +27,6 @@ public class CountExperimentsWithExitRateGoalMetricType implements DBMetricType 
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Experiments with exit rate goal";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "SELECT COUNT(*) AS Value FROM experiment WHERE goals->'primary'->>'type' = '" + MetricType.EXIT_RATE.name() + "'";
     }

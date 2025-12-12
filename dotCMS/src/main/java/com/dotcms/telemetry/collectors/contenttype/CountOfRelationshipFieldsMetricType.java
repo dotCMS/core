@@ -21,9 +21,4 @@ public class CountOfRelationshipFieldsMetricType extends ContentTypeFieldsMetric
     public String getDescription() {
         return "Count the number of relationship fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Relationship Fields";
-    }
 }

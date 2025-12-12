@@ -24,11 +24,6 @@ public class UrlMapPatterWithTwoVariablesDatabaseMetricType implements DBMetricT
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "URL Map Patterns with more than one variable";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

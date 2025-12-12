@@ -21,9 +21,4 @@ public class CountOfSiteOrFolderFieldsMetricType extends ContentTypeFieldsMetric
     public String getDescription() {
         return "Count the number of site or folder fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Site/Folder Fields";
-    }
 }

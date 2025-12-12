@@ -34,11 +34,6 @@ public class OldStyleLanguagesVarialeMetricType implements MetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Old-style Language variables";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

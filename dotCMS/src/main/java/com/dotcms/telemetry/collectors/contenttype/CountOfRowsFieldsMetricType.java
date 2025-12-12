@@ -21,9 +21,4 @@ public class CountOfRowsFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of row fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Row Fields";
-    }
 }

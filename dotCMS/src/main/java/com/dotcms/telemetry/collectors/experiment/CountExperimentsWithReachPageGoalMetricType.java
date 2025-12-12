@@ -27,11 +27,6 @@ public class CountExperimentsWithReachPageGoalMetricType implements DBMetricType
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Experiments with Reach Page Goal";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "SELECT COUNT(*) AS Value FROM experiment WHERE goals->'primary'->>'type' = '" + MetricType.REACH_PAGE.name() + "'";
     }

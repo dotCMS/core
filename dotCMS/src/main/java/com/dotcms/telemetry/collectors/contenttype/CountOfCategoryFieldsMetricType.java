@@ -21,9 +21,4 @@ public class CountOfCategoryFieldsMetricType extends ContentTypeFieldsMetricType
     public String getDescription() {
         return "Count the number of category fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Category Fields";
-    }
 }
