@@ -160,26 +160,142 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
         });
-    });
 
-    describe('name auto-generation from title', () => {
-        it('should generate name slug from title when name is not touched', () => {
-            component.folderForm.patchValue({ title: 'My New Folder' });
+        it('should return hostname only when name is empty', () => {
+            component.folderForm.patchValue({ name: '' });
             spectator.detectChanges();
 
-            expect(component.folderForm.get('name')?.value).toBe('my-new-folder');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
         });
 
-        it('should not override name when manually touched', () => {
-            // First touch the name field
-            component.folderForm.get('name')?.markAsTouched();
-            component.folderForm.patchValue({
-                name: 'custom-name',
-                title: 'My New Folder'
-            });
+        it('should return hostname only when name is null', () => {
+            component.folderForm.patchValue({ name: null });
             spectator.detectChanges();
 
-            expect(component.folderForm.get('name')?.value).toBe('custom-name');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+        });
+
+        it('should return hostname only when name is whitespace', () => {
+            component.folderForm.patchValue({ name: '   ' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+        });
+
+        it('should handle path with trailing slash', () => {
+            store.path.mockReturnValue('/documents/');
+            component.folderForm.patchValue({ name: 'new-folder' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
+        });
+
+        it('should convert name to slug in path', () => {
+            component.folderForm.patchValue({ name: 'My New Folder' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/my-new-folder/');
+        });
+
+        it('should handle name with spaces', () => {
+            component.folderForm.patchValue({ name: 'test folder name' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/test-folder-name/');
+        });
+    });
+
+    describe('title auto-generation from name', () => {
+        it('should generate navigation label from name when title is not dirty', () => {
+            component.folderForm.patchValue({ name: 'my-new-folder' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('My New Folder');
+        });
+
+        it('should handle multiple hyphens correctly', () => {
+            component.folderForm.patchValue({ name: 'my-very-long-folder-name' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('My Very Long Folder Name');
+        });
+
+        it('should not override title when manually edited (dirty)', () => {
+            // First mark title as dirty by setting a value
+            component.folderForm.get('title')?.setValue('Custom Title');
+            component.folderForm.get('title')?.markAsDirty();
+            spectator.detectChanges();
+
+            // Now change the name
+            component.folderForm.patchValue({ name: 'different-name' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Custom Title');
+        });
+
+        it('should not auto-generate title when folder is being edited', () => {
+            // Simulate editing an existing folder
+            const mockFolder: DotContentDriveFolder = {
+                name: 'existing-folder',
+                title: 'Existing Folder',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1234567890,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1234567890,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', mockFolder);
+            spectator.detectChanges();
+
+            // Change the name
+            component.folderForm.patchValue({ name: 'new-name' });
+            spectator.detectChanges();
+
+            // Title should remain as it was set from the folder
+            expect(component.folderForm.get('title')?.value).toBe('Existing Folder');
+        });
+
+        it('should capitalize first letter of each word', () => {
+            component.folderForm.patchValue({ name: 'test-folder' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Test Folder');
+        });
+
+        it('should handle single word names', () => {
+            component.folderForm.patchValue({ name: 'documents' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Documents');
+        });
+
+        it('should handle empty name', () => {
+            component.folderForm.patchValue({ name: '' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('');
+        });
+
+        it('should handle name with leading/trailing spaces (trimmed)', () => {
+            component.folderForm.patchValue({ name: '  test-folder  ' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Test Folder');
         });
     });
 
