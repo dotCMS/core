@@ -1776,7 +1776,7 @@ public class ContentTypeResource implements Serializable {
 	@Path("/page")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	@Tag(name = "getPagesContentTypes", description = "Returns the content types valid for a page based on the container/types on the layout")
 	@Operation(
 			operationId = "getPagesContentTypes",
