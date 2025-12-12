@@ -203,7 +203,6 @@ const button = spectator.query('[data-testid="submit-button"]');
 ### Web Components
 
 -   **Stencil.js**: Framework-agnostic components in `libs/dotcms-webcomponents`
--   **Legacy**: `libs/dotcms-field-elements` (deprecated, use Stencil components)
 -   **Integration**: Used across Angular, React, and vanilla JS contexts
 
 ### Performance Considerations

@@ -1,9 +1,14 @@
 {
-    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
+        "baseUrl": "../..",
+        "paths": {
+            "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
+            "@dotcms/dotcms-models/*": ["libs/dotcms-models/src/*"]
+        },
         "allowSyntheticDefaultImports": true,
         "allowUnreachableCode": false,
         "declaration": false,
+        "esModuleInterop": true,
         "experimentalDecorators": true,
         "lib": ["dom", "es2015"],
         "moduleResolution": "node",

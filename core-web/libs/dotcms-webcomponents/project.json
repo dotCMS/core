@@ -29,11 +29,9 @@
             }
         },
         "build": {
-            "executor": "@nxext/stencil:build",
+            "executor": "nx:run-commands",
             "options": {
-                "outputPath": "dist/libs/dotcms-webcomponents",
-                "projectType": "library",
-                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                "command": "npx stencil build --config libs/dotcms-webcomponents/stencil.config.ts --prod"
             }
         },
         "serve": {
