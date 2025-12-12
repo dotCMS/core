@@ -66,6 +66,7 @@ export interface Product extends Contentlet {
   salePrice: number;
   retailPrice: number;
   urlTitle: string;
+  description?: string;
 }
 
 export interface Activity extends Contentlet {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { enableBlockEditorInline } from "@dotcms/uve";
