@@ -8,13 +8,15 @@
     "implicitDependencies": ["dotcms-webcomponents"],
     "targets": {
         "build": {
-            "executor": "@nx/angular:browser-esbuild",
+            "executor": "@nx/angular:application",
             "options": {
                 "baseHref": "./",
-                "outputPath": "dist/apps/dotcms-ui",
+                "outputPath": {
+                    "base": "dist/apps/dotcms-ui",
+                    "browser": ""
+                },
                 "index": "apps/dotcms-ui/src/index.html",
-                "main": "apps/dotcms-ui/src/main.ts",
-                "polyfills": "apps/dotcms-ui/src/polyfills.ts",
+                "polyfills": ["apps/dotcms-ui/src/polyfills.ts"],
                 "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
                 "allowedCommonJsDependencies": [
                     "lodash",
@@ -73,12 +75,11 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "vendorChunk": true,
                 "extractLicenses": false,
-                "buildOptimizer": false,
                 "sourceMap": true,
                 "optimization": false,
-                "namedChunks": true
+                "namedChunks": true,
+                "browser": "apps/dotcms-ui/src/main.ts"
             },
             "configurations": {
                 "production": {
@@ -93,8 +94,6 @@
                     "sourceMap": false,
                     "namedChunks": false,
                     "extractLicenses": true,
-                    "vendorChunk": false,
-                    "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
@@ -110,13 +109,13 @@
                 },
                 "development": {
                     "deployUrl": "/dotAdmin/",
-                    "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
+                    "outputPath": {
+                        "base": "../../tomcat9/webapps/ROOT/dotAdmin"
+                    },
                     "baseHref": "",
                     "optimization": false,
                     "sourceMap": true,
-                    "namedChunks": true,
-                    "vendorChunk": true,
-                    "buildOptimizer": false
+                    "namedChunks": true
                 }
             },
             "defaultConfiguration": "production",
