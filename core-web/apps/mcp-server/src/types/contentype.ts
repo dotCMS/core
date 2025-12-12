@@ -87,13 +87,11 @@ const KnownFieldClazzEnum = z.enum([
 ]);
 
 // Flexible field clazz that accepts known types or any string matching the dotCMS field pattern
-const FieldClazzEnum = z.union([
+export const FieldClazzEnum = z.union([
     KnownFieldClazzEnum,
-    z
-        .string()
-        .refine((val) => /^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/.test(val), {
-            message: 'Field clazz must be a valid dotCMS field type'
-        })
+    z.string().regex(/^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/, {
+        message: 'Field clazz must be a valid dotCMS field type'
+    })
 ]);
 
 const DividerSchema = z.object({
