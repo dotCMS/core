@@ -27,11 +27,6 @@ public class CountPagesWithAllEndedExperimentsMetricType implements DBMetricType
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Pages with ended experiments";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "select count(*) as Value from experiment where status = '" + AbstractExperiment.Status.ENDED.name() + "'";
     }

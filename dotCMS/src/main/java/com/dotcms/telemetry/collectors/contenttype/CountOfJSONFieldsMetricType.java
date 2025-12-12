@@ -22,9 +22,4 @@ public class CountOfJSONFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of JSON fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "JSON Fields";
-    }
 }

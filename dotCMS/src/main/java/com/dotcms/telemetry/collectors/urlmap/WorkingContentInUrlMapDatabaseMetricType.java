@@ -24,11 +24,6 @@ public class WorkingContentInUrlMapDatabaseMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Working Contentlets in content types with URL maps";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

@@ -21,9 +21,4 @@ public class CountOfWYSIWYGFieldsMetricType extends ContentTypeFieldsMetricType 
     public String getDescription() {
         return "Count the number of WYSIWYG fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "WYSIWYG Fields";
-    }
 }

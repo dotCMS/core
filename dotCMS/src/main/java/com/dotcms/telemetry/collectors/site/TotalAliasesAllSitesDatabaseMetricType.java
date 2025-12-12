@@ -26,11 +26,6 @@ public class TotalAliasesAllSitesDatabaseMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Site Aliases";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

@@ -26,11 +26,6 @@ public class StepsDatabaseMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Workflow Steps";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

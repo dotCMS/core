@@ -24,11 +24,6 @@ public class TotalThemeUsedInWorkingTemplatesMetricType implements DBMetricType 
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Themes used by templates";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

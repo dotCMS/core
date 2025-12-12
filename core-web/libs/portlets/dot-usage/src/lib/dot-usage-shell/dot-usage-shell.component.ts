@@ -7,48 +7,9 @@ import { MessagesModule } from 'primeng/messages';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotUsageService, MetricData } from '../services/dot-usage.service';
-
-/**
- * Mapping of metric names to icons.
- * Display labels come from the API response (MetricType.getDisplayLabel()).
- */
-const METRIC_ICONS: Record<string, string> = {
-    // Site metrics
-    COUNT_OF_SITES: 'pi-globe',
-    COUNT_OF_ACTIVE_SITES: 'pi-check-circle',
-    COUNT_OF_TEMPLATES: 'pi-clone',
-    ALIASES_SITES_COUNT: 'pi-link',
-
-    // Content metrics
-    COUNT: 'pi-file',
-    COUNT_CONTENT: 'pi-file',
-    CONTENT_TYPES_ASSIGNED: 'pi-sitemap',
-    CONTENTS_RECENTLY_EDITED: 'pi-pencil',
-    LAST_CONTENT_EDITED: 'pi-clock',
-
-    // User metrics
-    ACTIVE_USERS_COUNT: 'pi-users',
-    COUNT_OF_USERS: 'pi-user',
-    LAST_LOGIN: 'pi-calendar',
-
-    // System metrics
-    COUNT_LANGUAGES: 'pi-flag',
-    SCHEMES_COUNT: 'pi-share-alt',
-    STEPS_COUNT: 'pi-sitemap',
-    COUNT_OF_LIVE_CONTAINERS: 'pi-box',
-    COUNT_OF_TEMPLATE_BUILDER_TEMPLATES: 'pi-th-large'
-};
-
-/**
- * Mapping of category names to display titles.
- */
-const CATEGORY_TITLES: Record<string, string> = {
-    site: 'Site Metrics',
-    content: 'Content Metrics',
-    user: 'User Activity',
-    system: 'System Configuration'
-};
 
 @Component({
     selector: 'lib-dot-usage-shell',
@@ -58,7 +19,8 @@ const CATEGORY_TITLES: Record<string, string> = {
         CardModule,
         MessagesModule,
         SkeletonModule,
-        TooltipModule
+        TooltipModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-usage-shell.component.html',
     styleUrl: './dot-usage-shell.component.scss',
@@ -71,6 +33,7 @@ export class DotUsageShellComponent implements OnInit {
     readonly summary = this.usageService.summary;
     readonly loading = this.usageService.loading;
     readonly error = this.usageService.error;
+    readonly errorStatus = this.usageService.errorStatus;
 
     // Computed values for display
     readonly hasData = computed(() => this.summary() !== null);
@@ -120,7 +83,7 @@ export class DotUsageShellComponent implements OnInit {
      */
     formatMetricValue(value: number | string | undefined | null): string {
         if (value === undefined || value === null) {
-            return 'N/A';
+            return 'usage.dashboard.value.notAvailable';
         }
 
         // If it's already a string, check if it's a number string
@@ -131,7 +94,7 @@ export class DotUsageShellComponent implements OnInit {
                 return this.formatNumber(numValue);
             }
             // It's a non-numeric string, return as-is
-            return value || 'N/A';
+            return value || 'usage.dashboard.value.notAvailable';
         }
 
         // It's a number, format it
@@ -185,16 +148,20 @@ export class DotUsageShellComponent implements OnInit {
     }
 
     /**
-     * Gets the icon class for a metric name.
+     * Gets the i18n key for a category's display title.
+     * Format: usage.category.{category}.title
+     *
+     * @param category the category name (e.g., "content")
+     * @return the i18n key (e.g., "usage.category.content.title")
      */
-    getMetricIcon(metricName: string): string {
-        return METRIC_ICONS[metricName] || 'pi-circle';
+    getCategoryTitleKey(category: string): string {
+        return `usage.category.${category}.title`;
     }
 
     /**
-     * Gets the display title for a category.
+     * Checks if a string is an i18n key (starts with a known prefix).
      */
-    getCategoryTitle(category: string): string {
-        return CATEGORY_TITLES[category] || category.charAt(0).toUpperCase() + category.slice(1);
+    isI18nKey(value: string): boolean {
+        return value.startsWith('usage.dashboard.');
     }
 }

@@ -21,9 +21,4 @@ public class CountOfPermissionsFieldsMetricType extends ContentTypeFieldsMetricT
     public String getDescription() {
         return "Count the number of permissions fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Permissions Fields";
-    }
 }

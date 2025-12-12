@@ -45,11 +45,6 @@ public class CountOfSitesWithThumbnailsMetricType implements MetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Sites with Thumbnails";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

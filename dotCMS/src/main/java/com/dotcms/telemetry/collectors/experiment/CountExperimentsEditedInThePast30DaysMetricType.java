@@ -26,11 +26,6 @@ public class CountExperimentsEditedInThePast30DaysMetricType implements DBMetric
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Experiments edited in the past 30 days";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "select count(*) as Value from experiment where mod_date >= NOW() - INTERVAL '30 days'";
     }

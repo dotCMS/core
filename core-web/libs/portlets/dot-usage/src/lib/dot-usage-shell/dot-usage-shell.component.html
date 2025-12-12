@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="usage-header">
         <div class="usage-header__title">
-            <h1>Usage Dashboard</h1>
+            <h1>{{ 'usage.dashboard.title' | dm }}</h1>
         </div>
 
         <div class="usage-header__actions">
@@ -12,7 +12,7 @@
                 [loading]="loading()"
                 [disabled]="loading()"
                 (onClick)="onRefresh()"
-                pTooltip="Refresh metrics"
+                [pTooltip]="'usage.dashboard.refresh.tooltip' | dm"
                 data-testid="refresh-button"></p-button>
         </div>
     </div>
@@ -42,11 +42,23 @@
                     <div class="error-content">
                         <i class="pi pi-exclamation-triangle"></i>
                         <div>
-                            <strong>Error Loading Usage Data</strong>
-                            <p>{{ error() }}</p>
+                            <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
+                            <p>
+                                @if (
+                                    error() === 'usage.dashboard.error.requestFailed' &&
+                                    errorStatus()
+                                ) {
+                                    {{
+                                        'usage.dashboard.error.requestFailed'
+                                            | dm: [errorStatus()!.toString()]
+                                    }}
+                                } @else {
+                                    {{ error() | dm }}
+                                }
+                            </p>
                         </div>
                         <p-button
-                            label="Retry"
+                            [label]="'usage.dashboard.retry.button' | dm"
                             severity="secondary"
                             size="small"
                             (onClick)="onRetry()"
@@ -63,7 +75,7 @@
             @for (category of getCategories(); track category) {
                 @if (getCategoryMetrics(category); as categoryMetrics) {
                     <div class="usage-section">
-                        <h2 class="section-title">{{ getCategoryTitle(category) }}</h2>
+                        <h2 class="section-title">{{ getCategoryTitleKey(category) | dm }}</h2>
                         <div class="metrics-row">
                             @for (
                                 metricEntry of categoryMetrics | keyvalue;
@@ -76,22 +88,26 @@
                                             category + '-' + metricEntry.key + '-card'
                                         ">
                                         <div class="metric-card__content">
-                                            <div class="metric-card__icon">
-                                                <i
-                                                    [class]="
-                                                        'pi ' + getMetricIcon(metricEntry.key)
-                                                    "></i>
-                                            </div>
                                             <div class="metric-card__data">
                                                 <span class="metric-label">
-                                                    {{ metricData.displayLabel }}
+                                                    {{ metricData.displayLabel | dm }}
                                                 </span>
                                                 <span
                                                     class="metric-value"
                                                     [class.metric-value--text]="
                                                         isStringValue(metricData.value)
                                                     ">
-                                                    {{ formatMetricValue(metricData.value) }}
+                                                    @if (
+                                                        isI18nKey(
+                                                            formatMetricValue(metricData.value)
+                                                        )
+                                                    ) {
+                                                        {{
+                                                            formatMetricValue(metricData.value) | dm
+                                                        }}
+                                                    } @else {
+                                                        {{ formatMetricValue(metricData.value) }}
+                                                    }
                                                 </span>
                                             </div>
                                         </div>

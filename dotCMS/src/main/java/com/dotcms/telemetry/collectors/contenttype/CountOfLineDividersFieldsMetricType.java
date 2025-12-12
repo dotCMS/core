@@ -21,9 +21,4 @@ public class CountOfLineDividersFieldsMetricType extends ContentTypeFieldsMetric
     public String getDescription() {
         return "Count the number of line divider fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Line Divider Fields";
-    }
 }

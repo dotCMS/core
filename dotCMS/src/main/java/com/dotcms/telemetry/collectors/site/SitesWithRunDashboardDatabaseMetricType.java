@@ -24,11 +24,6 @@ public class SitesWithRunDashboardDatabaseMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Sites with 'Run Dashboard' enabled";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

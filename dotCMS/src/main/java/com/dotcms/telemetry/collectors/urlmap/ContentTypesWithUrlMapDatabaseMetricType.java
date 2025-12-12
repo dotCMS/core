@@ -24,11 +24,6 @@ public class ContentTypesWithUrlMapDatabaseMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Content types with URL maps";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

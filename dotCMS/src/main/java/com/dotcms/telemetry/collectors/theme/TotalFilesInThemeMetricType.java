@@ -25,11 +25,6 @@ public class TotalFilesInThemeMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Number of WORKING and LIVE files in themes";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

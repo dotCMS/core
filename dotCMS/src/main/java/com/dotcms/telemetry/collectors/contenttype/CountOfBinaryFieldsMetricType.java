@@ -21,9 +21,4 @@ public class CountOfBinaryFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of binary fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Binary Fields";
-    }
 }

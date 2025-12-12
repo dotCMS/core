@@ -31,11 +31,6 @@ public class TotalFileContainersInLiveTemplatesDatabaseMetricType extends TotalC
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "FILE containers used in LIVE templates";
-    }
-
-    @Override
     boolean filterContainer(final String containerId) {
         return FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId);
     }

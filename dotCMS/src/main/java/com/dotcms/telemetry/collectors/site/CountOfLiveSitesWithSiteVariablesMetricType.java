@@ -18,9 +18,4 @@ public class CountOfLiveSitesWithSiteVariablesMetricType extends CountOfSitesWit
         return PublishStatus.LIVE;
     }
 
-    @Override
-    public String getDisplayLabel() {
-        return "Live Sites with Site Variables";
-    }
-
 }

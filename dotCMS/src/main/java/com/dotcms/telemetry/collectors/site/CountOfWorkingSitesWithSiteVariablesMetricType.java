@@ -18,9 +18,4 @@ public class CountOfWorkingSitesWithSiteVariablesMetricType extends CountOfSites
         return PublishStatus.WORKING;
     }
 
-    @Override
-    public String getDisplayLabel() {
-        return "Working Sites with Site Variables";
-    }
-
 }

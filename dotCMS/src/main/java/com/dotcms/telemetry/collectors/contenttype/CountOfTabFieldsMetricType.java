@@ -21,9 +21,4 @@ public class CountOfTabFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of tab divider fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Tab Divider Fields";
-    }
 }

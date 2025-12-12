@@ -24,11 +24,6 @@ public class LiveNotDefaultLanguageContentsDatabaseMetricType implements DBMetri
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Live Content items with non-default Language versions";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

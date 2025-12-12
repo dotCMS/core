@@ -25,11 +25,6 @@ public class TotalLiveLanguagesVariablesDatabaseMetricType implements DBMetricTy
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Live Language Variables";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

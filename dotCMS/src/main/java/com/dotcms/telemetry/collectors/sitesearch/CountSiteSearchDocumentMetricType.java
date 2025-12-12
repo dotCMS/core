@@ -29,11 +29,6 @@ public class CountSiteSearchDocumentMetricType extends IndicesSiteSearchMetricTy
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Documents in indexes";
-    }
-
-    @Override
     public Optional<Object> getValue(Collection<IndexStats> indices) throws DotDataException {
         return Optional.of(indices.stream()
                 .collect(Collectors.summingLong(IndexStats::getDocumentCount))

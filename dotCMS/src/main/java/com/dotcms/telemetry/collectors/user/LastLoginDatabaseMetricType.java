@@ -26,11 +26,6 @@ public class LastLoginDatabaseMetricType implements UsersDatabaseMetricType  {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Last Login";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

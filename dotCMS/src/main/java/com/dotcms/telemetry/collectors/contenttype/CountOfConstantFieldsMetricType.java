@@ -22,9 +22,4 @@ public class CountOfConstantFieldsMetricType extends ContentTypeFieldsMetricType
     public String getDescription() {
         return "Count the number of constant fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Constant Fields";
-    }
 }

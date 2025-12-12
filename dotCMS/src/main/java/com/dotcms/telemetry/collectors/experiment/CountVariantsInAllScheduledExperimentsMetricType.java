@@ -27,11 +27,6 @@ public class CountVariantsInAllScheduledExperimentsMetricType implements DBMetri
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Pages with scheduled experiments";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "SELECT COALESCE(SUM(jsonb_array_length(traffic_proportion->'variants')),0) AS Value FROM experiment where experiment.status = '"+ AbstractExperiment.Status.SCHEDULED.name() +"'";
     }

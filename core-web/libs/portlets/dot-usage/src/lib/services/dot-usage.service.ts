@@ -88,6 +88,7 @@ export class DotUsageService {
     readonly summary = signal<UsageSummary | null>(null);
     readonly loading = signal<boolean>(false);
     readonly error = signal<string | null>(null);
+    readonly errorStatus = signal<number | null>(null);
 
     /**
      * Fetches usage summary from the backend API
@@ -105,6 +106,7 @@ export class DotUsageService {
             catchError((error) => {
                 const errorMessage = this.getErrorMessage(error);
                 this.error.set(errorMessage);
+                this.errorStatus.set(error.status || null);
                 this.loading.set(false);
                 console.error('Failed to fetch usage summary:', error);
                 throw error;
@@ -126,10 +128,12 @@ export class DotUsageService {
         this.summary.set(null);
         this.loading.set(false);
         this.error.set(null);
+        this.errorStatus.set(null);
     }
 
     /**
-     * Extracts user-friendly error message from HTTP error
+     * Extracts user-friendly error message i18n key from HTTP error
+     * Returns i18n keys that should be translated using the dm pipe in the component
      */
     private getErrorMessage(error: HttpErrorResponse | UsageErrorResponse): string {
         if (error.error?.message) {
@@ -139,24 +143,25 @@ export class DotUsageService {
         if (error.status) {
             switch (error.status) {
                 case 401:
-                    return 'You are not authorized to view this data.';
+                    return 'usage.dashboard.error.unauthorized';
                 case 403:
-                    return 'You do not have permission to access usage data.';
+                    return 'usage.dashboard.error.forbidden';
                 case 404:
-                    return 'Usage data not found.';
+                    return 'usage.dashboard.error.notFound';
                 case 408:
-                    return 'Request timed out. Please try again.';
+                    return 'usage.dashboard.error.timeout';
                 case 500:
-                    return 'Server error occurred. Please try again later.';
+                    return 'usage.dashboard.error.serverError';
                 case 502:
-                    return 'Bad gateway. Please try again later.';
+                    return 'usage.dashboard.error.badGateway';
                 case 503:
-                    return 'Service unavailable. Please try again later.';
+                    return 'usage.dashboard.error.serviceUnavailable';
                 default:
-                    return `Request failed with status ${error.status}.`;
+                    // Return the i18n key - the component will handle parameter interpolation
+                    return 'usage.dashboard.error.requestFailed';
             }
         }
 
-        return 'Failed to load usage data. Please check your connection and try again.';
+        return 'usage.dashboard.error.generic';
     }
 }

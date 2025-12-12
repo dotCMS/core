@@ -143,38 +143,6 @@
         }
     }
 
-    &--primary {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
-    &--success {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
-    &--info {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
-    &--warning {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
     &__content {
         padding: 1.25rem;
         display: flex;
@@ -182,10 +150,6 @@
         align-items: center;
         gap: 0;
         min-height: auto;
-    }
-
-    &__icon {
-        display: none;
     }
 
     &__data {

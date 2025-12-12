@@ -25,11 +25,6 @@ public class TotalWorkingLanguagesVariablesDatabaseMetricType implements DBMetri
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Working Language Variables";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

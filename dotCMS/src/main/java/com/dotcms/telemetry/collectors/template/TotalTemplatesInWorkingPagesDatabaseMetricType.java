@@ -24,11 +24,6 @@ public class TotalTemplatesInWorkingPagesDatabaseMetricType implements DBMetricT
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "All templates used in WORKING pages";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

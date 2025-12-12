@@ -27,11 +27,6 @@ public class CountExperimentsWithBounceRateGoalMetricType implements DBMetricTyp
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Experiments with bounce rate goal";
-    }
-
-    @Override
     public String getSqlQuery() {
         return "SELECT COUNT(*) AS Value FROM experiment WHERE goals->'primary'->>'type' = '" + MetricType.BOUNCE_RATE.name() + "'";
     }

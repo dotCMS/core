@@ -21,9 +21,4 @@ public class CountOfBlockEditorFieldsMetricType extends ContentTypeFieldsMetricT
     public String getDescription() {
         return "Count the number of block editor fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Block Editor Fields";
-    }
 }

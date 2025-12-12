@@ -22,9 +22,4 @@ public class CountOfHiddenFieldsMetricType extends ContentTypeFieldsMetricType {
     public String getDescription() {
         return "Count the number of hidden fields";
     }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Hidden Fields";
-    }
 }

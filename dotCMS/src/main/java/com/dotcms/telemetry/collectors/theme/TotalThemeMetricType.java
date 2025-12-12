@@ -24,11 +24,6 @@ public class TotalThemeMetricType implements DBMetricType {
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Themes";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }

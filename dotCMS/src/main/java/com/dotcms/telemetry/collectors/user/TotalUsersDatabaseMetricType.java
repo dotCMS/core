@@ -11,7 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Collects the total count of all users (excluding system users)
  */
 @ApplicationScoped
-@MetricsProfile({ProfileType.STANDARD, ProfileType.FULL})
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})
 @DashboardMetric(category = "user", priority = 2)
 public class TotalUsersDatabaseMetricType implements UsersDatabaseMetricType {
     @Override
@@ -22,13 +22,7 @@ public class TotalUsersDatabaseMetricType implements UsersDatabaseMetricType {
     @Override
     public String getDescription() {
         return "Total count of users";
-    }
-
-    @Override
-    public String getDisplayLabel() {
-        return "Total Users";
-    }
-
+    }    
     @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;

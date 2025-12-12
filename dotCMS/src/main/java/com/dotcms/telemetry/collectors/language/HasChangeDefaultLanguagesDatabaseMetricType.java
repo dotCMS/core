@@ -24,11 +24,6 @@ public class HasChangeDefaultLanguagesDatabaseMetricType implements DBMetricType
     }
 
     @Override
-    public String getDisplayLabel() {
-        return "Has default language been changed from English?";
-    }
-
-    @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
     }
