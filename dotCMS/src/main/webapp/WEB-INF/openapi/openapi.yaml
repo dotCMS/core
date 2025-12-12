@@ -77,6 +77,11 @@ tags:
   name: Usage
 - description: Endpoints for managing content variants
   name: Variants
+- description: Endpoints that perform operations related to workflows.
+  externalDocs:
+    description: Additional Workflow API information
+    url: https://www.dotcms.com/docs/latest/workflow-rest-api
+  name: Workflow
 - description: Content type field definitions and configuration
   name: Content Type Field
 - description: System administration and management tools
@@ -154,11 +159,6 @@ tags:
   name: Web Assets
 - description: Widget development and rendering
   name: Widgets
-- description: Endpoints that perform operations related to workflows.
-  externalDocs:
-    description: Additional Workflow API information
-    url: https://www.dotcms.com/docs/latest/workflow-rest-api
-  name: Workflow
 paths:
   /auditPublishing/get/{bundleId}:
     get:

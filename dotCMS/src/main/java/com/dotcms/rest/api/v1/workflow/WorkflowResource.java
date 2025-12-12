@@ -186,7 +186,11 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
  */
 @SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/workflow")
-@Tag(name = "Workflow")
+@Tag(name = "Workflow",
+        description = "Endpoints that perform operations related to workflows.",
+        externalDocs = @ExternalDocumentation(description = "Additional Workflow API information",
+                url = "https://www.dotcms.com/docs/latest/workflow-rest-api")
+)
 @ApiResponses(
         value = { // error codes only!
                 @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in

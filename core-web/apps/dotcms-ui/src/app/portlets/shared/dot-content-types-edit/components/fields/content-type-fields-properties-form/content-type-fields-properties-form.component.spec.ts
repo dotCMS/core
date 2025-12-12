@@ -19,7 +19,11 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSClazzes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -287,6 +291,242 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 ) {
                     fail();
                 }
+            });
+        });
+    });
+
+    describe('transformFormValue', () => {
+        beforeEach(() => {
+            jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
+                'property1',
+                'property2'
+            ]);
+        });
+
+        describe('when field clazz is NOT CUSTOM_FIELD', () => {
+            beforeEach(async () => await startHostComponent());
+
+            it('should return the value as-is', () => {
+                const formValue = {
+                    name: 'testField',
+                    label: 'Test Field',
+                    clazz: DotCMSClazzes.TEXT
+                };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result).toEqual(formValue);
+                expect(result).toBe(formValue);
+            });
+        });
+
+        describe('when field clazz is CUSTOM_FIELD', () => {
+            beforeEach(() => {
+                comp.formFieldData = {
+                    ...mockDFormFieldData,
+                    clazz: DotCMSClazzes.CUSTOM_FIELD
+                };
+            });
+
+            it('should create fieldVariables array with newRenderMode when fieldVariables is undefined', () => {
+                comp.formFieldData.fieldVariables = undefined;
+                const formValue = { newRenderMode: 'editable', name: 'customField' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables).toBeDefined();
+                expect(result.fieldVariables.length).toBe(1);
+                expect(result.fieldVariables[0]).toEqual({
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: 'editable'
+                });
+                expect(result.newRenderMode).toBe('editable');
+                expect(result.name).toBe('customField');
+            });
+
+            it('should create fieldVariables array with newRenderMode when fieldVariables is empty array', () => {
+                comp.formFieldData.fieldVariables = [];
+                const formValue = { newRenderMode: 'readonly', label: 'Custom Field' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables).toBeDefined();
+                expect(result.fieldVariables.length).toBe(1);
+                expect(result.fieldVariables[0]).toEqual({
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: 'readonly'
+                });
+                expect(result.newRenderMode).toBe('readonly');
+                expect(result.label).toBe('Custom Field');
+            });
+
+            it('should preserve existing fieldVariables and add newRenderMode', () => {
+                comp.formFieldData.fieldVariables = [
+                    {
+                        key: 'existingVar1',
+                        value: 'value1',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: '1',
+                        fieldId: 'field123'
+                    },
+                    {
+                        key: 'existingVar2',
+                        value: 'value2',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: '2',
+                        fieldId: 'field123'
+                    }
+                ];
+                const formValue = { newRenderMode: 'editable', name: 'customField' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables.length).toBe(3);
+                expect(result.fieldVariables[0]).toEqual({
+                    key: 'existingVar1',
+                    value: 'value1',
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    id: '1',
+                    fieldId: 'field123'
+                });
+                expect(result.fieldVariables[1]).toEqual({
+                    key: 'existingVar2',
+                    value: 'value2',
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    id: '2',
+                    fieldId: 'field123'
+                });
+                expect(result.fieldVariables[2]).toEqual({
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: 'editable'
+                });
+            });
+
+            it('should update existing newRenderMode variable and preserve other variables', () => {
+                comp.formFieldData.fieldVariables = [
+                    {
+                        key: 'existingVar1',
+                        value: 'value1',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: '1',
+                        fieldId: 'field123'
+                    },
+                    {
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value: 'oldRenderMode',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: 'renderModeId',
+                        fieldId: 'field123'
+                    },
+                    {
+                        key: 'existingVar2',
+                        value: 'value2',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: '2',
+                        fieldId: 'field123'
+                    }
+                ];
+                const formValue = { newRenderMode: 'newRenderMode', name: 'customField' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables.length).toBe(3);
+                expect(result.fieldVariables[0]).toEqual({
+                    key: 'existingVar1',
+                    value: 'value1',
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    id: '1',
+                    fieldId: 'field123'
+                });
+                expect(result.fieldVariables[1]).toEqual({
+                    key: 'existingVar2',
+                    value: 'value2',
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    id: '2',
+                    fieldId: 'field123'
+                });
+                expect(result.fieldVariables[2]).toEqual({
+                    id: 'renderModeId',
+                    fieldId: 'field123',
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: 'newRenderMode'
+                });
+            });
+
+            it('should handle newRenderMode value being undefined', () => {
+                comp.formFieldData.fieldVariables = [
+                    {
+                        key: 'existingVar1',
+                        value: 'value1',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: '1',
+                        fieldId: 'field123'
+                    }
+                ];
+                const formValue = { newRenderMode: undefined, name: 'customField' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables.length).toBe(2);
+                expect(result.fieldVariables[1]).toEqual({
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: undefined
+                });
+            });
+
+            it('should handle newRenderMode value being null', () => {
+                comp.formFieldData.fieldVariables = [];
+                const formValue = { newRenderMode: null, name: 'customField' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables.length).toBe(1);
+                expect(result.fieldVariables[0]).toEqual({
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: null
+                });
+            });
+
+            it('should preserve existing newRenderMode variable properties when updating', () => {
+                comp.formFieldData.fieldVariables = [
+                    {
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value: 'oldValue',
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: 'existingId',
+                        fieldId: 'fieldId123'
+                    }
+                ];
+                const formValue = { newRenderMode: 'newValue', name: 'customField' };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.fieldVariables.length).toBe(1);
+                expect(result.fieldVariables[0]).toEqual({
+                    id: 'existingId',
+                    fieldId: 'fieldId123',
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    key: NEW_RENDER_MODE_VARIABLE_KEY,
+                    value: 'newValue'
+                });
+            });
+
+            it('should preserve all form value properties along with fieldVariables', () => {
+                comp.formFieldData.fieldVariables = [];
+                const formValue = {
+                    newRenderMode: 'editable',
+                    name: 'customField',
+                    label: 'Custom Field Label',
+                    required: true,
+                    indexed: false
+                };
+                const result = comp.transformFormValue(formValue);
+
+                expect(result.name).toBe('customField');
+                expect(result.label).toBe('Custom Field Label');
+                expect(result.required).toBe(true);
+                expect(result.indexed).toBe(false);
+                expect(result.newRenderMode).toBe('editable');
+                expect(result.fieldVariables).toBeDefined();
+                expect(result.fieldVariables.length).toBe(1);
             });
         });
     });

@@ -315,6 +315,7 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
     clazz: typeof DotCMSClazzes.CUSTOM_FIELD;
     values: string;
     regexCheck?: string;
+    rendered?: string;
 }
 
 /**
@@ -564,6 +565,7 @@ export interface DotCMSContentTypeField {
     fieldContentTypeProperties?: string[];
     skipRelationshipCreation?: boolean;
     metadata?: { [key: string]: string | number | boolean };
+    rendered?: string;
 }
 
 export interface DotCMSContentTypeLayoutTab {
