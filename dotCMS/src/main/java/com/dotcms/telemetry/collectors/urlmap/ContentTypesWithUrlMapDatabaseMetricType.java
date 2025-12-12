@@ -2,6 +2,8 @@ package com.dotcms.telemetry.collectors.urlmap;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -9,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Collects the count of content types with a non-null detail page.
  */
 @ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})
 public class ContentTypesWithUrlMapDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

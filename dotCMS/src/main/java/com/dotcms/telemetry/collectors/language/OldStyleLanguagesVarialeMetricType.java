@@ -12,11 +12,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of old style Language Variables
  */
 
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class OldStyleLanguagesVarialeMetricType implements MetricType {
 

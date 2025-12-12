@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * This Metric collects the total size -- in bytes -- of all files that live under every Theme in
@@ -25,6 +27,7 @@ import javax.enterprise.context.ApplicationScoped;
  * @author Jose Castro
  * @since Mar 25th, 2025
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalSizeOfFilesPerThemeMetricType extends ThemeDataMetricType {
 

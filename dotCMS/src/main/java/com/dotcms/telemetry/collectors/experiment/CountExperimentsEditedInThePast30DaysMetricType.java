@@ -4,11 +4,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count the experiments edited in the past 30 days
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountExperimentsEditedInThePast30DaysMetricType implements DBMetricType {
 

@@ -13574,8 +13574,24 @@ paths:
   /v1/usage/summary:
     get:
       description: "Retrieves key business metrics optimized for dashboard display\
-        \ including content, sites, users, and system metrics"
+        \ including content, sites, users, and system metrics. Supports optional profile\
+        \ parameter (MINIMAL, STANDARD, FULL) to override the default metric collection\
+        \ profile."
       operationId: getSummary
+      parameters:
+      - description: "Metric collection profile to use. MINIMAL (default): Fast collection\
+          \ with 10-15 core metrics. STANDARD: Comprehensive collection with ~50 metrics.\
+          \ FULL: Complete collection with all available metrics. This allows administrators\
+          \ to view additional metrics beyond the default MINIMAL profile."
+        in: query
+        name: profile
+        schema:
+          type: string
+          default: MINIMAL
+          enum:
+          - MINIMAL
+          - STANDARD
+          - FULL
       responses:
         "200":
           content:
@@ -13583,6 +13599,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityUsageSummaryView"
           description: Dashboard summary retrieved successfully
+        "400":
+          description: Invalid profile parameter
         "401":
           description: Unauthorized
         "403":
@@ -20092,23 +20110,6 @@ components:
       required:
       - file
       - form
-    ContentMetrics:
-      type: object
-      properties:
-        contentTypes:
-          type: integer
-          format: int64
-        contentTypesWithWorkflows:
-          type: integer
-          format: int64
-        lastContentEdited:
-          type: string
-        recentlyEdited:
-          type: integer
-          format: int64
-        totalContent:
-          type: integer
-          format: int64
     ContentReferenceView:
       type: object
       properties:
@@ -26741,21 +26742,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
-    SiteMetrics:
-      type: object
-      properties:
-        activeSites:
-          type: integer
-          format: int64
-        siteAliases:
-          type: integer
-          format: int64
-        templates:
-          type: integer
-          format: int64
-        totalSites:
-          type: integer
-          format: int64
     SiteVariableForm:
       type: object
       properties:
@@ -26888,24 +26874,6 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
-    SystemMetrics:
-      type: object
-      properties:
-        builderTemplates:
-          type: integer
-          format: int64
-        languages:
-          type: integer
-          format: int64
-        liveContainers:
-          type: integer
-          format: int64
-        workflowSchemes:
-          type: integer
-          format: int64
-        workflowSteps:
-          type: integer
-          format: int64
     TabDividerField:
       type: object
       allOf:
@@ -27578,17 +27546,15 @@ components:
     UsageSummary:
       type: object
       properties:
-        contentMetrics:
-          $ref: "#/components/schemas/ContentMetrics"
         lastUpdated:
           type: string
           format: date-time
-        siteMetrics:
-          $ref: "#/components/schemas/SiteMetrics"
-        systemMetrics:
-          $ref: "#/components/schemas/SystemMetrics"
-        userMetrics:
-          $ref: "#/components/schemas/UserMetrics"
+        metrics:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
     User:
       type: object
       properties:
@@ -27838,20 +27804,6 @@ components:
       - email
       - firstName
       - lastName
-    UserMetrics:
-      type: object
-      properties:
-        activeUsers:
-          type: integer
-          format: int64
-        lastLogin:
-          type: string
-        recentLogins:
-          type: integer
-          format: int64
-        totalUsers:
-          type: integer
-          format: int64
     UserPermissionAssetView:
       type: object
       description: The updated asset with new permission assignments

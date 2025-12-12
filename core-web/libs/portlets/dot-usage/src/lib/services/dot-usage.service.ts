@@ -6,55 +6,47 @@ import { Injectable, inject, signal } from '@angular/core';
 import { catchError, map, tap } from 'rxjs/operators';
 
 /**
- * Content-related metrics for the usage dashboard
+ * Metric metadata structure containing name, value, and display label.
  */
-export interface ContentMetrics {
-    readonly totalContent: number;
-    readonly contentTypes: number;
-    readonly recentlyEdited: number;
-    readonly contentTypesWithWorkflows: number;
-    readonly lastContentEdited: string;
+export interface MetricData {
+    readonly name: string;
+    readonly value: number | string;
+    readonly displayLabel: string;
 }
 
 /**
- * Site-related metrics for the usage dashboard
- */
-export interface SiteMetrics {
-    readonly totalSites: number;
-    readonly activeSites: number;
-    readonly templates: number;
-    readonly siteAliases: number;
-}
-
-/**
- * User activity metrics for the usage dashboard
- */
-export interface UserMetrics {
-    readonly activeUsers: number;
-    readonly totalUsers: number;
-    readonly recentLogins: number;
-    readonly lastLogin: string;
-}
-
-/**
- * System configuration metrics for the usage dashboard
- */
-export interface SystemMetrics {
-    readonly languages: number;
-    readonly workflowSchemes: number;
-    readonly workflowSteps: number;
-    readonly liveContainers: number;
-    readonly builderTemplates: number;
-}
-
-/**
- * Complete usage summary containing all metric categories
+ * Dynamic usage summary that adapts to available metrics based on profile.
+ *
+ * Metrics are organized by category (e.g., "content", "site", "user", "system")
+ * as defined by their @DashboardMetric annotation. Each category contains a map
+ * of metric names to their metadata (name, value, displayLabel). Only metrics
+ * available for the active profile (MINIMAL, STANDARD, FULL) are included.
  */
 export interface UsageSummary {
-    readonly contentMetrics: ContentMetrics;
-    readonly siteMetrics: SiteMetrics;
-    readonly userMetrics: UserMetrics;
-    readonly systemMetrics: SystemMetrics;
+    /**
+     * Metrics organized by category. Each category contains a map of
+     * metric names to their metadata. Only metrics available for the
+     * active profile are included.
+     *
+     * Example structure:
+     * {
+     *   "content": {
+     *     "COUNT_CONTENT": {
+     *       "name": "COUNT_CONTENT",
+     *       "value": 12345,
+     *       "displayLabel": "Total Content"
+     *     }
+     *   },
+     *   "site": {
+     *     "COUNT_OF_SITES": {
+     *       "name": "COUNT_OF_SITES",
+     *       "value": 10,
+     *       "displayLabel": "Total Sites"
+     *     }
+     *   }
+     * }
+     */
+    readonly metrics: Record<string, Record<string, MetricData>>;
     readonly lastUpdated: string;
 }
 
@@ -96,6 +88,7 @@ export class DotUsageService {
     readonly summary = signal<UsageSummary | null>(null);
     readonly loading = signal<boolean>(false);
     readonly error = signal<string | null>(null);
+    readonly errorStatus = signal<number | null>(null);
 
     /**
      * Fetches usage summary from the backend API
@@ -113,6 +106,7 @@ export class DotUsageService {
             catchError((error) => {
                 const errorMessage = this.getErrorMessage(error);
                 this.error.set(errorMessage);
+                this.errorStatus.set(error.status || null);
                 this.loading.set(false);
                 console.error('Failed to fetch usage summary:', error);
                 throw error;
@@ -134,10 +128,12 @@ export class DotUsageService {
         this.summary.set(null);
         this.loading.set(false);
         this.error.set(null);
+        this.errorStatus.set(null);
     }
 
     /**
-     * Extracts user-friendly error message from HTTP error
+     * Extracts user-friendly error message i18n key from HTTP error
+     * Returns i18n keys that should be translated using the dm pipe in the component
      */
     private getErrorMessage(error: HttpErrorResponse | UsageErrorResponse): string {
         if (error.error?.message) {
@@ -147,24 +143,25 @@ export class DotUsageService {
         if (error.status) {
             switch (error.status) {
                 case 401:
-                    return 'You are not authorized to view this data.';
+                    return 'usage.dashboard.error.unauthorized';
                 case 403:
-                    return 'You do not have permission to access usage data.';
+                    return 'usage.dashboard.error.forbidden';
                 case 404:
-                    return 'Usage data not found.';
+                    return 'usage.dashboard.error.notFound';
                 case 408:
-                    return 'Request timed out. Please try again.';
+                    return 'usage.dashboard.error.timeout';
                 case 500:
-                    return 'Server error occurred. Please try again later.';
+                    return 'usage.dashboard.error.serverError';
                 case 502:
-                    return 'Bad gateway. Please try again later.';
+                    return 'usage.dashboard.error.badGateway';
                 case 503:
-                    return 'Service unavailable. Please try again later.';
+                    return 'usage.dashboard.error.serviceUnavailable';
                 default:
-                    return `Request failed with status ${error.status}.`;
+                    // Return the i18n key - the component will handle parameter interpolation
+                    return 'usage.dashboard.error.requestFailed';
             }
         }
 
-        return 'Failed to load usage data. Please check your connection and try again.';
+        return 'usage.dashboard.error.generic';
     }
 }
