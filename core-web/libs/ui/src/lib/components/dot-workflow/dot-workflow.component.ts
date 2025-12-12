@@ -138,6 +138,7 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
      */
     private parseLazyLoadEvent(event: SelectLazyLoadEvent): ParsedSelectLazyLoadEvent {
         const first = Number(event?.first) || 0;
+
         // PrimeNG 21 uses 'last' instead of 'rows' - last is the last index (inclusive)
         const last = event?.last !== undefined ? Number(event.last) : undefined;
 
@@ -198,7 +199,6 @@ export class DotWorkflowComponent implements ControlValueAccessor, OnInit {
      */
     private loadContentTypesLazy(
         parsed: ParsedSelectLazyLoadEvent,
-        currentCount: number,
         totalEntries: number
     ): void {
         if (this.loading()) {
