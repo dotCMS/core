@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    effect,
+    inject,
+    OnInit
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -25,6 +32,14 @@ export class DotContentDriveSearchInputComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
 
     readonly searchControl = new FormControl('');
+
+    readonly cleanTextEffect = effect(() => {
+        const searchValue = this.#store.getFilterValue('title');
+
+        if (searchValue !== this.searchControl.value) {
+            this.searchControl.setValue(searchValue as string, { emitEvent: false });
+        }
+    });
 
     // We need to use ngOnInit to retrieve the filter value from the store
     ngOnInit() {

@@ -140,9 +140,16 @@ export const DotContentDriveStore = signalStore(
                 }
             },
             setPath(path: string) {
+                // Only reset the title if the path is changed and its not the default path
+                const title = path ? undefined : store.filters().title;
+
                 patchState(store, {
                     path,
-                    pagination: { ...store.pagination(), offset: 0 }
+                    pagination: { ...store.pagination(), offset: 0 },
+                    filters: {
+                        ...store.filters(),
+                        title
+                    }
                 });
             },
             setPagination(pagination: DotContentDrivePagination) {
