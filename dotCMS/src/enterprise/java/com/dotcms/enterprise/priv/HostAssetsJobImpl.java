@@ -167,10 +167,17 @@ public class HostAssetsJobImpl extends ParentProxy{
 	/**
 	 * Configuration property to control how long to pause (in milliseconds) between batches
 	 * of content processing. This gives the system time to reclaim memory and reduces CPU
-	 * pressure. Set to 0 to disable pauses. Default: 100ms
+	 * pressure. Even if set to 0, a minimum pause will still be enforced. Default: 100ms
 	 */
 	private static final Lazy<Integer> BATCH_PAUSE_MS = Lazy.of(() ->
 			Config.getIntProperty("SITE_COPY_BATCH_PAUSE_MS", 100));
+
+	/**
+	 * Minimum pause time (in milliseconds) between batches, enforced even if configured value
+	 * is 0. This ensures the system always has time to breathe, allowing garbage collection,
+	 * thread scheduling, and preventing CPU thrashing. Default: 10ms
+	 */
+	private static final int MIN_BATCH_PAUSE_MS = 10;
 
 	/**
 	 * Configuration property to control the maximum initial capacity for the HTML pages collection
@@ -1554,18 +1561,21 @@ public class HostAssetsJobImpl extends ParentProxy{
     /**
 	 * Pauses the current thread for the configured duration to reduce system pressure during
 	 * large batch operations. This gives the system time to reclaim memory, reduce CPU load,
-	 * and prevent resource exhaustion.
+	 * and prevent resource exhaustion. A minimum pause is always enforced to ensure system health.
 	 *
-	 * @param pauseMs The number of milliseconds to pause. If 0 or negative, no pause occurs.
+	 * @param pauseMs The requested pause duration in milliseconds. The actual pause will be
+	 *                at least MIN_BATCH_PAUSE_MS (10ms), even if this value is 0 or negative.
 	 */
 	private void pauseBetweenBatches(final int pauseMs) {
-		if (pauseMs > 0) {
-			try {
-				Thread.sleep(pauseMs);
-			} catch (final InterruptedException e) {
-				Logger.warn(this, "Batch pause was interrupted", e);
-				Thread.currentThread().interrupt();
-			}
+		// Always enforce a minimum pause to allow garbage collection, thread scheduling,
+		// and prevent CPU thrashing, even if config is set to 0
+		final int effectivePauseMs = Math.max(pauseMs, MIN_BATCH_PAUSE_MS);
+
+		try {
+			Thread.sleep(effectivePauseMs);
+		} catch (final InterruptedException e) {
+			Logger.warn(this, "Batch pause was interrupted", e);
+			Thread.currentThread().interrupt();
 		}
 	}
 
