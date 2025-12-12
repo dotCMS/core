@@ -191,6 +191,7 @@ describe('DotPaletteListStore', () => {
         it('should initialize search params with correct defaults', () => {
             const searchParams = store.searchParams();
 
+            expect(searchParams.host).toBe('');
             expect(searchParams.pagePathOrId).toBe('');
             expect(searchParams.language).toBe(1);
             expect(searchParams.variantId).toBe(DEFAULT_VARIANT_ID);
@@ -580,6 +581,62 @@ describe('DotPaletteListStore', () => {
 
                 expect(store.pagination()).toEqual(expectedPagination);
             });
+
+            it('should pass host parameter to service for CONTENT list type', () => {
+                store.getContentTypes({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/test-page'
+                });
+
+                expect(pageContentTypeService.get).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        host: 'demo.dotcms.com',
+                        pagePathOrId: '/test-page',
+                        types: ['CONTENT', 'FILEASSET', 'DOTASSET'],
+                        per_page: 30
+                    })
+                );
+            });
+
+            it('should pass host parameter to service for WIDGET list type', () => {
+                store.getContentTypes({
+                    host: 'demo.dotcms.com',
+                    listType: DotUVEPaletteListTypes.WIDGET
+                });
+
+                expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        host: 'demo.dotcms.com',
+                        types: ['WIDGET'],
+                        per_page: 30
+                    })
+                );
+            });
+
+            it('should update searchParams with host when provided', () => {
+                store.getContentTypes({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/test-page'
+                });
+
+                const searchParams = store.searchParams();
+
+                expect(searchParams.host).toBe('demo.dotcms.com');
+                expect(searchParams.pagePathOrId).toBe('/test-page');
+            });
+
+            it('should not include host in service call when not provided', () => {
+                store.getContentTypes({ pagePathOrId: '/test-page' });
+
+                expect(pageContentTypeService.get).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        host: '',
+                        pagePathOrId: '/test-page',
+                        types: ['CONTENT', 'FILEASSET', 'DOTASSET'],
+                        per_page: 30
+                    })
+                );
+            });
         });
 
         describe('getContentlets', () => {
@@ -667,6 +724,7 @@ describe('DotPaletteListStore', () => {
 
             it('should preserve existing search params when not overridden', () => {
                 store.getContentTypes({
+                    host: 'demo.dotcms.com',
                     pagePathOrId: 'test-page',
                     language: 2,
                     orderby: 'usage'
@@ -676,6 +734,7 @@ describe('DotPaletteListStore', () => {
 
                 const searchParams = store.searchParams();
 
+                expect(searchParams.host).toBe('demo.dotcms.com');
                 expect(searchParams.pagePathOrId).toBe('test-page');
                 expect(searchParams.language).toBe(2);
                 expect(searchParams.orderby).toBe('usage');

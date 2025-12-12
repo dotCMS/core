@@ -83,6 +83,8 @@ export interface DotPaletteSortOption {
  * Used by the store to manage search state.
  */
 export interface DotPaletteSearchParams {
+    /** Site identifier for context-aware filtering */
+    host: string;
     /** Page path or ID for context-aware filtering */
     pagePathOrId: string;
     /** Language ID for content */

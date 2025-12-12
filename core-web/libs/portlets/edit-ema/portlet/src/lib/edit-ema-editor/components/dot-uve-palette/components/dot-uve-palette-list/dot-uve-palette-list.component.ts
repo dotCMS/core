@@ -36,6 +36,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPaletteListStore } from './store/store';
@@ -113,6 +114,7 @@ export class DotUvePaletteListComponent implements OnInit {
     $pagePath = input.required<string>({ alias: 'pagePath' });
     $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
+    readonly #globalStore = inject(GlobalStore);
     readonly #paletteListStore = inject(DotPaletteListStore);
     readonly #dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -127,6 +129,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
     protected readonly $isSearching = signal<boolean>(false);
     protected readonly $shouldHideControls = signal<boolean>(true);
+    protected readonly $siteId = this.#globalStore.currentSiteId;
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
     protected readonly $pagination = this.#paletteListStore.pagination;
@@ -216,7 +219,8 @@ export class DotUvePaletteListComponent implements OnInit {
                 pagePathOrId: this.$pagePath(),
                 language: this.$languageId(),
                 variantId: this.$variantId(),
-                listType: this.$type()
+                listType: this.$type(),
+                host: this.$siteId()
             };
 
             // Use untracked to prevent writes during effect

@@ -50,6 +50,7 @@ export const DEFAULT_STATE: DotPaletteListState = {
     contentlets: [],
     pagination: EMPTY_PAGINATION,
     searchParams: {
+        host: '',
         pagePathOrId: '',
         language: 1,
         variantId: DEFAULT_VARIANT_ID,
