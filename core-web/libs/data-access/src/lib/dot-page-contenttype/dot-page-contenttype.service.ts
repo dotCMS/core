@@ -45,6 +45,8 @@ export interface DotContentTypeQueryParams {
 export interface DotPageContentTypeQueryParams extends DotContentTypeQueryParams {
     /** The URL path or identifier of the page to filter content types */
     pagePathOrId: string;
+    /** Site identifier for context-aware filtering */
+    host?: string;
 }
 
 /**
@@ -101,6 +103,10 @@ export class DotPageContentTypeService {
 
         if (params.direction) {
             httpParams = httpParams.set('direction', params.direction);
+        }
+
+        if (params.host) {
+            httpParams = httpParams.set('host', params.host);
         }
 
         if (params.types && params.types.length > 0) {

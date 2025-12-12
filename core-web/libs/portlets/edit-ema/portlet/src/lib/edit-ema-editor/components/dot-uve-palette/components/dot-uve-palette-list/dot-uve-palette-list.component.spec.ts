@@ -172,6 +172,10 @@ const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com')
 };
 
+const mockGlobalStore = {
+    currentSiteId: signal('demo.dotcms.com')
+};
+
 describe('DotUvePaletteListComponent', () => {
     let spectator: Spectator<DotUvePaletteListComponent>;
     let store: jest.Mocked<InstanceType<typeof DotPaletteListStore>>;
@@ -234,6 +238,10 @@ describe('DotUvePaletteListComponent', () => {
                     ...MockDotMessageService,
                     get: (key: string) => key
                 }
+            },
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
             }
         ],
         detectChanges: false
