@@ -49,12 +49,10 @@ RUN apt update && \
         tini \
         zip \
         unzip \
-        libtcnative-1 \
         tzdata \
         ca-certificates \
         libmimalloc2.0 \
         openssl \
-        libapr1 \
         libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 

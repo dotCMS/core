@@ -34,8 +34,8 @@ RUN chmod 777 /data
 # Installing basic packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
-    tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
+    apt-get install -y --no-install-recommends bash zip unzip wget \
+    tzdata tini ca-certificates openssl libpq-dev curl gnupg\
     vim libarchive-tools postgresql-common
 
 
