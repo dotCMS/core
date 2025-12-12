@@ -275,7 +275,7 @@ describe('DotEditContentSidebarComponent', () => {
             };
 
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionsService.getByInode.mockReturnValue(of([]));
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)

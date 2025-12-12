@@ -1,6 +1,39 @@
 import { Subscription } from 'rxjs';
 
 /**
+ * Interface for a form field API that provides methods to interact with a specific field.
+ */
+export interface FormFieldAPI {
+    /**
+     * Gets the current value of the field.
+     * @returns The current value of the field
+     */
+    getValue(): FormFieldValue;
+
+    /**
+     * Sets the value of the field.
+     * @param value - The value to set for the field
+     */
+    setValue(value: FormFieldValue): void;
+
+    /**
+     * Subscribes to changes of the field.
+     * @param callback - Function to execute when the field value changes
+     */
+    onChange(callback: (value: FormFieldValue) => void): void;
+
+    /**
+     * Enables the field, allowing user interaction.
+     */
+    enable(): void;
+
+    /**
+     * Disables the field, preventing user interaction.
+     */
+    disable(): void;
+}
+
+/**
  * Interface for bridging form functionality between different frameworks.
  * Provides a unified API for form operations like getting/setting values and handling changes.
  */
@@ -27,6 +60,14 @@ export interface FormBridge {
      * @returns Function to unsubscribe this specific callback
      */
     onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void;
+
+    /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     * @param fieldId - The unique identifier of the form field
+     * @returns A FormFieldAPI object for the specified field
+     */
+    getField(fieldId: string): FormFieldAPI;
 
     /**
      * Optional method to handle bridge initialization.

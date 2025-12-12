@@ -179,7 +179,9 @@ describe('DotFormComponent', () => {
 
     describe('Form creation and validation', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
             workflowActionsService.getByInode.mockReturnValue(
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
             );
@@ -230,7 +232,9 @@ describe('DotFormComponent', () => {
 
     describe('New Content', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
             workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -296,7 +300,9 @@ describe('DotFormComponent', () => {
 
     describe('With multiple tabs and existing content', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
             dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
             workflowActionsService.getByInode.mockReturnValue(
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
@@ -368,7 +374,9 @@ describe('DotFormComponent', () => {
 
     describe('Sidebar State', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
             dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
             workflowActionsService.getByInode.mockReturnValue(
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
@@ -496,7 +504,9 @@ describe('DotFormComponent', () => {
                 // Mock window.open
                 windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
 
-                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_2_TABS)
+                );
                 dotEditContentService.getContentById.mockReturnValue(
                     of({
                         ...MOCK_CONTENTLET_1_OR_2_TABS,
@@ -549,7 +559,9 @@ describe('DotFormComponent', () => {
                 // Mock window.open
                 windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
 
-                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_2_TABS)
+                );
                 dotEditContentService.getContentById.mockReturnValue(
                     of(MOCK_CONTENTLET_1_OR_2_TABS)
                 );
@@ -580,7 +592,9 @@ describe('DotFormComponent', () => {
 
     describe('Lock functionality', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
             workflowActionsService.getByInode.mockReturnValue(
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
             );
@@ -654,7 +668,9 @@ describe('DotFormComponent', () => {
     describe('disabledWYSIWYG functionality', () => {
         describe('onDisabledWYSIWYGChange', () => {
             beforeEach(() => {
-                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_1_TAB)
+                );
                 workflowActionsService.getByInode.mockReturnValue(
                     of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
@@ -721,7 +737,9 @@ describe('DotFormComponent', () => {
 
         describe('with different contentlet scenarios', () => {
             it('should handle contentlet without disabledWYSIWYG property', () => {
-                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_1_TAB)
+                );
                 workflowActionsService.getByInode.mockReturnValue(
                     of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
@@ -749,7 +767,9 @@ describe('DotFormComponent', () => {
             });
 
             it('should include disabledWYSIWYG in form values when form is processed', () => {
-                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_1_TAB)
+                );
                 workflowActionsService.getByInode.mockReturnValue(
                     of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
@@ -779,7 +799,9 @@ describe('DotFormComponent', () => {
 
     describe('Form value processing', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
             workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -816,7 +838,9 @@ describe('DotFormComponent', () => {
         let historicalContentlet: DotCMSContentlet;
 
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
             dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
             workflowActionsService.getByInode.mockReturnValue(
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)

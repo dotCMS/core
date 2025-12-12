@@ -113,7 +113,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     saveFieldProperties(): void {
         if (this.form.valid) {
-            this.saveField.emit(this.transformFormValue(this.form.value));
+            const transformedValue = this.transformFormValue(this.form.value);
+            this.saveField.emit(transformedValue);
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
@@ -134,17 +135,22 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             const otherVariables = existingVariables.filter(
                 (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY
             );
-            return {
+            const existingNewRenderMode = existingVariables.find(
+                (v) => v.key === NEW_RENDER_MODE_VARIABLE_KEY
+            );
+            const newFormValue = {
                 ...value,
                 fieldVariables: [
                     ...otherVariables,
                     {
+                        ...(existingNewRenderMode || {}), // Preserve existing properties (id, etc.)
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: NEW_RENDER_MODE_VARIABLE_KEY,
                         value: value.newRenderMode
                     }
                 ]
             };
+            return newFormValue;
         }
         return value;
     }

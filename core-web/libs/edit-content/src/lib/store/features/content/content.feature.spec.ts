@@ -114,7 +114,7 @@ describe('ContentFeature', () => {
             } as DotCMSContentlet;
 
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of([]));
             workflowActionService.getWorkFlowActions.mockReturnValue(of([]));
             workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
@@ -126,7 +126,7 @@ describe('ContentFeature', () => {
         }));
 
         it('should return correct computed values for new content', fakeAsync(() => {
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -167,7 +167,7 @@ describe('ContentFeature', () => {
             ];
 
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of(expectedActions));
             workflowActionService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
@@ -186,7 +186,7 @@ describe('ContentFeature', () => {
         }));
 
         it('should return isLoaded as true when state is LOADED', fakeAsync(() => {
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -202,7 +202,9 @@ describe('ContentFeature', () => {
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
-            contentTypeService.getContentType.mockReturnValue(throwError(() => mockError));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                throwError(() => mockError)
+            );
 
             store.initializeNewContent('testContentType');
             tick();
@@ -217,7 +219,7 @@ describe('ContentFeature', () => {
             } as DotCMSContentlet;
 
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of([]));
             workflowActionService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
@@ -242,7 +244,9 @@ describe('ContentFeature', () => {
                 }
             };
 
-            contentTypeService.getContentType.mockReturnValue(of(contentTypeWithoutEditor));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(contentTypeWithoutEditor)
+            );
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -260,7 +264,7 @@ describe('ContentFeature', () => {
                 }
             };
 
-            contentTypeService.getContentType.mockReturnValue(of(contentTypeWithEditor));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(contentTypeWithEditor));
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -274,7 +278,7 @@ describe('ContentFeature', () => {
 
     describe('initializeNewContent', () => {
         beforeEach(() => {
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -289,7 +293,9 @@ describe('ContentFeature', () => {
             store.initializeNewContent('testContentType');
             tick();
 
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith('testContentType');
+            expect(contentTypeService.getContentTypeWithRender).toHaveBeenCalledWith(
+                'testContentType'
+            );
             expect(workflowActionService.getDefaultActions).toHaveBeenCalledWith('testContentType');
 
             const parsedSchemes = parseWorkflows(MOCK_SINGLE_WORKFLOW_ACTIONS);
@@ -313,7 +319,9 @@ describe('ContentFeature', () => {
 
         it('should handle error when initializing new content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            contentTypeService.getContentType.mockReturnValue(throwError(() => mockError));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                throwError(() => mockError)
+            );
 
             store.initializeNewContent('testContentType');
             tick();
@@ -337,7 +345,7 @@ describe('ContentFeature', () => {
 
         beforeEach(() => {
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of(mockActions));
             workflowActionService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
@@ -393,7 +401,7 @@ describe('ContentFeature', () => {
             };
 
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of([]));
             workflowActionService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
