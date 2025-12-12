@@ -11,9 +11,11 @@
     [options]="contentTypes()"
     [placeholder]="placeholder()"
     [virtualScroll]="true"
-    [virtualScrollItemSize]="34"
     [lazy]="true"
     [virtualScrollOptions]="{
+        itemSize: 34,
+        scrollHeight: '300px',
+        step: 40,
         contentStyle: {
             height: '300px'
         }

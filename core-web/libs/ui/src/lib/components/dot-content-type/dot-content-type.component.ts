@@ -114,6 +114,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      * @param event Lazy load event with first (offset) and last (last index)
      */
     onLazyLoad(event: SelectLazyLoadEvent): void {
+        console.log('onLazyLoad', event);
         const parsed = this.parseLazyLoadEvent(event);
         const currentCount = this.contentTypes().length;
         const totalEntries = this.totalRecords();
