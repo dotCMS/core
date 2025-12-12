@@ -1,11 +1,15 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { map, tap } from 'rxjs/operators';
 
-import { DotLoginInformation, SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
+import {
+    DotLoginInformation,
+    DotLoginUserSystemInformation,
+    SESSION_STORAGE_VARIATION_KEY
+} from '@dotcms/dotcms-models';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -167,7 +171,7 @@ export class LoginService {
         this.setLanguage(language);
 
         return this.coreWebService
-            .requestView<DotLoginInformation>({
+            .requestView<DotLoginUserSystemInformation>({
                 body: {
                     messagesKey: i18nKeys,
                     language: this.lang,
@@ -176,7 +180,14 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.serverInfo
             })
-            .pipe(map((x) => x?.bodyJsonObject));
+            .pipe(
+                map((x) => {
+                    return {
+                        entity: x?.entity,
+                        i18nMessagesMap: x?.i18nMessagesMap
+                    };
+                })
+            );
     }
 
     /**
@@ -340,7 +351,7 @@ export class LoginService {
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
-            this._logout$.next();
+            this._logout$.next(undefined);
         } else {
             this.dotcmsEventsService.start();
         }

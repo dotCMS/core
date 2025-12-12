@@ -53,7 +53,7 @@ export class PushPublishService {
                     url: `${this.pushEnvironementsUrl}/${user.roleId}`
                 });
             }),
-            map((x: ResponseView<DotEnvironment[]>) => x?.bodyJsonObject),
+            map((x: ResponseView<DotEnvironment[]>) => x?.entity || []),
             mergeMap((environments: DotEnvironment[]) => environments),
             filter((environment: DotEnvironment) => environment.name !== ''),
             toArray()

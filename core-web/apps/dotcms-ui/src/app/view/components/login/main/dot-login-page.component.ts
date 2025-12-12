@@ -27,6 +27,10 @@ export class DotLoginPageComponent implements OnInit {
                 map((x) => x?.entity)
             )
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
+                if (!dotLoginUserSystemInformation) {
+                    return;
+                }
+
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';
                 document.body.style.backgroundImage =

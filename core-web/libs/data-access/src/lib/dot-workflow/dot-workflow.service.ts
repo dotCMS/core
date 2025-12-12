@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, switchMap, take } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotCMSWorkflow, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 
 /**
@@ -24,7 +25,9 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     get(): Observable<DotCMSWorkflow[]> {
-        return this.httpClient.get(`${this.WORKFLOW_URL}/schemes`).pipe(map((x) => x?.entity));
+        return this.httpClient
+            .get<DotCMSResponse<DotCMSWorkflow[]>>(`${this.WORKFLOW_URL}/schemes`)
+            .pipe(map((x: DotCMSResponse<DotCMSWorkflow[]>) => x?.entity));
     }
 
     /**
@@ -54,8 +57,22 @@ export class DotWorkflowService {
         schemes: DotCMSWorkflow[];
     }> {
         return this.httpClient
-            .get(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
-            .pipe(map((x) => x?.entity));
+            .get<
+                DotCMSResponse<{
+                    contentTypeSchemes: DotCMSWorkflow[];
+                    schemes: DotCMSWorkflow[];
+                }>
+            >(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
+            .pipe(
+                map(
+                    (
+                        x: DotCMSResponse<{
+                            contentTypeSchemes: DotCMSWorkflow[];
+                            schemes: DotCMSWorkflow[];
+                        }>
+                    ) => x?.entity
+                )
+            );
     }
 
     /**
@@ -67,7 +84,7 @@ export class DotWorkflowService {
      */
     getWorkflowStatus(inode: string): Observable<DotCMSWorkflowStatus> {
         return this.httpClient
-            .get(`${this.WORKFLOW_URL}/status/${inode}`)
-            .pipe(map((x) => x?.entity));
+            .get<DotCMSResponse<DotCMSWorkflowStatus>>(`${this.WORKFLOW_URL}/status/${inode}`)
+            .pipe(map((x: DotCMSResponse<DotCMSWorkflowStatus>) => x?.entity));
     }
 }

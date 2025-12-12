@@ -59,8 +59,8 @@ export class DotEditContentService {
         }
 
         return this.#http
-            .get(`/api/v1/content/${id}`, { params: httpParams })
-            .pipe(map((x) => x?.entity));
+            .get<DotCMSResponse<DotCMSContentlet>>(`/api/v1/content/${id}`, { params: httpParams })
+            .pipe(map((x: DotCMSResponse<DotCMSContentlet>) => x?.entity));
     }
 
     /**
@@ -82,10 +82,14 @@ export class DotEditContentService {
     getTags(name: string): Observable<string[]> {
         const params = new HttpParams().set('name', name);
 
-        return this.#http.get<string[]>('/api/v2/tags', { params }).pipe(
-            map((x) => x?.entity),
-            map((res) => Object.values(res).map((obj) => obj.label))
-        );
+        return this.#http
+            .get<DotCMSResponse<{ [key: string]: { label: string } }>>('/api/v2/tags', { params })
+            .pipe(
+                map((x: DotCMSResponse<{ [key: string]: { label: string } }>) => x?.entity),
+                map((res: { [key: string]: { label: string } }) =>
+                    Object.values(res).map((obj: { label: string }) => obj.label)
+                )
+            );
     }
     /**
      * Saves a contentlet with the provided data.
@@ -143,8 +147,8 @@ export class DotEditContentService {
      */
     getFolders(path: string): Observable<DotFolder[]> {
         return this.#http
-            .post<DotFolder>('/api/v1/folder/byPath', { path })
-            .pipe(map((x) => x?.entity));
+            .post<DotCMSResponse<DotFolder[]>>('/api/v1/folder/byPath', { path })
+            .pipe(map((x: DotCMSResponse<DotFolder[]>) => x?.entity));
     }
 
     /**
@@ -294,7 +298,7 @@ export class DotEditContentService {
     getActivities(identifier: string): Observable<Activity[]> {
         return this.#http
             .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: { entity: Activity[] }) => x?.entity));
     }
 
     /**
@@ -305,8 +309,8 @@ export class DotEditContentService {
      */
     createActivity(identifier: string, comment: string): Observable<Activity> {
         return this.#http
-            .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
-            .pipe(map((x) => x?.entity));
+            .post<DotCMSResponse<Activity>>(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(map((x: DotCMSResponse<Activity>) => x?.entity));
     }
 
     /**

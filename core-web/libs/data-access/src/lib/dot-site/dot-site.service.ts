@@ -56,7 +56,7 @@ export class DotSiteService {
     getSites(filter = '*', perPage?: number, page?: number): Observable<Site[]> {
         return this.#http
             .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage, page))
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: { entity: Site[] }) => x?.entity));
     }
 
     private getSiteURL(filter: string, perPage?: number, page?: number): string {
@@ -81,7 +81,7 @@ export class DotSiteService {
     getCurrentSite(): Observable<SiteEntity> {
         return this.#http
             .get<{ entity: SiteEntity }>(`${BASE_SITE_URL}/currentSite`)
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: { entity: SiteEntity }) => x?.entity));
     }
 
     /**

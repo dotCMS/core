@@ -5,6 +5,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+
 export interface DotVersionable {
     inode: string;
 }
@@ -22,8 +24,8 @@ export class DotVersionableService {
      */
     bringBack(inode: string): Observable<DotVersionable> {
         return this.httpClient
-            .put(`/api/v1/versionables/${inode}/_bringback`, {})
-            .pipe(map((x) => x?.entity));
+            .put<DotCMSResponse<DotVersionable>>(`/api/v1/versionables/${inode}/_bringback`, {})
+            .pipe(map((x: DotCMSResponse<DotVersionable>) => x?.entity));
     }
 
     /**
@@ -34,6 +36,8 @@ export class DotVersionableService {
      * @memberof DotVersionableService
      */
     deleteVersion(inode: string): Observable<unknown> {
-        return this.httpClient.delete(`/api/v1/versionables/${inode}`).pipe(map((x) => x?.entity));
+        return this.httpClient
+            .delete<DotCMSResponse<unknown>>(`/api/v1/versionables/${inode}`)
+            .pipe(map((x: DotCMSResponse<unknown>) => x?.entity));
     }
 }

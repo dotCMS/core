@@ -36,10 +36,10 @@ export class DotWorkflowsActionsService {
      */
     getByWorkflows(workflows: DotCMSWorkflow[] = []): Observable<DotCMSWorkflowAction[]> {
         return this.httpClient
-            .post(`${this.BASE_URL}/schemes/actions/NEW`, {
+            .post<DotCMSResponse<DotCMSWorkflowAction[]>>(`${this.BASE_URL}/schemes/actions/NEW`, {
                 schemes: workflows.map(this.getWorkFlowId)
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: DotCMSResponse<DotCMSWorkflowAction[]>) => x?.entity));
     }
 
     /**
@@ -54,8 +54,10 @@ export class DotWorkflowsActionsService {
         const renderModeQuery = renderMode ? `?renderMode=${renderMode}` : '';
 
         return this.httpClient
-            .get(`${this.BASE_URL}/contentlet/${inode}/actions${renderModeQuery}`)
-            .pipe(map((x) => x?.entity));
+            .get<
+                DotCMSResponse<DotCMSWorkflowAction[]>
+            >(`${this.BASE_URL}/contentlet/${inode}/actions${renderModeQuery}`)
+            .pipe(map((x: DotCMSResponse<DotCMSWorkflowAction[]>) => x?.entity));
     }
 
     /**

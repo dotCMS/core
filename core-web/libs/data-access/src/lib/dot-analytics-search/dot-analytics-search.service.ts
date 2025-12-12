@@ -37,7 +37,9 @@ export class DotAnalyticsSearchService {
         type: AnalyticsQueryType = AnalyticsQueryType.DEFAULT
     ): Observable<JsonObject[]> {
         return this.#http
-            .post(type == AnalyticsQueryType.DEFAULT ? this.#BASE_URL : this.#CUBE_URL, query)
-            .pipe(map((x) => x?.entity));
+            .post<{
+                entity: JsonObject[];
+            }>(type == AnalyticsQueryType.DEFAULT ? this.#BASE_URL : this.#CUBE_URL, query)
+            .pipe(map((x: { entity: JsonObject[] }) => x?.entity));
     }
 }

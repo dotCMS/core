@@ -5,7 +5,12 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DotCMSContentlet, DotContentletCanLock, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotContentletCanLock,
+    DotLanguage,
+    DotCMSResponse
+} from '@dotcms/dotcms-models';
 
 @Injectable({
     providedIn: 'root'
@@ -25,10 +30,15 @@ export class DotContentletService {
      */
     getContentletVersions(identifier: string, language: string): Observable<DotCMSContentlet[]> {
         return this.http
-            .get(`${this.CONTENTLET_API_URL}versions?identifier=${identifier}&groupByLang=1`)
+            .get<
+                DotCMSResponse<{ versions: Record<string, DotCMSContentlet[]> }>
+            >(`${this.CONTENTLET_API_URL}versions?identifier=${identifier}&groupByLang=1`)
             .pipe(
                 take(1),
-                map((x) => x?.entity?.versions?.[language])
+                map(
+                    (x: DotCMSResponse<{ versions: Record<string, DotCMSContentlet[]> }>) =>
+                        x?.entity?.versions?.[language]
+                )
             );
     }
 
@@ -40,10 +50,12 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     getContentletByInode(inode: string): Observable<DotCMSContentlet> {
-        return this.http.get(`${this.CONTENTLET_API_URL}${inode}`).pipe(
-            take(1),
-            map((x) => x?.entity)
-        );
+        return this.http
+            .get<DotCMSResponse<DotCMSContentlet>>(`${this.CONTENTLET_API_URL}${inode}`)
+            .pipe(
+                take(1),
+                map((x: DotCMSResponse<DotCMSContentlet>) => x?.entity)
+            );
     }
 
     /**
@@ -54,10 +66,12 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     getLanguages(identifier: string): Observable<DotLanguage[]> {
-        return this.http.get(`${this.CONTENTLET_API_URL}${identifier}/languages`).pipe(
-            take(1),
-            map((x) => x?.entity)
-        );
+        return this.http
+            .get<DotCMSResponse<DotLanguage[]>>(`${this.CONTENTLET_API_URL}${identifier}/languages`)
+            .pipe(
+                take(1),
+                map((x: DotCMSResponse<DotLanguage[]>) => x?.entity)
+            );
     }
 
     /**
@@ -68,10 +82,12 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     lockContent(inode: string): Observable<DotCMSContentlet> {
-        return this.http.put(`${this.CONTENTLET_API_URL}_lock/${inode}`, {}).pipe(
-            take(1),
-            map((x) => x?.entity)
-        );
+        return this.http
+            .put<DotCMSResponse<DotCMSContentlet>>(`${this.CONTENTLET_API_URL}_lock/${inode}`, {})
+            .pipe(
+                take(1),
+                map((x: DotCMSResponse<DotCMSContentlet>) => x?.entity)
+            );
     }
 
     /**
@@ -82,10 +98,12 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     unlockContent(inode: string): Observable<DotCMSContentlet> {
-        return this.http.put(`${this.CONTENTLET_API_URL}_unlock/${inode}`, {}).pipe(
-            take(1),
-            map((x) => x?.entity)
-        );
+        return this.http
+            .put<DotCMSResponse<DotCMSContentlet>>(`${this.CONTENTLET_API_URL}_unlock/${inode}`, {})
+            .pipe(
+                take(1),
+                map((x: DotCMSResponse<DotCMSContentlet>) => x?.entity)
+            );
     }
 
     /**
@@ -96,9 +114,13 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     canLock(inode: string): Observable<DotContentletCanLock> {
-        return this.http.get(`${this.CONTENTLET_API_URL}_canlock/${inode}`).pipe(
-            take(1),
-            map((x) => x?.entity)
-        );
+        return this.http
+            .get<
+                DotCMSResponse<DotContentletCanLock>
+            >(`${this.CONTENTLET_API_URL}_canlock/${inode}`)
+            .pipe(
+                take(1),
+                map((x: DotCMSResponse<DotContentletCanLock>) => x?.entity)
+            );
     }
 }

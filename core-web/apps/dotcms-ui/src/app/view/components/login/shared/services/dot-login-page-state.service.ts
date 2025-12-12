@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, take, tap } from 'rxjs/operators';
+import { filter, map, take, tap } from 'rxjs/operators';
 
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
@@ -47,6 +47,7 @@ export class DotLoginPageStateService {
     set(lang: string): Observable<DotLoginInformation> {
         return this.loginService.getLoginFormInfo(lang, LOGIN_LABELS).pipe(
             take(1),
+            filter((loginInfo: DotLoginInformation) => !!loginInfo),
             map((loginInfo: DotLoginInformation) => {
                 return {
                     ...loginInfo,
@@ -67,6 +68,10 @@ export class DotLoginPageStateService {
     }
 
     private getUserNameLabel(loginInfo: DotLoginInformation): string {
+        if (!loginInfo?.entity || !loginInfo?.i18nMessagesMap) {
+            return '';
+        }
+
         return loginInfo.entity.authorizationType === 'emailAddress'
             ? loginInfo.i18nMessagesMap['email-address']
             : loginInfo.i18nMessagesMap['user-id'];

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { formatMessage } from '@dotcms/utils';
 
 import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
@@ -65,10 +66,10 @@ export class DotMessageService {
     private getAll(lang: string = DEFAULT_LANG, newBuildDate: string | null = null): void {
         if (this.shouldReloadMessages(lang, newBuildDate)) {
             this.http
-                .get(this.geti18nURL(lang))
+                .get<DotCMSResponse<{ [key: string]: string }>>(this.geti18nURL(lang))
                 .pipe(
                     take(1),
-                    map((x) => x?.entity)
+                    map((x: DotCMSResponse<{ [key: string]: string }>) => x?.entity)
                 )
                 .subscribe((messages) => {
                     this.messageMap = messages as { [key: string]: string };

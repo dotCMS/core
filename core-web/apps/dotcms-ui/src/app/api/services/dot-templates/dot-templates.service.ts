@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { CoreWebService, DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
@@ -98,10 +98,10 @@ export class DotTemplatesService {
      */
     saveAndPublish(values: DotTemplate): Observable<DotTemplate> {
         return this.http
-            .put<DotTemplate>(`${TEMPLATE_API_URL}_savepublish`, {
+            .put<DotCMSResponse<DotTemplate>>(`${TEMPLATE_API_URL}_savepublish`, {
                 ...values
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: DotCMSResponse<DotTemplate>) => x?.entity));
     }
 
     /**

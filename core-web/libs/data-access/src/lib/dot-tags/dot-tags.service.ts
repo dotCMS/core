@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import { DotTag } from '@dotcms/dotcms-models';
 
 /**
@@ -25,11 +25,11 @@ export class DotTagsService {
      */
     getSuggestions(name?: string): Observable<DotTag[]> {
         return this.coreWebService
-            .requestView({
+            .requestView<{ [key: string]: DotTag }>({
                 url: `v1/tags${name ? `?name=${name}` : ''}`
             })
             .pipe(
-                map((x) => x?.bodyJsonObject),
+                map((x: ResponseView<{ [key: string]: DotTag }>) => x?.entity),
                 map((tags: { [key: string]: DotTag }) => {
                     return Object.entries(tags).map(([_key, value]) => value);
                 })

@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotPageContainer, DotWhatChanged } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
@@ -37,7 +37,9 @@ export class DotEditPageService {
             };
         }
 
-        return this.coreWebService.requestView(requestOptions).pipe(map((x) => x?.entity));
+        return this.coreWebService
+            .requestView<string>(requestOptions)
+            .pipe(map((x: ResponseView<string>) => x?.entity));
     }
 
     /**
@@ -50,9 +52,9 @@ export class DotEditPageService {
      */
     whatChange(pageId: string, languageId: string): Observable<DotWhatChanged> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotWhatChanged>({
                 url: `v1/page/${pageId}/render/versions?langId=${languageId}`
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<DotWhatChanged>) => x?.entity));
     }
 }

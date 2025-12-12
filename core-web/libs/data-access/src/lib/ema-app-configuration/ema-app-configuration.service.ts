@@ -34,8 +34,8 @@ export class EmaAppConfigurationService {
         url = url?.replace(/^\/+|\/+$/g, '');
 
         return this.http.get<{ entity: { config: EmaAppSecretValue[] } }>(`/api/v1/ema`).pipe(
-            map((x) => x?.entity?.config),
-            map((config) => {
+            map((x: { entity: { config: EmaAppSecretValue[] } }) => x?.entity?.config),
+            map((config: EmaAppSecretValue[]) => {
                 for (const secret of config) {
                     try {
                         if (doesPathMatch(secret.pattern, url)) {
@@ -51,8 +51,8 @@ export class EmaAppConfigurationService {
             catchError(() => {
                 return EMPTY;
             }),
-            defaultIfEmpty<EmaAppSecretValue | null>(null)
-        );
+            defaultIfEmpty(null)
+        ) as Observable<EmaAppSecretValue | null>;
     }
 }
 

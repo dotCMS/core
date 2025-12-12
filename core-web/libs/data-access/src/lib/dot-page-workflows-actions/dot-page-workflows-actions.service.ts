@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotCMSWorkflowAction, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotRenderMode } from '../dot-workflows-actions/dot-workflows-actions.service';
@@ -31,12 +32,12 @@ export class DotPageWorkflowsActionsService {
         renderMode?: DotRenderMode;
     }): Observable<DotCMSPageWorkflowState> {
         return this.http
-            .post('/api/v1/page/actions', {
+            .post<DotCMSResponse<DotCMSPageWorkflowState>>('/api/v1/page/actions', {
                 host_id: params.host_id,
                 language_id: params.language_id,
                 url: params.url,
                 renderMode: params.renderMode
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: DotCMSResponse<DotCMSPageWorkflowState>) => x?.entity));
     }
 }

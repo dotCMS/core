@@ -20,6 +20,6 @@ export class DotPageToolsService {
     get(): Observable<DotPageTool[]> {
         return this.http
             .get<{ entity: DotPageTools }>(this.seoToolsUrl)
-            .pipe(map((x) => x?.pageTools));
+            .pipe(map((x: { entity: DotPageTools }) => x?.entity?.pageTools));
     }
 }

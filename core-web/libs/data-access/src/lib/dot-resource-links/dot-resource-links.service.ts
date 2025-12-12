@@ -5,6 +5,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+
 export interface DotResourceLinks {
     configuredImageURL: string;
     idPath: string;
@@ -39,7 +41,9 @@ export class DotResourceLinksService {
      * @memberof DotResourceLinksService
      */
     private getResourceLinks(url: string): Observable<DotResourceLinks> {
-        return this.httpClient.get(url).pipe(map((x) => x?.entity));
+        return this.httpClient
+            .get<DotCMSResponse<DotResourceLinks>>(url)
+            .pipe(map((x: DotCMSResponse<DotResourceLinks>) => x?.entity));
     }
 
     /**

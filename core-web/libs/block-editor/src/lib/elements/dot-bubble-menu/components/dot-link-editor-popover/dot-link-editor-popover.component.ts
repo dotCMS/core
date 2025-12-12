@@ -25,7 +25,7 @@ import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operato
 
 import { Editor } from '@tiptap/core';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { EditorModalDirective } from '../../../../directive/editor-modal.directive';
 
@@ -305,13 +305,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const languageId = this.editor().storage.dotConfig.lang;
 
         return this.httpClient
-            .post('/api/content/_search', {
-                query: `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
-                sort: 'modDate desc',
-                offset: 0,
-                limit: 5
-            })
-            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
+            .post<DotCMSResponse<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>>(
+                '/api/content/_search',
+                {
+                    query: `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
+                    sort: 'modDate desc',
+                    offset: 0,
+                    limit: 5
+                }
+            )
+            .pipe(
+                map(
+                    (x: DotCMSResponse<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>) =>
+                        x?.entity?.jsonObjectView?.contentlets
+                )
+            );
     }
 
     /**

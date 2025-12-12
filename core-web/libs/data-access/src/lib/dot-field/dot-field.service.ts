@@ -29,9 +29,9 @@ export class DotFieldService {
         const params = filter ? new HttpParams().set('filter', filter) : new HttpParams();
 
         return this.#http
-            .get<
-                DotCMSContentTypeField[]
-            >(`/api/v3/contenttype/${contentType}/fields/allfields`, { params })
-            .pipe(map((x) => x?.entity));
+            .get<{
+                entity: DotCMSContentTypeField[];
+            }>(`/api/v3/contenttype/${contentType}/fields/allfields`, { params })
+            .pipe(map((x: { entity: DotCMSContentTypeField[] }) => x?.entity));
     }
 }

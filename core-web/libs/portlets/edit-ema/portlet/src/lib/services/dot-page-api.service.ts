@@ -124,9 +124,14 @@ export class DotPageApiService {
     getFormIndetifier(containerId: string, formId: string): Observable<string> {
         return this.http
             .get<{
-                entity: { content: { idenfitier: string } };
+                entity: { content: { identifier: string } };
             }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
-            .pipe(map((x) => x?.entity?.content?.identifier));
+            .pipe(
+                map(
+                    (x: { entity: { content: { identifier: string } } }) =>
+                        x?.entity?.content?.identifier
+                )
+            );
     }
 
     /**

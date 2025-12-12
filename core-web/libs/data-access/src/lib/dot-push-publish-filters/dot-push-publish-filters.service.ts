@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 
 export interface DotPushPublishFilter {
     defaultFilter: boolean;
@@ -19,9 +19,9 @@ export class DotPushPublishFiltersService {
 
     get(): Observable<DotPushPublishFilter[]> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotPushPublishFilter[]>({
                 url: '/api/v1/pushpublish/filters/'
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<DotPushPublishFilter[]>) => x?.entity));
     }
 }

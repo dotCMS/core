@@ -5,7 +5,7 @@ import { Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import {
     DotPageMode,
     DotPersona,
@@ -38,14 +38,14 @@ export class DotPageRenderService {
      */
     checkPermission(queryParams: Params): Observable<boolean> {
         return this.coreWebService
-            .requestView({
+            .requestView<boolean>({
                 body: {
                     ...queryParams
                 },
                 method: 'POST',
                 url: `v1/page/_check-permission`
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<boolean>) => x?.entity));
     }
 
     /**
@@ -62,11 +62,11 @@ export class DotPageRenderService {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
 
         return this.coreWebService
-            .requestView({
+            .requestView<DotPageRenderParameters>({
                 url: `v1/page/render/${url?.replace(/^\//, '')}`,
                 params: { ...extraParams, ...params }
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<DotPageRenderParameters>) => x?.entity));
     }
 
     private getOptionalViewAsParams(

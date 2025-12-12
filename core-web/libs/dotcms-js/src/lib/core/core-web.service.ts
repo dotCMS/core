@@ -232,7 +232,7 @@ export class CoreWebService {
 
     private emitHttpError(status: number): void {
         if (this.httpErrosSubjects[status]) {
-            this.httpErrosSubjects[status].next();
+            this.httpErrosSubjects[status].next(undefined);
         }
     }
 

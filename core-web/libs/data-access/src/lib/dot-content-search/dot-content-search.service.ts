@@ -56,13 +56,13 @@ export class DotContentSearchService {
         sort = 'score,modDate desc'
     }: EsQueryParamsSearch): Observable<T> {
         return this.#http
-            .post('/api/content/_search', {
+            .post<{ entity: T }>('/api/content/_search', {
                 query,
                 sort,
                 limit,
                 offset
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: { entity: T }) => x?.entity));
     }
 
     /**
@@ -95,6 +95,6 @@ export class DotContentSearchService {
 
         return this.#http
             .post<DotContentSearchResponse>('/api/v1/content/search', payload)
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: DotContentSearchResponse) => x?.entity));
     }
 }

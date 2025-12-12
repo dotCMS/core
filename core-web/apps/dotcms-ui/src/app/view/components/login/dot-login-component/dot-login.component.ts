@@ -142,6 +142,10 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private setInitialFormValues(loginInfo: DotLoginInformation): void {
+        if (!loginInfo?.entity) {
+            return;
+        }
+
         this.loginForm
             .get('language')
             .setValue(this.getLanguageFormatted(loginInfo.entity.currentLanguage));
@@ -154,6 +158,10 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private setInitialMessage(loginInfo: DotLoginInformation): void {
+        if (!loginInfo?.i18nMessagesMap) {
+            return;
+        }
+
         this.route.queryParams.pipe(take(1)).subscribe((params: Params) => {
             if (params['changedPassword']) {
                 this.setMessage(loginInfo.i18nMessagesMap['reset-password-success']);
@@ -169,6 +177,10 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private setLanguageItems(languages: DotLoginLanguage[]): void {
+        if (!languages || languages.length === 0) {
+            return;
+        }
+
         this.languages =
             this.languages.length === 0
                 ? (this.languages = languages.map((lang: DotLoginLanguage) => ({

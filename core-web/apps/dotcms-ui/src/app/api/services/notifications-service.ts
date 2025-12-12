@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService, DotCMSResponse } from '@dotcms/dotcms-js';
+import { CoreWebService, DotCMSResponse, ResponseView } from '@dotcms/dotcms-js';
 
 import { DotNotificationResponse } from '../../shared/models/notifications/notification.model';
 
@@ -32,38 +32,38 @@ export class NotificationsService {
 
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotNotificationResponse>({
                 url: this.urls.getLastNotificationsUrl
             })
-            .pipe(map((x) => x?.bodyJsonObject));
+            .pipe(map((x: ResponseView<DotNotificationResponse>) => x?.response?.body));
     }
 
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotNotificationResponse>({
                 url: this.urls.getNotificationsUrl
             })
-            .pipe(map((x) => x?.bodyJsonObject));
+            .pipe(map((x: ResponseView<DotNotificationResponse>) => x?.response?.body));
     }
 
     dismissNotifications(
         items: Record<string, unknown>
     ): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotNotificationResponse>({
                 body: items,
                 method: 'PUT',
                 url: this.urls.dismissNotificationsUrl
             })
-            .pipe(map((x) => x?.bodyJsonObject));
+            .pipe(map((x: ResponseView<DotNotificationResponse>) => x?.response?.body));
     }
 
-    markAllAsRead(): Observable<DotCMSResponse<DotNotificationResponse>> {
+    markAllAsRead(): Observable<DotNotificationResponse> {
         return this.coreWebService
-            .request({
+            .request<DotNotificationResponse>({
                 method: 'PUT',
                 url: this.urls.markAsReadNotificationsUrl
             })
-            .pipe(map((x) => x?.bodyJsonObject));
+            .pipe(map((x) => x as DotNotificationResponse));
     }
 }

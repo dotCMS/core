@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, shareReplay } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotTreeNode, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export const DEFAULT_PERSONALIZATION = 'dot:default';
@@ -30,9 +31,9 @@ export class DotCopyContentService {
             personalization: treeNode?.personalization || DEFAULT_PERSONALIZATION
         };
 
-        return this.http.put(API_ENDPOINT, body).pipe(
+        return this.http.put<DotCMSResponse<DotCMSContentlet>>(API_ENDPOINT, body).pipe(
             shareReplay(),
-            map((x) => x?.entity)
+            map((x: DotCMSResponse<DotCMSContentlet>) => x?.entity)
         );
     }
 }

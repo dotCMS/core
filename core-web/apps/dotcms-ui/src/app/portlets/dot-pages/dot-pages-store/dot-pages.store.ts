@@ -526,7 +526,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         isEnterprise,
                         environments,
                         filterParams,
-                        collapsedParam
+                        collapsedParam,
+                        contentEditor2Enabled,
+                        contentEditor2ContentTypes
                     ]: [
                         ESContent,
                         DotCurrentUser,
@@ -534,7 +536,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         boolean,
                         boolean,
                         DotSessionStorageFilter,
-                        boolean
+                        boolean,
+                        boolean,
+                        string[]
                     ]) => {
                         return this.dotCurrentUser
                             .getUserPermissions(
@@ -553,7 +557,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         environments,
                                         permissionsType,
                                         filterParams,
-                                        collapsedParam
+                                        collapsedParam,
+                                        contentEditor2Enabled,
+                                        contentEditor2ContentTypes
                                     ];
                                 })
                             );
@@ -569,7 +575,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     environments,
                     permissions,
                     filterParams,
-                    collapsedParam
+                    collapsedParam,
+                    contentEditor2Enabled,
+                    contentEditor2ContentTypes
                 ]: [
                     ESContent,
                     DotCurrentUser,
@@ -578,7 +586,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     boolean,
                     DotPermissionsType,
                     DotSessionStorageFilter,
-                    boolean
+                    boolean,
+                    boolean,
+                    string[]
                 ]): void => {
                     this.setState({
                         favoritePages: {

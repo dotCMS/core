@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import { DotCMSPersonalizedItem } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
@@ -26,7 +26,7 @@ export class DotPersonalizeService {
         const currentVariantName = this.dotSessionStorageService.getVariationId();
 
         return this.coreWebService
-            .requestView({
+            .requestView<DotCMSPersonalizedItem[]>({
                 method: 'POST',
                 url: `/api/v1/personalization/pagepersonas`,
                 params: {
@@ -37,7 +37,7 @@ export class DotPersonalizeService {
                     personaTag
                 }
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<DotCMSPersonalizedItem[]>) => x?.entity));
     }
 
     /**
@@ -52,13 +52,13 @@ export class DotPersonalizeService {
         const currentVariantName = this.dotSessionStorageService.getVariationId();
 
         return this.coreWebService
-            .requestView({
+            .requestView<string>({
                 method: 'DELETE',
                 url: `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}`,
                 params: {
                     variantName: currentVariantName
                 }
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<string>) => x?.entity));
     }
 }

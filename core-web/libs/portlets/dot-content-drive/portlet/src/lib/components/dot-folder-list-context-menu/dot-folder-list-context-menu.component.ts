@@ -10,7 +10,6 @@ import {
 import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
-import { lastValueFrom } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 import {
@@ -121,9 +120,10 @@ export class DotFolderListViewContextMenuComponent {
 
         this.$items.set([]);
 
-        const canLockData = await lastValueFrom(
-            this.#dotContentletService.canLock(contentlet.inode)
-        );
+        const canLockData = await this.#dotContentletService
+            .canLock(contentlet.inode)
+            .pipe(take(1))
+            .toPromise();
 
         const memoizedMenuItems = this.$memoizedMenuItems();
 
@@ -133,9 +133,10 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
-        const workflowActions = await lastValueFrom(
-            this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
-        );
+        const workflowActions = await this.#workflowsActionsService
+            .getByInode(contentlet.inode, DotRenderMode.LISTING)
+            .pipe(take(1))
+            .toPromise();
 
         const actionsMenu = [];
 

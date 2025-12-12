@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
 
 /**
@@ -25,9 +25,9 @@ export class DotThemesService {
      */
     get(inode: string): Observable<DotTheme> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotTheme>({
                 url: 'v1/themes/id/' + inode
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<DotTheme>) => x?.entity));
     }
 }

@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 
 /**
  * Provides util listing methods
@@ -30,7 +30,7 @@ export class DotCrudService {
                 method: 'POST',
                 url: `${baseUrl}`
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<T>) => x?.entity));
     }
 
     /**
@@ -48,7 +48,7 @@ export class DotCrudService {
                 method: 'PUT',
                 url: `${baseUrl}`
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<T>) => x?.entity));
     }
 
     /**
@@ -65,7 +65,7 @@ export class DotCrudService {
             .requestView<T>({
                 url: `${baseUrl}/id/${id}`
             })
-            .pipe(map((x) => (x as any)?.[pick]));
+            .pipe(map((x: ResponseView<T>) => (x as any)?.[pick]));
     }
 
     /**
@@ -82,6 +82,6 @@ export class DotCrudService {
                 method: 'DELETE',
                 url: `${baseUrl}/${id}`
             })
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x: ResponseView<T>) => x?.entity));
     }
 }
