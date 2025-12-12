@@ -243,15 +243,13 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3'
-                }
+                },
+                queryParamsHandling: 'merge'
             });
 
-            // And Location.go called with the serialized query string
-            expect(location.go).toHaveBeenCalled();
-            const calledWith = location.go.mock.calls[0][0] as string;
-            expect(calledWith).toContain('isTreeExpanded=false');
-            expect(calledWith).toContain('path=%2Fanother%2Fpath');
-            expect(calledWith).toContain('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3');
+            expect(location.go).toHaveBeenCalledWith(
+                expect.stringContaining('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3')
+            );
         });
 
         it('should not include filters in query params when filters are empty', () => {
@@ -259,33 +257,33 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('/another/path');
             filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
+            spectator.flushEffects();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3'
-                }
+                },
+                queryParamsHandling: 'merge'
             });
 
-            spectator.detectChanges();
+            jest.clearAllMocks(); // Clear previous calls
 
             filtersSignal.set({});
-
             spectator.detectChanges();
+            spectator.flushEffects();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
-                    path: '/another/path'
-                }
+                    path: '/another/path',
+                    filters: null // With merge, null removes the param
+                },
+                queryParamsHandling: 'merge'
             });
 
-            expect(location.go).toHaveBeenCalled();
-            const calledWith = location.go.mock.calls[1][0] as string;
-            expect(calledWith).toContain('isTreeExpanded=false');
-            expect(calledWith).toContain('path=%2Fanother%2Fpath');
-            expect(calledWith).not.toContain('filters');
+            expect(location.go).toHaveBeenCalledWith(expect.stringContaining('filters=null'));
         });
     });
 

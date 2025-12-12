@@ -139,6 +139,12 @@ export const DotContentDriveStore = signalStore(
                     });
                 }
             },
+            setPath(path: string) {
+                patchState(store, {
+                    path,
+                    pagination: { ...store.pagination(), offset: 0 }
+                });
+            },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
             },
@@ -184,9 +190,6 @@ export const DotContentDriveStore = signalStore(
             },
             reloadContentDrive() {
                 this.loadItems();
-            },
-            setPath(path: string) {
-                patchState(store, { path });
             }
         };
     }),
