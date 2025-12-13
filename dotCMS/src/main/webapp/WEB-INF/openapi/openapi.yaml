@@ -19890,8 +19890,6 @@ components:
           type: string
         owner:
           type: string
-        parentPermissionable:
-          $ref: "#/components/schemas/Permissionable"
         parents:
           type: array
           items:
