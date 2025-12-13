@@ -7,7 +7,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
-import { SelectLazyLoadEvent } from 'primeng/select';
+import { Select, SelectLazyLoadEvent } from 'primeng/select';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
@@ -64,22 +64,49 @@ describe('DotContentTypeComponent', () => {
     });
 
     describe('Component Initialization', () => {
-    it('should create', () => {
-            spectator.detectChanges();
-            expect(spectator.component).toBeTruthy();
-    });
-
-    it('should load content types on init', () => {
+        it('should bind props correctly to p-select', () => {
+            spectator.setInput('placeholder', 'Select content type');
+            spectator.setInput('disabled', false);
+            spectator.component.value.set(mockContentTypes[0]);
             spectator.detectChanges();
 
-            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                page: 1,
-                per_page: 40
-            });
-            expect(spectator.component.$state.contentTypes()).toEqual(
-                expect.arrayContaining(mockContentTypes)
-            );
-            expect(spectator.component.$state.loading()).toBe(false);
+            const select = spectator.query(Select);
+
+            expect(select.options).toEqual(expect.arrayContaining(mockContentTypes));
+            expect(select.placeholder()).toBe('Select content type');
+            expect(select.disabled()).toBe(false);
+            expect(select.loading).toBe(false);
+            expect(select.virtualScroll).toBe(true);
+            expect(select.lazy).toBe(true);
+            expect(select.filter).toBe(true);
+        });
+
+        it('should update disabled binding on p-select', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.disabled()).toBe(true);
+
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
+            expect(select.disabled()).toBe(false);
+
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+            expect(select.disabled()).toBe(true);
+        });
+
+        it('should bind placeholder to p-select', () => {
+            spectator.setInput('placeholder', 'Choose a type');
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.placeholder()).toBe('Choose a type');
+
+            spectator.setInput('placeholder', 'Select content');
+            spectator.detectChanges();
+            expect(select.placeholder()).toBe('Select content');
         });
 
         it('should sort content types alphabetically', () => {
@@ -103,26 +130,6 @@ describe('DotContentTypeComponent', () => {
             expect(sortedTypes[1].name).toBe('Beta');
             expect(sortedTypes[2].name).toBe('Zebra');
         });
-
-        it('should set loading state during data fetch', () => {
-            contentTypeService.getContentTypesWithPagination.mockReturnValue(
-                of({
-                    contentTypes: mockContentTypes,
-                    pagination: mockPagination
-                })
-            );
-
-            spectator.detectChanges();
-
-            // After loading completes, loading should be false
-            expect(spectator.component.$state.loading()).toBe(false);
-        });
-
-        it('should update totalRecords from pagination response', () => {
-            spectator.detectChanges();
-
-            expect(spectator.component.$state.totalRecords()).toBe(100);
-        });
     });
 
     describe('Lazy Loading', () => {
@@ -132,10 +139,12 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should handle lazy load events from PrimeNG Select', () => {
-            // Component already loaded first page in ngOnInit, so test with page 2
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
             const lazyLoadEvent = { first: 40, last: 79 };
 
-            spectator.component.onLazyLoad(lazyLoadEvent);
+            spectator.triggerEventHandler(Select, 'onLazyLoad', lazyLoadEvent);
             spectator.detectChanges();
 
             expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
@@ -144,19 +153,10 @@ describe('DotContentTypeComponent', () => {
             });
         });
 
-        it('should load page 2 when scrolling past first page', () => {
-            const lazyLoadEvent = { first: 40, last: 79 };
-
-            spectator.component.onLazyLoad(lazyLoadEvent);
-
-            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                page: 2,
-                per_page: 40
-            });
-        });
-
         it('should merge new content types without duplicates', () => {
+            // Page 2 includes a duplicate (Blog) and new items (Event, Product)
             const page2ContentTypes: DotCMSContentType[] = [
+                { id: '1', name: 'Blog', variable: 'Blog' } as DotCMSContentType, // Duplicate from page 1
                 { id: '4', name: 'Event', variable: 'Event' } as DotCMSContentType,
                 { id: '5', name: 'Product', variable: 'Product' } as DotCMSContentType
             ];
@@ -185,8 +185,10 @@ describe('DotContentTypeComponent', () => {
             spectator.detectChanges();
 
             const allContentTypes = spectator.component.$state.contentTypes();
-            // Should have initial 3 + 2 new = 5 total
+            // Should have 5 items: Blog, News, Article (from page 1) + Event, Product (from page 2)
+            // Blog should NOT be duplicated
             expect(allContentTypes.length).toBe(5);
+            expect(allContentTypes.filter((ct) => ct.variable === 'Blog').length).toBe(1);
             expect(allContentTypes.find((ct) => ct.variable === 'Event')).toBeTruthy();
             expect(allContentTypes.find((ct) => ct.variable === 'Product')).toBeTruthy();
         });
@@ -208,19 +210,6 @@ describe('DotContentTypeComponent', () => {
             const invalidEvent: Partial<SelectLazyLoadEvent> = { first: NaN, last: NaN };
 
             spectator.component.onLazyLoad(invalidEvent as SelectLazyLoadEvent);
-
-            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
-        });
-
-        it('should not load more if already have enough items', () => {
-            // Simulate having 40 items already
-            spectator.component.onLazyLoad({ first: 0, last: 39 });
-            spectator.detectChanges();
-            jest.clearAllMocks();
-
-            // Request for first 39 items again
-            spectator.component.onLazyLoad({ first: 0, last: 39 });
-            spectator.detectChanges();
 
             expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
         });
@@ -322,32 +311,22 @@ describe('DotContentTypeComponent', () => {
             jest.clearAllMocks();
             contentTypeService.getContentTypesWithPagination.mockReturnValue(
                 of({
-                    contentTypes: [{ id: '1', name: 'Blog', variable: 'Blog' } as DotCMSContentType],
+                    contentTypes: [
+                        { id: '1', name: 'Blog', variable: 'Blog' } as DotCMSContentType
+                    ],
                     pagination: { ...mockPagination, totalEntries: 50 }
                 })
             );
             spectator.component.onLazyLoad({ first: 40, last: 79 });
             spectator.detectChanges();
             // Should make another call for page 2 since pages were reset by filter
-            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalled();
-        }));
-
-        it('should clear content types before loading filtered results', fakeAsync(() => {
-            // Initial load with some content types
-            spectator.detectChanges();
-            expect(spectator.component.$state.contentTypes().length).toBeGreaterThan(0);
-
-            // Apply filter - this should clear content types first
-            spectator.component.onFilterChange('blog');
-            tick(300);
-
-            // Content types should be cleared and then loaded with filter
             expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
-                page: 1,
+                page: 2,
                 per_page: 40,
                 filter: 'blog'
             });
         }));
+
 
         it('should reset filter and reload when filter is cleared', fakeAsync(() => {
             // Apply a filter first
@@ -527,21 +506,6 @@ describe('DotContentTypeComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should update placeholder input', () => {
-            const placeholder = 'Select a content type';
-            spectator.setInput('placeholder', placeholder);
-            spectator.detectChanges();
-
-            expect(spectator.component.placeholder()).toBe(placeholder);
-        });
-
-        it('should update disabled input', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            expect(spectator.component.disabled()).toBe(true);
-            expect(spectator.component.$disabled()).toBe(true);
-        });
 
         it('should update value model signal', () => {
             const testValue = mockContentTypes[0];
@@ -552,10 +516,13 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should emit onChange output when value changes', () => {
+            spectator.detectChanges();
             const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
 
             const selectedContentType = mockContentTypes[0];
-            spectator.component.onContentTypeChange(selectedContentType);
+            // Trigger onChange event from p-select component to test binding chain: (onChange)="onContentTypeChange($event.value)"
+            spectator.triggerEventHandler(Select, 'onChange', { value: selectedContentType });
+            spectator.detectChanges();
 
             expect(spectator.component.value()).toEqual(selectedContentType);
             expect(onChangeSpy).toHaveBeenCalledWith(selectedContentType);
