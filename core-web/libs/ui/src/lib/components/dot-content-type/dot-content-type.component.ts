@@ -77,21 +77,49 @@ interface DotContentTypeState {
     ]
 })
 export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
+
     private contentTypeService = inject(DotContentTypeService);
 
+    /**
+     * Placeholder text to be shown in the select input when empty.
+     */
     placeholder = input<string>('');
+
+    /**
+     * Whether the select is disabled.
+     * Settable via component input.
+     */
     disabled = input<boolean>(false);
+
+    /**
+     * Model binding for the selected content type.
+     * Null represents no selection.
+     */
     value = model<DotCMSContentType | null>(null);
 
-    // ControlValueAccessor disabled state (can be set by form control)
+    /**
+     * Disabled state from the ControlValueAccessor interface.
+     * True when the form control disables this component.
+     * @internal
+     */
     $isDisabled = signal<boolean>(false);
 
-    // Combined disabled state (input disabled OR form control disabled)
+    /**
+     * Combined disabled state: true if either the input or ControlValueAccessor disabled state is true.
+     * Used to control the actual disabled property of the select.
+     */
     $disabled = computed(() => this.disabled() || this.$isDisabled());
 
-    // Custom output for explicit change events
+    /**
+     * Output event emitted whenever the selected content type changes.
+     * Emits the new value or null.
+     */
     onChange = output<DotCMSContentType | null>();
 
+    /**
+     * Reactive state of the component including loaded types, loading status, total results, and active filter.
+     * Readonly to prevent accidental re-assignment.
+     */
     readonly $state = signalState<DotContentTypeState>({
         contentTypes: [],
         loading: false,
@@ -99,8 +127,25 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         filterValue: ''
     });
 
+    /**
+     * The number of items to load per page when fetching content types.
+     * @private
+     */
     private readonly pageSize = 40;
+
+    /**
+     * Set of page numbers that have already been loaded from the backend.
+     * Used to prevent redundant page fetching.
+     * @private
+     */
     private loadedPages = new Set<number>();
+
+    /**
+     * Stores the timeout ID for the debounce when filtering content types.
+     * Used to delay filter service calls until typing stabilizes.
+     * Null when no debounce is pending.
+     * @private
+     */
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     // ControlValueAccessor callback functions
