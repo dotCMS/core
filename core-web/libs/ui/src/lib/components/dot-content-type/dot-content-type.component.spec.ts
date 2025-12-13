@@ -635,22 +635,22 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         expect(select.disabled()).toBe(true);
     });
 
-        it('should combine input disabled and FormControl disabled state', () => {
-            // Test with both input disabled=false and FormControl enabled
-            hostComponent.disabled = false;
-            hostComponent.contentTypeControl.enable();
-            hostSpectator.detectChanges();
-            expect(hostSpectator.component.$disabled()).toBe(false);
+    it('should combine input disabled and FormControl disabled state', () => {
+        // Test with both input disabled=false and FormControl enabled
+        hostComponent.disabled = false;
+        hostComponent.contentTypeControl.enable();
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$disabled()).toBe(false);
 
-            // Test with input disabled=true (should override FormControl enabled)
-            hostComponent.disabled = true;
-            hostSpectator.detectChanges();
-            expect(hostSpectator.component.$disabled()).toBe(true);
+        // Test with input disabled=true (should override FormControl enabled)
+        hostComponent.disabled = true;
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$disabled()).toBe(true);
 
-            // Test with input disabled=false but FormControl disabled (should be disabled)
-            hostComponent.disabled = false;
-            hostComponent.contentTypeControl.disable();
-            hostSpectator.detectChanges();
-            expect(hostSpectator.component.$disabled()).toBe(true);
-        });
+        // Test with input disabled=false but FormControl disabled (should be disabled)
+        hostComponent.disabled = false;
+        hostComponent.contentTypeControl.disable();
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$disabled()).toBe(true);
+    });
 });
