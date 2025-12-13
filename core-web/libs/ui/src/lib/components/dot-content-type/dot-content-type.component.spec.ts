@@ -1,11 +1,12 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, createHostFactory, mockProvider, Spectator, SpectatorHost, SpyObject } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { Select, SelectLazyLoadEvent } from 'primeng/select';
 
@@ -37,6 +38,16 @@ const mockPagination: DotPagination = {
     perPage: 40,
     totalEntries: 100
 };
+
+@Component({
+    selector: 'dot-test-host',
+    template: '',
+    standalone: false
+})
+class FormHostComponent {
+    contentTypeControl = new FormControl<DotCMSContentType | null>(null);
+    disabled = false;
+}
 
 describe('DotContentTypeComponent', () => {
     let spectator: Spectator<DotContentTypeComponent>;
@@ -371,136 +382,6 @@ describe('DotContentTypeComponent', () => {
         }));
     });
 
-    describe('ControlValueAccessor Implementation', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
-
-        it('should write value to component', () => {
-            const testValue = mockContentTypes[0];
-            spectator.component.writeValue(testValue);
-            spectator.detectChanges();
-
-            expect(spectator.component.value()).toEqual(testValue);
-        });
-
-        it('should handle null value in writeValue', () => {
-            spectator.component.writeValue(null);
-
-            expect(spectator.component.value()).toBeNull();
-        });
-
-        it('should ensure value is in contentTypes list when writing value', () => {
-            const newContentType: DotCMSContentType = {
-                id: '99',
-                name: 'Custom',
-                variable: 'Custom'
-            } as DotCMSContentType;
-
-            spectator.component.writeValue(newContentType);
-            spectator.detectChanges();
-
-            const contentTypes = spectator.component.$state.contentTypes();
-            expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
-        });
-
-        it('should register onChange callback and trigger on value change', () => {
-            const onChangeSpy = jest.fn();
-            spectator.component.registerOnChange(onChangeSpy);
-
-            const testValue = mockContentTypes[0];
-            spectator.component.value.set(testValue);
-            spectator.detectChanges();
-
-            expect(onChangeSpy).toHaveBeenCalledWith(testValue);
-        });
-
-        it('should register onTouched callback and trigger on user interaction', () => {
-            const onTouchedSpy = jest.fn();
-            spectator.component.registerOnTouched(onTouchedSpy);
-
-            const testValue = mockContentTypes[0];
-            spectator.component.onContentTypeChange(testValue);
-
-            expect(onTouchedSpy).toHaveBeenCalled();
-        });
-
-        it('should set disabled state via ControlValueAccessor', () => {
-            spectator.component.setDisabledState(true);
-            spectator.detectChanges();
-
-            expect(spectator.component.$isDisabled()).toBe(true);
-            expect(spectator.component.$disabled()).toBe(true);
-        });
-
-        it('should combine input disabled and form control disabled state', () => {
-            spectator.setInput('disabled', false);
-            spectator.component.setDisabledState(false);
-            spectator.detectChanges();
-            expect(spectator.component.$disabled()).toBe(false);
-
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-            expect(spectator.component.$disabled()).toBe(true);
-
-            spectator.setInput('disabled', false);
-            spectator.component.setDisabledState(true);
-            spectator.detectChanges();
-            expect(spectator.component.$disabled()).toBe(true);
-        });
-    });
-
-    describe('Form Integration', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
-
-        it('should work with FormControl', () => {
-            const onChangeSpy = jest.fn();
-            const onTouchedSpy = jest.fn();
-
-            spectator.component.registerOnChange(onChangeSpy);
-            spectator.component.registerOnTouched(onTouchedSpy);
-
-            // Simulate form control setting a value
-            const testValue = mockContentTypes[0];
-            spectator.component.writeValue(testValue);
-            spectator.detectChanges();
-
-            expect(spectator.component.value()).toEqual(testValue);
-
-            // Simulate user changing value
-            spectator.component.onContentTypeChange(mockContentTypes[1]);
-            spectator.detectChanges();
-
-            expect(onChangeSpy).toHaveBeenCalledWith(mockContentTypes[1]);
-            expect(onTouchedSpy).toHaveBeenCalled();
-        });
-
-        it('should propagate value changes to form control', () => {
-            const onChangeSpy = jest.fn();
-
-            spectator.component.registerOnChange(onChangeSpy);
-
-            spectator.component.value.set(mockContentTypes[0]);
-            spectator.detectChanges();
-
-            expect(onChangeSpy).toHaveBeenCalledWith(mockContentTypes[0]);
-        });
-
-        it('should update component when form control value changes', () => {
-            spectator.component.writeValue(mockContentTypes[0]);
-            spectator.detectChanges();
-
-            expect(spectator.component.value()).toEqual(mockContentTypes[0]);
-
-            spectator.component.writeValue(mockContentTypes[1]);
-            spectator.detectChanges();
-
-            expect(spectator.component.value()).toEqual(mockContentTypes[1]);
-        });
-    });
-
     describe('Component Inputs/Outputs', () => {
         beforeEach(() => {
             spectator.detectChanges();
@@ -668,5 +549,140 @@ describe('DotContentTypeComponent', () => {
             const contentTypes = spectator.component.$state.contentTypes();
             expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
         });
+    });
+});
+
+describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
+    const createHost = createHostFactory({
+        component: DotContentTypeComponent,
+        host: FormHostComponent,
+        imports: [ReactiveFormsModule],
+        providers: [
+            mockProvider(DotContentTypeService),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
+        detectChanges: false
+    });
+
+    let hostSpectator: SpectatorHost<DotContentTypeComponent, FormHostComponent>;
+    let hostComponent: FormHostComponent;
+    let hostContentTypeService: SpyObject<DotContentTypeService>;
+
+        beforeEach(() => {
+            hostSpectator = createHost(`<dot-content-type [formControl]="contentTypeControl" [disabled]="disabled"></dot-content-type>`);
+            hostComponent = hostSpectator.hostComponent;
+            hostContentTypeService = hostSpectator.inject(DotContentTypeService, true);
+
+        hostContentTypeService.getContentTypesWithPagination.mockReturnValue(
+            of({
+                contentTypes: mockContentTypes,
+                pagination: mockPagination
+            })
+        );
+
+        hostSpectator.detectChanges();
+    });
+
+    it('should write value to component from FormControl', () => {
+        const testValue = mockContentTypes[0];
+        hostComponent.contentTypeControl.setValue(testValue);
+        hostSpectator.detectChanges();
+
+        expect(hostSpectator.component.value()).toEqual(testValue);
+    });
+
+    it('should handle null value from FormControl', () => {
+        hostComponent.contentTypeControl.setValue(null);
+        hostSpectator.detectChanges();
+
+        expect(hostSpectator.component.value()).toBeNull();
+    });
+
+    it('should ensure value is in contentTypes list when FormControl sets value', () => {
+        const newContentType: DotCMSContentType = {
+            id: '99',
+            name: 'Custom',
+            variable: 'Custom'
+        } as DotCMSContentType;
+
+        hostComponent.contentTypeControl.setValue(newContentType);
+        hostSpectator.detectChanges();
+
+        const contentTypes = hostSpectator.component.$state.contentTypes();
+        expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
+    });
+
+    it('should propagate value changes from component to FormControl', () => {
+        const testValue = mockContentTypes[0];
+
+        // Trigger onChange event from p-select component
+        hostSpectator.triggerEventHandler(Select, 'onChange', { value: testValue });
+        hostSpectator.detectChanges();
+
+        expect(hostComponent.contentTypeControl.value).toEqual(testValue);
+    });
+
+    it('should mark FormControl as touched when user interacts', () => {
+        const testValue = mockContentTypes[0];
+
+        expect(hostComponent.contentTypeControl.touched).toBe(false);
+
+        // Trigger onChange event from p-select component (user interaction)
+        hostSpectator.triggerEventHandler(Select, 'onChange', { value: testValue });
+        hostSpectator.detectChanges();
+
+        expect(hostComponent.contentTypeControl.touched).toBe(true);
+    });
+
+    it('should set disabled state via FormControl', () => {
+        hostComponent.contentTypeControl.disable();
+        hostSpectator.detectChanges();
+
+        expect(hostSpectator.component.$isDisabled()).toBe(true);
+        expect(hostSpectator.component.$disabled()).toBe(true);
+
+        const select = hostSpectator.query(Select);
+        expect(select.disabled()).toBe(true);
+    });
+
+        it('should combine input disabled and FormControl disabled state', () => {
+            // Test with both input disabled=false and FormControl enabled
+            hostComponent.disabled = false;
+            hostComponent.contentTypeControl.enable();
+            hostSpectator.detectChanges();
+            expect(hostSpectator.component.$disabled()).toBe(false);
+
+            // Test with input disabled=true (should override FormControl enabled)
+            hostComponent.disabled = true;
+            hostSpectator.detectChanges();
+            expect(hostSpectator.component.$disabled()).toBe(true);
+
+            // Test with input disabled=false but FormControl disabled (should be disabled)
+            hostComponent.disabled = false;
+            hostComponent.contentTypeControl.disable();
+            hostSpectator.detectChanges();
+            expect(hostSpectator.component.$disabled()).toBe(true);
+        });
+
+    it('should update component when FormControl value changes', () => {
+        hostComponent.contentTypeControl.setValue(mockContentTypes[0]);
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.value()).toEqual(mockContentTypes[0]);
+
+        hostComponent.contentTypeControl.setValue(mockContentTypes[1]);
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.value()).toEqual(mockContentTypes[1]);
+    });
+
+    it('should update FormControl when user selects a different value', () => {
+        hostComponent.contentTypeControl.setValue(mockContentTypes[0]);
+        hostSpectator.detectChanges();
+
+        // User selects a different value through p-select
+        hostSpectator.triggerEventHandler(Select, 'onChange', { value: mockContentTypes[1] });
+        hostSpectator.detectChanges();
+
+        expect(hostComponent.contentTypeControl.value).toEqual(mockContentTypes[1]);
     });
 });
