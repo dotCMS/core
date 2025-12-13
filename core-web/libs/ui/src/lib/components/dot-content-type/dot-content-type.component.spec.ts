@@ -1,10 +1,17 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
+import { of, throwError } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { of } from 'rxjs';
-import { DotContentTypeComponent } from './dot-content-type.component';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+
+import { SelectLazyLoadEvent } from 'primeng/select';
+
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotPagination } from '@dotcms/dotcms-models';
+
+import { DotContentTypeComponent } from './dot-content-type.component';
 
 const mockContentTypes: DotCMSContentType[] = [
     {
@@ -16,117 +23,678 @@ const mockContentTypes: DotCMSContentType[] = [
         id: '2',
         name: 'News',
         variable: 'News'
+    } as DotCMSContentType,
+    {
+        id: '3',
+        name: 'Article',
+        variable: 'Article'
     } as DotCMSContentType
 ];
 
+const mockPagination: DotPagination = {
+    currentPage: 1,
+    perPage: 40,
+    totalEntries: 100
+};
+
 describe('DotContentTypeComponent', () => {
-    let component: DotContentTypeComponent;
-    let fixture: ComponentFixture<DotContentTypeComponent>;
-    let contentTypeService: jasmine.SpyObj<DotContentTypeService>;
+    let spectator: Spectator<DotContentTypeComponent>;
+    let contentTypeService: SpyObject<DotContentTypeService>;
 
-    beforeEach(async () => {
-        const contentTypeServiceSpy = jasmine.createSpyObj('DotContentTypeService', ['getContentTypes']);
-
-        await TestBed.configureTestingModule({
-            imports: [DotContentTypeComponent, HttpClientTestingModule, ReactiveFormsModule],
-            providers: [
-                {
-                    provide: DotContentTypeService,
-                    useValue: contentTypeServiceSpy
-                }
-            ]
-        }).compileComponents();
-
-        contentTypeService = TestBed.inject(DotContentTypeService) as jasmine.SpyObj<DotContentTypeService>;
-        contentTypeService.getContentTypes.and.returnValue(of(mockContentTypes));
-
-        fixture = TestBed.createComponent(DotContentTypeComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotContentTypeComponent,
+        imports: [HttpClientTestingModule, ReactiveFormsModule],
+        providers: [mockProvider(DotContentTypeService)]
     });
 
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        contentTypeService = spectator.inject(DotContentTypeService, true);
+        contentTypeService.getContentTypesWithPagination.mockReturnValue(
+            of({
+                contentTypes: mockContentTypes,
+                pagination: mockPagination
+            })
+        );
+    });
+
+    describe('Component Initialization', () => {
     it('should create', () => {
-        expect(component).toBeTruthy();
+            spectator.detectChanges();
+            expect(spectator.component).toBeTruthy();
     });
 
     it('should load content types on init', () => {
-        expect(contentTypeService.getContentTypes).toHaveBeenCalledWith({ page: 100 });
-        expect(component.contentTypes()).toEqual(mockContentTypes);
-        expect(component.loading()).toBe(false);
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40
+            });
+            expect(spectator.component.$state.contentTypes()).toEqual(
+                expect.arrayContaining(mockContentTypes)
+            );
+            expect(spectator.component.$state.loading()).toBe(false);
+        });
+
+        it('should sort content types alphabetically', () => {
+            const unsortedContentTypes: DotCMSContentType[] = [
+                { id: '1', name: 'Zebra', variable: 'Zebra' } as DotCMSContentType,
+                { id: '2', name: 'Alpha', variable: 'Alpha' } as DotCMSContentType,
+                { id: '3', name: 'Beta', variable: 'Beta' } as DotCMSContentType
+            ];
+
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: unsortedContentTypes,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            const sortedTypes = spectator.component.$state.contentTypes();
+            expect(sortedTypes[0].name).toBe('Alpha');
+            expect(sortedTypes[1].name).toBe('Beta');
+            expect(sortedTypes[2].name).toBe('Zebra');
+        });
+
+        it('should set loading state during data fetch', () => {
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: mockContentTypes,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            // After loading completes, loading should be false
+            expect(spectator.component.$state.loading()).toBe(false);
+        });
+
+        it('should update totalRecords from pagination response', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.$state.totalRecords()).toBe(100);
+        });
     });
 
-    it('should emit onChange when content type changes', () => {
-        spyOn(component.onChange, 'emit');
+    describe('Lazy Loading', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
+        });
 
-        const selectedContentType = mockContentTypes[0];
-        component.onContentTypeChange(selectedContentType);
+        it('should handle lazy load events from PrimeNG Select', () => {
+            // Component already loaded first page in ngOnInit, so test with page 2
+            const lazyLoadEvent = { first: 40, last: 79 };
 
-        expect(component.value()).toEqual(selectedContentType);
-        expect(component.onChange.emit).toHaveBeenCalledWith(selectedContentType);
+            spectator.component.onLazyLoad(lazyLoadEvent);
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 2,
+                per_page: 40
+            });
+        });
+
+        it('should load page 2 when scrolling past first page', () => {
+            const lazyLoadEvent = { first: 40, last: 79 };
+
+            spectator.component.onLazyLoad(lazyLoadEvent);
+
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 2,
+                per_page: 40
+            });
+        });
+
+        it('should merge new content types without duplicates', () => {
+            const page2ContentTypes: DotCMSContentType[] = [
+                { id: '4', name: 'Event', variable: 'Event' } as DotCMSContentType,
+                { id: '5', name: 'Product', variable: 'Product' } as DotCMSContentType
+            ];
+
+            // Reset and setup for page 2
+            spectator = createComponent({ detectChanges: false });
+            contentTypeService = spectator.inject(DotContentTypeService, true);
+            contentTypeService.getContentTypesWithPagination
+                .mockReturnValueOnce(
+                    of({
+                        contentTypes: mockContentTypes,
+                        pagination: { ...mockPagination, currentPage: 1 }
+                    })
+                )
+                .mockReturnValueOnce(
+                    of({
+                        contentTypes: page2ContentTypes,
+                        pagination: { ...mockPagination, currentPage: 2 }
+                    })
+                );
+
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            spectator.component.onLazyLoad({ first: 40, last: 79 });
+            spectator.detectChanges();
+
+            const allContentTypes = spectator.component.$state.contentTypes();
+            // Should have initial 3 + 2 new = 5 total
+            expect(allContentTypes.length).toBe(5);
+            expect(allContentTypes.find((ct) => ct.variable === 'Event')).toBeTruthy();
+            expect(allContentTypes.find((ct) => ct.variable === 'Product')).toBeTruthy();
+        });
+
+        it('should not load duplicate pages', () => {
+            spectator.component.onLazyLoad({ first: 40, last: 79 });
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Try to load page 2 again
+            spectator.component.onLazyLoad({ first: 40, last: 79 });
+            spectator.detectChanges();
+
+            // Should not make another call
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        });
+
+        it('should handle invalid lazy load events with NaN values', () => {
+            const invalidEvent: Partial<SelectLazyLoadEvent> = { first: NaN, last: NaN };
+
+            spectator.component.onLazyLoad(invalidEvent as SelectLazyLoadEvent);
+
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        });
+
+        it('should not load more if already have enough items', () => {
+            // Simulate having 40 items already
+            spectator.component.onLazyLoad({ first: 0, last: 39 });
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Request for first 39 items again
+            spectator.component.onLazyLoad({ first: 0, last: 39 });
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        });
+
+        it('should not load if currently loading', () => {
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: mockContentTypes,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Manually set loading state to true
+            patchState(spectator.component.$state, { loading: true });
+
+            // Try to load while still loading
+            spectator.component.onLazyLoad({ first: 40, last: 79 });
+            spectator.detectChanges();
+
+            // Should not make another call while loading
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+
+            // Cleanup
+            patchState(spectator.component.$state, { loading: false });
+        });
+
+        it('should not load beyond total entries', () => {
+            // Create new component instance with limited total entries
+            spectator = createComponent({ detectChanges: false });
+            contentTypeService = spectator.inject(DotContentTypeService, true);
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: mockContentTypes.slice(0, 2),
+                    pagination: { ...mockPagination, totalEntries: 50 }
+                })
+            );
+
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Component should know total is 50, page 2 would be beyond that
+            // But the component loads page 2 if last index is 79 (which is < 50 in total)
+            // Actually, page 2 calculation: Math.floor(79 / 40) + 1 = 2
+            // maxPage would be Math.ceil(50 / 40) = 2, so page 2 is valid
+            // So we need to test with a higher page
+            spectator.component.onLazyLoad({ first: 80, last: 119 });
+            spectator.detectChanges();
+
+            // Page 3 would be beyond total of 50, so should not load
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Filtering Functionality', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
+        });
+
+        it('should debounce filter changes', fakeAsync(() => {
+            spectator.component.onFilterChange('blog');
+
+            // Should not call immediately
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+
+            // After 300ms, should call
+            tick(300);
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40,
+                filter: 'blog'
+            });
+        }));
+
+        it('should reset loaded pages when filtering', fakeAsync(() => {
+            // Load page 2 first to mark it as loaded
+            spectator.component.onLazyLoad({ first: 40, last: 79 });
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Apply filter - should reset loaded pages and clear content types
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            spectator.detectChanges();
+
+            // Should reset and load page 1 with filter
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40,
+                filter: 'blog'
+            });
+
+            // Verify that content types were cleared before filter load
+            // The filter already loaded page 1, so now page 1 is in loadedPages
+            // But if we try to load page 2 with filter, it should work since pages were reset
+            jest.clearAllMocks();
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: [{ id: '1', name: 'Blog', variable: 'Blog' } as DotCMSContentType],
+                    pagination: { ...mockPagination, totalEntries: 50 }
+                })
+            );
+            spectator.component.onLazyLoad({ first: 40, last: 79 });
+            spectator.detectChanges();
+            // Should make another call for page 2 since pages were reset by filter
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalled();
+        }));
+
+        it('should clear content types before loading filtered results', fakeAsync(() => {
+            // Initial load with some content types
+            spectator.detectChanges();
+            expect(spectator.component.$state.contentTypes().length).toBeGreaterThan(0);
+
+            // Apply filter - this should clear content types first
+            spectator.component.onFilterChange('blog');
+            tick(300);
+
+            // Content types should be cleared and then loaded with filter
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40,
+                filter: 'blog'
+            });
+        }));
+
+        it('should reset filter and reload when filter is cleared', fakeAsync(() => {
+            // Apply a filter first
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            jest.clearAllMocks();
+
+            // Clear filter
+            spectator.component.onFilterChange('');
+            tick(300);
+
+            expect(spectator.component.$state.filterValue()).toBe('');
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40
+            });
+        }));
+
+        it('should cancel previous debounce timeout on new filter', fakeAsync(() => {
+            spectator.component.onFilterChange('blog');
+            spectator.component.onFilterChange('news');
+            tick(300);
+
+            // Should only call once with 'news'
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledTimes(1);
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40,
+                filter: 'news'
+            });
+        }));
+
+        it('should trim filter value before passing to service', fakeAsync(() => {
+            spectator.component.onFilterChange('  blog  ');
+            tick(300);
+
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40,
+                filter: 'blog'
+            });
+        }));
     });
 
     describe('ControlValueAccessor Implementation', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
         it('should write value to component', () => {
             const testValue = mockContentTypes[0];
-            component.writeValue(testValue);
+            spectator.component.writeValue(testValue);
+            spectator.detectChanges();
 
-            expect(component.value()).toEqual(testValue);
+            expect(spectator.component.value()).toEqual(testValue);
         });
 
         it('should handle null value in writeValue', () => {
-            component.writeValue(null);
+            spectator.component.writeValue(null);
 
-            expect(component.value()).toBeNull();
+            expect(spectator.component.value()).toBeNull();
         });
 
-        it('should register onChange callback', () => {
-            const onChangeSpy = jasmine.createSpy('onChange');
-            component.registerOnChange(onChangeSpy);
+        it('should ensure value is in contentTypes list when writing value', () => {
+            const newContentType: DotCMSContentType = {
+                id: '99',
+                name: 'Custom',
+                variable: 'Custom'
+            } as DotCMSContentType;
+
+            spectator.component.writeValue(newContentType);
+            spectator.detectChanges();
+
+            const contentTypes = spectator.component.$state.contentTypes();
+            expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
+        });
+
+        it('should register onChange callback and trigger on value change', () => {
+            const onChangeSpy = jest.fn();
+            spectator.component.registerOnChange(onChangeSpy);
 
             const testValue = mockContentTypes[0];
-            component.value.set(testValue);
-            fixture.detectChanges();
+            spectator.component.value.set(testValue);
+            spectator.detectChanges();
 
             expect(onChangeSpy).toHaveBeenCalledWith(testValue);
         });
 
-        it('should register onTouched callback', () => {
-            const onTouchedSpy = jasmine.createSpy('onTouched');
-            component.registerOnTouched(onTouchedSpy);
+        it('should register onTouched callback and trigger on user interaction', () => {
+            const onTouchedSpy = jest.fn();
+            spectator.component.registerOnTouched(onTouchedSpy);
 
             const testValue = mockContentTypes[0];
-            component.onContentTypeChange(testValue);
+            spectator.component.onContentTypeChange(testValue);
 
             expect(onTouchedSpy).toHaveBeenCalled();
         });
 
-        it('should set disabled state', () => {
-            component.setDisabledState(true);
+        it('should set disabled state via ControlValueAccessor', () => {
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
 
-            expect(component.$isDisabled()).toBe(true);
+            expect(spectator.component.$isDisabled()).toBe(true);
+            expect(spectator.component.$disabled()).toBe(true);
+        });
+
+        it('should combine input disabled and form control disabled state', () => {
+            spectator.setInput('disabled', false);
+            spectator.component.setDisabledState(false);
+            spectator.detectChanges();
+            expect(spectator.component.$disabled()).toBe(false);
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            expect(spectator.component.$disabled()).toBe(true);
+
+            spectator.setInput('disabled', false);
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+            expect(spectator.component.$disabled()).toBe(true);
+        });
+    });
+
+    describe('Form Integration', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
         });
 
         it('should work with FormControl', () => {
-            const formControl = new FormControl<DotCMSContentType | null>(null);
-            const onChangeSpy = jasmine.createSpy('onChange');
-            const onTouchedSpy = jasmine.createSpy('onTouched');
+            const onChangeSpy = jest.fn();
+            const onTouchedSpy = jest.fn();
 
-            component.registerOnChange(onChangeSpy);
-            component.registerOnTouched(onTouchedSpy);
+            spectator.component.registerOnChange(onChangeSpy);
+            spectator.component.registerOnTouched(onTouchedSpy);
 
             // Simulate form control setting a value
             const testValue = mockContentTypes[0];
-            component.writeValue(testValue);
-            fixture.detectChanges();
+            spectator.component.writeValue(testValue);
+            spectator.detectChanges();
 
-            expect(component.value()).toEqual(testValue);
+            expect(spectator.component.value()).toEqual(testValue);
 
             // Simulate user changing value
-            component.onContentTypeChange(mockContentTypes[1]);
-            fixture.detectChanges();
+            spectator.component.onContentTypeChange(mockContentTypes[1]);
+            spectator.detectChanges();
 
             expect(onChangeSpy).toHaveBeenCalledWith(mockContentTypes[1]);
             expect(onTouchedSpy).toHaveBeenCalled();
+        });
+
+        it('should propagate value changes to form control', () => {
+            const onChangeSpy = jest.fn();
+
+            spectator.component.registerOnChange(onChangeSpy);
+
+            spectator.component.value.set(mockContentTypes[0]);
+            spectator.detectChanges();
+
+            expect(onChangeSpy).toHaveBeenCalledWith(mockContentTypes[0]);
+        });
+
+        it('should update component when form control value changes', () => {
+            spectator.component.writeValue(mockContentTypes[0]);
+            spectator.detectChanges();
+
+            expect(spectator.component.value()).toEqual(mockContentTypes[0]);
+
+            spectator.component.writeValue(mockContentTypes[1]);
+            spectator.detectChanges();
+
+            expect(spectator.component.value()).toEqual(mockContentTypes[1]);
+        });
+    });
+
+    describe('Component Inputs/Outputs', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should update placeholder input', () => {
+            const placeholder = 'Select a content type';
+            spectator.setInput('placeholder', placeholder);
+            spectator.detectChanges();
+
+            expect(spectator.component.placeholder()).toBe(placeholder);
+        });
+
+        it('should update disabled input', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.disabled()).toBe(true);
+            expect(spectator.component.$disabled()).toBe(true);
+        });
+
+        it('should update value model signal', () => {
+            const testValue = mockContentTypes[0];
+            spectator.component.value.set(testValue);
+            spectator.detectChanges();
+
+            expect(spectator.component.value()).toEqual(testValue);
+        });
+
+        it('should emit onChange output when value changes', () => {
+            const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
+
+            const selectedContentType = mockContentTypes[0];
+            spectator.component.onContentTypeChange(selectedContentType);
+
+            expect(spectator.component.value()).toEqual(selectedContentType);
+            expect(onChangeSpy).toHaveBeenCalledWith(selectedContentType);
+        });
+
+        it('should trigger ControlValueAccessor onChange when model signal changes', () => {
+            const onChangeSpy = jest.fn();
+            spectator.component.registerOnChange(onChangeSpy);
+
+            const testValue = mockContentTypes[0];
+            spectator.component.value.set(testValue);
+            spectator.detectChanges();
+
+            expect(onChangeSpy).toHaveBeenCalledWith(testValue);
+        });
+
+        it('should emit null when value is cleared', () => {
+            const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
+
+            spectator.component.onContentTypeChange(null);
+
+            expect(spectator.component.value()).toBeNull();
+            expect(onChangeSpy).toHaveBeenCalledWith(null);
+        });
+    });
+
+    describe('Edge Cases', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should handle null value in onContentTypeChange', () => {
+            spectator.component.onContentTypeChange(null);
+
+            expect(spectator.component.value()).toBeNull();
+        });
+
+        it('should handle empty content types array', () => {
+            // Create new component instance with empty response
+            spectator = createComponent({ detectChanges: false });
+            contentTypeService = spectator.inject(DotContentTypeService, true);
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: [],
+                    pagination: { ...mockPagination, totalEntries: 0 }
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.component.$state.contentTypes().length).toBe(0);
+            expect(spectator.component.$state.totalRecords()).toBe(0);
+        });
+
+        it('should reset loading state on service error', () => {
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                throwError(() => new Error('API Error'))
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.component.$state.loading()).toBe(false);
+        });
+
+        it('should handle filter with only whitespace', fakeAsync(() => {
+            spectator.component.onFilterChange('   ');
+            tick(300);
+
+            // Should reset filter instead of calling with whitespace
+            expect(spectator.component.$state.filterValue()).toBe('');
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40
+            });
+        }));
+
+        it('should not add selected value to list when filtering', fakeAsync(() => {
+            const filteredContentTypes: DotCMSContentType[] = [
+                { id: '1', name: 'Blog', variable: 'Blog' } as DotCMSContentType
+            ];
+
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: filteredContentTypes,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            // Set a value that doesn't match the filter
+            spectator.component.value.set(mockContentTypes[1]);
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            spectator.detectChanges();
+
+            const contentTypes = spectator.component.$state.contentTypes();
+            // Should not have the selected value if it doesn't match filter
+            expect(contentTypes.find((ct) => ct.variable === 'News')).toBeFalsy();
+        }));
+
+        it('should handle lazy load event with undefined last', () => {
+            const event: Partial<SelectLazyLoadEvent> = { first: 0 };
+
+            spectator.component.onLazyLoad(event as SelectLazyLoadEvent);
+            spectator.detectChanges();
+
+            // Should use pageSize when last is undefined
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
+                page: 1,
+                per_page: 40
+            });
+        });
+
+        it('should handle writeValue when contentTypes list is empty', () => {
+            // Create a new component instance with empty content types
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: [],
+                    pagination: { ...mockPagination, totalEntries: 0 }
+                })
+            );
+
+            spectator = createComponent({ detectChanges: false });
+            contentTypeService = spectator.inject(DotContentTypeService, true);
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: [],
+                    pagination: { ...mockPagination, totalEntries: 0 }
+                })
+            );
+            spectator.detectChanges();
+
+            const newContentType: DotCMSContentType = {
+                id: '99',
+                name: 'Custom',
+                variable: 'Custom'
+            } as DotCMSContentType;
+
+            spectator.component.writeValue(newContentType);
+            spectator.detectChanges();
+
+            const contentTypes = spectator.component.$state.contentTypes();
+            expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
         });
     });
 });

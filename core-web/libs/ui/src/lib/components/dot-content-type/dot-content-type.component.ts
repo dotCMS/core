@@ -30,10 +30,28 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
 
 type ParsedLazyLoadResult = ParsedSelectLazyLoadEvent | null;
 
+/**
+ * Represents the state for the DotContentTypeComponent.
+ */
 interface DotContentTypeState {
+    /**
+     * The list of loaded content types.
+     */
     contentTypes: DotCMSContentType[];
+
+    /**
+     * Indicates whether the content types are currently being loaded.
+     */
     loading: boolean;
+
+    /**
+     * The total number of records available on the backend (0 if unknown or not loaded).
+     */
     totalRecords: number;
+
+    /**
+     * The current filter value used to filter content types.
+     */
     filterValue: string;
 }
 
