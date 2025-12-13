@@ -26,6 +26,8 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
     itemsNeeded: number;
 }
 
+type ParsedLazyLoadResult = ParsedSelectLazyLoadEvent | null;
+
 @Component({
     selector: 'dot-content-type',
     imports: [
@@ -114,8 +116,13 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      * @param event Lazy load event with first (offset) and last (last index)
      */
     onLazyLoad(event: SelectLazyLoadEvent): void {
-        console.log('onLazyLoad', event);
         const parsed = this.parseLazyLoadEvent(event);
+
+        // Skip if event is invalid (contains NaN values from PrimeNG Scroller initialization)
+        if (!parsed) {
+            return;
+        }
+
         const currentCount = this.contentTypes().length;
         const totalEntries = this.totalRecords();
 
@@ -230,17 +237,30 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     }
 
     /**
-     * Parses lazy load event and calculates items needed
+     * Parses and validates lazy load event, calculates items needed.
+     * Returns null if event contains invalid values (NaN) from PrimeNG Scroller initialization.
      *
      * @private
      * @param event Lazy load event with first (offset) and last (last index)
-     * @returns Object with parsed values and calculated itemsNeeded
+     * @returns Parsed event object with calculated itemsNeeded, or null if event is invalid
      */
-    private parseLazyLoadEvent(event: SelectLazyLoadEvent): ParsedSelectLazyLoadEvent {
-        const first = Number(event?.first) || 0;
+    private parseLazyLoadEvent(event: SelectLazyLoadEvent): ParsedLazyLoadResult {
+        // Validate event: PrimeNG Scroller may emit events with NaN values during initialization
+        // when calculateOptions() runs before items are loaded. This happens because it calculates
+        // lazyLoadState.last as: Math.min(step, this._items.length). If this._items is null/undefined,
+        // this results in Math.min(40, undefined) = NaN.
+        if (
+            event?.first === undefined ||
+            isNaN(Number(event.first)) ||
+            (event?.last !== undefined && isNaN(Number(event.last)))
+        ) {
+            return null;
+        }
+
+        const first = Number(event.first);
 
         // PrimeNG 21 uses 'last' instead of 'rows' - last is the last index (inclusive)
-        const last = event?.last !== undefined ? Number(event.last) : undefined;
+        const last = event.last !== undefined ? Number(event.last) : undefined;
 
         // Calculate items needed: if 'last' is provided, use it; otherwise use page size
         const itemsNeeded = last !== undefined ? last + 1 : this.pageSize;
