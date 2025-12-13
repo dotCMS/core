@@ -1,4 +1,4 @@
-<dot-select-seo-tool [socialMedia]="seoMedia"></dot-select-seo-tool>
+<dot-select-seo-tool [socialMedia]="seoMedia" />
 <div class="results-seo-tool__main-card">
     <p-card>
         <div class="results-seo-tool__main-card-content">
@@ -51,8 +51,7 @@
                     }
                     @case (seoMediaTypes.TWITTER) {
                         <div>
-                            <dot-seo-image-preview
-                                [image]="mainPreview.image"></dot-seo-image-preview>
+                            <dot-seo-image-preview [image]="mainPreview.image" />
                             <div class="results-seo-tool__preview">
                                 <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                                 <h5>{{ mainPreview.twitterTitle }}</h5>
@@ -62,8 +61,7 @@
                     }
                     @default {
                         <div>
-                            <dot-seo-image-preview
-                                [image]="mainPreview.image"></dot-seo-image-preview>
+                            <dot-seo-image-preview [image]="mainPreview.image" />
                             <div class="results-seo-tool__preview">
                                 <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                                 <h5>{{ mainPreview.title }}</h5>

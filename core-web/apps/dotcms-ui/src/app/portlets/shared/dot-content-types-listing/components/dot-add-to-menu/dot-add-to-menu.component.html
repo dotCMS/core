@@ -18,9 +18,7 @@
                 data-testId="titleMenu" />
             <dot-field-validation-message
                 [field]="form.get('title')"
-                message="{{
-                    'contenttypes.field.properties.name.error.required' | dm
-                }}"></dot-field-validation-message>
+                message="{{ 'contenttypes.field.properties.name.error.required' | dm }}" />
         </div>
         <div class="field">
             <label dotFieldRequired for="menu" data-testId="menuOptionLabel">
@@ -33,7 +31,7 @@
                 appendTo="body"
                 formControlName="menuOption"
                 optionLabel="name"
-                optionValue="id"></p-dropdown>
+                optionValue="id" />
         </div>
         <div class="field">
             <label dotFieldRequired for="cardViewMode" data-testId="ViewModeLabel">
@@ -46,7 +44,7 @@
                     data-testId="cardViewMode"
                     name="defaultView"
                     value="card"
-                    formControlName="defaultView"></p-radioButton>
+                    formControlName="defaultView" />
             </div>
             <div class="field">
                 <p-radioButton
@@ -54,7 +52,7 @@
                     data-testId="listViewMode"
                     name="defaultView"
                     value="list"
-                    formControlName="defaultView"></p-radioButton>
+                    formControlName="defaultView" />
             </div>
         </div>
     </form>

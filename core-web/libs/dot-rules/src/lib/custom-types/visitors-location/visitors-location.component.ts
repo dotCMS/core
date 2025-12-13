@@ -46,7 +46,7 @@ const UNITS = {
                     [class.cw-comparator-selector]="true"
                     flex
                     class="cw-input"
-                    placeholder="{{ comparisonDropdown.placeholder }}"></cw-input-dropdown>
+                    placeholder="{{ comparisonDropdown.placeholder }}" />
                 <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
                     <input
                         [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
@@ -75,7 +75,7 @@ const UNITS = {
             (cancel)="showingMap = !showingMap"
             [headerText]="'Select an area'"
             [hidden]="!showingMap"
-            [circle]="circle"></cw-area-picker-dialog-component>
+            [circle]="circle" />
     `,
     standalone: false
 })

@@ -30,10 +30,10 @@ import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } fro
     imports: [],
     template: `
         <ng-template #tabContent>
-            <ng-content></ng-content>
+            <ng-content />
         </ng-template>
         <ng-template #headerContent>
-            <ng-content select="[slot=header-content]"></ng-content>
+            <ng-content select="[slot=header-content]" />
         </ng-template>
     `,
     styles: [

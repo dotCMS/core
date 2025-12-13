@@ -8,11 +8,11 @@
             [image]="persona?.photo"
             [badgeDisabled]="!persona?.personalized"
             pBadge
-            dotAvatar></p-avatar>
+            dotAvatar />
     }
 
     @if (!persona) {
-        <p-avatar [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
+        <p-avatar [text]="'modes.persona.no.persona' | dm" dotAvatar />
     }
 
     <span class="dot-persona-selector__name">

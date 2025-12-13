@@ -145,7 +145,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                         [conditionTypes]="conditionTypes"
                         [saved]="rule._saved"
                         [saving]="rule._saving"
-                        [errors]="rule._errors"></rule>
+                        [errors]="rule._errors" />
                 }
             </div>
         }

@@ -9,7 +9,7 @@
     @if (!isLoading) {
         <span data-testId="title">{{ title }}</span>
     } @else {
-        <p-skeleton height="1rem" width="12rem"></p-skeleton>
+        <p-skeleton height="1rem" width="12rem" />
     }
 
     @if (!!experiment?.status) {
@@ -26,9 +26,9 @@
                         : '')
                 "
                 data-testId="status-tag"
-                styleClass="{{ experiment?.status | lowercase }}"></p-chip>
+                styleClass="{{ experiment?.status | lowercase }}" />
         </div>
     }
 
-    <ng-content></ng-content>
+    <ng-content />
 </div>

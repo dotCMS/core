@@ -28,7 +28,7 @@
                             subtitle: 'edit.content.sidebar.history.empty.message' | dm,
                             icon: 'pi-folder-open'
                         }"
-                        [hideContactUsLink]="true"></dot-empty-container>
+                        [hideContactUsLink]="true" />
                 } @else {
                     <!-- History content -->
                     <div class="dot-edit-content-sidebar-history__content">
@@ -51,9 +51,7 @@
                                             item
                                         })
                                     "
-                                    (actionTriggered)="
-                                        timelineItemAction.emit($event)
-                                    "></dot-history-timeline-item>
+                                    (actionTriggered)="timelineItemAction.emit($event)" />
                             </ng-template>
                         </p-scroller>
                     </div>
@@ -73,8 +71,8 @@
                     styleClass="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
                     (click)="ppMenu.toggle($event); $event.stopPropagation()"
                     [disabled]="!$hasPushPublishHistoryItems()"
-                    data-testid="push-publish-menu-button"></p-button>
-                <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true"></p-menu>
+                    data-testid="push-publish-menu-button" />
+                <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
             </div>
             <div class="dot-edit-content-sidebar-history__push-publish">
                 @if ($isLoading()) {
@@ -97,7 +95,7 @@
                                 'edit.content.sidebar.history.push.publish.empty.message' | dm,
                             icon: 'pi-folder-open'
                         }"
-                        [hideContactUsLink]="true"></dot-empty-container>
+                        [hideContactUsLink]="true" />
                 } @else {
                     <!-- Push Publish History content -->
                     <div class="dot-edit-content-sidebar-history__push-publish-content">
@@ -112,7 +110,7 @@
                             <ng-template pTemplate="item" let-item let-index="index">
                                 <dot-pushpublish-timeline-item
                                     [item]="item"
-                                    data-testid="pushpublish-timeline-item"></dot-pushpublish-timeline-item>
+                                    data-testid="pushpublish-timeline-item" />
                             </ng-template>
                         </p-scroller>
                     </div>

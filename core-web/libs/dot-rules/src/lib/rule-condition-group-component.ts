@@ -49,7 +49,7 @@ import { I18nService } from './services/system/locale/I18n';
                             [conditionTypePlaceholder]="conditionTypePlaceholder"
                             [index]="i"
                             flex
-                            layout="row"></rule-condition>
+                            layout="row" />
                         <div class="cw-btn-group cw-add-btn">
                             @if (i === group?._conditions.length - 1) {
                                 <div class="ui basic icon buttons">

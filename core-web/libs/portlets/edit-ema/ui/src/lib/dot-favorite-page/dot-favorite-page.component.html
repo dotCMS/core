@@ -9,7 +9,7 @@
             <form [formGroup]="form" class="p-fluid" data-testId="form">
                 <div class="fields-col">
                     @if (vm.showFavoriteEmptySkeleton) {
-                        <dot-pages-favorite-page-empty-skeleton></dot-pages-favorite-page-empty-skeleton>
+                        <dot-pages-favorite-page-empty-skeleton />
                     } @else {
                         <div
                             class="dot-favorite-dialog__thumbnailField"
@@ -19,7 +19,7 @@
                                     <dot-html-to-image
                                         [value]="vm.pageRenderedHtml"
                                         [width]="vm.imgWidth"
-                                        [height]="vm.imgHeight"></dot-html-to-image>
+                                        [height]="vm.imgHeight" />
                                 }
                             } @else {
                                 <div
@@ -50,8 +50,7 @@
                             formControlName="title"
                             autofocus
                             data-testId="favoritePageTitleField" />
-                        <dot-field-validation-message
-                            [field]="form.get('title')"></dot-field-validation-message>
+                        <dot-field-validation-message [field]="form.get('title')" />
                     </div>
                     <div class="field" data-testId="urlField">
                         <label dotFieldRequired for="url">{{ 'url' | dm }}</label>
@@ -60,8 +59,7 @@
                             pInputText
                             formControlName="url"
                             data-testId="favoritePageUrlField" />
-                        <dot-field-validation-message
-                            [field]="form.get('url')"></dot-field-validation-message>
+                        <dot-field-validation-message [field]="form.get('url')" />
                     </div>
                     <div class="field" data-testId="orderField">
                         <label dotFieldRequired for="order">{{ 'order' | dm }}</label>
@@ -70,8 +68,7 @@
                             pInputText
                             formControlName="order"
                             data-testId="favoritePageOrderField" />
-                        <dot-field-validation-message
-                            [field]="form.get('order')"></dot-field-validation-message>
+                        <dot-field-validation-message [field]="form.get('order')" />
                     </div>
                 </div>
             </form>

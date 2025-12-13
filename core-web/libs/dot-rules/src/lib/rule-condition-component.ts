@@ -33,7 +33,7 @@ import { I18nService } from './services/system/locale/I18n';
                     [value]="condition.type?.key"
                     flex="25"
                     class="cw-type-dropdown"
-                    placeholder="{{ conditionTypePlaceholder }}"></cw-input-dropdown>
+                    placeholder="{{ conditionTypePlaceholder }}" />
                 <div flex="75" class="cw-condition-row-main">
                     @switch (condition.type?.key) {
                         @case ('NoSelection') {
@@ -42,13 +42,13 @@ import { I18nService } from './services/system/locale/I18n';
                         @case ('VisitorsGeolocationConditionlet') {
                             <cw-visitors-location-container
                                 (parameterValuesChange)="onParameterValuesChange($event)"
-                                [componentInstance]="condition"></cw-visitors-location-container>
+                                [componentInstance]="condition" />
                         }
                         @default {
                             <cw-serverside-condition
                                 (parameterValueChange)="onParameterValueChange($event)"
                                 [componentInstance]="condition"
-                                class="cw-condition-component"></cw-serverside-condition>
+                                class="cw-condition-component" />
                         }
                     }
                 </div>

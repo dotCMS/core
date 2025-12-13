@@ -62,7 +62,7 @@ const I8N_BASE = 'api.sites.ruleengine';
             <cw-add-to-bundle-dialog-container
                 (close)="showAddToBundleDialog = false"
                 [assetId]="rule.key"
-                [hidden]="!showAddToBundleDialog"></cw-add-to-bundle-dialog-container>
+                [hidden]="!showAddToBundleDialog" />
             <div
                 [class.cw-hidden]="hidden"
                 [class.cw-disabled]="!rule.enabled"
@@ -122,9 +122,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                     [options]="fireOn.options"
                                     class="cw-fire-on-dropdown"
                                     flex="none"
-                                    placeholder="{{
-                                        fireOn.placeholder | async
-                                    }}"></cw-input-dropdown>
+                                    placeholder="{{ fireOn.placeholder | async }}" />
                             }
                         </div>
                         <div
@@ -140,7 +138,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                 [(ngModel)]="rule.enabled"
                                 [ngModelOptions]="{ standalone: true }"
                                 [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
-                                tooltipPosition="bottom"></p-inputSwitch>
+                                tooltipPosition="bottom" />
                             <div class="cw-btn-group">
                                 <button
                                     (click)="ruleOptions.toggle($event); $event.stopPropagation()"
@@ -163,7 +161,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                     [model]="ruleActionOptions"
                                     #ruleOptions
                                     appendTo="body"
-                                    popup="true"></p-menu>
+                                    popup="true" />
                             </div>
                         </div>
                     </div>
@@ -185,9 +183,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                 [group]="group"
                                 [conditionTypes]="conditionTypes"
                                 [groupIndex]="i"
-                                [conditionTypePlaceholder]="
-                                    conditionTypePlaceholder
-                                "></condition-group>
+                                [conditionTypePlaceholder]="conditionTypePlaceholder" />
                         }
                         <div class="cw-action-group">
                             <div class="cw-action-separator">
@@ -207,7 +203,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                                             [actionTypePlaceholder]="actionTypePlaceholder"
                                             [ruleActionTypes]="ruleActionTypes"
                                             flex
-                                            layout="row"></rule-action>
+                                            layout="row" />
                                         <div class="cw-btn-group cw-add-btn">
                                             @if (i === ruleActions.length - 1) {
                                                 <div class="ui basic icon buttons">
