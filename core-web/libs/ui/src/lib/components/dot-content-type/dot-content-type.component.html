@@ -10,7 +10,7 @@
     [disabled]="$disabled()"
     [filter]="true"
     [loading]="$state.loading()"
-    [options]="$state.contentTypes()"
+    [options]="$options()"
     [placeholder]="placeholder()"
     [virtualScroll]="true"
     [lazy]="true"
@@ -39,5 +39,15 @@
                 (click)="$event.stopPropagation()" />
             <p-inputicon class="pi pi-search" />
         </p-iconfield>
+    </ng-template>
+
+    <ng-template let-contentType let-i="index" #item>
+        @if ($state.pinnedOption()?.variable === contentType.variable) {
+            <div class="font-bold">
+                {{ contentType.name }}
+            </div>
+        } @else {
+            {{ contentType.name }}
+        }
     </ng-template>
 </p-select>

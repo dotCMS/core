@@ -36,9 +36,15 @@ type ParsedLazyLoadResult = ParsedSelectLazyLoadEvent | null;
  */
 interface DotContentTypeState {
     /**
-     * The list of loaded content types.
+     * The list of loaded content types (from lazy loading).
      */
     contentTypes: DotCMSContentType[];
+
+    /**
+     * The currently pinned option (shown at top of list).
+     * This is the selected value that may not exist in the lazy-loaded pages yet.
+     */
+    pinnedOption: DotCMSContentType | null;
 
     /**
      * Indicates whether the content types are currently being loaded.
@@ -125,9 +131,42 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      */
     readonly $state = signalState<DotContentTypeState>({
         contentTypes: [],
+        pinnedOption: null,
         loading: false,
         totalRecords: 0,
         filterValue: ''
+    });
+
+    /**
+     * Computed options for the select dropdown.
+     * Combines pinned option (if any) with lazy-loaded options.
+     * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
+     */
+    $options = computed(() => {
+        const loaded = this.$state.contentTypes();
+        const pinned = this.$state.pinnedOption();
+        const filterValue = this.$state.filterValue().trim().toLowerCase();
+
+        // No pinned option - just return loaded options
+        if (!pinned) {
+            return loaded;
+        }
+
+        // If filtering, only show pinned if it matches the filter
+        if (filterValue) {
+            const pinnedName = (pinned.name || '').toLowerCase();
+            const pinnedVariable = (pinned.variable || '').toLowerCase();
+            const matchesFilter = pinnedName.includes(filterValue) || pinnedVariable.includes(filterValue);
+
+            if (!matchesFilter) {
+                return loaded;
+            }
+        }
+
+        // Filter out pinned from loaded to avoid duplicates, then prepend pinned
+        const filtered = loaded.filter(ct => ct.variable !== pinned.variable);
+
+        return [pinned, ...filtered];
     });
 
     /**
@@ -176,6 +215,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Handles the event when the selected content type changes.
+     * - Updates the pinned option to the new selection
      * - Updates the model value with the selected content type.
      * - Calls the registered onTouched callback (for ControlValueAccessor interface).
      * - Emits the onChange output event to notify consumers of the new value.
@@ -183,6 +223,9 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      * @param contentType The selected content type, or null if cleared
      */
     onContentTypeChange(contentType: DotCMSContentType | null): void {
+        // Update pinned option to the new selection
+        patchState(this.$state, { pinnedOption: contentType });
+
         this.value.set(contentType);
         this.onTouchedCallback();
         this.onChange.emit(contentType);
@@ -287,11 +330,8 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     writeValue(value: DotCMSContentType | null): void {
         this.value.set(value);
 
-        // If we have a value, ensure it's in the contentTypes array
-        // This is especially important when the field is disabled
-        if (value) {
-            this.ensureContentTypeInList(value);
-        }
+        // Pin the initial value so it appears at the top of the list
+        patchState(this.$state, { pinnedOption: value });
     }
 
     registerOnChange(fn: (value: DotCMSContentType | null) => void): void {
@@ -315,21 +355,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     private setContentTypes(contentTypes: DotCMSContentType[]): void {
         const sorted = [...contentTypes].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         patchState(this.$state, { contentTypes: sorted });
-    }
-
-    /**
-     * Ensures the given content type is in the contentTypes list.
-     *
-     * @private
-     * @param contentType The content type to ensure is in the list
-     */
-    private ensureContentTypeInList(contentType: DotCMSContentType): void {
-        const currentContentTypes = this.$state.contentTypes();
-        const exists = currentContentTypes.some((ct) => ct.variable === contentType.variable);
-
-        if (!exists) {
-            this.setContentTypes([...currentContentTypes, contentType]);
-        }
     }
 
     /**
@@ -397,7 +422,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      *
      * @private
      * @param parsed Parsed event values
-     * @param currentCount Current number of items loaded
      * @param totalEntries Total number of entries available (0 if unknown)
      */
     private loadContentTypesLazy(parsed: ParsedSelectLazyLoadEvent, totalEntries: number): void {
@@ -436,7 +460,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             .subscribe({
                 next: ({ contentTypes, pagination }) => {
                     const currentContentTypes = this.$state.contentTypes();
-                    const isFiltering = filter.length > 0;
                     const isFirstPage = pageToLoad === 1;
 
                     // Update total records from pagination
@@ -462,14 +485,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
 
                     this.loadedPages.add(pageToLoad);
                     patchState(this.$state, { loading: false });
-
-                    // Ensure current value is in the list only when not filtering
-                    // When filtering, don't add selected value if it doesn't match the filter
-                    // This allows "No results found" to display correctly
-                    const currentValue = this.value();
-                    if (currentValue && !isFiltering) {
-                        this.ensureContentTypeInList(currentValue);
-                    }
                 },
                 error: () => {
                     patchState(this.$state, { loading: false });

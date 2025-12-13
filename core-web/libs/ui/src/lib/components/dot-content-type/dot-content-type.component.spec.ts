@@ -423,6 +423,201 @@ describe('DotContentTypeComponent', () => {
         });
     });
 
+    describe('Pinned Option Functionality', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should show pinnedOption at the top of $options when writeValue is called', () => {
+            const testValue = mockContentTypes[0];
+            const loadedTypes = [mockContentTypes[1], mockContentTypes[2]];
+
+            patchState(spectator.component.$state, { contentTypes: loadedTypes });
+            spectator.component.writeValue(testValue);
+
+            const options = spectator.component.$options();
+            expect(options[0]).toEqual(testValue);
+            expect(options.length).toBe(3);
+        });
+
+        it('should update pinnedOption when p-select onChange is triggered', () => {
+            const testValue = mockContentTypes[1];
+            spectator.triggerEventHandler(Select, 'onChange', { value: testValue });
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.options[0]).toEqual(testValue);
+        });
+
+        it('should set pinnedOption to null when p-select onChange is triggered with null', () => {
+            const select = spectator.query(Select);
+            const testValue = mockContentTypes[0];
+
+            spectator.triggerEventHandler(Select, 'onChange', { value: testValue });
+            spectator.detectChanges();
+            expect(select.options[0]).toEqual(testValue);
+
+            spectator.triggerEventHandler(Select, 'onChange', { value: null });
+            spectator.detectChanges();
+            expect(select.options[0]).not.toEqual(testValue);
+        });
+
+        it('should return only loaded options when pinnedOption is null', () => {
+            const loadedTypes = mockContentTypes.slice(0, 2);
+            patchState(spectator.component.$state, { contentTypes: loadedTypes, pinnedOption: null });
+
+            const options = spectator.component.$options();
+            expect(options).toEqual(loadedTypes);
+            expect(options.length).toBe(2);
+        });
+
+        it('should show pinnedOption at the top of $options', () => {
+            const pinned = mockContentTypes[0];
+            const loadedTypes = [mockContentTypes[1], mockContentTypes[2]];
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: loadedTypes
+            });
+
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.options[0]).toEqual(pinned);
+        });
+
+        it('should filter out pinnedOption from loaded options to avoid duplicates', () => {
+            const pinned = mockContentTypes[0];
+            // Loaded types include the pinned option (duplicate)
+            const loadedTypes = [mockContentTypes[0], mockContentTypes[1], mockContentTypes[2]];
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: loadedTypes
+            });
+
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+
+            // Should have pinned at top, then only News and Article (Blog filtered out)
+            expect(select.options[0]).toEqual(pinned);
+            expect(select.options.length).toBe(3);
+            // Verify Blog only appears once (as pinned)
+            const blogCount = select.options.filter((ct) => ct.variable === 'Blog').length;
+            expect(blogCount).toBe(1);
+        });
+
+        it('should show pinnedOption when filtering if it matches the filter by name', fakeAsync(() => {
+            const pinned: DotCMSContentType = {
+                id: '99',
+                name: 'CustomBlog',
+                variable: 'CustomBlog'
+            } as DotCMSContentType;
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: mockContentTypes
+            });
+
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            // Pinned should appear at top if it matches filter
+            expect(select.options[0]).toEqual(pinned);
+        }));
+
+        it('should show pinnedOption when filtering if it matches the filter by variable', fakeAsync(() => {
+            const pinned: DotCMSContentType = {
+                id: '99',
+                name: 'Custom',
+                variable: 'MyBlog'
+            } as DotCMSContentType;
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: mockContentTypes
+            });
+
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.options[0]).toEqual(pinned);
+        }));
+
+        it('should not show pinnedOption when filtering if it does not match the filter', fakeAsync(() => {
+            const pinned: DotCMSContentType = {
+                id: '99',
+                name: 'Custom',
+                variable: 'Custom'
+            } as DotCMSContentType;
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: mockContentTypes
+            });
+
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            const options = spectator.component.$options();
+            // Pinned should not appear if it doesn't match filter
+            expect(options.find((ct) => ct.variable === 'Custom')).toBeFalsy();
+            // Should only show filtered results
+            expect(options.length).toBeGreaterThan(0);
+        }));
+
+        it('should show pinnedOption when filter is cleared', fakeAsync(() => {
+            const pinned = mockContentTypes[0];
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: mockContentTypes
+            });
+
+            // Apply filter first
+            spectator.component.onFilterChange('news');
+            tick(300);
+            spectator.detectChanges();
+
+            // Clear filter
+            spectator.component.onFilterChange('');
+            tick(300);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            // Pinned should appear at top when filter is cleared
+            expect(select.options[0]).toEqual(pinned);
+        }));
+
+        it('should handle case-insensitive filter matching for pinnedOption', fakeAsync(() => {
+            const pinned: DotCMSContentType = {
+                id: '99',
+                name: 'BLOG',
+                variable: 'BLOG'
+            } as DotCMSContentType;
+
+            patchState(spectator.component.$state, {
+                pinnedOption: pinned,
+                contentTypes: mockContentTypes
+            });
+
+            spectator.component.onFilterChange('blog');
+            tick(300);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            // Pinned should match case-insensitively
+            expect(select.options[0]).toEqual(pinned);
+        }));
+    });
+
     describe('Edge Cases', () => {
         beforeEach(() => {
             spectator.detectChanges();
@@ -482,7 +677,8 @@ describe('DotContentTypeComponent', () => {
             spectator.detectChanges();
 
             // Set a value that doesn't match the filter
-            spectator.component.value.set(mockContentTypes[1]);
+            // Use writeValue to properly set both value and pinnedOption
+            spectator.component.writeValue(mockContentTypes[1]);
             spectator.component.onFilterChange('blog');
             tick(300);
             spectator.detectChanges();
@@ -490,6 +686,11 @@ describe('DotContentTypeComponent', () => {
             const contentTypes = spectator.component.$state.contentTypes();
             // Should not have the selected value if it doesn't match filter
             expect(contentTypes.find((ct) => ct.variable === 'News')).toBeFalsy();
+            // Verify pinnedOption is still set even though it doesn't match filter
+            expect(spectator.component.$state.pinnedOption()).toEqual(mockContentTypes[1]);
+            // Verify pinnedOption doesn't appear in options when it doesn't match filter
+            const options = spectator.component.$options();
+            expect(options.find((ct) => ct.variable === 'News')).toBeFalsy();
         }));
 
         it('should handle lazy load event with undefined last', () => {
@@ -533,8 +734,11 @@ describe('DotContentTypeComponent', () => {
             spectator.component.writeValue(newContentType);
             spectator.detectChanges();
 
-            const contentTypes = spectator.component.$state.contentTypes();
-            expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
+            // Verify pinnedOption is set
+            expect(spectator.component.$state.pinnedOption()).toEqual(newContentType);
+            // Verify the value appears in $options (which combines pinnedOption with contentTypes)
+            const options = spectator.component.$options();
+            expect(options.find((ct) => ct.variable === 'Custom')).toBeTruthy();
         });
     });
 });
@@ -579,6 +783,34 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         hostSpectator.detectChanges();
 
         expect(hostSpectator.component.value()).toEqual(testValue);
+        // Verify pinnedOption is set when FormControl sets value
+        expect(hostSpectator.component.$state.pinnedOption()).toEqual(testValue);
+    });
+
+    it('should set pinnedOption when writeValue is called', () => {
+        const testValue = mockContentTypes[0];
+        hostSpectator.component.writeValue(testValue);
+
+        expect(hostSpectator.component.$state.pinnedOption()).toEqual(testValue);
+    });
+
+    it('should set pinnedOption to null when writeValue is called with null', () => {
+        hostSpectator.component.writeValue(null);
+
+        expect(hostSpectator.component.$state.pinnedOption()).toBeNull();
+    });
+
+    it('should show pinnedOption at the top of $options when writeValue is called', () => {
+        const testValue = mockContentTypes[0];
+        const loadedTypes = [mockContentTypes[1], mockContentTypes[2]];
+
+        patchState(hostSpectator.component.$state, { contentTypes: loadedTypes });
+        hostComponent.contentTypeControl.setValue(testValue);
+        hostSpectator.detectChanges();
+
+        const options = hostSpectator.component.$options();
+        expect(options[0]).toEqual(testValue);
+        expect(options.length).toBe(3);
     });
 
     it('should handle null value from FormControl', () => {
@@ -586,6 +818,8 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         hostSpectator.detectChanges();
 
         expect(hostSpectator.component.value()).toBeNull();
+        // Verify pinnedOption is set to null
+        expect(hostSpectator.component.$state.pinnedOption()).toBeNull();
     });
 
     it('should ensure value is in contentTypes list when FormControl sets value', () => {
@@ -598,8 +832,11 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         hostComponent.contentTypeControl.setValue(newContentType);
         hostSpectator.detectChanges();
 
-        const contentTypes = hostSpectator.component.$state.contentTypes();
-        expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
+        // Verify pinnedOption is set
+        expect(hostSpectator.component.$state.pinnedOption()).toEqual(newContentType);
+        // Verify the value appears in $options (which combines pinnedOption with contentTypes)
+        const options = hostSpectator.component.$options();
+        expect(options.find((ct) => ct.variable === 'Custom')).toBeTruthy();
     });
 
     it('should propagate value changes from component to FormControl', () => {
