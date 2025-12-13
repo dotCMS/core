@@ -2,7 +2,8 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngn
 import { patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -43,8 +44,12 @@ describe('DotContentTypeComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotContentTypeComponent,
-        imports: [HttpClientTestingModule, ReactiveFormsModule],
-        providers: [mockProvider(DotContentTypeService)]
+        imports: [ReactiveFormsModule],
+            providers: [
+            mockProvider(DotContentTypeService),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(() => {
