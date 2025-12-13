@@ -1,8 +1,10 @@
 <p-select
+    #select
     optionLabel="hostname"
     [appendTo]="'body'"
     (onChange)="onSiteChange($event.value)"
     (onLazyLoad)="onLazyLoad($event)"
+    (onShow)="onSelectShow()"
     [ngModel]="value()"
     (ngModelChange)="value.set($event)"
     [disabled]="$disabled()"
@@ -12,12 +14,14 @@
     [placeholder]="placeholder()"
     [virtualScroll]="true"
     [lazy]="true"
+    [scrollHeight]="'300px'"
     [virtualScrollOptions]="{
         itemSize: 34,
-        scrollHeight: '300px',
         step: 40,
-        contentStyle: {
-            height: '300px'
+        autoSize: false,
+        style: {
+            height: '300px',
+            minHeight: '300px'
         }
     }"
     class="w-full">

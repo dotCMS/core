@@ -12,14 +12,15 @@ import {
     effect,
     forwardRef,
     computed,
-    OnInit
+    OnInit,
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectLazyLoadEvent, SelectModule } from 'primeng/select';
+import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
 import { DotSiteService } from '@dotcms/data-access';
 import { Site } from '@dotcms/dotcms-js';
@@ -78,6 +79,8 @@ interface DotSiteState {
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit {
     private siteService = inject(DotSiteService);
+
+    @ViewChild('select') select: Select | undefined;
 
     /**
      * TODO: Remove this hardcoded value once the API endpoint /api/v1/site
@@ -272,6 +275,20 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
             { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
             0
         );
+    }
+
+    /**
+     * Handles the event when the select overlay is shown.
+     * Initializes the virtual scroller to ensure options are displayed correctly.
+     */
+    onSelectShow(): void {
+        // Initialize virtual scroller state to fix display issue with custom filter template
+        requestAnimationFrame(() => {
+            if (this.select?.scroller) {
+                this.select.scroller.setInitialState();
+                this.select.scroller.viewInit();
+            }
+        });
     }
 
     // ControlValueAccessor implementation
