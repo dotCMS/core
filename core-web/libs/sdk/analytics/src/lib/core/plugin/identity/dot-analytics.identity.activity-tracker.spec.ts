@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
-
 import {
     cleanupActivityTracking,
     initializeActivityTracking,
@@ -9,6 +7,10 @@ import {
 } from './dot-analytics.identity.activity-tracker';
 
 import { ACTIVITY_EVENTS } from '../../shared/constants';
+import {
+    ANALYTICS_WINDOWS_ACTIVE_KEY,
+    ANALYTICS_WINDOWS_CLEANUP_KEY
+} from '../../shared/constants/dot-analytics.constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 describe('DotCMS Activity Tracker', () => {
