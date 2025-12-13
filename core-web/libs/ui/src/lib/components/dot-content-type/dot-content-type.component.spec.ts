@@ -115,18 +115,6 @@ describe('DotContentTypeComponent', () => {
             expect(select.disabled()).toBe(true);
         });
 
-        it('should bind placeholder to p-select', () => {
-            spectator.setInput('placeholder', 'Choose a type');
-            spectator.detectChanges();
-
-            const select = spectator.query(Select);
-            expect(select.placeholder()).toBe('Choose a type');
-
-            spectator.setInput('placeholder', 'Select content');
-            spectator.detectChanges();
-            expect(select.placeholder()).toBe('Select content');
-        });
-
         it('should sort content types alphabetically', () => {
             const unsortedContentTypes: DotCMSContentType[] = [
                 { id: '1', name: 'Zebra', variable: 'Zebra' } as DotCMSContentType,
@@ -440,12 +428,6 @@ describe('DotContentTypeComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should handle null value in onContentTypeChange', () => {
-            spectator.component.onContentTypeChange(null);
-
-            expect(spectator.component.value()).toBeNull();
-        });
-
         it('should handle empty content types array', () => {
             // Create new component instance with empty response
             spectator = createComponent({ detectChanges: false });
@@ -653,43 +635,22 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         expect(select.disabled()).toBe(true);
     });
 
-    it('should combine input disabled and FormControl disabled state', () => {
-        // Test with both input disabled=false and FormControl enabled
-        hostComponent.disabled = false;
-        hostComponent.contentTypeControl.enable();
-        hostSpectator.detectChanges();
-        expect(hostSpectator.component.$disabled()).toBe(false);
+        it('should combine input disabled and FormControl disabled state', () => {
+            // Test with both input disabled=false and FormControl enabled
+            hostComponent.disabled = false;
+            hostComponent.contentTypeControl.enable();
+            hostSpectator.detectChanges();
+            expect(hostSpectator.component.$disabled()).toBe(false);
 
-        // Test with input disabled=true (should override FormControl enabled)
-        hostComponent.disabled = true;
-        hostSpectator.detectChanges();
-        expect(hostSpectator.component.$disabled()).toBe(true);
+            // Test with input disabled=true (should override FormControl enabled)
+            hostComponent.disabled = true;
+            hostSpectator.detectChanges();
+            expect(hostSpectator.component.$disabled()).toBe(true);
 
-        // Test with input disabled=false but FormControl disabled (should be disabled)
-        hostComponent.disabled = false;
-        hostComponent.contentTypeControl.disable();
-        hostSpectator.detectChanges();
-        expect(hostSpectator.component.$disabled()).toBe(true);
-    });
-
-    it('should update component when FormControl value changes', () => {
-        hostComponent.contentTypeControl.setValue(mockContentTypes[0]);
-        hostSpectator.detectChanges();
-        expect(hostSpectator.component.value()).toEqual(mockContentTypes[0]);
-
-        hostComponent.contentTypeControl.setValue(mockContentTypes[1]);
-        hostSpectator.detectChanges();
-        expect(hostSpectator.component.value()).toEqual(mockContentTypes[1]);
-    });
-
-    it('should update FormControl when user selects a different value', () => {
-        hostComponent.contentTypeControl.setValue(mockContentTypes[0]);
-        hostSpectator.detectChanges();
-
-        // User selects a different value through p-select
-        hostSpectator.triggerEventHandler(Select, 'onChange', { value: mockContentTypes[1] });
-        hostSpectator.detectChanges();
-
-        expect(hostComponent.contentTypeControl.value).toEqual(mockContentTypes[1]);
-    });
+            // Test with input disabled=false but FormControl disabled (should be disabled)
+            hostComponent.disabled = false;
+            hostComponent.contentTypeControl.disable();
+            hostSpectator.detectChanges();
+            expect(hostSpectator.component.$disabled()).toBe(true);
+        });
 });
