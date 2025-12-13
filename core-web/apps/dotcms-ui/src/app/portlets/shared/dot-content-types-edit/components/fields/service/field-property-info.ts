@@ -93,7 +93,7 @@ export const PROPERTY_INFO = {
     },
     newRenderMode: {
         component: NewRenderModePropertyComponent,
-        defaultValue: 'false',
+        defaultValue: '',
         order: 1
     }
 };
