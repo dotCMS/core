@@ -1,0 +1,39 @@
+<p-select
+    optionLabel="hostname"
+    [appendTo]="'body'"
+    (onChange)="onSiteChange($event.value)"
+    (onLazyLoad)="onLazyLoad($event)"
+    [ngModel]="value()"
+    (ngModelChange)="value.set($event)"
+    [disabled]="$disabled()"
+    [filter]="true"
+    [loading]="$state.loading()"
+    [options]="$state.sites()"
+    [placeholder]="placeholder()"
+    [virtualScroll]="true"
+    [lazy]="true"
+    [virtualScrollOptions]="{
+        itemSize: 34,
+        scrollHeight: '300px',
+        step: 40,
+        contentStyle: {
+            height: '300px'
+        }
+    }"
+    class="w-full">
+    <ng-template pTemplate="filter" let-options>
+        <p-iconfield>
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="$state.filterValue() || ''"
+                [placeholder]="'Search sites...'"
+                (input)="onFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+            <p-inputicon class="pi pi-search" />
+        </p-iconfield>
+    </ng-template>
+</p-select>
