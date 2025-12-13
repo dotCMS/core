@@ -1,3 +1,5 @@
+import { signalState, patchState } from '@ngrx/signals';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -27,6 +29,13 @@ interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
 }
 
 type ParsedLazyLoadResult = ParsedSelectLazyLoadEvent | null;
+
+interface DotContentTypeState {
+    contentTypes: DotCMSContentType[];
+    loading: boolean;
+    totalRecords: number;
+    filterValue: string;
+}
 
 @Component({
     selector: 'dot-content-type',
@@ -65,10 +74,13 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     // Custom output for explicit change events
     onChange = output<DotCMSContentType | null>();
 
-    contentTypes = signal<DotCMSContentType[]>([]);
-    loading = signal<boolean>(false);
-    totalRecords = signal<number>(0);
-    filterValue = signal<string>('');
+    readonly $state = signalState<DotContentTypeState>({
+        contentTypes: [],
+        loading: false,
+        totalRecords: 0,
+        filterValue: ''
+    });
+
     private readonly pageSize = 40;
     private loadedPages = new Set<number>();
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -91,7 +103,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     }
 
     ngOnInit(): void {
-        if (this.contentTypes().length === 0) {
+        if (this.$state.contentTypes().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
     }
@@ -123,8 +135,8 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             return;
         }
 
-        const currentCount = this.contentTypes().length;
-        const totalEntries = this.totalRecords();
+        const currentCount = this.$state.contentTypes().length;
+        const totalEntries = this.$state.totalRecords();
 
         if (!this.shouldLoadMore(parsed.itemsNeeded, currentCount, totalEntries)) {
             return;
@@ -150,12 +162,14 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             clearTimeout(this.filterDebounceTimeout);
         }
 
-        this.filterValue.set(filter);
+        patchState(this.$state, { filterValue: filter });
 
         this.filterDebounceTimeout = setTimeout(() => {
             this.loadedPages.clear();
-            this.contentTypes.set([]);
-            this.totalRecords.set(0);
+            patchState(this.$state, {
+                contentTypes: [],
+                totalRecords: 0
+            });
 
             // Load first page with the new filter
             this.loadContentTypesLazy(
@@ -176,10 +190,12 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             this.filterDebounceTimeout = null;
         }
 
-        this.filterValue.set('');
+        patchState(this.$state, {
+            filterValue: '',
+            contentTypes: [],
+            totalRecords: 0
+        });
         this.loadedPages.clear();
-        this.contentTypes.set([]);
-        this.totalRecords.set(0);
 
         this.loadContentTypesLazy(
             { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
@@ -218,7 +234,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      */
     private setContentTypes(contentTypes: DotCMSContentType[]): void {
         const sorted = [...contentTypes].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        this.contentTypes.set(sorted);
+        patchState(this.$state, { contentTypes: sorted });
     }
 
     /**
@@ -228,7 +244,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      * @param contentType The content type to ensure is in the list
      */
     private ensureContentTypeInList(contentType: DotCMSContentType): void {
-        const currentContentTypes = this.contentTypes();
+        const currentContentTypes = this.$state.contentTypes();
         const exists = currentContentTypes.some((ct) => ct.variable === contentType.variable);
 
         if (!exists) {
@@ -305,7 +321,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      * @param totalEntries Total number of entries available (0 if unknown)
      */
     private loadContentTypesLazy(parsed: ParsedSelectLazyLoadEvent, totalEntries: number): void {
-        if (this.loading()) {
+        if (this.$state.loading()) {
             return;
         }
 
@@ -329,8 +345,8 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             }
         }
 
-        this.loading.set(true);
-        const filter = this.filterValue().trim();
+        patchState(this.$state, { loading: true });
+        const filter = this.$state.filterValue().trim();
         this.contentTypeService
             .getContentTypesWithPagination({
                 page: pageToLoad,
@@ -339,13 +355,13 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             })
             .subscribe({
                 next: ({ contentTypes, pagination }) => {
-                    const currentContentTypes = this.contentTypes();
+                    const currentContentTypes = this.$state.contentTypes();
                     const isFiltering = filter.length > 0;
                     const isFirstPage = pageToLoad === 1;
 
                     // Update total records from pagination
                     if (pagination.totalEntries) {
-                        this.totalRecords.set(pagination.totalEntries);
+                        patchState(this.$state, { totalRecords: pagination.totalEntries });
                     }
 
                     // Replace on first page (initial load or filter change clears list first)
@@ -365,7 +381,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
                     }
 
                     this.loadedPages.add(pageToLoad);
-                    this.loading.set(false);
+                    patchState(this.$state, { loading: false });
 
                     // Ensure current value is in the list only when not filtering
                     // When filtering, don't add selected value if it doesn't match the filter
@@ -376,7 +392,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
                     }
                 },
                 error: () => {
-                    this.loading.set(false);
+                    patchState(this.$state, { loading: false });
                 }
             });
     }
