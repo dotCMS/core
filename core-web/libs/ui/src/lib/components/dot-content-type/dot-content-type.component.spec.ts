@@ -1,11 +1,18 @@
-import { createComponentFactory, createHostFactory, mockProvider, Spectator, SpectatorHost, SpyObject } from '@ngneat/spectator/jest';
+import {
+    createComponentFactory,
+    createHostFactory,
+    mockProvider,
+    Spectator,
+    SpectatorHost,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
 import { Component } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { Select, SelectLazyLoadEvent } from 'primeng/select';
@@ -56,7 +63,7 @@ describe('DotContentTypeComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentTypeComponent,
         imports: [ReactiveFormsModule],
-            providers: [
+        providers: [
             mockProvider(DotContentTypeService),
             provideHttpClient(),
             provideHttpClientTesting()
@@ -338,7 +345,6 @@ describe('DotContentTypeComponent', () => {
             });
         }));
 
-
         it('should reset filter and reload when filter is cleared', fakeAsync(() => {
             // Apply a filter first
             spectator.component.onFilterChange('blog');
@@ -386,7 +392,6 @@ describe('DotContentTypeComponent', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
-
 
         it('should update value model signal', () => {
             const testValue = mockContentTypes[0];
@@ -569,10 +574,12 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
     let hostComponent: FormHostComponent;
     let hostContentTypeService: SpyObject<DotContentTypeService>;
 
-        beforeEach(() => {
-            hostSpectator = createHost(`<dot-content-type [formControl]="contentTypeControl" [disabled]="disabled"></dot-content-type>`);
-            hostComponent = hostSpectator.hostComponent;
-            hostContentTypeService = hostSpectator.inject(DotContentTypeService, true);
+    beforeEach(() => {
+        hostSpectator = createHost(
+            `<dot-content-type [formControl]="contentTypeControl" [disabled]="disabled"></dot-content-type>`
+        );
+        hostComponent = hostSpectator.hostComponent;
+        hostContentTypeService = hostSpectator.inject(DotContentTypeService, true);
 
         hostContentTypeService.getContentTypesWithPagination.mockReturnValue(
             of({
@@ -646,24 +653,24 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         expect(select.disabled()).toBe(true);
     });
 
-        it('should combine input disabled and FormControl disabled state', () => {
-            // Test with both input disabled=false and FormControl enabled
-            hostComponent.disabled = false;
-            hostComponent.contentTypeControl.enable();
-            hostSpectator.detectChanges();
-            expect(hostSpectator.component.$disabled()).toBe(false);
+    it('should combine input disabled and FormControl disabled state', () => {
+        // Test with both input disabled=false and FormControl enabled
+        hostComponent.disabled = false;
+        hostComponent.contentTypeControl.enable();
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$disabled()).toBe(false);
 
-            // Test with input disabled=true (should override FormControl enabled)
-            hostComponent.disabled = true;
-            hostSpectator.detectChanges();
-            expect(hostSpectator.component.$disabled()).toBe(true);
+        // Test with input disabled=true (should override FormControl enabled)
+        hostComponent.disabled = true;
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$disabled()).toBe(true);
 
-            // Test with input disabled=false but FormControl disabled (should be disabled)
-            hostComponent.disabled = false;
-            hostComponent.contentTypeControl.disable();
-            hostSpectator.detectChanges();
-            expect(hostSpectator.component.$disabled()).toBe(true);
-        });
+        // Test with input disabled=false but FormControl disabled (should be disabled)
+        hostComponent.disabled = false;
+        hostComponent.contentTypeControl.disable();
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$disabled()).toBe(true);
+    });
 
     it('should update component when FormControl value changes', () => {
         hostComponent.contentTypeControl.setValue(mockContentTypes[0]);
