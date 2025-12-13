@@ -36,9 +36,15 @@ type ParsedLazyLoadResult = ParsedSelectLazyLoadEvent | null;
  */
 interface DotSiteState {
     /**
-     * The list of loaded sites.
+     * The list of loaded sites (from lazy loading).
      */
     sites: Site[];
+
+    /**
+     * The currently pinned option (shown at top of list).
+     * This is the selected value that may not exist in the lazy-loaded pages yet.
+     */
+    pinnedOption: Site | null;
 
     /**
      * Indicates whether the sites are currently being loaded.
@@ -133,9 +139,41 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
      */
     readonly $state = signalState<DotSiteState>({
         sites: [],
+        pinnedOption: null,
         loading: false,
         totalRecords: 0,
         filterValue: ''
+    });
+
+    /**
+     * Computed options for the select dropdown.
+     * Combines pinned option (if any) with lazy-loaded options.
+     * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
+     */
+    $options = computed(() => {
+        const loaded = this.$state.sites();
+        const pinned = this.$state.pinnedOption();
+        const filterValue = this.$state.filterValue().trim().toLowerCase();
+
+        // No pinned option - just return loaded options
+        if (!pinned) {
+            return loaded;
+        }
+
+        // If filtering, only show pinned if it matches the filter
+        if (filterValue) {
+            const pinnedHostname = (pinned.hostname || '').toLowerCase();
+            const matchesFilter = pinnedHostname.includes(filterValue);
+
+            if (!matchesFilter) {
+                return loaded;
+            }
+        }
+
+        // Filter out pinned from loaded to avoid duplicates, then prepend pinned
+        const filtered = loaded.filter(s => s.identifier !== pinned.identifier);
+
+        return [pinned, ...filtered];
     });
 
     /**
@@ -184,6 +222,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Handles the event when the selected site changes.
+     * - Updates the pinned option to the new selection
      * - Updates the model value with the selected site.
      * - Calls the registered onTouched callback (for ControlValueAccessor interface).
      * - Emits the onChange output event to notify consumers of the new value.
@@ -191,6 +230,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
      * @param site The selected site, or null if cleared
      */
     onSiteChange(site: Site | null): void {
+        // Update pinned option to the new selection
+        patchState(this.$state, { pinnedOption: site });
+
         this.value.set(site);
         this.onTouchedCallback();
         this.onChange.emit(site);
@@ -294,6 +336,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
     // ControlValueAccessor implementation
     writeValue(value: Site | null): void {
         this.value.set(value);
+
+        // Pin the initial value so it appears at the top of the list
+        patchState(this.$state, { pinnedOption: value });
 
         // If we have a value, ensure it's in the sites array
         // This is especially important when the field is disabled

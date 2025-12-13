@@ -138,13 +138,20 @@ export class DotStarterComponent implements OnInit {
         ]
     } as DotCMSContentType;
 
+
     // selectedContentType = null;
     isDisabled = false;
     isInitiallyDisabled = true;
     contentTypeControl = new FormControl<DotCMSContentType | null>(null);
 
     // Test properties for dot-site component
-    selectedSite: Site | null = null;
+    // selectedSite: Site | null = null;
+    selectedSite: Site | null = {
+        "hostname": "site498.com",
+        "type": "contentlet",
+        "identifier": "a34844e012666716e068c5bbff820e09",
+        "archived": false
+    };
     siteControl = new FormControl<Site | null>(null);
 
     readonly #destroyRef = inject(DestroyRef);

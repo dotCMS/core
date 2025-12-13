@@ -10,7 +10,7 @@
     [disabled]="$disabled()"
     [filter]="true"
     [loading]="$state.loading()"
-    [options]="$state.sites()"
+    [options]="$options()"
     [placeholder]="placeholder()"
     [virtualScroll]="true"
     [lazy]="true"
@@ -39,5 +39,15 @@
                 (click)="$event.stopPropagation()" />
             <p-inputicon class="pi pi-search" />
         </p-iconfield>
+    </ng-template>
+
+    <ng-template let-site let-i="index" #item>
+        @if ($state.pinnedOption()?.hostname === site.hostname) {
+            <div class="font-bold">
+                {{ site.hostname }}
+            </div>
+        } @else {
+            {{ site.hostname }}
+        }
     </ng-template>
 </p-select>
