@@ -90,37 +90,32 @@ describe('DotSiteComponent', () => {
     });
 
     describe('Component Initialization', () => {
-        it('should bind props correctly to p-select', () => {
-            spectator.setInput('placeholder', 'Select site');
-            spectator.setInput('disabled', false);
+        it('should initialize p-select with correct configuration', () => {
             spectator.component.value.set('site1');
             spectator.detectChanges();
 
             const select = spectator.query(Select);
 
             expect(spectator.component.$options()).toEqual(expect.arrayContaining(mockSites));
-            expect(select.placeholder()).toBe('Select site');
-            expect(select.disabled()).toBe(false);
             expect(select.loading).toBe(false);
             expect(select.virtualScroll).toBe(true);
             expect(select.lazy).toBe(true);
             expect(select.filter).toBe(true);
         });
 
-        it('should update disabled binding on p-select', () => {
-            spectator.setInput('disabled', true);
+        it('should update disabled state via ControlValueAccessor', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            expect(select.disabled()).toBe(true);
-
-            spectator.setInput('disabled', false);
-            spectator.detectChanges();
             expect(select.disabled()).toBe(false);
 
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
             expect(select.disabled()).toBe(true);
+
+            spectator.component.setDisabledState(false);
+            spectator.detectChanges();
+            expect(select.disabled()).toBe(false);
         });
 
         it('should sort sites alphabetically by hostname', () => {
@@ -441,7 +436,7 @@ describe('DotSiteComponent', () => {
         }));
     });
 
-    describe('Component Inputs/Outputs', () => {
+    describe('Component Inputs', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
@@ -452,6 +447,67 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.value()).toEqual(testValue);
+        });
+
+        it('should bind placeholder input to p-select', () => {
+            spectator.setInput('placeholder', 'Custom placeholder');
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.placeholder()).toBe('Custom placeholder');
+        });
+
+        it('should bind disabled input to p-select', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.disabled()).toBe(true);
+
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
+            expect(select.disabled()).toBe(false);
+        });
+
+        it('should bind class input to p-select', () => {
+            spectator.setInput('class', 'custom-class');
+            spectator.detectChanges();
+
+            const selectElement = spectator.query('p-select');
+            expect(selectElement).toHaveClass('custom-class');
+        });
+
+        it('should bind id input to p-select inputId', () => {
+            spectator.setInput('id', 'custom-id');
+            spectator.detectChanges();
+
+            const select = spectator.query(Select);
+            expect(select.inputId).toBe('custom-id');
+        });
+
+        it('should use default values when inputs are not provided', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.placeholder()).toBe('');
+            expect(spectator.component.class()).toBe('w-full');
+            expect(spectator.component.id()).toBe('');
+        });
+
+        it('should trigger ControlValueAccessor onChange when model signal changes', () => {
+            const onChangeSpy = jest.fn();
+            spectator.component.registerOnChange(onChangeSpy);
+
+            const testValue = 'site1';
+            spectator.component.value.set(testValue);
+            spectator.detectChanges();
+
+            expect(onChangeSpy).toHaveBeenCalledWith(testValue);
+        });
+    });
+
+    describe('Component Outputs', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
         });
 
         it('should emit onChange output when value changes', () => {
@@ -467,17 +523,6 @@ describe('DotSiteComponent', () => {
             expect(onChangeSpy).toHaveBeenCalledWith(selectedSite.identifier);
         });
 
-        it('should trigger ControlValueAccessor onChange when model signal changes', () => {
-            const onChangeSpy = jest.fn();
-            spectator.component.registerOnChange(onChangeSpy);
-
-            const testValue = 'site1';
-            spectator.component.value.set(testValue);
-            spectator.detectChanges();
-
-            expect(onChangeSpy).toHaveBeenCalledWith(testValue);
-        });
-
         it('should emit null when value is cleared', () => {
             const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
 
@@ -485,6 +530,22 @@ describe('DotSiteComponent', () => {
 
             expect(spectator.component.value()).toBeNull();
             expect(onChangeSpy).toHaveBeenCalledWith(null);
+        });
+
+        it('should emit onShow output when select overlay is shown', () => {
+            const onShowSpy = jest.spyOn(spectator.component.onShow, 'emit');
+
+            spectator.triggerEventHandler(Select, 'onShow', {});
+
+            expect(onShowSpy).toHaveBeenCalled();
+        });
+
+        it('should emit onHide output when select overlay is hidden', () => {
+            const onHideSpy = jest.spyOn(spectator.component.onHide, 'emit');
+
+            spectator.triggerEventHandler(Select, 'onHide', {});
+
+            expect(onHideSpy).toHaveBeenCalled();
         });
     });
 
