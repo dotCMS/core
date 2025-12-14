@@ -13,7 +13,8 @@ import {
     forwardRef,
     computed,
     OnInit,
-    ViewChild
+    ViewChild,
+    HostListener
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
@@ -84,8 +85,12 @@ interface DotContentTypeState {
     ]
 })
 export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
-
     private contentTypeService = inject(DotContentTypeService);
+
+    @HostListener('focus')
+    onHostFocus(): void {
+        this.select?.focusInputViewChild?.nativeElement?.focus();
+    }
 
     @ViewChild('select') select: Select | undefined;
 
@@ -101,10 +106,11 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     disabled = input<boolean>(false);
 
     /**
-     * Model binding for the selected content type.
-     * Null represents no selection.
+     * Two-way model binding for the selected content type.
+     * Accepts a string (content type variable), a DotCMSContentType object, or null if no content type is selected.
+     * Used to drive the currently selected value in the dropdown.
      */
-    value = model<DotCMSContentType | null>(null);
+    value = model<string | DotCMSContentType | null>(null);
 
     /**
      * Disabled state from the ControlValueAccessor interface.
@@ -121,9 +127,33 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Output event emitted whenever the selected content type changes.
-     * Emits the new value or null.
+     * Emits the content type variable or null.
      */
-    onChange = output<DotCMSContentType | null>();
+    onChange = output<string | null>();
+
+    /**
+     * Output event emitted when the select dropdown overlay is shown.
+     * Can be used by parent components to respond to overlay display (e.g., for analytics, UI adjustments).
+     */
+    onShow = output<void>();
+
+    /**
+     * Output event emitted when the select dropdown overlay is hidden.
+     * Allows parent components to react to overlay closure (e.g., cleaning up, focusing).
+     */
+    onHide = output<void>();
+
+    /**
+     * CSS class(es) applied to the select component wrapper.
+     * Default is 'w-full'.
+     */
+    class = input<string>('w-full');
+
+    /**
+     * The HTML id attribute for the select input.
+     * Can be customized; defaults to an empty string.
+     */
+    id = input<string>('');
 
     /**
      * Reactive state of the component including loaded types, loading status, total results, and active filter.
@@ -190,22 +220,47 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      */
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    constructor() {
+        // Sync model signal changes with ControlValueAccessor
+        effect(() => {
+            const variable = this.extractVariable(this.value());
+            this.onChangeCallback(variable);
+        });
+
+        // Watch value model changes and fetch content type object to set state
+        effect(() => {
+            const variable = this.extractVariable(this.value());
+
+            if (variable) {
+                patchState(this.$state, { loading: true });
+                this.contentTypeService.getContentType(variable).subscribe({
+                    next: (contentType) => {
+                        // Pin the initial value so it appears at the top of the list
+                        patchState(this.$state, { pinnedOption: contentType, loading: false });
+
+                        // Ensure it's in the contentTypes array
+                        // This is especially important when the field is disabled
+                        this.ensureContentTypeInList(contentType);
+                    },
+                    error: () => {
+                        // If fetch fails, clear pinned option
+                        patchState(this.$state, { pinnedOption: null, loading: false });
+                    }
+                });
+            } else {
+                patchState(this.$state, { pinnedOption: null });
+            }
+        });
+    }
+
     // ControlValueAccessor callback functions
-    private onChangeCallback = (_value: DotCMSContentType | null) => {
+    private onChangeCallback = (_value: string | null) => {
         // Implementation provided by registerOnChange
     };
 
     private onTouchedCallback = () => {
         // Implementation provided by registerOnTouched
     };
-
-    constructor() {
-        // Sync model signal changes with ControlValueAccessor
-        effect(() => {
-            const currentValue = this.value();
-            this.onChangeCallback(currentValue);
-        });
-    }
 
     ngOnInit(): void {
         if (this.$state.contentTypes().length === 0) {
@@ -216,7 +271,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     /**
      * Handles the event when the selected content type changes.
      * - Updates the pinned option to the new selection
-     * - Updates the model value with the selected content type.
+     * - Updates the model value with the selected content type variable.
      * - Calls the registered onTouched callback (for ControlValueAccessor interface).
      * - Emits the onChange output event to notify consumers of the new value.
      *
@@ -226,9 +281,21 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         // Update pinned option to the new selection
         patchState(this.$state, { pinnedOption: contentType });
 
-        this.value.set(contentType);
+        const variable = contentType?.variable ?? null;
+        this.value.set(variable);
         this.onTouchedCallback();
-        this.onChange.emit(contentType);
+        this.onChange.emit(variable);
+    }
+
+    /**
+     * Handles ngModelChange from PrimeNG Select
+     * Extracts the variable from the ContentType object and stores it in the model
+     *
+     * @param contentType The ContentType object from PrimeNG Select, or null if cleared
+     */
+    onModelChange(contentType: DotCMSContentType | null): void {
+        const variable = contentType?.variable ?? null;
+        this.value.set(variable);
     }
 
     /**
@@ -317,6 +384,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
      * Initializes the virtual scroller to ensure options are displayed correctly.
      */
     onSelectShow(): void {
+        this.onShow.emit();
         // Initialize virtual scroller state to fix display issue with custom filter template
         requestAnimationFrame(() => {
             if (this.select?.scroller) {
@@ -326,15 +394,21 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         });
     }
 
-    // ControlValueAccessor implementation
-    writeValue(value: DotCMSContentType | null): void {
-        this.value.set(value);
-
-        // Pin the initial value so it appears at the top of the list
-        patchState(this.$state, { pinnedOption: value });
+    /**
+     * Handles the event when the select overlay is hidden.
+     */
+    onSelectHide(): void {
+        this.onHide.emit();
     }
 
-    registerOnChange(fn: (value: DotCMSContentType | null) => void): void {
+    // ControlValueAccessor implementation
+    writeValue(value: string | DotCMSContentType | null): void {
+        // Extract variable and set the value - the effect will handle fetching the content type and updating state
+        const variable = this.extractVariable(value);
+        this.value.set(variable);
+    }
+
+    registerOnChange(fn: (value: string | null) => void): void {
         this.onChangeCallback = fn;
     }
 
@@ -355,6 +429,50 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     private setContentTypes(contentTypes: DotCMSContentType[]): void {
         const sorted = [...contentTypes].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         patchState(this.$state, { contentTypes: sorted });
+    }
+
+    /**
+     * Extracts the variable from a value that can be a string, DotCMSContentType object, or null.
+     * Handles backward compatibility with DotCMSContentType objects.
+     *
+     * @private
+     * @param value The value to extract variable from (string, DotCMSContentType, or null)
+     * @returns The variable string or null
+     */
+    private extractVariable(value: string | DotCMSContentType | null): string | null {
+        if (!value) {
+            return null;
+        }
+
+        if (typeof value === 'string') {
+            return value;
+        }
+
+        // Validate that the object has a variable property
+        if (!('variable' in value) || typeof value.variable !== 'string') {
+            console.warn(
+                `DotContentTypeComponent: Invalid content type object provided. Expected object with 'variable' property of type string, but received:`,
+                value
+            );
+            return null;
+        }
+
+        return value.variable;
+    }
+
+    /**
+     * Ensures the given content type is in the contentTypes list.
+     *
+     * @private
+     * @param contentType The content type to ensure is in the list
+     */
+    private ensureContentTypeInList(contentType: DotCMSContentType): void {
+        const currentContentTypes = this.$state.contentTypes();
+        const exists = currentContentTypes.some((ct) => ct.variable === contentType.variable);
+
+        if (!exists) {
+            this.setContentTypes([...currentContentTypes, contentType]);
+        }
     }
 
     /**
@@ -403,13 +521,21 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         currentCount: number,
         totalEntries: number
     ): boolean {
-        // If we already have all items, no need to load
-        if (totalEntries > 0 && currentCount >= totalEntries) {
+        // If we already have enough items to satisfy the request, no need to load
+        if (currentCount >= itemsNeeded) {
             return false;
         }
 
-        // If we already have enough items, no need to load
-        if (currentCount >= itemsNeeded) {
+        // If we know the total and we have all items, no need to load
+        // But be cautious: if totalEntries equals currentCount and currentCount equals pageSize,
+        // the API might be returning incorrect totalEntries (it might just be the current page count)
+        // So only trust totalEntries if it's significantly larger than the page size
+        if (totalEntries > 0 && currentCount >= totalEntries) {
+            // If totalEntries is suspiciously equal to pageSize, don't trust it
+            // Continue loading to see if there are more items
+            if (totalEntries <= this.pageSize && currentCount === this.pageSize) {
+                return true; // Keep loading, API might have wrong total
+            }
             return false;
         }
 
@@ -419,6 +545,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     /**
      * Loads content types with pagination support
      * Converts PrimeNG's offset-based lazy loading to page-based API calls
+     * Loads all missing pages from 1 up to the required page
      *
      * @private
      * @param parsed Parsed event values
@@ -436,21 +563,48 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
         const lastIndexNeeded = last !== undefined ? last : itemsNeeded - 1;
         const pageToLoad = Math.floor(lastIndexNeeded / this.pageSize) + 1;
 
-        // Check if we already loaded this page
-        if (this.loadedPages.has(pageToLoad)) {
-            return;
-        }
-
         // If we know the total, check if we're requesting beyond it
-        if (totalEntries > 0) {
+        // But be cautious: if totalEntries equals pageSize, the API might be wrong
+        if (totalEntries > 0 && totalEntries > this.pageSize) {
             const maxPage = Math.ceil(totalEntries / this.pageSize);
             if (pageToLoad > maxPage) {
                 return;
             }
         }
 
+        // Find all missing pages from 1 to pageToLoad
+        const pagesToLoad: number[] = [];
+        for (let page = 1; page <= pageToLoad; page++) {
+            if (!this.loadedPages.has(page)) {
+                pagesToLoad.push(page);
+            }
+        }
+
+        // If all required pages are already loaded, return
+        if (pagesToLoad.length === 0) {
+            return;
+        }
+
+        // Load all missing pages sequentially
+        this.loadPagesSequentially(pagesToLoad);
+    }
+
+    /**
+     * Loads multiple pages sequentially
+     *
+     * @private
+     * @param pages Array of page numbers to load
+     */
+    private loadPagesSequentially(pages: number[]): void {
+        if (pages.length === 0) {
+            return;
+        }
+
         patchState(this.$state, { loading: true });
         const filter = this.$state.filterValue().trim();
+        const pageToLoad = pages[0];
+        const remainingPages = pages.slice(1);
+
         this.contentTypeService
             .getContentTypesWithPagination({
                 page: pageToLoad,
@@ -460,11 +614,14 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
             .subscribe({
                 next: ({ contentTypes, pagination }) => {
                     const currentContentTypes = this.$state.contentTypes();
+                    const isFiltering = filter.length > 0;
                     const isFirstPage = pageToLoad === 1;
 
                     // Update total records from pagination
-                    if (pagination.totalEntries) {
-                        patchState(this.$state, { totalRecords: pagination.totalEntries });
+                    if (isFirstPage || this.$state.totalRecords() === 0) {
+                        if (pagination.totalEntries) {
+                            patchState(this.$state, { totalRecords: pagination.totalEntries });
+                        }
                     }
 
                     // Replace on first page (initial load or filter change clears list first)
@@ -484,7 +641,31 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
                     }
 
                     this.loadedPages.add(pageToLoad);
-                    patchState(this.$state, { loading: false });
+
+                    // If there are more pages to load, continue loading them
+                    if (remainingPages.length > 0) {
+                        this.loadPagesSequentially(remainingPages);
+                    } else {
+                        patchState(this.$state, { loading: false });
+
+                        // Ensure current value is in the list only when not filtering
+                        // When filtering, don't add selected value if it doesn't match the filter
+                        // This allows "No results found" to display correctly
+                        const currentValue = this.value();
+                        if (currentValue && typeof currentValue === 'string' && !isFiltering) {
+                            // Fetch the content type by variable to ensure it's in the list
+                            patchState(this.$state, { loading: true });
+                            this.contentTypeService.getContentType(currentValue).subscribe({
+                                next: (contentType) => {
+                                    this.ensureContentTypeInList(contentType);
+                                    patchState(this.$state, { loading: false });
+                                },
+                                error: () => {
+                                    patchState(this.$state, { loading: false });
+                                }
+                            });
+                        }
+                    }
                 },
                 error: () => {
                     patchState(this.$state, { loading: false });
