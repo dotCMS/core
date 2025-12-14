@@ -1,20 +1,22 @@
 <p-select
     #select
-    optionLabel="name"
-    [appendTo]="'body'"
+    (ngModelChange)="onModelChange($event)"
     (onChange)="onContentTypeChange($event.value)"
+    (onHide)="onSelectHide()"
     (onLazyLoad)="onLazyLoad($event)"
     (onShow)="onSelectShow()"
-    [ngModel]="value()"
-    (ngModelChange)="value.set($event)"
+    [appendTo]="'body'"
+    [class]="class()"
     [disabled]="$disabled()"
     [filter]="true"
+    [inputId]="id()"
+    [lazy]="true"
     [loading]="$state.loading()"
+    [ngModel]="$state.pinnedOption()"
     [options]="$options()"
     [placeholder]="placeholder()"
-    [virtualScroll]="true"
-    [lazy]="true"
     [scrollHeight]="'300px'"
+    [virtualScroll]="true"
     [virtualScrollOptions]="{
         itemSize: 34,
         step: 40,
@@ -24,7 +26,8 @@
             minHeight: '300px'
         }
     }"
-    class="w-full">
+    dataKey="variable"
+    optionLabel="name">
     <ng-template pTemplate="filter" let-options>
         <p-iconfield>
             <input
