@@ -14,7 +14,6 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { fakeAsync, tick, flush } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { Select, SelectLazyLoadEvent } from 'primeng/select';
 
@@ -69,8 +68,7 @@ describe('DotSiteComponent', () => {
         providers: [
             mockProvider(DotSiteService),
             provideHttpClient(),
-            provideHttpClientTesting(),
-            provideNoopAnimations()
+            provideHttpClientTesting()
         ]
     });
 
