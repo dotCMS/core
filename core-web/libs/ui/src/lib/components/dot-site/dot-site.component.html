@@ -1,20 +1,22 @@
 <p-select
     #select
-    optionLabel="hostname"
-    [appendTo]="'body'"
+    (ngModelChange)="onModelChange($event)"
     (onChange)="onSiteChange($event.value)"
+    (onHide)="onSelectHide()"
     (onLazyLoad)="onLazyLoad($event)"
     (onShow)="onSelectShow()"
-    [ngModel]="value()"
-    (ngModelChange)="value.set($event)"
+    [appendTo]="'body'"
+    [class]="class()"
     [disabled]="$disabled()"
     [filter]="true"
+    [inputId]="id()"
+    [lazy]="true"
     [loading]="$state.loading()"
+    [ngModel]="$state.pinnedOption()"
     [options]="$options()"
     [placeholder]="placeholder()"
-    [virtualScroll]="true"
-    [lazy]="true"
     [scrollHeight]="'300px'"
+    [virtualScroll]="true"
     [virtualScrollOptions]="{
         itemSize: 34,
         step: 40,
@@ -24,8 +26,9 @@
             minHeight: '300px'
         }
     }"
-    class="w-full">
-    <ng-template pTemplate="filter" let-options>
+    dataKey="identifier"
+    optionLabel="hostname">
+    <ng-template pTemplate="filter">
         <p-iconfield>
             <input
                 pInputText
@@ -41,8 +44,8 @@
         </p-iconfield>
     </ng-template>
 
-    <ng-template let-site let-i="index" #item>
-        @if ($state.pinnedOption()?.hostname === site.hostname) {
+    <ng-template let-site #item>
+        @if ($state.pinnedOption()?.identifier === site.identifier) {
             <div class="font-bold">
                 {{ site.hostname }}
             </div>

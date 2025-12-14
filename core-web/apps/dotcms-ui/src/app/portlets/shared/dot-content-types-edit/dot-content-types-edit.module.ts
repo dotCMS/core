@@ -33,7 +33,8 @@ import {
     DotIconComponent,
     DotMenuComponent,
     DotMessagePipe,
-    DotSafeHtmlPipe
+    DotSafeHtmlPipe,
+    DotSiteComponent
 } from '@dotcms/ui';
 
 import { DotBinarySettingsComponent } from './components/dot-binary-settings/dot-binary-settings.component';
@@ -74,7 +75,6 @@ import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 import { DotInlineEditComponent } from '../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { DotMdIconSelectorComponent } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotPageSelectorComponent } from '../../../view/components/_common/dot-page-selector/dot-page-selector.component';
-import { DotSiteSelectorFieldComponent } from '../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotTextareaContentComponent } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotWorkflowsActionsSelectorFieldComponent } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
@@ -159,7 +159,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropdownComponent,
-        DotSiteSelectorFieldComponent,
+        DotSiteComponent,
         SplitButtonModule,
         TabsModule,
         DotRelationshipTreeComponent,

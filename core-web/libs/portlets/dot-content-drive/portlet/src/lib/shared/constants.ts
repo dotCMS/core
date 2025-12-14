@@ -1,53 +1,15 @@
-import { DotCMSBaseTypesContentTypes, SiteEntity } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
 
 import { DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
 export const HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY = 'content-drive-hide-message-banner';
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
-export const SYSTEM_HOST: SiteEntity = {
+export const SYSTEM_HOST: DotSite = {
     aliases: '',
     archived: false,
-    categoryId: '',
-    contentTypeId: '',
-    default: false,
-    dotAsset: false,
-    fileAsset: false,
-    folder: '/',
-    form: false,
-    host: 'SYSTEM_HOST',
-    hostThumbnail: null,
     hostname: 'SYSTEM_HOST',
-    htmlpage: false,
     identifier: 'SYSTEM_HOST',
-    indexPolicyDependencies: '',
-    inode: 'SYSTEM_HOST',
-    keyValue: false,
-    languageId: 1,
-    languageVariable: false,
-    live: true,
-    locked: false,
-    lowIndexPriority: false,
-    modDate: 0,
-    modUser: '',
-    name: 'System Host',
-    new: false,
-    owner: '',
-    parent: false,
-    permissionId: '',
-    permissionType: 'INDIVIDUAL',
-    persona: false,
-    sortOrder: 0,
-    structureInode: '',
-    systemHost: true,
-    tagStorage: 'SCHEMA',
-    title: 'System Host',
-    titleImage: null,
-    type: 'HOST',
-    vanityUrl: false,
-    variantId: '',
-    versionId: '',
-    working: true
 };
 
 // We want to exclude forms and Hosts, and only show contentlets that are not deleted

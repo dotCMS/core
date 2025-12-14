@@ -13,7 +13,8 @@ import {
     forwardRef,
     computed,
     OnInit,
-    ViewChild
+    ViewChild,
+    HostListener
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
@@ -23,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
 import { DotSiteService } from '@dotcms/data-access';
-import { Site } from '@dotcms/dotcms-js';
+import { DotSite } from '@dotcms/dotcms-models';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
     itemsNeeded: number;
@@ -38,13 +39,13 @@ interface DotSiteState {
     /**
      * The list of loaded sites (from lazy loading).
      */
-    sites: Site[];
+    sites: DotSite[];
 
     /**
      * The currently pinned option (shown at top of list).
      * This is the selected value that may not exist in the lazy-loaded pages yet.
      */
-    pinnedOption: Site | null;
+    pinnedOption: DotSite | null;
 
     /**
      * Indicates whether the sites are currently being loaded.
@@ -81,10 +82,15 @@ interface DotSiteState {
             useExisting: forwardRef(() => DotSiteComponent),
             multi: true
         }
-    ]
+    ],
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit {
     private siteService = inject(DotSiteService);
+
+    @HostListener('focus')
+    onHostFocus(): void {
+        this.select?.focusInputViewChild?.nativeElement?.focus();
+    }
 
     @ViewChild('select') select: Select | undefined;
 
@@ -109,10 +115,11 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
     disabled = input<boolean>(false);
 
     /**
-     * Model binding for the selected site.
-     * Null represents no selection.
+     * Two-way model binding for the selected site.
+     * Accepts a string (site identifier), a DotSite object, or null if no site is selected.
+     * Used to drive the currently selected value in the dropdown.
      */
-    value = model<Site | null>(null);
+    value = model<string | DotSite | null>(null);
 
     /**
      * Disabled state from the ControlValueAccessor interface.
@@ -129,9 +136,33 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
 
     /**
      * Output event emitted whenever the selected site changes.
-     * Emits the new value or null.
+     * Emits the site identifier or null.
      */
-    onChange = output<Site | null>();
+    onChange = output<string | null>();
+
+    /**
+     * Output event emitted when the select dropdown overlay is shown.
+     * Can be used by parent components to respond to overlay display (e.g., for analytics, UI adjustments).
+     */
+    onShow = output<void>();
+
+    /**
+     * Output event emitted when the select dropdown overlay is hidden.
+     * Allows parent components to react to overlay closure (e.g., cleaning up, focusing).
+     */
+    onHide = output<void>();
+
+    /**
+     * CSS class(es) applied to the select component wrapper.
+     * Default is 'w-full'.
+     */
+    class = input<string>('w-full');
+
+    /**
+     * The HTML id attribute for the select input.
+     * Can be customized; defaults to an empty string.
+     */
+    id = input<string>('');
 
     /**
      * Reactive state of the component including loaded sites, loading status, total results, and active filter.
@@ -150,7 +181,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
      * Combines pinned option (if any) with lazy-loaded options.
      * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
      */
-    $options = computed(() => {
+    $options = computed<DotSite[]>(() => {
         const loaded = this.$state.sites();
         const pinned = this.$state.pinnedOption();
         const filterValue = this.$state.filterValue().trim().toLowerCase();
@@ -162,8 +193,8 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
 
         // If filtering, only show pinned if it matches the filter
         if (filterValue) {
-            const pinnedHostname = (pinned.hostname || '').toLowerCase();
-            const matchesFilter = pinnedHostname.includes(filterValue);
+            const pinnedName = pinned.hostname.toLowerCase();
+            const matchesFilter = pinnedName.includes(filterValue);
 
             if (!matchesFilter) {
                 return loaded;
@@ -171,7 +202,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
         }
 
         // Filter out pinned from loaded to avoid duplicates, then prepend pinned
-        const filtered = loaded.filter(s => s.identifier !== pinned.identifier);
+        const filtered = loaded.filter((s) => s.identifier !== pinned.identifier);
 
         return [pinned, ...filtered];
     });
@@ -197,20 +228,36 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
      */
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    // ControlValueAccessor callback functions
-    private onChangeCallback = (_value: Site | null) => {
-        // Implementation provided by registerOnChange
-    };
-
-    private onTouchedCallback = () => {
-        // Implementation provided by registerOnTouched
-    };
-
     constructor() {
         // Sync model signal changes with ControlValueAccessor
         effect(() => {
-            const currentValue = this.value();
-            this.onChangeCallback(currentValue);
+            const identifier = this.extractIdentifier(this.value());
+            this.onChangeCallback(identifier);
+        });
+
+        // Watch value model changes and fetch site object to set state
+        effect(() => {
+            const identifier = this.extractIdentifier(this.value());
+
+            if (identifier) {
+                patchState(this.$state, { loading: true });
+                this.siteService.getSiteById(identifier).subscribe({
+                    next: (site) => {
+                        // Pin the initial value so it appears at the top of the list
+                        patchState(this.$state, { pinnedOption: site, loading: false });
+
+                        // Ensure it's in the sites array
+                        // This is especially important when the field is disabled
+                        this.ensureSiteInList(site);
+                    },
+                    error: () => {
+                        // If fetch fails, clear pinned option
+                        patchState(this.$state, { pinnedOption: null, loading: false });
+                    }
+                });
+            } else {
+                patchState(this.$state, { pinnedOption: null });
+            }
         });
     }
 
@@ -220,22 +267,43 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
         }
     }
 
+    // ControlValueAccessor callback functions
+    private onChangeCallback = (_value: string | null) => {
+        // Implementation provided by registerOnChange
+    };
+
+    private onTouchedCallback = () => {
+        // Implementation provided by registerOnTouched
+    };
+
     /**
      * Handles the event when the selected site changes.
      * - Updates the pinned option to the new selection
-     * - Updates the model value with the selected site.
+     * - Updates the model value with the selected site identifier.
      * - Calls the registered onTouched callback (for ControlValueAccessor interface).
      * - Emits the onChange output event to notify consumers of the new value.
      *
      * @param site The selected site, or null if cleared
      */
-    onSiteChange(site: Site | null): void {
+    onSiteChange(site: DotSite | null): void {
         // Update pinned option to the new selection
         patchState(this.$state, { pinnedOption: site });
 
-        this.value.set(site);
+        const identifier = site?.identifier ?? null;
+        this.value.set(identifier);
         this.onTouchedCallback();
-        this.onChange.emit(site);
+        this.onChange.emit(identifier);
+    }
+
+    /**
+     * Handles ngModelChange from PrimeNG Select
+     * Extracts the identifier from the Site object and stores it in the model
+     *
+     * @param site The Site object from PrimeNG Select, or null if cleared
+     */
+    onModelChange(site: DotSite | null): void {
+        const identifier = site?.identifier ?? null;
+        this.value.set(identifier);
     }
 
     /**
@@ -313,10 +381,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
         });
         this.loadedPages.clear();
 
-        this.loadSitesLazy(
-            { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
-            0
-        );
+        this.loadSitesLazy({ first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize }, 0);
     }
 
     /**
@@ -324,6 +389,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
      * Initializes the virtual scroller to ensure options are displayed correctly.
      */
     onSelectShow(): void {
+        this.onShow.emit();
         // Initialize virtual scroller state to fix display issue with custom filter template
         requestAnimationFrame(() => {
             if (this.select?.scroller) {
@@ -333,21 +399,21 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
         });
     }
 
-    // ControlValueAccessor implementation
-    writeValue(value: Site | null): void {
-        this.value.set(value);
-
-        // Pin the initial value so it appears at the top of the list
-        patchState(this.$state, { pinnedOption: value });
-
-        // If we have a value, ensure it's in the sites array
-        // This is especially important when the field is disabled
-        if (value) {
-            this.ensureSiteInList(value);
-        }
+    /**
+     * Handles the event when the select overlay is hidden.
+     */
+    onSelectHide(): void {
+        this.onHide.emit();
     }
 
-    registerOnChange(fn: (value: Site | null) => void): void {
+    // ControlValueAccessor implementation
+    writeValue(value: string | DotSite | null): void {
+        // Extract identifier and set the value - the effect will handle fetching the site and updating state
+        const identifier = this.extractIdentifier(value);
+        this.value.set(identifier);
+    }
+
+    registerOnChange(fn: (value: string | null) => void): void {
         this.onChangeCallback = fn;
     }
 
@@ -360,14 +426,45 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
     }
 
     /**
-     * Sets sites with automatic sorting by hostname
+     * Sets sites with automatic sorting by name
      *
      * @private
      * @param sites The sites to set
      */
-    private setSites(sites: Site[]): void {
-        const sorted = [...sites].sort((a, b) => (a.hostname || '').localeCompare(b.hostname || ''));
+    private setSites(sites: DotSite[]): void {
+        const sorted = [...sites].sort((a, b) =>
+            (a.hostname || '').localeCompare(b.hostname || '')
+        );
         patchState(this.$state, { sites: sorted });
+    }
+
+    /**
+     * Extracts the identifier from a value that can be a string, DotSite object, or null.
+     * Handles backward compatibility with DotSite objects.
+     *
+     * @private
+     * @param value The value to extract identifier from (string, DotSite, or null)
+     * @returns The identifier string or null
+     */
+    private extractIdentifier(value: string | DotSite | null): string | null {
+        if (!value) {
+            return null;
+        }
+
+        if (typeof value === 'string') {
+            return value;
+        }
+
+        // Validate that the object has an identifier property
+        if (!('identifier' in value) || typeof value.identifier !== 'string') {
+            console.warn(
+                `DotSiteComponent: Invalid site object provided. Expected object with 'identifier' property of type string, but received:`,
+                value
+            );
+            return null;
+        }
+
+        return value.identifier;
     }
 
     /**
@@ -376,7 +473,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
      * @private
      * @param site The site to ensure is in the list
      */
-    private ensureSiteInList(site: Site): void {
+    private ensureSiteInList(site: DotSite): void {
         const currentSites = this.$state.sites();
         const exists = currentSites.some((s) => s.identifier === site.identifier);
 
@@ -516,7 +613,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
         const remainingPages = pages.slice(1);
 
         this.siteService
-            .getSitesWithPagination({
+            .getSites({
                 page: pageToLoad,
                 per_page: this.pageSize,
                 ...(filter ? { filter } : {})
@@ -561,8 +658,18 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
                         // When filtering, don't add selected value if it doesn't match the filter
                         // This allows "No results found" to display correctly
                         const currentValue = this.value();
-                        if (currentValue && !isFiltering) {
-                            this.ensureSiteInList(currentValue);
+                        if (currentValue && typeof currentValue === 'string' && !isFiltering) {
+                            // Fetch the site by identifier to ensure it's in the list
+                            patchState(this.$state, { loading: true });
+                            this.siteService.getSiteById(currentValue).subscribe({
+                                next: (site) => {
+                                    this.ensureSiteInList(site);
+                                    patchState(this.$state, { loading: false });
+                                },
+                                error: () => {
+                                    patchState(this.$state, { loading: false });
+                                }
+                            });
                         }
                     }
                 },

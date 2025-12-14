@@ -1,19 +1,23 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, OnInit, Signal, inject } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { map, switchMap, take } from 'rxjs/operators';
+
+import { DotRouterService, DotSiteService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotSite, FeaturedFlags } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotSiteComponent } from '@dotcms/ui';
 
 import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 
@@ -25,45 +29,63 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
         ToolbarModule,
         DividerModule,
         DotCrumbtrailComponent,
-        DotSiteSelectorComponent,
         DotToolbarNotificationsComponent,
         DotToolbarAnnouncementsComponent,
         DotToolbarUserComponent,
-        DotShowHideFeatureDirective
+        DotShowHideFeatureDirective,
+        DotSiteComponent,
+        FormsModule
     ]
 })
 export class DotToolbarComponent implements OnInit {
+    #globalStore = inject(GlobalStore);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dotcmsEventsService = inject(DotcmsEventsService);
-    readonly #siteService = inject(SiteService);
+    readonly #siteService = inject(DotSiteService);
     readonly #destroyRef = inject(DestroyRef);
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
 
+    $currentSite: Signal<DotSite | null> = toSignal(this.#siteService.getCurrentSite());
+
     ngOnInit(): void {
         this.#dotcmsEventsService
-            .subscribeTo<Site>('ARCHIVE_SITE')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((data: Site) => {
-                if (data.hostname === this.#siteService.currentSite.hostname && data.archived) {
-                    this.#siteService.switchToDefaultSite().subscribe((defaultSite: Site) => {
-                        this.siteChange(defaultSite);
+            .subscribeTo<DotSite>('ARCHIVE_SITE')
+            .pipe(
+                switchMap((data: DotSite) =>
+                    this.#siteService.getCurrentSite().pipe(
+                        take(1),
+                        map((currentSite: DotSite) => ({ data, currentSite }))
+                    )
+                ),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe(({ data, currentSite }) => {
+                if (
+                    data.hostname === currentSite.hostname &&
+                    data.archived
+                ) {
+                    this.#siteService.switchSite(null).subscribe((defaultSite: DotSite) => {
+                        this.siteChange(defaultSite.identifier);
                     });
                 }
             });
     }
 
-    siteChange(site: Site): void {
-        this.#siteService
-            .switchSite(site)
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => {
-                // wait for the site to be switched
-                // before redirecting to the site browser
-                if (this.#dotRouterService.isEditPage()) {
-                    this.#dotRouterService.goToSiteBrowser();
-                }
-            });
+    siteChange(identifier: string | null): void {
+        if (identifier) {
+            this.#siteService
+                .switchSite(identifier)
+                .pipe(takeUntilDestroyed(this.#destroyRef))
+                .subscribe((site: DotSite) => {
+                    // wait for the site to be switched
+                    // before redirecting to the site browser
+                    if (this.#dotRouterService.isEditPage()) {
+                        this.#dotRouterService.goToSiteBrowser();
+                    }
+                    this.#globalStore.setCurrentSite(site);
+                });
+        }
     }
 }

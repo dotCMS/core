@@ -3,7 +3,7 @@ import { DotCMSContentType } from './dot-content-types.model';
 /**
  * @deprecated Use SiteEntity instead
  */
-export interface DotSite {
+export interface Site {
     archived?: string;
     categoryId?: string;
     contentType: DotCMSContentType;
@@ -28,52 +28,25 @@ export interface DotSite {
     versionType?: string;
 }
 
+
 /**
- * Interface representing a complete site entity as returned by the DotCMS API.
- * This reflects the actual structure of site data from endpoints like /api/v1/site/currentSite.
+ * The primary (and only) site model to be used in components and stores.
+ *
+ * This interface defines the minimal, normalized site entity used across all
+ * UI components, data-access services, and global store state. It consolidates the
+ * fields needed for displaying, selecting, and working with sites in the application.
+ *
+ * Do NOT use the old `Site` or `SiteEntity` types in component code—this is the one
+ * to use everywhere in the app. All backend responses/DTOs should be mapped to this model.
+ *
+ * - `archived`: Whether the site is archived.
+ * - `identifier`: The unique site identifier (primary key).
+ * - `hostname`: The main hostname for the site (used for display/select).
+ * - `aliases`: Any alias hostnames, or null if none.
  */
-export interface SiteEntity {
-    aliases: string;
-    archived: boolean;
-    categoryId: string;
-    contentTypeId: string;
-    default: boolean;
-    dotAsset: boolean;
-    fileAsset: boolean;
-    folder: string;
-    form: boolean;
-    host: string;
-    hostThumbnail: unknown;
-    hostname: string;
-    htmlpage: boolean;
+export interface DotSite {
+    archived?: boolean;
     identifier: string;
-    indexPolicyDependencies: string;
-    inode: string;
-    keyValue: boolean;
-    languageId: number;
-    languageVariable: boolean;
-    live: boolean;
-    locked: boolean;
-    lowIndexPriority: boolean;
-    modDate: number;
-    modUser: string;
-    name: string;
-    new: boolean;
-    owner: string;
-    parent: boolean;
-    permissionId: string;
-    permissionType: string;
-    persona: boolean;
-    sortOrder: number;
-    structureInode: string;
-    systemHost: boolean;
-    tagStorage: string;
-    title: string;
-    titleImage: unknown;
-    type: string;
-    vanityUrl: boolean;
-    variantId: string;
-    versionId: string;
-    working: boolean;
-    googleMap?: string;
+    hostname: string;
+    aliases: string | null;
 }

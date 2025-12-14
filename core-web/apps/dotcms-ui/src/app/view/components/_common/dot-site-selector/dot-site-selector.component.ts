@@ -9,17 +9,18 @@ import {
     signal,
     ViewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Select, SelectModule } from 'primeng/select';
+
 import { delay, map, retryWhen, scan, take, tap } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
-import { Site, SiteService, LoggerService } from '@dotcms/dotcms-js';
-import { SiteEntity } from '@dotcms/dotcms-models';
+import { LoggerService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { Select, SelectModule } from 'primeng/select';
 
 /**
  * It is dropdown of sites, it handles global search using p-select native filtering
@@ -213,7 +214,7 @@ export class DotSiteSelectorComponent {
         // Mark as user-selected (computed will use this)
         this.#userSelectedSite.set(site);
         // Update global store
-        this.#globalStore.setCurrentSite(site as unknown as SiteEntity);
+        this.#globalStore.setCurrentSite(site as unknown as DotSite);
         // Emit event
         this.switch.emit(site);
     }
