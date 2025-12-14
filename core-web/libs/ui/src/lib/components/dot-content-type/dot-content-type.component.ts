@@ -221,16 +221,14 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
-        // Sync model signal changes with ControlValueAccessor
+        // Sync model signal changes with ControlValueAccessor and fetch content type object to set state
         effect(() => {
             const variable = this.extractVariable(this.value());
+
+            // Sync with ControlValueAccessor
             this.onChangeCallback(variable);
-        });
 
-        // Watch value model changes and fetch content type object to set state
-        effect(() => {
-            const variable = this.extractVariable(this.value());
-
+            // Fetch content type object to set state
             if (variable) {
                 patchState(this.$state, { loading: true });
                 this.contentTypeService.getContentType(variable).subscribe({

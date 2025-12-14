@@ -229,16 +229,14 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit {
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
-        // Sync model signal changes with ControlValueAccessor
+        // Sync model signal changes with ControlValueAccessor and fetch site object to set state
         effect(() => {
             const identifier = this.extractIdentifier(this.value());
+
+            // Sync with ControlValueAccessor
             this.onChangeCallback(identifier);
-        });
 
-        // Watch value model changes and fetch site object to set state
-        effect(() => {
-            const identifier = this.extractIdentifier(this.value());
-
+            // Fetch site object to set state
             if (identifier) {
                 patchState(this.$state, { loading: true });
                 this.siteService.getSiteById(identifier).subscribe({
