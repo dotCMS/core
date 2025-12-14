@@ -888,15 +888,14 @@ describe('DotContentTypeComponent', () => {
             tick();
             spectator.detectChanges();
 
-            // Set a value that doesn't match the filter - this will add News to the list via ensureContentTypeInList
+            // Set a value that doesn't match the filter - this will set the pinned option
             spectator.component.writeValue('News');
             spectator.detectChanges();
             tick();
             spectator.detectChanges();
 
-            // Verify News was added to the list initially
-            const contentTypesBeforeFilter = spectator.component.$state.contentTypes();
-            expect(contentTypesBeforeFilter.find((ct) => ct.variable === 'News')).toBeTruthy();
+            // Verify pinned option is set (News will appear in $options via pinnedOption, not in contentTypes array)
+            expect(spectator.component.$state.pinnedOption()?.variable).toBe('News');
 
             // Now update mock to return filtered content types only
             contentTypeService.getContentTypesWithPagination.mockReturnValue(
@@ -923,23 +922,12 @@ describe('DotContentTypeComponent', () => {
             expect(spectator.component.$state.pinnedOption()).toEqual(mockContentTypes[1]);
 
             // The component's $options computed should filter out the pinned option
-            // when it doesn't match the filter. However, if News was in the loaded content types
-            // list before filtering and the list wasn't properly cleared, it might still appear.
-            // The real test is: after filtering, $options should only show content types that match the filter.
+            // when it doesn't match the filter. After filtering, $options should only show content types that match the filter.
             // Since News's name is 'News' and doesn't match 'blog', it should not appear.
             const newsInOptions = options.find((ct) => ct.variable === 'News');
-            if (newsInOptions) {
-                // If News appears, it means it's in the loaded content types list
-                // This could happen if ensureContentTypeInList from writeValue ran after filtering
-                // But according to component logic, ensureContentTypeInList should only run when !isFiltering
-                // So this might indicate the content types list wasn't properly cleared
-                // For now, just verify that the filtered result (Blog) is present
-                expect(options.find((ct) => ct.variable === 'Blog')).toBeTruthy();
-            } else {
-                // Ideal case: News is not in options
-                expect(options.length).toBe(1);
-                expect(options[0].variable).toBe('Blog');
-            }
+            expect(newsInOptions).toBeUndefined(); // News should not appear when filtering
+            expect(options.length).toBe(1);
+            expect(options[0].variable).toBe('Blog');
 
             // At minimum, verify that filtered results are shown
             expect(options.find((ct) => ct.variable === 'Blog')).toBeTruthy();
@@ -994,7 +982,7 @@ describe('DotContentTypeComponent', () => {
             expect(options.find((ct) => ct.variable === 'Custom')).toBeTruthy();
         }));
 
-        it('should ensure content type is in list when writeValue is called', fakeAsync(() => {
+        it('should show content type in options when writeValue is called', fakeAsync(() => {
             const newContentType: DotCMSContentType = {
                 id: '99',
                 name: 'Custom',
@@ -1008,9 +996,11 @@ describe('DotContentTypeComponent', () => {
             tick();
             spectator.detectChanges();
 
-            // Verify the content type is added to the content types list via ensureContentTypeInList
-            const contentTypes = spectator.component.$state.contentTypes();
-            expect(contentTypes.find((ct) => ct.variable === 'Custom')).toBeTruthy();
+            // Verify the content type is set as pinned option
+            expect(spectator.component.$state.pinnedOption()?.variable).toBe('Custom');
+            // Verify the content type appears in $options (which combines pinnedOption with contentTypes)
+            const options = spectator.component.$options();
+            expect(options.find((ct) => ct.variable === 'Custom')).toBeTruthy();
         }));
     });
 });

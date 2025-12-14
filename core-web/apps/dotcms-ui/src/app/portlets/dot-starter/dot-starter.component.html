@@ -8,7 +8,7 @@
             [placeholder]="'Select a content type'"
             (onChange)="onContentTypeChange($event)"
             style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedContentType?.name || 'None' }}</p>
+        <p><strong>Selected:</strong> {{ selectedContentType || 'None' }}</p>
     </div>
 
     <div style="margin-bottom: 2rem;">
@@ -18,7 +18,7 @@
             [placeholder]="'Select a site'"
             (onChange)="onSiteChange($event)"
             style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedSite?.hostname || 'None' }}</p>
+        <p><strong>Selected:</strong> {{ selectedSite || 'None' }}</p>
     </div>
 
     <div style="margin-bottom: 2rem;">

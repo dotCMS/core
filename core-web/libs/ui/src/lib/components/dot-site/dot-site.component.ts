@@ -234,7 +234,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         effect(() => {
             const identifier = this.extractIdentifier(this.value());
 
-            // Sync with ControlValueAccessor
             this.onChangeCallback(identifier);
 
             if (!identifier) {
@@ -242,7 +241,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                 return;
             }
 
-            // Skip fetch if we already have this site pinned
             const currentPinned = this.$state.pinnedOption();
             if (currentPinned?.identifier === identifier) {
                 return;
@@ -251,15 +249,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             patchState(this.$state, { loading: true });
             this.siteService.getSiteById(identifier).subscribe({
                 next: (site) => {
-                    // Pin the initial value so it appears at the top of the list
                     patchState(this.$state, { pinnedOption: site, loading: false });
-
-                    // Ensure it's in the sites array
-                    // This is especially important when the field is disabled
-                    this.ensureSiteInList(site);
                 },
                 error: () => {
-                    // If fetch fails, clear pinned option
                     patchState(this.$state, { pinnedOption: null, loading: false });
                 }
             });
@@ -305,17 +297,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         this.value.set(identifier);
         this.onTouchedCallback();
         this.onChange.emit(identifier);
-    }
-
-    /**
-     * Handles ngModelChange from PrimeNG Select
-     * Extracts the identifier from the Site object and stores it in the model
-     *
-     * @param site The Site object from PrimeNG Select, or null if cleared
-     */
-    onModelChange(site: DotSite | null): void {
-        const identifier = site?.identifier ?? null;
-        this.value.set(identifier);
     }
 
     /**
@@ -479,20 +460,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         return value.identifier;
     }
 
-    /**
-     * Ensures the given site is in the sites list.
-     *
-     * @private
-     * @param site The site to ensure is in the list
-     */
-    private ensureSiteInList(site: DotSite): void {
-        const currentSites = this.$state.sites();
-        const exists = currentSites.some((s) => s.identifier === site.identifier);
-
-        if (!exists) {
-            this.setSites([...currentSites, site]);
-        }
-    }
 
     /**
      * Parses and validates lazy load event, calculates items needed.
@@ -633,7 +600,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             .subscribe({
                 next: ({ sites }) => {
                     const currentSites = this.$state.sites();
-                    const isFiltering = filter.length > 0;
                     const isFirstPage = pageToLoad === 1;
 
                     // Update total records from pagination
@@ -660,35 +626,10 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
 
                     this.loadedPages.add(pageToLoad);
 
-                    // If there are more pages to load, continue loading them
                     if (remainingPages.length > 0) {
                         this.loadPagesSequentially(remainingPages);
                     } else {
                         patchState(this.$state, { loading: false });
-
-                        // Ensure current value is in the list only when not filtering
-                        // When filtering, don't add selected value if it doesn't match the filter
-                        // This allows "No results found" to display correctly
-                        const currentValue = this.value();
-                        if (currentValue && typeof currentValue === 'string' && !isFiltering) {
-                            const currentSites = this.$state.sites();
-                            const alreadyInList = currentSites.some((s) => s.identifier === currentValue);
-
-                            // Only fetch if not already in the list to avoid duplicate API calls
-                            // (the constructor effect also fetches when value changes)
-                            if (!alreadyInList) {
-                                patchState(this.$state, { loading: true });
-                                this.siteService.getSiteById(currentValue).subscribe({
-                                    next: (site) => {
-                                        this.ensureSiteInList(site);
-                                        patchState(this.$state, { loading: false });
-                                    },
-                                    error: () => {
-                                        patchState(this.$state, { loading: false });
-                                    }
-                                });
-                            }
-                        }
                     }
                 },
                 error: () => {

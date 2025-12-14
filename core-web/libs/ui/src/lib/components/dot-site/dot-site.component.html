@@ -1,6 +1,5 @@
 <p-select
     #select
-    (ngModelChange)="onModelChange($event)"
     (onChange)="onSiteChange($event.value)"
     (onHide)="onSelectHide()"
     (onLazyLoad)="onLazyLoad($event)"
@@ -45,12 +44,8 @@
     </ng-template>
 
     <ng-template let-site #item>
-        @if ($state.pinnedOption()?.identifier === site.identifier) {
-            <div class="font-bold">
-                {{ site.hostname }}
-            </div>
-        } @else {
+        <span [class.font-bold]="$state.pinnedOption()?.identifier === site.identifier">
             {{ site.hostname }}
-        }
+        </span>
     </ng-template>
 </p-select>

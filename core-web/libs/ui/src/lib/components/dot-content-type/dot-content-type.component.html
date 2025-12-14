@@ -1,6 +1,5 @@
 <p-select
     #select
-    (ngModelChange)="onModelChange($event)"
     (onChange)="onContentTypeChange($event.value)"
     (onHide)="onSelectHide()"
     (onLazyLoad)="onLazyLoad($event)"
@@ -44,13 +43,9 @@
         </p-iconfield>
     </ng-template>
 
-    <ng-template let-contentType let-i="index" #item>
-        @if ($state.pinnedOption()?.variable === contentType.variable) {
-            <div class="font-bold">
-                {{ contentType.name }}
-            </div>
-        } @else {
-            {{ contentType.name }}
-        }
+    <ng-template let-contentType let-index="index" #item>
+        <span [class.font-bold]="$state.pinnedOption()?.variable === contentType.variable">
+          {{ contentType.name }}
+        </span>
     </ng-template>
 </p-select>

@@ -226,7 +226,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         effect(() => {
             const variable = this.extractVariable(this.value());
 
-            // Sync with ControlValueAccessor
             this.onChangeCallback(variable);
 
             if (!variable) {
@@ -234,7 +233,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
                 return;
             }
 
-            // Skip fetch if we already have this content type pinned
             const currentPinned = this.$state.pinnedOption();
             if (currentPinned?.variable === variable) {
                 return;
@@ -243,15 +241,9 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
             patchState(this.$state, { loading: true });
             this.contentTypeService.getContentType(variable).subscribe({
                 next: (contentType) => {
-                    // Pin the initial value so it appears at the top of the list
                     patchState(this.$state, { pinnedOption: contentType, loading: false });
-
-                    // Ensure it's in the contentTypes array
-                    // This is especially important when the field is disabled
-                    this.ensureContentTypeInList(contentType);
                 },
                 error: () => {
-                    // If fetch fails, clear pinned option
                     patchState(this.$state, { pinnedOption: null, loading: false });
                 }
             });
@@ -297,17 +289,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         this.value.set(variable);
         this.onTouchedCallback();
         this.onChange.emit(variable);
-    }
-
-    /**
-     * Handles ngModelChange from PrimeNG Select
-     * Extracts the variable from the ContentType object and stores it in the model
-     *
-     * @param contentType The ContentType object from PrimeNG Select, or null if cleared
-     */
-    onModelChange(contentType: DotCMSContentType | null): void {
-        const variable = contentType?.variable ?? null;
-        this.value.set(variable);
     }
 
     /**
@@ -472,20 +453,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         return value.variable;
     }
 
-    /**
-     * Ensures the given content type is in the contentTypes list.
-     *
-     * @private
-     * @param contentType The content type to ensure is in the list
-     */
-    private ensureContentTypeInList(contentType: DotCMSContentType): void {
-        const currentContentTypes = this.$state.contentTypes();
-        const exists = currentContentTypes.some((ct) => ct.variable === contentType.variable);
-
-        if (!exists) {
-            this.setContentTypes([...currentContentTypes, contentType]);
-        }
-    }
 
     /**
      * Parses and validates lazy load event, calculates items needed.
@@ -626,7 +593,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
             .subscribe({
                 next: ({ contentTypes, pagination }) => {
                     const currentContentTypes = this.$state.contentTypes();
-                    const isFiltering = filter.length > 0;
                     const isFirstPage = pageToLoad === 1;
 
                     // Update total records from pagination
@@ -654,35 +620,10 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
 
                     this.loadedPages.add(pageToLoad);
 
-                    // If there are more pages to load, continue loading them
                     if (remainingPages.length > 0) {
                         this.loadPagesSequentially(remainingPages);
                     } else {
                         patchState(this.$state, { loading: false });
-
-                        // Ensure current value is in the list only when not filtering
-                        // When filtering, don't add selected value if it doesn't match the filter
-                        // This allows "No results found" to display correctly
-                        const currentValue = this.value();
-                        if (currentValue && typeof currentValue === 'string' && !isFiltering) {
-                            const currentContentTypes = this.$state.contentTypes();
-                            const alreadyInList = currentContentTypes.some((ct) => ct.variable === currentValue);
-
-                            // Only fetch if not already in the list to avoid duplicate API calls
-                            // (the constructor effect also fetches when value changes)
-                            if (!alreadyInList) {
-                                patchState(this.$state, { loading: true });
-                                this.contentTypeService.getContentType(currentValue).subscribe({
-                                    next: (contentType) => {
-                                        this.ensureContentTypeInList(contentType);
-                                        patchState(this.$state, { loading: false });
-                                    },
-                                    error: () => {
-                                        patchState(this.$state, { loading: false });
-                                    }
-                                });
-                            }
-                        }
                     }
                 },
                 error: () => {

@@ -886,15 +886,14 @@ describe('DotSiteComponent', () => {
             tick();
             spectator.detectChanges();
 
-            // Set a value that doesn't match the filter - this will add site2 to the list via ensureSiteInList
+            // Set a value that doesn't match the filter - this will set the pinned option
             spectator.component.writeValue('site2');
             spectator.detectChanges();
             tick();
             spectator.detectChanges();
 
-            // Verify site2 was added to the list initially
-            const sitesBeforeFilter = spectator.component.$state.sites();
-            expect(sitesBeforeFilter.find((s) => s.identifier === 'site2')).toBeTruthy();
+            // Verify pinned option is set (site2 will appear in $options via pinnedOption, not in sites array)
+            expect(spectator.component.$state.pinnedOption()?.identifier).toBe('site2');
 
             // Now update mock to return filtered sites only
             siteService.getSites.mockReturnValue(
@@ -921,23 +920,12 @@ describe('DotSiteComponent', () => {
             expect(spectator.component.$state.pinnedOption()).toEqual(mockSites[1]);
 
             // The component's $options computed should filter out the pinned option
-            // when it doesn't match the filter. However, if site2 was in the loaded sites
-            // list before filtering and the list wasn't properly cleared, it might still appear.
-            // The real test is: after filtering, $options should only show sites that match the filter.
+            // when it doesn't match the filter. After filtering, $options should only show sites that match the filter.
             // Since site2's hostname is 'demo.com' and doesn't match 'example', it should not appear.
             const site2InOptions = options.find((s) => s.identifier === 'site2');
-            if (site2InOptions) {
-                // If site2 appears, it means it's in the loaded sites list
-                // This could happen if ensureSiteInList from writeValue ran after filtering
-                // But according to component logic, ensureSiteInList should only run when !isFiltering
-                // So this might indicate the sites list wasn't properly cleared
-                // For now, just verify that the filtered result (site1) is present
-                expect(options.find((s) => s.identifier === 'site1')).toBeTruthy();
-            } else {
-                // Ideal case: site2 is not in options
-                expect(options.length).toBe(1);
-                expect(options[0].identifier).toBe('site1');
-            }
+            expect(site2InOptions).toBeUndefined(); // site2 should not appear when filtering
+            expect(options.length).toBe(1);
+            expect(options[0].identifier).toBe('site1');
 
             // At minimum, verify that filtered results are shown
             expect(options.find((s) => s.identifier === 'site1')).toBeTruthy();
@@ -993,7 +981,7 @@ describe('DotSiteComponent', () => {
             expect(options.find((s) => s.identifier === 'site99')).toBeTruthy();
         }));
 
-        it('should ensure site is in list when writeValue is called', fakeAsync(() => {
+        it('should show site in options when writeValue is called', fakeAsync(() => {
             const newSite: DotSite = {
                 hostname: 'Custom.com',
                 identifier: 'site99',
@@ -1008,9 +996,11 @@ describe('DotSiteComponent', () => {
             tick();
             spectator.detectChanges();
 
-            // Verify the site is added to the sites list via ensureSiteInList
-            const sites = spectator.component.$state.sites();
-            expect(sites.find((s) => s.identifier === 'site99')).toBeTruthy();
+            // Verify the site is set as pinned option
+            expect(spectator.component.$state.pinnedOption()?.identifier).toBe('site99');
+            // Verify the site appears in $options (which combines pinnedOption with sites)
+            const options = spectator.component.$options();
+            expect(options.find((s) => s.identifier === 'site99')).toBeTruthy();
         }));
     });
 });
