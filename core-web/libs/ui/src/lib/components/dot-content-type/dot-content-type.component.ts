@@ -13,6 +13,7 @@ import {
     forwardRef,
     computed,
     OnInit,
+    OnDestroy,
     ViewChild,
     HostListener
 } from '@angular/core';
@@ -84,7 +85,7 @@ interface DotContentTypeState {
         }
     ]
 })
-export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
+export class DotContentTypeComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private contentTypeService = inject(DotContentTypeService);
 
     @HostListener('focus')
@@ -263,6 +264,13 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit {
     ngOnInit(): void {
         if (this.$state.contentTypes().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
+        }
+    }
+
+    ngOnDestroy(): void {
+        if (this.filterDebounceTimeout) {
+            clearTimeout(this.filterDebounceTimeout);
+            this.filterDebounceTimeout = null;
         }
     }
 
