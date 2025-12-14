@@ -289,6 +289,93 @@ describe('DotSiteComponent', () => {
             // Page 3 would be beyond total of 50, so should not load
             expect(siteService.getSites).not.toHaveBeenCalled();
         });
+
+        it('should not fetch current value if already in loaded sites list', fakeAsync(() => {
+            // Create new component instance
+            spectator = createComponent({ detectChanges: false });
+            siteService = spectator.inject(DotSiteService, true);
+
+            // Set a value that will be in the loaded sites
+            spectator.component.value.set('site1');
+
+            // Mock getSites to return sites including site1
+            siteService.getSites.mockReturnValue(
+                of({
+                    sites: mockSites,
+                    pagination: mockPagination
+                })
+            );
+            siteService.getSiteById.mockImplementation((id: string) =>
+                of(mockSites.find((s) => s.identifier === id) || mockSites[0])
+            );
+
+            spectator.detectChanges();
+            tick();
+            jest.clearAllMocks();
+
+            // Trigger lazy load for page 1 (which will complete loading all pages)
+            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // After loading completes, site1 is already in the loaded sites
+            // So getSiteById should NOT be called to avoid duplicate API call
+            expect(siteService.getSiteById).not.toHaveBeenCalled();
+        }));
+
+        it('should fetch current value if not in loaded sites list', fakeAsync(() => {
+            // Create new component instance
+            spectator = createComponent({ detectChanges: false });
+            siteService = spectator.inject(DotSiteService, true);
+
+            // Mock getSites to return sites that don't include missing-site
+            siteService.getSites.mockReturnValue(
+                of({
+                    sites: mockSites,
+                    pagination: mockPagination
+                })
+            );
+
+            const missingSite: DotSite = {
+                hostname: 'missing.com',
+                identifier: 'missing-site',
+                archived: false,
+                aliases: null
+            };
+            siteService.getSiteById.mockReturnValue(of(missingSite));
+
+            // Initial load
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Set a value that will NOT be in the loaded sites
+            // The constructor effect will fetch it and add it to the list
+            spectator.component.value.set('missing-site');
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // Now manually remove it from the sites list and clear pinnedOption to simulate the scenario
+            // where it was added but then the list was cleared/reloaded
+            const currentSites = spectator.component.$state.sites();
+            const sitesWithoutMissing = currentSites.filter((s) => s.identifier !== 'missing-site');
+            patchState(spectator.component.$state, { sites: sitesWithoutMissing, pinnedOption: null });
+
+            jest.clearAllMocks();
+
+            // Trigger lazy load for page 1 (which will complete loading all pages)
+            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // After loading completes, missing-site is NOT in the loaded sites
+            // So getSiteById SHOULD be called to ensure it's in the list
+            expect(siteService.getSiteById).toHaveBeenCalledWith('missing-site');
+        }));
     });
 
     describe('Filtering Functionality', () => {

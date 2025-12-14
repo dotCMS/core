@@ -283,6 +283,92 @@ describe('DotContentTypeComponent', () => {
             // Page 3 would be beyond total of 50, so should not load
             expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
         });
+
+        it('should not fetch current value if already in loaded content types list', fakeAsync(() => {
+            // Create new component instance
+            spectator = createComponent({ detectChanges: false });
+            contentTypeService = spectator.inject(DotContentTypeService, true);
+
+            // Set a value that will be in the loaded content types
+            spectator.component.value.set('Blog');
+
+            // Mock getContentTypesWithPagination to return content types including Blog
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: mockContentTypes,
+                    pagination: mockPagination
+                })
+            );
+            contentTypeService.getContentType.mockImplementation((variable: string) =>
+                of(mockContentTypes.find((ct) => ct.variable === variable) || mockContentTypes[0])
+            );
+
+            spectator.detectChanges();
+            tick();
+            jest.clearAllMocks();
+
+            // Trigger lazy load for page 1 (which will complete loading all pages)
+            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // After loading completes, Blog is already in the loaded content types
+            // So getContentType should NOT be called to avoid duplicate API call
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+        }));
+
+        it('should fetch current value if not in loaded content types list', fakeAsync(() => {
+            // Create new component instance
+            spectator = createComponent({ detectChanges: false });
+            contentTypeService = spectator.inject(DotContentTypeService, true);
+
+            // Mock getContentTypesWithPagination to return content types that don't include Missing
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                of({
+                    contentTypes: mockContentTypes,
+                    pagination: mockPagination
+                })
+            );
+
+            const missingContentType: DotCMSContentType = {
+                id: '99',
+                name: 'Missing',
+                variable: 'Missing'
+            } as DotCMSContentType;
+            contentTypeService.getContentType.mockReturnValue(of(missingContentType));
+
+            // Initial load
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            // Set a value that will NOT be in the loaded content types
+            // The constructor effect will fetch it and add it to the list
+            spectator.component.value.set('Missing');
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // Now manually remove it from the content types list and clear pinnedOption to simulate the scenario
+            // where it was added but then the list was cleared/reloaded
+            const currentContentTypes = spectator.component.$state.contentTypes();
+            const contentTypesWithoutMissing = currentContentTypes.filter((ct) => ct.variable !== 'Missing');
+            patchState(spectator.component.$state, { contentTypes: contentTypesWithoutMissing, pinnedOption: null });
+
+            jest.clearAllMocks();
+
+            // Trigger lazy load for page 1 (which will complete loading all pages)
+            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // After loading completes, Missing is NOT in the loaded content types
+            // So getContentType SHOULD be called to ensure it's in the list
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('Missing');
+        }));
     });
 
     describe('Filtering Functionality', () => {

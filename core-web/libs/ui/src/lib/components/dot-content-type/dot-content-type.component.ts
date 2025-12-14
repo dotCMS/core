@@ -229,26 +229,32 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
             // Sync with ControlValueAccessor
             this.onChangeCallback(variable);
 
-            // Fetch content type object to set state
-            if (variable) {
-                patchState(this.$state, { loading: true });
-                this.contentTypeService.getContentType(variable).subscribe({
-                    next: (contentType) => {
-                        // Pin the initial value so it appears at the top of the list
-                        patchState(this.$state, { pinnedOption: contentType, loading: false });
-
-                        // Ensure it's in the contentTypes array
-                        // This is especially important when the field is disabled
-                        this.ensureContentTypeInList(contentType);
-                    },
-                    error: () => {
-                        // If fetch fails, clear pinned option
-                        patchState(this.$state, { pinnedOption: null, loading: false });
-                    }
-                });
-            } else {
+            if (!variable) {
                 patchState(this.$state, { pinnedOption: null });
+                return;
             }
+
+            // Skip fetch if we already have this content type pinned
+            const currentPinned = this.$state.pinnedOption();
+            if (currentPinned?.variable === variable) {
+                return;
+            }
+
+            patchState(this.$state, { loading: true });
+            this.contentTypeService.getContentType(variable).subscribe({
+                next: (contentType) => {
+                    // Pin the initial value so it appears at the top of the list
+                    patchState(this.$state, { pinnedOption: contentType, loading: false });
+
+                    // Ensure it's in the contentTypes array
+                    // This is especially important when the field is disabled
+                    this.ensureContentTypeInList(contentType);
+                },
+                error: () => {
+                    // If fetch fails, clear pinned option
+                    patchState(this.$state, { pinnedOption: null, loading: false });
+                }
+            });
         });
     }
 
@@ -659,17 +665,23 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
                         // This allows "No results found" to display correctly
                         const currentValue = this.value();
                         if (currentValue && typeof currentValue === 'string' && !isFiltering) {
-                            // Fetch the content type by variable to ensure it's in the list
-                            patchState(this.$state, { loading: true });
-                            this.contentTypeService.getContentType(currentValue).subscribe({
-                                next: (contentType) => {
-                                    this.ensureContentTypeInList(contentType);
-                                    patchState(this.$state, { loading: false });
-                                },
-                                error: () => {
-                                    patchState(this.$state, { loading: false });
-                                }
-                            });
+                            const currentContentTypes = this.$state.contentTypes();
+                            const alreadyInList = currentContentTypes.some((ct) => ct.variable === currentValue);
+
+                            // Only fetch if not already in the list to avoid duplicate API calls
+                            // (the constructor effect also fetches when value changes)
+                            if (!alreadyInList) {
+                                patchState(this.$state, { loading: true });
+                                this.contentTypeService.getContentType(currentValue).subscribe({
+                                    next: (contentType) => {
+                                        this.ensureContentTypeInList(contentType);
+                                        patchState(this.$state, { loading: false });
+                                    },
+                                    error: () => {
+                                        patchState(this.$state, { loading: false });
+                                    }
+                                });
+                            }
                         }
                     }
                 },

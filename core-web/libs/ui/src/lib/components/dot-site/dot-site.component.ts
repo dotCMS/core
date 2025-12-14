@@ -237,26 +237,32 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             // Sync with ControlValueAccessor
             this.onChangeCallback(identifier);
 
-            // Fetch site object to set state
-            if (identifier) {
-                patchState(this.$state, { loading: true });
-                this.siteService.getSiteById(identifier).subscribe({
-                    next: (site) => {
-                        // Pin the initial value so it appears at the top of the list
-                        patchState(this.$state, { pinnedOption: site, loading: false });
-
-                        // Ensure it's in the sites array
-                        // This is especially important when the field is disabled
-                        this.ensureSiteInList(site);
-                    },
-                    error: () => {
-                        // If fetch fails, clear pinned option
-                        patchState(this.$state, { pinnedOption: null, loading: false });
-                    }
-                });
-            } else {
+            if (!identifier) {
                 patchState(this.$state, { pinnedOption: null });
+                return;
             }
+
+            // Skip fetch if we already have this site pinned
+            const currentPinned = this.$state.pinnedOption();
+            if (currentPinned?.identifier === identifier) {
+                return;
+            }
+
+            patchState(this.$state, { loading: true });
+            this.siteService.getSiteById(identifier).subscribe({
+                next: (site) => {
+                    // Pin the initial value so it appears at the top of the list
+                    patchState(this.$state, { pinnedOption: site, loading: false });
+
+                    // Ensure it's in the sites array
+                    // This is especially important when the field is disabled
+                    this.ensureSiteInList(site);
+                },
+                error: () => {
+                    // If fetch fails, clear pinned option
+                    patchState(this.$state, { pinnedOption: null, loading: false });
+                }
+            });
         });
     }
 
@@ -665,17 +671,23 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                         // This allows "No results found" to display correctly
                         const currentValue = this.value();
                         if (currentValue && typeof currentValue === 'string' && !isFiltering) {
-                            // Fetch the site by identifier to ensure it's in the list
-                            patchState(this.$state, { loading: true });
-                            this.siteService.getSiteById(currentValue).subscribe({
-                                next: (site) => {
-                                    this.ensureSiteInList(site);
-                                    patchState(this.$state, { loading: false });
-                                },
-                                error: () => {
-                                    patchState(this.$state, { loading: false });
-                                }
-                            });
+                            const currentSites = this.$state.sites();
+                            const alreadyInList = currentSites.some((s) => s.identifier === currentValue);
+
+                            // Only fetch if not already in the list to avoid duplicate API calls
+                            // (the constructor effect also fetches when value changes)
+                            if (!alreadyInList) {
+                                patchState(this.$state, { loading: true });
+                                this.siteService.getSiteById(currentValue).subscribe({
+                                    next: (site) => {
+                                        this.ensureSiteInList(site);
+                                        patchState(this.$state, { loading: false });
+                                    },
+                                    error: () => {
+                                        patchState(this.$state, { loading: false });
+                                    }
+                                });
+                            }
                         }
                     }
                 },
