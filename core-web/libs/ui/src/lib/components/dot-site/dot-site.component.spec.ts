@@ -57,7 +57,6 @@ const mockPagination: DotPagination = {
 })
 class FormHostComponent {
     siteControl = new FormControl<string | null>(null);
-    disabled = false;
 }
 
 describe('DotSiteComponent', () => {
@@ -946,7 +945,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
 
     beforeEach(() => {
         hostSpectator = createHost(
-            `<dot-site [formControl]="siteControl" [disabled]="disabled"></dot-site>`
+            `<dot-site [formControl]="siteControl"></dot-site>`
         );
         hostComponent = hostSpectator.hostComponent;
         hostSiteService = hostSpectator.inject(DotSiteService, true);
@@ -1073,20 +1072,13 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         expect(select.disabled()).toBe(true);
     });
 
-    it('should combine input disabled and FormControl disabled state', () => {
-        // Test with both input disabled=false and FormControl enabled
-        hostComponent.disabled = false;
+    it('should respect FormControl disabled state', () => {
+        // Test with FormControl enabled
         hostComponent.siteControl.enable();
         hostSpectator.detectChanges();
         expect(hostSpectator.component.$disabled()).toBe(false);
 
-        // Test with input disabled=true (should override FormControl enabled)
-        hostComponent.disabled = true;
-        hostSpectator.detectChanges();
-        expect(hostSpectator.component.$disabled()).toBe(true);
-
-        // Test with input disabled=false but FormControl disabled (should be disabled)
-        hostComponent.disabled = false;
+        // Test with FormControl disabled (should be disabled)
         hostComponent.siteControl.disable();
         hostSpectator.detectChanges();
         expect(hostSpectator.component.$disabled()).toBe(true);
