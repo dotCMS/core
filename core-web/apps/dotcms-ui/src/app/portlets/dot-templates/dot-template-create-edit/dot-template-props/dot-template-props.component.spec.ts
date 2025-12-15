@@ -16,14 +16,13 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotThemeComponent
 } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
-
-import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -68,17 +67,17 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
 }
 
 @Component({
-    selector: 'dot-theme-selector-dropdown',
+    selector: 'dot-theme',
     template: '',
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotThemeSelectorDropdownMockComponent)
+            useExisting: forwardRef(() => DotThemeMockComponent)
         }
     ]
 })
-export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
+export class DotThemeMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
         //
     };
@@ -121,7 +120,7 @@ describe('DotTemplatePropsComponent', () => {
                 DotFieldValidationMessageComponent,
                 DotFieldRequiredDirective,
                 DotTemplateThumbnailFieldMockComponent,
-                DotThemeSelectorDropdownMockComponent
+                DotThemeMockComponent
             ],
             providers: [
                 {
@@ -153,12 +152,12 @@ describe('DotTemplatePropsComponent', () => {
         })
             .overrideComponent(DotTemplatePropsComponent, {
                 remove: {
-                    imports: [DotTemplateThumbnailFieldComponent, DotThemeSelectorDropdownComponent]
+                    imports: [DotTemplateThumbnailFieldComponent, DotThemeComponent]
                 },
                 add: {
                     imports: [
                         DotTemplateThumbnailFieldMockComponent,
-                        DotThemeSelectorDropdownMockComponent
+                        DotThemeMockComponent
                     ]
                 }
             })
@@ -205,7 +204,7 @@ describe('DotTemplatePropsComponent', () => {
             it('should setup theme', () => {
                 const field = de.query(By.css('[data-testId="themeField"]'));
                 const label = field.query(By.css('label'));
-                const selector = field.query(By.css('dot-theme-selector-dropdown'));
+                const selector = field.query(By.css('dot-theme'));
 
                 expect(field.classes['field']).toBe(true);
 

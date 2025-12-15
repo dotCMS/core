@@ -22,12 +22,12 @@ import { DotTempFileUploadService } from '@dotcms/data-access';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotThemeComponent
 } from '@dotcms/ui';
 
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
 
-import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
 @Component({
@@ -46,7 +46,7 @@ import { DotTemplateItem } from '../store/dot-template.store';
         ReactiveFormsModule,
         DotMessagePipe,
         DotTemplateThumbnailFieldComponent,
-        DotThemeSelectorDropdownComponent,
+        DotThemeComponent,
         DotFieldRequiredDirective
     ]
 })
