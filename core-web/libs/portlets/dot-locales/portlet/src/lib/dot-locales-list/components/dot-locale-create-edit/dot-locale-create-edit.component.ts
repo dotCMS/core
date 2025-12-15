@@ -14,6 +14,8 @@ import {
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
@@ -41,6 +43,8 @@ export interface DotLocaleCreateEditData {
         ReactiveFormsModule,
         ButtonModule,
         DotMessagePipe,
+        InputGroupModule,
+        InputGroupAddonModule,
         InputTextModule,
         TooltipModule,
         DotCopyButtonComponent

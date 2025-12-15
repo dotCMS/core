@@ -1,6 +1,3 @@
-@use "../../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../../../dotcms-scss/shared/spacing";
 
 @use "variables" as *;
 
@@ -14,22 +11,6 @@
             min-height: 20rem;
         }
     }
-    dot-copy-button {
-        position: absolute;
-        top: spacing.$spacing-0;
-        right: spacing.$spacing-0;
-    }
+
 }
 
-.locale-add__buttons {
-    display: flex;
-    gap: spacing.$spacing-3;
-    margin-top: auto;
-    justify-content: flex-end;
-}
-
-.locale-add__error-message {
-    margin: spacing.$spacing-1 0;
-    font-size: fonts.$font-size-sm;
-    color: colors.$red;
-}

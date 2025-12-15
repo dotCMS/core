@@ -1,34 +1,18 @@
-@use "../../../../../../dotcms-scss/shared/spacing";
+/* 
+ * These ::ng-deep styles are required for PrimeNG table component internals
+ * that cannot be styled with Tailwind
+ */
+:host ::ng-deep {
+    p-table {
+        flex-grow: 1;
+        padding-bottom: 0.75rem;
 
-@use "variables" as *;
+        .dotTable.p-datatable.p-component {
+            height: 100%;
 
-:host {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-
-    ::ng-deep {
-        p-table {
-            flex-grow: 1;
-            padding-bottom: spacing.$spacing-3;
-
-            .dotTable.p-datatable.p-component {
+            .p-datatable-wrapper {
                 height: 100%;
-
-                .p-datatable-wrapper {
-                    height: 100%;
-                }
             }
         }
     }
-}
-
-.locales-list__header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: spacing.$spacing-1;
-}
-
-.locales-list__search {
-    width: 405px;
 }

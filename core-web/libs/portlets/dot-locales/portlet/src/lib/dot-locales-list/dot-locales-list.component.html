@@ -1,20 +1,18 @@
 @if (vm$ | async; as vm) {
-    <div class="locales-list__header">
-        <span class="p-input-icon-right">
-            <i class="pi pi-search"></i>
+    <div class="flex justify-between mb-2">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
             <input
                 (input)="dt.filterGlobal($event.target.value, 'contains')"
-                class="locales-list__search"
+                class="w-[405px]"
                 type="text"
                 data-testId="input-search"
                 pInputText />
-        </span>
-        <button
-            (click)="store.openAddEditDialog(null)"
+        </p-iconField>
+        <p-button
+            (onClick)="store.openAddEditDialog(null)"
             [label]="'locales.add.locale' | dm"
-            pButton
-            type="button"
-            icon="pi pi-plus"></button>
+            icon="pi pi-plus" />
     </div>
     <p-table
         [value]="vm.locales"
