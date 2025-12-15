@@ -2,42 +2,30 @@ import { DotTheme } from '@dotcms/dotcms-models';
 
 export const mockDotThemes: DotTheme[] = [
     {
-        name: 'Test Theme 1',
-        title: 'Theme tittle',
+        identifier: 'test',
         inode: '1234g',
+        path: '/application/themes/test-theme-1/',
+        title: 'Theme tittle',
         themeThumbnail: null,
-        identifier: 'test',
-        hostId: 'test',
-        host: {
-            hostName: 'Test',
-            inode: '1',
-            identifier: '345'
-        }
+        name: 'Test Theme 1',
+        hostId: 'test'
     },
     {
-        name: 'Test Theme 2',
-        title: 'Theme tittle',
+        identifier: 'test',
         inode: '13r3fd234g',
+        path: '/application/themes/test-theme-2/',
+        title: 'Theme tittle',
         themeThumbnail: null,
-        identifier: 'test',
-        hostId: 'test',
-        host: {
-            hostName: 'Test',
-            inode: '2',
-            identifier: '345'
-        }
+        name: 'Test Theme 2',
+        hostId: 'test'
     },
     {
-        name: 'Test Theme 3',
-        title: 'Theme tittle',
-        inode: '123dedw4g',
-        themeThumbnail: 'test',
         identifier: 'test',
-        hostId: 'test',
-        host: {
-            hostName: 'Test',
-            inode: '3',
-            identifier: '345'
-        }
+        inode: '123dedw4g',
+        path: '/application/themes/test-theme-3/',
+        title: 'Theme tittle',
+        themeThumbnail: 'test',
+        name: 'Test Theme 3',
+        hostId: 'test'
     }
 ];
