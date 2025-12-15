@@ -19941,6 +19941,12 @@ components:
             type: string
         personaTag:
           type: string
+        stylePropertiesMap:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
     ContainerForm:
       type: object
       properties:
