@@ -233,7 +233,7 @@ describe('DotTemplatePropsComponent', () => {
     });
 
     describe('form', () => {
-        it('should get valut from config', () => {
+        it('should get value from config', () => {
             expect(component.form.value).toEqual({
                 title: '',
                 friendlyName: '',
