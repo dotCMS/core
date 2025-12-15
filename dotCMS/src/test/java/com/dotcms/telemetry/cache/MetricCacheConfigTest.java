@@ -247,4 +247,140 @@ public class MetricCacheConfigTest {
         assertEquals("Cron profile should return FULL for empty string",
                 ProfileType.FULL, cronProfile);
     }
+
+    @Test
+    public void testIsCachingEnabled_globallyEnabled_shouldReturnTrue() {
+        // Given: Global caching enabled
+        Config.setProperty("telemetry.cache.enabled", "true");
+
+        // When: Checking if caching is enabled globally
+        final boolean enabled = config.isCachingEnabled();
+
+        // Then: Should return true
+        assertTrue("Global caching should be enabled", enabled);
+    }
+
+    @Test
+    public void testIsCachingEnabled_globallyDisabled_shouldReturnFalse() {
+        // Given: Global caching disabled
+        Config.setProperty("telemetry.cache.enabled", "false");
+
+        // When: Checking if caching is enabled globally
+        final boolean enabled = config.isCachingEnabled();
+
+        // Then: Should return false
+        assertFalse("Global caching should be disabled", enabled);
+    }
+
+    @Test
+    public void testIsCachingEnabledForMetric_globalEnabledNoOverride_shouldReturnTrue() {
+        // Given: Global caching enabled, no per-metric override
+        Config.setProperty("telemetry.cache.enabled", "true");
+
+        // When: Checking if caching is enabled for a specific metric
+        final boolean enabled = config.isCachingEnabled("TEST_METRIC");
+
+        // Then: Should return true (defaults to global setting)
+        assertTrue("Caching should be enabled for metric when globally enabled", enabled);
+    }
+
+    @Test
+    public void testIsCachingEnabledForMetric_globalDisabled_shouldReturnFalse() {
+        // Given: Global caching disabled
+        Config.setProperty("telemetry.cache.enabled", "false");
+
+        // When: Checking if caching is enabled for a specific metric
+        final boolean enabled = config.isCachingEnabled("TEST_METRIC");
+
+        // Then: Should return false (global disable overrides everything)
+        assertFalse("Caching should be disabled when globally disabled", enabled);
+    }
+
+    @Test
+    public void testIsCachingEnabledForMetric_perMetricOverrideEnabled_shouldReturnTrue() {
+        // Given: Global caching enabled, per-metric override enabled
+        Config.setProperty("telemetry.cache.enabled", "true");
+        Config.setProperty("telemetry.cache.metric.SPECIAL_METRIC.enabled", "true");
+
+        // When: Checking if caching is enabled for the specific metric
+        final boolean enabled = config.isCachingEnabled("SPECIAL_METRIC");
+
+        // Then: Should return true
+        assertTrue("Caching should be enabled for metric with per-metric override", enabled);
+    }
+
+    @Test
+    public void testIsCachingEnabledForMetric_perMetricOverrideDisabled_shouldReturnFalse() {
+        // Given: Global caching enabled, but per-metric override disabled
+        Config.setProperty("telemetry.cache.enabled", "true");
+        Config.setProperty("telemetry.cache.metric.DISABLED_METRIC.enabled", "false");
+
+        // When: Checking if caching is enabled for the specific metric
+        final boolean enabled = config.isCachingEnabled("DISABLED_METRIC");
+
+        // Then: Should return false (per-metric override takes precedence)
+        assertFalse("Caching should be disabled for metric with per-metric override", enabled);
+    }
+
+    @Test
+    public void testGetCacheTTL_defaultValue_shouldReturnDefault() {
+        // Given: Default TTL configuration
+        Config.setProperty("telemetry.cache.default.ttl.seconds", "300");
+
+        // When: Getting cache TTL for a metric without override
+        final long ttl = config.getCacheTTL("TEST_METRIC");
+
+        // Then: Should return default TTL in milliseconds
+        assertEquals("Cache TTL should return default value", 300000L, ttl);
+    }
+
+    @Test
+    public void testGetCacheTTL_perMetricOverride_shouldReturnOverrideValue() {
+        // Given: Default TTL and per-metric override
+        Config.setProperty("telemetry.cache.default.ttl.seconds", "300");
+        Config.setProperty("telemetry.cache.metric.SPECIAL_METRIC.ttl.seconds", "600");
+
+        // When: Getting cache TTL for the overridden metric
+        final long ttl = config.getCacheTTL("SPECIAL_METRIC");
+
+        // Then: Should return override value in milliseconds
+        assertEquals("Cache TTL should return per-metric override value", 600000L, ttl);
+    }
+
+    @Test
+    public void testGetCacheTTL_perMetricZeroOverride_shouldUseDefault() {
+        // Given: Default TTL and per-metric override of 0
+        Config.setProperty("telemetry.cache.default.ttl.seconds", "300");
+        Config.setProperty("telemetry.cache.metric.ZERO_METRIC.ttl.seconds", "0");
+
+        // When: Getting cache TTL for the metric with 0 override
+        final long ttl = config.getCacheTTL("ZERO_METRIC");
+
+        // Then: Should fall back to default TTL
+        assertEquals("Cache TTL should use default when per-metric is 0", 300000L, ttl);
+    }
+
+    @Test
+    public void testGetMaxCacheSize_defaultValue_shouldReturnDefault() {
+        // Given: Default max cache size
+        Config.setProperty("telemetry.cache.max.size", "1000");
+
+        // When: Getting max cache size
+        final long maxSize = config.getMaxCacheSize();
+
+        // Then: Should return configured value
+        assertEquals("Max cache size should return configured value", 1000L, maxSize);
+    }
+
+    @Test
+    public void testGetMaxCacheSize_customValue_shouldReturnCustomValue() {
+        // Given: Custom max cache size
+        Config.setProperty("telemetry.cache.max.size", "5000");
+
+        // When: Getting max cache size
+        final long maxSize = config.getMaxCacheSize();
+
+        // Then: Should return custom value
+        assertEquals("Max cache size should return custom value", 5000L, maxSize);
+    }
 }
