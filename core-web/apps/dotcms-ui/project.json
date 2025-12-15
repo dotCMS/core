@@ -78,7 +78,6 @@
             },
             "configurations": {
                 "production": {
-                    "baseHref": "/dotAdmin/",
                     "fileReplacements": [
                         {
                             "replace": "apps/dotcms-ui/src/environments/environment.ts",
