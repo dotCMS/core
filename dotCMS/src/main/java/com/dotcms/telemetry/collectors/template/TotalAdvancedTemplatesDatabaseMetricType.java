@@ -4,10 +4,13 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the total count of advanced templates
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalAdvancedTemplatesDatabaseMetricType implements DBMetricType {
     @Override

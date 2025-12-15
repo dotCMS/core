@@ -3,49 +3,46 @@ package com.dotcms.rest.api.v1.usage;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
- * Summary of key business metrics for the usage dashboard
+ * Summary of key business metrics for the usage dashboard.
+ * 
+ * <p>This class uses a dynamic, category-based structure that adapts to
+ * available metrics based on the active profile (MINIMAL, STANDARD, FULL).
+ * Metrics are organized by category as defined by their {@code @DashboardMetric}
+ * annotation.</p>
+ * 
+ * <p>Each category contains a map of metric names to values, allowing the
+ * dashboard to display whatever metrics are available without requiring
+ * hardcoded field mappings.</p>
  */
 public final class UsageSummary {
 
+    /**
+     * Metrics organized by category. Each category contains a map of
+     * metric names to their values. Only metrics available for the
+     * active profile are included.
+     */
     @JsonProperty
-    private final ContentMetrics contentMetrics;
-    
-    @JsonProperty
-    private final SiteMetrics siteMetrics;
-    
-    @JsonProperty
-    private final UserMetrics userMetrics;
-    
-    @JsonProperty
-    private final SystemMetrics systemMetrics;
+    private final Map<String, Map<String, Object>> metrics;
     
     @JsonProperty
     private final Instant lastUpdated;
 
     private UsageSummary(final Builder builder) {
-        this.contentMetrics = builder.contentMetrics;
-        this.siteMetrics = builder.siteMetrics;
-        this.userMetrics = builder.userMetrics;
-        this.systemMetrics = builder.systemMetrics;
+        this.metrics = builder.metrics;
         this.lastUpdated = builder.lastUpdated;
     }
 
-    public ContentMetrics getContentMetrics() {
-        return contentMetrics;
-    }
-
-    public SiteMetrics getSiteMetrics() {
-        return siteMetrics;
-    }
-
-    public UserMetrics getUserMetrics() {
-        return userMetrics;
-    }
-
-    public SystemMetrics getSystemMetrics() {
-        return systemMetrics;
+    /**
+     * Returns all metrics organized by category.
+     * 
+     * @return map where keys are category names (e.g., "content", "site", "user", "system")
+     *         and values are maps of metric names to their values
+     */
+    public Map<String, Map<String, Object>> getMetrics() {
+        return metrics;
     }
 
     public Instant getLastUpdated() {
@@ -56,196 +53,12 @@ public final class UsageSummary {
         return new Builder();
     }
 
-    public static final class ContentMetrics {
-        @JsonProperty
-        private final long totalContent;
-        
-        @JsonProperty
-        private final long contentTypes;
-        
-        @JsonProperty
-        private final long recentlyEdited;
-        
-        @JsonProperty
-        private final long contentTypesWithWorkflows;
-        
-        @JsonProperty
-        private final String lastContentEdited;
-
-        public ContentMetrics(final long totalContent, final long contentTypes, final long recentlyEdited,
-                             final long contentTypesWithWorkflows, final String lastContentEdited) {
-            this.totalContent = totalContent;
-            this.contentTypes = contentTypes;
-            this.recentlyEdited = recentlyEdited;
-            this.contentTypesWithWorkflows = contentTypesWithWorkflows;
-            this.lastContentEdited = lastContentEdited;
-        }
-
-        public long getTotalContent() {
-            return totalContent;
-        }
-
-        public long getContentTypes() {
-            return contentTypes;
-        }
-
-        public long getRecentlyEdited() {
-            return recentlyEdited;
-        }
-
-        public long getContentTypesWithWorkflows() {
-            return contentTypesWithWorkflows;
-        }
-
-        public String getLastContentEdited() {
-            return lastContentEdited;
-        }
-    }
-
-    public static final class SiteMetrics {
-        @JsonProperty
-        private final long totalSites;
-        
-        @JsonProperty
-        private final long activeSites;
-        
-        @JsonProperty
-        private final long templates;
-        
-        @JsonProperty
-        private final long siteAliases;
-
-        public SiteMetrics(final long totalSites, final long activeSites, final long templates, final long siteAliases) {
-            this.totalSites = totalSites;
-            this.activeSites = activeSites;
-            this.templates = templates;
-            this.siteAliases = siteAliases;
-        }
-
-        public long getTotalSites() {
-            return totalSites;
-        }
-
-        public long getActiveSites() {
-            return activeSites;
-        }
-
-        public long getTemplates() {
-            return templates;
-        }
-
-        public long getSiteAliases() {
-            return siteAliases;
-        }
-    }
-
-    public static final class UserMetrics {
-        @JsonProperty
-        private final long activeUsers;
-        
-        @JsonProperty
-        private final long totalUsers;
-        
-        @JsonProperty
-        private final long recentLogins;
-        
-        @JsonProperty
-        private final String lastLogin;
-
-        public UserMetrics(final long activeUsers, final long totalUsers, final long recentLogins, final String lastLogin) {
-            this.activeUsers = activeUsers;
-            this.totalUsers = totalUsers;
-            this.recentLogins = recentLogins;
-            this.lastLogin = lastLogin;
-        }
-
-        public long getActiveUsers() {
-            return activeUsers;
-        }
-
-        public long getTotalUsers() {
-            return totalUsers;
-        }
-
-        public long getRecentLogins() {
-            return recentLogins;
-        }
-
-        public String getLastLogin() {
-            return lastLogin;
-        }
-    }
-
-    public static final class SystemMetrics {
-        @JsonProperty
-        private final long languages;
-        
-        @JsonProperty
-        private final long workflowSchemes;
-        
-        @JsonProperty
-        private final long workflowSteps;
-        
-        @JsonProperty
-        private final long liveContainers;
-        
-        @JsonProperty
-        private final long builderTemplates;
-
-        public SystemMetrics(final long languages, final long workflowSchemes, final long workflowSteps,
-                            final long liveContainers, final long builderTemplates) {
-            this.languages = languages;
-            this.workflowSchemes = workflowSchemes;
-            this.workflowSteps = workflowSteps;
-            this.liveContainers = liveContainers;
-            this.builderTemplates = builderTemplates;
-        }
-
-        public long getLanguages() {
-            return languages;
-        }
-
-        public long getWorkflowSchemes() {
-            return workflowSchemes;
-        }
-
-        public long getWorkflowSteps() {
-            return workflowSteps;
-        }
-
-        public long getLiveContainers() {
-            return liveContainers;
-        }
-
-        public long getBuilderTemplates() {
-            return builderTemplates;
-        }
-    }
-
     public static final class Builder {
-        private ContentMetrics contentMetrics;
-        private SiteMetrics siteMetrics;
-        private UserMetrics userMetrics;
-        private SystemMetrics systemMetrics;
+        private Map<String, Map<String, Object>> metrics;
         private Instant lastUpdated;
 
-        public Builder contentMetrics(final ContentMetrics contentMetrics) {
-            this.contentMetrics = contentMetrics;
-            return this;
-        }
-
-        public Builder siteMetrics(final SiteMetrics siteMetrics) {
-            this.siteMetrics = siteMetrics;
-            return this;
-        }
-
-        public Builder userMetrics(final UserMetrics userMetrics) {
-            this.userMetrics = userMetrics;
-            return this;
-        }
-
-        public Builder systemMetrics(final SystemMetrics systemMetrics) {
-            this.systemMetrics = systemMetrics;
+        public Builder metrics(final Map<String, Map<String, Object>> metrics) {
+            this.metrics = metrics;
             return this;
         }
 

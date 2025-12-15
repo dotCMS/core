@@ -2,6 +2,8 @@ package com.dotcms.telemetry.collectors.workflow;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -11,6 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
  * in this case it count several times.
  */
 @ApplicationScoped
+@MetricsProfile(ProfileType.FULL)
 public class SubActionsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

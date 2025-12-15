@@ -143,38 +143,6 @@
         }
     }
 
-    &--primary {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
-    &--success {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
-    &--info {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
-    &--warning {
-        background: white;
-
-        .metric-card__icon {
-            display: none;
-        }
-    }
-
     &__content {
         padding: 1.25rem;
         display: flex;
@@ -182,10 +150,6 @@
         align-items: center;
         gap: 0;
         min-height: auto;
-    }
-
-    &__icon {
-        display: none;
     }
 
     &__data {
@@ -222,7 +186,7 @@
             margin-bottom: 0;
             letter-spacing: -0.02em;
             text-align: center;
-            color: var(--color-palette-secondary-500);
+            color: var(--color-palette-secondary-500, #14151a);
 
             &--text {
                 font-size: 1.5rem;
@@ -230,7 +194,7 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-                color: var(--color-palette-secondary-500);
+                color: var(--color-palette-secondary-500, #14151a);
             }
         }
     }
@@ -267,22 +231,6 @@
             &--text {
                 font-size: 1.125rem;
             }
-        }
-    }
-}
-
-// Dark mode support (if your app has it)
-@media (prefers-color-scheme: dark) {
-    :host {
-        background-color: var(--color-background-dark, #1a1a1a);
-    }
-
-    .metric-card {
-        background: var(--color-surface-dark, #2a2a2a);
-        border-color: var(--color-border-dark, #404040);
-
-        &:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
     }
 }

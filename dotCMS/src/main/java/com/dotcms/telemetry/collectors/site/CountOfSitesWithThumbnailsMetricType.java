@@ -16,10 +16,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of sites with thumbnails set
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountOfSitesWithThumbnailsMetricType implements MetricType {
 

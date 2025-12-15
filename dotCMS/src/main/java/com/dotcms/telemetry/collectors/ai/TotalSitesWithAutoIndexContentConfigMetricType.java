@@ -20,7 +20,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalSitesWithAutoIndexContentConfigMetricType implements MetricType {
 
