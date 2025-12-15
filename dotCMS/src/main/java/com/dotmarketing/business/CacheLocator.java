@@ -7,8 +7,8 @@ import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
-import com.dotcms.content.elasticsearch.business.IndiciesCache;
-import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.content.elasticsearch.business.IndicesCache;
+import com.dotcms.content.elasticsearch.business.IndicesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
@@ -255,8 +255,8 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (HostVariablesCache)getInstance(CacheIndex.HostVariables);
 	}
 
-	public static IndiciesCache getIndiciesCache() {
-	    return (IndiciesCache)getInstance(CacheIndex.Indicies);
+	public static IndicesCache getIndiciesCache() {
+	    return (IndicesCache)getInstance(CacheIndex.Indicies);
 	}
 
     
@@ -529,7 +529,7 @@ enum CacheIndex
 	      	case Versionable : return new VersionableCacheImpl();
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
-	      	case Indicies: return new IndiciesCacheImpl();
+	      	case Indicies: return new IndicesCacheImpl();
 	        case NavTool: return new NavToolCacheImpl();
 	      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
 	      	case PushedAssets: return new PushedAssetsCacheImpl();

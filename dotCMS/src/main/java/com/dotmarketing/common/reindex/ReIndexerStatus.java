@@ -7,7 +7,7 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -62,14 +62,14 @@ public class ReIndexerStatus implements Serializable {
 
     @CloseDBIfOpened
     public String currentIndexPath() throws DotDataException {
-        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndicesInfo info = APILocator.getIndiciesAPI().loadLegacyIndices();
         return "[" + esIndexAPI.removeClusterIdFromName(info.getWorking()) + ","
                         + esIndexAPI.removeClusterIdFromName(info.getLive()) + "]";
     }
 
     @CloseDBIfOpened
     public String getNewIndexPath() throws DotDataException {
-        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndicesInfo info = APILocator.getIndiciesAPI().loadLegacyIndices();
         return "[" + esIndexAPI.removeClusterIdFromName(info.getReindexWorking()) + ","
                         + esIndexAPI.removeClusterIdFromName(info.getReindexLive()) + "]";
     }

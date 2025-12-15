@@ -66,7 +66,7 @@ for(String x : indexHosts){
 	catch(Exception e){}
 }
 
-boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch() != null;
+boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadLegacyIndices().getSiteSearch() != null;
 
 
 List<Language> langs=APILocator.getLanguageAPI().getLanguages();
@@ -77,7 +77,7 @@ String includeExclude = (String) props.get("includeExclude") ==null ? "all": (St
 
 boolean hasPath = false;
 
-final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
+final String siteSearch = APILocator.getIndiciesAPI().loadLegacyIndices().getSiteSearch();
 
 %>
 

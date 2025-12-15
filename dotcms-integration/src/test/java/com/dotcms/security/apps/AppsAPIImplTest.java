@@ -9,8 +9,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndicesAPI;
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
@@ -1525,8 +1525,8 @@ public class AppsAPIImplTest {
     public void Test_AppKeyByHost_On_Index_Deactivation()
             throws DotDataException, IOException, DotSecurityException {
         final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
-        final IndiciesAPI indiciesAPI = APILocator.getIndiciesAPI();
-        final IndiciesInfo indiciesInfo = indiciesAPI.loadIndicies();
+        final IndicesAPI indicesAPI = APILocator.getIndiciesAPI();
+        final IndicesInfo legacyIndicesInfo = indicesAPI.loadLegacyIndices();
         try {
 
             AppSecrets.Builder builder = new AppSecrets.Builder();
@@ -1540,8 +1540,8 @@ public class AppsAPIImplTest {
 
             final Host host = new SiteDataGen().nextPersisted();
 
-            contentletIndexAPI.deactivateIndex(indiciesInfo.getWorking());
-            contentletIndexAPI.deactivateIndex(indiciesInfo.getLive());
+            contentletIndexAPI.deactivateIndex(legacyIndicesInfo.getWorking());
+            contentletIndexAPI.deactivateIndex(legacyIndicesInfo.getLive());
 
             final AppsAPI api = APILocator.getAppsAPI();
             api.saveSecrets(bean,host,APILocator.systemUser());
@@ -1550,8 +1550,8 @@ public class AppsAPIImplTest {
             assertTrue(keysByHost.get(host.getIdentifier()).contains(appKey.toLowerCase()));
 
         } finally {
-            contentletIndexAPI.activateIndex(indiciesInfo.getWorking());
-            contentletIndexAPI.activateIndex(indiciesInfo.getLive());
+            contentletIndexAPI.activateIndex(legacyIndicesInfo.getWorking());
+            contentletIndexAPI.activateIndex(legacyIndicesInfo.getLive());
         }
     }
 

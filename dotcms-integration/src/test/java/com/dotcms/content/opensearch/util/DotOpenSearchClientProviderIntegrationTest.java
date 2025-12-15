@@ -11,7 +11,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opensearch.client.opensearch.OpenSearchClient;
@@ -24,7 +23,7 @@ import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.client.opensearch.indices.ExistsRequest;
 
 /**
- * Integration test for DotOpenSearchClientProvider.
+ * Integration test for ConfigurableOpenSearchProvider.
  * Tests the provider's ability to create and configure OpenSearch clients.
  *
  * @author fabrizio
@@ -41,32 +40,98 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
     }
 
     /**
-     * Test provider rebuild with new configuration
+     * Test direct provider with custom configuration
+     * This demonstrates how tests should use ConfigurableOpenSearchProvider directly for custom configs
      */
     @Test
-    public void test_rebuildProvider_withNewConfig_shouldCreateClientWithNewConfig() {
-        // Arrange
-        OpenSearchClientConfig originalConfig = OpenSearchClientConfig.builder()
-            .addEndpoints("http://localhost:9200")
-            .maxConnections(100)
-            .build();
+    public void test_directProvider_withCustomConfiguration_shouldWork() {
+        ConfigurableOpenSearchProvider provider = null;
+        try {
+            // Arrange - Create test configuration
+            OpenSearchClientConfig testConfig = OpenSearchClientConfig.builder()
+                .addEndpoints("http://localhost:9201")  // Local OpenSearch port
+                .tlsEnabled(false)
+                .maxConnections(200) // Different configuration for testing
+                .maxConnectionsPerRoute(100)
+                .build();
 
-        OpenSearchClientConfig newConfig = OpenSearchClientConfig.builder()
-            .addEndpoints("http://localhost:9200")
-            .maxConnections(200) // Different configuration
-            .build();
+            // Act - Create provider with custom configuration
+            provider = new ConfigurableOpenSearchProvider(testConfig);
+            OpenSearchClient client = provider.getClient();
 
-        DotOpenSearchClientProvider provider = new DotOpenSearchClientProvider(originalConfig);
+            // Assert
+            assertNotNull("Provider should not be null", provider);
+            assertNotNull("Client should not be null", client);
 
-        // Act
-        provider.rebuildClient(newConfig);
-        OpenSearchClient client = provider.getClient();
+            // Verify the singleton still works independently
+            OpenSearchDefaultClientProvider singleton = OpenSearchDefaultClientProvider.getInstance();
+            OpenSearchClient singletonClient = singleton.getClient();
+            assertNotNull("Singleton client should not be null", singletonClient);
+
+            // They should be different instances (custom vs default config)
+            assertTrue("Should be different client instances", client != singletonClient);
+
+        } finally {
+            closeProvider(provider);
+        }
+    }
+
+    /**
+     * Test direct provider with convenience configurations
+     * Shows how to use the convenience configuration methods with ConfigurableOpenSearchProvider
+     */
+    @Test
+    public void test_directProvider_withConvenienceConfigurations_shouldWork() {
+        ConfigurableOpenSearchProvider localProvider = null;
+        ConfigurableOpenSearchProvider prodProvider = null;
+        try {
+            // Test 1: Local test configuration
+            OpenSearchClientConfig localConfig = OpenSearchDefaultClientProvider.createLocalTestConfig();
+            localProvider = new ConfigurableOpenSearchProvider(localConfig);
+
+            assertEquals("Should use local port", "http://localhost:9201", localConfig.endpoints().get(0));
+            assertFalse("Should have TLS disabled", localConfig.tlsEnabled());
+
+            // Test client creation
+            OpenSearchClient localClient = localProvider.getClient();
+            assertNotNull("Local test client should not be null", localClient);
+
+            // Test 2: Production-like test configuration
+            OpenSearchClientConfig prodConfig = OpenSearchDefaultClientProvider.createProductionTestConfig();
+            prodProvider = new ConfigurableOpenSearchProvider(prodConfig);
+
+            assertEquals("Should use production endpoint", "https://opensearch.prod.com:9200", prodConfig.endpoints().get(0));
+            assertTrue("Should have TLS enabled", prodConfig.tlsEnabled());
+            assertTrue("Should have username", prodConfig.username().isPresent());
+
+            // Test client creation
+            OpenSearchClient prodClient = prodProvider.getClient();
+            assertNotNull("Production test client should not be null", prodClient);
+
+            // Verify they are different instances
+            assertTrue("Should be different client instances", localClient != prodClient);
+
+        } finally {
+            // Cleanup
+            closeProvider(localProvider);
+            closeProvider(prodProvider);
+        }
+    }
+
+    /**
+     * Test that singleton maintains same instance across calls
+     */
+    @Test
+    public void test_singletonProvider_shouldMaintainSameInstance() {
+        // Arrange & Act
+        OpenSearchDefaultClientProvider instance1 = OpenSearchDefaultClientProvider.getInstance();
+        OpenSearchDefaultClientProvider instance2 = OpenSearchDefaultClientProvider.getInstance();
 
         // Assert
-        assertNotNull("Client should not be null after rebuild", client);
-
-        // Cleanup
-        closeProvider(provider);
+        assertNotNull("First instance should not be null", instance1);
+        assertNotNull("Second instance should not be null", instance2);
+        assertEquals("Both instances should be the same", instance1, instance2);
+        assertTrue("Should be exact same object", instance1 == instance2);
     }
 
     /**
@@ -85,7 +150,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
             Config.setProperty("OS_TLS_ENABLED", "false");
 
             // Act
-            DotOpenSearchClientProvider provider = new DotOpenSearchClientProvider();
+            ConfigurableOpenSearchProvider provider = new ConfigurableOpenSearchProvider();
             OpenSearchClient client = provider.getClient();
 
             // Assert
@@ -109,7 +174,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
     @Test
     public void test_clientFunctionality_clusterHealth_shouldReturnValidResponse() {
         // This test connects to local OpenSearch (opensearch-3x container on port 9201)
-        DotOpenSearchClientProvider provider = null;
+        ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure for local OpenSearch container
             OpenSearchClientConfig config = OpenSearchClientConfig.builder()
@@ -120,7 +185,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
                 .socketTimeout(Duration.ofSeconds(10))
                 .build();
 
-            provider = new DotOpenSearchClientProvider(config);
+            provider = new ConfigurableOpenSearchProvider(config);
             OpenSearchClient client = provider.getClient();
 
             // Act - Try to get cluster health
@@ -161,7 +226,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
      */
     @Test
     public void test_clientFunctionality_indexOperations_shouldWorkCorrectly() {
-        DotOpenSearchClientProvider provider = null;
+        ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure for local OpenSearch container
             OpenSearchClientConfig config = OpenSearchClientConfig.builder()
@@ -172,7 +237,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
                 .socketTimeout(Duration.ofSeconds(10))
                 .build();
 
-            provider = new DotOpenSearchClientProvider(config);
+            provider = new ConfigurableOpenSearchProvider(config);
             OpenSearchClient client = provider.getClient();
 
             // Act & Assert - Try basic index operations
@@ -227,7 +292,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
      */
     @Test
     public void test_localOpenSearchConnectivity_shouldProvideDetailedInfo() {
-        DotOpenSearchClientProvider provider = null;
+        ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure specifically for the opensearch-3x container
             OpenSearchClientConfig config = OpenSearchClientConfig.builder()
@@ -243,7 +308,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
             System.out.println("🔍 Endpoint: http://localhost:9201");
             System.out.println("🔍 Expected cluster: opensearch-3x-cluster");
 
-            provider = new DotOpenSearchClientProvider(config);
+            provider = new ConfigurableOpenSearchProvider(config);
             OpenSearchClient client = provider.getClient();
 
             // Test 1: Basic cluster health
@@ -327,7 +392,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
     @Test
     public void test_closeProvider_shouldNotThrowException() {
         // Arrange
-        DotOpenSearchClientProvider provider = new DotOpenSearchClientProvider();
+        ConfigurableOpenSearchProvider provider = new ConfigurableOpenSearchProvider();
 
         // Act & Assert - Should not throw exception
         try {
@@ -348,13 +413,13 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
             .build();
 
         // Act & Assert - Should throw DotRuntimeException due to invalid URL
-        new DotOpenSearchClientProvider(config);
+        new ConfigurableOpenSearchProvider(config);
     }
 
     /**
      * Helper method to close provider safely
      */
-    private void closeProvider(DotOpenSearchClientProvider provider) {
+    private void closeProvider(ConfigurableOpenSearchProvider provider) {
         if (provider != null) {
             try {
                 provider.close();

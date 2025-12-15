@@ -11,28 +11,34 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
+import java.util.Optional;
 
 
-public class IndiciesAPIImpl implements IndiciesAPI {
+public class IndicesAPIImpl implements IndicesAPI {
 
-    protected final IndiciesFactory ifac;
+    protected final IndicesFactory indicesFactory;
 
-    public IndiciesAPIImpl(){
-        ifac = FactoryLocator.getIndiciesFactory();
+    public IndicesAPIImpl(){
+        indicesFactory = FactoryLocator.getIndiciesFactory();
     }
 
     @CloseDBIfOpened
-    public IndiciesInfo loadIndicies() throws DotDataException {
-        return loadIndicies(null);
+    public LegacyIndicesInfo loadLegacyIndices() throws DotDataException {
+        return loadLegacyIndices(null);
     }
 
     @CloseDBIfOpened
-    public IndiciesInfo loadIndicies(Connection conn) throws DotDataException {
-        return ifac.loadIndicies(conn);
+    public LegacyIndicesInfo loadLegacyIndices(Connection conn) throws DotDataException {
+        return indicesFactory.loadLegacyIndices(conn);
+    }
+
+    @CloseDBIfOpened
+    public Optional<IndicesInfo> loadIndices() throws DotDataException{
+        return indicesFactory.loadIndices();
     }
 
     @WrapInTransaction
-    public synchronized void point(IndiciesInfo newInfo) throws DotDataException {
+    public synchronized void point(IndicesInfo newInfo) throws DotDataException {
         final User currentUser = Try.of(() -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
                 .getOrNull();
         
@@ -46,10 +52,17 @@ public class IndiciesAPIImpl implements IndiciesAPI {
             newInfo.getReindexWorking(), 
             newInfo.getReindexLive(), 
             newInfo.getSiteSearch());
-            
-        Logger.info(this, "Indices configuration updated by user: " + userInfo + " - " + indexInfo + " at " + new java.util.Date());
-        
-        ifac.point(newInfo);
+
+        if(newInfo.isLegacy()) {
+            Logger.info(this,
+                    "Legacy Indices configuration updated by user: " + userInfo + " - " + indexInfo
+                            + " at " + new java.util.Date());
+        } else {
+            Logger.info(this,
+                    "New Indices configuration updated by user: " + userInfo + " - " + indexInfo
+                            + " at " + new java.util.Date());
+        }
+        indicesFactory.point(newInfo);
     }
 
 }

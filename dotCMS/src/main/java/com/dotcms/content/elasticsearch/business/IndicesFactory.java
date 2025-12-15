@@ -1,12 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.content.opensearch.business.IndicesInfoImpl;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -15,32 +15,33 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
 import io.vavr.control.Try;
+import java.util.Optional;
 import org.apache.commons.beanutils.PropertyUtils;
 
-public class IndiciesFactory {
+public class IndicesFactory {
 
 
-    protected static IndiciesCache cache = CacheLocator.getIndiciesCache();
+    protected static IndicesCache cache = CacheLocator.getIndiciesCache();
 
 
-    public IndiciesInfo loadIndicies() throws DotDataException {
-        return loadIndicies(null);
+    public LegacyIndicesInfo loadLegacyIndices() throws DotDataException {
+        return loadLegacyIndices(null);
     }
 
     @CloseDBIfOpened
-    public IndiciesInfo loadIndicies(Connection conn) throws DotDataException {
-        IndiciesInfo info = cache.get();
+    public LegacyIndicesInfo loadLegacyIndices(Connection conn) throws DotDataException {
+        LegacyIndicesInfo info = cache.get();
         if (info == null) {
             // build it once
-            synchronized (this.getClass()) {
+            synchronized (IndicesFactory.class) {
                 if (conn == null) {
                     conn = DbConnectionFactory.getConnection();
                 }
                 info = cache.get();
                 if (info == null) {
-                    final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
+                    final LegacyIndicesInfo.Builder builder = new LegacyIndicesInfo.Builder();
                     final DotConnect dc = new DotConnect();
-                    dc.setSQL("SELECT index_name,index_type FROM indicies");
+                    dc.setSQL("SELECT index_name,index_type FROM indicies WHERE index_version is NULL");
                     final List<Map<String, Object>> results = dc.loadResults(conn);
                     for (Map<String, Object> rr : results) {
                         String name = (String) rr.get("index_name");
@@ -66,21 +67,51 @@ public class IndiciesFactory {
         return info;
     }
 
+    @CloseDBIfOpened
+    public Optional<IndicesInfo> loadIndices() throws DotDataException {
+        IndicesInfoImpl info = null;
+        // build it once
+        synchronized (IndicesFactory.class) {
+            final IndicesInfoImpl.Builder builder = new IndicesInfoImpl.Builder();
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT index_name,index_type FROM indicies WHERE index_version is '"
+                    + IndicesInfo.OPEN_SEARCH_VERSION + "' ");
+            @SuppressWarnings("unchecked") final List<Map<String, Object>> results = dc.loadResults();
+            if(results.isEmpty()){
+               return Optional.empty();
+            }
+            for (Map<String, Object> rr : results) {
+                String name = (String) rr.get("index_name");
+                String type = (String) rr.get("index_type");
+                if (type.equalsIgnoreCase(IndexType.WORKING.toString())) {
+                    builder.working(name);
+                } else if (type.equalsIgnoreCase(IndexType.LIVE.toString())) {
+                    builder.live(name);
+                } else if (type.equalsIgnoreCase(IndexType.REINDEX_LIVE.toString())) {
+                    builder.reindexLive(name);
+                } else if (type.equalsIgnoreCase(IndexType.REINDEX_WORKING.toString())) {
+                    builder.reindexWorking(name);
+                } else if (type.equalsIgnoreCase(IndexType.SITE_SEARCH.toString())) {
+                    builder.siteSearch(name);
+                }
+            }
+            info = builder.build();
+        }
+        return Optional.of(info);
+    }
 
-    public void point(final IndiciesInfo newInfo) throws DotDataException {
+    public void point(final IndicesInfo newInfo) throws DotDataException {
       Connection conn = null;
 
       try {
         conn = DbConnectionFactory.getDataSource().getConnection();
         conn.setAutoCommit(false);
-        if (DbConnectionFactory.isMySql()) {
-          conn.setTransactionIsolation(conn.TRANSACTION_READ_COMMITTED);
-        }
-        if(newInfo==null || newInfo.equals(loadIndicies(conn))) {
+
+        if(newInfo==null || newInfo.equals(loadLegacyIndices(conn))) {
             return;
         }
         DotConnect dc = new DotConnect();
-        final String insertSQL = "INSERT INTO indicies VALUES(?,?)";
+        final String insertSQL = "INSERT INTO indicies VALUES(?,?,?)";
         final String deleteSQL = "DELETE from indicies where index_type=? or index_name=?";
         for (IndexType type : IndexType.values()) {
             final String indexType = type.toString().toLowerCase();
@@ -89,7 +120,7 @@ public class IndiciesFactory {
 
             dc.setSQL(deleteSQL).addParam(indexType).addParam(newValue).loadResult(conn);
             if (newValue != null) {
-                dc.setSQL(insertSQL).addParam(newValue).addParam(indexType).loadResult(conn);
+                dc.setSQL(insertSQL).addParam(newValue).addParam(indexType).addParam(newInfo.version()).loadResult(conn);
             }
 
         }

@@ -73,17 +73,17 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
     private final ESIndexAPI indexApi;
     private final ESMappingAPIImpl mappingAPI;
-    private final IndiciesAPI indiciesAPI;
+    private final IndicesAPI indicesAPI;
     private ArrayList<Object> list;
     private int indexPosition;
 
     @VisibleForTesting
     public ESSiteSearchAPI(final ESIndexAPI indexApi,
             final ESMappingAPIImpl mappingAPI,
-            final IndiciesAPI indiciesAPI) {
+            final IndicesAPI indicesAPI) {
         this.indexApi = indexApi;
         this.mappingAPI = mappingAPI;
-        this.indiciesAPI = indiciesAPI;
+        this.indicesAPI = indicesAPI;
     }
 
     public ESSiteSearchAPI() {
@@ -122,7 +122,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
             try {
                 //search the default site search index
-                final String defaultIndice = indiciesAPI.loadIndicies().getSiteSearch();
+                final String defaultIndice = indicesAPI.loadLegacyIndices().getSiteSearch();
                 if (defaultIndice != null && !defaultIndice.isEmpty() && !list.isEmpty() ){
                     final int index = list.indexOf(defaultIndice);
                     //change the element defaultIndex to the first position of the arraylist if it is not yet
@@ -170,7 +170,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         try{
 
 
-            results =  search(indiciesAPI.loadIndicies().getSiteSearch(), query, start, rows);
+            results =  search(indicesAPI.loadLegacyIndices().getSiteSearch(), query, start, rows);
 
 
         }
@@ -210,7 +210,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         SearchResponse resp = null;
         try {
             if(indexName ==null){
-                indexName = indiciesAPI.loadIndicies().getSiteSearch();
+                indexName = indicesAPI.loadLegacyIndices().getSiteSearch();
             }
             if(!IndexType.SITE_SEARCH.is(indexName)){
                 throw new ElasticsearchException(indexName + " is not a sitesearch index");
@@ -317,7 +317,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
      */
     @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-       return  indexName.equals(indiciesAPI.loadIndicies().getSiteSearch());
+       return  indexName.equals(indicesAPI.loadLegacyIndices().getSiteSearch());
     }
 
     @Override
@@ -325,14 +325,14 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return;
 
-        final IndiciesInfo info = indiciesAPI.loadIndicies();
-        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        final IndicesInfo info = indicesAPI.loadLegacyIndices();
+        final LegacyIndicesInfo.Builder builder = LegacyIndicesInfo.Builder.copy(info);
 
         if(IndexType.SITE_SEARCH.is(indexName)) {
             builder.setSiteSearch(indexName);
         }
 
-        indiciesAPI.point(builder.build());
+        indicesAPI.point(builder.build());
     }
 
     @Override
@@ -340,13 +340,13 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return;
 
-        final IndiciesInfo info = indiciesAPI.loadIndicies();
-        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        final IndicesInfo info = indicesAPI.loadLegacyIndices();
+        final LegacyIndicesInfo.Builder builder = LegacyIndicesInfo.Builder.copy(info);
         if(IndexType.SITE_SEARCH.is(indexName)) {
             builder.setSiteSearch(null);
         }
 
-        indiciesAPI.point(builder.build());
+        indicesAPI.point(builder.build());
     }
 
     @Override
@@ -625,7 +625,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
         RestHighLevelClient client = RestHighLevelClientProvider.getInstance().getClient();
         if ( indexName == null ) {
-            indexName = indiciesAPI.loadIndicies().getSiteSearch();
+            indexName = indicesAPI.loadLegacyIndices().getSiteSearch();
         }
         if ( !indexApi.indexExists( indexName ) ) {
             // try using it as an alias
@@ -660,7 +660,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
         final RestHighLevelClient client = RestHighLevelClientProvider.getInstance().getClient();
         if ( indexName == null ) {
-            indexName = indiciesAPI.loadIndicies().getSiteSearch();
+            indexName = indicesAPI.loadLegacyIndices().getSiteSearch();
         }
         if ( !indexApi.indexExists( indexName ) ) {
             // try using it as an alias
@@ -705,7 +705,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         indicesToRemove.addAll(listIndices());
 
         //Remove Default SiteSearch Index
-        final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+        final IndicesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadLegacyIndices())
                 .getOrNull();
 
         if(info!=null) {

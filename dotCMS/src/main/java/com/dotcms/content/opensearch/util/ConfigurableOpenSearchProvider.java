@@ -28,10 +28,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Simple provider for OpenSearch client that reads configuration from properties.
+ * Internal configurable OpenSearch client provider implementation.
+ * Package-private class used internally by OpenSearchClients and for test configurations.
  * Provides a straightforward way to configure and create OpenSearch clients.
  */
-public class DotOpenSearchClientProvider {
+class ConfigurableOpenSearchProvider {
 
     private static final String OS_ENDPOINTS = "OS_ENDPOINTS";
     private static final String OS_HOSTNAME = "OS_HOSTNAME";
@@ -67,14 +68,14 @@ public class DotOpenSearchClientProvider {
     /**
      * Create provider using configuration from properties
      */
-    public DotOpenSearchClientProvider() {
+    public ConfigurableOpenSearchProvider() {
         buildClient();
     }
 
     /**
      * Create provider using custom configuration
      */
-    public DotOpenSearchClientProvider(OpenSearchClientConfig config) {
+    public ConfigurableOpenSearchProvider(OpenSearchClientConfig config) {
         buildClient(config);
     }
 

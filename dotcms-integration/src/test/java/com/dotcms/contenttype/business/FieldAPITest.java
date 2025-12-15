@@ -1,8 +1,33 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.INODE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LIVE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
 import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DateField;
@@ -37,7 +62,6 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
@@ -51,42 +75,16 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.INODE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LIVE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
-import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class FieldAPITest extends IntegrationTestBase {
@@ -1433,18 +1431,18 @@ public class FieldAPITest extends IntegrationTestBase {
                     .build();
             field = fieldAPI.save(field, user);
 
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final IndicesInfo legacyIndicesInfo = APILocator.getIndiciesAPI().loadLegacyIndices();
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
             Map<String, Object> mapping = mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getWorking(),
                             (type.variable() + StringPool.PERIOD + field.variable()));
             assertFalse(UtilMethods.isSet(mapping));
 
             //verify mapping on live index
             mapping = mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getLive(),
                             (type.variable() + StringPool.PERIOD + field.variable()));
             assertFalse(UtilMethods.isSet(mapping));
         }finally{
@@ -1473,12 +1471,12 @@ public class FieldAPITest extends IntegrationTestBase {
                     .build();
             field = fieldAPI.save(field, user);
 
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final IndicesInfo legacyIndicesInfo = APILocator.getIndiciesAPI().loadLegacyIndices();
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
             Map<String, String> mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getWorking(),
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1486,7 +1484,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //verify mapping on live index
             mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getLive(),
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1494,7 +1492,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //validate _dotraw fields
             mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getLive(),
                             (type.variable() + StringPool.PERIOD + field.variable() + "_dotraw")
                                     .toLowerCase()).get(field.variable() + "_dotraw");
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1521,12 +1519,12 @@ public class FieldAPITest extends IntegrationTestBase {
             final Field field = createAndSaveRelationshipField("newRel",
                     type.id(), type.variable(), CARDINALITY);
 
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            final IndicesInfo legacyIndicesInfo = APILocator.getIndiciesAPI().loadLegacyIndices();
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
             Map<String, String> mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getWorking(),
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable().toLowerCase());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1534,7 +1532,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //verify mapping on live index
             mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(legacyIndicesInfo.getLive(),
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable().toLowerCase());
             assertTrue(UtilMethods.isSet(mapping.get("type")));

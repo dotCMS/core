@@ -45,7 +45,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -1103,9 +1102,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Nullable
     private static String getSiteSearchIndex() {
         String indexToHit;
-        IndiciesInfo info;
+        IndicesInfo info;
         try {
-            info = APILocator.getIndiciesAPI().loadIndicies();
+            info = APILocator.getIndiciesAPI().loadLegacyIndices();
         } catch (DotDataException ee) {
             Logger.fatal(ContentletIndexAPIImpl.class, "Can't get indicies information", ee);
             return null;
