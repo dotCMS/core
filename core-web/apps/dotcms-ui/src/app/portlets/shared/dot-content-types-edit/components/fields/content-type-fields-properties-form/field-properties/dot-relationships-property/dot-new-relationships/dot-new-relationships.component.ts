@@ -54,13 +54,21 @@ export class DotNewRelationshipsComponent implements OnChanges {
 
     /**
      * Handle content type change from dot-content-type component
+     * Note: onChange event emits the variable (string), so we need to look up the full contentType object
      *
-     * @param contentType The selected content type
+     * @param variable The selected content type variable or null
      * @memberof DotNewRelationshipsComponent
      */
-    onContentTypeChange(contentType: DotCMSContentType | null): void {
-        this.contentType = contentType;
-        this.triggerChanged();
+    onContentTypeChange(variable: string | null): void {
+        if (variable) {
+            this.contentTypeService.getContentType(variable).subscribe((contentType) => {
+                this.contentType = contentType;
+                this.triggerChanged();
+            });
+        } else {
+            this.contentType = null;
+            this.triggerChanged();
+        }
     }
 
     /**
