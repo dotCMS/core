@@ -1,11 +1,9 @@
 <form [formGroup]="form" class="p-fluid">
     <div class="field">
         <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
-        <dot-site-selector-field
-            [system]="true"
+        <dot-site
             id="content-type-form-host"
-            [width]="'100%'"
-            formControlName="hostFolder"></dot-site-selector-field>
+            formControlName="hostFolder"></dot-site>
     </div>
 
     <div class="field">

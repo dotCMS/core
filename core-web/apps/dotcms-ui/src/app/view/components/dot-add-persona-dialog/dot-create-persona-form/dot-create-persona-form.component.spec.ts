@@ -17,7 +17,8 @@ import { DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSiteComponent
 } from '@dotcms/ui';
 import {
     mockDotCMSTempFile,
@@ -29,7 +30,6 @@ import {
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 
 import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
-import { DotSiteSelectorFieldComponent } from '../../_common/dot-site-selector-field/dot-site-selector-field.component';
 
 const FROM_INITIAL_VALUE = {
     hostFolder: mockSites[0].identifier,
@@ -64,7 +64,7 @@ describe('DotCreatePersonaFormComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 DotCreatePersonaFormComponent,
-                MockComponent(DotSiteSelectorFieldComponent),
+                MockComponent(DotSiteComponent),
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 FileUploadModule,

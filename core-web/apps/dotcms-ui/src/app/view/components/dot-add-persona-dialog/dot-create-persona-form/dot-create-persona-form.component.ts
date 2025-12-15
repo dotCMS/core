@@ -16,12 +16,11 @@ import { takeUntil } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotFieldValidationMessageComponent, DotSiteComponent } from '@dotcms/ui';
 import { camelCase } from '@dotcms/utils';
 
 import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-file-upload.model';
 import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
-import { DotSiteSelectorFieldComponent } from '../../_common/dot-site-selector-field/dot-site-selector-field.component';
 
 @Component({
     selector: 'dot-create-persona-form',
@@ -34,7 +33,7 @@ import { DotSiteSelectorFieldComponent } from '../../_common/dot-site-selector-f
         ButtonModule,
         DotMessagePipe,
         DotFieldValidationMessageComponent,
-        DotSiteSelectorFieldComponent,
+        DotSiteComponent,
         DotAutocompleteTagsComponent
     ]
 })
