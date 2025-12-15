@@ -17580,7 +17580,8 @@ paths:
       - Internationalization
   /v2/tags:
     delete:
-      description: Deletes one or more tags by their IDs
+      description: Deletes one or more tags by their IDs. User must have EDIT permission
+        on all contentlets associated with each tag.
       operationId: delete_17
       requestBody:
         content:
@@ -17600,8 +17601,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: Tags deleted successfully
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
+          description: Bulk delete result with success count and failures
         "400":
           content:
             application/json: {}
@@ -19224,6 +19225,19 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkResultView:
+      type: object
+      properties:
+        fails:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedResultView"
+        skippedCount:
+          type: integer
+          format: int64
+        successCount:
+          type: integer
+          format: int64
     BulkWorkflowSchemeView:
       type: object
       properties:
@@ -20804,6 +20818,13 @@ components:
           type: string
       required:
       - packages
+    FailedResultView:
+      type: object
+      properties:
+        element:
+          type: string
+        errorMessage:
+          type: string
     Field:
       type: object
       discriminator:
@@ -23701,6 +23722,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/BulkActionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBulkResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkResultView"
         errors:
           type: array
           items:

@@ -2,15 +2,21 @@ package com.dotmarketing.tag.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -998,6 +1004,378 @@ public class TagAPITest extends IntegrationTestBase {
 		for(Tag tag : tags){
 			assertEquals(tagName.toLowerCase(), tag.getTagName());
 		}
+	}
+
+	// ==================== Permission-Checked Delete Tests ====================
+
+	/**
+	 * Method to test: {@link TagAPI#canDeleteTag(User, String)}
+	 * Given scenario: Tag with no contentlet associations (orphan tag)
+	 * Expected result: Returns null (deletion allowed)
+	 */
+	@Test
+	public void canDeleteTag_OrphanTag_ReturnsNull() throws Exception {
+		// Create a tag with no associations
+		final String tagName = "candeleteorphan" + System.currentTimeMillis();
+		final Tag tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
+		assertNotNull(tag);
+
+		// Check permission - should return null (allowed)
+		final String result = tagAPI.canDeleteTag(testUser, tag.getTagId());
+		assertNull("Orphan tag should be deletable", result);
+
+		// Verify tag still exists (canDeleteTag doesn't delete)
+		final Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNotNull("Tag should still exist after canDeleteTag check", foundTag);
+
+		// Cleanup
+		tagAPI.deleteTag(tag.getTagId());
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canDeleteTag(User, String)}
+	 * Given scenario: Tag associated with contentlet user cannot edit
+	 * Expected result: Returns error message (deletion denied)
+	 */
+	@Test
+	public void canDeleteTag_WithoutPermission_ReturnsErrorMessage() throws Exception {
+		// Create a limited user with no permissions
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+		Contentlet contentAsset = null;
+		Tag tag = null;
+
+		try {
+			// Create a contentlet as admin
+			contentAsset = createTestContentlet();
+
+			// Create a tag and associate with the contentlet
+			final String tagName = "candeletedenied" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			// Check permission - should return error message (denied)
+			final String result = tagAPI.canDeleteTag(limitedUser, tag.getTagId());
+			assertNotNull("Should return error message when permission denied", result);
+			assertTrue("Error message should mention permission",
+					result.contains("lacks") || result.contains("permission"));
+
+			// Verify tag still exists (canDeleteTag doesn't delete)
+			final Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+			assertNotNull("Tag should still exist after canDeleteTag check", foundTag);
+
+		} finally {
+			// Cleanup
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			if (contentAsset != null) {
+				try { conAPI.destroy(contentAsset, systemUser, false); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTag(User, String)}
+	 * Given scenario: Tag with no contentlet associations (orphan tag)
+	 * Expected result: Tag should be deleted successfully
+	 */
+	@Test
+	public void deleteTag_OrphanTag_ShouldDelete() throws Exception {
+		// Create a tag with no associations
+		final String tagName = "orphantag" + System.currentTimeMillis();
+		final Tag tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
+		assertNotNull(tag);
+		assertNotNull(tag.getTagId());
+
+		// Verify tag exists
+		Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNotNull(foundTag);
+
+		// Delete using permission-checked method - should succeed since no associations
+		tagAPI.deleteTag(testUser, tag.getTagId());
+
+		// Verify tag is deleted
+		foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNull(foundTag);
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTag(User, String)}
+	 * Given scenario: Tag associated with contentlet that user has EDIT permission on
+	 * Expected result: Tag should be deleted successfully
+	 */
+	@Test
+	public void deleteTag_WithPermission_ShouldDelete() throws Exception {
+		// Create a contentlet
+		final Contentlet contentAsset = createTestContentlet();
+
+		try {
+			// Create a tag and associate with the contentlet
+			final String tagName = "permittedtag" + System.currentTimeMillis();
+			final Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			// Verify tag exists and is associated
+			Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+			assertNotNull(foundTag);
+			List<TagInode> tagInodes = tagAPI.getTagInodesByTagId(tag.getTagId());
+			assertFalse(tagInodes.isEmpty());
+
+			// Delete using admin user who has EDIT permission - should succeed
+			tagAPI.deleteTag(testUser, tag.getTagId());
+
+			// Verify tag is deleted
+			foundTag = tagAPI.getTagByTagId(tag.getTagId());
+			assertNull(foundTag);
+		} finally {
+			conAPI.destroy(contentAsset, systemUser, false);
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTag(User, String)}
+	 * Given scenario: Tag associated with contentlet that user does NOT have EDIT permission on
+	 * Expected result: DotSecurityException should be thrown
+	 */
+	@Test(expected = DotSecurityException.class)
+	public void deleteTag_WithoutPermission_ShouldFail() throws Exception {
+		// Create a limited user with no permissions
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+		Contentlet contentAsset = null;
+		Tag tag = null;
+
+		try {
+			// Create a contentlet as admin
+			contentAsset = createTestContentlet();
+
+			// Create a tag and associate with the contentlet
+			final String tagName = "restrictedtag" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			// Verify tag exists and is associated
+			final Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+			assertNotNull(foundTag);
+
+			// Verify the limited user does NOT have EDIT permission
+			final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+			assertFalse("Limited user should NOT have EDIT permission",
+					permissionAPI.doesUserHavePermission(contentAsset, PermissionAPI.PERMISSION_EDIT, limitedUser));
+
+			// Try to delete using limited user - should throw DotSecurityException
+			tagAPI.deleteTag(limitedUser, tag.getTagId());
+
+			fail("Should have thrown DotSecurityException");
+		} finally {
+			// Cleanup
+			if (tag != null) {
+				try {
+					tagAPI.deleteTag(tag.getTagId());
+				} catch (Exception e) {
+					// Ignore cleanup errors
+				}
+			}
+			if (contentAsset != null) {
+				try {
+					conAPI.destroy(contentAsset, systemUser, false);
+				} catch (Exception e) {
+					// Ignore cleanup errors
+				}
+			}
+			try {
+				UserDataGen.remove(limitedUser);
+			} catch (Exception e) {
+				// Ignore cleanup errors
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTag(User, String)}
+	 * Given scenario: Tag associated with contentlet that was deleted (orphan association)
+	 * Expected result: Tag should be deleted successfully since association points to non-existent content
+	 */
+	@Test
+	public void deleteTag_OrphanAssociation_ShouldDelete() throws Exception {
+		// Create a contentlet
+		Contentlet contentAsset = createTestContentlet();
+		final String contentletInode = contentAsset.getInode();
+
+		// Create a tag and associate with the contentlet
+		final String tagName = "orphanassoctag" + System.currentTimeMillis();
+		final Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+		tagAPI.addContentletTagInode(tagName, contentletInode, defaultHostId, WIKI_TAG_VARNAME);
+
+		// Verify tag exists and is associated
+		Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNotNull(foundTag);
+		List<TagInode> tagInodes = tagAPI.getTagInodesByTagId(tag.getTagId());
+		assertFalse(tagInodes.isEmpty());
+
+		// Delete the contentlet (creates orphan association)
+		conAPI.destroy(contentAsset, systemUser, false);
+
+		// Verify contentlet is deleted
+		contentAsset = conAPI.find(contentletInode, systemUser, false);
+		assertNull(contentAsset);
+
+		// Verify tag still exists with orphan association
+		foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNotNull(foundTag);
+
+		// Delete using permission-checked method - should succeed since contentlet doesn't exist
+		tagAPI.deleteTag(testUser, tag.getTagId());
+
+		// Verify tag is deleted
+		foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNull(foundTag);
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTag(User, String)}
+	 * Given scenario: Tag associated with multiple contentlets - user has permission on all
+	 * Expected result: Tag should be deleted successfully
+	 */
+	@Test
+	public void deleteTag_MultipleContentletsWithPermission_ShouldDelete() throws Exception {
+		Contentlet contentAsset1 = null;
+		Contentlet contentAsset2 = null;
+
+		try {
+			// Create two contentlets
+			contentAsset1 = createTestContentlet();
+			contentAsset2 = createTestContentlet();
+
+			// Create a tag and associate with both contentlets
+			final String tagName = "multitag" + System.currentTimeMillis();
+			final Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset1.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+			tagAPI.addContentletTagInode(tagName, contentAsset2.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			// Verify tag has two associations
+			List<TagInode> tagInodes = tagAPI.getTagInodesByTagId(tag.getTagId());
+			assertEquals(2, tagInodes.size());
+
+			// Delete using admin user who has EDIT permission on both - should succeed
+			tagAPI.deleteTag(testUser, tag.getTagId());
+
+			// Verify tag is deleted
+			Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+			assertNull(foundTag);
+		} finally {
+			if (contentAsset1 != null) {
+				conAPI.destroy(contentAsset1, systemUser, false);
+			}
+			if (contentAsset2 != null) {
+				conAPI.destroy(contentAsset2, systemUser, false);
+			}
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTag(User, String)}
+	 * Given scenario: Tag associated with multiple contentlets - user lacks permission on one
+	 * Expected result: DotSecurityException should be thrown
+	 */
+	@Test(expected = DotSecurityException.class)
+	public void deleteTag_MultipleContentletsMixedPermissions_ShouldFail() throws Exception {
+		// Create a limited user with a role
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+		Contentlet contentAsset1 = null;
+		Contentlet contentAsset2 = null;
+		Tag tag = null;
+
+		try {
+			// Create two contentlets
+			contentAsset1 = createTestContentlet();
+			contentAsset2 = createTestContentlet();
+
+			// Give limited user EDIT permission on first contentlet only
+			final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+			final Permission permission = new Permission();
+			permission.setPermission(PermissionAPI.PERMISSION_EDIT);
+			permission.setRoleId(limitedRole.getId());
+			permission.setInode(contentAsset1.getPermissionId());
+			permissionAPI.save(permission, contentAsset1, systemUser, false);
+
+			// Verify permissions
+			assertTrue("Limited user should have EDIT permission on first contentlet",
+					permissionAPI.doesUserHavePermission(contentAsset1, PermissionAPI.PERMISSION_EDIT, limitedUser));
+			assertFalse("Limited user should NOT have EDIT permission on second contentlet",
+					permissionAPI.doesUserHavePermission(contentAsset2, PermissionAPI.PERMISSION_EDIT, limitedUser));
+
+			// Create a tag and associate with both contentlets
+			final String tagName = "mixedpermtag" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset1.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+			tagAPI.addContentletTagInode(tagName, contentAsset2.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			// Verify tag has two associations
+			List<TagInode> tagInodes = tagAPI.getTagInodesByTagId(tag.getTagId());
+			assertEquals(2, tagInodes.size());
+
+			// Try to delete using limited user - should throw DotSecurityException
+			// because user lacks permission on second contentlet
+			tagAPI.deleteTag(limitedUser, tag.getTagId());
+
+			fail("Should have thrown DotSecurityException");
+		} finally {
+			// Cleanup
+			if (tag != null) {
+				try {
+					tagAPI.deleteTag(tag.getTagId());
+				} catch (Exception e) {
+					// Ignore cleanup errors
+				}
+			}
+			if (contentAsset1 != null) {
+				try {
+					conAPI.destroy(contentAsset1, systemUser, false);
+				} catch (Exception e) {
+					// Ignore cleanup errors
+				}
+			}
+			if (contentAsset2 != null) {
+				try {
+					conAPI.destroy(contentAsset2, systemUser, false);
+				} catch (Exception e) {
+					// Ignore cleanup errors
+				}
+			}
+			try {
+				UserDataGen.remove(limitedUser);
+			} catch (Exception e) {
+				// Ignore cleanup errors
+			}
+		}
+	}
+
+	/**
+	 * Helper method to create a test contentlet for permission tests
+	 */
+	private Contentlet createTestContentlet() throws Exception {
+		final Contentlet contentAsset = new Contentlet();
+		final ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setContentTypeId(contentType.id());
+		contentAsset.setHost(defaultHostId);
+		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+		final String name = "testtagperm" + System.currentTimeMillis();
+		contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+		contentAsset.setProperty(WIKI_URL_VARNAME, name);
+		contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+		contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
+		final Contentlet checkedIn = conAPI.checkin(contentAsset, testUser, false);
+		conAPI.publish(checkedIn, testUser, false);
+		return checkedIn;
 	}
 
 	/**

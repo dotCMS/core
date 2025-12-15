@@ -5,17 +5,21 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link TagAPI} interface.
@@ -429,6 +433,79 @@ public class TagAPIImpl implements TagAPI {
             return;
         }
         tagFactory.deleteTagsInBatch(java.util.Arrays.asList(tagIds));
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public String canDeleteTag(final User user, final String tagId) throws DotDataException {
+        return checkTagDeletePermission(tagId, user);
+    }
+
+    @Override
+    public void deleteTag(final User user, final String tagId) throws DotDataException, DotSecurityException {
+        // Check if user has permission to delete this tag
+        final String permissionError = canDeleteTag(user, tagId);
+        if (permissionError != null) {
+            throw new DotSecurityException(permissionError);
+        }
+        // Permission check passed, delete the tag
+        deleteTag(tagId);
+    }
+
+    /**
+     * Checks if a user has permission to delete a tag.
+     * <p>A tag can be deleted if:
+     * <ul>
+     *   <li>The tag has no contentlet associations (orphan tag)</li>
+     *   <li>The user has EDIT permission on ALL associated contentlets</li>
+     * </ul>
+     * User ownership records (fieldVarName=null) are ignored as they represent tag ownership, not content tagging.</p>
+     *
+     * @param tagId the tag ID to check
+     * @param user  the user requesting deletion
+     * @return null if deletion is allowed, or an error message if denied
+     * @throws DotDataException if there's a data access error
+     */
+    private String checkTagDeletePermission(final String tagId, final User user) throws DotDataException {
+        final List<TagInode> associations = tagFactory.getTagInodesByTagId(tagId);
+
+        // Filter to contentlet associations only (fieldVarName != null)
+        // User ownership records have null fieldVarName and should be ignored
+        final List<TagInode> contentletAssociations = associations.stream()
+                .filter(ti -> UtilMethods.isSet(ti.getFieldVarName()))
+                .collect(Collectors.toList());
+
+        // Orphan tag - no contentlet associations, allow delete
+        if (contentletAssociations.isEmpty()) {
+            return null;
+        }
+
+        // Check EDIT permission on each associated contentlet
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        for (final TagInode tagInode : contentletAssociations) {
+            try {
+                final Contentlet contentlet = APILocator.getContentletAPI()
+                        .find(tagInode.getInode(), APILocator.systemUser(), false);
+
+                // Orphan association - contentlet doesn't exist anymore, skip
+                if (contentlet == null) {
+                    continue;
+                }
+
+                // Check EDIT permission
+                if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user)) {
+                    return String.format("User '%s' lacks EDIT permission on contentlet '%s'",
+                            user.getUserId(), contentlet.getIdentifier());
+                }
+            } catch (final DotSecurityException e) {
+                // User doesn't have read permission on the contentlet
+                return String.format("User '%s' lacks permission to access associated contentlet",
+                        user.getUserId());
+            }
+        }
+
+        // All permission checks passed
+        return null;
     }
 
     @WrapInTransaction
