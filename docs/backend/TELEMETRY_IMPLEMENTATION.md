@@ -283,12 +283,135 @@ Use the `category` attribute to group related metrics:
 
 Use `priority` to control display order within categories (lower = first).
 
+## Performance Monitoring & Timeout Handling
+
+### Overview
+
+The telemetry system includes comprehensive performance monitoring and timeout protection to ensure system stability and provide visibility into metric collection performance.
+
+### Timing Infrastructure
+
+**`MetricTiming`**
+Captures execution timing information for each metric:
+- **`durationMs`**: Total execution time including cache lookup
+- **`cacheHit`**: Whether the value was served from cache
+- **`computationMs`**: Actual computation time (0 for cache hits)
+- **`timedOut`**: Whether the metric exceeded timeout threshold
+- **`slow`**: Whether the metric exceeded slow threshold
+
+**Example timing data:**
+```json
+{
+  "metricName": "COUNT_OF_SITES",
+  "durationMs": 5,
+  "cacheHit": true,
+  "computationMs": 0,
+  "timedOut": false,
+  "slow": false
+}
+```
+
+**For cache misses:**
+```json
+{
+  "metricName": "COMPLEX_QUERY",
+  "durationMs": 820,
+  "cacheHit": false,
+  "computationMs": 800,
+  "timedOut": false,
+  "slow": true
+}
+```
+
+### Timeout Protection
+
+**Global Timeout**
+All metric collections are protected by a global timeout to prevent runaway queries from locking the database:
+
+```properties
+# Global timeout for any single metric (hard limit)
+telemetry.metric.timeout.seconds=2
+
+# Total timeout for entire collection process
+telemetry.collection.timeout.seconds=30
+
+# Warning threshold for slow metrics
+telemetry.metric.slow.threshold.ms=500
+```
+
+**How It Works:**
+1. Each metric collection runs in a timeout-enforced executor
+2. If a metric exceeds the timeout, it's cancelled and logged as an error
+3. Slow metrics (above threshold but not timed out) are logged as warnings
+4. Timing data is collected regardless of success/failure
+
+**Implementation:** See `MetricStatsCollector.java:123-225` for timeout enforcement logic.
+
+### Cache Effectiveness Analysis
+
+The timing data provides full visibility into cache effectiveness:
+
+**Cache Hit Rate:**
+```
+cacheHits / totalMetrics * 100
+```
+
+**Time Savings:**
+```
+sum(computationMs for cache misses) - sum(durationMs for cache hits)
+```
+
+**Slow Metrics by Cache Status:**
+- Cache hits that are slow: Check cache configuration
+- Cache misses that are slow: Optimize underlying query
+
+### Configuration
+
+**Timeout Settings:**
+```properties
+# Global timeout (no exceptions)
+telemetry.metric.timeout.seconds=2
+
+# Total collection timeout
+telemetry.collection.timeout.seconds=30
+
+# Slow metric warning threshold
+telemetry.metric.slow.threshold.ms=500
+```
+
+**Best Practices:**
+- **Default timeout (2s)**: Protects database from long-running queries
+- **No per-metric exceptions**: Consistency and predictability
+- **Slow threshold (500ms)**: Identifies optimization opportunities
+- **Cache slow metrics**: Metrics consistently over 500ms should be cached
+
 ## API Endpoints
 
 ### General Telemetry
-- **`/api/v1/telemetry/stats`**: Returns all metrics (filtered by optional `metricNames` query parameter)
-- Uses `MetricStatsCollector` to collect all discovered metrics
-- Returns `MetricsSnapshot` with all collected metrics
+- **`/api/v1/telemetry/stats`**: Returns all metrics with timing information
+  - **Query Parameters:**
+    - `metricNames`: Comma-separated list of specific metrics to retrieve
+    - `profile`: Profile type (MINIMAL, STANDARD, FULL)
+    - `bypassCache`: Set to `true` to force fresh computation bypassing cache
+  - Uses `MetricStatsCollector` to collect all discovered metrics
+  - Returns `MetricsSnapshot` with metrics, errors, and timing data
+
+**Cache Bypass for Diagnostics:**
+```bash
+# Normal operation (uses cache)
+curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
+  "http://localhost:8080/api/v1/telemetry/stats"
+
+# Bypass cache for diagnostics
+curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
+  "http://localhost:8080/api/v1/telemetry/stats?bypassCache=true"
+```
+
+**Use Cases for Cache Bypass:**
+- Diagnosing slow metrics: See actual database query times
+- Testing optimizations: Verify performance improvements
+- Cache verification: Compare cached vs fresh values
+- Performance baselines: Establish actual query times
 
 ### Dashboard Metrics
 - **`/api/v1/usage/summary`**: Returns dashboard-specific metrics
@@ -369,6 +492,109 @@ com.dotcms.telemetry/
     └── MetricsStatsJob.java           # Scheduled metric collection job
 ```
 
+## Caching System
+
+### Overview
+
+The telemetry system includes a configuration-driven caching layer to improve performance for dashboard loading while maintaining data freshness.
+
+### Design Principles
+
+**Configuration-Driven (Not Annotation-Based)**
+
+The caching system uses properties instead of annotations for several key reasons:
+
+1. **Runtime Configurable**: Change caching behavior without code changes or redeployment
+2. **Environment-Specific**: Different cache settings per environment (dev/staging/prod)
+3. **Future-Proof**: Works for both code-based metrics and future configuration-based metrics
+4. **Separation of Concerns**: Metrics compute values; cache manager handles caching
+
+### Core Components
+
+#### `MetricCacheManager`
+CDI-managed service that provides transparent caching for metrics using `DynamicTTLCache` (Caffeine-based).
+
+**Key Features:**
+- Configuration-driven: All caching controlled via properties
+- Per-metric TTL: Different cache durations per metric
+- Works by metric name: Supports future config-based metrics
+- Transparent to metrics: Metrics don't know about caching
+
+**Usage:**
+```java
+@ApplicationScoped
+public class MetricStatsCollector {
+    @Inject
+    private MetricCacheManager cacheManager;
+
+    private Optional<MetricValue> getMetricValue(MetricType metricType) {
+        return cacheManager.get(
+            metricType.getName(),
+            () -> computeMetricValue(metricType)
+        );
+    }
+}
+```
+
+#### `MetricCacheConfig`
+Reads caching configuration from properties and provides cache settings to `MetricCacheManager`.
+
+### Configuration
+
+**Global settings:**
+```properties
+# Enable/disable caching globally
+telemetry.cache.enabled=true
+
+# Default TTL for all cached metrics (seconds)
+telemetry.cache.default.ttl.seconds=300
+
+# Maximum cache size (number of entries)
+telemetry.cache.max.size=1000
+```
+
+**Per-metric overrides:**
+```properties
+# Override caching for specific metrics
+telemetry.cache.metric.COUNT_OF_SITES.enabled=true
+telemetry.cache.metric.COUNT_OF_SITES.ttl.seconds=600
+
+# Disable caching for specific metrics
+telemetry.cache.metric.COUNT_OF_USERS.enabled=false
+```
+
+### How It Works
+
+1. **Cache Check**: `MetricCacheManager` checks if caching is enabled for the metric
+2. **Cache Hit**: If cached value exists and not expired, returns immediately
+3. **Cache Miss**: Computes value using supplier, caches with configured TTL
+4. **No Cache**: If caching disabled, always computes fresh value
+
+See `MetricCacheManager.java:87-114` for implementation.
+
+### Cache Backend
+
+Uses `DynamicTTLCache` (Caffeine-based) instead of DotCache:
+- ✅ **Simpler**: No need to register cache regions in enum
+- ✅ **Per-key TTL**: Different expiration times per metric
+- ✅ **High Performance**: Caffeine is optimized for in-memory caching
+- ✅ **Sufficient**: Metrics are database-sourced (same value on all instances)
+
+### Performance Guidelines
+
+**Dashboard Performance (MINIMAL Profile):**
+- Target: < 5 seconds total load time
+- Strategy: Annotate only 10-15 core metrics with `@MetricsProfile(ProfileType.MINIMAL)`
+- Enable caching for slow metrics (>500ms execution time)
+- Set appropriate TTL based on data freshness requirements
+
+**Example slow metric configuration:**
+```properties
+# Cache expensive query for 10 minutes
+telemetry.cache.metric.COUNT_OF_EXPERIMENTS.enabled=true
+telemetry.cache.metric.COUNT_OF_EXPERIMENTS.ttl.seconds=600
+```
+
 ## Best Practices
 
 ### Creating Metrics
@@ -413,6 +639,10 @@ The code is the source of truth for metric definitions. Each `MetricType` implem
 
 ---
 
-*Last Updated: 2024*  
-*Issue: #33979 - Refactor telemetry API to use CDI dependency injection*
+*Last Updated: December 2024*
+*Issues:*
+- *#33979 - Refactor telemetry API to use CDI dependency injection*
+- *#33980 - Design and implement flexible caching and metric profiling*
+- *#33986 - Implement performance timing infrastructure and timeout handling*
+- *#33987 - Implement minimal profile with core metrics for fast dashboard loading*
 
