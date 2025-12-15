@@ -2,7 +2,7 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, UntypedFormBuilder } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -12,8 +12,8 @@ import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAutofocusDirective,
     DotFieldValidationMessageComponent,
@@ -23,8 +23,7 @@ import {
 import {
     mockDotCMSTempFile,
     MockDotMessageService,
-    mockSites,
-    SiteServiceMock
+    mockSites
 } from '@dotcms/utils-testing';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
@@ -59,7 +58,10 @@ describe('DotCreatePersonaFormComponent', () => {
     });
 
     beforeEach(() => {
-        const siteServiceMock = new SiteServiceMock();
+        const mockGlobalStore = {
+            currentSiteId: signal(mockSites[0].identifier),
+            siteDetails: signal(mockSites[0])
+        } as unknown as InstanceType<typeof GlobalStore>;
 
         TestBed.configureTestingModule({
             imports: [
@@ -77,7 +79,7 @@ describe('DotCreatePersonaFormComponent', () => {
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: SiteService, useValue: siteServiceMock },
+                { provide: GlobalStore, useValue: mockGlobalStore },
                 {
                     provide: DotSystemConfigService,
                     useValue: {
