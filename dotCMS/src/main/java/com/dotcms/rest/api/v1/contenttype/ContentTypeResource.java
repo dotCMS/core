@@ -1201,6 +1201,7 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+		req.setAttribute("contentTypeId", idOrVar);
 		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
 	}
 

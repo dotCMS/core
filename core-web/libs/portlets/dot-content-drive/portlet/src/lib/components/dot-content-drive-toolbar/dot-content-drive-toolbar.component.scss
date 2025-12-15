@@ -19,7 +19,8 @@
                 visibility: visible;
                 width: inherit;
                 grid-area: tree-toogler;
-                transition: all common.$content-drive-animation-speed common.$content-drive-animation-ease;
+                transition: all common.$content-drive-animation-speed
+                    common.$content-drive-animation-ease;
 
                 &.sidebar-expanded {
                     visibility: hidden;
@@ -50,7 +51,8 @@
         ". toolbar-group-bottom";
 
     place-items: center;
-    transition: column-gap common.$content-drive-animation-speed common.$content-drive-animation-ease;
+    transition: column-gap common.$content-drive-animation-speed
+        common.$content-drive-animation-ease;
 
     &:has(dot-content-drive-tree-toggler.sidebar-expanded) {
         column-gap: 0;

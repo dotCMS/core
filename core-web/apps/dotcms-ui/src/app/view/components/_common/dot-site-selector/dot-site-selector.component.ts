@@ -21,7 +21,6 @@ import { LoggerService, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-
 /**
  * It is dropdown of sites, it handles global search using p-select native filtering
  *

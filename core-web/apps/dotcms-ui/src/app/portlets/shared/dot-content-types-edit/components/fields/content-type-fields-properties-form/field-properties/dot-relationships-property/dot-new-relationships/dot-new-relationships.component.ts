@@ -70,7 +70,7 @@ export class DotNewRelationshipsComponent implements OnChanges {
      * @memberof DotNewRelationshipsComponent
      */
     triggerChanged(): void {
-        this.switch.next({
+        this.switch.emit({
             velocityVar:
                 this.velocityVar || (this.contentType ? this.contentType.variable : undefined),
             cardinality: this.currentCardinalityIndex

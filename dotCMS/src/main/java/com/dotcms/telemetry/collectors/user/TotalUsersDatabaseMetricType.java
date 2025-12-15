@@ -1,11 +1,15 @@
 package com.dotcms.telemetry.collectors.user;
 
+import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the total count of all users (excluding system users)
  */
+@ApplicationScoped
+@DashboardMetric(category = "user", priority = 2)
 public class TotalUsersDatabaseMetricType implements UsersDatabaseMetricType {
     @Override
     public String getName() {

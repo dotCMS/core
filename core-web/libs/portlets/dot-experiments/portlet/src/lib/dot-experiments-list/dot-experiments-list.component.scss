@@ -11,7 +11,8 @@
     padding-bottom: spacing.$spacing-7;
 
     .dot-experiment {
-        padding: spacing.$spacing-3 calc(spacing.$spacing-5 + experiment.$nav-size) spacing.$spacing-5 spacing.$spacing-5;
+        padding: spacing.$spacing-3 calc(spacing.$spacing-5 + experiment.$nav-size)
+            spacing.$spacing-5 spacing.$spacing-5;
         display: flex;
         gap: spacing.$spacing-3;
         flex-direction: column;

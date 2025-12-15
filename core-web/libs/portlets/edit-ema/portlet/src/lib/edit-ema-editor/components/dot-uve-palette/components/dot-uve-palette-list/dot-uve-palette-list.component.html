@@ -105,13 +105,7 @@
         [currentPageReportTemplate]="'uve.palette.pagination.template' | dm" />
 }
 
-<p-menu
-    #menu
-    [model]="$menuItems()"
-    [popup]="true"
-    appendTo="body"
-    styleClass="options-menu-popup"
-    showTransitionOptions="0ms">
+<p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" styleClass="options-menu-popup">
     <ng-template pTemplate="submenuheader" let-item>
         <span>{{ item.label | dm }}</span>
     </ng-template>

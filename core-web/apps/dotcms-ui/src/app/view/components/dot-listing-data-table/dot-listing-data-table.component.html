@@ -19,7 +19,7 @@
     (onRowUnselect)="handleRowCheck()"
     [(selection)]="selected"
     [columns]="columns"
-    [contextMenu]="contextMenu ? cm : null"
+    [contextMenu]="contextMenuComponent()"
     [dataKey]="dataKey"
     [lazy]="true"
     [loading]="loading"

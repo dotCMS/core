@@ -17,11 +17,11 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenu } from 'primeng/contextmenu';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { MenuModule } from 'primeng/menu';
+import { Menu } from 'primeng/menu';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { PopoverModule } from 'primeng/popover';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -80,13 +80,13 @@ import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttyp
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        MenuModule,
+        Menu,
         PaginatorModule,
         SkeletonModule,
         PopoverModule,
         DotFavoriteSelectorComponent,
         DotMessagePipe,
-        ContextMenuModule
+        ContextMenu
     ],
     providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',

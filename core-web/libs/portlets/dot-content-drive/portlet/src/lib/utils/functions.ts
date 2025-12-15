@@ -3,7 +3,7 @@ import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotFolder, DotSite } from '@dotcms/dotcms-models';
+import { DotContentDriveFolder, DotContentDriveItem, DotFolder, DotSite } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { QueryBuilder } from '@dotcms/query-builder';
 
@@ -166,8 +166,10 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
         return '';
     }
 
-    // Filter out empty values
-    const filtersArray = Object.entries(filters).filter(([_key, value]) => value !== '');
+    // Filter out empty values (empty strings, null, undefined)
+    const filtersArray = Object.entries(filters).filter(
+        ([_key, value]) => value !== '' && value !== null && value !== undefined
+    );
 
     if (filtersArray.length === 0) {
         return '';
@@ -231,7 +233,7 @@ export function buildContentDriveQuery({
         modifiedQuery = modifiedQuery.field('parentPath').equals(path);
     }
 
-    if (currentSite) {
+    if (currentSite && currentSite.identifier !== SYSTEM_HOST.identifier) {
         // Add site and working/variant filters
         modifiedQuery = modifiedQuery.raw(
             `+(conhost:${currentSite?.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
@@ -310,6 +312,15 @@ export function getFolderHierarchyByPath(
     dotFolderService: DotFolderService
 ): Observable<DotFolder[][]> {
     const paths = generateAllParentPaths(path);
+
+    // Handle empty paths case - forkJoin doesn't emit for empty array
+    if (paths.length === 0) {
+        return new Observable((observer) => {
+            observer.next([]);
+            observer.complete();
+        });
+    }
+
     const folderRequests = paths.map((path) => dotFolderService.getFolders(path));
 
     return forkJoin(folderRequests);
@@ -336,4 +347,14 @@ export function getFolderNodesByPath(
             };
         })
     );
+}
+
+/**
+ * Checks if an item is a folder.
+ *
+ * @param {DotContentDriveItem} item - The item to check
+ * @returns {boolean} True if the item is a folder, false otherwise
+ */
+export function isFolder(item: DotContentDriveItem): item is DotContentDriveFolder {
+    return item != null && 'type' in item && item.type === 'folder';
 }

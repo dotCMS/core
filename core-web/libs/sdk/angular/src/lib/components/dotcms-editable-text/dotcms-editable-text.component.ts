@@ -1,5 +1,4 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
-import { EventObj } from '@tinymce/tinymce-angular/editor/Events';
 
 import {
     Component,
@@ -21,6 +20,18 @@ import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
 import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
+
+import type { Editor as TinyMCEEditor } from 'tinymce';
+
+/**
+ * Event object interface from TinyMCE Angular
+ * This matches the EventObj interface from @tinymce/tinymce-angular/editor/Events
+ * which is not exported from the main package
+ */
+interface EventObj<T> {
+    event: T;
+    editor: TinyMCEEditor;
+}
 
 /**
  * Dot editable text component.

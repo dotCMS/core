@@ -32,9 +32,11 @@
 }
 
 $dot-table-cell-padding: 0.625rem spacing.$spacing-1;
-$dot-table-cell-padding-first-child: 0.625rem spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-3;
+$dot-table-cell-padding-first-child: 0.625rem spacing.$spacing-1 spacing.$spacing-1
+    spacing.$spacing-3;
 $dot-table-cell-with-tag-padding: spacing.$spacing-1;
-$dot-table-cell-with-tag-padding-first-child: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-3;
+$dot-table-cell-with-tag-padding-first-child: spacing.$spacing-1 spacing.$spacing-1
+    spacing.$spacing-1 spacing.$spacing-3;
 $dot-table-header-cell-height: 1.5rem;
 $dot-table-cell-height: 1.25rem;
 

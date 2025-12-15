@@ -19,6 +19,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -1387,6 +1388,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1397,6 +1399,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Folder subFolder = new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
+                    .owner(owner)
                     .nextPersisted();
             subFolders.add(subFolder);
         }
@@ -1441,6 +1444,8 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertNotNull("Item should have name", item.get("name"));
             assertTrue("First 25 items should be folders",
                 item.get("name").toString().startsWith("folder_"));
+            assertEquals("Owner should be the same as parent folder",
+                owner.getFullName(), item.get("owner"));
         }
 
         // Verify the last item is a contentlet
@@ -1627,7 +1632,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getPaginatedContents_textFilter_contentTotalCount() throws Exception {
-        // Create test environment
+        // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
@@ -1732,6 +1737,57 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should find no matching content", 0, resultsNone.contentTotalCount);
         assertEquals("Should return no content items", 0, resultsNone.contentCount);
         assertEquals("Should return empty list", 0, resultsNone.list.size());
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: Here we test a similar situation as above, but we set limits in the pageSize
+     * to verify that the total count accurately reflects the total items in existence reflected in the contentTotalCount
+     * Expected result: We should expect 5 matches filling the first page and a universe of 10 items
+     * @throws Exception
+     */
+    @Test
+    public void test_getPaginatedContents_Fixed_Page_Size_Using_textFilter_Verify_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        for(int i=0; i<10; i++) {
+            new ContentletDataGen(customContentType)
+                    .setProperty("title", String.format("SearchableItem %s",i))
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Item")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(query);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should report all 10 contents as the total", 10, resultsOne.contentTotalCount);
+        assertEquals("Should return 5 matching item as we defined a pageSize of 5.", 5, resultsOne.contentCount);
+
     }
 
 }

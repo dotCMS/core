@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
@@ -20,7 +20,7 @@ import { TabsModule } from 'primeng/tabs';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotFolderEntity } from '@dotcms/dotcms-models';
+import { DotContentDriveFolder, DotFolderEntity } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -30,12 +30,11 @@ import {
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 interface FolderForm {
     title: FormControl<string>;
-    path: FormControl<string>;
     sortOrder: FormControl<number | null>;
     allowedFileExtensions: FormControl<string[]>;
     defaultFileAssetType: FormControl<string>;
     showOnMenu: FormControl<boolean>;
-    url: FormControl<string>;
+    name: FormControl<string>;
 }
 
 @Component({
@@ -66,20 +65,21 @@ export class DotContentDriveDialogFolderComponent {
 
     #hostName = this.#store.currentSite().hostname;
 
+    $folder = input<DotContentDriveFolder>(null, { alias: 'folder' });
+
     readonly $fileAssetTypes = toSignal(
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
     );
 
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
-        path: this.#fb.control('', { nonNullable: true }),
         sortOrder: this.#fb.control<number | null>(1),
         allowedFileExtensions: this.#fb.control([], { nonNullable: true }),
         defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[0].id, {
             nonNullable: true
         }),
         showOnMenu: this.#fb.control(false, { nonNullable: true }),
-        url: this.#fb.control('', { validators: [Validators.required], nonNullable: true })
+        name: this.#fb.control('', { validators: [Validators.required], nonNullable: true })
     });
 
     /** Signal containing the current site information from the store */
@@ -89,7 +89,7 @@ export class DotContentDriveDialogFolderComponent {
     $title = toSignal(this.folderForm.get('title')?.valueChanges);
 
     /** Signal tracking changes to the folder URL form control */
-    $url = toSignal(this.folderForm.get('url')?.valueChanges);
+    $name = toSignal(this.folderForm.get('name')?.valueChanges);
 
     /** Signal containing the filtered list of allowed file extensions for autocomplete */
     $filteredAllowedFileExtensions = signal<string[]>(SUGGESTED_ALLOWED_FILE_EXTENSIONS);
@@ -97,22 +97,57 @@ export class DotContentDriveDialogFolderComponent {
     /** Signal tracking the loading state during folder creation */
     $isLoading = signal(false);
 
+    $originalName = signal<string | undefined>(undefined);
+
+    setFolderFormEffect = effect(() => {
+        const folder = this.$folder();
+        const assetType = this.$fileAssetTypes()?.find(
+            (asset) => asset.id === folder?.defaultFileType
+        );
+
+        if (folder && assetType) {
+            const cleanName = folder.name;
+
+            this.$originalName.set(cleanName);
+
+            this.folderForm.patchValue({
+                title: folder.title,
+                sortOrder: folder.sortOrder,
+                allowedFileExtensions: folder.filesMasks?.trim().length
+                    ? folder.filesMasks.split(',')
+                    : [],
+                defaultFileAssetType: assetType.variable,
+                showOnMenu: folder.showOnMenu,
+                name: cleanName
+            });
+        }
+    });
+
     /**
      * Computed signal that generates the full folder path
      * Combines hostname, current path, and URL to create the complete folder path
      * Ensures proper path formatting by removing trailing slashes
      */
     $finalPath = computed(() => {
-        const path = this.#store.path();
-        const url = this.$url();
+        const name = this.$name();
 
-        let finalPath = this.#hostName;
+        return this.#getAssetPath(name);
+    });
 
-        if (path) {
-            finalPath += `${path.replace(/\/$/, '')}`;
+    /**
+     * Effect that automatically sets the URL field value based on the title
+     * Only runs when the URL field has not been manually touched by the user
+     * Converts the title to a URL-friendly slug format and sets it as the URL value
+     */
+    readonly urlEffect = effect(() => {
+        if (this.folderForm.get('name')?.touched || !!this.$folder()) {
+            return;
         }
 
-        return `//${finalPath}/${url}/`;
+        const title = this.$title();
+        const titleSlug = this.#getSlugTitle(title || '');
+
+        this.folderForm.get('name')?.setValue(titleSlug);
     });
 
     /**
@@ -152,20 +187,14 @@ export class DotContentDriveDialogFolderComponent {
     }
 
     /**
-     * Effect that automatically sets the URL field value based on the title
-     * Only runs when the URL field has not been manually touched by the user
-     * Converts the title to a URL-friendly slug format and sets it as the URL value
+     * Handles the success case for folder creation and saving
+     * Reloads the content drive, loads items, and closes the dialog
      */
-    readonly urlEffect = effect(() => {
-        if (this.folderForm.get('url')?.touched) {
-            return;
-        }
-
-        const title = this.$title();
-        const titleSlug = this.#getSlugTitle(title || '');
-
-        this.folderForm.get('url')?.setValue(titleSlug);
-    });
+    #onSuccess() {
+        this.#store.reloadContentDrive();
+        this.#store.loadFolders();
+        this.#store.closeDialog();
+    }
 
     /**
      * Creates a new folder using the form data
@@ -179,8 +208,7 @@ export class DotContentDriveDialogFolderComponent {
 
         this.#dotFolderService.createFolder(body).subscribe({
             next: () => {
-                this.#store.loadFolders();
-                this.#store.closeDialog();
+                this.#onSuccess();
 
                 this.#messageService.add({
                     severity: 'success',
@@ -208,6 +236,39 @@ export class DotContentDriveDialogFolderComponent {
         });
     }
 
+    saveFolder() {
+        this.$isLoading.set(true);
+        const body: DotFolderEntity = this.#createFolderBody();
+
+        this.#dotFolderService.saveFolder(body).subscribe({
+            next: () => {
+                this.#onSuccess();
+
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.save-success'
+                    )
+                });
+            },
+            error: (err) => {
+                const { error } = err as HttpErrorResponse;
+
+                console.error('Error saving folder:', err);
+
+                this.$isLoading.set(false);
+
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.save-error'
+                    ),
+                    detail: error.message
+                });
+            }
+        });
+    }
+
     #createFolderBody() {
         const formValue = this.folderForm.getRawValue();
 
@@ -218,6 +279,10 @@ export class DotContentDriveDialogFolderComponent {
         // Only add properties if they have values
         if (formValue.showOnMenu !== undefined && formValue.showOnMenu !== null) {
             data.showOnMenu = formValue.showOnMenu;
+        }
+
+        if (this.$originalName() && formValue.name !== this.$originalName()) {
+            data.name = this.#getSlugTitle(formValue.name);
         }
 
         if (formValue.sortOrder !== null && formValue.sortOrder !== undefined) {
@@ -232,7 +297,7 @@ export class DotContentDriveDialogFolderComponent {
             data.defaultAssetType = formValue.defaultFileAssetType;
         }
 
-        const assetPath = this.$finalPath();
+        const assetPath = this.#getAssetPath(this.$originalName() ?? formValue.name);
 
         return {
             assetPath,
@@ -249,5 +314,26 @@ export class DotContentDriveDialogFolderComponent {
      */
     closeDialog() {
         this.#store.closeDialog();
+    }
+
+    /**
+     * Generates the asset path for a given name
+     * Combines hostname, current path, and URL to create the complete folder path
+     * Ensures proper path formatting by removing trailing slashes
+     *
+     * @param {string} name - The name of the folder
+     * @returns {string} The asset path
+     */
+    #getAssetPath(name: string) {
+        const slugName = this.#getSlugTitle(name);
+
+        const path = this.#store.path();
+        let finalPath = this.#hostName;
+
+        if (path) {
+            finalPath += `${path.replace(/\/$/, '')}`;
+        }
+
+        return `//${finalPath}/${slugName}/`;
     }
 }

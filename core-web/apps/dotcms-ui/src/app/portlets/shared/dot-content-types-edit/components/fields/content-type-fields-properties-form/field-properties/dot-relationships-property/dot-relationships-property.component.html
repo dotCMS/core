@@ -36,9 +36,7 @@
             <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
                 Relationship
             </label>
-            <dot-edit-relationships
-                (switch)="handleChange($event)"
-                [id]="property.name" />
+            <dot-edit-relationships (switch)="handleChange($event)" [id]="property.name" />
         </div>
     }
 

@@ -52,10 +52,9 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         setTimeout(() => {
             if (changes.show.currentValue) {
-                // container is already the native element
-                // TODO: (migration) update to use signal because it was failing in the build after upgrading to primeng 21, needs to test
-                const dialogElement = this.dotDialog.container as unknown as WritableSignal<HTMLElement | undefined>;
-                const tableElement = dialogElement()?.querySelector('.p-datatable');
+                // container is a WritableSignal<HTMLElement> in PrimeNG v21
+                const dialogElement = this.dotDialog.container();
+                const tableElement = dialogElement?.querySelector('.p-datatable');
                 this.contentMinHeight =
                     this.paginatorService.totalRecords > this.paginatorService.paginationPerPage &&
                     tableElement

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+    AfterViewInit,
     Component,
     ContentChild,
     ContentChildren,
@@ -11,14 +12,16 @@ import {
     QueryList,
     TemplateRef,
     ViewChild,
-    inject
+    computed,
+    inject,
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenu } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
 import { Table, TableModule } from 'primeng/table';
 
@@ -68,7 +71,7 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
         TableModule,
         InputTextModule,
         CheckboxModule,
-        ContextMenuModule,
+        ContextMenu,
         DotActionMenuButtonComponent,
         DotIconComponent,
         DotMessagePipe,
@@ -76,7 +79,7 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
         DotStringFormatPipe
     ]
 })
-export class DotListingDataTableComponent implements OnInit {
+export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loggerService = inject(LoggerService);
     paginatorService = inject(PaginatorService);
 
@@ -103,7 +106,20 @@ export class DotListingDataTableComponent implements OnInit {
     @ViewChild('dataTable', { static: true })
     dataTable: Table;
 
+    @ViewChild('cm', { static: false })
+    contextMenuRef: ContextMenu | undefined;
+
     @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
+
+    // Signal to track when contextMenuRef is available
+    private readonly contextMenuRefSignal = signal<ContextMenu | undefined>(undefined);
+
+    // Computed signal for context menu component
+    readonly contextMenuComponent = computed(() => {
+        const hasContextMenu = this.contextMenu;
+        const ref = this.contextMenuRefSignal();
+        return hasContextMenu && ref ? ref : null;
+    });
 
     @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
     @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
@@ -128,6 +144,12 @@ export class DotListingDataTableComponent implements OnInit {
         this.globalSearch.nativeElement.focus();
         this.paginationSetUp();
         this.dateColumns = this.columns.filter((column) => column.format === this.DATE_FORMAT);
+    }
+
+    ngAfterViewInit(): void {
+        // Update signal reactively when ViewChild becomes available
+        // This follows Angular 21 best practices - using signals instead of setTimeout
+        this.contextMenuRefSignal.set(this.contextMenuRef);
     }
 
     /**
