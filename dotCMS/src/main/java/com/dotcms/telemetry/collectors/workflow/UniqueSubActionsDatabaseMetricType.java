@@ -2,13 +2,18 @@ package com.dotcms.telemetry.collectors.workflow;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 
 /**
  * Collect the count of Unique Workflow SubActions, it means if the same Sub Action is use by several
  * Workflow Action then it count as 1
  */
+@ApplicationScoped
+@MetricsProfile(ProfileType.FULL)
 public class UniqueSubActionsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {
