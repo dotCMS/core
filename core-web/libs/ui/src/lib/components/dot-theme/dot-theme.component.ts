@@ -15,8 +15,7 @@ import {
     OnInit,
     OnDestroy,
     ViewChild,
-    HostListener,
-    ElementRef
+    HostListener
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
@@ -108,7 +107,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     }
 
     @ViewChild('select') select: Select | undefined;
-    @ViewChild('siteSelectorWrapper') siteSelectorWrapper: ElementRef<HTMLDivElement> | undefined;
 
     /**
      * Placeholder text to be shown in the select input when empty.
@@ -235,24 +233,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      */
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    /**
-     * Flag to track if we're interacting with the site selector.
-     * Used to prevent the theme select overlay from closing when selecting a site.
-     */
-    isInteractingWithSiteSelector = false;
-
-    /**
-     * Document click listener (capture phase) to mark interaction with site selector.
-     * @private
-     */
-    private documentClickListener: ((event: MouseEvent) => void) | null = null;
-
-    /**
-     * Document click listener (bubble phase) to stop propagation after site selector handles clicks.
-     * @private
-     */
-    private documentBubbleClickListener: ((event: MouseEvent) => void) | null = null;
-
     constructor() {
         // Sync model signal changes with ControlValueAccessor and fetch theme object to set state
         effect(() => {
@@ -292,29 +272,12 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
         if (this.$state.themes().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
-
-        // Add document click listeners to prevent theme select from closing when interacting with site selector
-        // Capture phase: mark interaction
-        this.documentClickListener = this.onDocumentClick.bind(this);
-        document.addEventListener('click', this.documentClickListener, true);
-
-        // Bubble phase: stop propagation after site selector handles clicks
-        this.documentBubbleClickListener = this.onDocumentBubbleClick.bind(this);
-        document.addEventListener('click', this.documentBubbleClickListener, false);
     }
 
     ngOnDestroy(): void {
         if (this.filterDebounceTimeout) {
             clearTimeout(this.filterDebounceTimeout);
             this.filterDebounceTimeout = null;
-        }
-
-        // Remove document listeners
-        if (this.documentClickListener) {
-            document.removeEventListener('click', this.documentClickListener, true);
-        }
-        if (this.documentBubbleClickListener) {
-            document.removeEventListener('click', this.documentBubbleClickListener, false);
         }
     }
 
@@ -431,7 +394,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      * @param siteId The selected site identifier, or null if cleared
      */
     onSiteChange(siteId: string | null): void {
-        this.isInteractingWithSiteSelector = true;
         this.$selectedSiteId.set(siteId);
 
         // Reset state and reload themes for the new site
@@ -447,22 +409,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
         });
 
         this.loadThemesLazy({ first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize }, 0);
-
-        // Reset flag after a delay to allow site selector to close
-        // The onSiteSelectorHide handler will also manage this flag
-        setTimeout(() => {
-            this.isInteractingWithSiteSelector = false;
-        }, 300);
-    }
-
-    /**
-     * Handles when the site selector overlay closes.
-     * Clears the interaction flag after a delay to prevent theme select from closing.
-     */
-    onSiteSelectorHide(): void {
-        setTimeout(() => {
-            this.isInteractingWithSiteSelector = false;
-        }, 200);
     }
 
     /**
@@ -470,8 +416,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      * Initializes the virtual scroller to ensure options are displayed correctly.
      */
     onSelectShow(): void {
-        // Reset the flag when theme select opens (in case it was left set)
-        this.isInteractingWithSiteSelector = false;
         this.onShow.emit();
         // Initialize virtual scroller state to fix display issue with custom filter template
         requestAnimationFrame(() => {
@@ -483,77 +427,9 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     }
 
     /**
-     * Handles document clicks in capture phase to mark interaction with site selector.
-     * @private
-     */
-    private onDocumentClick(event: MouseEvent): void {
-        if (!this.select?.overlayVisible) {
-            return;
-        }
-
-        const target = event.target as HTMLElement;
-        if (!target) {
-            return;
-        }
-
-        // Check if click is within the site selector overlay (appended to body, separate from theme select overlay)
-        const clickedOverlay = target.closest('.p-select-overlay');
-        if (clickedOverlay && !clickedOverlay.contains(this.siteSelectorWrapper?.nativeElement)) {
-            // This is the site selector overlay - mark interaction
-            this.isInteractingWithSiteSelector = true;
-            return;
-        }
-
-        // Check if click is within the site selector wrapper (inside theme select filter template)
-        if (this.siteSelectorWrapper?.nativeElement?.contains(target)) {
-            this.isInteractingWithSiteSelector = true;
-        }
-    }
-
-    /**
-     * Handles document clicks in bubble phase to stop propagation after site selector handles them.
-     * This prevents PrimeNG's click handlers from seeing clicks on the site selector overlay.
-     * @private
-     */
-    private onDocumentBubbleClick(event: MouseEvent): void {
-        if (!this.select?.overlayVisible || !this.isInteractingWithSiteSelector) {
-            return;
-        }
-
-        const target = event.target as HTMLElement;
-        if (!target) {
-            return;
-        }
-
-        // Check if click is within the site selector overlay (not the theme select overlay)
-        const clickedOverlay = target.closest('.p-select-overlay');
-        if (clickedOverlay && !clickedOverlay.contains(this.siteSelectorWrapper?.nativeElement)) {
-            // Stop propagation to prevent theme select from closing
-            event.stopImmediatePropagation();
-        }
-    }
-
-    /**
      * Handles the event when the select overlay is hidden.
-     * Prevents closing if we're interacting with the site selector.
      */
     onSelectHide(): void {
-        // If we're interacting with the site selector, prevent closing and re-open
-        if (this.isInteractingWithSiteSelector) {
-            // Don't clear the flag yet - keep it set to prevent immediate re-closing
-            // Re-open the overlay immediately
-            requestAnimationFrame(() => {
-                if (this.select && !this.select.overlayVisible && this.isInteractingWithSiteSelector) {
-                    this.select.show();
-                }
-            });
-            // Clear flag after a delay
-            setTimeout(() => {
-                this.isInteractingWithSiteSelector = false;
-            }, 300);
-            return;
-        }
-
         this.onHide.emit();
     }
 
