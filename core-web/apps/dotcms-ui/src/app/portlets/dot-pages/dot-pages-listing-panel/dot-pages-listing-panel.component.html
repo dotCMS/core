@@ -1,8 +1,4 @@
 @if (vm$ | async; as vm) {
-    <p-contextMenu
-        (onHide)="closedActionsContextMenu()"
-        [model]="vm.pages.menuActions"
-        #cm></p-contextMenu>
     <p-table
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
@@ -21,15 +17,15 @@
         #table
         selectionMode="single"
         sortField="modDate">
-        <ng-template pTemplate="caption">
-            <div class="flex justify-between dot-pages-listing-header">
-                <div class="dot-pages-listing-header__inputs">
-                    <div class="p-input-icon-right">
+        <ng-template #caption>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-4 min-w-0">
+                    <div class="p-input-icon-right w-64 min-w-0">
                         <input
+                            #input
                             [placeholder]="'Type-To-Search' | dm"
                             [value]="vm.keywordValue"
-                            class="dot-pages-listing-header__filter-input"
-                            #input
+                            class="w-full"
                             (input)="filterData(input.value)"
                             data-testid="dot-pages-listing-header__keyword-input"
                             type="text"
@@ -47,27 +43,26 @@
                         (onChange)="setPagesLanguage($event.value)"
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
-                        class="dot-pages-listing-header__language-input"></p-select>
-                    <div class="flex items-center">
+                        class="w-56" />
+                    <div class="flex items-center gap-2 whitespace-nowrap">
                         <p-checkbox
                             (onChange)="setPagesArchived($event.checked)"
                             [(ngModel)]="vm.showArchivedValue"
                             [inputId]="'show-archived'"
-                            [binary]="true"></p-checkbox>
+                            [binary]="true" />
                         <label [for]="'show-archived'">
                             {{ 'Show-Archived' | dm }}
                         </label>
                     </div>
                 </div>
-                <button
+                <p-button
                     (click)="store.getPageTypes()"
                     [label]="'create.page' | dm"
-                    class="p-button-primary"
                     data-testid="createPageButton"
-                    pButton></button>
+                    styleClass="p-button-sm shrink-0" />
             </div>
         </ng-template>
-        <ng-template pTemplate="header">
+        <ng-template #header>
             @if (vm.pages.items.length !== 0) {
                 <tr>
                     <th pSortableColumn="title" style="width: 25%">
@@ -97,18 +92,8 @@
                 </tr>
             }
         </ng-template>
-        <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
-            <tr
-                (contextmenu)="
-                    showActionsContextMenu({
-                        event: $event,
-                        actionMenuDomId: 'tableRow-' + rowIndex,
-                        item: rowData
-                    })
-                "
-                [pSelectableRow]="rowData"
-                id="tableRow-{{ rowIndex }}"
-                pContextMenuRow>
+        <ng-template #body let-rowData let-rowIndex="rowIndex">
+            <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="rowData" pContextMenuRow>
                 <td>{{ rowData['title'] }}</td>
                 <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
                     {{ rowData['urlMap'] || rowData['url'] }}
@@ -117,16 +102,12 @@
                     {{ rowData['contentType'] }}
                 </td>
                 <td>
-                    <div class="dot-pages-table__status-field">
-                        <dot-state-icon
-                            [labels]="dotStateLabels"
-                            [state]="rowData"
-                            size="14px"></dot-state-icon>
-                        <dot-badge bordered="{true}">
+                    <div class="flex items-center gap-2 whitespace-nowrap">
+                        <dot-state-icon [labels]="dotStateLabels" [state]="rowData" size="14px" />
+                        <dot-badge [bordered]="true">
                             {{ vm.languageLabels[rowData['languageId']] }}
                         </dot-badge>
-                        <dot-contentlet-lock-icon
-                            locked="{{ rowData['locked'] }}"></dot-contentlet-lock-icon>
+                        <dot-contentlet-lock-icon [locked]="rowData['locked']" />
                     </div>
                 </td>
                 <td>
@@ -144,16 +125,21 @@
                         "
                         id="pageActionButton-{{ rowIndex }}"
                         icon="pi pi-ellipsis-v"
-                        styleClass="p-button-rounded p-button-sm p-button-text"></p-button>
+                        styleClass="p-button-rounded p-button-sm p-button-text" />
                 </td>
             </tr>
         </ng-template>
-        <ng-template pTemplate="emptymessage">
+        <ng-template #emptymessage>
             <tr>
-                <td [attr.colspan]="7" class="dot-pages-listing__empty-content">
+                <td [attr.colspan]="7">
                     {{ 'favoritePage.listing.empty.table' | dm }}
                 </td>
             </tr>
         </ng-template>
     </p-table>
 }
+
+<!-- <p-contextMenu
+(onHide)="closedActionsContextMenu()"
+[model]="vm?.pages?.menuActions"
+#cm /> -->
