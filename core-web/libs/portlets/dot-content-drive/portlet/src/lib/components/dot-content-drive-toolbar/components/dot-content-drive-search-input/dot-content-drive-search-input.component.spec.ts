@@ -167,21 +167,21 @@ describe('DotContentDriveSearchInputComponent', () => {
 
     describe('Clear Icon', () => {
         it('should appear when input has value', () => {
-            spectator.component.searchControl.setValue('test value');
+            mockStore.getFilterValue.mockReturnValue('test value');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('search-icon-clear'))).toBeTruthy();
         });
 
         it('should not appear when input is empty', () => {
-            spectator.component.searchControl.setValue('');
+            mockStore.getFilterValue.mockReturnValue('');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('search-icon-clear'))).not.toBeTruthy();
         });
 
         it('should clear input when clear icon is clicked', () => {
-            spectator.component.searchControl.setValue('test value');
+            mockStore.getFilterValue.mockReturnValue('test value');
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('search-icon-clear')));
