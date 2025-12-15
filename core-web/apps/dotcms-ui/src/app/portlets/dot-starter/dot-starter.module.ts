@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotMessagePipe, DotWorkflowComponent } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
@@ -18,12 +17,9 @@ import { DotToolbarAnnouncementsComponent } from '../../view/components/dot-tool
     imports: [
         CommonModule,
         RouterModule.forChild(dotStarterRoutes),
-        FormsModule,
-        ReactiveFormsModule,
         DotMessagePipe,
         CheckboxModule,
-        DotToolbarAnnouncementsComponent,
-        DotWorkflowComponent
+        DotToolbarAnnouncementsComponent
     ],
     providers: [DotStarterResolver]
 })

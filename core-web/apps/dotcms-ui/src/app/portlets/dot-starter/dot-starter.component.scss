@@ -1,22 +1,16 @@
-@use "../../../../../../libs/dotcms-scss/shared/colors";
-@use "../../../../../../libs/dotcms-scss/shared/common";
-@use "../../../../../../libs/dotcms-scss/shared/fonts";
-@use "../../../../../../libs/dotcms-scss/shared/shadows";
-@use "../../../../../../libs/dotcms-scss/shared/spacing";
-
 @use "variables" as *;
 
 $number-link-icon-size: 2.28rem;
 
 :host {
     display: block;
-    font-size: fonts.$font-size-md;
+    font-size: $font-size-md;
     height: 100%;
     overflow: auto;
-    background-color: colors.$white;
+    background-color: $white;
 
     hr {
-        border-top: 1px solid colors.$color-palette-gray-300;
+        border-top: 1px solid $color-palette-gray-300;
     }
 
     a {
@@ -29,19 +23,19 @@ $number-link-icon-size: 2.28rem;
         align-items: flex-start;
 
         p-checkbox {
-            margin-top: spacing.$spacing-5;
+            margin-top: $spacing-5;
         }
     }
 
     .dot-starter-title {
-        color: colors.$black;
-        font-size: fonts.$font-size-lg;
-        margin: spacing.$spacing-5 spacing.$spacing-3 spacing.$spacing-1;
+        color: $black;
+        font-size: $font-size-lg;
+        margin: $spacing-5 $spacing-3 $spacing-1;
     }
 
     .dot-starter-description {
-        color: colors.$black;
-        margin: 0 spacing.$spacing-3;
+        color: $black;
+        margin: 0 $spacing-3;
     }
 
     .dot-starter-top-content,
@@ -53,29 +47,29 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-top-main__section {
-        background-color: colors.$white;
+        background-color: $white;
         counter-reset: css-counter 0;
         flex-grow: 1;
         margin-left: 0;
-        margin-bottom: spacing.$spacing-4;
-        margin-right: spacing.$spacing-1;
+        margin-bottom: $spacing-4;
+        margin-right: $spacing-1;
         display: flex;
     }
 
     .dot-starter-offset {
-        margin-left: spacing.$spacing-5;
+        margin-left: $spacing-5;
     }
 
     .dot-starter-top-main__block {
-        border-radius: common.$border-radius-md;
-        box-shadow: shadows.$shadow-l;
+        border-radius: $border-radius-md;
+        box-shadow: $shadow-l;
 
         align-content: space-between;
-        border-bottom: 1px solid colors.$color-palette-gray-300;
+        border-bottom: 1px solid $color-palette-gray-300;
         display: flex;
         flex-direction: column;
-        margin: spacing.$spacing-3;
-        padding: spacing.$spacing-5 spacing.$spacing-3;
+        margin: $spacing-3;
+        padding: $spacing-5 $spacing-3;
 
         transition: background-color $basic-speed ease-in;
         width: 25%;
@@ -87,12 +81,12 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__link-number {
         align-self: center;
-        margin: 0 spacing.$spacing-4 spacing.$spacing-1;
+        margin: 0 $spacing-4 $spacing-1;
         text-align: center;
 
         span {
             align-items: center;
-            color: colors.$color-palette-primary;
+            color: $color-palette-primary;
             counter-increment: css-counter 1;
             display: inline-flex;
             font-size: $md-icon-size-extra-big;
@@ -112,15 +106,15 @@ $number-link-icon-size: 2.28rem;
         text-align: center;
 
         h4 {
-            color: colors.$black;
-            font-size: fonts.$font-size-lmd;
-            font-weight: fonts.$font-weight-semi-bold;
+            color: $black;
+            font-size: $font-size-lmd;
+            font-weight: $font-weight-semi-bold;
             margin: 0;
         }
         p {
-            color: colors.$color-palette-gray-700;
+            color: $color-palette-gray-700;
             margin: 0;
-            font-size: fonts.$font-size-md;
+            font-size: $font-size-md;
         }
     }
 
@@ -128,22 +122,22 @@ $number-link-icon-size: 2.28rem;
         align-self: center;
 
         i {
-            color: colors.$color-palette-gray-500;
-            font-size: fonts.$font-size-lg;
-            margin-right: spacing.$spacing-3;
+            color: $color-palette-gray-500;
+            font-size: $font-size-lg;
+            margin-right: $spacing-3;
         }
     }
 
     .dot-starter-top-main__title {
-        font-size: fonts.$font-size-lmd;
-        font-weight: fonts.$font-weight-semi-bold;
+        font-size: $font-size-lmd;
+        font-weight: $font-weight-semi-bold;
         margin: 0;
-        border-bottom: 1px solid colors.$color-palette-gray-300;
-        padding-bottom: spacing.$spacing-3;
+        border-bottom: 1px solid $color-palette-gray-300;
+        padding-bottom: $spacing-3;
     }
     .dot-starter-top-secondary__block {
         display: flex;
-        padding-bottom: spacing.$spacing-8;
+        padding-bottom: $spacing-8;
 
         &:last-child {
             padding-bottom: 0;
@@ -154,14 +148,14 @@ $number-link-icon-size: 2.28rem;
         padding-top: 0;
 
         span {
-            color: colors.$color-palette-primary;
-            fill: colors.$color-palette-primary;
+            color: $color-palette-primary;
+            fill: $color-palette-primary;
             display: inline-flex;
             width: $number-link-icon-size;
         }
 
         svg {
-            fill: colors.$color-palette-primary;
+            fill: $color-palette-primary;
             height: 1.71rem;
             width: $md-icon-size-normal;
         }
@@ -171,12 +165,12 @@ $number-link-icon-size: 2.28rem;
         padding: 0;
 
         h4 {
-            color: colors.$black;
-            font-size: fonts.$font-size-lmd;
+            color: $black;
+            font-size: $font-size-lmd;
             margin: 0;
         }
         p {
-            color: colors.$color-palette-gray-700;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
@@ -185,35 +179,35 @@ $number-link-icon-size: 2.28rem;
         padding: 0;
 
         h4 {
-            color: colors.$color-palette-primary;
-            font-size: fonts.$font-size-lmd;
+            color: $color-palette-primary;
+            font-size: $font-size-lmd;
             font-weight: 500;
             margin: 0;
-            padding-bottom: spacing.$spacing-1;
+            padding-bottom: $spacing-1;
         }
         p {
-            color: colors.$color-palette-gray-700;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
 
     .dot-starter-bottom-content {
         flex-wrap: wrap;
-        padding: spacing.$spacing-1 0 spacing.$spacing-5 spacing.$spacing-5;
+        padding: $spacing-1 0 $spacing-5 $spacing-5;
     }
 
     .dot-starter-bottom__block {
-        background-color: colors.$white;
-        border-bottom: 1px solid colors.$color-palette-gray-300;
-        box-shadow: shadows.$shadow-m;
+        background-color: $white;
+        border-bottom: 1px solid $color-palette-gray-300;
+        box-shadow: $shadow-m;
         display: flex;
         flex-grow: 1;
         height: 100%;
         overflow: hidden;
         transition: background-color $basic-speed ease-in;
-        border-radius: common.$border-radius-md;
-        gap: spacing.$spacing-1;
-        padding: spacing.$spacing-3;
+        border-radius: $border-radius-md;
+        gap: $spacing-1;
+        padding: $spacing-3;
 
         &:hover {
             background-color: $bg-hover;
@@ -221,24 +215,24 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-icon {
-        padding-top: spacing.$spacing-0;
+        padding-top: $spacing-0;
         span {
-            color: colors.$color-palette-primary;
+            color: $color-palette-primary;
             display: inline-flex;
         }
     }
 
     .dot-starter-bottom__link-data {
-        margin-right: spacing.$spacing-5;
+        margin-right: $spacing-5;
         padding: 0;
 
         h4 {
-            color: colors.$black;
-            font-size: fonts.$font-size-lmd;
+            color: $black;
+            font-size: $font-size-lmd;
             margin: 0;
         }
         p {
-            color: colors.$color-palette-gray-700;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
