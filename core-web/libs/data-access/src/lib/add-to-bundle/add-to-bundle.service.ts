@@ -36,7 +36,7 @@ export class AddToBundleService {
                     })
                     .pipe(map((x) => x?.bodyJsonObject?.items));
             })
-        ) as Observable<DotBundle[]>; 
+        ) as Observable<DotBundle[]>;
     }
 
     /**
