@@ -4,6 +4,8 @@ import com.dotcms.telemetry.MetricCalculationError;
 import com.dotcms.telemetry.MetricType;
 import com.dotcms.telemetry.MetricValue;
 import com.dotcms.telemetry.MetricsSnapshot;
+import com.dotcms.telemetry.ProfileType;
+import com.dotcms.telemetry.cache.MetricCacheConfig;
 import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
 import com.dotcms.telemetry.util.MetricCaches;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -17,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Collects and generates all metrics for telemetry reporting.
@@ -38,6 +41,9 @@ public class MetricStatsCollector {
     
     @Inject
     private ApiMetricAPI apiStatAPI;
+    
+    @Inject
+    private MetricCacheConfig config;
 
     /**
      * Calculate a MetricSnapshot by iterating through all the MetricType collections.
@@ -55,6 +61,17 @@ public class MetricStatsCollector {
      * @return the {@link MetricsSnapshot} with all the calculated metrics.
      */
     public MetricsSnapshot getStats(final Set<String> metricNameSet) {
+        return getStats(metricNameSet, null);
+    }
+    
+    /**
+     * Calculate a MetricSnapshot by iterating through all the MetricType collections.
+     *
+     * @param metricNameSet the set of metric names to filter by (empty set means all metrics)
+     * @param profileOverride optional profile override (if null, uses default profile from config)
+     * @return the {@link MetricsSnapshot} with all the calculated metrics.
+     */
+    public MetricsSnapshot getStats(final Set<String> metricNameSet, final ProfileType profileOverride) {
         final Collection<MetricValue> stats = new ArrayList<>();
         final Collection<MetricValue> noNumberStats = new ArrayList<>();
         Collection<MetricCalculationError> errors = new ArrayList<>();
@@ -62,14 +79,29 @@ public class MetricStatsCollector {
         try {
             openDBConnection();
 
+            // Get active profile - use override if provided, otherwise use default from config
+            final ProfileType activeProfile = profileOverride != null ? profileOverride : config.getActiveProfile();
+            Logger.debug(this, () -> String.format("Collecting metrics for profile: %s%s", 
+                activeProfile, profileOverride != null ? " (override)" : ""));
+
             // Use CDI-discovered metrics if available, otherwise fall back to static collection
-            final Collection<MetricType> collectors = getMetricCollectors();
+            final Collection<MetricType> allCollectors = getMetricCollectors();
+            final Collection<MetricType> collectors = allCollectors
+                    .stream()
+                    .filter(metric -> {
+                        // Apply name filter if provided
+                        if (!metricNameSet.isEmpty() && !metricNameSet.contains(metric.getName())) {
+                            return false;
+                        }
+                        // Apply profile filter
+                        return ProfileFilter.matches(metric, activeProfile);
+                    })
+                    .collect(Collectors.toList());
+
+            Logger.debug(this, () -> String.format("Filtered to %d metrics matching profile %s (from %d total)", 
+                    collectors.size(), activeProfile, allCollectors.size()));
 
             for (final MetricType metricType : collectors) {
-                // If the metricNameSet is not empty and the metricNameSet does not contain the metricType name, skip it
-                if (!metricNameSet.isEmpty() && !metricNameSet.contains(metricType.getName())) {
-                    continue;
-                }
                 try {
                     getMetricValue(metricType).ifPresent(metricValue -> {
                         if (metricValue.isNumeric()) {
@@ -128,11 +160,25 @@ public class MetricStatsCollector {
 
     /**
      * Get stats and clean up temporary API table.
+     * Uses the default profile from configuration (typically MINIMAL for dashboard).
      *
      * @return the {@link MetricsSnapshot} with all the calculated metrics.
      */
     public MetricsSnapshot getStatsAndCleanUp() {
         final MetricsSnapshot stats = getStats();
+        apiStatAPI.flushTemporaryTable();
+        return stats;
+    }
+    
+    /**
+     * Get stats with a specific profile and clean up temporary API table.
+     * Used by cron jobs to collect all metrics regardless of dashboard profile setting.
+     *
+     * @param profile the profile to use for metric collection
+     * @return the {@link MetricsSnapshot} with all the calculated metrics.
+     */
+    public MetricsSnapshot getStatsAndCleanUp(final ProfileType profile) {
+        final MetricsSnapshot stats = getStats(Set.of(), profile);
         apiStatAPI.flushTemporaryTable();
         return stats;
     }
