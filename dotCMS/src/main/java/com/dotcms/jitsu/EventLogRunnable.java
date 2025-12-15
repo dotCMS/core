@@ -103,7 +103,8 @@ public class EventLogRunnable implements Runnable {
         Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + payloads);
 
         if (payloads.isEmpty()){
-            Logger.warn(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + eventPayload.get().payloads());
+            Logger.error(EventLogRunnable.class,
+                    "It is not possible to send the Analytics Event because it has a empty payload: " + eventPayload.get().payloads());
             return;
         }
 
