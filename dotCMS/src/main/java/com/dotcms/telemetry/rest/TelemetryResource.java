@@ -22,6 +22,7 @@ import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -45,7 +46,8 @@ public class TelemetryResource {
     @Operation(summary = "Retrieves dotCMS usage data",
             description = "Collects telemetry metrics based on the specified profile. " +
                     "Defaults to FULL profile to return all available metrics. " +
-                    "Use MINIMAL profile for dashboard (faster, ~10 metrics) or FULL for complete data (~100+ metrics).",
+                    "Use MINIMAL profile for dashboard (faster, ~10 metrics) or FULL for complete data (~100+ metrics). " +
+                    "Set bypassCache=true to force fresh metric computation bypassing cache.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -60,12 +62,18 @@ public class TelemetryResource {
                                   @Parameter(description = "Profile type to use for metric collection. " +
                                           "Options: MINIMAL (10-15 core metrics, <5s), STANDARD (~50 metrics, <15s), " +
                                           "FULL (all 100+ metrics). Defaults to FULL for API access.")
-                                  @QueryParam("profile") final String profile) throws DotDataException {
+                                  @QueryParam("profile") final String profile,
+                                  @Parameter(description = "Bypass cache to force fresh metric computation. " +
+                                          "Use for diagnostics to see actual database query times. " +
+                                          "Defaults to false (use cache if available).")
+                                  @DefaultValue("false")
+                                  @QueryParam("bypassCache") final boolean bypassCache) throws DotDataException {
 
         Logger.debug(this, ()-> "Generating dotCMS Telemetry data");
         Logger.debug(this, ()-> "Client Info: " + Try.of(()->APILocator.getMetricsAPI().getClient()));
         Logger.debug(this, ()-> "Metric Names: " + metricNames);
         Logger.debug(this, ()-> "Profile: " + profile);
+        Logger.debug(this, ()-> "Bypass Cache: " + bypassCache);
         new WebResource.InitBuilder(new WebResource())
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
@@ -82,7 +90,7 @@ public class TelemetryResource {
         Logger.debug(this, ()-> "Using profile: " + profileType);
 
         final MetricStatsCollector collector = CDIUtils.getBeanThrows(MetricStatsCollector.class);
-        return Response.ok(new ResponseEntityMetricsSnapshotView(collector.getStats(metricNameSet, profileType)))
+        return Response.ok(new ResponseEntityMetricsSnapshotView(collector.getStats(metricNameSet, profileType, bypassCache)))
                 .build();
     }
 
