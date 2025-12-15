@@ -1,12 +1,13 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { map, mergeMap, take, takeUntil } from 'rxjs/operators';
+import { map, mergeMap, take } from 'rxjs/operators';
 
 import {
     DotContentTypesInfoService,
@@ -74,12 +75,12 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     loadingFields = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
+    private destroyRef = inject(DestroyRef);
     ngOnInit(): void {
         this.route.data
             .pipe(
-                map((x: any) => x?.contentType),
-                takeUntil(this.destroy$)
+                map((data) => data.contentType),
+                takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((contentType: DotCMSContentType) => {
                 this.data = contentType;

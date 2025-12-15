@@ -10,14 +10,15 @@ import {
     input,
     OnInit,
     output,
-    Renderer2
+    Renderer2,
+    viewChild
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
@@ -51,6 +52,8 @@ export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
+    dataTable = viewChild<Table>('dataTable');
+
     /**
      * A signal that takes an array of DotContentDriveItem objects.
      *
@@ -74,6 +77,14 @@ export class DotFolderListViewComponent implements OnInit {
      * @alias loading
      */
     $loading = input<boolean>(false, { alias: 'loading' });
+
+    /**
+     * A signal that takes the offset.
+     *
+     * @type {InputSignal<number>}
+     * @alias offset
+     */
+    $offset = input<number>(0, { alias: 'offset' });
 
     /**
      * An output that emits the selected items.
@@ -132,6 +143,14 @@ export class DotFolderListViewComponent implements OnInit {
     dragEnd = output<void>();
 
     /**
+     * An output that emits the drop event.
+     *
+     * @type {Output<DotContentDriveItem>} the target value
+     * @alias drop
+     */
+    drop = output<DotContentDriveItem>();
+
+    /**
      * An array of selected items.
      *
      * @type {DotContentDriveItem[]}
@@ -162,18 +181,8 @@ export class DotFolderListViewComponent implements OnInit {
      */
     readonly state = signalState({
         isDragging: false,
-        currentPageFirstRowIndex: 0,
-        languagesMap: new Map<number, DotLanguage>()
-    });
-
-    /**
-     * Effect that handles pagination state management
-     */
-    protected readonly firstEffect = effect(() => {
-        const showPagination = this.$showPagination();
-        if (showPagination) {
-            patchState(this.state, { currentPageFirstRowIndex: 0 });
-        }
+        languagesMap: new Map<number, DotLanguage>(),
+        dragOverRowId: null as string | null
     });
 
     /**
@@ -212,7 +221,6 @@ export class DotFolderListViewComponent implements OnInit {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
-        patchState(this.state, { currentPageFirstRowIndex: event.first });
         this.paginate.emit(event);
     }
 
@@ -275,6 +283,51 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
+     * Handles drag over a content item to show hover effect
+     * @param event The drag over event
+     * @param targetItem The content item being dragged over
+     */
+    onDragOver(event: DragEvent, targetItem: DotContentDriveItem) {
+        // Only handle internal drags (item to item)
+        const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
+        if (isInternalDrag) {
+            event.preventDefault();
+            patchState(this.state, { dragOverRowId: targetItem.identifier });
+        }
+    }
+
+    /**
+     * Handles drop on a content item
+     * Only handles internal drags (item to item). External file drops are allowed to bubble up to the dropzone.
+     * @param event The drop event
+     * @param targetItem The content item that was dropped
+     */
+    onDrop(event: DragEvent, targetItem: DotContentDriveItem) {
+        // If this is an external file drop, let it bubble up to the dropzone
+        const hasFiles = event.dataTransfer?.files && event.dataTransfer.files.length > 0;
+        const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
+
+        // Only handle internal drags (item to item), not file drops
+        if (hasFiles || !isInternalDrag) {
+            return; // Let the event bubble up to the dropzone
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        patchState(this.state, { dragOverRowId: null });
+        this.drop.emit(targetItem);
+    }
+
+    /**
+     * Handles drag end on a content item
+     */
+    onDragEnd() {
+        // Reset dragging state to false and clear drag over
+        patchState(this.state, { isDragging: false, dragOverRowId: null });
+        this.dragEnd.emit();
+    }
+
+    /**
      * Creates drag image from actual rendered thumbnails (img/icon elements)
      * @param items The items to create the drag image from
      * @param totalCount The total number of items
@@ -293,7 +346,7 @@ export class DotFolderListViewComponent implements OnInit {
             // Note: Using querySelector here as Renderer2 doesn't provide query methods
             // This is acceptable since drag operations are client-side only
             const thumbnail = document.querySelector(
-                `[data-id="${item.identifier}"]`
+                `[data-table-id="${item.identifier}"]`
             ) as HTMLElement;
 
             if (!thumbnail) {
@@ -344,11 +397,18 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
-     * Handles drag end on a content item
+     * Handles first change event from the PrimeNG Table
+     * Basically primeNG Table handles the change of the first on every OnChange
+     * Making it lose the reference if you do a sort and do not handle this manually
+     *
+     * Check this issue to know if we are able to remove this function
+     * since its a legacy issue that they are basically ignoring.
+     * https://github.com/primefaces/primeng/issues/11898#issuecomment-1831076132
      */
-    onDragEnd() {
-        // Reset dragging state to false
-        patchState(this.state, { isDragging: false });
-        this.dragEnd.emit();
+    protected onFirstChange() {
+        const dataTable = this.dataTable();
+        if (dataTable) {
+            dataTable.first = this.$offset();
+        }
     }
 }

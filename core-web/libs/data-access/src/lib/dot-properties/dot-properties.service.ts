@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
 @Injectable({
     providedIn: 'root'
@@ -22,10 +22,14 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getKey(key: string): Observable<string> {
-        return this.http.get('/api/v1/configuration/config', { params: { keys: key } }).pipe(
-            take(1),
-            map((x) => (x as any)?.['entity']?.[key])
-        );
+        return this.http
+            .get<
+                DotCMSResponse<Record<string, string>>
+            >('/api/v1/configuration/config', { params: { keys: key } })
+            .pipe(
+                take(1),
+                map((response) => response.entity[key] ?? FEATURE_FLAG_NOT_FOUND)
+            );
     }
 
     /**

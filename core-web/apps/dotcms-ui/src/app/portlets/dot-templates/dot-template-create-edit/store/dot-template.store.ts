@@ -160,21 +160,21 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 return this.dotTemplateService
                     .saveAndPublish(this.cleanTemplateItem(template))
                     .pipe(
-                        tapResponse(
-                            (template: DotTemplate) => {
+                        tapResponse({
+                            next: (template: DotTemplate) => {
                                 this.dotGlobalMessageService.success(
                                     this.dotMessageService.get('message.template.published')
                                 );
                                 this.dotRouterService.allowRouteDeactivation();
                                 this.updateTemplateState(template);
                             },
-                            (err: HttpErrorResponse) => {
+                            error: (err: HttpErrorResponse) => {
                                 this.dotGlobalMessageService.error(err.statusText);
                                 this.dotHttpErrorManagerService.handle(err).subscribe(() => {
                                     this.dotRouterService.allowRouteDeactivation();
                                 });
                             }
-                        )
+                        })
                     );
             })
         );

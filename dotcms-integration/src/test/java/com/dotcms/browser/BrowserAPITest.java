@@ -11,6 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.DotAssetDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -18,6 +19,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -1386,6 +1388,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1396,12 +1399,13 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Folder subFolder = new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
+                    .owner(owner)
                     .nextPersisted();
             subFolders.add(subFolder);
         }
 
-        // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        // Create 30 contentlets
+        for (int i = 0; i < 30; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1432,7 +1436,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
         assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
         assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
-        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
+        assertEquals("Content total count should be 30", 30, paginatedContents.contentTotalCount);
 
         // Verify first 25 items are folders
         for (int i = 0; i < 25; i++) {
@@ -1440,6 +1444,8 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertNotNull("Item should have name", item.get("name"));
             assertTrue("First 25 items should be folders",
                 item.get("name").toString().startsWith("folder_"));
+            assertEquals("Owner should be the same as parent folder",
+                owner.getFullName(), item.get("owner"));
         }
 
         // Verify the last item is a contentlet
@@ -1611,6 +1617,177 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertTrue("All items should be folders",
                 item.get("name").toString().startsWith("folder_"));
         }
+    }
+
+    /**
+     * Test Case: Text filtering with custom ContentType - contentTotalCount validation
+     *
+     * Tests that getBrowserAPI.getPaginatedContents() correctly returns contentTotalCount
+     * when using text search filters with a custom content type containing a title field.
+     *
+     * Expected behavior:
+     * - Creates 3 custom content instances with different titles
+     * - Filter matching one title returns contentTotalCount = 1
+     * - Filter matching multiple titles returns contentTotalCount = 2
+     */
+    @Test
+    public void test_getPaginatedContents_textFilter_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        // Create 3 contentlet instances with specific titles
+        final Contentlet contentlet1 = new ContentletDataGen(customContentType)
+                .setProperty("title", "SearchableItem Alpha")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(customContentType)
+                .setProperty("title", "SearchableItem Beta")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final Contentlet contentlet3 = new ContentletDataGen(customContentType)
+                .setProperty("title", "DifferentContent Gamma")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Test Case 1: Filter matching one item - expect contentTotalCount = 1
+        final BrowserQuery queryMatchingOne = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Alpha")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(queryMatchingOne);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should find exactly 1 matching content", 1, resultsOne.contentTotalCount);
+        assertEquals("Should return 1 content item", 1, resultsOne.contentCount);
+
+        // Verify the correct content was found
+        assertEquals("Should return exactly 1 item in list", 1, resultsOne.list.size());
+        final Map<String, Object> foundItem = resultsOne.list.get(0);
+        assertEquals("Found item should be contentlet1", contentlet1.getInode(), foundItem.get("inode"));
+
+        // Test Case 2: Filter matching multiple items - expect contentTotalCount = 2
+        final BrowserQuery queryMatchingTwo = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("SearchableItem")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsTwo = browserAPI.getPaginatedContents(queryMatchingTwo);
+
+        assertNotNull("Results should not be null", resultsTwo);
+        assertEquals("Should find exactly 2 matching contents", 2, resultsTwo.contentTotalCount);
+        assertEquals("Should return 2 content items", 2, resultsTwo.contentCount);
+        assertEquals("Should return exactly 2 items in list", 2, resultsTwo.list.size());
+
+        // Verify the correct contents were found (contentlet1 and contentlet2)
+        final Set<String> foundInodes = resultsTwo.list.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain contentlet1", foundInodes.contains(contentlet1.getInode()));
+        assertTrue("Should contain contentlet2", foundInodes.contains(contentlet2.getInode()));
+        assertFalse("Should not contain contentlet3", foundInodes.contains(contentlet3.getInode()));
+
+        // Test Case 3: Filter with no matches - expect contentTotalCount = 0
+        final BrowserQuery queryNoMatches = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("NonExistentTerm")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsNone = browserAPI.getPaginatedContents(queryNoMatches);
+
+        assertNotNull("Results should not be null", resultsNone);
+        assertEquals("Should find no matching content", 0, resultsNone.contentTotalCount);
+        assertEquals("Should return no content items", 0, resultsNone.contentCount);
+        assertEquals("Should return empty list", 0, resultsNone.list.size());
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: Here we test a similar situation as above, but we set limits in the pageSize
+     * to verify that the total count accurately reflects the total items in existence reflected in the contentTotalCount
+     * Expected result: We should expect 5 matches filling the first page and a universe of 10 items
+     * @throws Exception
+     */
+    @Test
+    public void test_getPaginatedContents_Fixed_Page_Size_Using_textFilter_Verify_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        for(int i=0; i<10; i++) {
+            new ContentletDataGen(customContentType)
+                    .setProperty("title", String.format("SearchableItem %s",i))
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Item")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(query);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should report all 10 contents as the total", 10, resultsOne.contentTotalCount);
+        assertEquals("Should return 5 matching item as we defined a pageSize of 5.", 5, resultsOne.contentCount);
+
     }
 
 }

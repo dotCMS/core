@@ -260,6 +260,6 @@ export class DotContentTypeService {
     private getBaseTypes(): Observable<StructureTypeView[]> {
         return this.#httpClient
             .get<{ entity: StructureTypeView[] }>('/api/v1/contenttype/basetypes')
-            .pipe(map((x) => x?.entity));
+            .pipe(map((data) => data.entity));
     }
 }

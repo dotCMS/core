@@ -3,6 +3,7 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/dotcms/src",
     "projectType": "library",
+    "tags": ["skip:test", "skip:lint", "skip:build"],
     "targets": {
         "build": {
             "executor": "@nx/js:tsc",
@@ -37,6 +38,5 @@
                 "jestConfig": "libs/dotcms/jest.config.ts"
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint", "skip:build"]
+    }
 }

@@ -28,10 +28,10 @@ export class DotFolderService {
      * Creates a new folder in the assets system
      *
      * @param {DotFolderEntity} body - The folder data to create
-     * @returns {Observable<any>} Observable that emits the created folder
+     * @returns {Observable<DotFolder>} Observable that emits the created folder
      */
     createFolder(body: DotFolderEntity): Observable<DotFolder> {
-        return this.#http.post(`/api/v1/assets/folders`, body).pipe(map((x) => x?.entity));
+        return this.#http.post<{ entity: DotFolder }>(`/api/v1/assets/folders`, body).pipe(map((x) => x?.entity));
     }
 
     /**

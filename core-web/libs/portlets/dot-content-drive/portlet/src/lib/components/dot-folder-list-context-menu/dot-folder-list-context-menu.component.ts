@@ -31,10 +31,15 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 
-import { ERROR_MESSAGE_LIFE, MOVE_TO_FOLDER_WORKFLOW_ACTION_ID } from '../../shared/constants';
+import {
+    DIALOG_TYPE,
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+} from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { isFolder } from '../../utils/functions';
 
 @Component({
     selector: 'dot-folder-list-context-menu',
@@ -127,8 +132,10 @@ export class DotFolderListViewContextMenuComponent {
 
         const memoizedMenuItems = this.$memoizedMenuItems();
 
-        if (memoizedMenuItems[contentlet.inode]) {
-            this.$items.set(memoizedMenuItems[contentlet.inode]);
+        const key = isFolder(contentlet) ? contentlet.identifier : contentlet.inode;
+
+        if (memoizedMenuItems[key]) {
+            this.$items.set(memoizedMenuItems[key]);
             this.contextMenu()?.show(triggeredEvent);
             return;
         }
@@ -184,7 +191,7 @@ export class DotFolderListViewContextMenuComponent {
         this.$items.set(actionsMenu);
         this.$memoizedMenuItems.set({
             ...this.$memoizedMenuItems(),
-            [contentlet.inode]: this.$items()
+            [key]: this.$items()
         });
         this.contextMenu()?.show(triggeredEvent);
     }
