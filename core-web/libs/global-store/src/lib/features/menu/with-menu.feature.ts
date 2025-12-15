@@ -19,7 +19,7 @@ import { computed, effect, inject } from '@angular/core';
 import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { initialMenuSlice, menuConfig } from './menu.slice';
+import { initialMenuSlice, menuConfig, REPLACE_SECTIONS_MAP } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
@@ -68,7 +68,7 @@ export function withMenu() {
                 }, {});
 
                 // Transform grouped object into array of MenuGroup
-                return Object.entries(grouped).map(([parentMenuId, menuItems]) => {
+                const groups = Object.entries(grouped).map(([parentMenuId, menuItems]) => {
                     const firstItem = menuItems[0];
                     return {
                         id: parentMenuId,
@@ -78,6 +78,7 @@ export function withMenu() {
                         isOpen: parentMenuId === currentOpenParentMenuId
                     };
                 });
+                return groups;
             });
 
             /**
@@ -230,21 +231,9 @@ export function withMenu() {
              * Toggles the navigation menu collapsed/expanded state.
              */
             const toggleNavigation = () => {
-                const isCollapsed = store.isNavigationCollapsed();
-                patchState(store, {
-                    isNavigationCollapsed: !isCollapsed
-                });
-
-                // When collapsing, close all parent menu groups
-                if (!isCollapsed) {
-                    patchState(store, { openParentMenuId: null });
-                } else {
-                    // When expanding, open the parent menu group of the active item if there is one
-                    const activeItem = store.activeMenuItem();
-                    if (activeItem) {
-                        patchState(store, { openParentMenuId: activeItem.parentMenuId });
-                    }
-                }
+                patchState(store, (state) => ({
+                    isNavigationCollapsed: !state.isNavigationCollapsed
+                }));
             };
 
             /**
@@ -253,8 +242,7 @@ export function withMenu() {
              */
             const collapseNavigation = () => {
                 patchState(store, {
-                    isNavigationCollapsed: true,
-                    openParentMenuId: null
+                    isNavigationCollapsed: true
                 });
             };
 
@@ -280,28 +268,36 @@ export function withMenu() {
              * @param portletId - The ID of the menu item (portlet) to activate
              * @param shortParentMenuId - The first 4 characters of the parent menu ID
              */
-            const setActiveMenu = (portletId: string, shortParentMenuId: string) => {
+            const setActiveMenu = (
+                portletId: string,
+                shortParentMenuId: string,
+                bookmark?: boolean
+            ) => {
                 if (!portletId) {
                     return;
                 }
 
+                // Check if portletId should be replaced according to REPLACE_SECTIONS_MAP
+                const resolvedPortletId = REPLACE_SECTIONS_MAP[portletId] || portletId;
+
                 // Direct lookup using the composite key
                 const entityMap = store.entityMap();
-                let compositeKey = `${portletId}__${shortParentMenuId}`;
+                let compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
                 const item = entityMap[compositeKey];
 
                 // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (!portletId || !shortParentMenuId) {
-                    const item = Object.values(entityMap).find((item) => item.id === portletId);
-                    if (item) {
-                        compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
-                        activateMenuItemWithParent(compositeKey, item.parentMenuId);
+                if (bookmark) {
+                    const foundItem = Object.values(entityMap).find((item) => {
+                        return item.id === resolvedPortletId || item.id === portletId;
+                    });
+                    if (foundItem) {
+                        compositeKey = `${foundItem.id}__${foundItem.parentMenuId?.substring(0, 4)}`;
+                        activateMenuItemWithParent(compositeKey, foundItem.parentMenuId);
                     }
                 }
 
                 if (item) {
-                    const collapsed = store.isNavigationCollapsed();
-                    activateMenuItemWithParent(compositeKey, collapsed ? null : item.parentMenuId);
+                    activateMenuItemWithParent(compositeKey, item.parentMenuId);
                 }
             };
 

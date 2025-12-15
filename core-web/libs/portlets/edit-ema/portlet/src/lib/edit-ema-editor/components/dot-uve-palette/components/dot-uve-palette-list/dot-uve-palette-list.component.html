@@ -1,15 +1,15 @@
-@if (!$hideControls()) {
-    <div class="dot-uve-palette-list__controls">
-        @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
-            <p-button
-                data-testid="back-to-content-types-button"
-                icon="pi pi-chevron-left"
-                styleClass="options-menu-button"
-                [text]="true"
-                [rounded]="true"
-                (onClick)="onBackToContentTypes()" />
-        }
+<div class="dot-uve-palette-list__controls">
+    @if ($isContentletsView()) {
+        <p-button
+            data-testid="back-to-content-types-button"
+            icon="pi pi-chevron-left"
+            styleClass="options-menu-button"
+            [text]="true"
+            [rounded]="true"
+            (onClick)="onBackToContentTypes()" />
+    }
 
+    @if (!$shouldHideControls()) {
         <p-iconField iconPosition="left" [style]="{ width: '100%' }">
             <p-inputIcon styleClass="pi pi-search" />
             <input
@@ -21,26 +21,18 @@
                 [style]="{ width: '100%' }" />
         </p-iconField>
 
-        @if ($showSortButton()) {
+        @if ($isContentTypesView()) {
+            @let actionBtn = $actionButton();
             <p-button
-                data-testid="sort-menu-button"
-                icon="pi pi-arrow-right-arrow-left"
                 styleClass="options-menu-button"
+                [attr.data-testid]="actionBtn.testId"
+                [icon]="actionBtn.icon"
                 [text]="true"
                 [rounded]="true"
-                (onClick)="menu.toggle($event)" />
-        } @else if ($isFavoritesList()) {
-            <p-button
-                data-testid="add-favorites-button"
-                icon="pi pi-plus"
-                styleClass="options-menu-button"
-                [text]="true"
-                [rounded]="true"
-                (onClick)="favoritesPanel.toggle($event)" />
+                (onClick)="actionBtn.onClick($event)" />
         }
-    </div>
-}
-
+    }
+</div>
 <div
     class="dot-uve-palette-list__grid"
     [class.dot-uve-palette-list__grid--list]="$showListLayout()"
@@ -119,7 +111,16 @@
     [popup]="true"
     appendTo="body"
     styleClass="options-menu-popup"
-    showTransitionOptions="0ms" />
+    showTransitionOptions="0ms">
+    <ng-template pTemplate="submenuheader" let-item>
+        <span>{{ item.label | dm }}</span>
+    </ng-template>
+    <ng-template pTemplate="item" let-item>
+        <a class="p-ripple p-element p-menuitem-link">
+            <span class="p-menuitem-text">{{ item.label | dm }}</span>
+        </a>
+    </ng-template>
+</p-menu>
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
 
