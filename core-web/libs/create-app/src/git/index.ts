@@ -30,8 +30,8 @@ export const cloneFrontEndSample = async ({
 
     // 3. Checkout main branch (only the selected folder is downloaded)
     await execa('git', ['checkout', 'main'], {
-        cwd: directory,
-        stdio: 'inherit'
+        cwd: directory
+        // stdio: 'inherit'
     });
 
     const src = path.join(directory, 'examples', `${framework}`);
