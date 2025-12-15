@@ -3,10 +3,15 @@ package com.dotcms.telemetry.collectors.content;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of contentlets which have at least one live version in a non-default Language
  */
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class LiveNotDefaultLanguageContentsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

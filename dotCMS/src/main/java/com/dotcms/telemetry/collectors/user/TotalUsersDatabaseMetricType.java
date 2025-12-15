@@ -1,11 +1,18 @@
 package com.dotcms.telemetry.collectors.user;
 
+import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the total count of all users (excluding system users)
  */
+@ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})
+@DashboardMetric(category = "user", priority = 2)
 public class TotalUsersDatabaseMetricType implements UsersDatabaseMetricType {
     @Override
     public String getName() {
@@ -15,8 +22,7 @@ public class TotalUsersDatabaseMetricType implements UsersDatabaseMetricType {
     @Override
     public String getDescription() {
         return "Total count of users";
-    }
-
+    }    
     @Override
     public MetricCategory getCategory() {
         return MetricCategory.DIFFERENTIATING_FEATURES;
