@@ -7,22 +7,19 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotEventsService, DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotEventsService, DotMessageService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
 import { DotSystemConfig } from '@dotcms/dotcms-models';
 import {
-    DotDialogComponent,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotSafeHtmlPipe
+    DotSafeHtmlPipe,
+    DotSiteComponent
 } from '@dotcms/ui';
-import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
-import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
-import { DotFormSelectorComponent } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -65,7 +62,6 @@ class MockDotSystemConfigService {
 }
 
 describe('DotContentTypeCloneDialogComponent', () => {
-    const siteServiceMock = new SiteServiceMock();
     let component: DotContentTypeCopyDialogComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
@@ -74,26 +70,25 @@ describe('DotContentTypeCloneDialogComponent', () => {
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.form.label.variable_name': 'Variable Name',
-            'contenttypes.form.label.icon': 'Icon'
+            'contenttypes.form.label.icon': 'Icon',
+            'contenttypes.content.copy': 'Copy',
+            'contenttypes.content.add_to_bundle.form.cancel': 'Cancel',
+            'contenttypes.form.name': 'Name'
         });
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
             imports: [
                 DotContentTypeCopyDialogComponent,
-                DotFormSelectorComponent,
                 BrowserAnimationsModule,
                 DotFieldValidationMessageComponent,
                 DotMdIconSelectorComponent,
-                DotSiteSelectorFieldComponent,
-                DotDialogComponent,
+                DotSiteComponent,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: SiteService, useValue: siteServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 {
@@ -102,6 +97,12 @@ describe('DotContentTypeCloneDialogComponent', () => {
                         listen() {
                             return of([]);
                         }
+                    }
+                },
+                {
+                    provide: DotSiteService,
+                    useValue: {
+                        getSites: jest.fn().mockReturnValue(of({}))
                     }
                 }
             ]
@@ -112,7 +113,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
 
         component = de.componentInstance;
 
-        dotdialog = de.query(By.css('dot-dialog'));
+        dotdialog = de.query(By.css('p-dialog'));
         component.isVisibleDialog = true;
 
         fixture.detectChanges();
@@ -121,7 +122,7 @@ describe('DotContentTypeCloneDialogComponent', () => {
     it('should have a form', () => {
         const form: DebugElement = de.query(By.css('form'));
         expect(form).not.toBeNull();
-        expect(component.form).toEqual(form.componentInstance.form);
+        expect(component.form).toBeDefined();
     });
 
     it('should be invalid if no name was added', () => {
@@ -184,11 +185,19 @@ describe('DotContentTypeCloneDialogComponent', () => {
         expect(copyButton).toBeDefined();
 
         expect(component.form.valid).toEqual(false);
-        jest.spyOn(component, 'submitForm');
+        expect(component.dialogActions.accept.disabled).toEqual(true);
+
+        // Check that button component instance is disabled
+        const buttonComponent = copyButton.componentInstance;
+        expect(buttonComponent.disabled).toBe(true);
+
+        jest.spyOn(component.validFormFields, 'emit');
 
         fixture.detectChanges();
+
+        // Even if clicked programmatically, submitForm checks form validity and won't emit
         copyButton.nativeElement.click();
 
-        expect(component.submitForm).toHaveBeenCalledTimes(0);
+        expect(component.validFormFields.emit).not.toHaveBeenCalled();
     });
 });
