@@ -4,9 +4,12 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.telemetry.Metric;
 import com.dotcms.telemetry.MetricType;
 import com.dotcms.telemetry.MetricValue;
+import com.dotcms.telemetry.MetricsSnapshot;
 import com.dotcms.telemetry.collectors.DashboardMetricsProvider;
+import com.dotcms.telemetry.collectors.MetricStatsCollector;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -148,12 +151,15 @@ public class UsageResource {
     /**
      * Collects metrics for dashboard display using {@link DashboardMetricsProvider}
      * to discover metrics annotated with {@link com.dotcms.telemetry.DashboardMetric}.
-     * 
+     *
+     * <p>Metrics are collected via {@link MetricStatsCollector} which provides
+     * configuration-driven caching for improved performance.</p>
+     *
      * @param user the authenticated user (used for i18n)
      * @param profileOverride optional profile to override the default (null = use default from config)
      */
     private UsageSummary collectUsageSummary(final User user, final ProfileType profileOverride) {
-        Logger.debug(this, () -> String.format("Collecting business metrics for usage dashboard (profile: %s)", 
+        Logger.debug(this, () -> String.format("Collecting business metrics for usage dashboard (profile: %s)",
                 profileOverride != null ? profileOverride : "default"));
 
         final DashboardMetricsProvider metricsProvider = CDIUtils.getBeanThrows(DashboardMetricsProvider.class);
@@ -161,47 +167,72 @@ public class UsageResource {
 
         Logger.debug(this, () -> String.format("Found %d dashboard metrics to collect", keyMetrics.size()));
 
-        // Collect metric values - use metricType.getName() as the map key
+        // Collect metric names to pass to MetricStatsCollector
+        final Set<String> metricNames = keyMetrics.stream()
+                .map(MetricType::getName)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // Use MetricStatsCollector which provides caching
+        final MetricStatsCollector collector = CDIUtils.getBeanThrows(MetricStatsCollector.class);
+        final MetricsSnapshot snapshot = collector.getStats(metricNames, profileOverride);
+
+        Logger.debug(this, () -> String.format("Collected %d metric values via MetricStatsCollector (with caching)",
+                snapshot.getStats().size() + snapshot.getNotNumericStats().size()));
+
+        // Build metric map from snapshot - combine numeric and non-numeric stats
         final Map<String, MetricValue> metricMap = new HashMap<>();
-        for (MetricType metricType : keyMetrics) {
-            try {
-                final String metricName = metricType.getName();
-                final Optional<MetricValue> metricValueOpt = metricType.getStat();
-                if (metricValueOpt.isPresent()) {
-                    final MetricValue metricValue = metricValueOpt.get();
-                    
-                    // Handle duplicate "COUNT" keys by mapping to specific names based on feature
-                    // TODO: Remove this workaround once MetricType naming is standardized
-                    // See: https://github.com/dotCMS/core/issues/34042
-                    final String mapKey;
-                    if ("COUNT".equals(metricName)) {
-                        // Use feature to disambiguate generic "COUNT" metric
-                        switch (metricType.getFeature()) {
-                            case CONTENTLETS:
-                                mapKey = "COUNT_CONTENT";
-                                break;
-                            case LANGUAGES:
-                                mapKey = "COUNT_LANGUAGES";
-                                break;
-                            default:
-                                mapKey = metricName;
-                        }
-                    } else {
-                        mapKey = metricName;
+
+        // Add numeric stats
+        for (MetricValue metricValue : snapshot.getStats()) {
+            final String metricName = metricValue.getMetric().getName();
+
+            // Handle duplicate "COUNT" keys by mapping to specific names based on feature
+            // TODO: Remove this workaround once MetricType naming is standardized
+            // See: https://github.com/dotCMS/core/issues/34042
+            final String mapKey;
+            if ("COUNT".equals(metricName)) {
+                // Find the corresponding MetricType to get the feature
+                final Optional<MetricType> metricTypeOpt = keyMetrics.stream()
+                        .filter(mt -> "COUNT".equals(mt.getName()))
+                        .findFirst();
+
+                if (metricTypeOpt.isPresent()) {
+                    switch (metricTypeOpt.get().getFeature()) {
+                        case CONTENTLETS:
+                            mapKey = "COUNT_CONTENT";
+                            break;
+                        case LANGUAGES:
+                            mapKey = "COUNT_LANGUAGES";
+                            break;
+                        default:
+                            mapKey = metricName;
                     }
-                    
-                    metricMap.put(mapKey, metricValue);
-                    Logger.debug(this, () -> String.format("Collected metric: %s = %s (mapped to: %s)",
-                            metricName, metricValue.getValue(), mapKey));
                 } else {
-                    Logger.debug(this, () -> String.format("Metric %s returned empty value", metricName));
+                    mapKey = metricName;
                 }
-            } catch (Exception e) {
-                Logger.warn(this, "Failed to collect metric: " + metricType.getName(), e);
+            } else {
+                mapKey = metricName;
             }
+
+            metricMap.put(mapKey, metricValue);
+            Logger.debug(this, () -> String.format("Collected metric: %s = %s (mapped to: %s)",
+                    metricName, metricValue.getValue(), mapKey));
         }
 
-        Logger.debug(this, () -> String.format("Collected %d metric values from %d dashboard metrics", metricMap.size(), keyMetrics.size()));
+        // Add non-numeric stats (getNotNumericStats returns Map<String, Object>)
+        final Map<String, Object> nonNumericStatsMap = snapshot.getNotNumericStats();
+        for (Map.Entry<String, Object> entry : nonNumericStatsMap.entrySet()) {
+            final String metricName = entry.getKey();
+            final Object value = entry.getValue();
+            // Create a MetricValue wrapper for consistency
+            final Metric metric = new Metric.Builder().name(metricName).build();
+            final MetricValue metricValue = new MetricValue(metric, value);
+            metricMap.put(metricName, metricValue);
+            Logger.debug(this, () -> String.format("Collected non-numeric metric: %s = %s",
+                    metricName, value));
+        }
+
+        Logger.debug(this, () -> String.format("Built metric map with %d total values", metricMap.size()));
 
         // Build dynamic summary organized by category
         // Pass metricsProvider to avoid repeated CDI lookups in the loop
