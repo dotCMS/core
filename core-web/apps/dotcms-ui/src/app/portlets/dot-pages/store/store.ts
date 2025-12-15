@@ -1,6 +1,6 @@
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
-import { inject } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { DotESContentService } from '@dotcms/data-access';
 import {
@@ -43,6 +43,11 @@ const getPagesQuery = ({ languageId, archived }) => {
 
 export const DotCMSPagesStore = signalStore(
     withState(initialState),
+    withComputed((store) => {
+        return {
+            $totalRecords: computed<number>(() => store.pagination.totalEntries())
+        };
+    }),
     withMethods((store) => {
         const dotESContentService = inject(DotESContentService);
 
@@ -61,7 +66,7 @@ export const DotCMSPagesStore = signalStore(
                         sortField: 'modDate',
                         sortOrder: 'ASC'
                     })
-                    .subscribe(({ jsonObjectView }) => {
+                    .subscribe(({ jsonObjectView, resultsSize }) => {
                         const pages = jsonObjectView.contentlets;
 
                         patchState(store, {
@@ -70,7 +75,7 @@ export const DotCMSPagesStore = signalStore(
                             pagination: {
                                 currentPage: 1,
                                 perPage: 40,
-                                totalEntries: pages.length
+                                totalEntries: resultsSize
                             }
                         });
                     });

@@ -98,7 +98,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotPageStore);
-    readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
+    readonly dotCMSPagesStore = inject(DotCMSPagesStore);
 
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.#store.vm$;
@@ -108,7 +108,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
 
     constructor() {
         this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
-        this.#dotCMSPagesStore.getPages();
+        this.dotCMSPagesStore.getPages();
     }
 
     /**

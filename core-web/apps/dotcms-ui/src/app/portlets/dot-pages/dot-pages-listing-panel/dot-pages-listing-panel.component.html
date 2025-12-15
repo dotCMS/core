@@ -1,138 +1,120 @@
-@if (vm$ | async; as vm) {
-    <p-table
-        (onLazyLoad)="loadPagesLazy($event)"
-        (onRowSelect)="onRowSelect($event)"
-        (onPage)="pageChange.emit()"
-        [contextMenu]="cm"
-        [value]="vm.pages.items"
-        [totalRecords]="vm.pages.total"
-        [loading]="vm.isPagesLoading"
-        [lazy]="true"
-        [paginator]="true"
-        [rows]="40"
-        [sortOrder]="-1"
-        [showPageLinks]="false"
-        [showCurrentPageReport]="true"
-        [showFirstLastIcon]="false"
-        #table
-        selectionMode="single"
-        sortField="modDate">
-        <ng-template #caption>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-4 min-w-0">
-                    <div class="p-input-icon-right w-64 min-w-0">
-                        <input
-                            #input
-                            [placeholder]="'Type-To-Search' | dm"
-                            [value]="vm.keywordValue"
-                            class="w-full"
-                            (input)="filterData(input.value)"
-                            data-testid="dot-pages-listing-header__keyword-input"
-                            type="text"
-                            pInputText
-                            dotAutofocus />
-                        @if (input.value.length) {
-                            <i
-                                (click)="filterData('')"
-                                class="pi pi-times"
-                                data-testid="dot-pages-listing-header__keyword-input-clear"
-                                role="button"></i>
-                        }
-                    </div>
-                    <p-select
-                        (onChange)="setPagesLanguage($event.value)"
-                        [(ngModel)]="vm.languageIdValue"
-                        [options]="vm.languageOptions"
-                        class="w-56" />
-                    <div class="flex items-center gap-2 whitespace-nowrap">
-                        <p-checkbox
-                            (onChange)="setPagesArchived($event.checked)"
-                            [(ngModel)]="vm.showArchivedValue"
-                            [inputId]="'show-archived'"
-                            [binary]="true" />
-                        <label [for]="'show-archived'">
-                            {{ 'Show-Archived' | dm }}
-                        </label>
-                    </div>
-                </div>
-                <p-button
-                    (click)="store.getPageTypes()"
-                    [label]="'create.page' | dm"
-                    data-testid="createPageButton"
-                    styleClass="p-button-sm shrink-0" />
-            </div>
-        </ng-template>
-        <ng-template #header>
-            @if (vm.pages.items.length !== 0) {
-                <tr>
-                    <th pSortableColumn="title" style="width: 25%">
-                        {{ 'title' | dm }}
-                        <p-sortIcon field="title" />
-                    </th>
-                    <th pSortableColumn="urlMap" style="width: 20%">
-                        {{ 'url' | dm }}
-                        <p-sortIcon field="urlMap" />
-                    </th>
-                    <th pSortableColumn="contentType" style="width: 12%">
-                        {{ 'type' | dm }}
-                        <p-sortIcon field="contentType" />
-                    </th>
-                    <th pSortableColumn="languageId" style="width: 12%">
-                        {{ 'status' | dm }}
-                        <p-sortIcon field="languageId" />
-                    </th>
-                    <th style="width: 12%">
-                        {{ 'Last-Editor' | dm }}
-                    </th>
-                    <th pSortableColumn="modDate" style="width: 14%">
-                        {{ 'Last-Edited' | dm }}
-                        <p-sortIcon field="modDate" />
-                    </th>
-                    <th style="width: 5%"></th>
-                </tr>
-            }
-        </ng-template>
-        <ng-template #body let-page let-rowIndex="rowIndex">
-            <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="page" pContextMenuRow>
-                <td>{{ page['title'] }}</td>
-                <td [pTooltip]="page['urlMap'] || page['url']" tooltipPosition="bottom">
-                    {{ page['urlMap'] || page['url'] }}
-                </td>
-                <td>
-                    {{ page['contentType'] }}
-                </td>
-                <td>
-                    <div class="flex items-center gap-2 whitespace-nowrap">
-                        <dot-state-icon [labels]="dotStateLabels" [state]="page" size="14px" />
-                        <dot-badge [bordered]="true">
-                            {{ vm.languageLabels[page['languageId']] }}
-                        </dot-badge>
-                        <dot-contentlet-lock-icon [locked]="page['locked']" />
-                    </div>
-                </td>
-                <td>
-                    {{ page['modUserName'] }}
-                </td>
-                <td>{{ page['modDate'] | dotRelativeDate }}</td>
-                <td>
-                    <p-button
-                        id="pageActionButton-{{ rowIndex }}"
-                        icon="pi pi-ellipsis-v"
-                        styleClass="p-button-rounded p-button-sm p-button-text" />
-                </td>
-            </tr>
-        </ng-template>
-        <ng-template #emptymessage>
-            <tr>
-                <td [attr.colspan]="7">
-                    {{ 'favoritePage.listing.empty.table' | dm }}
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
-}
+<!-- [loading]="vm.isPagesLoading" -->
 
-<!-- <p-contextMenu
-(onHide)="closedActionsContextMenu()"
-[model]="vm?.pages?.menuActions"
-#cm /> -->
+<p-table
+    (onLazyLoad)="loadPagesLazy($event)"
+    (onRowSelect)="onRowSelect($event)"
+    (onPage)="pageChange.emit()"
+    [value]="$pages()"
+    [totalRecords]="$totalRecords()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="40"
+    [sortOrder]="-1"
+    [showPageLinks]="false"
+    [showCurrentPageReport]="true"
+    [showFirstLastIcon]="false"
+    #table
+    selectionMode="single"
+    sortField="modDate">
+    <ng-template #caption>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 min-w-0">
+                <div class="p-input-icon-right w-64 min-w-0">
+                    <input
+                        #input
+                        class="w-full"
+                        [placeholder]="'Type-To-Search' | dm"
+                        (input)="filterData(input.value)"
+                        type="text"
+                        pInputText
+                        dotAutofocus />
+                </div>
+                <!-- <p-select
+                    (onChange)="setPagesLanguage($event.value)"
+                    [options]="$languages()"
+                    class="w-56" /> -->
+                <div class="flex items-center gap-2 whitespace-nowrap">
+                    <p-checkbox
+                        (onChange)="setPagesArchived($event.checked)"
+                        [inputId]="'show-archived'"
+                        [binary]="true" />
+                    <label [for]="'show-archived'">
+                        {{ 'Show-Archived' | dm }}
+                    </label>
+                </div>
+            </div>
+            <p-button
+                (click)="store.getPageTypes()"
+                [label]="'create.page' | dm"
+                data-testid="createPageButton"
+                styleClass="p-button-sm shrink-0" />
+        </div>
+    </ng-template>
+    <ng-template #header>
+        @if ($pages()?.length) {
+            <tr>
+                <th pSortableColumn="title" style="width: 25%">
+                    {{ 'title' | dm }}
+                    <p-sortIcon field="title" />
+                </th>
+                <th pSortableColumn="urlMap" style="width: 20%">
+                    {{ 'url' | dm }}
+                    <p-sortIcon field="urlMap" />
+                </th>
+                <th pSortableColumn="contentType" style="width: 12%">
+                    {{ 'type' | dm }}
+                    <p-sortIcon field="contentType" />
+                </th>
+                <th pSortableColumn="languageId" style="width: 12%">
+                    {{ 'status' | dm }}
+                    <p-sortIcon field="languageId" />
+                </th>
+                <th style="width: 12%">
+                    {{ 'Last-Editor' | dm }}
+                </th>
+                <th pSortableColumn="modDate" style="width: 14%">
+                    {{ 'Last-Edited' | dm }}
+                    <p-sortIcon field="modDate" />
+                </th>
+                <th style="width: 5%"></th>
+            </tr>
+        }
+    </ng-template>
+    <ng-template #body let-page let-rowIndex="rowIndex">
+        <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="page" pContextMenuRow>
+            <td>{{ page['title'] }}</td>
+            <td [pTooltip]="page['urlMap'] || page['url']" tooltipPosition="bottom">
+                {{ page['urlMap'] || page['url'] }}
+            </td>
+            <td>
+                {{ page['contentType'] }}
+            </td>
+            <td>
+                <div class="flex items-center gap-2 whitespace-nowrap">
+                    <dot-state-icon [labels]="dotStateLabels" [state]="page" size="14px" />
+                    <dot-badge [bordered]="true">
+                        {{ page['languageId'] }}
+                    </dot-badge>
+                    <dot-contentlet-lock-icon [locked]="page['locked']" />
+                </div>
+            </td>
+            <td>
+                {{ page['modUserName'] }}
+            </td>
+            <td>{{ page['modDate'] | dotRelativeDate }}</td>
+            <td>
+                <p-button
+                    id="pageActionButton-{{ rowIndex }}"
+                    icon="pi pi-ellipsis-v"
+                    styleClass="p-button-rounded p-button-sm p-button-text" />
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+        <tr>
+            <td [attr.colspan]="7">
+                {{ 'favoritePage.listing.empty.table' | dm }}
+            </td>
+        </tr>
+    </ng-template>
+</p-table>

@@ -1,17 +1,14 @@
-import { Observable } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
-    EventEmitter,
     HostListener,
     inject,
+    input,
     OnDestroy,
-    Output,
-    ViewChild
+    output,
+    viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -25,12 +22,10 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter } from 'rxjs/operators';
-
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
 @Component({
@@ -55,38 +50,26 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     ]
 })
 export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
-    readonly store = inject(DotPageStore);
-    readonly #dotMessageService = inject(DotMessageService);
+    readonly table = viewChild<Table>('table');
 
-    @ViewChild('cm') cm: ContextMenu;
-    @ViewChild('table') table: Table;
-    @Output() goToUrl = new EventEmitter<string>();
-    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
-    @Output() pageChange = new EventEmitter<void>();
-    vm$: Observable<DotPagesState> = this.store.vm$;
+    readonly $pages = input.required<DotCMSContentlet[]>({ alias: 'pages' });
+    readonly $languages = input.required<DotLanguage[]>({ alias: 'languages' });
+    readonly $totalRecords = input.required<number>({ alias: 'totalRecords' });
+
+    readonly goToUrl = output<string>();
+    readonly showActionsMenu = output<DotActionsMenuEventParams>();
+    readonly pageChange = output<void>();
+
+    readonly #dotMessageService = inject(DotMessageService);
+    #domIdMenuAttached = '';
+    #scrollElement?: HTMLElement;
+
     dotStateLabels = {
         archived: this.#dotMessageService.get('Archived'),
         published: this.#dotMessageService.get('Published'),
         revision: this.#dotMessageService.get('Revision'),
         draft: this.#dotMessageService.get('Draft')
     };
-    #domIdMenuAttached = '';
-    #scrollElement?: HTMLElement;
-
-    constructor() {
-        this.store.actionMenuDomId$
-            .pipe(
-                takeUntilDestroyed(),
-                filter((actionMenuDomId) => !!actionMenuDomId)
-            )
-            .subscribe((actionMenuDomId: string) => {
-                if (actionMenuDomId.includes('tableRow')) {
-                    this.cm.show(new Event('click'));
-                    this.#domIdMenuAttached = actionMenuDomId;
-                    // To hide when the menu is opened
-                } else this.cm.hide();
-            });
-    }
 
     ngAfterViewInit(): void {
         this.#scrollElement = document.querySelector('dot-pages');
@@ -106,12 +89,12 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      * @param {LazyLoadEvent} event
      * @memberof DotPagesListingPanelComponent
      */
-    loadPagesLazy(event: LazyLoadEvent): void {
-        this.store.getPages({
-            offset: event.first >= 0 ? event.first : 0,
-            sortField: event.sortField || '',
-            sortOrder: event.sortOrder || null
-        });
+    loadPagesLazy(_event: LazyLoadEvent): void {
+        // this.store.getPages({
+        //     offset: event.first >= 0 ? event.first : 0,
+        //     sortField: event.sortField || '',
+        //     sortOrder: event.sortOrder || null
+        // });
     }
 
     /**
@@ -120,12 +103,8 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      * @param {DotActionsMenuEventParams} params
      * @memberof DotPagesComponent
      */
-    showActionsContextMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
+    showActionsContextMenu({ event }: DotActionsMenuEventParams): void {
         event.stopPropagation();
-        this.store.clearMenuActions();
-        this.cm.hide();
-
-        this.store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -143,10 +122,10 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      * @param {string} keyword
      * @memberof DotPagesListingPanelComponent
      */
-    filterData(keyword: string): void {
-        this.store.setKeyword(keyword);
-        this.store.getPages({ offset: 0 });
-        this.store.setSessionStorageFilterParams();
+    filterData(_keyword: string): void {
+        // this.store.setKeyword(keyword);
+        // this.store.getPages({ offset: 0 });
+        // this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -169,10 +148,10 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      * @param {string} languageId
      * @memberof DotPagesListingPanelComponent
      */
-    setPagesLanguage(languageId: string): void {
-        this.store.setLanguageId(languageId);
-        this.store.getPages({ offset: 0 });
-        this.store.setSessionStorageFilterParams();
+    setPagesLanguage(_languageId: string): void {
+        // this.store.setLanguageId(languageId);
+        // this.store.getPages({ offset: 0 });
+        // this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -181,10 +160,10 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      * @param {string} archived
      * @memberof DotPagesListingPanelComponent
      */
-    setPagesArchived(archived: string): void {
-        this.store.setArchived(archived);
-        this.store.getPages({ offset: 0 });
-        this.store.setSessionStorageFilterParams();
+    setPagesArchived(_archived: string): void {
+        // this.store.setArchived(archived);
+        // this.store.getPages({ offset: 0 });
+        // this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -194,9 +173,10 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      */
     @HostListener('window:click')
     closeContextMenu(): void {
-        if (this.#domIdMenuAttached.includes('tableRow')) {
-            this.cm.hide();
-            this.store.clearMenuActions();
+        if (this.#domIdMenuAttached) {
+            // this.cm()?.hide();
+            // this.store.clearMenuActions();
+            // this.#domIdMenuAttached = '';
         }
     }
 }

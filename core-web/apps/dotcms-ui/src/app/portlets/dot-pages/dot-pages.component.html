@@ -11,6 +11,9 @@
                     [model]="vm.pages.menuActions"
                     #menu></p-menu>
                 <dot-pages-listing-panel
+                    [pages]="dotCMSPagesStore.pages()"
+                    [languages]="[]"
+                    [totalRecords]="dotCMSPagesStore.$totalRecords()"
                     (goToUrl)="goToUrl($event)"
                     (showActionsMenu)="showActionsMenu($event)"
                     (pageChange)="scrollToTop()"
@@ -18,13 +21,13 @@
                 @if (vm.pages.addToBundleCTId) {
                     <dot-add-to-bundle
                         (cancel)="vm.pages.addToBundleCTId = null"
-                        [assetIdentifier]="vm.pages.addToBundleCTId"></dot-add-to-bundle>
+                        [assetIdentifier]="vm.pages.addToBundleCTId" />
                 }
             </div>
         } @else {
             <div class="dot-pages__spinner-container">
                 <div class="dot-pages__spinner-container dot-pages__spinner-overlay">
-                    <p-progressSpinner styleClass="p-progress-spinner-custom"></p-progressSpinner>
+                    <p-progressSpinner styleClass="p-progress-spinner-custom" />
                 </div>
             </div>
         }
