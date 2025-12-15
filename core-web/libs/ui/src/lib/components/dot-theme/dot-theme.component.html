@@ -29,9 +29,15 @@
     optionLabel="title">
     <ng-template pTemplate="filter">
         <div class="flex flex-col gap-2 mb-2">
-            <dot-site
-                [value]="$selectedSiteId() || $currentSite()?.identifier"
-                (onChange)="onSiteChange($event)" />
+            <div
+                #siteSelectorWrapper
+                class="w-full">
+                <dot-site
+                    [value]="$selectedSiteId() || $currentSite()?.identifier"
+                    (onChange)="onSiteChange($event)"
+                    (onShow)="isInteractingWithSiteSelector = true"
+                    (onHide)="onSiteSelectorHide()" />
+            </div>
             <p-iconfield>
                 <input
                     pInputText
