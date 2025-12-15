@@ -11,7 +11,6 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild,
     inject
 } from '@angular/core';
 import {
@@ -67,7 +66,6 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     private readonly cd = inject(ChangeDetectorRef);
     private readonly destroy$ = new Subject<boolean>();
 
-    @ViewChild('dot-site-selector-field') siteSelector;
     dialogActions: DotDialogActions;
     inputNameWithType = '';
     dialogTitle = '';
