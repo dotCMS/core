@@ -16,7 +16,7 @@ import {
     askUserNameForDotcmsCloud,
     prepareDirectory
 } from './asks';
-import { DOTCMS_HEALTH_API, DOTCMS_HOST, DOTCMS_USER, FRAMEWORKS } from './constants';
+import { DOTCMS_HEALTH_API, DOTCMS_HOST, DOTCMS_USER } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import {
@@ -39,18 +39,28 @@ program
 
 program
     .argument('<project-name>', 'Name of the project folder')
-    .option(
-        '-f, --framework <framework>',
-        `Choose frontend framework. Options: ${FRAMEWORKS.join(', ')}`,
-        (value) => {
-            if (!FRAMEWORKS.includes(value as SupportedFrontEndFrameworks)) {
-                throw new Error(
-                    `Invalid framework "${value}". Choose one of: ${FRAMEWORKS.join(', ')}`
-                );
-            }
-            return value;
-        }
-    )
+    // framework flags
+    .option('--nextjs', 'Use Next.js')
+    .option('--angular', 'Use Angular')
+    .option('--angular-ssr', 'Use Angular SSR')
+    .option('--astro', 'Use Astro')
+
+    // cloud / no-cloud
+    .option('--no-cloud', 'Use dotCMS local instance using docker')
+    .option('--cloud', 'Use dotCMS Cloud')
+    // .option(
+    //     '-f, --framework <framework>',
+    //     `Choose frontend framework. Options: ${FRAMEWORKS.join(', ')}`,
+    //     (value) => {
+    //         if (!FRAMEWORKS.includes(value as SupportedFrontEndFrameworks)) {
+    //             throw new Error(
+    //                 `Invalid framework "${value}". Choose one of: ${FRAMEWORKS.join(', ')}`
+    //             );
+    //         }
+    //         return value;
+    //     }
+    // )
+
     .action(async (projectName, options) => {
         // <-- Add beta notice here
         console.log(chalk.bgYellow.black(' ⚠️  Beta Version Notice  ⚠️ '));
@@ -60,18 +70,46 @@ program
             )
         );
 
-        let { framework } = options;
-
-        // console.log(chalk.cyan("📁 Preparing project..."));
-
         // Ask directory location
         const directoryInput = await askDirectory();
         const finalDirectory = await prepareDirectory(directoryInput, projectName);
 
+        /* -------------------------------------------------------
+         * RESOLVE FRAMEWORK
+         * -----------------------------------------------------*/
+
+        const resolveFramework = (): SupportedFrontEndFrameworks | undefined => {
+            if (options.nextjs) return 'nextjs';
+            if (options.angular) return 'angular';
+            if (options['angular-ssr']) return 'angular-ssr';
+            if (options.astro) return 'astro';
+            return options.framework;
+        };
+
+        const selectedFrameworkFlags: SupportedFrontEndFrameworks[] = (
+            ['nextjs', 'angular', 'angular-ssr', 'astro'] as SupportedFrontEndFrameworks[]
+        ).filter((f) => options[f]);
+
+        if (selectedFrameworkFlags.length > 1) {
+            console.log(chalk.red('❌ Please select only one framework flag.'));
+            process.exit(1);
+        }
+
+        let framework = resolveFramework();
+
+        if (!framework) {
+            framework = await askFramework();
+        }
+
+        // let { framework } = options;
+
+        // console.log(chalk.cyan("📁 Preparing project..."));
+
         // Ask framework
         if (!framework) framework = await askFramework();
 
-        const isCloudInstanceSelected = await askCloudOrLocalInstance();
+        const isCloudInstanceSelected =
+            typeof options.cloud === 'boolean' ? options.cloud : await askCloudOrLocalInstance();
 
         // console.log(chalk.green("✔ Starting DotCMS app setup...\n"));
         // const spinner = ora(`Scaffolding ${framework} application ...`).start();

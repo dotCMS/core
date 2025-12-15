@@ -1,4 +1,4 @@
-export type SupportedFrontEndFrameworks = 'nextjs' | 'astro' | 'vuejs' | 'angular' | 'angular-ssr';
+export type SupportedFrontEndFrameworks = 'nextjs' | 'astro' | 'angular' | 'angular-ssr';
 
 export type FrameworkChoices = {
     name: string;

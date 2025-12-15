@@ -38,8 +38,6 @@ export function getPortByFramework(framework: SupportedFrontEndFrameworks): stri
             return '4200';
         case 'nextjs':
             return '3000';
-        case 'vuejs':
-            return '5173';
         case 'astro':
             return '4321';
         default:

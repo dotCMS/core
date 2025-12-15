@@ -11,7 +11,7 @@
         "dist",
         "!**/*.tsbuildinfo"
     ],
-  "dependencies": {
-    "tslib": "^2.3.0"
-  }
+    "dependencies": {
+        "tslib": "^2.3.0"
+    }
 }

@@ -143,11 +143,8 @@
         "execa": "^9.6.0",
         "fs-extra": "^11.3.2",
         "inquirer": "^13.0.1",
-        "log-symbols": "^7.0.1",
         "ora": "^9.0.0",
-        "ts-results": "^3.3.0",
-        "zod": "4.1.9",
-        "zone.js": "0.15.1"
+        "ts-results": "^3.3.0"
     },
     "devDependencies": {
         "@analytics/queue-utils": "^0.1.3",
