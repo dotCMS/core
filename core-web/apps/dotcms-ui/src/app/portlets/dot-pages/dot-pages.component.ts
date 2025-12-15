@@ -51,6 +51,7 @@ import {
     DotPageStore,
     FAVORITE_PAGE_LIMIT
 } from './dot-pages-store/dot-pages.store';
+import { DotCMSPagesStore } from './store/store';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
@@ -71,7 +72,8 @@ export interface DotActionsMenuEventParams {
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        DotFavoritePageService
+        DotFavoritePageService,
+        DotCMSPagesStore
     ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
@@ -96,6 +98,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotPageStore);
+    readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
 
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.#store.vm$;
@@ -105,6 +108,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
 
     constructor() {
         this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
+        this.#dotCMSPagesStore.getPages();
     }
 
     /**

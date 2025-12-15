@@ -67,62 +67,55 @@
                 <tr>
                     <th pSortableColumn="title" style="width: 25%">
                         {{ 'title' | dm }}
-                        <p-sortIcon field="title"></p-sortIcon>
+                        <p-sortIcon field="title" />
                     </th>
                     <th pSortableColumn="urlMap" style="width: 20%">
                         {{ 'url' | dm }}
-                        <p-sortIcon field="urlMap"></p-sortIcon>
+                        <p-sortIcon field="urlMap" />
                     </th>
                     <th pSortableColumn="contentType" style="width: 12%">
                         {{ 'type' | dm }}
-                        <p-sortIcon field="contentType"></p-sortIcon>
+                        <p-sortIcon field="contentType" />
                     </th>
                     <th pSortableColumn="languageId" style="width: 12%">
                         {{ 'status' | dm }}
-                        <p-sortIcon field="languageId"></p-sortIcon>
+                        <p-sortIcon field="languageId" />
                     </th>
                     <th style="width: 12%">
                         {{ 'Last-Editor' | dm }}
                     </th>
                     <th pSortableColumn="modDate" style="width: 14%">
                         {{ 'Last-Edited' | dm }}
-                        <p-sortIcon field="modDate"></p-sortIcon>
+                        <p-sortIcon field="modDate" />
                     </th>
                     <th style="width: 5%"></th>
                 </tr>
             }
         </ng-template>
-        <ng-template #body let-rowData let-rowIndex="rowIndex">
-            <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="rowData" pContextMenuRow>
-                <td>{{ rowData['title'] }}</td>
-                <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
-                    {{ rowData['urlMap'] || rowData['url'] }}
+        <ng-template #body let-page let-rowIndex="rowIndex">
+            <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="page" pContextMenuRow>
+                <td>{{ page['title'] }}</td>
+                <td [pTooltip]="page['urlMap'] || page['url']" tooltipPosition="bottom">
+                    {{ page['urlMap'] || page['url'] }}
                 </td>
                 <td>
-                    {{ rowData['contentType'] }}
+                    {{ page['contentType'] }}
                 </td>
                 <td>
                     <div class="flex items-center gap-2 whitespace-nowrap">
-                        <dot-state-icon [labels]="dotStateLabels" [state]="rowData" size="14px" />
+                        <dot-state-icon [labels]="dotStateLabels" [state]="page" size="14px" />
                         <dot-badge [bordered]="true">
-                            {{ vm.languageLabels[rowData['languageId']] }}
+                            {{ vm.languageLabels[page['languageId']] }}
                         </dot-badge>
-                        <dot-contentlet-lock-icon [locked]="rowData['locked']" />
+                        <dot-contentlet-lock-icon [locked]="page['locked']" />
                     </div>
                 </td>
                 <td>
-                    {{ rowData['modUserName'] }}
+                    {{ page['modUserName'] }}
                 </td>
-                <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
+                <td>{{ page['modDate'] | dotRelativeDate }}</td>
                 <td>
                     <p-button
-                        (click)="
-                            showActionsMenu.emit({
-                                event: $event,
-                                actionMenuDomId: 'pageActionButton-' + rowIndex,
-                                item: rowData
-                            })
-                        "
                         id="pageActionButton-{{ rowIndex }}"
                         icon="pi pi-ellipsis-v"
                         styleClass="p-button-rounded p-button-sm p-button-text" />

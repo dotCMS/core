@@ -29,7 +29,11 @@
                         [actionButtonId]="'favoritePageActionButton-' + i"
                         [imageUri]="
                             item.screenshot
-                                ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
+                                ? item.screenshot +
+                                  '?language_id=' +
+                                  item.languageId +
+                                  '&' +
+                                  timeStamp
                                 : ''
                         "
                         [title]="item.title"

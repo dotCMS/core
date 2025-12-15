@@ -10,20 +10,14 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
     selector: 'dot-pages-card',
     templateUrl: './dot-pages-card.component.html',
     styleUrls: ['./dot-pages-card.component.scss'],
-    imports: [
-        CardModule,
-        ButtonModule,
-        TooltipModule,
-        DotPagesFavoritePageEmptySkeletonComponent
-    ]
+    imports: [CardModule, ButtonModule, TooltipModule, DotPagesFavoritePageEmptySkeletonComponent]
 })
-export class DotPagesCardComponent {    
-    readonly $actionButtonId = input<string>('', { alias: "actionButtonId"});
-    readonly $imageUri = input<string>('', { alias: "imageUri"});
-    readonly $title = input<string>('', { alias: "title"});
-    readonly $url = input<string>('', { alias: "url"});
-    readonly $ownerPage = input<boolean>(false, { alias: "ownerPage"});
-
+export class DotPagesCardComponent {
+    readonly $actionButtonId = input<string>('', { alias: 'actionButtonId' });
+    readonly $imageUri = input<string>('', { alias: 'imageUri' });
+    readonly $title = input<string>('', { alias: 'title' });
+    readonly $url = input<string>('', { alias: 'url' });
+    readonly $ownerPage = input<boolean>(false, { alias: 'ownerPage' });
 
     readonly edit = output<boolean>();
     readonly goTo = output<boolean>();
