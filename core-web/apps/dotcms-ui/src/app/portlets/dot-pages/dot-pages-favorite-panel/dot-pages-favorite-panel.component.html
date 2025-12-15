@@ -1,9 +1,6 @@
 @if (vm$ | async; as vm) {
     <p-panel
         (onAfterToggle)="toggleFavoritePagesPanel($event)"
-        [ngClass]="{
-            'dot-pages-panel__empty-state': vm.favoritePages?.items?.length === 0
-        }"
         [toggleable]="true"
         [collapsed]="vm.isFavoritePanelCollaped"
         toggler="header"
@@ -11,33 +8,35 @@
         expandIcon="pi pi-angle-down"
         collapseIcon="pi pi-angle-up">
         <ng-template pTemplate="header">
-            <span class="dot-pages-panel__header">
+            <span class="flex items-center gap-2">
                 <i class="pi pi-star-fill" data-testId="bookmarksIcon"></i>
-                <span>{{ 'favoritePage.panel.header' | dm }}</span>
+                <span class="font-bold">{{ 'favoritePage.panel.header' | dm }}</span>
             </span>
         </ng-template>
         @if (vm.favoritePages?.items?.length !== 0) {
-            @for (item of vm.favoritePages.items; track $index) {
-                <dot-pages-card
-                    (edit)="editFavoritePage(item)"
-                    (goTo)="goToUrl.emit(item.url)"
-                    (showActionMenu)="
-                        showActionsMenu.emit({
-                            event: $event,
-                            actionMenuDomId: 'favoritePageActionButton-' + i,
-                            item
-                        })
-                    "
-                    [actionButtonId]="'favoritePageActionButton-' + i"
-                    [imageUri]="
-                        item.screenshot
-                            ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
-                            : ''
-                    "
-                    [title]="item.title"
-                    [url]="item.url"
-                    [ownerPage]="item.owner === vm.loggedUser.id"></dot-pages-card>
-            }
+            <div class="grid gap-6 [grid-template-columns:repeat(auto-fill,250px)]">
+                @for (item of vm.favoritePages.items; track $index; let i = $index) {
+                    <dot-pages-card
+                        (edit)="editFavoritePage(item)"
+                        (goTo)="goToUrl.emit(item.url)"
+                        (showActionMenu)="
+                            showActionsMenu.emit({
+                                event: $event,
+                                actionMenuDomId: 'favoritePageActionButton-' + i,
+                                item
+                            })
+                        "
+                        [actionButtonId]="'favoritePageActionButton-' + i"
+                        [imageUri]="
+                            item.screenshot
+                                ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
+                                : ''
+                        "
+                        [title]="item.title"
+                        [url]="item.url"
+                        [ownerPage]="item.owner === vm.loggedUser.id" />
+                }
+            </div>
         } @else {
             <div class="dot-pages-empty__container">
                 <i class="pi pi-star"></i>

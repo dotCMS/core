@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -12,20 +11,21 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
     templateUrl: './dot-pages-card.component.html',
     styleUrls: ['./dot-pages-card.component.scss'],
     imports: [
-        CommonModule,
         CardModule,
-        DotPagesFavoritePageEmptySkeletonComponent,
         ButtonModule,
-        TooltipModule
+        TooltipModule,
+        DotPagesFavoritePageEmptySkeletonComponent
     ]
 })
-export class DotPagesCardComponent {
-    @Input() actionButtonId: string;
-    @Input() imageUri: string;
-    @Input() title: string;
-    @Input() url: string;
-    @Input() ownerPage: boolean;
-    @Output() edit = new EventEmitter<boolean>();
-    @Output() goTo = new EventEmitter<boolean>();
-    @Output() showActionMenu = new EventEmitter<MouseEvent>();
+export class DotPagesCardComponent {    
+    readonly $actionButtonId = input<string>('', { alias: "actionButtonId"});
+    readonly $imageUri = input<string>('', { alias: "imageUri"});
+    readonly $title = input<string>('', { alias: "title"});
+    readonly $url = input<string>('', { alias: "url"});
+    readonly $ownerPage = input<boolean>(false, { alias: "ownerPage"});
+
+
+    readonly edit = output<boolean>();
+    readonly goTo = output<boolean>();
+    readonly showActionMenu = output<MouseEvent>();
 }
