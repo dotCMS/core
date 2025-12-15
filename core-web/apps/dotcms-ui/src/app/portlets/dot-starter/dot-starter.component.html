@@ -1,49 +1,22 @@
-<div style="padding: 2rem; max-width: 800px;">
+<div style="padding: 2rem; max-width: 800px">
     <h2>Dot Workflow Component Test</h2>
 
-    <div style="margin-bottom: 2rem;">
-        <h3>1. Content Type Component</h3>
-        <dot-content-type
+    <div style="margin-bottom: 2rem">
+        <h3>1. Enabled State</h3>
+        <dot-workflow
             [(ngModel)]="selectedContentType"
             [placeholder]="'Select a content type'"
             (onChange)="onContentTypeChange($event)"
-            style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedContentType || 'None' }}</p>
+            style="width: 100%; margin-bottom: 1rem" />
+        <p>
+            <strong>Selected:</strong>
+            {{ selectedContentType?.name || 'None' }}
+        </p>
     </div>
 
-    <div style="margin-bottom: 2rem;">
-        <h3>2. Site Component</h3>
-        <dot-site
-            [(ngModel)]="selectedSite"
-            [placeholder]="'Select a site'"
-            (onChange)="onSiteChange($event)"
-            style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedSite || 'None' }}</p>
-    </div>
-
-    <div style="margin-bottom: 2rem;">
-        <h3>3. Theme Component</h3>
-        <dot-theme
-            [(ngModel)]="selectedTheme"
-            [placeholder]="'Select a theme'"
-            (onChange)="onThemeChange($event)"
-            style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedTheme || 'None' }}</p>
-    </div>
-
-    <div style="margin-bottom: 2rem;">
-        <h3>3b. Theme Component (with initial value)</h3>
-        <dot-theme
-            [(ngModel)]="selectedTheme2"
-            [placeholder]="'Select a theme'"
-            (onChange)="onThemeChange($event)"
-            style="width: 100%; margin-bottom: 1rem;" />
-        <p><strong>Selected:</strong> {{ selectedTheme2 || 'None' }}</p>
-    </div>
-
-    <div style="margin-bottom: 2rem;">
-        <h3>4. Disabled State</h3>
-        <dot-content-type
+    <!-- <div style="margin-bottom: 2rem;">
+        <h3>2. Disabled State</h3>
+        <dot-workflow
             [(ngModel)]="selectedContentType"
             [disabled]="true"
             [placeholder]="'Disabled field'"
@@ -51,11 +24,11 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>5. Toggle Disabled State</h3>
+        <h3>3. Toggle Disabled State</h3>
         <button (click)="isDisabled = !isDisabled" style="margin-bottom: 1rem;">
             {{ isDisabled ? 'Enable' : 'Disable' }} Field
         </button>
-        <dot-content-type
+        <dot-workflow
             [(ngModel)]="selectedContentType"
             [disabled]="isDisabled"
             [placeholder]="'Toggle disabled state'"
@@ -63,11 +36,11 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>6. Initially Disabled (with value)</h3>
+        <h3>4. Initially Disabled (with value)</h3>
         <button (click)="isInitiallyDisabled = !isInitiallyDisabled" style="margin-bottom: 1rem;">
             {{ isInitiallyDisabled ? 'Enable' : 'Disable' }} Field
         </button>
-        <dot-content-type
+        <dot-workflow
             [(ngModel)]="selectedContentType"
             [disabled]="isInitiallyDisabled"
             [placeholder]="'Initially disabled'"
@@ -75,8 +48,8 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>7. Form Control Integration</h3>
-        <dot-content-type
+        <h3>5. Form Control Integration</h3>
+        <dot-workflow
             [formControl]="contentTypeControl"
             [placeholder]="'Form control'"
             style="width: 100%; margin-bottom: 1rem;" />
@@ -87,6 +60,5 @@
         <button type="button" (click)="contentTypeControl.enable()">
             Enable Form Control
         </button>
-    </div>
+    </div> -->
 </div>
-
