@@ -9,7 +9,7 @@
  * - `checkboxGroup`: Multiple-value selection from checkbox options
  * - `switch`: Boolean toggle switch (reserved for future implementation)
  */
-export type StyleEditorFieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup' | 'switch';
+export type StyleEditorFieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup';
 
 /**
  * Available input types for input fields in the style editor.
@@ -67,6 +67,8 @@ export type StyleEditorInputValueType<T extends StyleEditorFieldInputType> = T e
  * ```
  */
 export interface StyleEditorInputFieldConfig<T extends StyleEditorFieldInputType> {
+    /** The unique identifier for this field */
+    id: string;
     /** The label text displayed to users for this field */
     label: string;
     /** The input type that determines the value type ('text' for strings, 'number' for numbers) */
@@ -186,6 +188,8 @@ export type StyleEditorCheckboxDefaultValue = Record<string, boolean>;
  * @property label - The human-readable label displayed for this field in the UI
  */
 export interface StyleEditorBaseField {
+    /** The unique identifier for this field */
+    id: string;
     /** The type of field, used to discriminate between different field types in union types */
     type: StyleEditorFieldType;
     /** The label text displayed to users for this field */
@@ -279,6 +283,7 @@ export type StyleEditorInputField =
  * ```
  */
 export interface StyleEditorDropdownField extends StyleEditorBaseField {
+
     /** Discriminator: must be 'dropdown' */
     type: 'dropdown';
     /** Array of selectable options. Can be strings or objects with label and value properties */
@@ -590,6 +595,8 @@ export interface StyleEditorFieldSchemaConfig {
  * @property config - Object containing all field-specific configuration properties
  */
 export interface StyleEditorFieldSchema {
+    /** The unique identifier for this field */
+    id: string;
     /** The field type identifier */
     type: StyleEditorFieldType;
     /** The field label */

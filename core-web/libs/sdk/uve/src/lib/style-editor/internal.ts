@@ -61,7 +61,8 @@ import {
 function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
     const base = {
         type: field.type,
-        label: field.label
+        label: field.label,
+        id: field.id
     };
 
     const config: StyleEditorFieldSchema['config'] = {};

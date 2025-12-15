@@ -5,8 +5,10 @@ import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
+import { DotUveStyleEditorFormComponent } from "./components/dot-uve-style-editor-form/dot-uve-style-editor-form.component";
 import { DotUVEPaletteListTypes } from './models';
 
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
@@ -20,7 +22,7 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
  */
 @Component({
     selector: 'dot-uve-palette',
-    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule, JsonPipe],
+    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule, JsonPipe, DotUveStyleEditorFormComponent],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -54,7 +56,7 @@ export class DotUvePaletteComponent {
     /**
      * The Style Schema to use for the current selected contentlet.
      */
-    $styleSchema = input<unknown>(undefined, { alias: 'styleSchema' });
+    $styleSchema = input<StyleEditorFormSchema>(undefined, { alias: 'styleSchema' });
 
     /**
      * Emits whenever the active tab in the palette changes.

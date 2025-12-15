@@ -1,0 +1,109 @@
+@if (form && sections()) {
+    <form [formGroup]="form" class="uve-style-editor-form">
+        <p-accordion [multiple]="true" class="uve-accordion">
+            @for (section of sections(); track section.title) {
+                <p-accordionTab [header]="section.title" class="uve-accordion-tab">
+                    <div class="form-fields">
+                        @for (field of section.fields; track field.id) {
+                            @let fieldKey = field.id;
+                            
+                            <div class="form-field" [class.field-radio-image]="field.type === 'radio' && field.hasRadioImage">
+                                <label class="field-label">{{ field.label }}</label>
+                                
+                                @switch (field.type) {
+                                    @case ('dropdown') {
+                                        <p-dropdown
+                                            [formControlName]="fieldKey"
+                                            [options]="field.dropdownOptions || []"
+                                            optionLabel="label"
+                                            optionValue="value"
+                                            [showClear]="false"
+                                            class="uve-dropdown">
+                                        </p-dropdown>
+                                    }
+                                    
+                                    @case ('checkboxGroup') {
+                                        <div class="checkbox-group">
+                                            @for (option of field.checkboxOptions || []; track option.value) {
+                                                @let checkboxControl = field.checkboxControls?.get(option.value);
+                                                @if (checkboxControl) {
+                                                    <div class="checkbox-item">
+                                                        <p-checkbox
+                                                            [formControl]="checkboxControl"
+                                                            [binary]="true"
+                                                            [inputId]="fieldKey + '-' + option.value"
+                                                            [label]="option.label"
+                                                            class="uve-checkbox">
+                                                        </p-checkbox>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    
+                                    @case ('radio') {
+                                        @if (field.hasRadioImage) {
+                                            <div class="radio-image-group" [style.grid-template-columns]="'repeat(' + (field.columns || 1) + ', 1fr)'">
+                                                @for (option of field.radioOptions || []; track option.value) {
+                                                    <div class="radio-image-item">
+                                                        <input
+                                                            type="radio"
+                                                            [id]="fieldKey + '-' + option.value"
+                                                            [formControlName]="fieldKey"
+                                                            [value]="option.value"
+                                                            class="radio-image-input">
+                                                        <label
+                                                            [for]="fieldKey + '-' + option.value"
+                                                            class="radio-image-label">
+                                                            <img
+                                                                [src]="option.imageURL"
+                                                                [alt]="option.label"
+                                                                [style.width.px]="option.width || '100%'"
+                                                                class="radio-image">
+                                                            <span class="radio-image-text">{{ option.label }}</span>
+                                                        </label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        } @else {
+                                            <div class="radio-group">
+                                                @for (option of field.radioOptions || []; track option.value) {
+                                                    <div class="radio-item">
+                                                        <p-radioButton
+                                                            [formControlName]="fieldKey"
+                                                            [value]="option.value"
+                                                            [inputId]="fieldKey + '-' + option.value"
+                                                            [label]="option.label"
+                                                            class="uve-radio">
+                                                        </p-radioButton>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                    
+                                    @case ('input') {
+                                        <input
+                                            pInputText
+                                            [formControlName]="fieldKey"
+                                            [id]="fieldKey"
+                                            class="uve-input">
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                </p-accordionTab>
+            }
+        </p-accordion>
+        
+        <div class="form-actions">
+            <p-button
+                label="Print Values"
+                (onClick)="printFormValues()"
+                [outlined]="true"
+                class="print-button">
+            </p-button>
+        </div>
+    </form>
+}

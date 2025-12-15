@@ -1,0 +1,299 @@
+@use "variables" as *;
+
+:host {
+    height: 100%;
+    width: 100%;
+    // background: white;
+}
+
+.uve-style-editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0;
+    overflow-y: auto;
+    height: 100%;
+
+    ::ng-deep {
+        .p-accordion p-accordiontab .p-accordion-header .p-accordion-header-link {
+            border-radius: 0;
+            border-right: none;
+            border-left: none;
+            color: $color-palette-blue-shade;
+            font-weight: $font-weight-bold;
+            min-height: 3.75rem; // 60px
+        }
+
+        .p-accordion p-accordiontab .p-accordion-tab {
+            // Ask about this
+            // margin-bottom: 0;
+        }
+
+        // Expanded
+        .p-accordion .p-accordion-header.p-highlight .p-accordion-header-link {
+            border-bottom: 1px solid $color-palette-gray-400;
+        }
+
+        // Accordion content
+        .p-accordion .p-accordion-content {
+            border: none;
+        }
+    }
+
+    // Form fields container
+    .form-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    // Individual form field
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .field-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.25rem;
+        }
+    }
+
+    // Dropdown styling
+    ::ng-deep .uve-dropdown {
+        width: 100%;
+
+        .p-dropdown {
+            width: 100%;
+    //         border: 1px solid #d1d5db;
+    //         border-radius: 0.375rem;
+    //         background: white;
+    //         transition: border-color 0.2s ease;
+
+    //         &:hover {
+    //             border-color: #9ca3af;
+    //         }
+
+    //         &:focus,
+    //         &.p-focus {
+    //             border-color: #1e3a5f;
+    //             box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+    //         }
+
+    //         .p-dropdown-label {
+    //             padding: 0.5rem 0.75rem;
+    //             font-size: 0.875rem;
+    //             color: #111827;
+    //         }
+
+    //         .p-dropdown-trigger {
+    //             color: #6b7280;
+    //             width: 2rem;
+    //         }
+        }
+    }
+
+    // Checkbox group styling
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+    }
+
+    // ::ng-deep .uve-checkbox {
+    //     .p-checkbox {
+    //         .p-checkbox-box {
+    //             width: 1.25rem;
+    //             height: 1.25rem;
+    //             border: 1px solid #d1d5db;
+    //             border-radius: 0.25rem;
+    //             background: white;
+    //             transition: all 0.2s ease;
+
+    //             &:hover {
+    //                 border-color: #9ca3af;
+    //             }
+
+    //             &.p-highlight {
+    //                 background: #1e3a5f; // Dark blue when checked
+    //                 border-color: #1e3a5f;
+
+    //                 .p-checkbox-icon {
+    //                     color: white;
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     .p-checkbox-label {
+    //         margin-left: 0.5rem;
+    //         font-size: 0.875rem;
+    //         color: #374151;
+    //         cursor: pointer;
+    //     }
+    // }
+
+    // Radio group styling (standard)
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .radio-item {
+        display: flex;
+        align-items: center;
+    }
+
+    // ::ng-deep .uve-radio {
+    //     .p-radiobutton {
+    //         .p-radiobutton-box {
+    //             width: 1.25rem;
+    //             height: 1.25rem;
+    //             border: 1px solid #d1d5db;
+    //             background: white;
+    //             transition: all 0.2s ease;
+
+    //             &:hover {
+    //                 border-color: #9ca3af;
+    //             }
+
+    //             &.p-highlight {
+    //                 border-color: #1e3a5f; // Dark blue border
+    //                 background: white;
+
+    //                 .p-radiobutton-icon {
+    //                     background-color: #1e3a5f; // Dark blue fill
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     .p-radiobutton-label {
+    //         margin-left: 0.5rem;
+    //         font-size: 0.875rem;
+    //         color: #374151;
+    //         cursor: pointer;
+    //     }
+    // }
+
+    // Radio image group styling
+    .field-radio-image {
+        .radio-image-group {
+            display: grid;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .radio-image-item {
+            position: relative;
+        }
+
+        .radio-image-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .radio-image-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            border: 2px solid #e5e7eb; // Light grey border
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+            background: white;
+
+            &:hover {
+                border-color: #d1d5db;
+            }
+
+            .radio-image {
+                width: 100%;
+                height: auto;
+                border-radius: 0.25rem;
+                object-fit: cover;
+                display: block;
+            }
+
+            .radio-image-text {
+                font-size: 0.875rem;
+                color: #374151;
+                text-align: center;
+                font-weight: 500;
+            }
+        }
+
+        .radio-image-input:checked + .radio-image-label {
+            border-color: #60a5fa; // Light blue border when selected
+            background: #f0f9ff; // Very light blue background
+        }
+
+        .radio-image-input:focus + .radio-image-label {
+            outline: 2px solid rgba(96, 165, 250, 0.5);
+            outline-offset: 2px;
+        }
+    }
+
+    // Input styling
+    // ::ng-deep .uve-input {
+    //     width: 100%;
+    //     padding: 0.5rem 0.75rem;
+    //     border: 1px solid #d1d5db;
+    //     border-radius: 0.375rem;
+    //     font-size: 0.875rem;
+    //     color: #111827;
+    //     background: white;
+    //     transition: border-color 0.2s ease;
+
+    //     &:hover {
+    //         border-color: #9ca3af;
+    //     }
+
+    //     &:focus {
+    //         border-color: #1e3a5f;
+    //         outline: none;
+    //         box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+    //     }
+    // }
+
+    // Form actions
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 1rem;
+    }
+
+    ::ng-deep .print-button {
+        .p-button {
+            background: white;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background: #f9fafb;
+                border-color: #9ca3af;
+            }
+
+            &:focus {
+                box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+            }
+        }
+    }
+}

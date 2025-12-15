@@ -3,11 +3,11 @@
   "version": "1.1.1",
   "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18"
+    "react-dom": ">=18",
+    "@dotcms/uve": "latest",
+    "@dotcms/client": "latest"
   },
   "dependencies": {
-    "@dotcms/uve": "latest",
-    "@dotcms/client": "latest",
     "@tinymce/tinymce-react": "6.2.1"
   },
   "devDependencies": {

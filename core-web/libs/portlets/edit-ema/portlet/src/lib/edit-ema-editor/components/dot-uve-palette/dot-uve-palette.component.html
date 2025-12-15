@@ -51,7 +51,9 @@
                 <div
                     class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
                     @if ($styleSchema()) {
-                        <pre style="width: 100%; overflow: auto">{{ $styleSchema() | json }}</pre>
+                        <!-- <pre style="width: 100%; overflow: auto">{{ $styleSchema() | json }}</pre> -->
+
+                        <dot-uve-style-editor-form [schema]="$styleSchema()" />
                     } @else {
                         <span>No styles to show yet.</span>
                         <span>
