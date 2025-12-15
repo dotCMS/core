@@ -28,24 +28,19 @@
     dataKey="identifier"
     optionLabel="title">
     <ng-template pTemplate="filter">
-        <div class="flex flex-col gap-2 mb-2">
-            <dot-site
-                [value]="$selectedSiteId() || $currentSite()?.identifier"
-                (onChange)="onSiteChange($event)" />
-            <p-iconfield>
-                <input
-                    pInputText
-                    class="w-full"
-                    type="text"
-                    role="searchbox"
-                    autocomplete="off"
-                    (input)="onFilterChange($any($event.target).value)"
-                    [value]="$state.filterValue() || ''"
-                    [placeholder]="'Search themes...'"
-                    (click)="$event.stopPropagation()" />
-                <p-inputicon class="pi pi-search" />
-            </p-iconfield>
-        </div>
+        <p-iconfield>
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="$state.filterValue() || ''"
+                [placeholder]="'Search themes...'"
+                (input)="onFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+            <p-inputicon class="pi pi-search" />
+        </p-iconfield>
     </ng-template>
 
     <ng-template let-theme #item>
