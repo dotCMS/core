@@ -4,7 +4,7 @@
             "runner": "nx/tasks-runners/default",
             "options": {
                 "cacheableOperations": ["build", "lint", "test", "e2e", "build-storybook"],
-                "parallel": 1
+                "parallel": 3
             }
         }
     },
@@ -234,5 +234,8 @@
         "version": {
             "preVersionCommand": "yarn nx run-many -t build"
         }
+    },
+    "serve": {
+        "dependsOn": []
     }
 }
