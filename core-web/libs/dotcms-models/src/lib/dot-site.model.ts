@@ -1,34 +1,3 @@
-import { DotCMSContentType } from './dot-content-types.model';
-
-/**
- * @deprecated Use SiteEntity instead
- */
-export interface Site {
-    archived?: string;
-    categoryId?: string;
-    contentType: DotCMSContentType;
-    contentTypeId?: string;
-    host?: string;
-    hostname: string;
-    identifier: string;
-    inode?: string;
-    keyValue?: boolean;
-    locked?: boolean;
-    modDate?: Date;
-    name: string;
-    owner?: string;
-    permissionId: string;
-    permissionType?: string;
-    sortOrder?: number;
-    tagStorage?: string;
-    title?: string;
-    type: string;
-    vanityUrl?: boolean;
-    versionId?: string;
-    versionType?: string;
-}
-
-
 /**
  * The primary (and only) site model to be used in components and stores.
  *
