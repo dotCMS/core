@@ -7,26 +7,17 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
-
 import {
-    DotAlertConfirmService,
-    DotContentTypesInfoService,
-    DotEventsService,
     DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageDisplayService,
     DotMessageService,
     DotSiteService,
-    DotSystemConfigService,
     DotWorkflowService,
-    DotWorkflowsActionsService,
-    PaginatorService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
@@ -38,18 +29,14 @@ import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
-    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
-    LoginServiceMock,
     MockDotMessageService,
     mockWorkflows,
-    mockWorkflowsActions,
-    SiteServiceMock
+    mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
 
-import { MockDotSystemConfigService } from '../../../../../test/dot-test-bed';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
 
@@ -147,11 +134,7 @@ describe('ContentTypesFormComponent', () => {
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            provideAnimations(),
-            { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-            { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: SiteService, useClass: SiteServiceMock },
             {
                 provide: DotSiteService,
                 useValue: {
@@ -181,15 +164,8 @@ describe('ContentTypesFormComponent', () => {
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
-            DotcmsConfigService,
-            DotContentTypesInfoService,
-            DotEventsService,
-            PaginatorService,
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotAlertConfirmService),
-            mockProvider(ConfirmationService),
             mockProvider(DotWorkflowsActionsService),
             {
                 provide: DotWorkflowsActionsSelectorFieldService,
