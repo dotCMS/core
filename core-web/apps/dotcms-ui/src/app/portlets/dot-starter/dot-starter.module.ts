@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotMessagePipe, DotContentTypeComponent, DotSiteComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotContentTypeComponent, DotSiteComponent, DotThemeComponent } from '@dotcms/ui';
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
@@ -24,7 +24,8 @@ import { DotToolbarAnnouncementsComponent } from '../../view/components/dot-tool
         CheckboxModule,
         DotToolbarAnnouncementsComponent,
         DotContentTypeComponent,
-        DotSiteComponent
+        DotSiteComponent,
+        DotThemeComponent
     ],
     providers: [DotStarterResolver]
 })

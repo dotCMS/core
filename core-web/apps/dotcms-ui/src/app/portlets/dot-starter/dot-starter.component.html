@@ -22,7 +22,27 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>2. Disabled State</h3>
+        <h3>3. Theme Component</h3>
+        <dot-theme
+            [(ngModel)]="selectedTheme"
+            [placeholder]="'Select a theme'"
+            (onChange)="onThemeChange($event)"
+            style="width: 100%; margin-bottom: 1rem;" />
+        <p><strong>Selected:</strong> {{ selectedTheme || 'None' }}</p>
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+        <h3>3b. Theme Component (with initial value)</h3>
+        <dot-theme
+            [(ngModel)]="selectedTheme2"
+            [placeholder]="'Select a theme'"
+            (onChange)="onThemeChange($event)"
+            style="width: 100%; margin-bottom: 1rem;" />
+        <p><strong>Selected:</strong> {{ selectedTheme2 || 'None' }}</p>
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+        <h3>4. Disabled State</h3>
         <dot-content-type
             [(ngModel)]="selectedContentType"
             [disabled]="true"
@@ -31,7 +51,7 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>3. Toggle Disabled State</h3>
+        <h3>5. Toggle Disabled State</h3>
         <button (click)="isDisabled = !isDisabled" style="margin-bottom: 1rem;">
             {{ isDisabled ? 'Enable' : 'Disable' }} Field
         </button>
@@ -43,7 +63,7 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>4. Initially Disabled (with value)</h3>
+        <h3>6. Initially Disabled (with value)</h3>
         <button (click)="isInitiallyDisabled = !isInitiallyDisabled" style="margin-bottom: 1rem;">
             {{ isInitiallyDisabled ? 'Enable' : 'Disable' }} Field
         </button>
@@ -55,7 +75,7 @@
     </div>
 
     <div style="margin-bottom: 2rem;">
-        <h3>5. Form Control Integration</h3>
+        <h3>7. Form Control Integration</h3>
         <dot-content-type
             [formControl]="contentTypeControl"
             [placeholder]="'Form control'"

@@ -154,6 +154,11 @@ export class DotStarterComponent implements OnInit {
     };
     siteControl = new FormControl<Site | null>(null);
 
+    // Test properties for dot-theme component
+    selectedTheme: string | null = null;
+    themeControl = new FormControl<string | null>(null);
+    selectedTheme2: string | null = 'ed349b52fca3eb8facad8a3bbe82d38b';
+
     readonly #destroyRef = inject(DestroyRef);
 
     onContentTypeChange(contentType: DotCMSContentType | null): void {
@@ -162,6 +167,10 @@ export class DotStarterComponent implements OnInit {
 
     onSiteChange(site: Site | null): void {
         console.log('Site changed:', site);
+    }
+
+    onThemeChange(theme: string | null): void {
+        console.log('Theme changed:', theme);
     }
 
     ngOnInit() {

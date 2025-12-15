@@ -1,1 +1,51 @@
-<p>dot-theme works!</p>
+<p-select
+    #select
+    (onChange)="onThemeChange($event.value)"
+    (onHide)="onSelectHide()"
+    (onLazyLoad)="onLazyLoad($event)"
+    (onShow)="onSelectShow()"
+    [appendTo]="'body'"
+    [class]="class()"
+    [disabled]="$disabled()"
+    [filter]="true"
+    [inputId]="id()"
+    [lazy]="true"
+    [loading]="$state.loading()"
+    [ngModel]="$state.pinnedOption()"
+    [options]="$options()"
+    [placeholder]="placeholder()"
+    [scrollHeight]="'300px'"
+    [virtualScroll]="true"
+    [virtualScrollOptions]="{
+        itemSize: 34,
+        step: 40,
+        autoSize: false,
+        style: {
+            height: '300px',
+            minHeight: '300px'
+        }
+    }"
+    dataKey="identifier"
+    optionLabel="title">
+    <ng-template pTemplate="filter">
+        <p-iconfield>
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="$state.filterValue() || ''"
+                [placeholder]="'Search themes...'"
+                (input)="onFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+            <p-inputicon class="pi pi-search" />
+        </p-iconfield>
+    </ng-template>
+
+    <ng-template let-theme #item>
+        <span [class.font-bold]="$state.pinnedOption()?.identifier === theme.identifier">
+            {{ theme.title }}
+        </span>
+    </ng-template>
+</p-select>
