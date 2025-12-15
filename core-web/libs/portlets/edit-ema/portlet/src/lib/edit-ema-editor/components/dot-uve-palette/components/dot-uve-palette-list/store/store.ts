@@ -33,26 +33,24 @@ import {
     DotUVEPaletteListView
 } from '../../../models';
 import {
-    buildContentletsResponse,
+    buildPaletteContent,
     buildESContentParams,
     DEFAULT_SORT_OPTIONS,
     DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY,
     DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY,
     EMPTY_CONTENTLET_RESPONSE,
     EMPTY_CONTENTTYPE_RESPONSE,
-    filterAndBuildFavoriteResponse,
-    getPaletteState
+    buildPaletteFavorite,
+    getPaletteState,
+    EMPTY_PAGINATION
 } from '../../../utils';
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
     contentlets: [],
-    pagination: {
-        currentPage: 1,
-        perPage: DEFAULT_PER_PAGE,
-        totalEntries: 0
-    },
+    pagination: EMPTY_PAGINATION,
     searchParams: {
+        host: '',
         pagePathOrId: '',
         language: 1,
         variantId: DEFAULT_VARIANT_ID,
@@ -72,20 +70,24 @@ export const DotPaletteListStore = signalStore(
     withState<DotPaletteListState>(DEFAULT_STATE),
     withComputed((store) => {
         const params = store.searchParams;
+        const $isContentTypesView = computed(
+            () => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES
+        );
+        const $isContentletsView = computed(
+            () => store.currentView() === DotUVEPaletteListView.CONTENTLETS
+        );
+        const $isFavoritesList = computed(
+            () => params.listType() === DotUVEPaletteListTypes.FAVORITES
+        );
+        const $isListLayout = computed(() => store.layoutMode() === 'list');
+
         return {
+            $isFavoritesList,
+            $isContentletsView,
+            $isContentTypesView,
             $isLoading: computed(() => store.status() === DotPaletteListStatus.LOADING),
             $isEmpty: computed(() => store.status() === DotPaletteListStatus.EMPTY),
-            $showListLayout: computed(() => {
-                const isListLayout = store.layoutMode() === 'list';
-                const isContentletsView = store.currentView() === DotUVEPaletteListView.CONTENTLETS;
-                return isListLayout || isContentletsView;
-            }),
-            $isContentTypesView: computed(
-                () => store.currentView() === DotUVEPaletteListView.CONTENT_TYPES
-            ),
-            $isContentletsView: computed(
-                () => store.currentView() === DotUVEPaletteListView.CONTENTLETS
-            ),
+            $showListLayout: computed(() => $isListLayout() || $isContentletsView()),
             $currentSort: computed(() => ({
                 orderby: params.orderby(),
                 direction: params.direction()
@@ -116,7 +118,7 @@ export const DotPaletteListStore = signalStore(
                 case DotUVEPaletteListTypes.FAVORITES:
                     return of(dotFavoriteContentTypeService.getAll()).pipe(
                         map((contentTypes) =>
-                            filterAndBuildFavoriteResponse({
+                            buildPaletteFavorite({
                                 contentTypes,
                                 filter: params.filter || '',
                                 page: params.page
@@ -130,32 +132,15 @@ export const DotPaletteListStore = signalStore(
             setLayoutMode(layoutMode: DotPaletteViewMode) {
                 patchState(store, { layoutMode });
             },
-            setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
-                const { contenttypes, pagination } = filterAndBuildFavoriteResponse({
-                    contentTypes,
-                    filter: store.searchParams().filter,
-                    page: store.searchParams().page
-                });
-                patchState(store, {
-                    contenttypes,
-                    pagination,
-                    status: getPaletteState(contenttypes)
-                });
-            },
-            /**
-             * Fetch content types with optional parameter updates.
-             * Updates store search params and then fetches data using the updated params.
-             * Automatically uses listType from store state.
-             */
             getContentTypes(params: Partial<DotPaletteSearchParams> = {}) {
-                // Update search params in store
                 patchState(store, {
                     searchParams: {
                         ...store.searchParams(),
                         ...params,
                         selectedContentType: '' // Ensure we're in content types view
                     },
-                    status: DotPaletteListStatus.LOADING
+                    status: DotPaletteListStatus.LOADING,
+                    currentView: DotUVEPaletteListView.CONTENT_TYPES
                 });
 
                 return getData()
@@ -171,32 +156,24 @@ export const DotPaletteListStore = signalStore(
                         patchState(store, {
                             contenttypes,
                             pagination,
-                            currentView: DotUVEPaletteListView.CONTENT_TYPES,
                             status: getPaletteState(contenttypes)
                         });
                     });
             },
-            /**
-             * Fetch contentlets with optional parameter updates.
-             * Updates store search params and builds ES query automatically.
-             * Uses selectedContentType, variantId, language, page, and filter from store.
-             */
             getContentlets(params: Partial<DotPaletteSearchParams> = {}) {
-                // Update search params in store
+                const searchParams = { ...store.searchParams(), ...params };
+                const esParams = buildESContentParams(searchParams);
+                const offset = Number(esParams.offset);
                 patchState(store, {
-                    searchParams: { ...store.searchParams(), ...params },
-                    status: DotPaletteListStatus.LOADING
+                    searchParams,
+                    status: DotPaletteListStatus.LOADING,
+                    currentView: DotUVEPaletteListView.CONTENTLETS
                 });
-
-                // Build ES params from updated store state
-                const esParams = buildESContentParams(store.searchParams());
 
                 dotESContentService
                     .get(esParams)
                     .pipe(
-                        map((response) =>
-                            buildContentletsResponse(response, Number(esParams.offset))
-                        ),
+                        map((response) => buildPaletteContent(response, offset)),
                         catchError((error) => {
                             console.error(
                                 `[DotUVEPalette Store]: Error data fetching contentlets: ${error}`
@@ -204,14 +181,72 @@ export const DotPaletteListStore = signalStore(
                             return of(EMPTY_CONTENTLET_RESPONSE);
                         })
                     )
-                    .subscribe(({ contentlets, pagination }) => {
-                        patchState(store, {
-                            contentlets,
-                            pagination,
-                            currentView: DotUVEPaletteListView.CONTENTLETS,
-                            status: getPaletteState(contentlets)
-                        });
-                    });
+                    .subscribe((response) => patchState(store, { ...response }));
+            }
+        };
+    }),
+    withMethods((store) => {
+        const params = store.searchParams;
+        const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
+        const updateFavoriteState = (contentTypes: DotCMSContentType[]) => {
+            const response = buildPaletteFavorite({
+                contentTypes,
+                filter: params.filter(),
+                page: params.page() || 1
+            });
+            patchState(store, response);
+        };
+
+        const $isFavoritesList = computed(
+            () => params.listType() === DotUVEPaletteListTypes.FAVORITES
+        );
+
+        return {
+            /**
+             * Manually sets the loading status of the palette.
+             * Used when transitioning states or showing loading indicators before data fetches.
+             *
+             * @param status - The status to set (LOADING, LOADED, or EMPTY)
+             */
+            setStatus(status: DotPaletteListStatus) {
+                patchState(store, { status });
+            },
+            /**
+             * Sets the content types from a favorite list.
+             * Used when updating the favorite state of a content type.
+             *
+             * @param contentTypes - The content types to set
+             */
+            setContentTypesFromFavorite(contentTypes: DotCMSContentType[]) {
+                updateFavoriteState(contentTypes);
+            },
+            /**
+             * Adds a content type to the favorite list.
+             * If the list is a favorites list, updates the favorite state.
+             *
+             * @param contentType - The content type to add
+             */
+            addFavorite(contentType: DotCMSContentType) {
+                const response = dotFavoriteContentTypeService.add(contentType);
+
+                // If the list is a favorites list, update the favorite state
+                if ($isFavoritesList()) {
+                    updateFavoriteState(response);
+                }
+            },
+            /**
+             * Removes a content type from the favorite list.
+             * If the list is a favorites list, updates the favorite state.
+             *
+             * @param contentTypeId - The content type ID to remove
+             */
+            removeFavorite(contentTypeId: string) {
+                const response = dotFavoriteContentTypeService.remove(contentTypeId);
+
+                // If the list is a favorites list, update the favorite state
+                if ($isFavoritesList()) {
+                    updateFavoriteState(response);
+                }
             }
         };
     }),
