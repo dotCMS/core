@@ -107,33 +107,30 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                 this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
-                    tapResponse(
-                        (response) => {
+                    tapResponse({
+                        next: (response) => {
                             const newContent = { prompt, content: response };
                             generatedContent[activeIndex]?.error
                                 ? (generatedContent[activeIndex] = newContent)
                                 : generatedContent.push(newContent);
-
                             this.patchState({
                                 status: ComponentStatus.IDLE,
                                 generatedContent: [...generatedContent], // like this to cover the scenario when replacing an error.
                                 activeIndex: generatedContent.length - 1
                             });
                         },
-                        (error: string) => {
+                        error: (error: string) => {
                             const errorContent = { prompt, content: null, error };
-
                             generatedContent[activeIndex]?.error
                                 ? (generatedContent[activeIndex] = errorContent)
                                 : generatedContent.push(errorContent);
-
                             this.patchState({
                                 status: ComponentStatus.IDLE,
                                 generatedContent,
                                 activeIndex: generatedContent.length - 1
                             });
                         }
-                    )
+                    })
                 );
             })
         );

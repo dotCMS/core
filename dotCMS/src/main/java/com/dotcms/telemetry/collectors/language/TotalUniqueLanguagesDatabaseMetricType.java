@@ -3,11 +3,13 @@ package com.dotcms.telemetry.collectors.language;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of unique configured dotCMS Languages, it means that if two o more Countries use the same
  * language then it just count as one
  */
+@ApplicationScoped
 public class TotalUniqueLanguagesDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {
