@@ -7,9 +7,13 @@
     "targets": {
         "build": {
             "executor": "@angular-devkit/build-angular:application",
+            "outputs": ["{options.outputPath.base}"],
             "options": {
                 "baseHref": "./",
-                "outputPath": "dist/apps/dotcms-ui",
+                "outputPath": {
+                    "base": "dist/apps/dotcms-ui",
+                    "browser": ""
+                },
                 "index": "apps/dotcms-ui/src/index.html",
                 "browser": "apps/dotcms-ui/src/main.ts",
                 "polyfills": ["apps/dotcms-ui/src/polyfills.ts"],
