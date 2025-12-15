@@ -5,11 +5,14 @@ import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Metric type to count the experiments with exit rate goal
  * @author jsanca
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class CountExperimentsWithExitRateGoalMetricType implements DBMetricType {
 
