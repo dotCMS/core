@@ -50,40 +50,40 @@ export class DotOnboardingDevComponent implements OnInit {
         {
             id: 'nextjs',
             label: 'Next.js',
-            logo: 'assets/logos/nextjs.svg'
+            logo: '/dotAdmin/assets/logos/nextjs.svg'
         },
         {
             id: 'angular',
             label: 'Angular',
-            logo: 'assets/logos/angular.png',
+            logo: '/dotAdmin/assets/logos/angular.png',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
         },
         {
             id: 'angular-ssr',
             label: 'Angular SSR',
-            logo: 'assets/logos/angular.png',
+            logo: '/dotAdmin/assets/logos/angular.png',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
         },
         {
             id: 'astro',
             label: 'Astro',
-            logo: 'assets/logos/astro.svg',
+            logo: '/dotAdmin/assets/logos/astro.svg',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
         },
         {
             id: 'php',
             label: 'PHP',
-            logo: 'assets/logos/php.png',
+            logo: '/dotAdmin/assets/logos/php.png',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         },
         {
             id: 'dotnet',
             label: '.NET',
-            logo: 'assets/logos/dot-net.png',
+            logo: '/dotAdmin/assets/logos/dot-net.png',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         }
