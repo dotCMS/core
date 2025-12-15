@@ -5,8 +5,12 @@
     <ng-template pTemplate="end">
         <div class="flex gap-1 items-center">
             <div class="px-2">
-                <dot-site [value]="$currentSite()?.identifier" [placeholder]="'Select a site'" class="w-64"
-                    (onChange)="siteChange($event)" (onShow)="iframeOverlayService.show()"
+                <dot-site
+                    [value]="$currentSite()?.identifier"
+                    [placeholder]="'Select a site'"
+                    class="w-64"
+                    (onChange)="siteChange($event)"
+                    (onShow)="iframeOverlayService.show()"
                     (onHide)="iframeOverlayService.hide()" />
             </div>
             <ng-container *dotShowHideFeature="featureFlagAnnouncements">
