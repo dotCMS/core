@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
-    <div class="dot-pages__container">
+    <div>
         @if (!vm.isPortletLoading) {
-            <div class="dot-pages__inner-container">
+            <div class="flex flex-col gap-4">
                 <dot-pages-favorite-panel
                     (goToUrl)="goToUrl($event)"
                     (showActionsMenu)="showActionsMenu($event)" />
@@ -12,7 +12,7 @@
                     #menu></p-menu>
                 <dot-pages-listing-panel
                     [pages]="dotCMSPagesStore.pages()"
-                    [languages]="[]"
+                    [languages]="globalStore.systemConfig().languages"
                     [totalRecords]="dotCMSPagesStore.$totalRecords()"
                     (goToUrl)="goToUrl($event)"
                     (showActionsMenu)="showActionsMenu($event)"

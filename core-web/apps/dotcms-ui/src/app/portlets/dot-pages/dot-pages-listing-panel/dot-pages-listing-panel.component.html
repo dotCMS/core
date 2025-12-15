@@ -29,10 +29,10 @@
                         pInputText
                         dotAutofocus />
                 </div>
-                <!-- <p-select
+                <p-select
                     (onChange)="setPagesLanguage($event.value)"
-                    [options]="$languages()"
-                    class="w-56" /> -->
+                    [options]="$languageOptions()"
+                    class="w-56" />
                 <div class="flex items-center gap-2 whitespace-nowrap">
                     <p-checkbox
                         (onChange)="setPagesArchived($event.checked)"
@@ -43,42 +43,36 @@
                     </label>
                 </div>
             </div>
-            <p-button
-                (click)="store.getPageTypes()"
-                [label]="'create.page' | dm"
-                data-testid="createPageButton"
-                styleClass="p-button-sm shrink-0" />
+            <p-button [label]="'create.page' | dm" styleClass="p-button-sm shrink-0" />
         </div>
     </ng-template>
     <ng-template #header>
-        @if ($pages()?.length) {
-            <tr>
-                <th pSortableColumn="title" style="width: 25%">
-                    {{ 'title' | dm }}
-                    <p-sortIcon field="title" />
-                </th>
-                <th pSortableColumn="urlMap" style="width: 20%">
-                    {{ 'url' | dm }}
-                    <p-sortIcon field="urlMap" />
-                </th>
-                <th pSortableColumn="contentType" style="width: 12%">
-                    {{ 'type' | dm }}
-                    <p-sortIcon field="contentType" />
-                </th>
-                <th pSortableColumn="languageId" style="width: 12%">
-                    {{ 'status' | dm }}
-                    <p-sortIcon field="languageId" />
-                </th>
-                <th style="width: 12%">
-                    {{ 'Last-Editor' | dm }}
-                </th>
-                <th pSortableColumn="modDate" style="width: 14%">
-                    {{ 'Last-Edited' | dm }}
-                    <p-sortIcon field="modDate" />
-                </th>
-                <th style="width: 5%"></th>
-            </tr>
-        }
+        <tr>
+            <th pSortableColumn="title" style="width: 25%">
+                {{ 'title' | dm }}
+                <p-sortIcon field="title" />
+            </th>
+            <th pSortableColumn="urlMap" style="width: 20%">
+                {{ 'url' | dm }}
+                <p-sortIcon field="urlMap" />
+            </th>
+            <th pSortableColumn="contentType" style="width: 12%">
+                {{ 'type' | dm }}
+                <p-sortIcon field="contentType" />
+            </th>
+            <th pSortableColumn="languageId" style="width: 12%">
+                {{ 'status' | dm }}
+                <p-sortIcon field="languageId" />
+            </th>
+            <th style="width: 12%">
+                {{ 'Last-Editor' | dm }}
+            </th>
+            <th pSortableColumn="modDate" style="width: 14%">
+                {{ 'Last-Edited' | dm }}
+                <p-sortIcon field="modDate" />
+            </th>
+            <th style="width: 5%"></th>
+        </tr>
     </ng-template>
     <ng-template #body let-page let-rowIndex="rowIndex">
         <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="page" pContextMenuRow>

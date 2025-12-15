@@ -1,21 +1,11 @@
 import { CommonModule } from '@angular/common';
-import {
-    AfterViewInit,
-    Component,
-    HostListener,
-    inject,
-    input,
-    OnDestroy,
-    output,
-    viewChild
-} from '@angular/core';
+import { Component, computed, inject, input, output, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ContextMenu } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -23,7 +13,7 @@ import { Table, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotActionsMenuEventParams } from '../dot-pages.component';
@@ -45,15 +35,14 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
         SkeletonModule,
         TableModule,
         TooltipModule,
-        RouterModule,
-        ContextMenu
+        RouterModule
     ]
 })
-export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
+export class DotPagesListingPanelComponent {
     readonly table = viewChild<Table>('table');
 
     readonly $pages = input.required<DotCMSContentlet[]>({ alias: 'pages' });
-    readonly $languages = input.required<DotLanguage[]>({ alias: 'languages' });
+    readonly $languages = input.required<DotSystemLanguage[]>({ alias: 'languages' });
     readonly $totalRecords = input.required<number>({ alias: 'totalRecords' });
 
     readonly goToUrl = output<string>();
@@ -61,27 +50,21 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
     readonly pageChange = output<void>();
 
     readonly #dotMessageService = inject(DotMessageService);
-    #domIdMenuAttached = '';
-    #scrollElement?: HTMLElement;
 
-    dotStateLabels = {
+    readonly $languageOptions = computed(() => {
+        const availableLanguages = this.$languages().map((language) => ({
+            label: `${language.language} (${language.countryCode})`,
+            value: language.id
+        }));
+        return [{ label: 'All', value: 'all' }, ...availableLanguages];
+    });
+
+    readonly dotStateLabels = {
         archived: this.#dotMessageService.get('Archived'),
         published: this.#dotMessageService.get('Published'),
         revision: this.#dotMessageService.get('Revision'),
         draft: this.#dotMessageService.get('Draft')
     };
-
-    ngAfterViewInit(): void {
-        this.#scrollElement = document.querySelector('dot-pages');
-
-        this.#scrollElement?.addEventListener('scroll', () => {
-            this.closeContextMenu();
-        });
-    }
-
-    ngOnDestroy(): void {
-        this.#scrollElement?.removeAllListeners('scroll');
-    }
 
     /**
      * Event lazy loads pages data
@@ -105,15 +88,6 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
      */
     showActionsContextMenu({ event }: DotActionsMenuEventParams): void {
         event.stopPropagation();
-    }
-
-    /**
-     * Event to reset status of menu actions when closed
-     *
-     * @memberof DotPagesComponent
-     */
-    closedActionsContextMenu() {
-        this.#domIdMenuAttached = '';
     }
 
     /**
@@ -164,19 +138,5 @@ export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
         // this.store.setArchived(archived);
         // this.store.getPages({ offset: 0 });
         // this.store.setSessionStorageFilterParams();
-    }
-
-    /**
-     * Closes the context menu when the user clicks outside of it
-     *
-     * @memberof DotPagesListingPanelComponent
-     */
-    @HostListener('window:click')
-    closeContextMenu(): void {
-        if (this.#domIdMenuAttached) {
-            // this.cm()?.hide();
-            // this.store.clearMenuActions();
-            // this.#domIdMenuAttached = '';
-        }
     }
 }

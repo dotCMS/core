@@ -42,6 +42,7 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
@@ -99,6 +100,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
 
     readonly #store = inject(DotPageStore);
     readonly dotCMSPagesStore = inject(DotCMSPagesStore);
+    readonly globalStore = inject(GlobalStore);
 
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.#store.vm$;
