@@ -17,6 +17,7 @@ import {
     ViewChild,
     HostListener
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 import { IconFieldModule } from 'primeng/iconfield';
@@ -24,8 +25,10 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
-import { DotThemesService } from '@dotcms/data-access';
+import { DotSiteService, DotThemesService } from '@dotcms/data-access';
 import { DotTheme } from '@dotcms/dotcms-models';
+
+import { DotSiteComponent } from '../dot-site/dot-site.component';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
     itemsNeeded: number;
@@ -72,7 +75,8 @@ interface DotThemeState {
         SelectModule,
         IconFieldModule,
         InputIconModule,
-        InputTextModule
+        InputTextModule,
+        DotSiteComponent
     ],
     templateUrl: './dot-theme.component.html',
     styleUrl: './dot-theme.component.scss',
@@ -87,6 +91,15 @@ interface DotThemeState {
 })
 export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private themeService = inject(DotThemesService);
+
+    private readonly siteService = inject(DotSiteService);
+    readonly $currentSite = toSignal(this.siteService.getCurrentSite());
+
+    /**
+     * The selected site identifier for filtering themes.
+     * Defaults to the current site identifier, or null if no site is selected.
+     */
+    readonly $selectedSiteId = signal<string | null>(null);
 
     @HostListener('focus')
     onHostFocus(): void {
@@ -250,6 +263,12 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     }
 
     ngOnInit(): void {
+        // Initialize selected site to current site
+        const currentSite = this.$currentSite();
+        if (currentSite?.identifier) {
+            this.$selectedSiteId.set(currentSite.identifier);
+        }
+
         if (this.$state.themes().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
@@ -364,6 +383,30 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
             totalRecords: 0
         });
         this.loadedPages.clear();
+
+        this.loadThemesLazy({ first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize }, 0);
+    }
+
+    /**
+     * Handles site selection changes from the dot-site component
+     * Resets loaded data and reloads themes for the selected site
+     *
+     * @param siteId The selected site identifier, or null if cleared
+     */
+    onSiteChange(siteId: string | null): void {
+        this.$selectedSiteId.set(siteId);
+
+        // Reset state and reload themes for the new site
+        if (this.filterDebounceTimeout) {
+            clearTimeout(this.filterDebounceTimeout);
+            this.filterDebounceTimeout = null;
+        }
+
+        this.loadedPages.clear();
+        patchState(this.$state, {
+            themes: [],
+            totalRecords: 0
+        });
 
         this.loadThemesLazy({ first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize }, 0);
     }
@@ -577,6 +620,12 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
             return;
         }
 
+        const siteId = this.$selectedSiteId() || this.$currentSite()?.identifier;
+        if (!siteId) {
+            patchState(this.$state, { loading: false });
+            return;
+        }
+
         patchState(this.$state, { loading: true });
         const filter = this.$state.filterValue().trim();
         const pageToLoad = pages[0];
@@ -584,6 +633,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
         this.themeService
             .getThemes({
+                hostId: siteId,
                 page: pageToLoad,
                 per_page: this.pageSize,
                 ...(filter ? { searchParam: filter } : {})
