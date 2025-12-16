@@ -1,17 +1,20 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
@@ -67,29 +70,32 @@ public class PermissionResource {
     private final PermissionHelper permissionHelper;
     private final UserAPI userAPI;
     private final PermissionSaveHelper permissionSaveHelper;
-    private final UserResourceHelper userResourceHelper;
 
-    @Inject
+    public PermissionResource() {
+        this(new WebResource(),
+             PermissionHelper.getInstance(),
+             APILocator.getUserAPI(),
+             new PermissionSaveHelper());
+    }
+
+    @VisibleForTesting
     public PermissionResource(final PermissionSaveHelper permissionSaveHelper) {
         this(new WebResource(),
              PermissionHelper.getInstance(),
              APILocator.getUserAPI(),
-             permissionSaveHelper,
-             UserResourceHelper.getInstance());
+             permissionSaveHelper);
     }
 
     @VisibleForTesting
-    public PermissionResource(final WebResource webResource,
-                              final PermissionHelper permissionHelper,
-                              final UserAPI userAPI,
-                              final PermissionSaveHelper permissionSaveHelper,
-                              final UserResourceHelper userResourceHelper) {
+    public PermissionResource(final WebResource          webResource,
+                              final PermissionHelper     permissionHelper,
+                              final UserAPI              userAPI,
+                              final PermissionSaveHelper permissionSaveHelper) {
 
-        this.webResource = webResource;
-        this.permissionHelper = permissionHelper;
-        this.userAPI = userAPI;
+        this.webResource          = webResource;
+        this.permissionHelper     = permissionHelper;
+        this.userAPI              = userAPI;
         this.permissionSaveHelper = permissionSaveHelper;
-        this.userResourceHelper = userResourceHelper;
     }
 
     /**
@@ -322,140 +328,14 @@ public class PermissionResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final PermissionMetadataView permissionMetadata = new PermissionMetadataView(
-            permissionSaveHelper.getAvailablePermissionLevels(),
-            permissionSaveHelper.getAvailablePermissionScopes()
-        );
-
-        Logger.info(this, "Permission metadata retrieved successfully");
-
-        return new ResponseEntityPermissionMetadataView(permissionMetadata);
-    }
-
-    /**
-     * Retrieves permissions for a user's individual role, grouped by assets with pagination support.
-     * This endpoint retrieves permissions assigned directly to the user's individual role,
-     * not through group memberships. Only the user themselves or admin users can access this endpoint.
-     *
-     * @param request HTTP servlet request
-     * @param response HTTP servlet response
-     * @param userId User ID or email address
-     * @param page Page number (0-based)
-     * @param perPage Number of items per page
-     * @return ResponseEntityUserPermissionsView containing paginated user permissions
-     * @throws DotDataException if data access fails
-     * @throws DotSecurityException if security check fails
-     */
-    @Operation(
-        summary = "Get user permissions",
-        description = "Returns paginated list of permission assets (hosts and folders) that the specified user's " +
-                      "individual role has access to. This endpoint retrieves permissions assigned directly to the " +
-                      "user's individual role, not through group memberships. Only the user themselves or admin users " +
-                      "can access this endpoint."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200",
-                    description = "User permissions retrieved successfully",
-                    content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
-        @ApiResponse(responseCode = "400",
-                    description = "Bad request - invalid user ID or pagination parameters",
-                    content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "403",
-                    description = "Forbidden - user can only access their own permissions unless admin",
-                    content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404",
-                    description = "User not found",
-                    content = @Content(mediaType = "application/json"))
-    })
-    @GET
-    @Path("/user/{userId}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityUserPermissionsView getUserPermissions(
-            @Parameter(hidden = true) @Context final HttpServletRequest request,
-            @Parameter(hidden = true) @Context final HttpServletResponse response,
-            @Parameter(description = "User ID or email address", required = true, example = "dotcms.org.1")
-            @PathParam("userId") final String userId,
-            @Parameter(description = "Page number (0-based)", required = false, example = "0")
-            @DefaultValue("0") @QueryParam("page") final int page,
-            @Parameter(description = "Number of items per page", required = false, example = "20")
-            @DefaultValue("20") @QueryParam("per_page") final int perPage
-    ) throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, () -> String.format("Retrieving permissions for user: %s (page=%d, perPage=%d)",
-            userId, page, perPage));
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init();
-
-        final User requestingUser = initData.getUser();
-
-        if (!UtilMethods.isSet(userId)) {
-            Logger.debug(this, () -> String.format("Invalid user ID request from %s",
-                requestingUser.getUserId()));
-            throw new BadRequestException("User ID is required");
-        }
-
-        final User systemUser = APILocator.systemUser();
-        final User targetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
-
-        // Security validation - user can view own permissions or admin can view any
-        if (!requestingUser.isAdmin() && !requestingUser.getUserId().equals(targetUser.getUserId())) {
-            Logger.warn(this, () -> String.format("Non-admin user %s attempted to access permissions for user %s",
-                                  requestingUser.getUserId(), targetUser.getUserId()));
-            throw new DotSecurityException("User can only access their own permissions unless admin");
-        }
-
-        Logger.debug(this, () -> String.format("Loading permissions for user %s requested by %s",
-            targetUser.getUserId(), requestingUser.getUserId()));
-
-        final Role userRole = APILocator.getRoleAPI().getUserRole(targetUser);
-        if (userRole == null) {
-            Logger.warn(this, String.format("User role not found for user: %s", userId));
-            throw new DotDataException("User role not found for: " + userId);
-        }
-
-        // Get total count for pagination
-        final int totalEntries = permissionSaveHelper.getTotalPermissionAssetCount(userRole, requestingUser);
-
-        // Get paginated assets
-        final List<UserPermissionAssetView> paginatedAssets = permissionSaveHelper
-            .getUserPermissionAssetsPaginated(userRole, requestingUser, page, perPage);
-
-        // Build user info object
-        final UserInfoView userInfo = new UserInfoView(
-            targetUser.getUserId(),
-            targetUser.getFullName(),
-            targetUser.getEmailAddress()
-        );
-
-        // Build response entity
-        final UserPermissionsView userPermissions = new UserPermissionsView(
-            userInfo,
-            userRole.getId(),
-            paginatedAssets
-        );
-
-        // Create pagination object
-        final Pagination pagination = new Pagination.Builder()
-            .currentPage(page)
-            .perPage(perPage)
-            .totalEntries(totalEntries)
+        final PermissionMetadataView permissionMetadata = PermissionMetadataView.builder()
+            .levels(PermissionUtils.getAvailablePermissionLevels())
+            .scopes(PermissionUtils.getAvailablePermissionScopes())
             .build();
 
-        Logger.info(this, () -> String.format(
-            "Successfully retrieved %d/%d permissions for user %s (page %d)",
-            paginatedAssets.size(), totalEntries, targetUser.getUserId(), page));
+        Logger.debug(this, () -> "Permission metadata retrieved successfully");
 
-        return new ResponseEntityUserPermissionsView(userPermissions, pagination);
+        return new ResponseEntityPermissionMetadataView(permissionMetadata);
     }
 
     /**
@@ -551,8 +431,8 @@ public class PermissionResource {
         Logger.debug(this, () -> String.format("PUT /permissions/user/%s/asset/%s requested by %s",
             userId, assetId, requestingUser.getUserId()));
 
-        final User systemUser = APILocator.systemUser();
-        final User targetUser = userResourceHelper.loadUserByIdOrEmail(userId, systemUser, requestingUser);
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final User targetUser = loadUserByIdOrEmail(userId, systemUser);
         final Permissionable asset = permissionSaveHelper.resolveAsset(assetId, systemUser);
 
         // Security check: User must have EDIT_PERMISSIONS on the asset
@@ -586,5 +466,30 @@ public class PermissionResource {
         final PermissionView view = new PermissionView(permission.getId(), permission.getInode(), permission.getRoleId(),
                 PermissionAPI.Type.findById(permission.getPermission()), permission.isBitPermission(), permission.getType());
         return view;
+    }
+
+    /**
+     * Loads a user by ID or email.
+     * First tries to load by user ID, then falls back to email lookup.
+     *
+     * @param userIdOrEmail User ID or email address
+     * @param systemUser System user for API calls
+     * @return The found User
+     * @throws DotDataException if user lookup fails
+     * @throws DotSecurityException if security check fails
+     */
+    private User loadUserByIdOrEmail(final String userIdOrEmail, final User systemUser)
+            throws DotDataException, DotSecurityException {
+
+        try {
+            return this.userAPI.loadUserById(userIdOrEmail);
+        } catch (com.dotmarketing.business.NoSuchUserException e) {
+            try {
+                return this.userAPI.loadByUserByEmail(userIdOrEmail, systemUser, false);
+            } catch (com.dotmarketing.business.NoSuchUserException ex) {
+                Logger.warn(this, String.format("User not found: %s", userIdOrEmail));
+                throw new com.dotcms.rest.exception.NotFoundException("User not found: " + userIdOrEmail);
+            }
+        }
     }
 }

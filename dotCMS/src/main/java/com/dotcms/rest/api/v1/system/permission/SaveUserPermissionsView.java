@@ -7,8 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * View for save user permissions operation result.
  * Contains the result of saving permissions for a user on an asset.
  *
- * @author dotCMS
- * @since 24.01
+ * @author hassandotcms
  */
 public class SaveUserPermissionsView {
 

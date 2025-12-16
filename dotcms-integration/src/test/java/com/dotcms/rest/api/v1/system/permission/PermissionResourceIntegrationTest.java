@@ -10,7 +10,6 @@ import com.dotcms.rest.api.v1.system.permission.PermissionSaveHelper;
 import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsView;
 import com.dotcms.rest.api.v1.system.permission.UserPermissionAssetView;
 import com.dotcms.rest.api.v1.system.permission.ResponseEntitySaveUserPermissionsView;
-import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -66,7 +65,7 @@ public class PermissionResourceIntegrationTest {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        // Create resource instance
+        // Create resource instance using simple constructor (uses getInstance() defaults internally)
         resource = new PermissionResource(new PermissionSaveHelper());
 
         adminUser = TestUserUtils.getAdminUser();
@@ -164,6 +163,15 @@ public class PermissionResourceIntegrationTest {
 
     // ==================== PUT Permission Tests ====================
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions for a user on a host with
+     *     INDIVIDUAL scope containing READ, WRITE, and PUBLISH permissions.</li>
+     *     <li><b>Expected Result:</b> Permissions are saved successfully, response contains
+     *     the updated asset with all three permission levels, and cascade is not initiated.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_basicHostUpdate_success() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -187,13 +195,22 @@ public class PermissionResourceIntegrationTest {
 
         // Verify asset in response
         UserPermissionAssetView asset = data.getAsset();
-        assertEquals(updateTestHost.getIdentifier(), asset.getId());
-        Set<String> individualPerms = asset.getPermissions().get("INDIVIDUAL");
+        assertEquals(updateTestHost.getIdentifier(), asset.id());
+        Set<String> individualPerms = asset.permissions().get("INDIVIDUAL");
         assertNotNull(individualPerms);
         assertEquals(3, individualPerms.size());
         assertTrue(individualPerms.containsAll(Set.of("READ", "WRITE", "PUBLISH")));
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions for a user on a folder with
+     *     multiple permission scopes (INDIVIDUAL, HOST, and FOLDER) in a single request.</li>
+     *     <li><b>Expected Result:</b> All three scopes are saved successfully and appear in
+     *     the response with their respective permission levels.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_multipleScopes_success() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -216,7 +233,7 @@ public class PermissionResourceIntegrationTest {
         UserPermissionAssetView asset = data.getAsset();
 
         // Verify all 3 scopes present
-        Map<String, Set<String>> permMap = asset.getPermissions();
+        Map<String, Set<String>> permMap = asset.permissions();
         assertTrue("Should have INDIVIDUAL scope", permMap.containsKey("INDIVIDUAL"));
         assertTrue("Should have HOST scope", permMap.containsKey("HOST"));
         assertTrue("Should have FOLDER scope", permMap.containsKey("FOLDER"));
@@ -231,6 +248,16 @@ public class PermissionResourceIntegrationTest {
         assertTrue(permMap.get("FOLDER").containsAll(Set.of("READ", "CAN_ADD_CHILDREN")));
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions on a child folder that
+     *     currently inherits permissions from its parent folder.</li>
+     *     <li><b>Expected Result:</b> The permission inheritance is automatically broken before
+     *     saving, the child folder now has its own individual permissions, and inheritsPermissions
+     *     returns false in the response.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_breaksInheritance_success() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -251,7 +278,7 @@ public class PermissionResourceIntegrationTest {
         // Assert response successful
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        assertEquals(childFolder.getInode(), data.getAsset().getId());
+        assertEquals(childFolder.getInode(), data.getAsset().id());
 
         // VERIFY inheritance broken after PUT (critical assertion)
         assertFalse("Child folder should NOT be inheriting after PUT",
@@ -259,11 +286,20 @@ public class PermissionResourceIntegrationTest {
 
         // Verify permissions set on child
         UserPermissionAssetView childAsset = data.getAsset();
-        assertFalse("Child should not be inheriting", childAsset.isInheritsPermissions());
+        assertFalse("Child should not be inheriting", childAsset.inheritsPermissions());
         assertTrue("Child should have READ and WRITE",
-                childAsset.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
+                childAsset.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions on a parent host with
+     *     cascade=true to propagate permissions to all descendant assets.</li>
+     *     <li><b>Expected Result:</b> Permissions are saved and cascadeInitiated returns true,
+     *     indicating that the CascadePermissionsJob has been triggered.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_cascade_success() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -287,6 +323,15 @@ public class PermissionResourceIntegrationTest {
         assertTrue("Cascade should be initiated for parent permissionable", data.isCascadeInitiated());
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> A user already has READ, WRITE, and PUBLISH permissions on
+     *     a host. Admin then updates permissions to only include READ.</li>
+     *     <li><b>Expected Result:</b> The existing permissions are replaced (not merged), so the
+     *     user now only has READ permission. WRITE and PUBLISH are removed.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_replacesExisting_success() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -305,7 +350,7 @@ public class PermissionResourceIntegrationTest {
         );
         UserPermissionAssetView hostAsset1 = setupResponse.getEntity().getAsset();
         assertTrue("Setup should have all 3 permissions",
-                hostAsset1.getPermissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
+                hostAsset1.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
         // Action: Update to ONLY READ (should remove WRITE and PUBLISH)
         Map<String, Set<String>> updatePermissions = new HashMap<>();
@@ -319,13 +364,22 @@ public class PermissionResourceIntegrationTest {
         // Assert: Should have ONLY READ (replacement not merge)
         assertNotNull(response);
         UserPermissionAssetView asset = response.getEntity().getAsset();
-        Set<String> resultPerms = asset.getPermissions().get("INDIVIDUAL");
+        Set<String> resultPerms = asset.permissions().get("INDIVIDUAL");
         assertEquals("Should have only 1 permission", 1, resultPerms.size());
         assertTrue("Should have READ", resultPerms.contains("READ"));
         assertFalse("Should NOT have WRITE", resultPerms.contains("WRITE"));
         assertFalse("Should NOT have PUBLISH", resultPerms.contains("PUBLISH"));
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin attempts to update permissions using an invalid
+     *     permission scope name that doesn't exist in the system.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown indicating the invalid
+     *     permission scope.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_invalidScope_badRequest() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -348,6 +402,15 @@ public class PermissionResourceIntegrationTest {
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin attempts to update permissions using an invalid
+     *     permission level name that doesn't exist in the system.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown indicating the invalid
+     *     permission level.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_invalidLevel_badRequest() throws Exception {
         HttpServletRequest request = mockRequest();
@@ -370,6 +433,15 @@ public class PermissionResourceIntegrationTest {
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> A non-admin user (limited user) attempts to update
+     *     permissions for another user.</li>
+     *     <li><b>Expected Result:</b> A DotSecurityException is thrown indicating that only
+     *     admin users can update permissions.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_nonAdminUpdatingOther_forbidden() throws Exception {
         // Setup request as limitedUser (non-admin)
@@ -403,6 +475,15 @@ public class PermissionResourceIntegrationTest {
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link SaveUserPermissionsForm#checkValid()}</li>
+     *     <li><b>Given Scenario:</b> A form is created with a null value in the permission
+     *     levels set for a scope.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown during form validation
+     *     indicating that permission level cannot be null.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_nullPermissionLevel_badRequest() throws Exception {
         // Create form with null permission level
@@ -423,6 +504,15 @@ public class PermissionResourceIntegrationTest {
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link SaveUserPermissionsForm#checkValid()}</li>
+     *     <li><b>Given Scenario:</b> A form is created with an empty set of permission levels
+     *     for a scope.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown during form validation
+     *     indicating that permission levels cannot be empty.</li>
+     * </ul>
+     */
     @Test
     public void test_updateUserPermissions_emptyPermissionList_badRequest() throws Exception {
         // Create form with empty permission list

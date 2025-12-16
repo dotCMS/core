@@ -1,12 +1,15 @@
 import { describe, expect, it } from '@jest/globals';
 
+import { MenuItemCommandEvent } from 'primeng/api';
+
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import {
     buildContentletsQuery,
-    buildContentletsResponse,
+    buildPaletteContent,
     buildESContentParams,
-    filterAndBuildFavoriteResponse,
+    buildPaletteFavorite,
+    buildPaletteMenuItems,
     getPaletteState,
     getSortActiveClass
 } from './index';
@@ -92,7 +95,125 @@ describe('Dot UVE Palette Utils', () => {
         });
     });
 
-    describe('filterAndBuildFavoriteResponse', () => {
+    describe('buildPaletteMenuItems', () => {
+        it('should return menu structure with sort and view sections', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].label).toBe('uve.palette.menu.sort.title');
+            expect(result[1].label).toBe('uve.palette.menu.view.title');
+        });
+
+        it('should include three sort options with correct labels', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems).toHaveLength(3);
+            expect(sortItems[0].label).toBe('uve.palette.menu.sort.option.popular');
+            expect(sortItems[1].label).toBe('uve.palette.menu.sort.option.a-to-z');
+            expect(sortItems[2].label).toBe('uve.palette.menu.sort.option.z-to-a');
+        });
+
+        it('should include two view options with correct labels', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const viewItems = result[1].items;
+
+            expect(viewItems).toHaveLength(2);
+            expect(viewItems[0].label).toBe('uve.palette.menu.view.option.grid');
+            expect(viewItems[1].label).toBe('uve.palette.menu.view.option.list');
+        });
+
+        it('should set active class for current sort option', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems[0].styleClass).toBe(''); // popular (usage ASC) not active
+            expect(sortItems[1].styleClass).toBe('active-menu-item'); // name ASC is active
+            expect(sortItems[2].styleClass).toBe(''); // name DESC not active
+        });
+
+        it('should set active class for current view mode', () => {
+            const mockCallbacks = {
+                viewMode: 'list' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const viewItems = result[1].items;
+
+            expect(viewItems[0].styleClass).toBe(''); // grid not active
+            expect(viewItems[1].styleClass).toBe('active-menu-item'); // list is active
+        });
+
+        it('should call onSortSelect when sort command is executed', () => {
+            const onSortSelect = jest.fn();
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect,
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            sortItems[0].command({} as unknown as MenuItemCommandEvent);
+
+            expect(onSortSelect).toHaveBeenCalledWith({ orderby: 'usage', direction: 'ASC' });
+        });
+
+        it('should call onViewSelect when view command is executed', () => {
+            const onViewSelect = jest.fn();
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            if (!result[1].items) {
+                throw new Error('View items should be defined');
+            }
+            const viewItems = result[1].items;
+
+            viewItems[1].command({} as unknown as MenuItemCommandEvent);
+
+            expect(onViewSelect).toHaveBeenCalledWith('list');
+        });
+    });
+
+    describe('buildPaletteFavorite', () => {
         const mockContentTypes: DotCMSContentType[] = [
             { id: '1', name: 'Blog', variable: 'blog' } as DotCMSContentType,
             { id: '2', name: 'News', variable: 'news' } as DotCMSContentType,
@@ -102,7 +223,7 @@ describe('Dot UVE Palette Utils', () => {
         ];
 
         it('should return all content types sorted alphabetically when no filter is provided', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
             });
 
@@ -112,10 +233,11 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.contenttypes[2].name).toBe('Blog');
             expect(result.contenttypes[3].name).toBe('News');
             expect(result.contenttypes[4].name).toBe('Product');
+            expect(result.status).toBe(DotPaletteListStatus.LOADED);
         });
 
         it('should filter content types by name (case-insensitive)', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'blog'
             });
@@ -125,7 +247,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should filter content types by partial name match', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'an'
             });
@@ -135,7 +257,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should return pagination metadata for first page', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 page: 1
             });
@@ -154,7 +276,7 @@ describe('Dot UVE Palette Utils', () => {
                 variable: `content${i}`
             })) as DotCMSContentType[];
 
-            const page1 = filterAndBuildFavoriteResponse({
+            const page1 = buildPaletteFavorite({
                 contentTypes: manyContentTypes,
                 page: 1
             });
@@ -163,7 +285,7 @@ describe('Dot UVE Palette Utils', () => {
             expect(page1.pagination.totalEntries).toBe(50);
             expect(page1.pagination.currentPage).toBe(1);
 
-            const page2 = filterAndBuildFavoriteResponse({
+            const page2 = buildPaletteFavorite({
                 contentTypes: manyContentTypes,
                 page: 2
             });
@@ -173,7 +295,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should handle empty filter string as no filter', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: ''
             });
@@ -182,17 +304,18 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should return empty array when filter matches no content types', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'nonexistent'
             });
 
             expect(result.contenttypes).toHaveLength(0);
             expect(result.pagination.totalEntries).toBe(0);
+            expect(result.status).toBe(DotPaletteListStatus.EMPTY);
         });
 
         it('should use default page 1 when page is not provided', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
             });
 
@@ -200,7 +323,7 @@ describe('Dot UVE Palette Utils', () => {
         });
     });
 
-    describe('buildContentletsResponse', () => {
+    describe('buildPaletteContent', () => {
         it('should transform ES response into normalized format', () => {
             const esResponse = {
                 contentTook: 10,
@@ -214,11 +337,12 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 100
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.contentlets).toHaveLength(2);
             expect(result.contentlets).toEqual(esResponse.jsonObjectView.contentlets);
             expect(result.pagination.totalEntries).toBe(100);
+            expect(result.status).toBe(DotPaletteListStatus.LOADED);
         });
 
         it('should calculate correct page number for offset 0', () => {
@@ -231,7 +355,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 50
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.pagination.currentPage).toBe(1);
         });
@@ -246,7 +370,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 50
             };
 
-            const result = buildContentletsResponse(esResponse, 30);
+            const result = buildPaletteContent(esResponse, 30);
 
             expect(result.pagination.currentPage).toBe(2);
         });
@@ -261,7 +385,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 100
             };
 
-            const result = buildContentletsResponse(esResponse, 60);
+            const result = buildPaletteContent(esResponse, 60);
 
             expect(result.pagination.currentPage).toBe(3);
         });
@@ -279,7 +403,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 25
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.pagination.perPage).toBe(25);
         });
@@ -294,11 +418,12 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 0
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.contentlets).toHaveLength(0);
             expect(result.pagination.perPage).toBe(0);
             expect(result.pagination.totalEntries).toBe(0);
+            expect(result.status).toBe(DotPaletteListStatus.EMPTY);
         });
     });
 

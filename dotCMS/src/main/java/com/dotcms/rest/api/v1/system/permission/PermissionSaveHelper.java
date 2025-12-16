@@ -48,8 +48,7 @@ import javax.inject.Named;
  * Helper for saving user permissions on assets.
  * Handles permission conversion, asset resolution, and save operations.
  *
- * @author dotCMS
- * @since 24.01
+ * @author hassandotcms
  */
 @ApplicationScoped
 public class PermissionSaveHelper {
@@ -64,44 +63,6 @@ public class PermissionSaveHelper {
         "PUBLISH", bits -> bits | PermissionAPI.PERMISSION_PUBLISH,
         "EDIT_PERMISSIONS", bits -> bits | PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
         "CAN_ADD_CHILDREN", bits -> bits | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-    );
-
-    /**
-     * Maps permission type class names to API type constants.
-     */
-    private static final Map<String, String> PERMISSION_TYPE_MAPPINGS = Map.ofEntries(
-        Map.entry(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE.toUpperCase(), "INDIVIDUAL"),
-        Map.entry(IHTMLPage.class.getCanonicalName().toUpperCase(), "PAGE"),
-        Map.entry(Container.class.getCanonicalName().toUpperCase(), "CONTAINER"),
-        Map.entry(Folder.class.getCanonicalName().toUpperCase(), "FOLDER"),
-        Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
-        Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
-        Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
-        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "CONTENT_TYPE"),
-        Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
-        Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
-        Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
-        Map.entry(Host.class.getCanonicalName().toUpperCase(), "HOST")
-    );
-
-    /**
-     * Maps from API scope names (UPPERCASE) to Permission type strings.
-     * Reverse mapping of PERMISSION_TYPE_MAPPINGS.
-     * Based on RoleAjax.saveRolePermission() logic.
-     */
-    private static final Map<String, String> SCOPE_TO_PERMISSION_TYPE = Map.ofEntries(
-        Map.entry("INDIVIDUAL", PermissionAPI.INDIVIDUAL_PERMISSION_TYPE),
-        Map.entry("HOST", Host.class.getCanonicalName()),
-        Map.entry("FOLDER", Folder.class.getCanonicalName()),
-        Map.entry("CONTAINER", Container.class.getCanonicalName()),
-        Map.entry("TEMPLATE", Template.class.getCanonicalName()),
-        Map.entry("TEMPLATE_LAYOUT", TemplateLayout.class.getCanonicalName()),
-        Map.entry("LINK", Link.class.getCanonicalName()),
-        Map.entry("CONTENT", Contentlet.class.getCanonicalName()),
-        Map.entry("PAGE", IHTMLPage.class.getCanonicalName()),
-        Map.entry("STRUCTURE", Structure.class.getCanonicalName()),
-        Map.entry("CATEGORY", Category.class.getCanonicalName()),
-        Map.entry("RULE", Rule.class.getCanonicalName())
     );
 
     private final PermissionAPI permissionAPI;
@@ -145,7 +106,7 @@ public class PermissionSaveHelper {
      * @return Set of permission scope names (e.g., "INDIVIDUAL", "HOST", "FOLDER")
      */
     public Set<String> getAvailablePermissionScopes() {
-        return new HashSet<>(PERMISSION_TYPE_MAPPINGS.values());
+        return PermissionAPI.Scope.getAllScopeNames();
     }
 
     /**
@@ -228,12 +189,12 @@ public class PermissionSaveHelper {
      * @return Permission type class name or INDIVIDUAL constant
      */
     public String getPermissionTypeForScope(final String scopeName) {
-        final String permissionType = SCOPE_TO_PERMISSION_TYPE.get(scopeName.toUpperCase());
-        if (permissionType == null) {
+        final PermissionAPI.Scope scope = PermissionAPI.Scope.fromName(scopeName);
+        if (scope == null) {
             Logger.warn(this, "Unknown permission scope: " + scopeName);
             return scopeName;
         }
-        return permissionType;
+        return scope.getPermissionType();
     }
 
     /**
@@ -253,7 +214,7 @@ public class PermissionSaveHelper {
 
         // Try host first (line 815)
         final Host host = hostAPI.find(assetId, user, false);
-        if (host != null) {
+        if (host != null && UtilMethods.isSet(() -> host.getIdentifier())) {
             Logger.debug(this, () -> "Asset resolved as Host: " + host.getHostname());
             return host;
         }
@@ -429,8 +390,16 @@ public class PermissionSaveHelper {
 
         final Map<String, Set<String>> permissionMap = buildPermissionMap(permissions);
 
-        return new UserPermissionAssetView(id, type, name, path, hostId,
-                                           canEditPermissions, inheritsPermissions, permissionMap);
+        return UserPermissionAssetView.builder()
+            .id(id)
+            .type(type)
+            .name(name)
+            .path(path)
+            .hostId(hostId)
+            .canEditPermissions(canEditPermissions)
+            .inheritsPermissions(inheritsPermissions)
+            .permissions(permissionMap)
+            .build();
     }
 
     /**
@@ -457,9 +426,9 @@ public class PermissionSaveHelper {
      * Maps permission type class names to API type constants.
      */
     private String getModernPermissionType(final String permissionType) {
-        final String mappedType = PERMISSION_TYPE_MAPPINGS.get(permissionType.toUpperCase());
-        if (mappedType != null) {
-            return mappedType;
+        final PermissionAPI.Scope scope = PermissionAPI.Scope.fromPermissionType(permissionType);
+        if (scope != null) {
+            return scope.name();
         }
         Logger.debug(this, "Unknown permission type: " + permissionType);
         return permissionType.toUpperCase();

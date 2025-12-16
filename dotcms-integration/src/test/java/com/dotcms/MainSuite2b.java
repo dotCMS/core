@@ -112,6 +112,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
+import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
@@ -555,7 +556,8 @@ import org.junit.runners.Suite.SuiteClasses;
         OpenAIAutoTagActionletTest.class,
         Task250828CreateCustomAttributeTableTest.class,
         CustomAttributeAPIImplTest.class,
-        CustomAttributeFactoryTest.class
+        CustomAttributeFactoryTest.class,
+        PermissionResourceIntegrationTest.class,
 })
 
 public class MainSuite2b {
