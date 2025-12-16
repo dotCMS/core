@@ -22,6 +22,20 @@ import {
 } from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
+const HOST_TEMPLATE = `<dotcms-template-builder-box
+    [width]="width"
+    [actions]="actions"
+    [items]="items"
+    [containerMap]="containerMap">
+</dotcms-template-builder-box>`;
+
+const DEFAULT_HOST_PROPS = {
+    actions: ['add', 'delete', 'edit'],
+    width: 10,
+    items: CONTAINERS_DATA_MOCK,
+    containerMap: CONTAINER_MAP_MOCK
+};
+
 describe('TemplateBuilderBoxComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
 
@@ -62,143 +76,63 @@ describe('TemplateBuilderBoxComponent', () => {
 
     describe('Variant rendering', () => {
         it('should create the component', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+            spectator = createHost(HOST_TEMPLATE, { hostProps: DEFAULT_HOST_PROPS });
             expect(spectator).toBeTruthy();
         });
 
-        it('should render with default variant', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+        it('should render with large variant (default)', () => {
+            spectator = createHost(HOST_TEMPLATE, { hostProps: DEFAULT_HOST_PROPS });
             expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
                 'template-builder-box--large'
             );
         });
 
-        it('should render with medium variant and update the class', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 3,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+        it('should render with medium variant', () => {
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, width: 3 }
+            });
             expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
                 'template-builder-box--medium'
             );
         });
 
-        it('should render with small variant and update the class', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 1,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+        it('should render with small variant', () => {
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, width: 1 }
+            });
             expect(spectator.query(byTestId('template-builder-box-small')).classList).toContain(
                 'template-builder-box--small'
             );
         });
 
-        it('should render the first ng-template for large and medium variants', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
-            const firstTemplate = spectator.query(byTestId('template-builder-box'));
-            const secondTemplate = spectator.query(byTestId('template-builder-box-small'));
-            expect(firstTemplate).toBeTruthy();
-            expect(secondTemplate).toBeNull();
+        it('should render large template for large and medium variants', () => {
+            spectator = createHost(HOST_TEMPLATE, { hostProps: DEFAULT_HOST_PROPS });
+            expect(spectator.query(byTestId('template-builder-box'))).toBeTruthy();
+            expect(spectator.query(byTestId('template-builder-box-small'))).toBeNull();
         });
     });
 
-    describe('Actions', () => {
-        it('should only show the specified actions on actions input', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete'], // Here we hide the edit button
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
-
-            const paletteButton = spectator.query(byTestId('box-style-class-button'));
-            expect(paletteButton).toBeFalsy();
+    describe('Actions visibility', () => {
+        it('should hide edit button when not in actions', () => {
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, actions: ['add', 'delete'] }
+            });
+            expect(spectator.query(byTestId('box-style-class-button'))).toBeFalsy();
         });
 
         it('should show all buttons for small variant', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 1,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
-
-            const addButton = spectator.query(byTestId('btn-plus-small'));
-            const paletteButton = spectator.query(byTestId('box-style-class-button-small'));
-            const deleteButton = spectator.query(byTestId('btn-remove-item'));
-            expect(addButton).toBeTruthy();
-            expect(paletteButton).toBeTruthy();
-            expect(deleteButton).toBeTruthy();
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, width: 1 }
+            });
+            expect(spectator.query(byTestId('btn-plus-small'))).toBeTruthy();
+            expect(spectator.query(byTestId('box-style-class-button-small'))).toBeTruthy();
+            expect(spectator.query(byTestId('btn-remove-item'))).toBeTruthy();
         });
     });
 
     describe('Container operations', () => {
         beforeEach(() => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+            spectator = createHost(HOST_TEMPLATE, { hostProps: DEFAULT_HOST_PROPS });
         });
 
         it('should trigger addContainer when selecting from dropdown', () => {
@@ -209,145 +143,87 @@ describe('TemplateBuilderBoxComponent', () => {
             expect(addContainerMock).toHaveBeenCalled();
         });
 
-        it('should emit addContainer with a identifier as identifier when source is DB', () => {
+        it('should emit addContainer with identifier when source is DB', () => {
             const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-
             spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
                 value: containersMock[0]
             });
-
             expect(addContainerMock).toHaveBeenCalledWith(containersMock[0]);
         });
 
-        it('should emit addContainer with a path as identifier when source is FILE', () => {
+        it('should emit addContainer with path as identifier when source is FILE', () => {
             const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-
             spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
                 value: containersMock[2]
             });
-
             expect(addContainerMock).toHaveBeenCalledWith({
                 ...containersMock[2],
                 identifier: containersMock[2].path
             });
         });
 
-        it('should trigger editClasses when click on palette button', () => {
+        it('should trigger editClasses when clicking palette button', () => {
             const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
-            const paletteButton = spectator.query(byTestId('box-style-class-button'));
-
-            spectator.dispatchFakeEvent(paletteButton, 'onClick');
-
+            spectator.dispatchFakeEvent(spectator.query(byTestId('box-style-class-button')), 'onClick');
             expect(editStyleMock).toHaveBeenCalled();
         });
 
-        it('should use titles from container map', (done) => {
-            const displayedContainerTitles = spectator
+        it('should display titles from container map', () => {
+            const displayedTitles = spectator
                 .queryAll(byTestId('container-title'))
-                .map((element) => element.textContent.trim());
-            const containerMapTitles = Object.values(CONTAINER_MAP_MOCK).map(
-                (container) => container.title
-            );
+                .map((el) => el.textContent.trim());
+            const mapTitles = Object.values(CONTAINER_MAP_MOCK).map((c) => c.title);
 
-            displayedContainerTitles.forEach((title) => {
-                if (!containerMapTitles.includes(title)) {
-                    throw new Error(`title: "${title} not included the container map is displayed`);
-                }
+            displayedTitles.forEach((title) => {
+                expect(mapTitles).toContain(title);
             });
-
-            done();
         });
     });
 
     describe('Delete operations', () => {
-        it('should trigger deleteContainer when confirm is accepted', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
-            const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
+        beforeEach(() => {
+            spectator = createHost(HOST_TEMPLATE, { hostProps: DEFAULT_HOST_PROPS });
+        });
 
-            // Trigger the deleteConfirmed output event on the container's remove dialog using CSS selector
+        it('should trigger deleteContainer when confirm is accepted', () => {
+            const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
             spectator.triggerEventHandler(
                 "[data-testId='btn-trash-container']",
                 'deleteConfirmed',
                 null
             );
-
             expect(deleteContainerMock).toHaveBeenCalled();
         });
 
         it('should trigger deleteColumn when confirm is accepted', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
             const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
-
-            // Trigger deleteConfirmed on the column delete dialog
             spectator.triggerEventHandler(
                 "[data-testId='btn-delete-column']",
                 'deleteConfirmed',
                 null
             );
-
             expect(deleteMock).toHaveBeenCalled();
         });
 
         it('should trigger deleteColumnRejected when confirm is rejected', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
-            const rejectDeleteMock = jest.spyOn(spectator.component.deleteColumnRejected, 'emit');
-
-            // Trigger deleteRejected on the column delete dialog
+            const rejectMock = jest.spyOn(spectator.component.deleteColumnRejected, 'emit');
             spectator.triggerEventHandler(
                 "[data-testId='btn-delete-column']",
                 'deleteRejected',
                 null
             );
-
-            expect(rejectDeleteMock).toHaveBeenCalled();
+            expect(rejectMock).toHaveBeenCalled();
         });
+    });
 
-        it('should trigger deleteColumn when clicking on deleteColumn button and there are no containers', () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 10,
-                        items: [],
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+    describe('Delete with empty containers', () => {
+        it('should skip confirmation when there are no containers', () => {
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, items: [] }
+            });
             const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
 
-            const deleteButton = spectator.query(byTestId('btn-remove-item'));
-            spectator.dispatchFakeEvent(deleteButton, 'onClick');
+            spectator.dispatchFakeEvent(spectator.query(byTestId('btn-remove-item')), 'onClick');
             spectator.detectChanges();
 
             expect(deleteMock).toHaveBeenCalled();
@@ -355,57 +231,30 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     describe('Dialog', () => {
-        it('should open dialog when click on edit button', async () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 1,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+        it('should open dialog when clicking plus button on small variant', async () => {
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, width: 1 }
+            });
 
-            const templateBuilderSmallBox = spectator.query(byTestId('template-builder-box-small'));
+            expect(spectator.query(byTestId('template-builder-box-small'))).toExist();
+
             const plusButton = spectator.query(byTestId('btn-plus-small'));
-            expect(templateBuilderSmallBox).toExist();
-            expect(plusButton).toExist();
-
-            // Use dispatchFakeEvent() to simulate a click event
             spectator.dispatchFakeEvent(plusButton, 'onClick');
 
-            // Use whenStable() to wait for asynchronous tasks to complete
             await spectator.fixture.whenStable();
             spectator.detectChanges();
 
             const dialog = spectator.query(byTestId('edit-box-dialog'));
-            const templateBuilderBox = dialog?.querySelector(
-                "[data-testId='template-builder-box']"
-            );
-
-            expect(templateBuilderBox).toExist();
+            expect(dialog?.querySelector("[data-testId='template-builder-box']")).toExist();
             expect(spectator.component.dialogVisible).toBeTruthy();
         });
 
-        it('should not open dialog when the size is large', async () => {
-            spectator = createHost(
-                `<dotcms-template-builder-box [width]="width" [actions]="actions" [items]="items" [containerMap]="containerMap"></dotcms-template-builder-box>`,
-                {
-                    hostProps: {
-                        actions: ['add', 'delete', 'edit'],
-                        width: 5,
-                        items: CONTAINERS_DATA_MOCK,
-                        containerMap: CONTAINER_MAP_MOCK
-                    }
-                }
-            );
+        it('should not open dialog on large variant', () => {
+            spectator = createHost(HOST_TEMPLATE, {
+                hostProps: { ...DEFAULT_HOST_PROPS, width: 5 }
+            });
 
-            const plusButton = spectator.query(byTestId('btn-plus'));
-            expect(plusButton).toExist();
-
-            // The large variant uses p-select which doesn't trigger dialog
+            expect(spectator.query(byTestId('btn-plus'))).toExist();
             expect(spectator.component.dialogVisible).toBeFalsy();
         });
     });
