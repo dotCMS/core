@@ -665,7 +665,7 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
