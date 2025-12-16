@@ -8,6 +8,8 @@ servers:
 tags:
 - description: AI-powered content generation and analysis endpoints
   name: AI
+- description: Content type field definitions and configuration
+  name: Content Type Field
 - description: JavaScript execution and server-side scripting
   name: JavaScript
 - description: Content bundle management and deployment
@@ -34,10 +36,11 @@ tags:
   name: Authentication
 - description: File and folder browser tree operations
   name: Browser Tree
+- description: Content categorization and taxonomy
+  name: Categories
 - description: Endpoints for managing Container objects and their content
   name: Containers
-- description: Endpoints for managing content and contentlets - the core data objects
-    in dotCMS
+- description: Endpoints for managing content and contentlets
   name: Content
 - description: Returns the content types valid for a page based on the container/types
     on the layout
@@ -77,8 +80,11 @@ tags:
   name: Usage
 - description: Endpoints for managing content variants
   name: Variants
-- description: Content type field definitions and configuration
-  name: Content Type Field
+- description: Endpoints that perform operations related to workflows.
+  externalDocs:
+    description: Additional Workflow API information
+    url: https://www.dotcms.com/docs/latest/workflow-rest-api
+  name: Workflow
 - description: System administration and management tools
   name: Administration
 - description: API token management and authentication
@@ -86,8 +92,6 @@ tags:
     description: Additional API token information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken
   name: API Token
-- description: Content categorization and taxonomy
-  name: Categories
 - description: Cluster nodes and distributed system management
   name: Cluster Management
 - description: Content delivery and rendering
@@ -154,11 +158,6 @@ tags:
   name: Web Assets
 - description: Widget development and rendering
   name: Widgets
-- description: Endpoints that perform operations related to workflows.
-  externalDocs:
-    description: Additional Workflow API information
-    url: https://www.dotcms.com/docs/latest/workflow-rest-api
-  name: Workflow
 paths:
   /auditPublishing/get/{bundleId}:
     get:
@@ -703,372 +702,199 @@ paths:
       - System Configuration
   /content/_search:
     post:
-      description: "Performs a comprehensive content search using Lucene query syntax.\
-        \ Supports filtering, sorting, pagination, and depth-based relationship loading.\
-        \ Returns structured JSON with search metadata and contentlet results."
       operationId: search
       parameters:
-      - description: Store query in session for Query Tool portlet
-        in: query
+      - in: query
         name: rememberQuery
         schema:
           type: boolean
           default: false
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/SearchForm"
-        description: "Search criteria including query, sort, pagination and filters"
-        required: true
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySearchView"
-          description: Search completed successfully
-        "400":
+        default:
           content:
             application/json: {}
-          description: Invalid search parameters or malformed query
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions to access content
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error during search
-      summary: Search content with advanced parameters
+          description: default response
       tags:
       - Content Delivery
   /content/canLock/{params}:
     put:
       deprecated: true
-      description: Legacy endpoint for checking lock status of content. This endpoint
-        is deprecated and will be removed in future versions. Use the versioned v1
-        content API instead.
       operationId: canLockContent
       parameters:
-      - description: URL parameters containing content ID or inode
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Lock status checked successfully (deprecated endpoint)
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions or security error
-        "404":
-          content:
-            application/json: {}
-          description: Content not found
-      summary: Check if content can be locked (deprecated)
+          description: default response
       tags:
       - Content Delivery
   /content/indexcount/{query}:
     get:
-      description: Returns the total count of contentlets matching the specified Lucene
-        query. This is useful for pagination calculations and understanding result
-        set sizes without retrieving the actual content data.
       operationId: indexCount_1
       parameters:
-      - description: Lucene query string to count matching contentlets
-        in: path
+      - in: path
         name: query
         required: true
         schema:
           type: string
-      - description: Response format type (optional)
-        in: query
+      - in: path
         name: type
+        required: true
         schema:
           type: string
-      - description: JSONP callback function name (optional)
-        in: query
+      - in: path
         name: callback
+        required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
             text/plain: {}
-          description: Count retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid query syntax
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions to query content
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error during count operation
-      summary: Count content matching query
+          description: default response
       tags:
       - Content Delivery
   /content/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}:
     get:
-      description: Performs a direct Elasticsearch index search using Lucene query
-        syntax. Returns a simplified JSON array containing only inode and identifier
-        for each matching contentlet. This is a lighter-weight alternative to the
-        POST search endpoint.
       operationId: indexSearch
       parameters:
-      - description: "Lucene query string (e.g., '+structurename:webpagecontent +live:true')"
-        in: path
+      - in: path
         name: query
         required: true
         schema:
           type: string
-      - description: "Field to sort results by (e.g., 'modDate', 'title')"
-        in: path
+      - in: path
         name: sortby
         required: true
         schema:
           type: string
-      - description: Maximum number of results to return
-        in: path
+      - in: path
         name: limit
         required: true
         schema:
           type: integer
           format: int32
-      - description: Number of results to skip for pagination
-        in: path
+      - in: path
         name: offset
         required: true
         schema:
           type: integer
           format: int32
-      - description: Response format type (optional)
-        in: query
+      - in: path
         name: type
+        required: true
         schema:
           type: string
-      - description: JSONP callback function name (optional)
-        in: query
+      - in: path
         name: callback
+        required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Index search completed successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid query syntax or parameters
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions to search index
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error during index search
-      summary: Search content index with URL parameters
+          description: default response
       tags:
       - Content Delivery
   /content/lock/{params}:
     put:
       deprecated: true
-      description: Legacy endpoint for locking content. This endpoint is deprecated
-        and will be removed in future versions. Use the versioned v1 content API instead.
       operationId: lockContent
       parameters:
-      - description: URL parameters containing content ID or inode
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Content locked successfully (deprecated endpoint)
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions or security error
-        "404":
-          content:
-            application/json: {}
-          description: Content not found
-      summary: Lock content (deprecated)
+          description: default response
       tags:
       - Content Delivery
   /content/unlock/{params}:
     put:
       deprecated: true
-      description: Legacy endpoint for unlocking content. This endpoint is deprecated
-        and will be removed in future versions. Use the versioned v1 content API instead.
       operationId: unlockContent
       parameters:
-      - description: URL parameters containing content ID or inode
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Content unlocked successfully (deprecated endpoint)
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions or security error
-        "404":
-          content:
-            application/json: {}
-          description: Content not found
-      summary: Unlock content (deprecated)
+          description: default response
       tags:
       - Content Delivery
   /content/{params}:
     get:
-      description: "Retrieves contentlets using flexible URL parameters. Supports\
-        \ content lookup by identifier, inode, or Lucene query. Includes depth-based\
-        \ relationship loading (0-3 levels) and supports both JSON and XML output\
-        \ formats. This is a legacy endpoint - prefer using the versioned v1 content\
-        \ API for new implementations."
       operationId: getContent
       parameters:
-      - description: "URL parameters in key/value format (e.g., 'id/abc123' or 'query/+structurename:News/limit/10')"
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Content retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid parameters or malformed query
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions to access content
-        "404":
-          content:
-            application/json: {}
-          description: Content not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: "Get content by ID, inode, or query"
+          description: default response
       tags:
       - Content Delivery
     post:
       deprecated: true
-      description: "Legacy endpoint for creating content using JSON, XML, or form-encoded\
-        \ data. This endpoint is deprecated and will be removed in future versions.\
-        \ Use the WorkflowResource#fireActionDefault instead."
       operationId: singlePOST
       parameters:
-      - description: URL parameters for content creation
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
-      requestBody:
-        content:
-          application/json: {}
-          application/x-www-form-urlencoded: {}
-          application/xml: {}
-        description: "Content data in JSON, XML, or form format"
-        required: true
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Content created successfully (deprecated endpoint)
-        "400":
-          content:
-            application/json: {}
-          description: Invalid request data or parameters
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions or security error
-      summary: Create content with JSON/XML/form data (deprecated)
+            text/plain: {}
+          description: default response
       tags:
       - Content Delivery
     put:
       deprecated: true
-      description: "Legacy endpoint for updating content using JSON, XML, or form-encoded\
-        \ data. This endpoint is deprecated and will be removed in future versions.\
-        \ Use the WorkflowResource#fireActionDefault instead."
       operationId: singlePUT
       parameters:
-      - description: URL parameters for content update
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
-      requestBody:
-        content:
-          application/json: {}
-          application/x-www-form-urlencoded: {}
-          application/xml: {}
-        description: "Content data in JSON, XML, or form format"
-        required: true
       responses:
-        "200":
+        default:
           content:
             application/json: {}
-          description: Content updated successfully (deprecated endpoint)
-        "400":
-          content:
-            application/json: {}
-          description: Invalid request data or parameters
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions or security error
-      summary: Update content with JSON/XML/form data (deprecated)
+            text/plain: {}
+          description: default response
       tags:
       - Content Delivery
   /environment:
@@ -4393,380 +4219,233 @@ paths:
       - Cache Management
   /v1/categories:
     delete:
-      description: Deletes multiple categories by their inodes. Deletes both parent
-        categories and their children. User needs Edit permissions on categories to
-        delete them successfully.
       operationId: delete_7
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: array
               items:
                 type: string
-        description: List of category inodes to delete
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Categories deleted successfully (may include partial failures)
-        "400":
-          description: Bad request - missing category inodes
-        "401":
-          description: Unauthorized - user authentication required
-        "403":
-          description: Forbidden - insufficient permissions to delete categories
-        "500":
-          description: Internal server error deleting categories
-      summary: Delete categories
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
     get:
-      description: "Retrieves a paginated list of categories with optional filtering,\
-        \ sorting, and children count information. Supports hierarchical category\
-        \ navigation and management."
       operationId: getCategories
       parameters:
-      - description: Filter text to search categories
-        in: query
+      - in: query
         name: filter
         schema:
           type: string
-      - description: Page number for pagination
-        in: query
+      - in: query
         name: page
         schema:
           type: integer
           format: int32
-      - description: Number of items per page
-        in: query
+      - in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - description: Field to order results by
-        in: query
+      - in: query
         name: orderby
         schema:
           type: string
           default: category_name
-      - description: Sort direction (ASC or DESC)
-        in: query
+      - in: query
         name: direction
         schema:
           type: string
           default: ASC
-      - description: Whether to include children count for each category
-        in: query
+      - in: query
         name: showChildrenCount
         schema:
           type: boolean
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Categories retrieved successfully
-        "401":
-          description: Unauthorized - user authentication required
-        "500":
-          description: Internal server error retrieving categories
-      summary: Get categories with pagination
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
     post:
-      description: "Creates a new category with the specified properties. The category\
-        \ name is required, and optionally can be associated with a specific site."
       operationId: saveNew
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryForm"
-        description: Category form with name and properties
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Category created successfully
-        "400":
-          description: Bad request - missing category name or invalid form data
-        "401":
-          description: Unauthorized - user authentication required
-        "403":
-          description: Forbidden - insufficient permissions to create categories
-        "500":
-          description: Internal server error creating category
-      summary: Create new category
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
     put:
-      description: "Updates an existing category identified by its inode. All category\
-        \ properties can be modified including name, description, and hierarchy placement."
       operationId: save_1
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryForm"
-        description: Category form with updated properties including inode
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Category updated successfully
-        "400":
-          description: Bad request - missing inode or invalid form data
-        "401":
-          description: Unauthorized - user authentication required
-        "403":
-          description: Forbidden - insufficient permissions to update categories
-        "404":
-          description: Category not found
-        "500":
-          description: Internal server error updating category
-      summary: Update existing category
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
   /v1/categories/_export:
     get:
-      description: Exports categories to a CSV file format. Can filter by category
-        name pattern and specify a context category inode. Returns a downloadable
-        CSV file.
       operationId: export
       parameters:
-      - description: Context category inode to export from
-        in: query
+      - in: query
         name: contextInode
         schema:
           type: string
-      - description: Filter pattern to match category names
-        in: query
+      - in: query
         name: filter
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
             text/csv: {}
-          description: Categories exported successfully as CSV file
-        "401":
-          description: Unauthorized - user authentication required
-        "403":
-          description: Forbidden - insufficient permissions to export categories
-        "404":
-          description: Context category not found
-        "500":
-          description: Internal server error exporting categories
-      summary: Export categories to CSV
+          description: default response
       tags:
       - Categories
   /v1/categories/_import:
     post:
-      description: Imports categories from an uploaded CSV file. Supports 'replace'
-        mode to replace existing categories or 'append' mode to add to existing categories.
-        Can specify a context category and filter options.
       operationId: importCategories
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/CategoryImportFormSchema"
-        required: true
+              $ref: "#/components/schemas/FormDataMultiPart"
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Categories imported successfully
-        "400":
-          description: Bad request - invalid file format or missing required parameters
-        "401":
-          description: Unauthorized - user authentication required
-        "403":
-          description: Forbidden - insufficient permissions to import categories
-        "500":
-          description: Internal server error importing categories
-      summary: Import categories from CSV file
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
   /v1/categories/_sort:
     put:
-      description: Updates the sort order of categories. The request must contain
-        category inode and sortOrder pairs. Can update multiple categories at once
-        within a parent category.
       operationId: save
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryEditForm"
-        description: Category edit form with category data and sort order information
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Category sort order updated successfully
-        "400":
-          description: Bad request - missing category data or invalid sort order
-        "401":
-          description: Unauthorized - user authentication required
-        "403":
-          description: Forbidden - insufficient permissions to update categories
-        "404":
-          description: Parent category not found
-        "500":
-          description: Internal server error updating sort order
-      summary: Update category sort order
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
   /v1/categories/children:
     get:
-      description: Retrieves child categories of a specified parent category with
-        pagination and filtering options. Can include all nested levels and parent
-        hierarchy information.
       operationId: getChildren
       parameters:
-      - description: Filter text to search child categories
-        in: query
+      - in: query
         name: filter
         schema:
           type: string
-      - description: Page number for pagination
-        in: query
+      - in: query
         name: page
         schema:
           type: integer
           format: int32
-      - description: Number of items per page
-        in: query
+      - in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - description: Field to order results by
-        in: query
+      - in: query
         name: orderby
         schema:
           type: string
           default: category_name
-      - description: Sort direction (ASC or DESC)
-        in: query
+      - in: query
         name: direction
         schema:
           type: string
           default: ASC
-      - description: Parent category inode to get children for
-        in: query
+      - in: query
         name: inode
         schema:
           type: string
-      - description: Whether to include children count for each category
-        in: query
+      - in: query
         name: showChildrenCount
         schema:
           type: boolean
-      - description: Whether to include all nested levels
-        in: query
+      - in: query
         name: allLevels
         schema:
           type: boolean
-      - description: Whether to include parent list hierarchy
-        in: query
+      - in: query
         name: parentList
         schema:
           type: boolean
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Child categories retrieved successfully
-        "401":
-          description: Unauthorized - user authentication required
-        "404":
-          description: Parent category not found
-        "500":
-          description: Internal server error retrieving child categories
-      summary: Get category children
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
   /v1/categories/hierarchy:
     post:
-      description: "Retrieves the parent hierarchy for a set of categories specified\
-        \ by their keys. Returns parent lists for each category, starting from the\
-        \ top-level parent down to the direct parent. Categories that don't exist\
-        \ are ignored."
-      operationId: getHierarchy
+      description: Response with the list of parents for a specific set of categories.
+        If any of the categoriesdoes not exists then it is just ignored
+      operationId: getSchemes
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryKeysForm"
-        description: Category keys form containing array of category keys
-        required: true
       responses:
-        "200":
+        default:
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HierarchyShortCategoriesResponseView"
-          description: Category hierarchies retrieved successfully
-        "400":
-          description: Bad request - invalid category keys form
-        "401":
-          description: Unauthorized - user authentication required
-        "500":
-          description: Internal server error retrieving hierarchies
-      summary: Get category hierarchy for multiple categories
+          description: default response
+      summary: Get the List of Parents from  set of categories
       tags:
       - Categories
   /v1/categories/{idOrKey}:
     get:
-      description: Retrieves a specific category by its unique identifier (inode)
-        or key. Can optionally include child count information.
       operationId: getCategoryByIdOrKey
       parameters:
-      - description: Category ID (inode) or key
-        in: path
+      - in: path
         name: idOrKey
         required: true
         schema:
           type: string
-      - description: Whether to include children count
-        in: query
+      - in: query
         name: showChildrenCount
         schema:
           type: boolean
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Category retrieved successfully
-        "401":
-          description: Unauthorized - user authentication required
-        "404":
-          description: Category not found
-        "500":
-          description: Internal server error retrieving category
-      summary: Get category by ID or key
+            application/javascript: {}
+            application/json: {}
+          description: default response
       tags:
       - Categories
   /v1/changePassword:
@@ -5456,14 +5135,12 @@ paths:
         be locked by the current user.
       operationId: canLockContent_1
       parameters:
-      - description: Contentlet inode or identifier
-        in: path
+      - in: path
         name: inodeOrIdentifier
         required: true
         schema:
           type: string
-      - description: Language ID for content localization
-        in: query
+      - in: query
         name: language
         schema:
           type: string
@@ -5473,7 +5150,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Successfully retrieved lock status
         "400":
           description: Bad request
@@ -6092,14 +5769,12 @@ paths:
         \ inode or identifier, the contentlet will be locked."
       operationId: lockContent_1
       parameters:
-      - description: Contentlet inode or identifier
-        in: path
+      - in: path
         name: inodeOrIdentifier
         required: true
         schema:
           type: string
-      - description: Language ID for content localization
-        in: query
+      - in: query
         name: language
         schema:
           type: string
@@ -6130,14 +5805,12 @@ paths:
         \ inode or identifier, the contentlet will be unlocked."
       operationId: unlockContent_1
       parameters:
-      - description: Contentlet inode or identifier
-        in: path
+      - in: path
         name: inodeOrIdentifier
         required: true
         schema:
           type: string
-      - description: Language ID for content localization
-        in: query
+      - in: query
         name: language
         schema:
           type: string
@@ -6180,136 +5853,76 @@ paths:
       - File Assets
   /v1/content/related:
     post:
-      description: Retrieves related content for a contentlet based on relationship
-        field configuration and query conditions
       operationId: pullRelated
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/PullRelatedForm"
-        description: Pull related content request parameters
-        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityListMapView"
-          description: Related content retrieved successfully
+                $ref: "#/components/schemas/ResponseEntityView"
         "400":
-          content:
-            application/json: {}
-          description: Bad request - contentlet does not have a relationship field
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
+          description: Contentlet does not have a relationship field
         "404":
-          content:
-            application/json: {}
-          description: Not found - contentlet not found
+          description: Contentlet not found
       summary: Pull Related Content
       tags:
       - Content
   /v1/content/resourcelinks:
     get:
-      description: Retrieves resource links for all binary fields of a contentlet
-        identified by inode or identifier
       operationId: findResourceLinks
       parameters:
-      - description: Content inode
-        in: query
+      - in: query
         name: inode
         schema:
           type: string
-      - description: Content identifier
-        in: query
+      - in: query
         name: identifier
         schema:
           type: string
-      - description: Language ID
-        example: 1
-        in: query
+      - in: query
         name: language
         schema:
           type: string
           default: "-1"
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Resource links retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - missing inode/identifier parameter
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - download restricted
-      summary: Get all resource links for contentlet
+            application/json;charset=UTF-8: {}
+          description: default response
       tags:
       - Content
   /v1/content/resourcelinks/field/{field}:
     get:
-      description: Retrieves a resource link for a specific field of a contentlet
-        identified by inode or identifier
       operationId: findResourceLink
       parameters:
-      - description: Field variable name
-        in: path
+      - in: path
         name: field
         required: true
         schema:
           type: string
-      - description: Content inode
-        in: query
+      - in: query
         name: inode
         schema:
           type: string
-      - description: Content identifier
-        in: query
+      - in: query
         name: identifier
         schema:
           type: string
-      - description: Language ID
-        example: 1
-        in: query
+      - in: query
         name: language
         schema:
           type: string
           default: "-1"
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Resource link retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - missing inode/identifier parameter
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - download restricted
-        "404":
-          content:
-            application/json: {}
-          description: Not found - contentlet or field not found
-      summary: Get resource link for specific field
+            application/json;charset=UTF-8: {}
+          description: default response
       tags:
       - Content
   /v1/content/search:
@@ -6319,11 +5932,9 @@ paths:
       operationId: search_1
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/ContentSearchForm"
-        description: Content search parameters
-        required: true
       responses:
         "200":
           content:
@@ -6345,53 +5956,30 @@ paths:
       - Content
   /v1/content/versions:
     get:
-      description: "Retrieves all versions for content by identifier or inodes, with\
-        \ optional grouping by language"
       operationId: findVersions
       parameters:
-      - description: Comma-separated list of content inodes
-        in: query
+      - in: query
         name: inodes
         schema:
           type: string
-      - description: Content identifier (takes precedence over inodes)
-        in: query
+      - in: query
         name: identifier
         schema:
           type: string
-      - description: Group results by language (true/1 or false/0)
-        example: false
-        in: query
+      - in: query
         name: groupByLang
         schema:
           type: string
-      - description: "Maximum number of results (min: 20, max: 100)"
-        example: 20
-        in: query
+      - in: query
         name: limit
         schema:
           type: integer
           format: int32
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
-          description: Content versions retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - missing identifier/inodes or invalid parameters
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "404":
-          content:
-            application/json: {}
-          description: Not found - content not found
-      summary: Find content versions
+            application/json;charset=UTF-8: {}
+          description: default response
       tags:
       - Content
   /v1/content/versions/id/{identifier}/history:
@@ -6475,63 +6063,39 @@ paths:
       - Content
   /v1/content/versions/{inode}:
     get:
-      description: Retrieves a specific content version by its inode
       operationId: findByInode
       parameters:
-      - description: Content inode
-        in: path
+      - in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
-          description: Content found successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid inode format
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "404":
-          content:
-            application/json: {}
-          description: Not found - content with inode not found
-      summary: Find content by inode
+            application/json;charset=UTF-8: {}
+          description: default response
       tags:
       - Content
   /v1/content/{identifier}/languages:
     get:
-      description: Retrieves all available languages for a contentlet and indicates
-        which languages have content versions
       operationId: checkContentLanguageVersions
       parameters:
-      - description: Identifier of contentlet whose language status to display.
-        in: path
+      - in: path
         name: identifier
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json: {}
-          description: Language versions retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "404":
-          content:
-            application/json: {}
-          description: Not found - contentlet identifier not found
-      summary: Check content language versions
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityViewListExistingLanguagesForContentletView"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityViewListExistingLanguagesForContentletView"
+          description: default response
       tags:
       - Content
   /v1/content/{identifier}/push/history:
@@ -6581,32 +6145,20 @@ paths:
       - Content
   /v1/content/{identifier}/references/count:
     get:
-      description: Retrieves the total number of references to a specific contentlet
-        by its identifier
       operationId: getAllContentletReferencesCount
       parameters:
-      - description: Content identifier
-        in: path
+      - in: path
         name: identifier
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityCountView"
-          description: References count retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "404":
-          content:
-            application/json: {}
-          description: Not found - contentlet with identifier not found
-      summary: Get contentlet references count
+          description: default response
       tags:
       - Content
   /v1/content/{inodeOrIdentifier}:
@@ -6646,7 +6198,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Contentlet retrieved successfully
         "400":
           description: Bad request - Invalid identifier format
@@ -6663,115 +6215,75 @@ paths:
       - Content
   /v1/content/{inodeOrIdentifier}/references:
     get:
-      description: "Retrieves all references to a specific contentlet, including pages,\
-        \ containers, and personas that reference it"
       operationId: getContentletReferences
       parameters:
-      - description: Content inode or identifier
-        in: path
+      - in: path
         name: inodeOrIdentifier
         required: true
         schema:
           type: string
-      - description: Language ID for content localization
-        example: 1
-        in: query
+      - in: query
         name: language
         schema:
           type: string
           default: ""
       responses:
-        "200":
+        default:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityContentReferenceListView"
-          description: References retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "404":
-          content:
-            application/json: {}
-          description: Not found - contentlet not found
-      summary: Get contentlet references
+                $ref: "#/components/schemas/ResponseEntityViewListContentReferenceView"
+          description: default response
       tags:
       - Content
   /v1/contentrelationships/{params}:
     get:
       deprecated: true
-      description: "Retrieves content with relationships based on query parameters,\
-        \ identifier, or inode. This endpoint is deprecated - use /v1/content with\
-        \ depth parameter instead."
       operationId: getContent_1
       parameters:
-      - description: "Query parameters, identifier, or inode for content lookup"
-        in: path
+      - in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                type: object
-                description: Content with relationships in JSON format including contentlets
-                  and their related content
-          description: Content with relationships retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Get content with relationships (deprecated)
+            '*/*': {}
+          description: default response
       tags:
       - Content
   /v1/contentreport/folder/{folder}:
     get:
-      description: Generates a detailed report of the different Content Types living
-        under a Folder and the number of content items for each type. Supports both
-        folder ID and folder path (requires site parameter).
       operationId: getFolderContentReport
       parameters:
-      - description: Folder ID or path to generate the report for
-        in: path
+      - in: path
         name: folder
         required: true
         schema:
           type: string
           pattern: .*
-      - description: Site ID or key (required when using folder path)
-        in: query
+      - in: query
         name: site
         schema:
           type: string
-      - description: Page number for pagination
-        in: query
+      - in: query
         name: page
         schema:
           type: integer
           format: int32
-      - description: Number of items per page
-        in: query
+      - in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - description: Field to order results by
-        in: query
+      - in: query
         name: orderby
         schema:
           type: string
           default: upper(name)
-      - description: Sort direction (ASC or DESC)
-        in: query
+      - in: query
         name: direction
         schema:
           type: string
@@ -6784,42 +6296,35 @@ paths:
                 $ref: "#/components/schemas/ContentReportView"
           description: "Content Report for the specified Folder ID/path, or an empty\
             \ list if either the Folder doesn't exist, or no content is found."
-      summary: Generate folder content report
+      summary: "Generates a report of the different Content Types living under a Folder,\
+        \ and the number of content items for each type"
       tags:
       - Content Report
   /v1/contentreport/site/{site}:
     get:
-      description: Generates a detailed report of the different Content Types living
-        under a Site and the number of content items for each type. Useful for data
-        analysis and deletion planning.
       operationId: getSiteContentReport
       parameters:
-      - description: Site ID or key to generate the report for
-        in: path
+      - in: path
         name: site
         required: true
         schema:
           type: string
-      - description: Page number for pagination
-        in: query
+      - in: query
         name: page
         schema:
           type: integer
           format: int32
-      - description: Number of items per page
-        in: query
+      - in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - description: Field to order results by
-        in: query
+      - in: query
         name: orderby
         schema:
           type: string
           default: upper(name)
-      - description: Sort direction (ASC or DESC)
-        in: query
+      - in: query
         name: direction
         schema:
           type: string
@@ -6832,7 +6337,8 @@ paths:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
           description: "Content Report for the specified Site ID/Key, or an empty\
             \ list if either the Site doesn't exist, or no content is found."
-      summary: Generate site content report
+      summary: "Generates a report of the different Content Types living under a Site,\
+        \ and the number of content items for each type"
       tags:
       - Content Report
   /v1/contenttype:
@@ -7065,8 +6571,6 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityListMapView"
           description: Content type(s) created successfully
         "400":
           description: Bad Request
@@ -7146,8 +6650,6 @@ paths:
                   perPage: 0
                   totalEntries: 0
                 permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityListContentTypeView"
           description: Content types filtered successfully
         "400":
           description: Bad Request
@@ -7179,8 +6681,6 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBaseContentTypesView"
           description: Base content types retrieved successfully
         "500":
           description: Internal Server Error
@@ -7212,8 +6712,6 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityContentTypeJsonView"
           description: Content type deleted successfully
         "403":
           description: Forbidden
@@ -7225,14 +6723,14 @@ paths:
       tags:
       - Content Type
     get:
-      description: Returns one content type based on the provided ID or Velocity variable
+      description: Returns a Content Type based on the provided ID or Velocity variable
         name.
       operationId: getContentTypeIdVar
       parameters:
       - description: |-
-          The ID or Velocity variable name of the content type to retrieve.
+          The ID or Velocity variable name of the Content Type to retrieve.
 
-          Variable name example: `htmlpageasset` (Default page content type)
+          Variable name example: `htmlpageasset` (Default page Content Type)
         in: path
         name: idOrVar
         required: true
@@ -7288,16 +6786,14 @@ paths:
                   perPage: 0
                   totalEntries: 0
                 permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityContentTypeDetailView"
-          description: Content type retrieved successfully
+          description: Content Type retrieved successfully
         "403":
           description: Forbidden
         "404":
           description: Not Found
         "500":
           description: Internal Server Error
-      summary: Retrieves a single content type
+      summary: Retrieves a single Content Type
       tags:
       - Content Type
     put:
@@ -7381,8 +6877,6 @@ paths:
                 messages: []
                 pagination: null
                 permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityContentTypeDetailView"
           description: Content type updated successfully
         "400":
           description: Bad Request
@@ -7545,15 +7039,15 @@ paths:
       - Content Type
   /v1/contenttype/render/id/{idOrVar}:
     get:
-      description: "Returns a content type based on the provided ID or Velocity variable\
-        \ name. Additionally, the Velocity code in all of its custom fields will be\
+      description: "Returns a Content Type based on the provided ID or Velocity variable\
+        \ name. Additionally, the Velocity code in all of its Custom Fields will be\
         \ parsed."
       operationId: getContentTypeIdVar_1
       parameters:
       - description: |-
-          The ID or Velocity variable name of the content type to retrieve.
+          The ID or Velocity variable name of the Content Type to retrieve.
 
-          Variable name example: `htmlpageasset` (Default page content type)
+          Variable name example: `htmlpageasset` (Default page Content Type)
         in: path
         name: idOrVar
         required: true
@@ -7609,14 +7103,14 @@ paths:
                   perPage: 0
                   totalEntries: 0
                 permissions: []
-          description: Content type retrieved successfully
+          description: Content Type retrieved successfully
         "403":
           description: Forbidden
         "404":
           description: Not Found
         "500":
           description: Internal Server Error
-      summary: Retrieves a single content type with their rendered custom fields
+      summary: Retrieves a single Content Type with their rendered Custom Fields
       tags:
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
@@ -7706,8 +7200,6 @@ paths:
                   currentPage: 0
                   perPage: 0
                   totalEntries: 0
-              schema:
-                $ref: "#/components/schemas/ResponseEntityContentTypeOperationView"
           description: Content type copied successfully
         "400":
           description: Bad Request
@@ -7723,100 +7215,50 @@ paths:
   /v1/contenttype/{typeId}/fields:
     delete:
       deprecated: true
-      description: Deletes multiple fields from a content type by their field IDs.
-        Use v2 API instead for new implementations.
       operationId: deleteFields
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: array
               items:
                 type: string
-        description: Array of field IDs to delete
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
-          description: Fields deleted successfully
-        "400":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Bad request - invalid field IDs
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or one or more fields not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Delete multiple fields (deprecated)
+          description: default response
       tags:
       - Content Type Field
     get:
       deprecated: true
-      description: Retrieves all fields for a specific content type. Use v2 API instead
-        for new implementations.
       operationId: getContentTypeFields
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityListMapView"
-          description: Fields retrieved successfully
-        "401":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Get content type fields (deprecated)
+          description: default response
       tags:
       - Content Type Field
     post:
       deprecated: true
-      description: Creates a new field for a content type. Use v2 API instead.
       operationId: createContentTypeField
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
@@ -7826,41 +7268,19 @@ paths:
           application/json:
             schema:
               type: string
-        description: Field JSON data
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Field created successfully
-        "400":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Bad request - invalid field data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - content type not found
-      summary: Create content type field (deprecated)
+          description: default response
       tags:
       - Content Type Field
     put:
       deprecated: true
-      description: Updates multiple fields for a content type. Use v2 API instead.
       operationId: updateFields
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
@@ -7870,137 +7290,69 @@ paths:
           application/json:
             schema:
               type: string
-        description: Fields JSON data
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityListMapView"
-          description: Fields updated successfully
-        "400":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Bad request - invalid field data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - content type not found
-      summary: Update content type fields (deprecated)
+          description: default response
       tags:
       - Content Type Field
   /v1/contenttype/{typeId}/fields/id/{fieldId}:
     delete:
       deprecated: true
-      description: Deletes a specific field from a content type by its field ID. Use
-        v2 API instead for new implementations.
       operationId: deleteContentTypeFieldById
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID to delete
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
-          description: Field deleted successfully
-        "401":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or field not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Delete content type field by ID (deprecated)
+          description: default response
       tags:
       - Content Type Field
     get:
       deprecated: true
-      description: Retrieves a specific field from a content type by its unique field
-        ID. Use v2 API instead for new implementations.
       operationId: getContentTypeFieldById
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Field retrieved successfully
-        "401":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or field not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Get content type field by ID (deprecated)
+          description: default response
       tags:
       - Content Type Field
     put:
       deprecated: true
-      description: Updates a specific field in a content type by its field ID. Use
-        v2 API instead for new implementations.
       operationId: updateContentTypeFieldById
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID to update
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
@@ -8010,81 +7362,45 @@ paths:
           application/json:
             schema:
               type: string
-        description: Field JSON data with updates
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Field updated successfully
-        "400":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Bad request - invalid field data or missing field ID
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or field not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Update content type field by ID (deprecated)
+          description: default response
       tags:
       - Content Type Field
   /v1/contenttype/{typeId}/fields/id/{fieldId}/variables:
     get:
-      description: Retrieves all field variables for a specific field identified by
-        its ID
       operationId: getFieldVariablesByFieldId
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variables retrieved successfully
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field not found
-      summary: Get field variables by field ID
+          description: default response
       tags:
       - Content Type Field
     post:
-      description: Creates a new field variable for a specific field identified by
-        its ID
       operationId: createFieldVariableByFieldId
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
@@ -8094,129 +7410,81 @@ paths:
           application/json:
             schema:
               type: string
-        description: Field variable data
-        required: true
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable created successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid field variable data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field not found
-      summary: Create field variable by field ID
+          description: default response
       tags:
       - Content Type Field
   /v1/contenttype/{typeId}/fields/id/{fieldId}/variables/id/{fieldVarId}:
     delete:
-      description: Deletes a specific field variable for a field identified by its
-        ID
       operationId: deleteFieldVariableByFieldId
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
           type: string
-      - description: Field variable ID
-        in: path
+      - in: path
         name: fieldVarId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable deleted successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field or field variable not found
-      summary: Delete field variable by field ID
+          description: default response
       tags:
       - Content Type Field
     get:
-      description: Retrieves a specific field variable by field ID and variable ID
       operationId: getFieldVariableByFieldId
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
           type: string
-      - description: Field variable ID
-        in: path
+      - in: path
         name: fieldVarId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable retrieved successfully
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field or field variable not found
-      summary: Get specific field variable by field ID
+          description: default response
       tags:
       - Content Type Field
     put:
-      description: Updates an existing field variable for a specific field identified
-        by its ID
       operationId: updateFieldVariableByFieldId
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field ID
-        in: path
+      - in: path
         name: fieldId
         required: true
         schema:
           type: string
-      - description: Field variable ID
-        in: path
+      - in: path
         name: fieldVarId
         required: true
         schema:
@@ -8226,135 +7494,69 @@ paths:
           application/json:
             schema:
               type: string
-        description: Updated field variable data
-        required: true
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable updated successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid field variable data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field or field variable not found
-      summary: Update field variable by field ID
+          description: default response
       tags:
       - Content Type Field
   /v1/contenttype/{typeId}/fields/var/{fieldVar}:
     delete:
       deprecated: true
-      description: Deletes a specific field from a content type by its variable name.
-        Use v2 API instead for new implementations.
       operationId: deleteContentTypeFieldByVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field variable name to delete
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
-          description: Field deleted successfully
-        "401":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or field not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Delete content type field by variable name (deprecated)
+          description: default response
       tags:
       - Content Type Field
     get:
       deprecated: true
-      description: Retrieves a specific field from a content type by its variable
-        name. Use v2 API instead for new implementations.
       operationId: getContentTypeFieldByVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field variable name
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Field retrieved successfully
-        "401":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or field not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Get content type field by variable name (deprecated)
+          description: default response
       tags:
       - Content Type Field
     put:
       deprecated: true
-      description: Updates a specific field in a content type by its variable name.
-        Use v2 API instead for new implementations.
       operationId: updateContentTypeFieldByVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field variable name to update
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
@@ -8364,81 +7566,45 @@ paths:
           application/json:
             schema:
               type: string
-        description: Field JSON data with updates
-        required: true
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
-          description: Field updated successfully
-        "400":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Bad request - invalid field data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Content type or field not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Update content type field by variable name (deprecated)
+          description: default response
       tags:
       - Content Type Field
   /v1/contenttype/{typeId}/fields/var/{fieldVar}/variables:
     get:
-      description: Retrieves all field variables for a specific field identified by
-        its velocity variable name
       operationId: getFieldVariablesByFieldVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field velocity variable name
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variables retrieved successfully
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field not found
-      summary: Get field variables by field variable name
+          description: default response
       tags:
       - Content Type Field
     post:
-      description: Creates a new field variable for a specific field identified by
-        its velocity variable name
       operationId: createFieldVariableByFieldVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field velocity variable name
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
@@ -8448,130 +7614,81 @@ paths:
           application/json:
             schema:
               type: string
-        description: Field variable data
-        required: true
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable created successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid field variable data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field not found
-      summary: Create field variable by field variable name
+          description: default response
       tags:
       - Content Type Field
   /v1/contenttype/{typeId}/fields/var/{fieldVar}/variables/id/{fieldVarId}:
     delete:
-      description: Deletes a specific field variable for a field identified by its
-        velocity variable name
       operationId: deleteFieldVariableByFieldVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field velocity variable name
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
           type: string
-      - description: Field variable ID
-        in: path
+      - in: path
         name: fieldVarId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable deleted successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field or field variable not found
-      summary: Delete field variable by field variable name
+          description: default response
       tags:
       - Content Type Field
     get:
-      description: Retrieves a specific field variable by field velocity variable
-        name and variable ID
       operationId: getFieldVariableByFieldVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field velocity variable name
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
           type: string
-      - description: Field variable ID
-        in: path
+      - in: path
         name: fieldVarId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable retrieved successfully
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field or field variable not found
-      summary: Get specific field variable by field variable name
+          description: default response
       tags:
       - Content Type Field
     put:
-      description: Updates an existing field variable for a specific field identified
-        by its velocity variable name
       operationId: updateFieldVariableByFieldVar
       parameters:
-      - description: Content type ID
-        in: path
+      - in: path
         name: typeId
         required: true
         schema:
           type: string
-      - description: Field velocity variable name
-        in: path
+      - in: path
         name: fieldVar
         required: true
         schema:
           type: string
-      - description: Field variable ID
-        in: path
+      - in: path
         name: fieldVarId
         required: true
         schema:
@@ -8581,30 +7698,12 @@ paths:
           application/json:
             schema:
               type: string
-        description: Updated field variable data
-        required: true
       responses:
-        "200":
+        default:
           content:
+            application/javascript: {}
             application/json: {}
-          description: Field variable updated successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid field variable data
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-        "404":
-          content:
-            application/json: {}
-          description: Not found - field or field variable not found
-      summary: Update field variable by field variable name
+          description: default response
       tags:
       - Content Type Field
   /v1/ema:
@@ -9479,21 +8578,13 @@ paths:
       - Experiment
   /v1/fieldTypes:
     get:
-      description: Retrieves all available field types in dotCMS for content type
-        configuration
       operationId: getFieldTypes
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityFieldTypeListView"
-          description: Field types retrieved successfully
-        "401":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Unauthorized - authentication required
-      summary: Get field types
+          description: default response
       tags:
       - Content Type Field
   /v1/folder/byPath:
@@ -14483,8 +13574,24 @@ paths:
   /v1/usage/summary:
     get:
       description: "Retrieves key business metrics optimized for dashboard display\
-        \ including content, sites, users, and system metrics"
+        \ including content, sites, users, and system metrics. Supports optional profile\
+        \ parameter (MINIMAL, STANDARD, FULL) to override the default metric collection\
+        \ profile."
       operationId: getSummary
+      parameters:
+      - description: "Metric collection profile to use. MINIMAL (default): Fast collection\
+          \ with 10-15 core metrics. STANDARD: Comprehensive collection with ~50 metrics.\
+          \ FULL: Complete collection with all available metrics. This allows administrators\
+          \ to view additional metrics beyond the default MINIMAL profile."
+        in: query
+        name: profile
+        schema:
+          type: string
+          default: MINIMAL
+          enum:
+          - MINIMAL
+          - STANDARD
+          - FULL
       responses:
         "200":
           content:
@@ -14492,6 +13599,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityUsageSummaryView"
           description: Dashboard summary retrieved successfully
+        "400":
+          description: Invalid profile parameter
         "401":
           description: Unauthorized
         "403":
@@ -15362,7 +14471,7 @@ paths:
                 messages: []
                 permissions: []
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Contentlet(s) modified successfully
         "401":
           description: Invalid User
@@ -15480,7 +14589,7 @@ paths:
                 messages: []
                 permissions: []
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -15594,7 +14703,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -15616,10 +14725,12 @@ paths:
   /v1/workflow/actions/default/firemultipart/{systemAction}:
     put:
       description: |-
+        (**Construction notice:** Still needs request body documentation. Coming soon!)
+
         Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) on target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
-      operationId: putFireDefaultActionMultipart
+      operationId: putFireActionByIdMultipart
       parameters:
       - description: Inode of the target content.
         in: query
@@ -15673,16 +14784,13 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/WorkflowActionMultipartSchema"
-        description: Multipart form containing a JSON 'contentlet' body and optional
-          binary field parts.
-        required: true
+              $ref: "#/components/schemas/FormDataMultiPart"
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -15698,7 +14806,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire default action (multipart form)
+      summary: Fire action by ID (multipart form) 🚧
       tags:
       - Workflow
   /v1/workflow/actions/fire:
@@ -15777,7 +14885,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -15799,7 +14907,9 @@ paths:
   /v1/workflow/actions/firemultipart:
     put:
       description: |-
-        (Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
+        (**Construction notice:** Still needs request body documentation. Coming soon!)
+
+        Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
       operationId: putFireActionByNameMultipart
@@ -15841,16 +14951,15 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/WorkflowActionMultipartSchema"
-        description: Multipart form containing a JSON 'contentlet' body and optional
-          binary field parts.
+              $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form. More details to follow.
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -15866,7 +14975,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire action by name (multipart form)
+      summary: Fire action by name (multipart form) 🚧
       tags:
       - Workflow
   /v1/workflow/actions/separator:
@@ -16294,7 +15403,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -16316,10 +15425,12 @@ paths:
   /v1/workflow/actions/{actionId}/firemultipart:
     put:
       description: |-
+        (**Construction notice:** Still needs request body documentation. Coming soon!)
+
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
-      operationId: putFireActionByIdMultipart
+      operationId: putFireActionByIdMultipart_1
       parameters:
       - description: |-
           Identifier of a workflow action.
@@ -16367,16 +15478,15 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/WorkflowActionMultipartSchema"
-        description: Multipart form containing a JSON 'contentlet' body and optional
-          binary field parts.
+              $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form. More details to follow.
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -16392,7 +15502,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Fire action by ID (multipart form)
+      summary: Fire action by ID (multipart form) 🚧
       tags:
       - Workflow
   /v1/workflow/contentlet/actions/_bulkfire:
@@ -16873,7 +15983,7 @@ paths:
         Create a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).
 
          Returns created workflow scheme on success.
-      operationId: postSaveScheme
+      operationId: postSaveScheme_1
       requestBody:
         content:
           application/json:
@@ -16887,7 +15997,6 @@ paths:
           | `schemeName` | String | The workflow scheme's name. |
           | `schemeDescription` | String | A description of the scheme. |
           | `schemeArchived` | Boolean | If `true`, the scheme will be created in an archived state. |
-        required: true
       responses:
         "200":
           content:
@@ -17183,7 +16292,7 @@ paths:
                 pagination: null
                 permissions: []
               schema:
-                $ref: "#/components/schemas/ResponseEntityWorkflowSchemeView"
+                $ref: "#/components/schemas/ResponseEntityView"
           description: Exported workflow scheme successfully
         "400":
           description: Bad request
@@ -17985,32 +17094,14 @@ paths:
       - Workflow
   /v1/workflow/tasks:
     post:
-      description: "Retrieve the [workflow tasks](https://dev.dotcms.com/docs/workflow-tasks)\
-        \ that match the parameters included in the request body."
+      description: "Retrieve the workflow tasks that matchedhttps://www2.dotcms.com/docs/latest/workflow-tasks,\
+        \ [workflow task]"
       operationId: getWorkflowTasks
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/WorkflowSearcherForm"
-        description: |-
-          Body consists of a JSON object containing workflow task search parameters:
-
-          | Property | Type | Description |
-          |-|-|-|
-          | `keywords` | string | Search keywords to filter tasks by content |
-          | `assignedTo` | string | User ID to filter tasks assigned to specific user |
-          | `daysOld` | integer | Filter tasks by age in days (-1 for no limit, default: -1) |
-          | `schemeId` | string | Workflow scheme identifier to filter tasks |
-          | `stepId` | string | Workflow step identifier to filter tasks |
-          | `open` | boolean | Include open tasks in results (default: false) |
-          | `closed` | boolean | Include closed tasks in results (default: false) |
-          | `createdBy` | string | User ID who created the content to filter tasks |
-          | `show4all` | boolean | Show tasks for all users (admin privilege required, default: false) |
-          | `orderBy` | string | Field to order results by (e.g., 'created_date', 'title') |
-          | `count` | integer | Number of results per page (default: 20) |
-          | `page` | integer | Page number for pagination (default: 0) |
-        required: true
       responses:
         "200":
           content:
@@ -18028,7 +17119,7 @@ paths:
           description: Not Acceptable
         "500":
           description: Internal Server Error
-      summary: Find workflow tasks based on filter parameters
+      summary: Find workflow tasks based on the filter parameters on the request body
       tags:
       - Workflow
   /v1/workflow/tasks/history/comments/{contentletIdentifier}:
@@ -18079,7 +17170,7 @@ paths:
         Create a [workflow comment].
 
          Returns created workflow comment on success.
-      operationId: postSaveComment
+      operationId: postSaveScheme
       parameters:
       - description: Identifier of contentlet to add comment.
         in: path
@@ -18834,165 +17925,90 @@ paths:
       - Tags
   /v2/tags/inode/{inode}:
     delete:
-      description: Breaks the link between an inode and all its associated tags. Removes
-        all tag associations for the specified content but does not delete the tags
-        themselves.
       operationId: deleteTagInodesByInode_1
       parameters:
-      - description: Inode to remove tag associations from
-        in: path
+      - in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: Tag-inode associations deleted successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions to modify tag associations
-        "404":
-          content:
-            application/json: {}
-          description: No tag associations found for the specified inode
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Delete tag-inode associations
+          description: default response
       tags:
       - Tags
     get:
-      description: Retrieves all tags associated with a given inode. Returns tag-inode
-        relationships for the specified content.
       operationId: findTagsByInode_1
       parameters:
-      - description: Inode to retrieve tags for
-        in: path
+      - in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
-          description: Tags retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions to access tags
-        "404":
-          content:
-            application/json: {}
-          description: No tags found for the specified inode
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Get tags by inode
+          description: default response
       tags:
       - Tags
   /v2/tags/tag/{nameOrId}/inode/{inode}:
     put:
-      description: "Binds tags with a given inode. Lookup can be done via tag name\
-        \ or ID. If tag name matches multiple tags, all matching tags will be bound.\
-        \ Use tag ID for specific binding."
       operationId: linkTagsAndInode_1
       parameters:
-      - description: Name or UUID of the tag to link
-        in: path
+      - in: path
         name: nameOrId
         required: true
         schema:
           type: string
-      - description: Inode to link the tag(s) to
-        in: path
+      - in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
-          description: Tags linked to inode successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid tag name/ID or inode
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions to link tags
-        "404":
-          content:
-            application/json: {}
-          description: Tag not found by the specified name or ID
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Link tags to inode
+          description: default response
       tags:
       - Tags
   /v2/tags/user/{userId}:
     get:
-      description: Retrieves all tags owned by a specific user. Returns tags that
-        were explicitly linked to the user during creation.
       operationId: getTagsByUserId_1
       parameters:
-      - description: User ID to retrieve tags for
-        in: path
+      - in: path
         name: userId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagMapView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagMapView"
-          description: User tags retrieved successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions to access tags
-        "404":
-          content:
-            application/json: {}
-          description: No tags found for the specified user
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Get tags by user ID
+          description: default response
       tags:
       - Tags
   /v2/tags/{idOrName}:
@@ -19101,40 +18117,23 @@ paths:
       - Tags
   /v2/tags/{tagId}:
     delete:
-      description: Deletes a tag based on its ID. The tag must exist and the user
-        must have appropriate permissions.
       operationId: delete_17
       parameters:
-      - description: ID of the tag to delete
-        in: path
+      - in: path
         name: tagId
         required: true
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: Tag deleted successfully
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions to delete tags
-        "404":
-          content:
-            application/json: {}
-          description: Tag not found
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Delete tag
+          description: default response
       tags:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
@@ -20219,20 +19218,6 @@ components:
       required:
       - password
       - userId
-    BaseContentTypesView:
-      type: object
-      properties:
-        index:
-          type: integer
-          format: int32
-        label:
-          type: string
-        name:
-          type: string
-        types:
-          type: array
-          items:
-            $ref: "#/components/schemas/ContentTypeView"
     BayesianResult:
       type: object
       properties:
@@ -20605,26 +19590,6 @@ components:
           format: int32
       required:
       - categoryName
-    CategoryImportFormSchema:
-      type: object
-      description: Category import form data with CSV file and processing parameters
-      properties:
-        contextInode:
-          type: string
-          description: Context category inode to import into
-        exportType:
-          type: string
-          description: Import behavior
-          enum:
-          - replace
-          - merge
-        file:
-          type: string
-          format: binary
-          description: CSV file containing categories to import
-        filter:
-          type: string
-          description: Filter pattern for categories
     CategoryKeysForm:
       type: object
       properties:
@@ -20632,31 +19597,6 @@ components:
           type: array
           items:
             type: string
-    CategoryView:
-      type: object
-      properties:
-        active:
-          type: boolean
-        categoryName:
-          type: string
-        categoryVelocityVarName:
-          type: string
-        description:
-          type: string
-        inode:
-          type: string
-        key:
-          type: string
-        keywords:
-          type: string
-        modDate:
-          type: string
-          format: date-time
-        parent:
-          type: string
-        sortOrder:
-          type: integer
-          format: int32
     ChangeLoggerForm:
       type: object
       properties:
@@ -21019,6 +19959,12 @@ components:
             type: string
         personaTag:
           type: string
+        stylePropertiesMap:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
     ContainerForm:
       type: object
       properties:
@@ -21164,23 +20110,6 @@ components:
       required:
       - file
       - form
-    ContentMetrics:
-      type: object
-      properties:
-        contentTypes:
-          type: integer
-          format: int64
-        contentTypesWithWorkflows:
-          type: integer
-          format: int64
-        lastContentEdited:
-          type: string
-        recentlyEdited:
-          type: integer
-          format: int64
-        totalContent:
-          type: integer
-          format: int64
     ContentReferenceView:
       type: object
       properties:
@@ -21228,19 +20157,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowFormEntry"
-    ContentTypeView:
-      type: object
-      properties:
-        action:
-          type: string
-        inode:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-        variable:
-          type: string
     ContentletWorkflowStatusView:
       type: object
       properties:
@@ -23392,13 +22308,6 @@ components:
       properties:
         empty:
           type: boolean
-    ImmutableMapObjectObject:
-      type: object
-      additionalProperties:
-        type: object
-      properties:
-        empty:
-          type: boolean
     ImmutableMapStringListSampleData:
       type: object
       additionalProperties:
@@ -25047,31 +23956,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityBaseContentTypesView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/BaseContentTypesView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityBooleanView:
       type: object
       properties:
@@ -25166,29 +24050,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityCategoryView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/CategoryView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityContainerView:
       type: object
       properties:
@@ -25196,107 +24057,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Container"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityContentReferenceListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/ContentReferenceView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityContentTypeDetailView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityContentTypeJsonView:
-      type: object
-      properties:
-        entity:
-          type: string
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityContentTypeOperationView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
-          properties:
-            empty:
-              type: boolean
         errors:
           type: array
           items:
@@ -25555,33 +24315,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityFieldTypeListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: object
-            additionalProperties:
-              type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityForgotPasswordView:
       type: object
       properties:
@@ -25706,58 +24439,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Layout"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityListContentTypeView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/ContentType"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityListMapView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: object
-            additionalProperties:
-              type: object
         errors:
           type: array
           items:
@@ -25908,31 +24589,6 @@ components:
             type: object
             additionalProperties:
               type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityMapStringObjectView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
         errors:
           type: array
           items:
@@ -26296,29 +24952,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/SaveUserPermissionsView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntitySearchView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/SearchView"
         errors:
           type: array
           items:
@@ -26772,6 +25405,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Announcement"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityViewListContentReferenceView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentReferenceView"
         errors:
           type: array
           items:
@@ -28084,21 +26742,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
-    SiteMetrics:
-      type: object
-      properties:
-        activeSites:
-          type: integer
-          format: int64
-        siteAliases:
-          type: integer
-          format: int64
-        templates:
-          type: integer
-          format: int64
-        totalSites:
-          type: integer
-          format: int64
     SiteVariableForm:
       type: object
       properties:
@@ -28231,24 +26874,6 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
-    SystemMetrics:
-      type: object
-      properties:
-        builderTemplates:
-          type: integer
-          format: int64
-        languages:
-          type: integer
-          format: int64
-        liveContainers:
-          type: integer
-          format: int64
-        workflowSchemes:
-          type: integer
-          format: int64
-        workflowSteps:
-          type: integer
-          format: int64
     TabDividerField:
       type: object
       allOf:
@@ -28921,17 +27546,15 @@ components:
     UsageSummary:
       type: object
       properties:
-        contentMetrics:
-          $ref: "#/components/schemas/ContentMetrics"
         lastUpdated:
           type: string
           format: date-time
-        siteMetrics:
-          $ref: "#/components/schemas/SiteMetrics"
-        systemMetrics:
-          $ref: "#/components/schemas/SystemMetrics"
-        userMetrics:
-          $ref: "#/components/schemas/UserMetrics"
+        metrics:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
     User:
       type: object
       properties:
@@ -29181,20 +27804,6 @@ components:
       - email
       - firstName
       - lastName
-    UserMetrics:
-      type: object
-      properties:
-        activeUsers:
-          type: integer
-          format: int64
-        lastLogin:
-          type: string
-        recentLogins:
-          type: integer
-          format: int64
-        totalUsers:
-          type: integer
-          format: int64
     UserPermissionAssetView:
       type: object
       description: The updated asset with new permission assignments
@@ -29679,35 +28288,6 @@ components:
       - actionRoleHierarchyForAssign
       - schemeId
       - showOn
-    WorkflowActionMultipartSchema:
-      type: object
-      description: Multipart form for workflow actions. Include a JSON 'contentlet'
-        and one or more 'file' parts that map to binary field variables.
-      properties:
-        binaryFields:
-          type: array
-          description: List of binary field variables. The uploaded files in 'file'
-            should correspond by index to these field variables.
-          example:
-          - binaryImage
-          - binaryDocument
-          items:
-            type: string
-            description: List of binary field variables. The uploaded files in 'file'
-              should correspond by index to these field variables.
-            example: "[\"binaryImage\",\"binaryDocument\"]"
-        contentlet:
-          type: string
-          description: JSON object describing the contentlet values.
-          example: "{\\n  \"contentType\": \"News\",\\n  \"title\": \"My News\"\\\
-            n}"
-        file:
-          type: array
-          description: Files to upload. Repeat the 'file' part for multiple files;
-            order should match 'binaryFields'.
-          items:
-            type: string
-            format: binary
     WorkflowActionSeparatorForm:
       type: object
       properties:
