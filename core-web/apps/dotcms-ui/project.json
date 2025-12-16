@@ -6,14 +6,19 @@
     "prefix": "dot",
     "targets": {
         "build": {
-            "executor": "@nx/angular:browser-esbuild",
+            "executor": "@angular-devkit/build-angular:application",
+            "outputs": ["{options.outputPath.base}"],
             "options": {
                 "baseHref": "./",
-                "outputPath": "dist/apps/dotcms-ui",
+                "outputPath": {
+                    "base": "dist/apps/dotcms-ui",
+                    "browser": ""
+                },
                 "index": "apps/dotcms-ui/src/index.html",
-                "main": "apps/dotcms-ui/src/main.ts",
-                "polyfills": "apps/dotcms-ui/src/polyfills.ts",
+                "browser": "apps/dotcms-ui/src/main.ts",
+                "polyfills": ["apps/dotcms-ui/src/polyfills.ts"],
                 "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
                 "allowedCommonJsDependencies": [
                     "lodash",
                     "dragula",
@@ -71,9 +76,7 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "vendorChunk": true,
                 "extractLicenses": false,
-                "buildOptimizer": false,
                 "sourceMap": true,
                 "optimization": false,
                 "namedChunks": true
@@ -91,8 +94,6 @@
                     "sourceMap": false,
                     "namedChunks": false,
                     "extractLicenses": true,
-                    "vendorChunk": false,
-                    "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
@@ -107,25 +108,30 @@
                     ]
                 },
                 "development": {
-                    "deployUrl": "/dotAdmin/",
                     "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
-                    "baseHref": "",
+                    "baseHref": "/dotAdmin/",
                     "optimization": false,
                     "sourceMap": true,
                     "namedChunks": true,
-                    "vendorChunk": true,
-                    "buildOptimizer": false
+                    "extractLicenses": false,
+                    "fileReplacements": [],
+                    "outputHashing": "none",
+                    "budgets": [],
+                    "externalDependencies": ["date-fns/locale"]
                 }
             },
             "defaultConfiguration": "production",
             "dependsOn": ["^build"]
         },
         "serve": {
-            "dependsOn": ["dotcms-webcomponents:build"],
             "executor": "@angular-devkit/build-angular:dev-server",
+            "dependsOn": [],
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
-                "buildTarget": "dotcms-ui:build:development"
+                "buildTarget": "dotcms-ui:build:development",
+                "hmr": true,
+                "liveReload": false,
+                "watch": true
             }
         },
         "extract-i18n": {

@@ -11,7 +11,6 @@ import {
 
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotIconComponent } from '@dotcms/ui';
 
 import {
     LABEL_IMPORTANT_ICON,
@@ -24,15 +23,9 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    imports: [
-        CommonModule,
-        DotIconComponent,
-        DotSubNavComponent,
-        DotNavIconComponent,
-        DotRandomIconPipe
-    ],
+    imports: [CommonModule, DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe],
     host: {
-        'dot-nav-item__collapsed': '$collapsed()'
+        '[class.dot-nav-item__collapsed]': '$collapsed()'
     }
 })
 export class DotNavItemComponent {
@@ -59,8 +52,6 @@ export class DotNavItemComponent {
 
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
-
-    isGroupActive = this.#globalStore.isGroupActive;
 
     @HostListener('mouseleave', ['$event'])
     menuUnhovered() {

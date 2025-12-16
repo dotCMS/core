@@ -45,8 +45,6 @@ const initialState: UVEState = {
     pageParams: null,
     status: null,
     isTraditionalPage: true,
-    canEditPage: true,
-    pageIsLocked: false,
     isClientReady: false
 };
 
