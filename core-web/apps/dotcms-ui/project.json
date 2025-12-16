@@ -131,7 +131,6 @@
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
-                "hmr": true,
                 "liveReload": true,
                 "watch": true
             },
