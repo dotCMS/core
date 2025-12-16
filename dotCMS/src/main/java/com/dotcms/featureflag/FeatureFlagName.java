@@ -7,8 +7,6 @@ package com.dotcms.featureflag;
 public interface FeatureFlagName {
 
     // Experiments and Analytics
-    String TELEMETRY_API_METRICS_ENABLED = "TELEMETRY_API_METRICS_ENABLED";
-
     String FEATURE_FLAG_EXPERIMENTS = "FEATURE_FLAG_EXPERIMENTS";
 
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
