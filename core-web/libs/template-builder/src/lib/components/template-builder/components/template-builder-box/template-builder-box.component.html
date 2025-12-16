@@ -72,7 +72,8 @@
                         <dotcms-remove-confirm-dialog
                             (deleteConfirmed)="requestColumnDelete()"
                             (deleteRejected)="deleteColumnRejected.emit()"
-                            [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
+                            [skipConfirmation]="items.length === 0"
+                            data-testId="btn-delete-column"></dotcms-remove-confirm-dialog>
                     }
                 </div>
             </div>
