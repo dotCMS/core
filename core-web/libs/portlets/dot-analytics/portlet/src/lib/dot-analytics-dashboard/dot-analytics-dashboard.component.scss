@@ -21,99 +21,22 @@
 
     // Element: dashboard-row (white background)
     &__dashboard-row {
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        background: $white;
-        padding: $spacing-4;
-        overflow: auto;
+        padding: 0 $spacing-4;
     }
 
-    // Element: dashboard-container
-    &__dashboard-container {
-        max-width: 1400px;
-        width: 100%;
-    }
+    // p-tabView: override global flex: 1 that stretches tabs
+    ::ng-deep .p-tabview {
+        .p-tabview-nav li {
+            flex: initial;
 
-    // Element: metrics (responsive layout)
-    &__metrics {
-        // Mobile: Stack vertically
-        @media (max-width: 991px) {
-            flex-direction: column !important;
+            .p-tabview-nav-link {
+                padding: 1.5rem 1.5rem;
+            }
         }
-    }
-
-    // Element: metric-card
-    &__metric-card {
-        flex: 1;
-        min-width: 280px;
-
-        // Mobile: Full width
-        @media (max-width: 991px) {
-            min-width: auto;
-            width: 100%;
-        }
-
-        // Override PrimeNG card styles to add border
-        ::ng-deep .p-card {
-            border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-xl;
-        }
-    }
-
-    // Element: timeline-chart
-    &__timeline-chart {
-        flex: 1;
-        min-width: 0;
-
-        // Override PrimeNG card styles
-        ::ng-deep .p-card {
-            border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-xl;
-        }
-    }
-
-    // Element: bottom-section (responsive layout)
-    &__bottom-section {
-        // Mobile: Stack vertically
-        @media (max-width: 991px) {
-            flex-direction: column !important;
-        }
-    }
-
-    // Element: device-chart
-    &__device-chart {
-        width: 450px;
-        flex-shrink: 0;
-
-        // Mobile: Full width
-        @media (max-width: 991px) {
-            width: 100%;
-            flex-shrink: 1;
-        }
-
-        // Override PrimeNG card styles
-        ::ng-deep .p-card {
-            border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-xl;
-        }
-    }
-
-    // Element: table
-    &__table {
-        flex: 1;
-        min-width: 0;
-
-        // Mobile: Full width
-        @media (max-width: 991px) {
-            width: 100%;
-            min-width: auto;
-        }
-
-        // Override PrimeNG card styles
-        ::ng-deep .p-card {
-            border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-xl;
+        .p-tabview-panels {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding-top: $spacing-4;
         }
     }
 }

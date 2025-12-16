@@ -60,6 +60,32 @@ export interface BrowserEntity {
 }
 
 /**
+ * Total conversions entity response
+ */
+export interface TotalConversionsEntity {
+    'EventSummary.totalEvents': string;
+}
+
+/**
+ * Converting visitors entity response
+ */
+export interface ConvertingVisitorsEntity {
+    'EventSummary.uniqueVisitors': string;
+    'EventSummary.uniqueConvertingVisitors': string;
+}
+
+/**
+ * Content attribution entity response for content conversions table.
+ */
+export interface ContentAttributionEntity {
+    'ContentAttribution.eventType': string;
+    'ContentAttribution.identifier': string;
+    'ContentAttribution.title': string;
+    'ContentAttribution.conversions': string;
+    'ContentAttribution.events': string;
+}
+
+/**
  * Chart type options available for visualization.
  * Using const assertion for chart type management.
  */
@@ -93,14 +119,17 @@ export type ApiDimensionField = (typeof ApiDimensionField)[keyof typeof ApiDimen
  * Defines the structure for chart datasets used in analytics components.
  */
 export interface ChartDataset {
+    type?: 'bar' | 'line';
     label: string;
     data: number[];
     borderColor?: string;
     backgroundColor?: string | string[];
     borderWidth?: number;
+    borderRadius?: number;
     fill?: boolean;
     tension?: number;
     cubicInterpolationMode?: 'default' | 'monotone';
+    order?: number;
 }
 
 /**

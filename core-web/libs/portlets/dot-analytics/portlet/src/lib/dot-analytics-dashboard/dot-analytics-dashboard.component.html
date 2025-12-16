@@ -25,7 +25,7 @@
         </p-messages>
     }
 
-    <!-- Filters Row - Gray Background -->
+    <!-- Filters Row -->
     <div class="analytics-dashboard__filters-row">
         <div
             class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
@@ -46,53 +46,23 @@
         </div>
     </div>
 
-    <!-- Dashboard Row - White Background -->
+    <!-- Dashboard Content - Tabs -->
     <div class="analytics-dashboard__dashboard-row">
-        <div class="analytics-dashboard__dashboard-container flex flex-column gap-3">
-            <!-- Metrics Section -->
-            <div class="analytics-dashboard__metrics flex gap-3 flex-wrap">
-                @for (metric of $metricsData(); track metric.name) {
-                    <dot-analytics-dashboard-metrics
-                        class="analytics-dashboard__metric-card"
-                        [name]="metric.name"
-                        [value]="metric.value || 0"
-                        [subtitle]="metric.subtitle || ''"
-                        [icon]="metric.icon || ''"
-                        [status]="metric.status"
-                        data-testid="analytics-metric-card" />
-                }
-            </div>
-
-            <!-- Charts Section -->
-            <div class="analytics-dashboard__charts flex gap-3">
-                <!-- Line Chart -->
-                <div class="analytics-dashboard__timeline-chart">
-                    <dot-analytics-dashboard-chart
-                        [title]="'analytics.charts.pageviews-timeline.title' | dm"
-                        type="line"
-                        [chartState]="$pageViewTimeLine()"
-                        data-testid="analytics-timeline-chart" />
-                </div>
-            </div>
-
-            <!-- Table and Pie Chart Section -->
-            <div class="analytics-dashboard__bottom-section flex gap-3 align-items-stretch">
-                <!-- Pie Chart -->
-                <div class="analytics-dashboard__device-chart">
-                    <dot-analytics-dashboard-chart
-                        [title]="'analytics.charts.device-breakdown.title' | dm"
-                        type="pie"
-                        [chartState]="$pageViewDeviceBrowsers()"
-                        data-testid="analytics-device-chart" />
-                </div>
-
-                <!-- Table -->
-                <div class="analytics-dashboard__table">
-                    <dot-analytics-dashboard-table
-                        [tableState]="$topPagesTable()"
-                        data-testid="analytics-table" />
-                </div>
-            </div>
-        </div>
+        <p-tabView [activeIndex]="$activeTabIndex()" (onChange)="onTabChange($event)">
+            @for (tab of tabs; track tab.id) {
+                <p-tabPanel [header]="tab.label | dm">
+                    <ng-template pTemplate="content">
+                        @switch (tab.id) {
+                            @case ('pageview') {
+                                <dot-analytics-dashboard-pageview-report />
+                            }
+                            @case ('conversions') {
+                                <dot-analytics-dashboard-conversions-report />
+                            }
+                        }
+                    </ng-template>
+                </p-tabPanel>
+            }
+        </p-tabView>
     </div>
 </div>

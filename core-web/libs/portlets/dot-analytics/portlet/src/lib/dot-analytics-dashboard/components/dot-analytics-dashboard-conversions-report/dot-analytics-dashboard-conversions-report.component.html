@@ -1,0 +1,159 @@
+<!-- Metrics Section -->
+<div class="analytics-dashboard-conversions__metrics flex gap-3 flex-wrap">
+    @for (metric of $metricsData(); track metric.name) {
+        <dot-analytics-dashboard-metrics
+            class="analytics-dashboard-conversions__metric-card"
+            [name]="metric.name"
+            [value]="metric.value || 0"
+            [subtitle]="metric.subtitle || ''"
+            [icon]="metric.icon || ''"
+            [status]="metric.status"
+            data-testid="analytics-metric-card" />
+    }
+</div>
+
+<!-- Charts Section - Two charts side by side -->
+<div class="analytics-dashboard-conversions__charts flex gap-3">
+    <!-- Conversion Trend - Line Chart (1 dataset) -->
+    <div class="analytics-dashboard-conversions__chart-half">
+        <dot-analytics-dashboard-chart
+            [title]="'analytics.charts.conversion-trend.title' | dm"
+            type="line"
+            [data]="$conversionTrendData()"
+            [status]="$conversionTrendStatus()"
+            data-testid="analytics-conversion-trend-chart" />
+    </div>
+
+    <!-- Traffic vs Conversions - Combo Chart (2 datasets: bar + line) -->
+    <div class="analytics-dashboard-conversions__chart-half">
+        <dot-analytics-dashboard-chart
+            [title]="$trafficVsConversionsTitle()"
+            type="bar"
+            [data]="$trafficVsConversionsData()"
+            [status]="$trafficVsConversionsStatus()"
+            data-testid="analytics-traffic-conversions-chart" />
+    </div>
+</div>
+
+<!-- Content Conversions Table -->
+@let isTableLoading = $isTableLoading();
+@let isTableError = $isTableError();
+@let isTableEmpty = $isTableEmpty();
+@let tableData = $contentConversionsData();
+
+<p-card styleClass="analytics-dashboard-conversions__content-table">
+    <ng-template pTemplate="header">
+        <div class="flex align-items-center gap-2 p-3">
+            <i class="pi pi-chart-line"></i>
+            <span class="font-semibold">
+                {{ 'analytics.table.content-conversions.title' | dm }}
+            </span>
+        </div>
+    </ng-template>
+
+    @if (isTableLoading) {
+        <!-- Loading State -->
+        <div class="flex flex-column gap-3 p-4" data-testid="content-conversions-loading">
+            @for (i of [1, 2, 3]; track i) {
+                <div class="flex gap-3">
+                    <div
+                        class="skeleton-cell flex-1"
+                        style="
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell flex-1"
+                        style="
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell flex-1"
+                        style="
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell"
+                        style="
+                            width: 80px;
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell"
+                        style="
+                            width: 80px;
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell"
+                        style="
+                            width: 80px;
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                </div>
+            }
+        </div>
+    } @else if (isTableError) {
+        <!-- Error State -->
+        <div class="p-4" style="min-height: 200px" data-testid="content-conversions-error">
+            <dot-analytics-state-message
+                message="analytics.error.loading.content-conversions"
+                icon="pi-exclamation-triangle" />
+        </div>
+    } @else if (isTableEmpty) {
+        <!-- Empty State -->
+        <div class="p-4" style="min-height: 200px" data-testid="content-conversions-empty">
+            <dot-analytics-state-message
+                message="analytics.table.content-conversions.empty"
+                icon="pi-info-circle" />
+        </div>
+    } @else {
+        <!-- Data Table -->
+        <p-table
+            [value]="tableData"
+            styleClass="p-datatable-sm"
+            data-testid="content-conversions-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>{{ 'analytics.table.content-conversions.type' | dm }}</th>
+                    <th>{{ 'analytics.table.content-conversions.identifier' | dm }}</th>
+                    <th>{{ 'analytics.table.content-conversions.title-column' | dm }}</th>
+                    <th class="text-right">
+                        {{ 'analytics.table.content-conversions.count' | dm }}
+                    </th>
+                    <th class="text-right">
+                        {{ 'analytics.table.content-conversions.conversions' | dm }}
+                    </th>
+                    <th class="text-right">
+                        {{ 'analytics.table.content-conversions.conv-rate' | dm }}
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+                <tr>
+                    <td>
+                        <p-tag styleClass="sm" [value]="row.eventType" />
+                    </td>
+                    <td class="font-mono text-sm">{{ row.identifier }}</td>
+                    <td>{{ row.title }}</td>
+                    <td class="text-right">{{ row.events | number }}</td>
+                    <td class="text-right text-primary font-semibold">
+                        {{ row.conversions | number }}
+                    </td>
+                    <td class="text-right">{{ row.conversionRate }}%</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+</p-card>

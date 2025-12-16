@@ -10,13 +10,15 @@ import {
     subDays
 } from 'date-fns';
 
-import { TIME_RANGE_OPTIONS } from '../../constants';
+import { TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
 import {
     ChartData,
+    ContentAttributionEntity,
     Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
+    TimeRangeCubeJS,
     TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
@@ -93,6 +95,23 @@ export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Gra
             }
         }
     }
+}
+
+/**
+ * Converts TimeRangeInput to TimeRangeCubeJS format for CubeJS queries.
+ *
+ * @param timeRange - The time range input (predefined option or custom date array)
+ * @returns The CubeJS-compatible time range value
+ */
+export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
+    if (Array.isArray(timeRange)) {
+        return timeRange;
+    }
+
+    return (
+        TIME_RANGE_CUBEJS_MAPPING[timeRange as keyof typeof TIME_RANGE_CUBEJS_MAPPING] ||
+        TIME_RANGE_CUBEJS_MAPPING.last7days
+    );
 }
 
 /**
@@ -194,6 +213,213 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             }
         ]
     };
+};
+
+/**
+ * Conversion trend data point entity from EventSummary cube.
+ */
+export interface ConversionTrendEntity {
+    'EventSummary.totalEvents': string;
+    'EventSummary.day': string;
+    'EventSummary.day.day': string;
+}
+
+/**
+ * Transforms ConversionTrendEntity array to Chart.js compatible format
+ */
+export const transformConversionTrendData = (data: ConversionTrendEntity[] | null): ChartData => {
+    if (!data || !Array.isArray(data)) {
+        return {
+            labels: [],
+            datasets: [
+                {
+                    label: 'analytics.charts.conversion-trend.dataset-label',
+                    data: [],
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        };
+    }
+
+    const transformedData = data
+        .map((item) => ({
+            date: new Date(item['EventSummary.day']),
+            value: parseInt(item['EventSummary.totalEvents'] || '0', 10)
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // Check if all data points are from the same day
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
+
+        return isSameDay(arr[0].date, item.date);
+    });
+
+    const labels = transformedData.map((item) =>
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
+    );
+
+    const chartData = transformedData.map((item) => item.value);
+
+    return {
+        labels,
+        datasets: [
+            {
+                label: 'analytics.charts.conversion-trend.dataset-label',
+                data: chartData,
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone'
+            }
+        ]
+    };
+};
+
+/**
+ * Traffic vs Conversions chart data entity per day.
+ */
+export interface TrafficVsConversionsEntity {
+    'EventSummary.uniqueVisitors': string;
+    'EventSummary.uniqueConvertingVisitors': string;
+    'EventSummary.day': string;
+    'EventSummary.day.day': string;
+}
+
+/**
+ * Transforms TrafficVsConversionsEntity array to Chart.js compatible format.
+ * Creates a combo chart with bars (uniqueVisitors) and line (conversion rate %).
+ */
+export const transformTrafficVsConversionsData = (
+    data: TrafficVsConversionsEntity[] | null
+): ChartData => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return {
+            labels: [],
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'analytics.charts.unique-visitors',
+                    data: [],
+                    borderWidth: 0,
+                    borderRadius: 6,
+                    backgroundColor: '#3B82F6',
+                    order: 2
+                },
+                {
+                    type: 'line',
+                    label: 'analytics.charts.conversion-rate',
+                    data: [],
+                    borderColor: '#10B981',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    order: 1
+                }
+            ]
+        };
+    }
+
+    const transformedData = data
+        .map((item) => ({
+            date: new Date(item['EventSummary.day']),
+            uniqueVisitors: parseInt(item['EventSummary.uniqueVisitors'] || '0', 10),
+            uniqueConvertingVisitors: parseInt(
+                item['EventSummary.uniqueConvertingVisitors'] || '0',
+                10
+            )
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // Check if all data points are from the same day
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
+
+        return isSameDay(arr[0].date, item.date);
+    });
+
+    const labels = transformedData.map((item) =>
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
+    );
+
+    const visitorsData = transformedData.map((item) => item.uniqueVisitors);
+
+    // Conversion rate = (uniqueConvertingVisitors / uniqueVisitors) * 100
+    const conversionRateData = transformedData.map((item) =>
+        item.uniqueVisitors > 0
+            ? Math.round((item.uniqueConvertingVisitors / item.uniqueVisitors) * 10000) / 100
+            : 0
+    );
+
+    return {
+        labels,
+        datasets: [
+            {
+                type: 'bar',
+                label: 'analytics.charts.unique-visitors',
+                data: visitorsData,
+                borderWidth: 0,
+                borderRadius: 6,
+                backgroundColor: '#3B82F6',
+                order: 2
+            },
+            {
+                type: 'line',
+                label: 'analytics.charts.conversion-rate',
+                data: conversionRateData,
+                borderColor: '#10B981',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                order: 1
+            }
+        ]
+    };
+};
+
+/**
+ * Transformed content conversion row for table display.
+ */
+export interface ContentConversionRow {
+    eventType: string;
+    identifier: string;
+    title: string;
+    events: number;
+    conversions: number;
+    conversionRate: number;
+}
+
+/**
+ * Transforms ContentAttributionEntity array to table-friendly format.
+ * Calculates conversion rate as (conversions / events) * 100.
+ */
+export const transformContentConversionsData = (
+    data: ContentAttributionEntity[] | null
+): ContentConversionRow[] => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return [];
+    }
+
+    return data.map((item) => {
+        const events = parseInt(item['ContentAttribution.events'] || '0', 10);
+        const conversions = parseInt(item['ContentAttribution.conversions'] || '0', 10);
+        const conversionRate = events > 0 ? Math.round((conversions / events) * 10000) / 100 : 0;
+
+        return {
+            eventType: item['ContentAttribution.eventType'] || '',
+            identifier: item['ContentAttribution.identifier'] || '',
+            title: item['ContentAttribution.title'] || item['ContentAttribution.identifier'] || '',
+            events,
+            conversions,
+            conversionRate
+        };
+    });
 };
 
 /**

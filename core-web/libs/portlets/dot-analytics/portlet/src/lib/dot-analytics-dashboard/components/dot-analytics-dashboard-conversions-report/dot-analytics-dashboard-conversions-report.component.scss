@@ -1,0 +1,106 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+    width: 100%;
+}
+
+// Block: analytics-dashboard-conversions
+.analytics-dashboard-conversions {
+    // Element: metrics (responsive layout)
+    &__metrics {
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
+    }
+
+    // Element: metric-card
+    &__metric-card {
+        flex: 1;
+        min-width: 280px;
+
+        @media (max-width: 991px) {
+            min-width: auto;
+            width: 100%;
+        }
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: charts (two charts side by side)
+    &__charts {
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
+    }
+
+    // Element: chart-half (each chart takes half width)
+    &__chart-half {
+        flex: 1;
+        min-width: 0;
+
+        @media (max-width: 991px) {
+            width: 100%;
+        }
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: timeline-chart (legacy, kept for compatibility)
+    &__timeline-chart {
+        flex: 1;
+        min-width: 0;
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: bottom-section (responsive layout)
+    &__bottom-section {
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
+    }
+
+    // Element: device-chart
+    &__device-chart {
+        width: 450px;
+        flex-shrink: 0;
+
+        @media (max-width: 991px) {
+            width: 100%;
+            flex-shrink: 1;
+        }
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: table
+    &__table {
+        flex: 1;
+        min-width: 0;
+
+        @media (max-width: 991px) {
+            width: 100%;
+            min-width: auto;
+        }
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+}
