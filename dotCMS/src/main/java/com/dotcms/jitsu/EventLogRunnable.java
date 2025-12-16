@@ -97,14 +97,19 @@ public class EventLogRunnable implements Runnable {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
-        Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + eventPayload.get().payloads());
 
-        if (eventPayload.get().payloads().isEmpty()){
-            Logger.warn(EventLogRunnable.class, "Not Jitsu Events Payload to be sent");
+        final Collection<EventPayload> payloads = eventPayload.get().payloads();
+
+        Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + payloads);
+
+        if (payloads.isEmpty()){
+            Logger.error(EventLogRunnable.class,
+                    "It is not possible to send the Analytics Event because it has a empty payload: " + eventPayload.get().payloads());
             return;
         }
 
-        final EventPayload firstPayload = eventPayload.get().payloads().stream().findFirst().orElse(null);
+        final EventPayload firstPayload = payloads.stream().findFirst().orElse(null);
+
 
         if (firstPayload == null) {
             Logger.warn(EventLogRunnable.class, "Not Jitsu Events Payload to be sent");
@@ -114,7 +119,8 @@ public class EventLogRunnable implements Runnable {
         final String userAgent = firstPayload.contains(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME) ?
                 firstPayload.get(ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME).toString() : null;
 
-        sendEvent(builder, eventPayload.get().payloads(), userAgent).ifPresent(response -> {
+        sendEvent(builder, payloads, userAgent).ifPresent(response -> {
+
             Logger.debug(EventLogRunnable.class, "Jitsu Event Response: " + response.getStatusCode() +
              ", message: " + response.getResponse());
 
@@ -126,7 +132,8 @@ public class EventLogRunnable implements Runnable {
                                 url,
                                 response.getStatusCode(),
                                 response.getResponse()));
-                Logger.warn(this.getClass(), String.format("Failed log: number of events to be send %s", eventPayload.get().payloads().size()));
+
+                Logger.warn(this.getClass(), String.format("Failed log: number of events to be send %s", payloads.size()));
             }
         });
     }
