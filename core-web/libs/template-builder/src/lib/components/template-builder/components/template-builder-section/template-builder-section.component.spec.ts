@@ -30,9 +30,10 @@ describe('TemplateBuilderSectionComponent', () => {
         const deleteSection = jest.fn();
         spectator.component.deleteSection.subscribe(deleteSection);
         spectator.detectChanges();
-        const deleteButton = spectator.query('[data-testId="delete-section-button"]');
-        if (deleteButton) {
-            spectator.click(deleteButton);
+        const deleteButtonComponent = spectator.query('[data-testId="delete-section-button"]');
+        const actualButton = deleteButtonComponent?.querySelector('button');
+        if (actualButton) {
+            spectator.click(actualButton);
             expect(deleteSection).toHaveBeenCalledTimes(1);
         } else {
             // Fallback: directly emit the event

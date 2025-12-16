@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { DotThemeComponent } from './dot-theme.component';
 
 describe('DotThemeComponent', () => {
