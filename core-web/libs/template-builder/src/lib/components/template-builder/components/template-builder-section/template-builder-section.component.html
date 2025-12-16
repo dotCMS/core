@@ -1,6 +1,7 @@
 <ng-content></ng-content>
 <p-button
-    (click)="deleteSection.emit()"
-    styleClass="p-button-rounded p-button-text"
+    (onClick)="deleteSection.emit()"
+    [rounded]="true"
+    variant="text"
     icon="pi pi-trash"
     data-testId="delete-section-button"></p-button>

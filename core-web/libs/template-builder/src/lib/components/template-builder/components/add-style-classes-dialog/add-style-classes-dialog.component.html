@@ -1,6 +1,12 @@
-<div class="dialog__auto-complete-container field">
+<!--The dialog have overflow hidden -->
+<div class="pt-1 mb-6">
     @let hasClasses = $hasClasses();
-    <p-autoComplete
+    <p-autocomplete
+        [pt]="{
+            host: {
+                class: 'mb-3 w-full'
+            }
+        }"
         (completeMethod)="filterClasses($event)"
         [(ngModel)]="$selectedClasses"
         [unique]="UNIQUE_CLASSES"
@@ -15,19 +21,19 @@
         (keyup.enter)="onEnterKey($event)"
         appendTo="body" />
     @if (hasClasses) {
-        <ul data-testId="list">
-            <li>
+        <ul class="flex flex-col gap-2 text-gray-700 text-sm list-none m-0 p-0" data-testId="list">
+            <li class="flex items-center gap-1">
                 <i class="pi pi-info-circle"></i>
                 {{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}
             </li>
         </ul>
     } @else {
-        <ul data-testId="list">
-            <li>
+        <ul class="flex flex-col gap-2 text-gray-700 text-sm list-none m-0 p-0" data-testId="list">
+            <li class="flex items-center gap-1">
                 <i class="pi pi-info-circle"></i>
                 {{ 'dot.template.builder.autocomplete.no.suggestions' | dm }}
             </li>
-            <li>
+            <li class="flex items-center gap-1">
                 <i class="pi pi-check-circle"></i>
                 <span
                     [innerHTML]="'dot.template.builder.autocomplete.setup.suggestions' | dm"></span>
@@ -35,7 +41,7 @@
         </ul>
     }
 </div>
-<div class="dialog__actions-container">
+<div class="flex justify-end">
     <p-button (onClick)="save()" data-testId="update-btn">
         {{ 'dot.template.builder.classes.dialog.update.button' | dm }}
     </p-button>

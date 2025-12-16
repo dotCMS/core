@@ -79,7 +79,7 @@ import {
 @Component({
     selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
-    styleUrls: ['./template-builder.component.scss'],
+    styleUrls: ['./template-builder.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore],
     imports: [
@@ -452,6 +452,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
         const ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+            closeOnEscape: true,
+            closable: true,
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
                 selectedClasses: box.styleClass || []

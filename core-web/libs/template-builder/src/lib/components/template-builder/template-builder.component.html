@@ -1,9 +1,10 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
-        <div class="p-toolbar-group-start">
+        <ng-template #start>
             <ng-content select="[toolbar-left]"></ng-content>
-        </div>
-        <div class="p-toolbar-group-end">
+        </ng-template>
+        <ng-template #end>
+            <div class="flex gap-2">
             <dotcms-add-widget
                 [label]="'dot.template.builder.add.row' | dm"
                 [icon]="rowIcon"
@@ -19,6 +20,7 @@
                 #addBox
                 data-widget-type="col"
                 data-testId="add-box" />
+            </div>
             <p-divider layout="vertical" />
             <dotcms-template-builder-actions
                 [themeId]="vm.themeId"
@@ -26,12 +28,12 @@
                 [layoutProperties]="vm.layoutProperties"
                 data-testId="template-builder-actions"></dotcms-template-builder-actions>
             <ng-content select="[toolbar-actions-right]"></ng-content>
-        </div>
+        </ng-template>
     </p-toolbar>
     <div
         (mousemove)="fixGridStackNodeOptions()"
         [ngStyle]="customStyles"
-        class="template-builder__main"
+        class="template-builder__main h-full overflow-y-auto transition-opacity duration-300 ease-in-out"
         #templateContainerRef
         data-testId="template-builder-main">
         @if (vm.layoutProperties.header) {
@@ -46,7 +48,7 @@
                 'template-builder__container--right':
                     vm.layoutProperties.sidebar.location === 'right'
             }"
-            class="template-builder__container">
+            class="template-builder__container flex gap-6 pt-4">
             @if (vm.layoutProperties.sidebar.location.length) {
                 <dotcms-template-builder-sidebar
                     [ngClass]="{
@@ -58,7 +60,7 @@
                     [sidebarProperties]="vm.layoutProperties.sidebar"
                     [containerMap]="vm.containerMap" />
             }
-            <div class="grid-stack">
+            <div class="grid-stack flex-1">
                 @for (row of vm.rows; track identify($index, row)) {
                     <dotcms-template-builder-row
                         [attr.gs-id]="row.id"

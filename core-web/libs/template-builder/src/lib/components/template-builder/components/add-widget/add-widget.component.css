@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* Host styles that can't be in HTML - pseudo-selectors and dynamic classes */
+:host > div {
+    @apply transition-transform duration-100 ease-in;
+}
+
+:host:hover:not(.ui-draggable-dragging) > div {
+    @apply rotate-[-3.66deg] -translate-y-2;
+    box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
+}
+
+/* Class added by the gridstack library when the widget is being dragged */
+:host.ui-draggable-dragging > div {
+    @apply transition-none rotate-[-3.66deg];
+    box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
+}
+

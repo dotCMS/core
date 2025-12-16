@@ -1,4 +1,4 @@
-<p-tabs value="0" styleClass="dot-template-builder__new-template-builder">
+<p-tabs [value]="0" styleClass="dot-template-builder__new-template-builder">
     <p-tablist>
         <p-tab [value]="0" data-testId="builder">
             {{ item.type === 'advanced' ? ('code' | dm) : ('design' | dm) }}
