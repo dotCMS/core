@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 import { NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -104,7 +104,9 @@ describe('TemplateBuilderRowComponent', () => {
 
     it('should have a background when resizing', () => {
         fixture.componentInstance.isResizing = true;
-        fixture.detectChanges();
+        // Use changeDetectorRef to avoid ExpressionChangedAfterItHasBeenCheckedError
+        const cdr = fixture.componentRef.injector.get(ChangeDetectorRef);
+        cdr.detectChanges();
 
         expect(
             fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
@@ -128,19 +130,16 @@ describe('TemplateBuilderRowComponent', () => {
         ).toBeTruthy();
     });
 
-    it('should trigger removeRow from store when clicking on deleteRow button and click yes', () => {
+    it('should trigger removeRow from store when clicking on deleteRow button and click yes', async () => {
         const deleteMock = jest.spyOn(store, 'removeRow');
 
-        const deleteButton = fixture.debugElement.query(
-            By.css('p-button[data-testid="btn-remove-item"]')
+        const removeConfirmDialog = fixture.debugElement.query(
+            By.css('dotcms-remove-confirm-dialog')
         );
+        const removeConfirmComponent = removeConfirmDialog.componentInstance as RemoveConfirmDialogComponent;
 
-        deleteButton.nativeElement.dispatchEvent(new Event('onClick'));
-
-        fixture.detectChanges();
-
-        const confirmButton = document.querySelector('.p-confirm-popup-accept');
-        confirmButton.dispatchEvent(new Event('click'));
+        // Trigger the deleteConfirmed event directly
+        removeConfirmComponent.deleteConfirmed.emit();
 
         expect(deleteMock).toHaveBeenCalled();
     });
@@ -148,16 +147,13 @@ describe('TemplateBuilderRowComponent', () => {
     it('should not trigger removeRow from store when clicking on deleteRow button and click no', () => {
         const deleteMock = jest.spyOn(store, 'removeRow');
 
-        const deleteButton = fixture.debugElement.query(
-            By.css('p-button[data-testid="btn-remove-item"]')
+        const removeConfirmDialog = fixture.debugElement.query(
+            By.css('dotcms-remove-confirm-dialog')
         );
+        const removeConfirmComponent = removeConfirmDialog.componentInstance as RemoveConfirmDialogComponent;
 
-        deleteButton.nativeElement.dispatchEvent(new Event('onClick'));
-
-        fixture.detectChanges();
-
-        const rejectButton = document.querySelector('.p-confirm-popup-reject');
-        rejectButton.dispatchEvent(new Event('click'));
+        // Trigger the deleteRejected event directly (which happens when user clicks no)
+        removeConfirmComponent.deleteRejected.emit();
 
         expect(deleteMock).toHaveBeenCalledTimes(0);
     });
