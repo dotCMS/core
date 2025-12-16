@@ -1136,7 +1136,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	@Operation(
-			operationId = "getContentTypeIdVar",
+			operationId = "getContentTypeRenderedCustomFieldIdVar",
 			summary = "Retrieves a single content type with their rendered custom fields",
 			description = "Returns a content type based on the provided ID or Velocity variable " +
 					"name. Additionally, the Velocity code in all of its custom fields will be parsed.",

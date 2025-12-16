@@ -5588,7 +5588,8 @@ public class WorkflowResource {
     @Path("/tasks")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on filter parameters",
             description = "Retrieve the [workflow tasks](https://dev.dotcms.com/docs/workflow-tasks) that match the parameters included in the request body.",
             tags = {"Workflow"},
