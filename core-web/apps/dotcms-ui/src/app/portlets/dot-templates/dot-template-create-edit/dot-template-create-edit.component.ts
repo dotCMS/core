@@ -180,7 +180,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private createTemplate(): void {
-        const ref: DynamicDialogRef = this.dialogService.open(DotTemplatePropsComponent, {
+        const ref = this.dialogService.open(DotTemplatePropsComponent, {
             header: this.dotMessageService.get('templates.create.title'),
             width: '40rem',
             closable: false,

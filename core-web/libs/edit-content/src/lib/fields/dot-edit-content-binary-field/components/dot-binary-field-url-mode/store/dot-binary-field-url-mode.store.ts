@@ -89,28 +89,24 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
                 signal: signal
             })
         ).pipe(
-            tapResponse(
-                (tempFile: DotCMSTempFile) => {
+            tapResponse({
+                next: (tempFile: DotCMSTempFile) => {
                     if (!this.isValidType(tempFile)) {
                         this.setError(
                             'dot.binary.field.import.from.url.error.file.not.supported.message'
                         );
-
                         return;
                     }
-
                     this.setTempFile(tempFile);
                 },
-                (error: DotHttpErrorResponse) => {
+                error: (error: DotHttpErrorResponse) => {
                     if (signal.aborted) {
                         this.setIsLoading(false);
-
                         return;
                     }
-
                     this.setError(error.message);
                 }
-            )
+            })
         );
     }
 

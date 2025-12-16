@@ -17,6 +17,46 @@ import {
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
+import { EMPTY_PAGINATION } from '../../../utils';
+
+// ===== Mock Data =====
+
+const mockContentTypes: DotCMSContentType[] = [
+    {
+        id: '1',
+        name: 'Blog',
+        variable: 'blog',
+        baseType: 'CONTENT'
+    } as DotCMSContentType,
+    {
+        id: '2',
+        name: 'News',
+        variable: 'news',
+        baseType: 'CONTENT'
+    } as DotCMSContentType
+];
+
+const mockContentlets: DotCMSContentlet[] = [
+    {
+        identifier: '1',
+        title: 'Article 1',
+        baseType: 'CONTENT'
+    } as DotCMSContentlet,
+    {
+        identifier: '2',
+        title: 'Article 2',
+        baseType: 'CONTENT'
+    } as DotCMSContentlet
+];
+
+const mockESResponse = {
+    contentTook: 10,
+    queryTook: 5,
+    jsonObjectView: {
+        contentlets: mockContentlets
+    },
+    resultsSize: 2
+};
 
 describe('DotPaletteListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPaletteListStore>>;
@@ -26,41 +66,72 @@ describe('DotPaletteListStore', () => {
     let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
     let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
 
-    const mockContentTypes: DotCMSContentType[] = [
-        {
-            id: '1',
-            name: 'Blog',
-            variable: 'blog',
-            baseType: 'CONTENT'
-        } as DotCMSContentType,
-        {
-            id: '2',
-            name: 'News',
-            variable: 'news',
-            baseType: 'CONTENT'
-        } as DotCMSContentType
-    ];
+    // ===== Test Helper Functions =====
 
-    const mockContentlets: DotCMSContentlet[] = [
-        {
-            identifier: '1',
-            title: 'Article 1',
-            baseType: 'CONTENT'
-        } as DotCMSContentlet,
-        {
-            identifier: '2',
-            title: 'Article 2',
-            baseType: 'CONTENT'
-        } as DotCMSContentlet
-    ];
+    /**
+     * Creates a mock pagination response
+     */
+    const createMockPagination = (currentPage = 1, perPage = 30, totalEntries = 0) => ({
+        currentPage,
+        perPage,
+        totalEntries
+    });
 
-    const mockESResponse = {
+    /**
+     * Creates a mock content types response
+     */
+    const createMockContentTypesResponse = (
+        contenttypes: DotCMSContentType[] = mockContentTypes,
+        pagination = createMockPagination(1, 30, contenttypes.length)
+    ) => ({ contenttypes, pagination });
+
+    /**
+     * Creates a mock ES response
+     */
+    const createMockESResponse = (
+        contentlets: DotCMSContentlet[] = mockContentlets,
+        resultsSize = contentlets.length
+    ) => ({
         contentTook: 10,
         queryTook: 5,
-        jsonObjectView: {
-            contentlets: mockContentlets
-        },
-        resultsSize: 2
+        jsonObjectView: { contentlets },
+        resultsSize
+    });
+
+    /**
+     * Verifies store state matches content types view
+     */
+    const expectContentTypesView = () => {
+        expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
+        expect(store.$isContentTypesView()).toBe(true);
+        expect(store.$isContentletsView()).toBe(false);
+    };
+
+    /**
+     * Verifies store state matches contentlets view
+     */
+    const expectContentletsView = () => {
+        expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENTLETS);
+        expect(store.$isContentTypesView()).toBe(false);
+        expect(store.$isContentletsView()).toBe(true);
+    };
+
+    /**
+     * Verifies store is in loaded state with data
+     */
+    const expectLoadedState = () => {
+        expect(store.status()).toBe(DotPaletteListStatus.LOADED);
+        expect(store.$isLoading()).toBe(false);
+        expect(store.$isEmpty()).toBe(false);
+    };
+
+    /**
+     * Verifies store is in empty state
+     */
+    const expectEmptyState = () => {
+        expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+        expect(store.$isLoading()).toBe(false);
+        expect(store.$isEmpty()).toBe(true);
     };
 
     const createService = createServiceFactory({
@@ -89,25 +160,11 @@ describe('DotPaletteListStore', () => {
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
-            of({
-                contenttypes: mockContentTypes,
-                pagination: {
-                    currentPage: 1,
-                    perPage: 30,
-                    totalEntries: 2
-                }
-            })
+            of(createMockContentTypesResponse(mockContentTypes, createMockPagination(1, 30, 2)))
         );
 
         pageContentTypeService.getAllContentTypes.mockReturnValue(
-            of({
-                contenttypes: mockContentTypes,
-                pagination: {
-                    currentPage: 1,
-                    perPage: 30,
-                    totalEntries: 2
-                }
-            })
+            of(createMockContentTypesResponse(mockContentTypes, createMockPagination(1, 30, 2)))
         );
 
         dotESContentService.get.mockReturnValue(of(mockESResponse));
@@ -134,6 +191,7 @@ describe('DotPaletteListStore', () => {
         it('should initialize search params with correct defaults', () => {
             const searchParams = store.searchParams();
 
+            expect(searchParams.host).toBe('');
             expect(searchParams.pagePathOrId).toBe('');
             expect(searchParams.language).toBe(1);
             expect(searchParams.variantId).toBe(DEFAULT_VARIANT_ID);
@@ -160,14 +218,7 @@ describe('DotPaletteListStore', () => {
 
             it('should return false when status is EMPTY', () => {
                 pageContentTypeService.get.mockReturnValueOnce(
-                    of({
-                        contenttypes: [],
-                        pagination: {
-                            currentPage: 1,
-                            perPage: 30,
-                            totalEntries: 0
-                        }
-                    })
+                    of(createMockContentTypesResponse([]))
                 );
 
                 store.getContentTypes();
@@ -189,14 +240,7 @@ describe('DotPaletteListStore', () => {
 
             it('should return true when status is EMPTY', () => {
                 pageContentTypeService.get.mockReturnValueOnce(
-                    of({
-                        contenttypes: [],
-                        pagination: {
-                            currentPage: 1,
-                            perPage: 30,
-                            totalEntries: 0
-                        }
-                    })
+                    of(createMockContentTypesResponse([]))
                 );
 
                 store.getContentTypes();
@@ -281,6 +325,38 @@ describe('DotPaletteListStore', () => {
     });
 
     describe('Methods', () => {
+        describe('setStatus', () => {
+            it('should update status to LOADING', () => {
+                expect(store.status()).toBe(DotPaletteListStatus.LOADING);
+
+                store.setStatus(DotPaletteListStatus.LOADED);
+                expect(store.status()).toBe(DotPaletteListStatus.LOADED);
+
+                store.setStatus(DotPaletteListStatus.LOADING);
+                expect(store.status()).toBe(DotPaletteListStatus.LOADING);
+            });
+
+            it('should update status to EMPTY', () => {
+                store.setStatus(DotPaletteListStatus.EMPTY);
+
+                expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+            });
+
+            it('should affect computed signals $isLoading and $isEmpty', () => {
+                store.setStatus(DotPaletteListStatus.LOADING);
+                expect(store.$isLoading()).toBe(true);
+                expect(store.$isEmpty()).toBe(false);
+
+                store.setStatus(DotPaletteListStatus.EMPTY);
+                expect(store.$isLoading()).toBe(false);
+                expect(store.$isEmpty()).toBe(true);
+
+                store.setStatus(DotPaletteListStatus.LOADED);
+                expect(store.$isLoading()).toBe(false);
+                expect(store.$isEmpty()).toBe(false);
+            });
+        });
+
         describe('setLayoutMode', () => {
             it('should update layoutMode to list', () => {
                 expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
@@ -427,8 +503,8 @@ describe('DotPaletteListStore', () => {
                     })
                 );
                 expect(store.contenttypes()).toEqual(mockContentTypes);
-                expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
-                expect(store.status()).toBe(DotPaletteListStatus.LOADED);
+                expectContentTypesView();
+                expectLoadedState();
             });
 
             it('should fetch content types for WIDGET list type', () => {
@@ -487,40 +563,79 @@ describe('DotPaletteListStore', () => {
 
             it('should set status to EMPTY when no content types returned', () => {
                 pageContentTypeService.get.mockReturnValueOnce(
-                    of({
-                        contenttypes: [],
-                        pagination: {
-                            currentPage: 1,
-                            perPage: 30,
-                            totalEntries: 0
-                        }
-                    })
+                    of(createMockContentTypesResponse([]))
                 );
 
                 store.getContentTypes();
 
-                expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+                expectEmptyState();
             });
 
             it('should update pagination from response', () => {
+                const expectedPagination = createMockPagination(2, 30, 50);
                 pageContentTypeService.get.mockReturnValueOnce(
-                    of({
-                        contenttypes: mockContentTypes,
-                        pagination: {
-                            currentPage: 2,
-                            perPage: 30,
-                            totalEntries: 50
-                        }
-                    })
+                    of(createMockContentTypesResponse(mockContentTypes, expectedPagination))
                 );
 
                 store.getContentTypes({ page: 2 });
 
-                expect(store.pagination()).toEqual({
-                    currentPage: 2,
-                    perPage: 30,
-                    totalEntries: 50
+                expect(store.pagination()).toEqual(expectedPagination);
+            });
+
+            it('should pass host parameter to service for CONTENT list type', () => {
+                store.getContentTypes({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/test-page'
                 });
+
+                expect(pageContentTypeService.get).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        host: 'demo.dotcms.com',
+                        pagePathOrId: '/test-page',
+                        types: ['CONTENT', 'FILEASSET', 'DOTASSET'],
+                        per_page: 30
+                    })
+                );
+            });
+
+            it('should pass host parameter to service for WIDGET list type', () => {
+                store.getContentTypes({
+                    host: 'demo.dotcms.com',
+                    listType: DotUVEPaletteListTypes.WIDGET
+                });
+
+                expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        host: 'demo.dotcms.com',
+                        types: ['WIDGET'],
+                        per_page: 30
+                    })
+                );
+            });
+
+            it('should update searchParams with host when provided', () => {
+                store.getContentTypes({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/test-page'
+                });
+
+                const searchParams = store.searchParams();
+
+                expect(searchParams.host).toBe('demo.dotcms.com');
+                expect(searchParams.pagePathOrId).toBe('/test-page');
+            });
+
+            it('should not include host in service call when not provided', () => {
+                store.getContentTypes({ pagePathOrId: '/test-page' });
+
+                expect(pageContentTypeService.get).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        host: '',
+                        pagePathOrId: '/test-page',
+                        types: ['CONTENT', 'FILEASSET', 'DOTASSET'],
+                        per_page: 30
+                    })
+                );
             });
         });
 
@@ -541,8 +656,8 @@ describe('DotPaletteListStore', () => {
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.contentlets()).toEqual(mockContentlets);
-                expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENTLETS);
-                expect(store.status()).toBe(DotPaletteListStatus.LOADED);
+                expectContentletsView();
+                expectLoadedState();
             });
 
             it('should calculate correct offset for page 2', () => {
@@ -589,32 +704,16 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should set status to EMPTY when no contentlets returned', () => {
-                dotESContentService.get.mockReturnValueOnce(
-                    of({
-                        contentTook: 10,
-                        queryTook: 5,
-                        jsonObjectView: {
-                            contentlets: []
-                        },
-                        resultsSize: 0
-                    })
-                );
+                dotESContentService.get.mockReturnValueOnce(of(createMockESResponse([], 0)));
 
                 store.getContentlets({ selectedContentType: 'Blog' });
 
-                expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
+                expectEmptyState();
             });
 
             it('should update pagination from ES response', () => {
                 dotESContentService.get.mockReturnValueOnce(
-                    of({
-                        contentTook: 10,
-                        queryTook: 5,
-                        jsonObjectView: {
-                            contentlets: mockContentlets
-                        },
-                        resultsSize: 100
-                    })
+                    of(createMockESResponse(mockContentlets, 100))
                 );
 
                 store.getContentlets({ selectedContentType: 'Blog', page: 2 });
@@ -625,6 +724,7 @@ describe('DotPaletteListStore', () => {
 
             it('should preserve existing search params when not overridden', () => {
                 store.getContentTypes({
+                    host: 'demo.dotcms.com',
                     pagePathOrId: 'test-page',
                     language: 2,
                     orderby: 'usage'
@@ -634,6 +734,7 @@ describe('DotPaletteListStore', () => {
 
                 const searchParams = store.searchParams();
 
+                expect(searchParams.host).toBe('demo.dotcms.com');
                 expect(searchParams.pagePathOrId).toBe('test-page');
                 expect(searchParams.language).toBe(2);
                 expect(searchParams.orderby).toBe('usage');
@@ -646,18 +747,15 @@ describe('DotPaletteListStore', () => {
         it('should handle full workflow: content types -> contentlets -> back to content types', () => {
             // Start with content types
             store.getContentTypes();
-            expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
-            expect(store.$isContentTypesView()).toBe(true);
+            expectContentTypesView();
 
             // Navigate to contentlets
             store.getContentlets({ selectedContentType: 'Blog' });
-            expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENTLETS);
-            expect(store.$isContentletsView()).toBe(true);
+            expectContentletsView();
 
             // Back to content types
             store.getContentTypes();
-            expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
-            expect(store.$isContentTypesView()).toBe(true);
+            expectContentTypesView();
         });
 
         it('should handle switching between list types', () => {
@@ -676,28 +774,24 @@ describe('DotPaletteListStore', () => {
             expect(store.pagination().currentPage).toBe(1);
 
             pageContentTypeService.get.mockReturnValue(
-                of({
-                    contenttypes: mockContentTypes,
-                    pagination: {
-                        currentPage: 2,
-                        perPage: 30,
-                        totalEntries: 100
-                    }
-                })
+                of(
+                    createMockContentTypesResponse(
+                        mockContentTypes,
+                        createMockPagination(2, 30, 100)
+                    )
+                )
             );
 
             store.getContentTypes({ page: 2 });
             expect(store.pagination().currentPage).toBe(2);
 
             pageContentTypeService.get.mockReturnValue(
-                of({
-                    contenttypes: mockContentTypes,
-                    pagination: {
-                        currentPage: 3,
-                        perPage: 30,
-                        totalEntries: 100
-                    }
-                })
+                of(
+                    createMockContentTypesResponse(
+                        mockContentTypes,
+                        createMockPagination(3, 30, 100)
+                    )
+                )
             );
 
             store.getContentTypes({ page: 3 });
@@ -731,11 +825,7 @@ describe('DotPaletteListStore', () => {
             store.getContentTypes();
 
             expect(store.contenttypes()).toEqual([]);
-            expect(store.pagination()).toEqual({
-                currentPage: 0,
-                perPage: 0,
-                totalEntries: 0
-            });
+            expect(store.pagination()).toEqual(EMPTY_PAGINATION);
             expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
             expect(consoleErrorSpy).toHaveBeenCalled();
             expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -750,11 +840,7 @@ describe('DotPaletteListStore', () => {
             store.getContentlets({ selectedContentType: 'Blog' });
 
             expect(store.contentlets()).toEqual([]);
-            expect(store.pagination()).toEqual({
-                currentPage: 0,
-                perPage: 0,
-                totalEntries: 0
-            });
+            expect(store.pagination()).toEqual(EMPTY_PAGINATION);
             expect(store.status()).toBe(DotPaletteListStatus.EMPTY);
             expect(consoleErrorSpy).toHaveBeenCalled();
             expect(consoleErrorSpy).toHaveBeenCalledWith(

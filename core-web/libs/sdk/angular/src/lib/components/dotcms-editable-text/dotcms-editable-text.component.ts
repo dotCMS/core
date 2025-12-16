@@ -200,11 +200,11 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
     /**
      * Handle mouse down event
      *
-     * @param {EventObj<MouseEvent>} { event }
+     * @param {{ event: MouseEvent }} { event }
      * @return {*}
      * @memberof DotCMSEditableTextComponent
      */
-    onMouseDown({ event }: EventObj<MouseEvent>) {
+    onMouseDown({ event }: { event: MouseEvent }) {
         if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
