@@ -353,7 +353,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 										for (final Contentlet asset : sourceContainerAssets) {
 											processedContentletsList.add(
 													processCopyOfContentlet(asset, copyOptions,
-															destinationSite,
+															sourceSite, destinationSite,
 															copiedContentsBySourceId,
 															copiedFoldersBySourceId,
 															copiedContainersBySourceId,
@@ -639,7 +639,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 					for (final Contentlet sourceContent : sourceContentlets) {
                         if (null != sourceContent) {
                             this.processCopyOfContentlet(sourceContent, copyOptions,
-                                    destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+                                    sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
                                     copiedContainersBySourceId, copiedTemplatesBySourceId,
                                     contentsWithRelationships, copiedContentTypesBySourceId);
 
@@ -715,7 +715,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                         } else {
                             // Process simple content immediately
                             this.processCopyOfContentlet(sourceContent, copyOptions,
-                                    destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+                                    sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
                                     copiedContainersBySourceId, copiedTemplatesBySourceId,
                                     contentsWithRelationships, copiedContentTypesBySourceId);
                             currentProgress += progressIncrement;
@@ -761,7 +761,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 
                         if (null != sourceContent) {
                             this.processCopyOfContentlet(sourceContent, copyOptions,
-                                    destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+                                    sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
                                     copiedContainersBySourceId, copiedTemplatesBySourceId,
                                     contentsWithRelationships, copiedContentTypesBySourceId);
                             currentProgress += progressIncrement;
@@ -1108,9 +1108,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 *                                     is relevant ONLY if the
 	 *                                     {@code FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY} property
 	 *                                     is enabled.
+	 * @param sourceSite               The {@link Host} object from which content is being copied.
 	 */
 	private Contentlet processCopyOfContentlet(final Contentlet sourceContent,
-			final HostCopyOptions copyOptions, final Host destinationSite,
+			final HostCopyOptions copyOptions, final Host sourceSite, final Host destinationSite,
 			final Map<String, ContentMapping> copiedContentletsBySourceId,
 			final Map<String, FolderMapping> copiedFoldersBySourceId,
 			final Map<String, Container> copiedContainersBySourceId,
@@ -1175,9 +1176,16 @@ public class HostAssetsJobImpl extends ParentProxy{
                 final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceCopy.getIdentifier());
 				for (final MultiTree sourceMultiTree : pageContents) {
 					String newChild = sourceMultiTree.getContentlet();
+
 					// Update the child reference to point to the previously copied content
 					if (copiedContentletsBySourceId.containsKey(sourceMultiTree.getContentlet())) {
 						newChild = copiedContentletsBySourceId.get(sourceMultiTree.getContentlet()).destinationContent.getIdentifier();
+					} else {
+						// Contentlet was not copied - validate if it exists and is accessible
+						if (shouldSkipMultiTreeEntry(sourceMultiTree.getContentlet(), sourceSite,
+								destinationSite, newContent.getIdentifier())) {
+							continue;
+						}
 					}
 
                     String newContainer = sourceMultiTree.getContainer();
@@ -1471,6 +1479,55 @@ public class HostAssetsJobImpl extends ParentProxy{
 			this.sourceField = sourceField;
 		}
 
+	}
+
+	/**
+	 * Validates whether a contentlet referenced in a MultiTree entry can be used in the
+	 * destination site. This method checks if the contentlet exists and is accessible, and
+	 * determines if the MultiTree entry should be skipped.
+	 *
+	 * @param contentletId    The identifier of the contentlet to validate.
+	 * @param sourceSite      The source {@link Host} from which content is being copied.
+	 * @param destinationSite The destination {@link Host} to which content is being copied.
+	 * @param pageId          The identifier of the HTML page that references this contentlet.
+	 *
+	 * @return {@code true} if the MultiTree entry should be skipped (contentlet is not
+	 *         accessible), {@code false} if the entry should be kept.
+	 */
+	private boolean shouldSkipMultiTreeEntry(final String contentletId, final Host sourceSite,
+											  final Host destinationSite, final String pageId) {
+		try {
+			final Contentlet originalContentlet = this.contentAPI.findContentletByIdentifierAnyLanguage(
+					contentletId, false);
+
+			// Check if the contentlet is from System Host or is accessible from the destination site
+			if (originalContentlet.getHost().equals(this.SYSTEM_HOST.getIdentifier())) {
+				// Content from System Host can be referenced as-is
+				Logger.debug(HostAssetsJobImpl.class, () -> String.format(
+						"---> MultiTree references System Host contentlet '%s', keeping original reference",
+						contentletId));
+				return false;
+			} else if (!originalContentlet.getHost().equals(sourceSite.getIdentifier())
+					&& !originalContentlet.getHost().equals(destinationSite.getIdentifier())) {
+				// Content from a different site - keep reference if accessible
+				Logger.debug(HostAssetsJobImpl.class, () -> String.format(
+						"---> MultiTree references contentlet '%s' from different site, keeping original reference",
+						contentletId));
+				return false;
+			} else {
+				// Contentlet should have been copied but wasn't - skip this MultiTree entry
+				Logger.warn(this, String.format(
+						"Skipping MultiTree entry for page '%s': contentlet '%s' was not copied and is not accessible from destination site '%s'",
+						pageId, contentletId, destinationSite.getHostname()));
+				return true;
+			}
+		} catch (final Exception e) {
+			// Contentlet doesn't exist or is not accessible
+			Logger.warn(this, String.format(
+					"Skipping MultiTree entry for page '%s': contentlet '%s' could not be found or accessed: %s",
+					pageId, contentletId, e.getMessage()));
+			return true;
+		}
 	}
 
 	/**
