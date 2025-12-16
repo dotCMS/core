@@ -59,6 +59,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -198,7 +199,17 @@ public class ContentResource {
                            @QueryParam("rememberQuery") @DefaultValue("false") final boolean rememberQuery,
                            @RequestBody(description = "Search criteria including query, sort, pagination and filters",
                                       required = true,
-                                      content = @Content(schema = @Schema(implementation = SearchForm.class)))
+                                      content = @Content(schema = @Schema(implementation = SearchForm.class),
+                                              examples = @ExampleObject(
+                                                      value = "{\n" +
+                                                              "  \"query\": \"+systemType:false " +
+                                                                "+languageId:1 +deleted:false " +
+                                                                "+working:true +variant:default\",\n" +
+                                                              "  \"sort\": \"modDate desc\",\n" +
+                                                              "  \"limit\": 20,\n" +
+                                                              "  \"offset\": 0\n" +
+                                                              "}")
+                                      ))
                            final SearchForm searchForm) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = this.webResource.init

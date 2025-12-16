@@ -66,6 +66,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -1065,7 +1066,14 @@ public class ContentResource {
     public ResponseEntityView<SearchView> search(@Context final HttpServletRequest request,
                              @Context final HttpServletResponse response,
                              @RequestBody(description = "Content search parameters", required = true,
-                                        content = @Content(schema = @Schema(implementation = ContentSearchForm.class)))
+                                        content = @Content(schema = @Schema(implementation = ContentSearchForm.class),
+                                                examples = @ExampleObject(
+                                                             value = "{\n" +
+                                                             "  \"globalSearch\": \"test\",\n" +
+                                                             "  \"perPage\": 20,\n" +
+                                                             "  \"page\": 1\n" +
+                                                             "}")
+                                        ))
                              final ContentSearchForm contentSearchForm) throws DotDataException, DotSecurityException {
         Logger.debug(this, () -> "Searching for contentlets with the following parameters: " + contentSearchForm);
         final User user = new WebResource.InitBuilder(webResource)
