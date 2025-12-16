@@ -234,7 +234,7 @@ public class TagResource {
             description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201",
+            @ApiResponse(responseCode = "200",
                     description = "Tags created successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityRestTagListView.class))),
