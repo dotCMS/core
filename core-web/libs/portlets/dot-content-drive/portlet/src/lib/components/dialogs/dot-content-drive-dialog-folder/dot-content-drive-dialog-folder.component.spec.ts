@@ -6,6 +6,7 @@ import { MessageService } from 'primeng/api';
 import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
+import { DotContentDriveFolder } from '@dotcms/dotcms-models';
 import { createFakeSite, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog-folder.component';
@@ -41,11 +42,13 @@ describe('DotContentDriveDialogFolderComponent', () => {
             mockProvider(DotContentDriveStore, {
                 currentSite: jest.fn().mockReturnValue(mockSite),
                 path: jest.fn().mockReturnValue('/documents'),
+                reloadContentDrive: jest.fn(),
                 loadFolders: jest.fn(),
                 closeDialog: jest.fn()
             }),
             mockProvider(DotFolderService, {
-                createFolder: jest.fn().mockReturnValue(of({}))
+                createFolder: jest.fn().mockReturnValue(of({})),
+                saveFolder: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(MessageService, {
                 add: jest.fn()
@@ -55,7 +58,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 useValue: new MockDotMessageService({
                     'content-drive.dialog.folder.message.create-success':
                         'Folder created successfully',
-                    'content-drive.dialog.folder.message.create-error': 'Error creating folder'
+                    'content-drive.dialog.folder.message.create-error': 'Error creating folder',
+                    'content-drive.dialog.folder.message.save-success': 'Folder saved successfully',
+                    'content-drive.dialog.folder.message.save-error': 'Error saving folder'
                 })
             },
             mockProvider(DotContentTypeService, {
@@ -76,7 +81,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
     describe('initial state', () => {
         it('should initialize form with default values', () => {
             expect(component.folderForm.get('title')?.value).toBe('');
-            expect(component.folderForm.get('url')?.value).toBe('');
+            expect(component.folderForm.get('name')?.value).toBe('');
             expect(component.folderForm.get('sortOrder')?.value).toBe(1);
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([]);
             expect(component.folderForm.get('defaultFileAssetType')?.value).toBe(
@@ -94,25 +99,25 @@ describe('DotContentDriveDialogFolderComponent', () => {
         it('should be invalid when title is empty', () => {
             component.folderForm.patchValue({
                 title: '',
-                url: 'test-url'
+                name: 'test-name'
             });
 
             expect(component.folderForm.invalid).toBe(true);
         });
 
-        it('should be invalid when url is empty', () => {
+        it('should be invalid when name is empty', () => {
             component.folderForm.patchValue({
                 title: 'Test Title',
-                url: ''
+                name: ''
             });
 
             expect(component.folderForm.invalid).toBe(true);
         });
 
-        it('should be valid when both title and url are provided', () => {
+        it('should be valid when both title and name are provided', () => {
             component.folderForm.patchValue({
                 title: 'Test Title',
-                url: 'test-url'
+                name: 'test-name'
             });
 
             expect(component.folderForm.valid).toBe(true);
@@ -129,7 +134,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
         it('should enable create button when form is valid', () => {
             component.folderForm.patchValue({
                 title: 'Test Title',
-                url: 'test-url'
+                name: 'test-name'
             });
             spectator.detectChanges();
 
@@ -142,7 +147,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
     describe('finalPath computed', () => {
         it('should generate correct path with no existing path', () => {
             store.path.mockReturnValue(undefined);
-            component.folderForm.patchValue({ url: 'new-folder' });
+            component.folderForm.patchValue({ name: 'new-folder' });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/new-folder/');
@@ -150,31 +155,147 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should generate correct path with existing path', () => {
             store.path.mockReturnValue('/documents');
-            component.folderForm.patchValue({ url: 'new-folder' });
+            component.folderForm.patchValue({ name: 'new-folder' });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
         });
-    });
 
-    describe('url auto-generation from title', () => {
-        it('should generate url slug from title when url is not touched', () => {
-            component.folderForm.patchValue({ title: 'My New Folder' });
+        it('should return hostname only when name is empty', () => {
+            component.folderForm.patchValue({ name: '' });
             spectator.detectChanges();
 
-            expect(component.folderForm.get('url')?.value).toBe('my-new-folder');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
         });
 
-        it('should not override url when manually touched', () => {
-            // First touch the url field
-            component.folderForm.get('url')?.markAsTouched();
-            component.folderForm.patchValue({
-                url: 'custom-url',
-                title: 'My New Folder'
-            });
+        it('should return hostname only when name is null', () => {
+            component.folderForm.patchValue({ name: null });
             spectator.detectChanges();
 
-            expect(component.folderForm.get('url')?.value).toBe('custom-url');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+        });
+
+        it('should return hostname only when name is whitespace', () => {
+            component.folderForm.patchValue({ name: '   ' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+        });
+
+        it('should handle path with trailing slash', () => {
+            store.path.mockReturnValue('/documents/');
+            component.folderForm.patchValue({ name: 'new-folder' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
+        });
+
+        it('should convert name to slug in path', () => {
+            component.folderForm.patchValue({ name: 'My New Folder' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/my-new-folder/');
+        });
+
+        it('should handle name with spaces', () => {
+            component.folderForm.patchValue({ name: 'test folder name' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/test-folder-name/');
+        });
+    });
+
+    describe('title auto-generation from name', () => {
+        it('should generate navigation label from name when title is not dirty', () => {
+            component.folderForm.patchValue({ name: 'my-new-folder' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('My New Folder');
+        });
+
+        it('should handle multiple hyphens correctly', () => {
+            component.folderForm.patchValue({ name: 'my-very-long-folder-name' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('My Very Long Folder Name');
+        });
+
+        it('should not override title when manually edited (dirty)', () => {
+            // First mark title as dirty by setting a value
+            component.folderForm.get('title')?.setValue('Custom Title');
+            component.folderForm.get('title')?.markAsDirty();
+            spectator.detectChanges();
+
+            // Now change the name
+            component.folderForm.patchValue({ name: 'different-name' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Custom Title');
+        });
+
+        it('should not auto-generate title when folder is being edited', () => {
+            // Simulate editing an existing folder
+            const mockFolder: DotContentDriveFolder = {
+                name: 'existing-folder',
+                title: 'Existing Folder',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1234567890,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1234567890,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', mockFolder);
+            spectator.detectChanges();
+
+            // Change the name
+            component.folderForm.patchValue({ name: 'new-name' });
+            spectator.detectChanges();
+
+            // Title should remain as it was set from the folder
+            expect(component.folderForm.get('title')?.value).toBe('Existing Folder');
+        });
+
+        it('should capitalize first letter of each word', () => {
+            component.folderForm.patchValue({ name: 'test-folder' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Test Folder');
+        });
+
+        it('should handle single word names', () => {
+            component.folderForm.patchValue({ name: 'documents' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Documents');
+        });
+
+        it('should handle empty name', () => {
+            component.folderForm.patchValue({ name: '' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('');
+        });
+
+        it('should handle name with leading/trailing spaces (trimmed)', () => {
+            component.folderForm.patchValue({ name: '  test-folder  ' });
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('title')?.value).toBe('Test Folder');
         });
     });
 
@@ -232,7 +353,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
         beforeEach(() => {
             component.folderForm.patchValue({
                 title: 'Test Folder',
-                url: 'test-folder'
+                name: 'test-folder'
             });
             spectator.detectChanges();
         });
@@ -322,12 +443,13 @@ describe('DotContentDriveDialogFolderComponent', () => {
             });
         });
 
-        it('should reload folders and close dialog on success', () => {
+        it('should reload content drive, load folders and close dialog on success', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
             spectator.click(createButton);
 
+            expect(store.reloadContentDrive).toHaveBeenCalled();
             expect(store.loadFolders).toHaveBeenCalled();
             expect(store.closeDialog).toHaveBeenCalled();
         });
@@ -336,7 +458,12 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
+
+            expect(createButton).toBeTruthy();
+            expect(component.folderForm.valid).toBe(true);
+
             spectator.click(createButton);
+            spectator.detectChanges();
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
@@ -378,11 +505,480 @@ describe('DotContentDriveDialogFolderComponent', () => {
     describe('component integration', () => {
         it('should update final path when form values change', () => {
             component.folderForm.patchValue({
-                url: 'integration-test'
+                name: 'integration-test'
             });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toContain('integration-test');
+        });
+    });
+
+    describe('createFolderBody constraints', () => {
+        beforeEach(() => {
+            component.folderForm.patchValue({
+                title: 'Test Folder',
+                name: 'test-folder'
+            });
+            spectator.detectChanges();
+        });
+
+        it('should only include showOnMenu when it is not undefined and not null', () => {
+            component.folderForm.patchValue({
+                showOnMenu: true
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalledWith({
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
+                data: {
+                    title: 'Test Folder',
+                    showOnMenu: true,
+                    sortOrder: 1,
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                }
+            });
+        });
+
+        it('should not include showOnMenu when it is null', () => {
+            // Since showOnMenu is nonNullable, we need to set it directly on the control
+            // to test the null case, which the component logic handles
+            component.folderForm.get('showOnMenu')?.setValue(null as unknown as boolean, {
+                emitEvent: false
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.showOnMenu).toBeUndefined();
+        });
+
+        it('should only include sortOrder when it is not null and not undefined', () => {
+            component.folderForm.patchValue({
+                sortOrder: 5
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalledWith({
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
+                data: {
+                    title: 'Test Folder',
+                    showOnMenu: false,
+                    sortOrder: 5,
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                }
+            });
+        });
+
+        it('should not include sortOrder when it is null', () => {
+            component.folderForm.patchValue({
+                sortOrder: null
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.sortOrder).toBeUndefined();
+        });
+
+        it('should only include fileMasks when allowedFileExtensions has items', () => {
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg', '*.png']
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalledWith({
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
+                data: {
+                    title: 'Test Folder',
+                    showOnMenu: false,
+                    sortOrder: 1,
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    fileMasks: ['*.jpg', '*.png']
+                }
+            });
+        });
+
+        it('should not include fileMasks when allowedFileExtensions is empty', () => {
+            component.folderForm.patchValue({
+                allowedFileExtensions: []
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.fileMasks).toBeUndefined();
+        });
+
+        it('should only include defaultAssetType when it is not empty', () => {
+            component.folderForm.patchValue({
+                defaultFileAssetType: 'Video'
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalledWith({
+                assetPath: '//demo.dotcms.com/documents/test-folder/',
+                data: {
+                    title: 'Test Folder',
+                    showOnMenu: false,
+                    sortOrder: 1,
+                    defaultAssetType: 'Video'
+                }
+            });
+        });
+
+        it('should not include defaultAssetType when it is empty', () => {
+            component.folderForm.patchValue({
+                defaultFileAssetType: ''
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.defaultAssetType).toBeUndefined();
+        });
+
+        it('should not include defaultAssetType when it is only whitespace', () => {
+            component.folderForm.patchValue({
+                defaultFileAssetType: '   '
+            });
+            spectator.detectChanges();
+
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.defaultAssetType).toBeUndefined();
+        });
+
+        it('should use originalName in assetPath when it exists and name has not changed', () => {
+            // Simulate editing an existing folder
+            const mockFolder: DotContentDriveFolder = {
+                name: 'original-folder',
+                title: 'Original Folder',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1234567890,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1234567890,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', mockFolder);
+            spectator.detectChanges();
+
+            // Don't change the name
+            component.folderForm.patchValue({
+                title: 'Updated Title'
+            });
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalled();
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/documents/original-folder/');
+        });
+
+        it('should use form name in assetPath when originalName does not exist', () => {
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/documents/test-folder/');
+        });
+
+        it('should include name in data when originalName exists and name has changed', () => {
+            // Simulate editing an existing folder
+            const mockFolder: DotContentDriveFolder = {
+                name: 'original-folder',
+                title: 'Original Folder',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1234567890,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1234567890,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', mockFolder);
+            spectator.detectChanges();
+
+            // Verify originalName is set
+            expect(component.$originalName()).toBe('original-folder');
+            expect(component.folderForm.get('name')?.value).toBe('original-folder');
+
+            // Change the name and mark as touched to prevent urlEffect from interfering
+            component.folderForm.get('name')?.setValue('new-folder-name');
+            component.folderForm.get('name')?.markAsTouched();
+            spectator.detectChanges();
+
+            // Verify the form value is updated
+            expect(component.folderForm.get('name')?.value).toBe('new-folder-name');
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalled();
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.name).toBe('new-folder-name');
+            // assetPath uses $originalName() when it exists, even if name changed
+            // The name field in data is what tells the backend to rename it
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/documents/original-folder/');
+        });
+
+        it('should not include name in data when originalName does not exist', () => {
+            const createButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(createButton);
+
+            expect(folderService.createFolder).toHaveBeenCalled();
+            const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.name).toBeUndefined();
+        });
+
+        it('should not include name in data when originalName exists but name has not changed', () => {
+            // Simulate editing an existing folder
+            const mockFolder: DotContentDriveFolder = {
+                name: 'original-folder',
+                title: 'Original Folder',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1234567890,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1234567890,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', mockFolder);
+            spectator.detectChanges();
+
+            // Don't change the name
+            component.folderForm.patchValue({
+                title: 'Updated Title'
+            });
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalled();
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.data.name).toBeUndefined();
+        });
+    });
+
+    describe('saveFolder method', () => {
+        beforeEach(() => {
+            // Clear any previous mock calls
+            folderService.saveFolder.mockClear();
+            folderService.createFolder.mockClear();
+            store.reloadContentDrive.mockClear();
+            store.loadFolders.mockClear();
+            store.closeDialog.mockClear();
+            messageService.add.mockClear();
+
+            // Simulate editing an existing folder
+            const mockFolder: DotContentDriveFolder = {
+                name: 'existing-folder',
+                title: 'Existing Folder',
+                sortOrder: 1,
+                filesMasks: '*.jpg,*.png',
+                defaultFileType: 'FileAsset',
+                showOnMenu: true,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1234567890,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1234567890,
+                owner: null,
+                parent: '',
+                path: '',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', mockFolder);
+            spectator.detectChanges();
+
+            component.folderForm.patchValue({
+                title: 'Updated Folder',
+                name: 'updated-folder'
+            });
+            spectator.detectChanges();
+        });
+
+        it('should call saveFolder service method when folder exists', () => {
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalled();
+            expect(folderService.createFolder).not.toHaveBeenCalled();
+        });
+
+        it('should call saveFolder with correct body structure', () => {
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+
+            spectator.click(saveButton);
+
+            // assetPath uses $originalName() when it exists (for editing existing folders)
+            // The name field in data is what tells the backend to rename it
+            expect(folderService.saveFolder).toHaveBeenCalledWith({
+                assetPath: '//demo.dotcms.com/documents/existing-folder/',
+                data: {
+                    title: 'Updated Folder',
+                    name: 'updated-folder',
+                    showOnMenu: true,
+                    sortOrder: 1,
+                    defaultAssetType: 'File',
+                    fileMasks: ['*.jpg', '*.png']
+                }
+            });
+        });
+
+        it('should reload content drive, load folders and close dialog on success', () => {
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(store.reloadContentDrive).toHaveBeenCalled();
+            expect(store.loadFolders).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should show success message on successful save', () => {
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+
+            spectator.click(saveButton);
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'Folder saved successfully',
+                detail: undefined
+            });
+        });
+
+        it('should show error message on save failure', () => {
+            folderService.saveFolder.mockReturnValue(
+                throwError({ error: { message: 'Save failed' } })
+            );
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: 'Error saving folder',
+                detail: 'Save failed'
+            });
         });
     });
 });

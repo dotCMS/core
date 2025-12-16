@@ -90,7 +90,7 @@ const uveStoreMock = {
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     workflowActions: signal([]),
     workflowLoading: signal(false),
-    canEditPage: signal(true),
+    $canEditPage: signal(true),
     pageParams: signal(pageParams),
     loadPageAsset: jest.fn(),
     reloadCurrentPage: jest.fn(),
@@ -157,7 +157,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it("should be disabled if user can't edit", () => {
-            uveStoreMock.canEditPage.set(false);
+            uveStoreMock.$canEditPage.set(false);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -168,7 +168,7 @@ describe('DotUveWorkflowActionsComponent', () => {
     describe('With Workflow Actions', () => {
         beforeEach(() => {
             uveStoreMock.workflowLoading.set(false);
-            uveStoreMock.canEditPage.set(true);
+            uveStoreMock.$canEditPage.set(true);
             uveStoreMock.workflowActions.set(mockWorkflowsActions);
             spectator.detectChanges();
         });

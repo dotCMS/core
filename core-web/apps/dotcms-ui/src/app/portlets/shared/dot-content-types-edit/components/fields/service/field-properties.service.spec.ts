@@ -1,9 +1,17 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 
-import { DotCMSContentTypeField, DotRenderModes } from '@dotcms/dotcms-models';
+import { DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotRenderModes,
+    FeaturedFlags,
+    FEATURE_FLAG_NOT_FOUND,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 
 import { FieldPropertyService } from './field-properties.service';
 import { FieldService } from './field.service';
@@ -30,12 +38,23 @@ class TestFieldService {
     }
 }
 
-let fieldPropertiesService;
+class TestDotPropertiesService {
+    getKey = jest.fn().mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
+}
+
+let fieldPropertiesService: FieldPropertyService;
+let dotPropertiesService: TestDotPropertiesService;
 
 describe('FieldPropertyService', () => {
     beforeEach(() => {
+        dotPropertiesService = new TestDotPropertiesService();
+
         TestBed.configureTestingModule({
-            providers: [FieldPropertyService, { provide: FieldService, useClass: TestFieldService }]
+            providers: [
+                FieldPropertyService,
+                { provide: FieldService, useClass: TestFieldService },
+                { provide: DotPropertiesService, useValue: dotPropertiesService }
+            ]
         });
 
         fieldPropertiesService = TestBed.inject(FieldPropertyService);
@@ -132,6 +151,115 @@ describe('FieldPropertyService', () => {
         expect(fieldPropertiesService.getFieldType('fieldClass2')).toBeUndefined();
     });
 
+    describe('constructor', () => {
+        it('should add newRenderMode property to custom fields', fakeAsync(() => {
+            const customFieldService = new TestFieldService();
+            customFieldService.loadFieldTypes = jest.fn().mockReturnValue(
+                observableOf([
+                    {
+                        clazz: DotCMSClazzes.CUSTOM_FIELD,
+                        helpText: 'help',
+                        id: '1',
+                        label: 'label',
+                        properties: ['property1', 'property2']
+                    },
+                    {
+                        clazz: 'otherFieldClass',
+                        helpText: 'help',
+                        id: '2',
+                        label: 'label',
+                        properties: ['property1', 'property2']
+                    }
+                ])
+            );
+
+            TestBed.resetTestingModule().configureTestingModule({
+                providers: [
+                    FieldPropertyService,
+                    { provide: FieldService, useValue: customFieldService },
+                    { provide: DotPropertiesService, useValue: dotPropertiesService }
+                ]
+            });
+
+            const service = TestBed.inject(FieldPropertyService);
+
+            // Wait for the subscription to complete
+            tick();
+
+            const customFieldType = service.getFieldType(DotCMSClazzes.CUSTOM_FIELD);
+            expect(customFieldType).toBeDefined();
+            expect(customFieldType.properties).toContain(NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(customFieldType.properties).toEqual([
+                'property1',
+                'property2',
+                NEW_RENDER_MODE_VARIABLE_KEY
+            ]);
+
+            const otherFieldType = service.getFieldType('otherFieldClass');
+            expect(otherFieldType).toBeDefined();
+            expect(otherFieldType.properties).not.toContain(NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(otherFieldType.properties).toEqual(['property1', 'property2']);
+        }));
+    });
+
+    describe('$newRenderModeDefault', () => {
+        it('should default to IFRAME when feature flag is not found', fakeAsync(() => {
+            dotPropertiesService.getKey.mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
+
+            TestBed.resetTestingModule().configureTestingModule({
+                providers: [
+                    FieldPropertyService,
+                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotPropertiesService, useValue: dotPropertiesService }
+                ]
+            });
+
+            const service = TestBed.inject(FieldPropertyService);
+
+            // Wait for signal to initialize
+            tick();
+
+            expect(service.$newRenderModeDefault()).toBe(DotRenderModes.IFRAME);
+        }));
+
+        it('should return feature flag value when it exists', fakeAsync(() => {
+            dotPropertiesService.getKey.mockReturnValue(observableOf(DotRenderModes.COMPONENT));
+
+            TestBed.resetTestingModule().configureTestingModule({
+                providers: [
+                    FieldPropertyService,
+                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotPropertiesService, useValue: dotPropertiesService }
+                ]
+            });
+
+            const service = TestBed.inject(FieldPropertyService);
+
+            // Wait for signal to initialize
+            tick();
+
+            expect(service.$newRenderModeDefault()).toBe(DotRenderModes.COMPONENT);
+        }));
+
+        it('should call getKey with correct feature flag key', () => {
+            dotPropertiesService.getKey.mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
+
+            TestBed.resetTestingModule().configureTestingModule({
+                providers: [
+                    FieldPropertyService,
+                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotPropertiesService, useValue: dotPropertiesService }
+                ]
+            });
+
+            TestBed.inject(FieldPropertyService);
+
+            expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
+                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_RENDER_MODE_DEFAULT
+            );
+        });
+    });
+
     describe('getValue', () => {
         it('should return the value from fieldVariable when propertyName is newRenderMode and fieldVariable exists', () => {
             const field: DotCMSContentTypeField = {
@@ -145,8 +273,8 @@ describe('FieldPropertyService', () => {
                 fieldVariables: [
                     {
                         id: 'var1',
-                        key: 'newRenderMode',
-                        value: DotRenderModes.COMPONENTS,
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value: DotRenderModes.COMPONENT,
                         fieldId: '123',
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
                     }
@@ -164,11 +292,11 @@ describe('FieldPropertyService', () => {
                 unique: false
             };
 
-            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
-            expect(result).toEqual(DotRenderModes.COMPONENTS);
+            const result = fieldPropertiesService.getValue(field, NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(result).toEqual(DotRenderModes.COMPONENT);
         });
 
-        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariable does not exist', () => {
+        it('should return default render mode from signal when propertyName is newRenderMode and fieldVariable does not exist', () => {
             const field: DotCMSContentTypeField = {
                 id: '123',
                 name: 'Test Field',
@@ -199,11 +327,13 @@ describe('FieldPropertyService', () => {
                 unique: false
             };
 
-            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            const result = fieldPropertiesService.getValue(field, NEW_RENDER_MODE_VARIABLE_KEY);
+            // Should use the signal default value (IFRAME when feature flag not found)
+            expect(result).toEqual(fieldPropertiesService.$newRenderModeDefault());
             expect(result).toEqual(DotRenderModes.IFRAME);
         });
 
-        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariables is empty', () => {
+        it('should return default render mode from signal when propertyName is newRenderMode and fieldVariables is empty', () => {
             const field: DotCMSContentTypeField = {
                 id: '123',
                 name: 'Test Field',
@@ -226,11 +356,12 @@ describe('FieldPropertyService', () => {
                 unique: false
             };
 
-            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            const result = fieldPropertiesService.getValue(field, NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(result).toEqual(fieldPropertiesService.$newRenderModeDefault());
             expect(result).toEqual(DotRenderModes.IFRAME);
         });
 
-        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariables is undefined', () => {
+        it('should return default render mode from signal when propertyName is newRenderMode and fieldVariables is undefined', () => {
             const field: DotCMSContentTypeField = {
                 id: '123',
                 name: 'Test Field',
@@ -253,19 +384,21 @@ describe('FieldPropertyService', () => {
                 unique: false
             };
 
-            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            const result = fieldPropertiesService.getValue(field, NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(result).toEqual(fieldPropertiesService.$newRenderModeDefault());
             expect(result).toEqual(DotRenderModes.IFRAME);
         });
 
-        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and field is null', () => {
+        it('should return default render mode from signal when propertyName is newRenderMode and field is null', () => {
             const result = fieldPropertiesService.getValue(
                 null as unknown as DotCMSContentTypeField,
-                'newRenderMode'
+                NEW_RENDER_MODE_VARIABLE_KEY
             );
+            expect(result).toEqual(fieldPropertiesService.$newRenderModeDefault());
             expect(result).toEqual(DotRenderModes.IFRAME);
         });
 
-        it('should return DotRenderModes.IFRAME when propertyName is newRenderMode and fieldVariable value is empty string', () => {
+        it('should return default render mode from signal when propertyName is newRenderMode and fieldVariable value is empty string', () => {
             const field: DotCMSContentTypeField = {
                 id: '123',
                 name: 'Test Field',
@@ -277,7 +410,7 @@ describe('FieldPropertyService', () => {
                 fieldVariables: [
                     {
                         id: 'var1',
-                        key: 'newRenderMode',
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
                         value: '',
                         fieldId: '123',
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
@@ -296,9 +429,54 @@ describe('FieldPropertyService', () => {
                 unique: false
             };
 
-            const result = fieldPropertiesService.getValue(field, 'newRenderMode');
+            const result = fieldPropertiesService.getValue(field, NEW_RENDER_MODE_VARIABLE_KEY);
+            // Empty string is falsy, so it should use the signal default
+            expect(result).toEqual(fieldPropertiesService.$newRenderModeDefault());
             expect(result).toEqual(DotRenderModes.IFRAME);
         });
+
+        it('should return default render mode from signal when feature flag is set to COMPONENT', fakeAsync(() => {
+            dotPropertiesService.getKey.mockReturnValue(observableOf(DotRenderModes.COMPONENT));
+
+            TestBed.resetTestingModule().configureTestingModule({
+                providers: [
+                    FieldPropertyService,
+                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotPropertiesService, useValue: dotPropertiesService }
+                ]
+            });
+
+            const service = TestBed.inject(FieldPropertyService);
+
+            const field: DotCMSContentTypeField = {
+                id: '123',
+                name: 'Test Field',
+                variable: 'testField',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+                dataType: 'text',
+                fieldType: 'CustomField',
+                fieldTypeLabel: 'Custom Field',
+                fieldVariables: [],
+                contentTypeId: 'contentTypeId',
+                fixed: false,
+                iDate: 1234567890,
+                indexed: false,
+                listed: false,
+                modDate: 1234567890,
+                readOnly: false,
+                required: false,
+                searchable: false,
+                sortOrder: 1,
+                unique: false
+            };
+
+            // Wait for signal to initialize
+            tick();
+
+            const result = service.getValue(field, NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(result).toEqual(service.$newRenderModeDefault());
+            expect(result).toEqual(DotRenderModes.COMPONENT);
+        }));
 
         it('should return field property value when propertyName is not newRenderMode', () => {
             const field: DotCMSContentTypeField = {

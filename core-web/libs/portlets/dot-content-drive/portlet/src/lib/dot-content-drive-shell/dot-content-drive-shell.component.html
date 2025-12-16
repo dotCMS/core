@@ -45,6 +45,7 @@
         [items]="$items()"
         [totalItems]="$totalItems()"
         [loading]="$loading()"
+        [offset]="$offset()"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
         (selectionChange)="onSelectItems($event)"
@@ -52,6 +53,7 @@
         (doubleClick)="onDoubleClick($event)"
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd()"
+        (drop)="onTableDrop($event)"
         #listView />
 </dot-content-drive-dropzone>
 <dot-folder-list-context-menu />
@@ -91,7 +93,9 @@
     (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
-            <dot-content-drive-dialog-folder data-testId="dialog-folder" />
+            <dot-content-drive-dialog-folder
+                data-testId="dialog-folder"
+                [folder]="$dialog()?.payload" />
         }
         @default {
             <div>Default dialog</div>

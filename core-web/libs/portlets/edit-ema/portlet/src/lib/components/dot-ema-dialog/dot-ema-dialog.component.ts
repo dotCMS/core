@@ -405,6 +405,7 @@ export class DotEmaDialogComponent {
      */
     bringBack({ name, args }: { name: string; args: string[] } = { name: '', args: [] }) {
         this.$compareData.set(null);
+        // TODO: The 'emit' function requires a mandatory void argument
         this.callEmbeddedFunction(name, args, () => this.reloadFromDialog.emit());
     }
 

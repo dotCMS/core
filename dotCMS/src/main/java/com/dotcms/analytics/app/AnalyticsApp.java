@@ -87,7 +87,7 @@ public class AnalyticsApp {
         final Optional<Secret> secret = AppsUtil.paramSecret(
                 ANALYTICS_APP_KEY,
                 name,
-                analyticsKey.jsKey().toCharArray(),
+                analyticsKey.m2mKey().toCharArray(),
                 paramDescriptor);
 
         APILocator.getAppsAPI().saveSecret(

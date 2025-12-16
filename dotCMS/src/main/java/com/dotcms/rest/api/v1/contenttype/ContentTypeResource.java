@@ -14,12 +14,14 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -30,6 +32,8 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.PaginationUtilParams.Builder;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
@@ -44,6 +48,7 @@ import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -51,6 +56,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.IdentifierValidator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -1196,6 +1202,7 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+		req.setAttribute("contentTypeId", idOrVar);
 		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
 	}
 
@@ -1820,7 +1827,7 @@ public class ContentTypeResource implements Serializable {
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
-	public final Response getPagesContentTypes(@Context final HttpServletRequest httpRequest,
+	public final ResponseEntityPaginatedDataView getPagesContentTypes(@Context final HttpServletRequest httpRequest,
 										  @Context final HttpServletResponse httpResponse,
 
 										   @QueryParam("pagePathOrId") @Parameter(schema = @Schema(type = "string"),
@@ -1890,53 +1897,65 @@ public class ContentTypeResource implements Serializable {
 		final long languageId   = getLanguageId(language);
 		final Host site = getSite(siteId, user, pageMode.respectAnonPerms); // wondering if this should be current or default
 		final String orderBy = this.getOrderByRealName(orderByParam);
-		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrIdAndFilter(pagePathOrId, site,
-				languageId, pageMode, user, filter);
 		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
+        final Collection<BaseContentType> baseContentTypes = UtilMethods.isSet(types) ? BaseContentType.fromNames(types) : BaseContentType.allBaseTypes();
+        final List<ContentType> contentTypes = findPageContainersContentTypesVarNamesByPathOrIdAndFilter(pagePathOrId, site, languageId, pageMode, user, filter);
+        //Curated list of varNames ensures they belong into the passed BaseTypes
+        List<String> typeVarNames = contentTypes.stream()
+                .filter(contentType -> baseContentTypes.contains(contentType.baseType()))
+                .map(ContentType::variable)
+                .collect(Collectors.toList());
 
-		//If set, we need to consider only the content types that belong to the specific base types
-		if (null != types) {
-			//Remove empty strings and duplicates, preserve order
-			final List<String> filteredTypes = types.stream()
-					.filter(UtilMethods::isSet)
-					.collect(Collectors.toList());
-			if (!filteredTypes.isEmpty()) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, new LinkedHashSet<>(filteredTypes));
-			}
-		}
-
-		if (isUsage) {
-
+		if (isUsage && UtilMethods.isSet(typeVarNames)) {
 			typeVarNames = doUsage(page, siteId, perPage, direction, user, typeVarNames, extraParams);
 		}
 
-		if (null != siteId) {
+		if (UtilMethods.isSet(siteId)) {
 			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 		}
 
-		if (UtilMethods.isSet(typeVarNames)) {
-
+        if (UtilMethods.isSet(typeVarNames)) {
 			Logger.debug(this, "Found Content Types for page: " + pagePathOrId +
 					" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
 					" with languageId: " + languageId + " and pageMode: " + pageMode +
 					" with types: " + typeVarNames);
-			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+            //Types param (in plural) is used to filter concrete content-types, This param must be a List
+            extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+            //unfortunately, if we mix both params "Type" and "Types", the search results get broader not narrower,
+            //so we need to filter the results by a curated list that includes only content-types within the BaseTypes constraints
 		}
 
-		final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-		return isUsage?
-				paginationUtil.getPage(httpRequest, user, filter, PaginationUtil.FIRST_PAGE_INDEX, // we already paginate the results, so we start at page 1.
-						perPage, SQLUtil.DOT_NOT_SORT , // if usage is set, I do not want sort on the db, so use dotNONE.
-						OrderDirection.valueOf(direction), extraParams):
-				paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-				        OrderDirection.valueOf(direction), extraParams);
-	} // getPagesContentTypes.
+        final Builder<Map<String, Object>, PaginatedArrayList<?>> builder = new Builder<>();
+        builder.withRequest(httpRequest)
+                .withResponse(httpResponse)
+                .withFilter(filter)
+                .withDirection(OrderDirection.valueOf(direction))
+                .withPerPage(perPage)
+                .withUser(user)
+                .withExtraParams(extraParams);
+        if (typeVarNames.isEmpty()) {
+            //Null Paginator returns empty result set
+            return new PaginationUtil((usr, limit, offset, params) -> new PaginatedArrayList<>())
+            .getPageView(
+                builder.build()
+            );
+        }
+
+        final PaginationUtil util = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+        if(isUsage){
+            builder.withPage(PaginationUtil.FIRST_PAGE_INDEX)
+                   .withOrderBy(SQLUtil.DOT_NOT_SORT);
+        } else {
+            builder.withPage(page)
+                   .withOrderBy(orderBy);
+        }
+        return util.getPageView(builder.build());
+	}
 
 	private static long getLanguageId(final String language) {
 
 		final long userLanguageId = LanguageUtil.getLanguageId(language);
-		final long languageId = userLanguageId > 0 ? userLanguageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		return languageId;
+        return userLanguageId > 0 ? userLanguageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	}
 
 	private static Host getSite(final String siteId, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
@@ -1950,7 +1969,7 @@ public class ContentTypeResource implements Serializable {
 								 final int perPage,
 								 final String direction,
 								 final User user, List<String> typeVarNames,
-								 final Map<String, Object> extraParams) throws DotDataException {
+								 final Map<String, Object> extraParams) {
 
 		final boolean isAscending =  OrderDirection.ASC.name().equalsIgnoreCase(direction);
 		final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
@@ -1961,7 +1980,7 @@ public class ContentTypeResource implements Serializable {
 		extraParams.put(ContentTypesPaginator.ENTRIES_BY_CONTENT_TYPES, entriesByContentTypes);
 		final Comparator<Map<String, Object>> comparator = Comparator
 				.comparing((Map<String, Object> contentTypeMap) ->
-						ConversionUtils.toLong(contentTypeMap.getOrDefault(ContentTypesPaginator.N_ENTRIES_FIELD_NAME, -1l),-1l));
+						ConversionUtils.toLong(contentTypeMap.getOrDefault(ContentTypesPaginator.N_ENTRIES_FIELD_NAME, -1L),-1L));
 		extraParams.put(ContentTypesPaginator.COMPARATOR, isAscending?comparator:comparator.reversed());
 		return typeVarNames;
 	}
@@ -1990,10 +2009,10 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	/*
-	 * This methods retrieves the page by path or ID, then extracts the content types from the containers
+	 * This method retrieves the page by path or ID, then extracts the content types from the containers
 	 * Matching the filter criteria and removing the repeated ones and the ones from the blacklist.
 	 */
-	private List<String> findPageContainersContentTypesVarnamesByPathOrIdAndFilter(final String pagePathOrId,
+	private List<ContentType> findPageContainersContentTypesVarNamesByPathOrIdAndFilter(final String pagePathOrId,
 																				   final Host site,
 																				   final long languageId,
 																				   final PageMode pageMode,
@@ -2005,9 +2024,7 @@ public class ContentTypeResource implements Serializable {
 				" with languageId: " + languageId + " and pageMode: " + pageMode);
 
 		IHTMLPage htmlPage = Try.of(()->APILocator.getHTMLPageAssetAPI().getPageByPath(
-				pagePathOrId, site, languageId, pageMode.showLive)).getOrNull();
-
-		if (Objects.isNull(htmlPage)) { // try fallback by identifier
+				pagePathOrId, site, languageId, pageMode.showLive)).getOrNull();if (Objects.isNull(htmlPage)) { // try fallback by identifier
 
 			final Optional<ContentletVersionInfo> contentletVersionInfoOpt = APILocator.getVersionableAPI().getContentletVersionInfo(pagePathOrId, languageId);
 			if (contentletVersionInfoOpt.isPresent()) {
@@ -2051,17 +2068,18 @@ public class ContentTypeResource implements Serializable {
 			}
 		}
 
-		final Set<String> repeatedTypes = new HashSet<>();
-
-		// Retrieves the containers associated to the page, then extracts the content types for each container filtering the ones do not allowed
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        // Retrieves the containers associated with the page, then extracts the content types for each container filtering the ones do not allow
 		return new PageRenderUtil(htmlPage, user, pageMode, languageId, site)
-				.getContainersRaw().stream().map(containerRaw -> containerRaw.getContainerStructures())
+				.getContainersRaw().stream().map(ContainerRaw::getContainerStructures)
 				.flatMap(Collection::stream)
 				.map(ContainerStructure::getContentTypeVar)
 				.filter(Objects::nonNull)
 				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
-				.filter(repeatedTypes::add)
-				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
+                .distinct()
+				.filter(varName -> filter == null || varName.toLowerCase().contains(filter.toLowerCase()))
+                .map(varName -> Try.of(()->contentTypeAPI.find(varName)).getOrNull() )
+                .filter(Objects::nonNull)
 				.collect(Collectors.toList());
 	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
 }
