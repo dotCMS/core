@@ -33,6 +33,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
         component: DotWorkflowTaskDetailComponent,
         imports: [DotIframeDialogComponent, HttpClientTestingModule],
         providers: [
+            DotWorkflowTaskDetailService,
             DotIframeService,
             DotUiColorsService,
             IframeOverlayService,

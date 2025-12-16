@@ -117,15 +117,13 @@ describe('DotPortletDetailComponent', () => {
         router = de.injector.get(ActivatedRoute);
     });
 
-    it('should not have dot-workflow-task', () => {
+    it('should not have dot-workflow-task when parent route id is empty', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
-                parent: {
-                    snapshot: {
-                        params: {
-                            id: ''
-                        }
+                snapshot: {
+                    params: {
+                        id: ''
                     }
                 }
             },
@@ -137,15 +135,13 @@ describe('DotPortletDetailComponent', () => {
         expect(de.query(By.css('dot-contentlets')) === null).toBe(false);
     });
 
-    it('should have dot-workflow-task', () => {
+    it('should have dot-workflow-task when parent route id is workflow', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
-                parent: {
-                    snapshot: {
-                        params: {
-                            id: 'workflow'
-                        }
+                snapshot: {
+                    params: {
+                        id: 'workflow'
                     }
                 }
             },
@@ -157,15 +153,13 @@ describe('DotPortletDetailComponent', () => {
         expect(de.query(By.css('dot-contentlets')) === null).toBe(true);
     });
 
-    it('should have dot-contentlets', () => {
+    it('should have dot-contentlets when parent route id is content', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
-                parent: {
-                    snapshot: {
-                        params: {
-                            id: 'content'
-                        }
+                snapshot: {
+                    params: {
+                        id: 'content'
                     }
                 }
             },

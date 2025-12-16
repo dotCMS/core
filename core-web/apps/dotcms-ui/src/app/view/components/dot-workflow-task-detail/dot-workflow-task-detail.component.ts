@@ -17,8 +17,7 @@ import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog
 @Component({
     selector: 'dot-workflow-task-detail',
     templateUrl: './dot-workflow-task-detail.component.html',
-    imports: [CommonModule, DotIframeDialogComponent],
-    providers: [DotWorkflowTaskDetailService]
+    imports: [CommonModule, DotIframeDialogComponent]
 })
 export class DotWorkflowTaskDetailComponent implements OnInit {
     private dotWorkflowTaskDetailService = inject(DotWorkflowTaskDetailService);
