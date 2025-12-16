@@ -124,15 +124,25 @@
             "dependsOn": ["^build"]
         },
         "serve": {
+            "continuous": true,
             "executor": "@angular-devkit/build-angular:dev-server",
             "dependsOn": [],
+
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
-                "hmr": true,
-                "liveReload": false,
+                "liveReload": true,
                 "watch": true
-            }
+            },
+            "configurations": {
+                "production": {
+                    "buildTarget": "dotcms-ui:build:production"
+                },
+                "development": {
+                    "buildTarget": "dotcms-ui:build:development"
+                }
+            },
+            "defaultConfiguration": "development"
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
