@@ -21,7 +21,8 @@
                 data-testId="add-box" />
             <p-divider layout="vertical" />
             <dotcms-template-builder-actions
-                (selectTheme)="openThemeSelectorDynamicDialog()"
+                [themeId]="vm.themeId"
+                (selectTheme)="openThemeSelectorDynamicDialog($event)"
                 [layoutProperties]="vm.layoutProperties"
                 data-testId="template-builder-actions"></dotcms-template-builder-actions>
             <ng-content select="[toolbar-actions-right]"></ng-content>

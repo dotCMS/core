@@ -14,7 +14,9 @@ import {
     computed,
     OnInit,
     OnDestroy,
-    ViewChild
+    ViewChild,
+    contentChild,
+    TemplateRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
@@ -123,6 +125,12 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     id = input<string>('');
 
     /**
+     * Optional custom template for the button trigger.
+     * If not provided, the default button will be used.
+     */
+    buttonTemplate = contentChild<TemplateRef<unknown>>('buttonTemplate');
+
+    /**
      * Reactive state of the component including loaded themes, loading status, pagination, and filters.
      */
     readonly $state = signalState<DotThemeState>({
@@ -183,6 +191,8 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
                 : null;
             patchState(this.$state, { selectedTheme: theme });
             this.onChangeCallback(identifier);
+            this.onChange.emit(identifier);
+            this.onTouchedCallback();
         });
 
         // Watch for current site changes from global store
@@ -311,17 +321,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
         this.loadThemes(page, hostId, searchValue);
     }
 
-    /**
-     * Handles theme selection via radio button onChange event.
-     *
-     * @param theme The selected theme
-     */
-    onThemeSelect(theme: DotTheme): void {
-        patchState(this.$state, { selectedTheme: theme });
-        this.value.set(theme.identifier);
-        this.onTouchedCallback();
-        this.onChange.emit(theme.identifier);
-    }
 
     /**
      * Gets the thumbnail URL for a theme.
@@ -371,14 +370,14 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
                         ...theme,
                         path: theme.path.replace('/application', '').replace('/', '')
                     }));
-                    
+
                     // If we have a selected theme, check if it's in the newly loaded themes
                     const selectedId = this.$state.selectedTheme()?.identifier;
                     const selectedTheme = selectedId
                         ? t.find((theme) => theme.identifier === selectedId) ||
                           this.$state.selectedTheme()
                         : null;
-                    
+
                     patchState(this.$state, {
                         themes: t,
                         pagination,

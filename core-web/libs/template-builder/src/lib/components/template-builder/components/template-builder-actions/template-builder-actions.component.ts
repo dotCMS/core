@@ -16,7 +16,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotThemeComponent } from '@dotcms/ui';
 
 import { DotTemplateLayoutProperties } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
@@ -24,7 +24,7 @@ import { DotLayoutPropertiesComponent } from '../dot-layout-properties/dot-layou
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    imports: [ButtonModule, DotLayoutPropertiesComponent, DotMessagePipe],
+    imports: [ButtonModule, DotLayoutPropertiesComponent, DotMessagePipe, DotThemeComponent],
     templateUrl: './template-builder-actions.component.html',
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -43,9 +43,11 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
         this._layoutProperties = { ...layoutProperties };
     }
 
+    @Input() themeId: string | null = null;
+
     private _layoutProperties: DotTemplateLayoutProperties;
 
-    @Output() selectTheme: EventEmitter<void> = new EventEmitter();
+    @Output() selectTheme: EventEmitter<string> = new EventEmitter();
 
     @Output() layoutPropertiesChange: EventEmitter<DotTemplateLayoutProperties> =
         new EventEmitter();

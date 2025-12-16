@@ -1,21 +1,30 @@
-<p-button
-    styleClass="!justify-between w-full hover:!border-primary-500 hover:!bg-transparent"
-    [dt]="{
-        root: {
-            secondary: {
-                focusRing: {
-                    color: 'var(--p-select-focus-ring-color)',
-                    shadow: 'var(--p-select-focus-ring-shadow)'
+@if (buttonTemplate()) {
+    <ng-container
+        [ngTemplateOutlet]="buttonTemplate()!"
+        [ngTemplateOutletContext]="{
+            $selectedThemeTitle: $selectedThemeTitle(),
+            popover: popover
+        }" />
+} @else {
+    <p-button
+        styleClass="!justify-between w-full hover:!border-primary-500 hover:!bg-transparent"
+        [dt]="{
+            root: {
+                secondary: {
+                    focusRing: {
+                        color: 'var(--p-select-focus-ring-color)',
+                        shadow: 'var(--p-select-focus-ring-shadow)'
+                    }
                 }
             }
-        }
-    }"
-    [label]="$selectedThemeTitle()"
-    variant="outlined"
-    severity="secondary"
-    icon="pi pi-chevron-down"
-    iconPos="right"
-    (click)="popover.toggle($event)" />
+        }"
+        [label]="$selectedThemeTitle()"
+        variant="outlined"
+        severity="secondary"
+        icon="pi pi-chevron-down"
+        iconPos="right"
+        (click)="popover.toggle($event)" />
+}
 
 <p-popover #popover>
     <div class="flex flex-col gap-4 min-w-2xl max-w-2xl h-[420px]" [id]="id()">
@@ -84,8 +93,7 @@
                                         name="theme-selection"
                                         [value]="theme.identifier"
                                         [(ngModel)]="value"
-                                        [disabled]="$disabled()"
-                                        (onChange)="onThemeSelect(theme)" />
+                                        [disabled]="$disabled()" />
                                 </div>
                                 <p-card
                                     class="hover:scale-105 transition-all duration-200"

@@ -30,7 +30,7 @@ import {
 } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
@@ -41,7 +41,6 @@ import {
     DotLayout,
     DotLayoutBody,
     DotTemplateDesigner,
-    DotTheme,
     DotContainerMap,
     DotTemplate
 } from '@dotcms/dotcms-models';
@@ -55,7 +54,6 @@ import { TemplateBuilderBoxComponent } from './components/template-builder-box/t
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { TemplateBuilderSidebarComponent } from './components/template-builder-sidebar/template-builder-sidebar.component';
-import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
     BOX_WIDTH,
     DotGridStackNode,
@@ -227,6 +225,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 takeUntil(this.destroy$)
             )
             .subscribe(([rows, layoutProperties, themeId]) => {
+                console.log('themeId', themeId);
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
@@ -479,35 +478,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      *
      * @memberof TemplateBuilderComponent
      */
-    openThemeSelectorDynamicDialog(): void {
-        let ref: DynamicDialogRef;
-
-        this.themeId$.pipe(take(1)).subscribe((themeId) => {
-            ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
-                header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
-                resizable: false,
-                width: '80%',
-                closeOnEscape: true,
-                data: {
-                    themeId
-                }
-            });
-        });
-
-        ref.onClose
-            .pipe(
-                take(1),
-                filter((theme: DotTheme) => !!theme)
-            )
-            .subscribe(
-                (theme: DotTheme) => {
-                    this.store.updateThemeId(theme.identifier);
-                },
-                () => {
-                    /* */
-                },
-                () => ref.destroy() // Destroy the dialog when it's closed
-            );
+    openThemeSelectorDynamicDialog(themeId: string): void {
+        console.log('themeId in openThemeSelectorDynamicDialog', themeId);
+        this.store.updateThemeId(themeId);
     }
 
     /**
