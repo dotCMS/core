@@ -98,7 +98,6 @@ describe('DotWorkflowTaskComponent', () => {
                 DotWorkflowTaskComponent
             ],
             providers: [
-                DotWorkflowTaskDetailService,
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -108,10 +107,6 @@ describe('DotWorkflowTaskComponent', () => {
                             }
                         }
                     }
-                },
-                {
-                    provide: DotWorkflowTaskDetailService,
-                    useClass: MockDotWorkflowTaskDetailService
                 },
                 {
                     provide: DotMessageService,
@@ -162,10 +157,22 @@ describe('DotWorkflowTaskComponent', () => {
             ]
         });
 
+        TestBed.overrideComponent(DotWorkflowTaskComponent, {
+            set: {
+                providers: [
+                    {
+                        provide: DotWorkflowTaskDetailService,
+                        useClass: MockDotWorkflowTaskDetailService
+                    }
+                ]
+            }
+        });
+
         fixture = TestBed.createComponent(DotWorkflowTaskComponent);
         de = fixture.debugElement;
         component = de.componentInstance;
-        dotWorkflowTaskDetailService = TestBed.inject(DotWorkflowTaskDetailService);
+        // Get the service from the component's injector since it has its own provider
+        dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
