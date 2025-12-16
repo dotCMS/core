@@ -344,7 +344,12 @@ public class PermissionSaveHelper {
 
         Logger.info(this, () -> String.format("Successfully saved permissions for user %s on asset %s", userId, assetId));
 
-        return new SaveUserPermissionsView(userId, userRole.getId(), updatedAsset, cascadeInitiated);
+        return SaveUserPermissionsView.builder()
+            .userId(userId)
+            .roleId(userRole.getId())
+            .asset(updatedAsset)
+            .cascadeInitiated(cascadeInitiated)
+            .build();
     }
 
     /**

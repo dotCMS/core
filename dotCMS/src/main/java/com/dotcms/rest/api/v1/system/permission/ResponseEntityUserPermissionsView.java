@@ -9,7 +9,7 @@ import com.dotcms.rest.ResponseEntityView;
  * Each asset includes detailed permission information such as the permission assignments,
  * whether the user can edit those permissions, and whether permissions are inherited.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since 24.01
  * @see UserPermissionsView
  */
