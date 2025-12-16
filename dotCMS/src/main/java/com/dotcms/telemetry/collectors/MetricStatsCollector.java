@@ -9,7 +9,6 @@ import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.business.TimeoutConfig;
 import com.dotcms.telemetry.cache.MetricCacheConfig;
 import com.dotcms.telemetry.cache.MetricCacheManager;
-import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
 import com.dotcms.telemetry.util.MetricCaches;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -47,9 +46,6 @@ public class MetricStatsCollector {
     
     @Inject
     private Instance<MetricType> metricTypes;
-    
-    @Inject
-    private ApiMetricAPI apiStatAPI;
     
     @Inject
     private MetricCacheConfig config;
@@ -288,28 +284,24 @@ public class MetricStatsCollector {
     }
 
     /**
-     * Get stats and clean up temporary API table.
+     * Get stats and clean up.
      * Uses the default profile from configuration (typically MINIMAL for dashboard).
      *
      * @return the {@link MetricsSnapshot} with all the calculated metrics.
      */
     public MetricsSnapshot getStatsAndCleanUp() {
-        final MetricsSnapshot stats = getStats();
-        apiStatAPI.flushTemporaryTable();
-        return stats;
+        return getStats();
     }
     
     /**
-     * Get stats with a specific profile and clean up temporary API table.
+     * Get stats with a specific profile and clean up.
      * Used by cron jobs to collect all metrics regardless of dashboard profile setting.
      *
      * @param profile the profile to use for metric collection
      * @return the {@link MetricsSnapshot} with all the calculated metrics.
      */
     public MetricsSnapshot getStatsAndCleanUp(final ProfileType profile) {
-        final MetricsSnapshot stats = getStats(Set.of(), profile);
-        apiStatAPI.flushTemporaryTable();
-        return stats;
+        return getStats(Set.of(), profile);
     }
 
     private Optional<MetricValue> getMetricValue(final MetricType metricType) throws DotDataException {
