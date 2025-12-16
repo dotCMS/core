@@ -1,31 +1,58 @@
-<script type="application/javascript">
+#if( $structures.isNewEditModeEnabled() )
+	<script>
+		DotCustomFieldApi.ready(() =>{
+			const titleField = DotCustomFieldApi.getField('title');
+			const urlField = DotCustomFieldApi.getField('url');
+			const friendlyNameField = DotCustomFieldApi.getField('friendlyName');
 
-dojo.ready(function(){
-	
-	var titleBox=new dijit.form.TextBox({
-		name: "titleBox",
-		value: dojo.byId("title").value,
-		onChange: function() {
-			dojo.byId("title").value=this.get('value');
+			const titleBox = document.getElementById('titleBox');
+			titleBox.value = titleField.getValue() || '';
 
-			var url=dijit.byId('url');
-			if(url && url.get('value').trim()==='') {
-				url.set('value', 
-					this.get('value').toLowerCase().trim()
-				                     .replace(/[^a-zA-Z0-9]+/g,'-')
-				                     .replace(/-+$|^-+/g,''));
+			titleBox.addEventListener('blur', () => {
+				const currentTitleValue = titleBox.value;
+
+				const urlValue = urlField.getValue() || '';
+				if(urlValue.trim() === ''){
+					const urlValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
+					urlField.setValue(urlValue);
+				}
+
+				const friendlyNameValue = friendlyNameField.getValue() || '';
+				if(friendlyNameValue.trim() === ''){
+					friendlyNameField.setValue(currentTitleValue);
+				}
+			});
+		});
+	</script>
+	<input type="text" id="titleBox"/>
+#else
+	<script type="application/javascript">
+		dojo.ready(function(){
+
+		var titleBox=new dijit.form.TextBox({
+			name: "titleBox",
+			value: dojo.byId("title").value,
+			onChange: function() {
+				dojo.byId("title").value=this.get('value');
+
+				var url=dijit.byId('url');
+				if(url && url.get('value').trim()==='') {
+					url.set('value', 
+						this.get('value').toLowerCase().trim()
+										.replace(/[^a-zA-Z0-9]+/g,'-')
+										.replace(/-+$|^-+/g,''));
+				}
+
+				var fname=dijit.byId('friendlyName');
+				if(fname && fname.get('value').trim()==='') {
+					fname.set('value', this.get('value'));
+				}
+			},
+			onKeyDown: function() {
+				dojo.byId("title").value=this.get('value');
 			}
-
-			var fname=dijit.byId('friendlyName');
-			if(fname && fname.get('value').trim()==='') {
-				fname.set('value', this.get('value'));
-			}
-		},
-		onKeyDown: function() {
-			dojo.byId("title").value=this.get('value');
-		}
-	}, "titleBox");
-});
-
-</script>
-<input id="titleBox"/>
+		}, "titleBox");
+		});
+	</script>
+	<input id="titleBox"/>
+#end
