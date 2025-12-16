@@ -3,12 +3,15 @@ package com.dotcms.telemetry.collectors.user;
 import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the date of the last login.
  */
 @ApplicationScoped
+@MetricsProfile({ProfileType.STANDARD, ProfileType.FULL})
 @DashboardMetric(category = "user", priority = 3)
 public class LastLoginDatabaseMetricType implements UsersDatabaseMetricType  {
 
