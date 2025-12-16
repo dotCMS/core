@@ -1,6 +1,9 @@
-'use client';
+import { SearchIcon } from "./icons";
 
-import { SearchIcon } from './icons';
+interface SearchButtonProps {
+  /** Callback function invoked when the button is clicked */
+  onClick: () => void;
+}
 
 /**
  * SearchButton - A trigger button to open the AI search dialog.
@@ -19,15 +22,16 @@ import { SearchIcon } from './icons';
  * - Has `aria-label` for screen readers
  * - Includes hover state for visual feedback
  */
-function SearchButton({ onClick }) {
-    return (
-        <button
-            aria-label="toggleSearch"
-            className="flex items-center justify-center pl-2 hover:cursor-pointer"
-            onClick={onClick}>
-            <SearchIcon className="text-white hover:text-gray-300" />
-        </button>
-    );
+function SearchButton({ onClick }: SearchButtonProps) {
+  return (
+    <button
+      aria-label="Toggle search"
+      className="flex items-center justify-center pl-2 hover:cursor-pointer"
+      onClick={onClick}
+    >
+      <SearchIcon className="text-white hover:text-gray-300" />
+    </button>
+  );
 }
 
 export default SearchButton;

@@ -1,5 +1,3 @@
-import React from "react";
-
 /**
  * Icon Components
  *
@@ -23,7 +21,7 @@ import React from "react";
  * @param {number} [props.size=64] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function BotIcon({ size = 64, className = "" }) {
+export function BotIcon({ size = 64, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -35,8 +33,7 @@ export function BotIcon({ size = 64, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <path d="M12 8V4H8" />
             <rect width="16" height="12" x="4" y="8" rx="2" />
             <path d="M2 14h2" />
@@ -55,7 +52,7 @@ export function BotIcon({ size = 64, className = "" }) {
  * @param {number} [props.size=20] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function SearchIcon({ size = 20, className = "" }) {
+export function SearchIcon({ size = 20, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -67,8 +64,7 @@ export function SearchIcon({ size = 20, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
         </svg>
@@ -83,7 +79,7 @@ export function SearchIcon({ size = 20, className = "" }) {
  * @param {number} [props.size=24] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function CloseIcon({ size = 24, className = "" }) {
+export function CloseIcon({ size = 24, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -95,8 +91,7 @@ export function CloseIcon({ size = 24, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
@@ -111,7 +106,7 @@ export function CloseIcon({ size = 24, className = "" }) {
  * @param {number} [props.size=24] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function LogoIcon({ size = 24, className = "" }) {
+export function LogoIcon({ size = 24, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -123,8 +118,7 @@ export function LogoIcon({ size = 24, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <circle cx="12" cy="12" r="10" />
             <circle cx="12" cy="12" r="3" />
         </svg>
@@ -139,7 +133,7 @@ export function LogoIcon({ size = 24, className = "" }) {
  * @param {number} [props.size=24] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function DocumentIcon({ size = 24, className = "" }) {
+export function DocumentIcon({ size = 24, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -151,8 +145,7 @@ export function DocumentIcon({ size = 24, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
             <polyline points="14 2 14 8 20 8" />
         </svg>
@@ -167,7 +160,7 @@ export function DocumentIcon({ size = 24, className = "" }) {
  * @param {number} [props.size=24] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function BlogIcon({ size = 24, className = "" }) {
+export function BlogIcon({ size = 24, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -179,8 +172,7 @@ export function BlogIcon({ size = 24, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="16" y1="13" x2="8" y2="13" />
@@ -198,7 +190,7 @@ export function BlogIcon({ size = 24, className = "" }) {
  * @param {number} [props.size=24] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function DestinationIcon({ size = 24, className = "" }) {
+export function DestinationIcon({ size = 24, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -210,8 +202,7 @@ export function DestinationIcon({ size = 24, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
             <circle cx="12" cy="10" r="3" />
         </svg>
@@ -226,7 +217,7 @@ export function DestinationIcon({ size = 24, className = "" }) {
  * @param {number} [props.size=24] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function ProductIcon({ size = 24, className = "" }) {
+export function ProductIcon({ size = 24, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -238,8 +229,7 @@ export function ProductIcon({ size = 24, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
             <line x1="3" y1="6" x2="21" y2="6" />
             <path d="M16 10a4 4 0 0 1-8 0" />
@@ -255,7 +245,7 @@ export function ProductIcon({ size = 24, className = "" }) {
  * @param {number} [props.size=16] - Width and height in pixels
  * @param {string} [props.className=''] - Additional CSS classes
  */
-export function LinkIcon({ size = 16, className = "" }) {
+export function LinkIcon({ size = 16, className = '' }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -267,8 +257,7 @@ export function LinkIcon({ size = 16, className = "" }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={className}
-        >
+            className={className}>
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
         </svg>
