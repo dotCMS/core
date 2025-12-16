@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Params } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { MessagesModule } from 'primeng/messages';
@@ -9,7 +8,8 @@ import { TabViewModule } from 'primeng/tabview';
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DASHBOARD_TAB_LIST,
-    DotAnalyticsDashboardStore
+    DotAnalyticsDashboardStore,
+    TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -48,7 +48,6 @@ export default class DotAnalyticsDashboardComponent {
     // Tab configuration from constants
     readonly tabs = DASHBOARD_TAB_LIST;
 
-    // Tab index derived from store.currentTab()
     readonly $activeTabIndex = computed(() => {
         const currentTab = this.store.currentTab();
 
@@ -81,7 +80,10 @@ export default class DotAnalyticsDashboardComponent {
         this.store.refreshAllData();
     }
 
-    refreshQueryParams(queryParams: Params): void {
-        this.store.refreshQueryParams(queryParams);
+    /**
+     * Updates time range when filters change
+     */
+    onTimeRangeChange(timeRange: TimeRangeInput): void {
+        this.store.updateTimeRange(timeRange);
     }
 }

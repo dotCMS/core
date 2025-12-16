@@ -3,7 +3,6 @@ import {
     patchState,
     signalStoreFeature,
     type,
-    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
@@ -11,7 +10,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { effect, inject } from '@angular/core';
+import { inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -75,11 +74,12 @@ const initialConversionsState: ConversionsState = {
  *
  * This feature provides:
  * - State management for all conversion-related metrics
- * - Lazy loading via explicit method call (no auto-load)
- * - Structure ready for future API endpoints
+ * - Methods to load individual conversion metrics
+ * - Coordinated method to load all conversions data
+ * - conversionsDataLoaded flag for lazy loading tracking
  *
- * Note: Currently the conversions report uses mock data in the component.
- * When API endpoints are available, this feature will handle the data loading.
+ * Note: Data loading is managed by the main store's effect based on active tab.
+ * This feature only provides the methods and state management.
  *
  * @returns Signal store feature with conversions state and methods
  */
@@ -400,23 +400,6 @@ export function withConversions() {
                     patchState(store, { conversionsDataLoaded: false });
                 }
             })
-        ),
-        withHooks({
-            onInit: (store, globalStore = inject(GlobalStore)) => {
-                // Auto-reload conversions data when timeRange or currentSiteId changes
-                // Only if conversions data was already loaded (lazy loading)
-                effect(() => {
-                    // Read signals to establish reactivity
-                    store.timeRange();
-                    globalStore.currentSiteId();
-                    const conversionsDataLoaded = store.conversionsDataLoaded();
-
-                    // Only reload if data was already loaded
-                    if (conversionsDataLoaded) {
-                        store.loadConversionsData();
-                    }
-                });
-            }
-        })
+        )
     );
 }

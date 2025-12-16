@@ -3,7 +3,6 @@ import {
     patchState,
     signalStoreFeature,
     type,
-    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
@@ -11,7 +10,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { effect, inject } from '@angular/core';
+import { inject } from '@angular/core';
 
 import { map, switchMap, tap } from 'rxjs/operators';
 
@@ -72,9 +71,9 @@ const initialPageviewState: PageviewState = {
  * This feature provides:
  * - State management for all pageview-related metrics
  * - Methods to load individual metrics (builds CubeJS queries directly)
- * - Auto-loading via effect when timeRange or siteId changes
+ * - Coordinated method to load all pageview data
  *
- * @returns Signal store feature with pageview state, methods, and hooks
+ * @returns Signal store feature with pageview state and methods
  */
 export function withPageview() {
     return signalStoreFeature(
@@ -87,7 +86,7 @@ export function withPageview() {
                 dotMessageService = inject(DotMessageService)
             ) => ({
                 // Total Page Views
-                loadTotalPageViews: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
+                _loadTotalPageViews: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
                     pipe(
                         tap(() =>
                             patchState(store, {
@@ -140,7 +139,7 @@ export function withPageview() {
                 ),
 
                 // Unique Visitors
-                loadUniqueVisitors: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
+                _loadUniqueVisitors: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
                     pipe(
                         tap(() =>
                             patchState(store, {
@@ -193,7 +192,7 @@ export function withPageview() {
                 ),
 
                 // Top Page Performance
-                loadTopPagePerformance: rxMethod<{
+                _loadTopPagePerformance: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -252,7 +251,7 @@ export function withPageview() {
                 ),
 
                 // Page View Timeline
-                loadPageViewTimeLine: rxMethod<{
+                _loadPageViewTimeLine: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -310,7 +309,7 @@ export function withPageview() {
                 ),
 
                 // Page View Device Browsers
-                loadPageViewDeviceBrowsers: rxMethod<{
+                _loadPageViewDeviceBrowsers: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -370,7 +369,7 @@ export function withPageview() {
                 ),
 
                 // Top Pages Table
-                loadTopPagesTable: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
+                _loadTopPagesTable: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
                     pipe(
                         tap(() =>
                             patchState(store, {
@@ -435,27 +434,14 @@ export function withPageview() {
                 const currentSiteId = globalStore.currentSiteId();
 
                 if (currentSiteId) {
-                    store.loadTotalPageViews({ timeRange, currentSiteId });
-                    store.loadUniqueVisitors({ timeRange, currentSiteId });
-                    store.loadTopPagePerformance({ timeRange, currentSiteId });
-                    store.loadPageViewTimeLine({ timeRange, currentSiteId });
-                    store.loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
-                    store.loadTopPagesTable({ timeRange, currentSiteId });
+                    store._loadTotalPageViews({ timeRange, currentSiteId });
+                    store._loadUniqueVisitors({ timeRange, currentSiteId });
+                    store._loadTopPagePerformance({ timeRange, currentSiteId });
+                    store._loadPageViewTimeLine({ timeRange, currentSiteId });
+                    store._loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
+                    store._loadTopPagesTable({ timeRange, currentSiteId });
                 }
             }
-        })),
-        withHooks({
-            onInit: (store, globalStore = inject(GlobalStore)) => {
-                // Auto-load data when timeRange or currentSiteId changes
-                effect(() => {
-                    // Read signals to establish reactivity
-                    store.timeRange();
-                    globalStore.currentSiteId();
-
-                    // loadAllPageviewData handles the validation internally
-                    store.loadAllPageviewData();
-                });
-            }
-        })
+        }))
     );
 }

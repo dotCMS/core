@@ -1,7 +1,9 @@
 import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
 
-import { inject } from '@angular/core';
+import { effect, inject } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
+
+import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
 import { isValidTab, paramsToTimeRange, withFilters } from './features/with-filters.feature';
@@ -17,8 +19,13 @@ import { TimeRangeInput } from '../types';
  * Uses signal store features for modular state management:
  *
  * - withFilters: Shared filter state (timeRange, currentTab)
- * - withPageview: Pageview report data with auto-loading
- * - withConversions: Conversions report data with lazy loading
+ * - withPageview: Pageview report data
+ * - withConversions: Conversions report data
+ *
+ * Data loading strategy:
+ * - Automatically loads data for the active tab when tab, timeRange, or siteId changes
+ * - Pageview data is loaded when the pageview tab is active
+ * - Conversions data is loaded lazily when the conversions tab is first activated
  *
  * @example
  * ```typescript
@@ -27,13 +34,13 @@ import { TimeRangeInput } from '../types';
  *
  * // Access filter state
  * const timeRange = this.store.timeRange();
- * this.store.setTimeRange('last30days');
+ * this.store.updateTimeRange('last30days');
  *
- * // Access pageview data (auto-loaded)
+ * // Access pageview data (auto-loaded when tab is active)
  * const totalPageViews = this.store.totalPageViews();
  *
- * // Load conversions data (lazy)
- * this.store.loadConversionsData();
+ * // Data loads automatically when switching tabs
+ * this.store.setCurrentTabAndNavigate('conversions');
  * ```
  */
 export const DotAnalyticsDashboardStore = signalStore(
@@ -42,24 +49,6 @@ export const DotAnalyticsDashboardStore = signalStore(
     withConversions(),
     // Coordinator methods that work across features
     withMethods((store, route = inject(ActivatedRoute), router = inject(Router)) => ({
-        /**
-         * Updates time range from query params and syncs URL.
-         * Converts query params to time range, updates store, and navigates.
-         * Preserves all query params (including tab).
-         */
-        refreshQueryParams(queryParams: Params): void {
-            const timeRange = paramsToTimeRange(queryParams);
-            store.setTimeRange(timeRange);
-
-            // Update URL (merge to keep tab param and any other params)
-            router.navigate([], {
-                relativeTo: route,
-                queryParams: queryParams,
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        },
-
         /**
          * Sets current tab and syncs URL.
          */
@@ -90,9 +79,9 @@ export const DotAnalyticsDashboardStore = signalStore(
         },
 
         /**
-         * Sets time range and syncs URL.
+         * Updates time range and syncs URL with query params.
          */
-        setTimeRangeAndNavigate(timeRange: TimeRangeInput): void {
+        updateTimeRange(timeRange: TimeRangeInput): void {
             store.setTimeRange(timeRange);
 
             // Build query params from time range
@@ -121,11 +110,30 @@ export const DotAnalyticsDashboardStore = signalStore(
     withHooks({
         onInit(store) {
             const route = inject(ActivatedRoute);
-            // Initialize state from URL query params (only once on mount)
+            const globalStore = inject(GlobalStore);
             const params = route.snapshot.queryParams;
 
-            // Use custom state updaters
+            // Set initial state from query params
             patchState(store, setTabFromQueryParams(params), setTimeRangeFromQueryParams(params));
+
+            // Auto-load data when currentTab, timeRange, or currentSiteId changes
+            effect(() => {
+                const currentTab = store.currentTab();
+                store.timeRange(); // Read to establish reactivity
+                const currentSiteId = globalStore.currentSiteId();
+
+                // Only load if we have a site ID
+                if (!currentSiteId) {
+                    return;
+                }
+
+                // Load data based on active tab
+                if (currentTab === DASHBOARD_TABS.pageview) {
+                    store.loadAllPageviewData();
+                } else if (currentTab === DASHBOARD_TABS.conversions) {
+                    store.loadConversionsData();
+                }
+            });
         }
     })
 );
