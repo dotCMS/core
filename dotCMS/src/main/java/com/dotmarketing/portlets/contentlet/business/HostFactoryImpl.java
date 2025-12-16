@@ -85,7 +85,7 @@ public class HostFactoryImpl implements HostFactory {
     private static final String SELECT_SYSTEM_HOST = "SELECT id FROM identifier WHERE id = '"+ Host.SYSTEM_HOST+"' ";
 
     private static final String FROM_JOINED_TABLES = "INNER JOIN identifier i " +
-            "ON c.identifier = i.id AND i.asset_type = '" + Host.HOST_VELOCITY_VAR_NAME + "' " +
+            "ON c.identifier = i.id " +
             "INNER JOIN contentlet_version_info cvi " +
             "ON c.inode = cvi.working_inode " +
             "LEFT JOIN contentlet clive " +
