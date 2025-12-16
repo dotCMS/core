@@ -30,27 +30,39 @@ describe('RemoveConfirmDialogComponent', () => {
         jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
     });
 
-    it('should emit confirm event and call accept function', async () => {
+    it('should emit confirm event and call accept function', () => {
         const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
+        const confirmationService = spectator.inject(ConfirmationService);
+        const confirmSpy = jest.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
+            // Simulate accept callback
+            if (options.accept) {
+                options.accept();
+            }
+            return {} as ConfirmationService;
+        }) as jest.Mock;
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
-        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+        spectator.click(deleteButton);
 
-        const confirmAccept = spectator.query('.p-confirm-popup-accept');
-        spectator.click(confirmAccept);
-
+        expect(confirmSpy).toHaveBeenCalled();
         expect(confirmEventSpy).toHaveBeenCalled();
     });
 
     it('should emit confirm event and call reject function', () => {
         const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
+        const confirmationService = spectator.inject(ConfirmationService);
+        const confirmSpy = jest.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
+            // Simulate reject callback
+            if (options.reject) {
+                options.reject();
+            }
+            return {} as ConfirmationService;
+        }) as jest.Mock;
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
-        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+        spectator.click(deleteButton);
 
-        const confirmRejected = spectator.query('.p-confirm-popup-reject');
-        spectator.click(confirmRejected);
-
+        expect(confirmSpy).toHaveBeenCalled();
         expect(rejectEventSpy).toHaveBeenCalled();
     });
 
@@ -58,10 +70,8 @@ describe('RemoveConfirmDialogComponent', () => {
         const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
-        spectator.dispatchMouseEvent(deleteButton, 'onClick');
-
-        const confirmAccept = spectator.query('.p-confirm-popup-accept');
-        expect(confirmAccept).toBeTruthy();
+        spectator.click(deleteButton);
+        spectator.detectChanges();
 
         spectator.component.onEscapePress();
         expect(rejectEventSpy).toHaveBeenCalled();

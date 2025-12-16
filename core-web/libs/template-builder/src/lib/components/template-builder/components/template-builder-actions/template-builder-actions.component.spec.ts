@@ -1,8 +1,9 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
@@ -19,6 +20,10 @@ describe('TemplateBuilderActionsComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
             },
             DotTemplateBuilderStore
         ],

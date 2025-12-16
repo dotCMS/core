@@ -1,5 +1,6 @@
 import { expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
@@ -8,7 +9,8 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotContainersService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+
+import { DotContainersService, DotEventsService, DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     containersMock,
@@ -81,6 +83,10 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
             },
             DotEventsService
         ]
