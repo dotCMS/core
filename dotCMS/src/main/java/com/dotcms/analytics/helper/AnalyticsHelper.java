@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -175,17 +176,25 @@ public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEve
     }
 
     /**
-     * Given an {@link AccessToken} instance based on some checks evaluates if access token can be used.
+     * Given an {@link AccessToken} instance, and based on some checks, this method evaluates if the
+     * access token can be used.
      *
-     * @param accessToken provided access token
+     * @param accessToken The provided {@link AccessToken}.
+     *
+     * @throws AnalyticsException The specified access token is not valid. This may be related to a
+     *                            misconfiguration in the Experiments App.
      */
     public void checkAccessToken(final AccessToken accessToken) throws AnalyticsException {
         final TokenStatus tokenStatus = resolveTokenStatus(accessToken);
 
         if (!canUseToken(tokenStatus)) {
+            if (null != accessToken.status() && UtilMethods.isSet(accessToken.status().reason())) {
+                Logger.error(this, accessToken.status().reason());
+            }
             throw new AnalyticsException(
                 String.format(
-                    "ACCESS_TOKEN for clientId %s is %s",
+                    "ACCESS_TOKEN for Analytics Client ID %s is %s" +
+                            ". Please check that the Analytics Client ID value is correct.",
                     accessToken.clientId(),
                     tokenStatus.name()));
         }
