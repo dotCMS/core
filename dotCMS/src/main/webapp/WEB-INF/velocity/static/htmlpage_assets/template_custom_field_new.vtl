@@ -1,0 +1,381 @@
+<style>
+    /* Contenedor principal del campo */
+    .custom-field-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 100%;
+    }
+
+    /* Estilo del Label "Template *" */
+    .custom-label {
+        color: #374151; /* Gris oscuro */
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .required-asterisk {
+        color: #EF4444; /* Rojo */
+        margin-left: 2px;
+    }
+
+    /* Contenedor del Select para permitir la flecha personalizada */
+    .select-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    /* El elemento Select estilizado */
+    select#templateSel {
+        appearance: none; /* Ocultar flecha nativa */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        
+        width: 100%;
+        padding: 0.75rem 3rem 0.75rem 1rem; /* Padding extra a la derecha para la flecha */
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #1F2937;
+        background-color: #ffffff;
+        border: 1px solid #6366F1; /* Borde Azul Indigo (como en la imagen) */
+        border-radius: 6px;
+        cursor: pointer;
+        outline: none;
+        transition: box-shadow 0.2s, border-color 0.2s;
+        
+        /* Truco CSS para la flecha con fondo azul claro */
+        background-image: 
+            linear-gradient(45deg, transparent 50%, #4F46E5 50%),
+            linear-gradient(135deg, #4F46E5 50%, transparent 50%),
+            linear-gradient(to right, #EEF2FF, #EEF2FF); /* Fondo de la flecha */
+        background-position: 
+            calc(100% - 20px) calc(50% + 2px),  /* Posición parte 1 flecha */
+            calc(100% - 15px) calc(50% + 2px),  /* Posición parte 2 flecha */
+            100% 0; /* Posición del fondo azul claro */
+        background-size: 
+            5px 5px, 
+            5px 5px, 
+            40px 100%; /* Ancho del botón de la flecha */
+        background-repeat: no-repeat;
+    }
+
+    /* Estado Focus */
+    select#templateSel:focus {
+        border-color: #4F46E5;
+        box-shadow: 0 0 0 2px #C7D2FE; /* Anillo azul claro suave */
+    }
+
+    /* Hover */
+    select#templateSel:hover {
+        border-color: #4338CA;
+    }
+
+    /* Estilo para la imagen del thumbnail */
+    #templateThumbnailHolder {
+        transition: all 0.3s ease;
+        max-width: 100%;
+    }
+</style>
+
+<script type="application/javascript">
+    // Global Constants
+    const hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+    const defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")'; // try to preload the default template. [cite: 2]
+
+    // UTILS
+    /**
+    * Normalizes the key of a template
+    */
+    const normalizeKey = function (template) {
+        return template.fullTitle.replace(new RegExp("\\("+template.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
+    } // [cite: 3]
+
+    /**
+    * Returns a map of templates by name and by id
+    */
+    const getTemplatesMaps = (templates) => {
+        const mapByName = templates.reduce(function(map, template) {
+            const key = normalizeKey(template);
+            if (!map[key]) {
+                map[key] = template;
+            }
+            return map;
+        }, {});
+        
+        const mapById = templates.reduce(function(map, template) {
+            map[template.identifier] = template;
+            return map;
+        }, {}); // [cite: 5]
+
+        return {
+            mapByName,
+            mapById
+        }
+    }
+
+    // UTILS END
+
+    /**
+    * Fetches the template image from the server
+    */
+    function fetchTemplateImage(templateId) {
+        fetch("/api/v1/templates/image", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ templateId})
+        }).then(async (response) => {
+            // The ok value represents the result of the response status 200 codes
+            if (response.ok) {
+                const result = await response.json();
+                getTemplateCallBack(result); // here we pass the result of the json response to the callback function
+            } else {
+                throw new Error("Error fetching template image");
+            } // [cite: 7, 8]
+        })
+        .catch((error) => {
+            const imageEl = document.getElementById("templateThumbnailHolder");
+            if (imageEl) {
+                imageEl.src = "/html/images/shim.gif";
+                imageEl.style.border = "0px";
+            }
+        });
+    };
+
+    /**
+    * Fetches templates from the API
+    */
+    function fetchTemplates(queryParams) {
+        const { hostId, filter = '', page = 1, perPage = 15, allSiteLabel = true } = queryParams;
+        const urlParams = new URLSearchParams();
+        urlParams.set('per_page', perPage);
+        urlParams.set('page', page);
+        urlParams.set('filter', filter);
+        
+        if (hostId) {
+            urlParams.set('host', hostId);
+        } // [cite: 10, 11]
+
+        const url = `/api/v1/templates/?${urlParams.toString()}`;
+        return fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Check for first page and add the all site template, so it does not break the pagination
+                if (allSiteLabel && page === 1) {
+                    const ALL_SITE_TEMPLATE = {
+                        title: 'All Sites',
+                        fullTitle: 'All Sites',
+                        htmlTitle: '<div>-- All Sites ---</div>',
+                        identifier: '0',
+                        inode: '0'
+                    }; // [cite: 13]
+                    data.entity.unshift(ALL_SITE_TEMPLATE);
+                }
+                return data.entity;
+            });
+    }
+
+    /**
+    * Callback function to handle the template fetch
+    */
+    const onTemplateFetchComplete = function(templates, templateField) {
+        const templateId = templateField.getValue() || '';
+        const isTemplateValid = templateId && templateId != "0";
+
+        if(!templates || templates.length === 0){
+            return;
+        }
+
+        const { mapById, mapByName } = getTemplatesMaps(templates);
+        const normalizedName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
+        const template = isTemplateValid ? mapById[templateId] : mapByName[normalizedName]; // [cite: 18]
+
+        if(!template){
+            return;
+        }
+
+        const { identifier, fullTitle } = template;
+        // We set the values directly into the components
+        const currentTemplateIdElement = document.getElementById("currentTemplateId");
+        if (currentTemplateIdElement) {
+            currentTemplateIdElement.value = identifier;
+        }
+        templateField.setValue(identifier);
+        
+        const templateSelect = document.getElementById("templateSel");
+        if (templateSelect) {
+            templateSelect.value = identifier;
+            // Update displayed value if there's a display element
+            const displayElement = document.getElementById("templateSelDisplay");
+            if (displayElement) {
+                displayElement.textContent = fullTitle;
+            }
+        }
+        
+        fetchTemplateImage(identifier);
+    };
+
+    function resetTemplateSelection(templateField) {
+        const templateSelect = document.getElementById("templateSel");
+        if (templateSelect) {
+            templateSelect.value = "";
+        }
+        
+        templateField.setValue('');
+        
+        const currentTemplateIdElement = document.getElementById("currentTemplateId");
+        if (currentTemplateIdElement) {
+            currentTemplateIdElement.value = "";
+        }
+        
+        const imageEl = document.getElementById("templateThumbnailHolder");
+        if (imageEl) {
+            imageEl.src = "/html/images/shim.gif";
+            imageEl.style.border = '0px';
+        } // [cite: 31]
+    }
+
+    /**
+    * Get the template callback
+    */
+    function getTemplateCallBack(data) {
+        const imageInode = data.identifier;
+        const imageExtension = data.extension;
+        const imageEl = document.getElementById("templateThumbnailHolder");
+
+        if (!imageEl) {
+            return;
+        }
+
+        if (isInodeSet(imageInode)) {
+            imageEl.src = "/dA/" + imageInode + "/250w";
+            imageEl.style.border = '1px solid #B6CBEB';
+            imageEl.style.marginTop = '1rem';
+            imageEl.style.borderRadius = '4px'; // Added visual tweak
+        } else {
+            imageEl.src  = "/html/images/shim.gif";
+            imageEl.style.border = '0px';
+        }
+    }
+
+    /**
+    * Creates and populates the template select dropdown
+    */
+    function populateTemplateSelect(templates, selectedValue) {
+        const templateSelect = document.getElementById("templateSel");
+        if (!templateSelect) {
+            return;
+        }
+
+        // Clear existing options
+        templateSelect.innerHTML = '';
+        templates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.identifier;
+            option.textContent = template.fullTitle;
+            // Standard select options cannot handle HTML content safely across browsers
+            option.setAttribute('data-html-title', template.htmlTitle || template.fullTitle);
+            if (template.identifier === selectedValue) {
+                option.selected = true;
+            }
+            templateSelect.appendChild(option);
+        }); // [cite: 39]
+    }
+
+    /**
+    * Handles the template change event
+    */
+    function handleTemplateChange(templateField, currentHostId, setAllSiteLabel) {
+        const templateSelect = document.getElementById("templateSel");
+        if (!templateSelect) {
+            return;
+        }
+
+        const value = templateSelect.value;
+        if(!value) {
+            resetTemplateSelection(templateField);
+            return;
+        }
+
+        if(value == "0") {
+            // Handle all sites selection
+            if (setAllSiteLabel) {
+                setAllSiteLabel(false);
+            }
+            resetTemplateSelection(templateField);
+            return;
+        }
+
+        templateField.setValue(value);
+        fetchTemplateImage(value);
+    }
+
+    DotCustomFieldApi.ready(() => {
+        const templateField = DotCustomFieldApi.getField('template');
+        const templateId = templateField.getValue() || '';
+        const isTemplateValid = templateId && templateId != "0";
+
+        const currentTemplateIdElement = document.getElementById("currentTemplateId");
+        if (currentTemplateIdElement) {
+            currentTemplateIdElement.value = templateId;
+        }
+
+        let currentHostId = hostId || '';
+        let allSiteLabel = true;
+
+        // Create template select element if it doesn't exist
+        let templateSelect = document.getElementById("templateSel");
+        if (!templateSelect) {
+            const templateHolder = document.getElementById("templateHolder");
+            if (templateHolder) {
+                templateSelect = document.createElement('select');
+                templateSelect.id = "templateSel";
+                templateSelect.name = "templateSel";
+                // templateSelect.style.width = "350px"; <--- REMOVED INLINE STYLE to allow CSS class 
+                templateHolder.appendChild(templateSelect);
+            }
+        }
+
+        if (templateSelect) {
+            // Add change event listener
+            templateSelect.addEventListener('change', () => {
+                handleTemplateChange(templateField, currentHostId, (value) => {
+                    allSiteLabel = value;
+                });
+            });
+        }
+
+        // Fetch initial templates
+        fetchTemplates({
+            hostId: currentHostId,
+            filter: '',
+            page: 1,
+            perPage: 15,
+            allSiteLabel: allSiteLabel
+        }).then(templates => {
+            populateTemplateSelect(templates, templateId);
+            onTemplateFetchComplete(templates, templateField);
+        });
+
+        if (isTemplateValid) {
+            fetchTemplateImage(templateId);
+        }
+    });
+</script>
+
+<div class="custom-field-wrapper">
+    <label for="templateSel" class="custom-label">
+        Template <span class="required-asterisk">*</span>
+    </label>
+    
+    <div class="select-wrapper">
+        <div id="templateHolder"></div>
+    </div>
+
+    <input id="currentTemplateId" type="hidden" name="currentTemplateId" value=""/>
+    
+    <div>
+        <img id="templateThumbnailHolder" src="/html/images/shim.gif" alt="Template Thumbnail"/>
+    </div>
+</div>
