@@ -2,7 +2,6 @@
 @import "mixins";
 
 :host {
-    // Usar ::ng-deep para aplicar estilos a elementos inyectados dinámicamente
     ::ng-deep {
         input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not(
                 [type="submit"]
