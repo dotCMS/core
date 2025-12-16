@@ -62,7 +62,13 @@
             *#<br />
 #*      *##elseif( $element.type == "horizontalRule" )
 #*          *#<hr />
-#*      *##elseif( $element.type == "text" )#*
+#*      *##elseif( $element.type == "dotImage" )#*
+            *##set($item = $element)#*
+            *##parse("static/storyblock/dotImage.vtl")#*
+        *##elseif( $element.type == "dotVideo" )#*
+            *##set($item = $element)#*
+            *##parse("static/storyblock/dotVideo.vtl")#*
+        *##elseif( $element.type == "text" )#*
             *##renderMarks($element)#*
         *##end#*
     *##end#*
