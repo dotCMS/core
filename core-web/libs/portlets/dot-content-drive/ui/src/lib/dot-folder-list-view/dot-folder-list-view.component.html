@@ -25,7 +25,7 @@
     scrollHeight="flex">
     <ng-template pTemplate="header">
         <tr data-testId="header-row">
-            <th [style.width]="'2.5rem'">
+            <th [style.width]="'3rem'">
                 <p-tableHeaderCheckbox data-testId="header-checkbox" />
             </th>
             @for (column of HEADER_COLUMNS; track column.field) {
@@ -52,7 +52,7 @@
 
         @if ($loading() || !$items().length) {
             <tr data-testId="loading-row" class="content-drive-table__loading-row">
-                <td [style.width]="'2.5rem'" [style.padding-left]="'1rem'">
+                <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
                     <span class="skeleton-wrapper">
                         <p-skeleton height="1.5rem" width="2.5rem" />
                     </span>
