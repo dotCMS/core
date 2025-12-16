@@ -2,9 +2,10 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotThemeComponent } from '@dotcms/ui';
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
@@ -19,7 +20,9 @@ import { DotToolbarAnnouncementsComponent } from '../../view/components/dot-tool
         RouterModule.forChild(dotStarterRoutes),
         DotMessagePipe,
         CheckboxModule,
-        DotToolbarAnnouncementsComponent
+        DotToolbarAnnouncementsComponent,
+        DotThemeComponent,
+        ButtonModule
     ],
     providers: [DotStarterResolver]
 })

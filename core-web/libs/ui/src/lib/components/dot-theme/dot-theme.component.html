@@ -1,51 +1,136 @@
-<p-select
-    #select
-    (onChange)="onThemeChange($event.value)"
-    (onHide)="onSelectHide()"
-    (onLazyLoad)="onLazyLoad($event)"
-    (onShow)="onSelectShow()"
-    [appendTo]="'body'"
-    [class]="class()"
-    [disabled]="$disabled()"
-    [filter]="true"
-    [inputId]="id()"
-    [lazy]="true"
-    [loading]="$state.loading()"
-    [ngModel]="$state.pinnedOption()"
-    [options]="$options()"
-    [placeholder]="placeholder()"
-    [scrollHeight]="'300px'"
-    [virtualScroll]="true"
-    [virtualScrollOptions]="{
-        itemSize: 34,
-        step: 40,
-        autoSize: false,
-        style: {
-            height: '300px',
-            minHeight: '300px'
+<p-button
+    styleClass="!justify-between w-full hover:!border-primary-500 hover:!bg-transparent"
+    [dt]="{
+        root: {
+            secondary: {
+                focusRing: {
+                    color: 'var(--p-select-focus-ring-color)',
+                    shadow: 'var(--p-select-focus-ring-shadow)'
+                }
+            }
         }
     }"
-    dataKey="identifier"
-    optionLabel="title">
-    <ng-template pTemplate="filter">
-        <p-iconfield>
-            <input
-                pInputText
-                class="w-full"
-                type="text"
-                role="searchbox"
-                autocomplete="off"
-                [value]="$state.filterValue() || ''"
-                [placeholder]="'Search themes...'"
-                (input)="onFilterChange($any($event.target).value)"
-                (click)="$event.stopPropagation()" />
-            <p-inputicon class="pi pi-search" />
-        </p-iconfield>
-    </ng-template>
+    label="Primary"
+    variant="outlined"
+    severity="secondary"
+    icon="pi pi-chevron-down"
+    iconPos="right"
+    (click)="popover.toggle($event)" />
 
-    <ng-template let-theme #item>
-        <span [class.font-bold]="$state.pinnedOption()?.identifier === theme.identifier">
-            {{ theme.title }}
-        </span>
-    </ng-template>
-</p-select>
+<p-popover #popover>
+    <div class="flex flex-col gap-4 min-w-2xl max-w-2xl h-[420px]" [id]="id()">
+        <!-- DataView with grid layout -->
+        <p-dataview
+            [dt]="{
+                header: {
+                    border: {
+                        width: '0'
+                    },
+                    background: 'transparent',
+                    padding: '0'
+                },
+                paginator: {
+                    bottom: {
+                        border: {
+                            width: '0'
+                        }
+                    }
+                },
+                root: {
+                    border: {
+                        width: '0'
+                    }
+                }
+            }"
+            #dataView
+            [value]="$currentPageThemes()"
+            [lazy]="true"
+            [paginator]="true"
+            [rows]="pageSize"
+            [totalRecords]="$state.pagination()?.totalEntries ?? 0"
+            [loading]="$state.loading()"
+            (onLazyLoad)="onLazyLoad($event)"
+            layout="grid">
+            <ng-template #header>
+                <!-- Header with site selector and search -->
+                <div class="flex flex-row gap-4 items-center mb-4">
+                    <dot-site
+                        [value]="$state.hostId()"
+                        (onChange)="onSiteChange($event)"
+                        [placeholder]="placeholder()"
+                        [disabled]="$disabled()"
+                        class="flex-1" />
+                    <p-iconfield class="flex-1">
+                        <input
+                            pInputText
+                            type="text"
+                            class="w-full"
+                            [value]="$state.searchValue()"
+                            [disabled]="$disabled()"
+                            (input)="onSearchChange($any($event.target).value)"
+                            placeholder="Search themes..." />
+                        <p-inputicon class="pi pi-search" />
+                    </p-iconfield>
+                </div>
+            </ng-template>
+            <ng-template #grid let-items>
+                <div class="grid grid-cols-12 gap-2">
+                    @for (theme of items; track theme.identifier) {
+                        <div class="col-span-4">
+                            <!-- Theme card with label wrapping radio button -->
+                            <label
+                                [for]="'theme-' + theme.identifier"
+                                class="rounded-lg relative p-3 cursor-pointer border-2 flex flex-col gap-2 hover:bg-gray-50 duration-200"
+                                [class.border-gray-200]="value() !== theme.identifier"
+                                [class.border-primary-500]="value() === theme.identifier"
+                                [class.bg-primary-50]="value() === theme.identifier"
+                                [class.hover:bg-primary-50]="value() === theme.identifier"
+                                [class.opacity-50]="$disabled()">
+                                <div class="hidden">
+                                    <p-radioButton
+                                        [inputId]="'theme-' + theme.identifier"
+                                        name="theme-selection"
+                                        [value]="theme.identifier"
+                                        [(ngModel)]="value"
+                                        [disabled]="$disabled()"
+                                        (onChange)="onThemeSelect(theme)" />
+                                </div>
+                                <!-- Thumbnail or icon -->
+                                <div
+                                    class="flex items-center justify-center rounded min-h-[90px] border border-gray-100">
+                                    <div
+                                        class="w-full aspect-16/8 flex items-center justify-center bg-gray-900/5">
+                                        @if (theme.themeThumbnail) {
+                                            <img
+                                                [src]="getThemeThumbnailUrl(theme)"
+                                                [alt]="theme.title"
+                                                class="w-full h-full object-cover rounded"
+                                                style="display: block" />
+                                        } @else {
+                                            <i
+                                                [class.text-primary-500]="
+                                                    value() === theme.identifier
+                                                "
+                                                class="pi pi-palette text-gray-500"
+                                                style="font-size: 2rem"
+                                                aria-hidden="true"></i>
+                                        }
+                                    </div>
+                                </div>
+                                <!-- Title and path -->
+                                <div>
+                                    <p class="font-medium">
+                                        {{ theme.title }}
+                                    </p>
+                                    <span class="text-sm truncate-text">
+                                        {{ theme.path }}
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </ng-template>
+        </p-dataview>
+    </div>
+</p-popover>

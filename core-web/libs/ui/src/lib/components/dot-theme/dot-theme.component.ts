@@ -14,54 +14,32 @@ import {
     computed,
     OnInit,
     OnDestroy,
-    ViewChild,
-    HostListener
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
+import { LazyLoadEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DataView, DataViewModule } from 'primeng/dataview';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
+import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotThemesService } from '@dotcms/data-access';
-import { DotTheme } from '@dotcms/dotcms-models';
+import { DotTheme, DotPagination } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
-interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
-    itemsNeeded: number;
-}
+import { DotSiteComponent } from '../dot-site/dot-site.component';
 
-type ParsedLazyLoadResult = ParsedSelectLazyLoadEvent | null;
-
-/**
- * Represents the state for the DotThemeComponent.
- */
 interface DotThemeState {
-    /**
-     * The list of loaded themes (from lazy loading).
-     */
     themes: DotTheme[];
-
-    /**
-     * The currently pinned option (shown at top of list).
-     * This is the selected value that may not exist in the lazy-loaded pages yet.
-     */
-    pinnedOption: DotTheme | null;
-
-    /**
-     * Indicates whether the themes are currently being loaded.
-     */
     loading: boolean;
-
-    /**
-     * The total number of records available on the backend (0 if unknown or not loaded).
-     */
-    totalRecords: number;
-
-    /**
-     * The current filter value used to filter themes.
-     */
-    filterValue: string;
+    pagination: DotPagination | null;
+    selectedThemeId: string | null;
+    hostId: string | null;
+    searchValue: string;
 }
 
 @Component({
@@ -69,10 +47,14 @@ interface DotThemeState {
     imports: [
         CommonModule,
         FormsModule,
-        SelectModule,
+        DataViewModule,
+        RadioButtonModule,
         IconFieldModule,
         InputIconModule,
-        InputTextModule
+        InputTextModule,
+        DotSiteComponent,
+        ButtonModule,
+        PopoverModule
     ],
     templateUrl: './dot-theme.component.html',
     styleUrl: './dot-theme.component.scss',
@@ -83,35 +65,30 @@ interface DotThemeState {
             useExisting: forwardRef(() => DotThemeComponent),
             multi: true
         }
-    ],
+    ]
 })
 export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestroy {
-    private themeService = inject(DotThemesService);
+    private readonly themesService = inject(DotThemesService);
+    private readonly globalStore = inject(GlobalStore);
 
-    @HostListener('focus')
-    onHostFocus(): void {
-        this.select?.focusInputViewChild?.nativeElement?.focus();
-    }
-
-    @ViewChild('select') select: Select | undefined;
+    @ViewChild('dataView') dataView: DataView | undefined;
 
     /**
-     * Placeholder text to be shown in the select input when empty.
+     * Placeholder text to be shown in the site selector when empty.
      */
     placeholder = input<string>('');
 
     /**
-     * Whether the select is disabled.
+     * Whether the component is disabled.
      * Settable via component input.
      */
     disabled = input<boolean>(false);
 
     /**
-     * Two-way model binding for the selected theme.
-     * Accepts a string (theme identifier), a DotTheme object, or null if no theme is selected.
-     * Used to drive the currently selected value in the dropdown.
+     * Two-way model binding for the selected theme identifier.
+     * Accepts a string (theme identifier) or null if no theme is selected.
      */
-    value = model<string | DotTheme | null>(null);
+    value = model<string | null>(null);
 
     /**
      * Disabled state from the ControlValueAccessor interface.
@@ -122,7 +99,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
     /**
      * Combined disabled state: true if either the input or ControlValueAccessor disabled state is true.
-     * Used to control the actual disabled property of the select.
      */
     $disabled = computed(() => this.disabled() || this.$isDisabled());
 
@@ -133,84 +109,41 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     onChange = output<string | null>();
 
     /**
-     * Output event emitted when the select dropdown overlay is shown.
-     * Can be used by parent components to respond to overlay display (e.g., for analytics, UI adjustments).
-     */
-    onShow = output<void>();
-
-    /**
-     * Output event emitted when the select dropdown overlay is hidden.
-     * Allows parent components to react to overlay closure (e.g., cleaning up, focusing).
-     */
-    onHide = output<void>();
-
-    /**
-     * CSS class(es) applied to the select component wrapper.
+     * CSS class(es) applied to the component wrapper.
      * Default is 'w-full'.
      */
     class = input<string>('w-full');
 
     /**
-     * The HTML id attribute for the select input.
+     * The HTML id attribute for the component.
      * Can be customized; defaults to an empty string.
      */
     id = input<string>('');
 
     /**
-     * Reactive state of the component including loaded themes, loading status, total results, and active filter.
-     * Readonly to prevent accidental re-assignment.
+     * Reactive state of the component including loaded themes, loading status, pagination, and filters.
      */
     readonly $state = signalState<DotThemeState>({
         themes: [],
-        pinnedOption: null,
         loading: false,
-        totalRecords: 0,
-        filterValue: ''
+        pagination: null,
+        selectedThemeId: null,
+        hostId: null,
+        searchValue: ''
     });
 
     /**
-     * Computed options for the select dropdown.
-     * Combines pinned option (if any) with lazy-loaded options.
-     * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
+     * Current page's themes for DataView (when using lazy="true").
+     * Contains only the themes for the current page being displayed.
      */
-    $options = computed<DotTheme[]>(() => {
-        const loaded = this.$state.themes();
-        const pinned = this.$state.pinnedOption();
-        const filterValue = this.$state.filterValue().trim().toLowerCase();
-
-        // No pinned option - just return loaded options
-        if (!pinned) {
-            return loaded;
-        }
-
-        // If filtering, only show pinned if it matches the filter
-        if (filterValue) {
-            const pinnedTitle = pinned.title.toLowerCase();
-            const matchesFilter = pinnedTitle.includes(filterValue);
-
-            if (!matchesFilter) {
-                return loaded;
-            }
-        }
-
-        // Filter out pinned from loaded to avoid duplicates, then prepend pinned
-        const filtered = loaded.filter((t) => t.identifier !== pinned.identifier);
-
-        return [pinned, ...filtered];
+    readonly $currentPageThemes = computed(() => {
+        return this.$state.themes();
     });
 
     /**
      * The number of items to load per page when fetching themes.
-     * @private
      */
-    private readonly pageSize = 40;
-
-    /**
-     * Set of page numbers that have already been loaded from the backend.
-     * Used to prevent redundant page fetching.
-     * @private
-     */
-    private loadedPages = new Set<number>();
+    readonly pageSize = 6;
 
     /**
      * Stores the timeout ID for the debounce when filtering themes.
@@ -220,38 +153,46 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      */
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    /**
+     * Set of page numbers that have already been loaded from the backend.
+     * Used to prevent redundant page fetching.
+     * @private
+     */
+    private loadedPages = new Set<number>();
+
     constructor() {
-        // Sync model signal changes with ControlValueAccessor and fetch theme object to set state
+        // Sync model signal changes with ControlValueAccessor and state
         effect(() => {
-            const identifier = this.extractIdentifier(this.value());
-
+            const identifier = this.value();
+            patchState(this.$state, { selectedThemeId: identifier });
             this.onChangeCallback(identifier);
+        });
 
-            if (!identifier) {
-                patchState(this.$state, { pinnedOption: null });
-                return;
-            }
+        // Watch for current site changes from global store
+        // This handles both initial load (when store loads asynchronously) and subsequent changes
+        effect(() => {
+            const currentSiteId = this.globalStore.currentSiteId();
+            const currentHostId = this.$state.hostId();
 
-            const currentPinned = this.$state.pinnedOption();
-            if (currentPinned?.identifier === identifier) {
-                return;
-            }
-
-            patchState(this.$state, { loading: true });
-            this.themeService.get(identifier).subscribe({
-                next: (theme) => {
-                    patchState(this.$state, { pinnedOption: theme, loading: false });
-                },
-                error: () => {
-                    patchState(this.$state, { pinnedOption: null, loading: false });
+            // Update hostId if it's different and we have a valid site ID
+            if (currentSiteId && currentSiteId !== currentHostId) {
+                patchState(this.$state, { hostId: currentSiteId });
+                // Only load themes if we don't have any loaded yet (initial load)
+                // If themes are already loaded, user might have changed the site selector
+                if (this.$state.themes().length === 0) {
+                    this.loadThemes(1, currentSiteId);
                 }
-            });
+            }
         });
     }
 
     ngOnInit(): void {
-        if (this.$state.themes().length === 0) {
-            this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
+        // Effect will handle the initial load when store becomes available
+        // But also check immediately in case store is already loaded
+        const currentSiteId = this.globalStore.currentSiteId();
+        if (currentSiteId && !this.$state.hostId()) {
+            patchState(this.$state, { hostId: currentSiteId });
+            this.loadThemes(1, currentSiteId);
         }
     }
 
@@ -272,129 +213,160 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     };
 
     /**
-     * Handles the event when the selected theme changes.
-     * - Updates the pinned option to the new selection
-     * - Updates the model value with the selected theme identifier.
-     * - Calls the registered onTouched callback (for ControlValueAccessor interface).
-     * - Emits the onChange output event to notify consumers of the new value.
+     * Handles the event when the selected site changes.
+     * Updates hostId and reloads themes with the new hostId.
      *
-     * @param theme The selected theme, or null if cleared
+     * @param siteId The selected site identifier, or null if cleared
      */
-    onThemeChange(theme: DotTheme | null): void {
-        // Update pinned option to the new selection
-        patchState(this.$state, { pinnedOption: theme });
+    onSiteChange(siteId: string | null): void {
+        if (!siteId) {
+            patchState(this.$state, {
+                hostId: null,
+                themes: [],
+                pagination: null
+            });
+            this.loadedPages.clear();
+            return;
+        }
 
-        const identifier = theme?.identifier ?? null;
-        this.value.set(identifier);
-        this.onTouchedCallback();
-        this.onChange.emit(identifier);
+        patchState(this.$state, { hostId: siteId });
+        this.loadedPages.clear();
+        this.loadThemes(1, siteId, this.$state.searchValue());
     }
 
     /**
-     * Handles lazy loading of themes from PrimeNG Select
+     * Handles search input changes with debouncing.
+     * Resets loaded data and loads the first page with the new search filter.
      *
-     * @param event Lazy load event with first (offset) and last (last index)
+     * @param search The search text value
      */
-    onLazyLoad(event: SelectLazyLoadEvent): void {
-        const parsed = this.parseLazyLoadEvent(event);
-
-        // Skip if event is invalid (contains NaN values from PrimeNG Scroller initialization)
-        if (!parsed) {
-            return;
-        }
-
-        const currentCount = this.$state.themes().length;
-        const totalEntries = this.$state.totalRecords();
-
-        if (!this.shouldLoadMore(parsed.itemsNeeded, currentCount, totalEntries)) {
-            return;
-        }
-
-        this.loadThemesLazy(parsed, totalEntries);
-    }
-
-    /**
-     * Handles filter changes from the custom filter template
-     * Resets loaded data and loads the first page with the new filter
-     * Uses debouncing to avoid excessive API calls while typing
-     *
-     * @param filter The filter text value
-     */
-    onFilterChange(filter: string): void {
-        if (!filter || filter.trim() === '') {
-            this.resetFilter();
-            return;
-        }
-
+    onSearchChange(search: string): void {
         if (this.filterDebounceTimeout) {
             clearTimeout(this.filterDebounceTimeout);
         }
 
-        patchState(this.$state, { filterValue: filter });
+        patchState(this.$state, { searchValue: search });
 
         this.filterDebounceTimeout = setTimeout(() => {
+            const hostId = this.$state.hostId();
+            if (!hostId) {
+                this.filterDebounceTimeout = null;
+                return;
+            }
+
             this.loadedPages.clear();
             patchState(this.$state, {
                 themes: [],
-                totalRecords: 0
+                pagination: null
             });
 
             // Load first page with the new filter
-            this.loadThemesLazy(
-                { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
-                0
-            );
+            this.loadThemes(1, hostId, search.trim() || undefined);
 
             this.filterDebounceTimeout = null;
         }, 300);
     }
 
     /**
-     * Resets the filter and reloads all themes
+     * Handles lazy loading of themes from PrimeNG DataView
+     * With lazy="true", DataView expects only the current page's data.
+     * We always load the requested page to ensure data is fresh.
+     *
+     * @param event Lazy load event with first (offset) and rows (page size)
      */
-    resetFilter(): void {
-        if (this.filterDebounceTimeout) {
-            clearTimeout(this.filterDebounceTimeout);
-            this.filterDebounceTimeout = null;
+    onLazyLoad(event: LazyLoadEvent): void {
+        const hostId = this.$state.hostId();
+        if (!hostId) {
+            return;
         }
 
-        patchState(this.$state, {
-            filterValue: '',
-            themes: [],
-            totalRecords: 0
-        });
-        this.loadedPages.clear();
+        // Validate event parameters
+        const first = Number(event?.first) || 0;
+        const rows = Number(event?.rows) || this.pageSize;
 
-        this.loadThemesLazy({ first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize }, 0);
+        // Convert offset to page number (1-indexed)
+        const page = Math.floor(first / rows) + 1;
+
+        // Always load the requested page (even if we've loaded it before)
+        // This ensures data is fresh when navigating back/forward
+        const searchValue = this.$state.searchValue().trim() || undefined;
+        this.loadThemes(page, hostId, searchValue);
     }
 
     /**
-     * Handles the event when the select overlay is shown.
-     * Initializes the virtual scroller to ensure options are displayed correctly.
+     * Handles theme selection via radio button onChange event.
+     *
+     * @param theme The selected theme
      */
-    onSelectShow(): void {
-        this.onShow.emit();
-        // Initialize virtual scroller state to fix display issue with custom filter template
-        requestAnimationFrame(() => {
-            if (this.select?.scroller) {
-                this.select.scroller.setInitialState();
-                this.select.scroller.viewInit();
-            }
-        });
+    onThemeSelect(theme: DotTheme): void {
+        patchState(this.$state, { selectedThemeId: theme.identifier });
+        this.value.set(theme.identifier);
+        this.onTouchedCallback();
+        this.onChange.emit(theme.identifier);
     }
 
     /**
-     * Handles the event when the select overlay is hidden.
+     * Gets the thumbnail URL for a theme.
+     *
+     * @param theme The theme object
+     * @returns The thumbnail URL string
      */
-    onSelectHide(): void {
-        this.onHide.emit();
+    getThemeThumbnailUrl(theme: DotTheme): string {
+        if (!theme.themeThumbnail) {
+            return '';
+        }
+
+        // SYSTEM_THEME uses thumbnail as-is
+        if (theme.identifier === 'SYSTEM_THEME') {
+            return theme.themeThumbnail;
+        }
+
+        // Other themes use the dotAsset URL format
+        return `/dA/${theme.themeThumbnail}/720/theme.png`;
+    }
+
+    /**
+     * Loads themes from the service with pagination support.
+     *
+     * @private
+     * @param page The page number to load (1-indexed)
+     * @param hostId The host ID to filter themes
+     * @param search Optional search parameter
+     */
+    private loadThemes(page: number, hostId: string, search?: string): void {
+        if (this.$state.loading()) {
+            return;
+        }
+
+        patchState(this.$state, { loading: true });
+
+        this.themesService
+            .getThemes({
+                hostId,
+                page,
+                per_page: this.pageSize,
+                ...(search ? { searchParam: search } : {})
+            })
+            .subscribe({
+                next: ({ themes, pagination }) => {
+                    const t = themes.map((theme) => ({
+                        ...theme,
+                        path: theme.path.replace('/application', '').replace('/', '')
+                    }));
+                    patchState(this.$state, { themes: t, pagination, loading: false });
+
+                    this.loadedPages.add(page);
+                },
+                error: () => {
+                    patchState(this.$state, { loading: false });
+                }
+            });
     }
 
     // ControlValueAccessor implementation
-    writeValue(value: string | DotTheme | null): void {
-        // Extract identifier and set the value - the effect will handle fetching the theme and updating state
-        const identifier = this.extractIdentifier(value);
-        this.value.set(identifier);
+    writeValue(value: string | null): void {
+        this.value.set(value);
+        patchState(this.$state, { selectedThemeId: value });
     }
 
     registerOnChange(fn: (value: string | null) => void): void {
@@ -407,224 +379,5 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
     setDisabledState(isDisabled: boolean): void {
         this.$isDisabled.set(isDisabled);
-    }
-
-    /**
-     * Sets themes with automatic sorting by title
-     *
-     * @private
-     * @param themes The themes to set
-     */
-    private setThemes(themes: DotTheme[]): void {
-        const sorted = [...themes].sort((a, b) =>
-            (a.title || '').localeCompare(b.title || '')
-        );
-        patchState(this.$state, { themes: sorted });
-    }
-
-    /**
-     * Extracts the identifier from a value that can be a string, DotTheme object, or null.
-     * Handles backward compatibility with DotTheme objects.
-     *
-     * @private
-     * @param value The value to extract identifier from (string, DotTheme, or null)
-     * @returns The identifier string or null
-     */
-    private extractIdentifier(value: string | DotTheme | null): string | null {
-        if (!value) {
-            return null;
-        }
-
-        if (typeof value === 'string') {
-            return value;
-        }
-
-        // Validate that the object has an identifier property
-        if (!('identifier' in value) || typeof value.identifier !== 'string') {
-            console.warn(
-                `DotThemeComponent: Invalid theme object provided. Expected object with 'identifier' property of type string, but received:`,
-                value
-            );
-            return null;
-        }
-
-        return value.identifier;
-    }
-
-
-    /**
-     * Parses and validates lazy load event, calculates items needed.
-     * Returns null if event contains invalid values (NaN) from PrimeNG Scroller initialization.
-     *
-     * @private
-     * @param event Lazy load event with first (offset) and last (last index)
-     * @returns Parsed event object with calculated itemsNeeded, or null if event is invalid
-     */
-    private parseLazyLoadEvent(event: SelectLazyLoadEvent): ParsedLazyLoadResult {
-        // Validate event: PrimeNG Scroller may emit events with NaN values during initialization
-        // when calculateOptions() runs before items are loaded. This happens because it calculates
-        // lazyLoadState.last as: Math.min(step, this._items.length). If this._items is null/undefined,
-        // this results in Math.min(40, undefined) = NaN.
-        if (
-            event?.first === undefined ||
-            isNaN(Number(event.first)) ||
-            (event?.last !== undefined && isNaN(Number(event.last)))
-        ) {
-            return null;
-        }
-
-        const first = Number(event.first);
-
-        // PrimeNG 21 uses 'last' instead of 'rows' - last is the last index (inclusive)
-        const last = event.last !== undefined ? Number(event.last) : undefined;
-
-        // Calculate items needed: if 'last' is provided, use it; otherwise use page size
-        const itemsNeeded = last !== undefined ? last + 1 : this.pageSize;
-
-        return { first, last, itemsNeeded };
-    }
-
-    /**
-     * Checks if we need to load more themes based on current state
-     *
-     * @private
-     * @param itemsNeeded Total number of items needed
-     * @param currentCount Current number of items loaded
-     * @param totalEntries Total number of entries available (0 if unknown)
-     * @returns true if we need to load more, false otherwise
-     */
-    private shouldLoadMore(
-        itemsNeeded: number,
-        currentCount: number,
-        totalEntries: number
-    ): boolean {
-        // If we already have enough items to satisfy the request, no need to load
-        if (currentCount >= itemsNeeded) {
-            return false;
-        }
-
-        // If we know the total and we have all items, no need to load
-        // But be cautious: if totalEntries equals currentCount and currentCount equals pageSize,
-        // the API might be returning incorrect totalEntries (it might just be the current page count)
-        // So only trust totalEntries if it's significantly larger than the page size
-        if (totalEntries > 0 && currentCount >= totalEntries) {
-            // If totalEntries is suspiciously equal to pageSize, don't trust it
-            // Continue loading to see if there are more items
-            if (totalEntries <= this.pageSize && currentCount === this.pageSize) {
-                return true; // Keep loading, API might have wrong total
-            }
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Loads themes with pagination support
-     * Converts PrimeNG's offset-based lazy loading to page-based API calls
-     * Loads all missing pages from 1 up to the required page
-     *
-     * @private
-     * @param parsed Parsed event values
-     * @param totalEntries Total number of entries available (0 if unknown)
-     */
-    private loadThemesLazy(parsed: ParsedSelectLazyLoadEvent, totalEntries: number): void {
-        if (this.$state.loading()) {
-            return;
-        }
-
-        const { itemsNeeded, last } = parsed;
-
-        // Calculate which page contains the last index we need
-        // Page number is 1-indexed: offset 0-39 = page 1, 40-79 = page 2, etc.
-        const lastIndexNeeded = last !== undefined ? last : itemsNeeded - 1;
-        const pageToLoad = Math.floor(lastIndexNeeded / this.pageSize) + 1;
-
-        // If we know the total, check if we're requesting beyond it
-        // But be cautious: if totalEntries equals pageSize, the API might be wrong
-        if (totalEntries > 0 && totalEntries > this.pageSize) {
-            const maxPage = Math.ceil(totalEntries / this.pageSize);
-            if (pageToLoad > maxPage) {
-                return;
-            }
-        }
-
-        // Find all missing pages from 1 to pageToLoad
-        const pagesToLoad: number[] = [];
-        for (let page = 1; page <= pageToLoad; page++) {
-            if (!this.loadedPages.has(page)) {
-                pagesToLoad.push(page);
-            }
-        }
-
-        // If all required pages are already loaded, return
-        if (pagesToLoad.length === 0) {
-            return;
-        }
-
-        // Load all missing pages sequentially
-        this.loadPagesSequentially(pagesToLoad);
-    }
-
-    /**
-     * Loads multiple pages sequentially
-     *
-     * @private
-     * @param pages Array of page numbers to load
-     */
-    private loadPagesSequentially(pages: number[]): void {
-        if (pages.length === 0) {
-            return;
-        }
-
-        patchState(this.$state, { loading: true });
-        const filter = this.$state.filterValue().trim();
-        const pageToLoad = pages[0];
-        const remainingPages = pages.slice(1);
-
-        this.themeService
-            .getThemes({
-                page: pageToLoad,
-                per_page: this.pageSize,
-                ...(filter ? { searchParam: filter } : {})
-            })
-            .subscribe({
-                next: ({ themes, pagination }) => {
-                    const currentThemes = this.$state.themes();
-                    const isFirstPage = pageToLoad === 1;
-
-                    // Update total records from pagination
-                    if (isFirstPage || this.$state.totalRecords() === 0) {
-                        patchState(this.$state, { totalRecords: pagination.totalEntries });
-                    }
-
-                    // Replace on first page (initial load or filter change clears list first)
-                    // Merge on subsequent pages (lazy loading pagination)
-                    if (isFirstPage) {
-                        this.setThemes(themes);
-                    } else {
-                        // For subsequent pages, merge with existing (lazy loading)
-                        const existingIdentifiers = new Set(currentThemes.map((t) => t.identifier));
-                        const newThemes = themes.filter(
-                            (t) => !existingIdentifiers.has(t.identifier)
-                        );
-
-                        if (newThemes.length > 0) {
-                            this.setThemes([...currentThemes, ...newThemes]);
-                        }
-                    }
-
-                    this.loadedPages.add(pageToLoad);
-
-                    if (remainingPages.length > 0) {
-                        this.loadPagesSequentially(remainingPages);
-                    } else {
-                        patchState(this.$state, { loading: false });
-                    }
-                },
-                error: () => {
-                    patchState(this.$state, { loading: false });
-                }
-            });
     }
 }

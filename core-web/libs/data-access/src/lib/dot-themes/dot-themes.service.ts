@@ -11,10 +11,9 @@ import { hasValidValue } from '@dotcms/utils';
 const THEMES_API_URL = '/api/v1/themes';
 const DEFAULT_PER_PAGE = 10;
 const DEFAULT_PAGE = 1;
-const HARDCODED_HOST_ID = '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d';
 
 export interface DotThemeOptions {
-    hostId?: string;
+    hostId: string;
     page?: number;
     per_page?: number;
     direction?: 'ASC' | 'DESC';
@@ -48,12 +47,12 @@ export class DotThemesService {
     /**
      * Get themes from the endpoint with pagination
      *
-     * @param options Optional parameters for filtering and pagination
+     * @param options Required parameters for filtering and pagination (hostId is required)
      * @return {Observable<{themes: DotTheme[]; pagination: DotPagination;}>}
      * Observable containing themes and pagination info
      * @memberof DotThemesService
      */
-    getThemes(options: DotThemeOptions = {}): Observable<{
+    getThemes(options: DotThemeOptions): Observable<{
         themes: DotTheme[];
         pagination: DotPagination;
     }> {
@@ -73,12 +72,18 @@ export class DotThemesService {
     /**
      * Creates HttpParams for retrieving themes with optional parameters
      * Only includes parameters that have meaningful values (not empty, null, or undefined)
+     * Validates that hostId is provided and not empty
      */
-    private getThemePaginationParams(options: DotThemeOptions = {}): HttpParams {
+    private getThemePaginationParams(options: DotThemeOptions): HttpParams {
+        // Validate hostId is provided and not empty
+        if (!options.hostId || options.hostId.trim() === '') {
+            throw new Error('hostId is required and cannot be empty');
+        }
+
         let params = new HttpParams();
 
-        // Default parameters
-        params = params.set('hostId', options.hostId ?? HARDCODED_HOST_ID);
+        // Required parameter
+        params = params.set('hostId', options.hostId);
         params = params.set('per_page', (options.per_page ?? DEFAULT_PER_PAGE).toString());
         params = params.set('page', (options.page ?? DEFAULT_PAGE).toString());
 

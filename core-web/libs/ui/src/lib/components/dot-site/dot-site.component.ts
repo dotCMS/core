@@ -75,7 +75,13 @@ interface DotSiteState {
         InputTextModule
     ],
     templateUrl: './dot-site.component.html',
-    styleUrl: './dot-site.component.scss',
+    styles: [
+        `
+            :host {
+                display: contents;
+            }
+        `
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
@@ -83,7 +89,7 @@ interface DotSiteState {
             useExisting: forwardRef(() => DotSiteComponent),
             multi: true
         }
-    ],
+    ]
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private siteService = inject(DotSiteService);
@@ -459,7 +465,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
 
         return value.identifier;
     }
-
 
     /**
      * Parses and validates lazy load event, calculates items needed.
