@@ -45,8 +45,13 @@ describe('DotLayoutPropertiesItemComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLayoutPropertiesItemComponent, TestHostComponent],
-            imports: [FormsModule, CommonModule, ReactiveFormsModule]
+            declarations: [TestHostComponent],
+            imports: [
+                DotLayoutPropertiesItemComponent,
+                FormsModule,
+                CommonModule,
+                ReactiveFormsModule
+            ]
         });
 
         fixture = TestBed.createComponent(DotLayoutPropertiesItemComponent);

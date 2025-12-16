@@ -4,18 +4,19 @@
     "projectType": "library",
     "sourceRoot": "libs/portlets/edit-ema/portlet/src",
     "prefix": "dot",
+    "tags": [],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/portlets/edit-ema/portlet/jest.config.ts"
+                "jestConfig": "libs/portlets/edit-ema/portlet/jest.config.ts",
+                "tsConfig": "libs/portlets/edit-ema/portlet/tsconfig.spec.json"
             }
         },
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": []
+    }
 }

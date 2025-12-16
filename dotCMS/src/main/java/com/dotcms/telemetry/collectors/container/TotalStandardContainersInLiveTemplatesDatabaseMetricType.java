@@ -5,10 +5,13 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Total of STANDARD containers used in LIVE templates
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalStandardContainersInLiveTemplatesDatabaseMetricType extends TotalContainersInLiveTemplatesDatabaseMetricType {
 

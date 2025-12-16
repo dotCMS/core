@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
@@ -9,7 +9,6 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotContentletLockerService } from './dot-contentlet-locker.service';
 
 describe('DotContentletLockerService', () => {
-    let injector: TestBed;
     let dotContentletLockerService: DotContentletLockerService;
     let httpMock: HttpTestingController;
 
@@ -21,9 +20,8 @@ describe('DotContentletLockerService', () => {
                 DotContentletLockerService
             ]
         });
-        injector = getTestBed();
-        dotContentletLockerService = injector.get(DotContentletLockerService);
-        httpMock = injector.get(HttpTestingController);
+        dotContentletLockerService = TestBed.inject(DotContentletLockerService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should lock a content asset', () => {

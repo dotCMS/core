@@ -1,8 +1,5 @@
 import { Component, Element, Listen, Prop, State, Watch, h, Host } from '@stencil/core';
 
-import { DotFieldStatus } from '../../models';
-import { fieldCustomProcess, getFieldsFromLayout, getErrorMessage } from './utils';
-import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
 import { DotUploadService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeLayoutRow,
@@ -10,7 +7,12 @@ import {
     DotCMSTempFile,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
+
+import { fieldCustomProcess, getFieldsFromLayout, getErrorMessage } from './utils';
+
+import { DotFieldStatus } from '../../models';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
+import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
 
 const SUBMIT_FORM_API_URL = '/api/v1/workflow/actions/default/fire/NEW';
@@ -105,7 +107,7 @@ export class DotFormComponent {
     }
 
     render() {
-        var classes = getClassNames(this.status, this.status.dotValid);
+        const classes = getClassNames(this.status, this.status.dotValid);
 
         return (
             <Host class={{ ...classes }}>

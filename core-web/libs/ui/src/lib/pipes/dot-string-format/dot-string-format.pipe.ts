@@ -8,8 +8,7 @@ import { Pipe, PipeTransform } from '@angular/core';
  * @implements {PipeTransform}
  */
 @Pipe({
-    name: 'dotStringFormat',
-    standalone: true
+    name: 'dotStringFormat'
 })
 export class DotStringFormatPipe implements PipeTransform {
     /**

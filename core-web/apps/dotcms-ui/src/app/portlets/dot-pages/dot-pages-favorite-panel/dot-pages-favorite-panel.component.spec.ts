@@ -28,7 +28,6 @@ import {
     mockResponseView
 } from '@dotcms/utils-testing';
 
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
@@ -130,12 +129,12 @@ describe('DotPagesFavoritePanelComponent', () => {
     describe('Empty state', () => {
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
+                declarations: [DotPagesCardMockComponent, MockDotIconComponent],
                 imports: [
+                    DotPagesFavoritePanelComponent,
                     BrowserAnimationsModule,
                     DotMessagePipe,
                     ButtonModule,
-                    DotPagesCardModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -242,12 +241,12 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         beforeEach(() => {
             TestBed.configureTestingModule({
-                declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
+                declarations: [DotPagesCardMockComponent, MockDotIconComponent],
                 imports: [
+                    DotPagesFavoritePanelComponent,
                     BrowserAnimationsModule,
                     DotMessagePipe,
                     ButtonModule,
-                    DotPagesCardModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],

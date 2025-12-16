@@ -4,6 +4,8 @@ package com.dotcms.jitsu;
 import com.dotmarketing.util.json.JSONObject;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -105,7 +107,7 @@ public class ValidAnalyticsEventPayload extends EventsPayload {
      * @return a collection of {@link EventsPayload} objects to be sent to Jitsu.
      */
     @Override
-    public Iterable<EventPayload> payloads() {
+    public Collection<EventPayload> payloads() {
         return ValidAnalyticsEventPayloadTransformer.INSTANCE.transform(jsonObject);
     }
 }

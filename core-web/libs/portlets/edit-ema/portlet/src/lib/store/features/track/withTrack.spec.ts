@@ -24,8 +24,6 @@ const initialState: UVEState = {
     pageParams: {} as DotPageApiParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
     isClientReady: false
 };
 

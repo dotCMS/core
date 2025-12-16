@@ -1,0 +1,72 @@
+<p-tabView [activeIndex]="$activeTab()" (onChange)="handleTabChange($event)">
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <div class="tab-header" pTooltip="Content types" tooltipPosition="bottom">
+                <i class="pi pi-stop" ti></i>
+            </div>
+        </ng-template>
+        <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
+        creating triple renders and triple requests to the server. -->
+        @if ($activeTab() === TABS_MAP.CONTENT_TYPES) {
+            <dot-uve-palette-list
+                [listType]="DotUVEPaletteListTypes.CONTENT"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()" />
+        }
+    </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <div class="tab-header" pTooltip="Widgets" tooltipPosition="bottom">
+                <i class="pi pi-th-large"></i>
+            </div>
+        </ng-template>
+        @if ($activeTab() === TABS_MAP.WIDGETS) {
+            <dot-uve-palette-list
+                [listType]="DotUVEPaletteListTypes.WIDGET"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()" />
+        }
+    </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <div class="tab-header" pTooltip="Favorites" tooltipPosition="bottom">
+                <i class="pi pi-star"></i>
+            </div>
+        </ng-template>
+        @if ($activeTab() === TABS_MAP.FAVORITES) {
+            <dot-uve-palette-list
+                [listType]="DotUVEPaletteListTypes.FAVORITES"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()" />
+        }
+    </p-tabPanel>
+    @if ($showStyleEditorTab()) {
+        <p-tabPanel>
+            <ng-template pTemplate="header">
+                <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
+                    <i class="pi pi-palette"></i>
+                </div>
+            </ng-template>
+            @if ($activeTab() === TABS_MAP.STYLE_EDITOR) {
+                <div
+                    class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
+                    @if ($styleSchema()) {
+                        <pre style="width: 100%; overflow: auto">{{ $styleSchema() | json }}</pre>
+                    } @else {
+                        <span>No styles to show yet.</span>
+                        <span>
+                            <strong>Select a contentlet</strong>
+                            to begin styling.
+                            <a
+                                href="https://dev.dotcms.com/docs/style-editor"
+                                target="_blank"
+                                rel="noopener">
+                                Learn more
+                            </a>
+                        </span>
+                    }
+                </div>
+            }
+        </p-tabPanel>
+    }
+</p-tabView>

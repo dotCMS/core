@@ -226,8 +226,29 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean refreshed  = false;
         final Map<String, Object> attrsMap = (Map<String, Object>) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
-            final Map<String, Object> dataMap = (Map<String, Object>) attrsMap.get(DATA_KEY);
-            if (UtilMethods.isSet(dataMap)) {
+            final Object dataValue = attrsMap.get(DATA_KEY);
+            if (UtilMethods.isSet(dataValue)) {
+                Map<String, Object> dataMap;
+
+                // Handle case where data is a JSON string instead of a Map
+                if (dataValue instanceof String) {
+                    try {
+                        dataMap = this.toMap(dataValue);
+                    } catch (JsonProcessingException e) {
+                        Logger.warnAndDebug(this.getClass(), String.format(
+                            "Failed to parse data field as JSON for parent contentlet '%s': %s",
+                            parentContentletIdentifier, ExceptionUtil.getErrorMessage(e)), e);
+                        return false;
+                    }
+                } else if (dataValue instanceof Map) {
+                    dataMap = (Map<String, Object>) dataValue;
+                } else {
+                    Logger.warn(this.getClass(), String.format(
+                        "Unexpected data type '%s' for data field in parent contentlet '%s'",
+                        dataValue.getClass().getName(), parentContentletIdentifier));
+                    return false;
+                }
+
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (UtilMethods.isSet(identifier)) {

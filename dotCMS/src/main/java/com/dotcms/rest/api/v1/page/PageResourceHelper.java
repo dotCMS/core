@@ -145,7 +145,6 @@ public class PageResourceHelper implements Serializable {
      * @param containerEntries The list of Containers and Contentlets in the form of
      *                         {@link PageContainerForm.ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
-     *
      * @throws DotDataException An error occurred when interacting with the data source.
      */
     @WrapInTransaction
@@ -161,18 +160,23 @@ public class PageResourceHelper implements Serializable {
             final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?
                     Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
+            final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
+                    final Map<String, Object> styleProperties = stylePropertiesMap.get(contentletId);
+
                     final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
                             .setContentlet(contentletId)
                             .setInstanceId(containerEntry.getContainerUUID())
                             .setTreeOrder(i++)
                             .setHtmlPage(pageId)
-                            .setVariantId(variantName);
+                            .setVariantId(variantName)
+                            .setStyleProperties(styleProperties);
 
                     CollectionsUtils.computeSubValueIfAbsent(
-                            multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
+                            multiTreesMap, personalization,
+                            MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
                             (String key, MultiTree multitree) -> list(multitree));
 
@@ -258,6 +262,7 @@ public class PageResourceHelper implements Serializable {
                                 .personalization(multiTree.getPersonalization())
                                 .treeOrder(multiTree.getTreeOrder())
                                 .variantId(multiTree.getVariantId())
+                                .styleProperties(multiTree.getStyleProperties())
                                 .build()
                         , user, pageMode, language);
             }
@@ -465,6 +470,7 @@ public class PageResourceHelper implements Serializable {
         final String variant    = copyContentletForm.getVariantId();
         final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
+        final Map<String, Object> styleProperties = copyContentletForm.getStyleProperties();
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(container)) {
 
@@ -486,9 +492,11 @@ public class PageResourceHelper implements Serializable {
 
         APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
 
-        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
-                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
-                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        final MultiTree newMultitree = new MultiTree(htmlPage, container,
+                copiedContentlet.getIdentifier(), instanceId, treeOrder,
+                null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT : personalization,
+                null == variant ? VariantAPI.DEFAULT_VARIANT.name() : variant,
+                styleProperties);
         Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
 

@@ -67,3 +67,6 @@ export * from './lib/dot-workflows-actions/dot-workflows-actions.service';
 export * from './lib/ema-app-configuration/ema-app-configuration.service';
 export * from './lib/paginator/paginator.service';
 export * from './lib/push-publish/push-publish.service';
+export * from './lib/dot-page-contenttype/dot-page-contenttype.service';
+export * from './lib/dot-favorite-contenttype/dot-favorite-contenttype.service';
+export * from './lib/dot-content-drive/dot-content-drive.service';

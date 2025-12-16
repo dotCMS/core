@@ -51,10 +51,10 @@ export class DotPageToolsSeoStore extends ComponentStore<DotPageToolsSeoState> {
 
                         return updatedTools;
                     }),
-                    tapResponse(
-                        (tools: DotPageTool[]) => this.updatePageTools(tools),
-                        (error: HttpErrorResponse) => console.error(error)
-                    )
+                    tapResponse({
+                        next: (tools: DotPageTool[]) => this.updatePageTools(tools),
+                        error: (error: HttpErrorResponse) => console.error(error)
+                    })
                 );
             })
         );

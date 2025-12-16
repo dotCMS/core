@@ -49,7 +49,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -276,7 +276,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
 
         if (!anonymous){
             request.setHeader("Authorization",
-                    "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                    "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);

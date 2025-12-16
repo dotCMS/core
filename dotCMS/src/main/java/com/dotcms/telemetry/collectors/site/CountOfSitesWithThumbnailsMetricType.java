@@ -15,10 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the count of sites with thumbnails set
  */
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class CountOfSitesWithThumbnailsMetricType implements MetricType {
 
     private static final String ALL_SITES_INODES = "SELECT c.inode AS inode \n" +

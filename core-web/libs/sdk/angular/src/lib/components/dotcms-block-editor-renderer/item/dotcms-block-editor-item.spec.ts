@@ -28,11 +28,10 @@ const MOCK_UVE_STATE_EDIT = {
 
 @Component({
     selector: 'dotcms-block-editor-renderer-custom-component',
-    standalone: true,
     template: '<div>Custom Component</div>'
 })
 export class DotCMSBlockEditorRendererCustomComponent {
-    @Input() content: BlockEditorNode[] = [];
+    @Input() node: BlockEditorNode | undefined;
 }
 
 jest.mock('@dotcms/uve', () => ({
@@ -303,7 +302,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
                 const customComponent = spectator.query(DotCMSBlockEditorRendererCustomComponent);
                 expect(customComponent).toBeTruthy();
-                expect(customComponent?.content).toEqual(content[0]);
+                expect(customComponent?.node).toEqual(content[0]);
             }));
 
             describe('Unknown Block Type', () => {

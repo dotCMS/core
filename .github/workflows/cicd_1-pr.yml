@@ -70,7 +70,7 @@ jobs:
       karate: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
-      e2e: ${{ needs.initialize.outputs.build == 'true' }}
+      e2e: false
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 

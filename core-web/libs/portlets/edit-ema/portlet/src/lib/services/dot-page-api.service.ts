@@ -137,8 +137,10 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        // indexPolicy=WAIT_FOR ensures the contentlet is indexed before returning, preventing stale data.
+        // Note: We'll replace this with optimistic updates for better UX.
         return this.http.put(
-            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}&indexPolicy=WAIT_FOR`,
             { contentlet }
         );
     }

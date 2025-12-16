@@ -58,7 +58,6 @@ const MAX_LANGUAGES_SUGGESTIONS = 20;
     imports: [AutoCompleteModule, FormsModule, DotMessagePipe, DotHighlightPipe],
     templateUrl: './dot-language-variable-selector.component.html',
     styleUrl: './dot-language-variable-selector.component.scss',
-    providers: [DotLanguagesService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLanguageVariableSelectorComponent {

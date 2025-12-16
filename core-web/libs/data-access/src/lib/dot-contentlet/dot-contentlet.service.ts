@@ -7,7 +7,9 @@ import { pluck, take } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotContentletCanLock, DotLanguage } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotContentletService {
     private http = inject(HttpClient);
 

@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import {
-  BlockEditorContent,
+  BlockEditorNode,
   DotCMSComposedPageResponse,
   DotCMSPageAsset,
   DotCMSURLContentMap,
@@ -15,7 +15,7 @@ import { HttpClient } from '@angular/common/http';
 import { DotCMSEditablePageService } from '@dotcms/angular';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
-  blogContent: BlockEditorContent;
+  blogContent: BlockEditorNode;
   image: ContentletImage;
 }
 

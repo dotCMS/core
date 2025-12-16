@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -19,7 +18,7 @@ export interface DotLocaleConfirmationDialogData {
 
 @Component({
     selector: 'dot-locale-confirmation-dialog',
-    imports: [CommonModule, DialogModule, ButtonModule, DotMessagePipe, InputTextModule],
+    imports: [DialogModule, ButtonModule, DotMessagePipe, InputTextModule],
     templateUrl: './DotLocaleConfirmationDialog.component.html',
     styleUrl: './DotLocaleConfirmationDialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -4,12 +4,14 @@
     "projectType": "library",
     "sourceRoot": "libs/portlets/dot-experiments/portlet/src",
     "prefix": "dotcms",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/portlets/dot-experiments/portlet/jest.config.ts"
+                "jestConfig": "libs/portlets/dot-experiments/portlet/jest.config.ts",
+                "tsConfig": "libs/portlets/dot-experiments/portlet/tsconfig.spec.json"
             },
             "configurations": {
                 "ci": {
@@ -21,6 +23,5 @@
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"]
+    }
 }

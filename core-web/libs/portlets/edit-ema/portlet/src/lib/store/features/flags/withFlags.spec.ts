@@ -22,8 +22,6 @@ const initialState: UVEState = {
     pageParams: {} as DotPageApiParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
     isClientReady: false
 };
 
@@ -70,15 +68,6 @@ describe('withFlags', () => {
 
         it('should patch state with flags', () => {
             expect(store.flags()).toEqual(MOCK_RESPONSE);
-        });
-    });
-    describe('methods', () => {
-        describe('setFlags', () => {
-            it('should patch state with flags', () => {
-                store.setFlags(MOCK_RESPONSE);
-
-                expect(store.flags()).toEqual(MOCK_RESPONSE);
-            });
         });
     });
 });

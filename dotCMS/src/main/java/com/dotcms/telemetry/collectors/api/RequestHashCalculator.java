@@ -47,11 +47,13 @@ public class RequestHashCalculator {
      *      <li>If the Request has any JSON Body it is sort by alphabetically by the attribute
      *      name, so:
      *      <pre>
-     *          {@code { a: 1, b: 2 }}
+     *          {@code { a: 1, b: 2 }
+}
      *      </pre>
      *      And:
      *      <pre>
-     *          {@code { b: 2, a: 1 }}
+     *          {@code { b: 2, a: 1 }
+}
      *      </pre>
      *      are the same.
      *      </li>

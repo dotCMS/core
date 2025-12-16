@@ -1,4 +1,4 @@
-import type { DotCMSBasicContentlet, DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset, DotCMSURLContentMap } from "@dotcms/types";
+import type { BlockEditorNode, DotCMSBasicContentlet, DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset, DotCMSURLContentMap } from "@dotcms/types";
 
 export type DotCMSCustomPageResponse = DotCMSComposedPageResponse< {
     pageAsset: DotCMSPageAsset;
@@ -17,7 +17,7 @@ export interface DetailPageAsset extends DotCMSPageAsset {
 
 interface URLContentMap extends DotCMSURLContentMap {
     urlMap: string;
-    blogContent: string;
+    blogContent: BlockEditorNode;
 }
 
 interface DotCMSContent {

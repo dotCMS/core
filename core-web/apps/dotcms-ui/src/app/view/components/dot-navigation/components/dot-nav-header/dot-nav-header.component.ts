@@ -1,13 +1,15 @@
 import { Component, input, inject, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
+
 import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
 
 @Component({
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
     templateUrl: 'dot-nav-header.component.html',
-    standalone: false
+    imports: [ButtonModule]
 })
 export class DotNavHeaderComponent {
     /**

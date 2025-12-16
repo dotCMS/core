@@ -4,7 +4,8 @@
         "outDir": "../../dist/out-tsc",
         "types": ["jasmine", "node"],
         "target": "ES2022",
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
+        "moduleResolution": "bundler"
     },
     "files": ["src/test.ts", "src/polyfills.ts"],
     "include": ["**/*.spec.ts", "**/*.d.ts"]

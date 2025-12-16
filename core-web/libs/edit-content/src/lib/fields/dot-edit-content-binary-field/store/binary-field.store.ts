@@ -168,10 +168,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
             switchMap((tempFile) => {
                 return this.handleTempFile(tempFile).pipe(
-                    tapResponse(
-                        (file) => this.setTempFile(file),
-                        () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
-                    )
+                    tapResponse({
+                        next: (file) => this.setTempFile(file),
+                        error: () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
+                    })
                 );
             })
         );
@@ -187,8 +187,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(
-                        tapResponse(
-                            (content = '') => {
+                        tapResponse({
+                            next: (content = '') => {
                                 this.setContentlet({
                                     ...contentlet,
                                     mimeType: contentType,
@@ -196,14 +196,14 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                                     content
                                 });
                             },
-                            () => {
+                            error: () => {
                                 this.setContentlet({
                                     ...contentlet,
                                     mimeType: contentType,
                                     name
                                 });
                             }
-                        )
+                        })
                     );
                 })
             );

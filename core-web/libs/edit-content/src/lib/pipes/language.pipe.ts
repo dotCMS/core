@@ -9,8 +9,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
  * Falls back to isoCode if languageCode is empty, or empty parentheses if neither exists.
  */
 @Pipe({
-    name: 'language',
-    standalone: true
+    name: 'language'
 })
 export class LanguagePipe implements PipeTransform {
     /**

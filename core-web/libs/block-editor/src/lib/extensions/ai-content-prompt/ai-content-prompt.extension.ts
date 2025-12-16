@@ -6,6 +6,8 @@ import { Extension } from '@tiptap/core';
 
 import { AIContentPromptComponent } from './ai-content-prompt.component';
 import { aiContentPromptPlugin } from './plugins/ai-content-prompt.plugin';
+// Import to ensure type augmentation is available
+import '../freeze-scroll/freeze-scroll.extension';
 
 export interface AIContentPromptOptions {
     pluginKey: PluginKey;

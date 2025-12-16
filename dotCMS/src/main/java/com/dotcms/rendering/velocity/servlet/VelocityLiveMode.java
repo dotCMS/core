@@ -8,6 +8,7 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -24,6 +25,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -40,11 +42,14 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.velocity.context.Context;
 
@@ -139,7 +144,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
         addHeaders(htmlPage);
-
+        processUrlMapTags(request);
         if (!VelocityUtil.shouldPageCache(request, htmlPage)) {
             try (Writer tmpOut = new OutputStreamWriter(out)) {
                 writePage(tmpOut, htmlPage);
@@ -294,6 +299,35 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
     }
+
+    private void processUrlMapTags(@NotNull HttpServletRequest request) {
+        if (!Config.getBooleanProperty("ACCRUE_TAGS_IN_URLMAPS", true)) {
+            return;
+        }
+        if (request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE) == null) {
+            return;
+        }
+        Optional<Visitor> visitor = visitorAPI.getVisitor(request, false);
+        if (visitor.isEmpty()) {
+            return;
+        }
+
+        String inode = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+
+        List<Tag> contentTags = Try.of(() -> APILocator.getTagAPI().getTagsByInode(inode))
+                .onFailure(e -> Logger.warnAndDebug(VelocityLiveMode.class,
+                        "unable to read tags for inode:" + inode + " : " + e.getMessage(), e))
+                .getOrElse(List.of());
+        for (Tag tag : contentTags) {
+            visitor.get().addTag(tag.getTagName());
+        }
+    }
+
+
+
+
+
+
 
 
 }

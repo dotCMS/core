@@ -1,0 +1,123 @@
+<div class="usage-dashboard">
+    <!-- Header -->
+    <div class="usage-header">
+        <div class="usage-header__title">
+            <h1>{{ 'usage.dashboard.title' | dm }}</h1>
+        </div>
+
+        <div class="usage-header__actions">
+            <p-button
+                icon="pi pi-refresh"
+                [text]="true"
+                [loading]="loading()"
+                [disabled]="loading()"
+                (onClick)="onRefresh()"
+                [pTooltip]="'usage.dashboard.refresh.tooltip' | dm"
+                data-testid="refresh-button"></p-button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading() && !hasData()) {
+        <div class="usage-skeleton">
+            <div class="usage-grid">
+                @for (i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; track i) {
+                    <p-card class="metric-card">
+                        <div class="metric-card__content">
+                            <p-skeleton height="1.5rem" width="60%"></p-skeleton>
+                            <p-skeleton height="3rem" width="80%" class="mt-2"></p-skeleton>
+                            <p-skeleton height="1rem" width="40%" class="mt-1"></p-skeleton>
+                        </div>
+                    </p-card>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Error State -->
+    @if (error() && !loading()) {
+        <div class="usage-error">
+            <p-messages severity="error" [closable]="false">
+                <ng-template pTemplate>
+                    <div class="error-content">
+                        <i class="pi pi-exclamation-triangle"></i>
+                        <div>
+                            <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
+                            <p>
+                                @if (
+                                    error() === 'usage.dashboard.error.requestFailed' &&
+                                    errorStatus()
+                                ) {
+                                    {{
+                                        'usage.dashboard.error.requestFailed'
+                                            | dm: [errorStatus()!.toString()]
+                                    }}
+                                } @else {
+                                    {{ error() | dm }}
+                                }
+                            </p>
+                        </div>
+                        <p-button
+                            [label]="'usage.dashboard.retry.button' | dm"
+                            severity="secondary"
+                            size="small"
+                            (onClick)="onRetry()"
+                            data-testid="retry-button"></p-button>
+                    </div>
+                </ng-template>
+            </p-messages>
+        </div>
+    }
+
+    <!-- Dashboard Content -->
+    @if (hasData()) {
+        <div class="usage-content">
+            @for (category of getCategories(); track category) {
+                @if (getCategoryMetrics(category); as categoryMetrics) {
+                    <div class="usage-section">
+                        <h2 class="section-title">{{ getCategoryTitleKey(category) | dm }}</h2>
+                        <div class="metrics-row">
+                            @for (
+                                metricEntry of categoryMetrics | keyvalue;
+                                track metricEntry.key
+                            ) {
+                                @if (metricEntry.value; as metricData) {
+                                    <p-card
+                                        class="metric-card"
+                                        [attr.data-testid]="
+                                            category + '-' + metricEntry.key + '-card'
+                                        ">
+                                        <div class="metric-card__content">
+                                            <div class="metric-card__data">
+                                                <span class="metric-label">
+                                                    {{ metricData.displayLabel | dm }}
+                                                </span>
+                                                <span
+                                                    class="metric-value"
+                                                    [class.metric-value--text]="
+                                                        isStringValue(metricData.value)
+                                                    ">
+                                                    @if (
+                                                        isI18nKey(
+                                                            formatMetricValue(metricData.value)
+                                                        )
+                                                    ) {
+                                                        {{
+                                                            formatMetricValue(metricData.value) | dm
+                                                        }}
+                                                    } @else {
+                                                        {{ formatMetricValue(metricData.value) }}
+                                                    }
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </p-card>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>

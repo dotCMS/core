@@ -7,9 +7,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.netty.util.NetUtil;
 import io.vavr.control.Try;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.common.network.InetAddresses;
+
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -17,14 +17,21 @@ import javax.management.Query;
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.elasticsearch.common.network.InetAddresses;
 
 /**
  * Provides quick access to information that can be obtained from the HTTP
@@ -237,6 +244,30 @@ public class HttpRequestDataUtil {
 	public static <T> T getAttribute(final HttpServletRequest request, final String attributeName, final T defaultValue) {
 		if (null != request.getAttribute(attributeName)) {
 			return (T) request.getAttribute(attributeName);
+		}
+		return defaultValue;
+	}
+
+	/**
+	 * Returns the value of a given variable in the HTTP Request object. If it's not there, it
+	 * tries to look it up as a parameter. If no value is found at all, the default value is
+	 * returned.
+	 *
+	 * @param request       An instance of the {@link HttpServletRequest} object.
+	 * @param attributeName The name of the variable that should be present in the request.
+	 * @param defaultValue  The default value that will be returned in case the expected one is NOT
+	 *                      present.
+	 *
+	 * @return The value of the specified variable in the request.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T getFromRequest(final HttpServletRequest request,
+									   final String attributeName, final T defaultValue) {
+		if (UtilMethods.isSet(request.getAttribute(attributeName))) {
+			return (T) request.getAttribute(attributeName);
+		}
+		if (UtilMethods.isSet(request.getParameter(attributeName))) {
+			return (T) request.getParameter(attributeName);
 		}
 		return defaultValue;
 	}

@@ -3,8 +3,8 @@
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-locales/data-access/src",
     "prefix": "lib",
-    "tags": ["type:data-access", "scope:dotcms-ui", "portlet:languages"],
     "projectType": "library",
+    "tags": ["type:data-access", "scope:dotcms-ui", "portlet:languages"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",

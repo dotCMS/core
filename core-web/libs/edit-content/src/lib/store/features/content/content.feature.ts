@@ -19,6 +19,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';
@@ -124,7 +125,8 @@ export function withContent() {
                 router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
                 title = inject(Title),
-                dotMessageService = inject(DotMessageService)
+                dotMessageService = inject(DotMessageService),
+                globalStore = inject(GlobalStore)
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -149,7 +151,8 @@ export function withContent() {
                             patchState(store, { state: ComponentStatus.LOADING });
 
                             return forkJoin({
-                                contentType: dotContentTypeService.getContentType(contentType),
+                                contentType:
+                                    dotContentTypeService.getContentTypeWithRender(contentType),
                                 schemes: workflowActionService.getDefaultActions(contentType)
                             }).pipe(
                                 tapResponse({
@@ -165,9 +168,16 @@ export function withContent() {
                                             parsedSchemes[defaultSchemeId]?.actions || []
                                         );
 
+                                        const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
+
                                         title.setTitle(
-                                            `${dotMessageService.get('New')} ${contentType.variable} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
                                         );
+                                        globalStore.addNewBreadcrumb({
+                                            label: titleString,
+                                            target: '_self',
+                                            url: `/dotAdmin/#/content/new/${contentType.variable}`
+                                        });
 
                                         patchState(store, {
                                             contentType,
@@ -221,7 +231,9 @@ export function withContent() {
 
                                     return forkJoin({
                                         contentType:
-                                            dotContentTypeService.getContentType(contentType),
+                                            dotContentTypeService.getContentTypeWithRender(
+                                                contentType
+                                            ),
                                         // Allowed actions for this inode
                                         currentContentActions: workflowActionService.getByInode(
                                             inode,
@@ -262,9 +274,15 @@ export function withContent() {
                                         const initialContentletState =
                                             !scheme || !step ? 'reset' : 'existing';
 
+                                        const titleString = `${contentlet.title}`;
                                         title.setTitle(
-                                            `${contentlet.title} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
                                         );
+                                        globalStore.addNewBreadcrumb({
+                                            label: titleString,
+                                            target: '_self',
+                                            url: `/dotAdmin/#/content/${contentlet.inode}`
+                                        });
 
                                         patchState(store, {
                                             contentType,

@@ -41,7 +41,7 @@ export class DotUveWorkflowActionsComponent {
     inode = computed(() => this.#uveStore.pageAPIResponse()?.page.inode);
     actions = this.#uveStore.workflowActions;
     loading = this.#uveStore.workflowLoading;
-    canEdit = this.#uveStore.canEditPage;
+    canEdit = this.#uveStore.$canEditPage;
 
     private readonly successMessage = {
         severity: 'info',

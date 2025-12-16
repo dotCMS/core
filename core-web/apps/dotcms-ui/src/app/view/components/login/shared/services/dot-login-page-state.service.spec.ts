@@ -13,7 +13,7 @@ describe('DotLoginPageStateServiceService', () => {
     let loginService: LoginService;
 
     beforeEach(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotLoginPageStateService,
                 { provide: LoginService, useClass: LoginServiceMock }
@@ -21,8 +21,8 @@ describe('DotLoginPageStateServiceService', () => {
             imports: []
         });
 
-        dotloginPageStateService = testbed.get(DotLoginPageStateService);
-        loginService = testbed.get(LoginService);
+        dotloginPageStateService = TestBed.inject(DotLoginPageStateService);
+        loginService = TestBed.inject(LoginService);
         jest.spyOn(loginService, 'getLoginFormInfo').mockReturnValue(of(mockLoginFormResponse));
     });
 

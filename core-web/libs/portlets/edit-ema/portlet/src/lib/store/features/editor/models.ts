@@ -1,29 +1,34 @@
 import {
-    DotCMSContentlet,
     DotDeviceListItem,
     DotExperiment,
     DotLanguage,
-    DotPersona,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotCMSPageAssetContainers, DotCMSViewAsPersona } from '@dotcms/types';
+import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
+import { EDITOR_STATE } from '../../../shared/enums';
+import { ContentletPayload } from '../../../shared/models';
 import { Orientation } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
-    contentletArea?: ContentletArea;
+    styleSchemas: StyleEditorFormSchema[];
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    paletteOpen: boolean;
+    activeContentlet?: ContentletPayload;
+    contentArea?: ContentletArea;
+    palette: {
+        open: boolean;
+        currentTab: UVE_PALETTE_TABS;
+    };
 }
 
 export interface EditorToolbarState {
@@ -66,50 +71,13 @@ export interface EditorProps {
         pointerEvents: string;
         opacity: string;
     };
-
-    contentletTools?: {
-        contentletArea: ContentletArea;
-        hide: boolean;
-        isEnterprise: boolean;
-        disableDeleteButton?: string;
-    };
     dropzone?: {
         bounds: Container[];
         dragItem: EmaDragItem;
     };
-    palette?: {
-        languageId: number;
-        containers: DotCMSPageAssetContainers;
-        variantId: string;
-        paletteClass: PALETTE_CLASSES;
-    };
     showDialogs: boolean;
     progressBar: boolean;
     showBlockEditorSidebar: boolean;
-}
-
-export interface ToolbarProps {
-    urlContentMap?: DotCMSContentlet;
-    bookmarksUrl: string;
-    copyUrl: string;
-    apiUrl: string;
-    isDefaultVariant: boolean;
-    showInfoDisplay: boolean;
-    currentLanguage: DotLanguage;
-    runningExperiment?: DotExperiment;
-    workflowActionsInode?: string;
-    personaSelector: {
-        pageId: string;
-        value: DotPersona;
-    };
-    unlockButton?: {
-        inode: string;
-        loading: boolean;
-    };
-    deviceSelector: {
-        apiLink: string;
-        hideSocialMedia: boolean;
-    };
 }
 
 /**
@@ -122,7 +90,6 @@ export interface ToolbarProps {
 export interface UVEToolbarProps {
     editor: {
         bookmarksUrl: string;
-        copyUrl: string;
         apiUrl: string;
     };
     preview?: {
@@ -144,4 +111,11 @@ export interface UVEToolbarProps {
 export interface PersonaSelectorProps {
     pageId: string;
     value: DotCMSViewAsPersona;
+}
+
+export enum UVE_PALETTE_TABS {
+    CONTENT_TYPES = 0,
+    WIDGETS = 1,
+    FAVORITES = 2,
+    STYLE_EDITOR = 3
 }

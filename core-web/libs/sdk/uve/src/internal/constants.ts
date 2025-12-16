@@ -114,3 +114,9 @@ export const EMPTY_CONTAINER_STYLE_ANGULAR = {
  * @internal
  */
 export const CUSTOM_NO_COMPONENT = 'CustomNoComponent';
+
+// Analytics active flag key
+export const ANALYTICS_WINDOWS_ACTIVE_KEY = '__dotAnalyticsActive__';
+
+// Analytics cleanup function key
+export const ANALYTICS_WINDOWS_CLEANUP_KEY = '__dotAnalyticsCleanup';

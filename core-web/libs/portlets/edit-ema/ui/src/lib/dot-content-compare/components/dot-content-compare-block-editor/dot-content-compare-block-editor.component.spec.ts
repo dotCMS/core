@@ -284,18 +284,24 @@ describe('DotContentCompareBlockEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContentCompareBlockEditorComponent],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             imports: [
+                DotContentCompareBlockEditorComponent,
                 DotDiffPipe,
                 HttpClientTestingModule,
                 CommonModule,
                 BlockEditorMockComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe
-            ]
-        }).compileComponents();
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        })
+            .overrideComponent(DotContentCompareBlockEditorComponent, {
+                set: {
+                    imports: [CommonModule, BlockEditorMockComponent, DotSafeHtmlPipe, DotDiffPipe]
+                }
+            })
+            .compileComponents();
     });
 
     beforeEach(() => {
@@ -313,9 +319,21 @@ describe('DotContentCompareBlockEditorComponent', () => {
         it('Should contain same HTML for working than the Block Editor', async () => {
             await fixture.whenStable();
             fixture.detectChanges();
-            const workingField = de.query(By.css('[data-testId="div-working"]')).nativeElement
-                .innerHTML;
-            expect(workingField).toEqual(component.blockEditor.editor.getHTML());
+
+            // Wait for ViewChild to be initialized and editor to be ready
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            fixture.detectChanges();
+
+            // Use type assertion for mock component
+            const blockEditor = component.blockEditor as unknown as BlockEditorMockComponent;
+            expect(blockEditor).toBeDefined();
+            expect(blockEditor.editor).toBeDefined();
+
+            const workingField = de.query(By.css('[data-testId="div-working"]'))?.nativeElement
+                ?.innerHTML;
+            const editorHTML = blockEditor.editor.getHTML();
+
+            expect(workingField).toEqual(editorHTML);
         });
     });
 
@@ -329,14 +347,28 @@ describe('DotContentCompareBlockEditorComponent', () => {
             await fixture.whenStable();
             fixture.detectChanges();
 
+            // Wait for ViewChild to be initialized and editor to be ready
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            fixture.detectChanges();
+
+            // Use type assertion for mock components
+            const blockEditor = component.blockEditor as unknown as BlockEditorMockComponent;
+            const blockEditorCompare =
+                component.blockEditorCompare as unknown as BlockEditorMockComponent;
+
+            expect(blockEditor).toBeDefined();
+            expect(blockEditor.editor).toBeDefined();
+            expect(blockEditorCompare).toBeDefined();
+            expect(blockEditorCompare.editor).toBeDefined();
+
             const pipe = new DotDiffPipe();
             const diff = pipe.transform(
-                component.blockEditor.editor.getHTML(),
-                component.blockEditorCompare.editor.getHTML()
+                blockEditor.editor.getHTML(),
+                blockEditorCompare.editor.getHTML()
             );
 
-            const compareField = de.query(By.css('[data-testId="div-compare"]')).nativeElement
-                .innerHTML;
+            const compareField = de.query(By.css('[data-testId="div-compare"]'))?.nativeElement
+                ?.innerHTML;
             expect(compareField).toEqual(diff);
         });
     });
@@ -351,9 +383,22 @@ describe('DotContentCompareBlockEditorComponent', () => {
             await fixture.whenStable();
             fixture.detectChanges();
 
-            const compareField = de.query(By.css('[data-testId="div-compare"]')).nativeElement
-                .innerHTML;
-            expect(compareField).toEqual(component.blockEditorCompare.editor.getHTML());
+            // Wait for ViewChild to be initialized and editor to be ready
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            fixture.detectChanges();
+
+            // Use type assertion for mock component
+            const blockEditorCompare =
+                component.blockEditorCompare as unknown as BlockEditorMockComponent;
+
+            expect(blockEditorCompare).toBeDefined();
+            expect(blockEditorCompare.editor).toBeDefined();
+
+            const compareField = de.query(By.css('[data-testId="div-compare"]'))?.nativeElement
+                ?.innerHTML;
+            const editorHTML = blockEditorCompare.editor.getHTML();
+
+            expect(compareField).toEqual(editorHTML);
         });
     });
 });

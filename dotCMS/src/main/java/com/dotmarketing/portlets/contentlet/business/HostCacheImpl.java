@@ -127,10 +127,12 @@ public class HostCacheImpl extends HostCache {
 			if (CACHE_404_HOST.equals(hostId)) {
 				return cache404Contentlet;
 			}
-    		host = get(hostId, NOT_FOUND_BY_ID_GROUP, retrieveLiveVersion);
-    		if(host == null){
-    			cache.remove(key, ALIAS_GROUP);
-    		}
+            if (null != hostId) { // The NullCacheAdministrator can return null here
+                host = get(hostId, NOT_FOUND_BY_ID_GROUP, retrieveLiveVersion);
+                if (host == null) {
+                    cache.remove(key, ALIAS_GROUP);
+                }
+            }
     	}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}

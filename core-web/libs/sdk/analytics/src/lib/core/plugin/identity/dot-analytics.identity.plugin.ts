@@ -1,10 +1,11 @@
 import {
     cleanupActivityTracking,
-    getAnalyticsContext,
     initializeActivityTracking,
     updateSessionActivity
-} from '../../shared/dot-content-analytics.utils';
+} from './dot-analytics.identity.activity-tracker';
+
 import { AnalyticsBaseParams, DotCMSAnalyticsConfig } from '../../shared/models';
+import { getAnalyticsContext } from '../../shared/utils/dot-analytics.utils';
 
 /**
  * Identity Plugin for DotAnalytics

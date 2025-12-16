@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
@@ -43,7 +43,6 @@
             </form>
         </div>
     </p-sidebar>
-
     <ng-template #actionHeaderBtnTpl>
         <button
             (click)="save(vm.experimentId)"
@@ -54,4 +53,4 @@
             pButton
             type="submit"></button>
     </ng-template>
-</ng-container>
+}

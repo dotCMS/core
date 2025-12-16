@@ -197,8 +197,9 @@ describe('DotAddVariableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotAddVariableComponent, DotFormDialogMockComponent],
+            declarations: [DotFormDialogMockComponent],
             imports: [
+                DotAddVariableComponent,
                 ButtonModule,
                 DataViewModule,
                 HttpClientTestingModule,

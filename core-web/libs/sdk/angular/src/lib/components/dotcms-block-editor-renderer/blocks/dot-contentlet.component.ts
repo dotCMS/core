@@ -9,7 +9,6 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
 @Component({
     selector: 'dotcms-no-component-provided',
-    standalone: true,
     template: `
         <div data-testid="no-component-provided" [style]="style">
             <strong style="color: #c05621">Dev Warning</strong>
@@ -54,7 +53,7 @@ export class NoComponentProvided {
             <ng-container
                 *ngComponentOutlet="
                     contentComponent | async;
-                    inputs: { contentlet: $data() }
+                    inputs: { node: node }
                 "></ng-container>
         } @else if (isDevMode) {
             <dotcms-no-component-provided [contentType]="$data()?.contentType" />
@@ -63,10 +62,11 @@ export class NoComponentProvided {
 })
 export class DotContentletBlock {
     @Input() customRenderers: CustomRenderer | undefined;
-    @Input() attrs: BlockEditorNode['attrs'];
+    @Input() node: BlockEditorNode | undefined;
 
     contentComponent: DynamicComponentEntity | undefined;
-    protected readonly $data = computed(() => this.attrs?.['data']);
+    protected readonly $data = computed(() => this.node?.attrs?.['data']);
+
     private readonly DOT_CONTENT_NO_DATA_MESSAGE =
         '[DotCMSBlockEditorRenderer]: No data provided for Contentlet Block. Try to add a contentlet to the block editor. If the error persists, please contact the DotCMS support team.';
     private readonly DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE = (contentType: string) =>
