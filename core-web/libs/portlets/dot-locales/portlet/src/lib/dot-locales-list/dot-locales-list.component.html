@@ -1,13 +1,13 @@
 @if (vm$ | async; as vm) {
     <div class="flex justify-between mb-2">
         <p-iconField iconPosition="left">
-            <p-inputIcon styleClass="pi pi-search" />
             <input
                 (input)="dt.filterGlobal($event.target.value, 'contains')"
                 class="w-[405px]"
                 type="text"
                 data-testId="input-search"
                 pInputText />
+            <p-inputIcon styleClass="pi pi-search" />
         </p-iconField>
         <p-button
             (onClick)="store.openAddEditDialog(null)"
