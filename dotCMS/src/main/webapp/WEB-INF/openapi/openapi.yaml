@@ -7042,7 +7042,7 @@ paths:
       description: "Returns a Content Type based on the provided ID or Velocity variable\
         \ name. Additionally, the Velocity code in all of its Custom Fields will be\
         \ parsed."
-      operationId: getContentTypeIdVar_1
+      operationId: getContentTypeRenderedCustomFieldIdVar
       parameters:
       - description: |-
           The ID or Velocity variable name of the Content Type to retrieve.
