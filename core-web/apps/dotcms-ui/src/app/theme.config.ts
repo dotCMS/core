@@ -7,6 +7,11 @@ export const CustomLaraPreset = definePreset(Lara, {
             tree: {
                 padding: '0.5rem'
             }
+        },
+        card: {
+            body: {
+                padding: '1rem'
+            }
         }
     }
 });

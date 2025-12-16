@@ -20,6 +20,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/f
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DataView, DataViewModule } from 'primeng/dataview';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -37,7 +38,7 @@ interface DotThemeState {
     themes: DotTheme[];
     loading: boolean;
     pagination: DotPagination | null;
-    selectedThemeId: string | null;
+    selectedTheme: DotTheme | null;
     hostId: string | null;
     searchValue: string;
 }
@@ -54,7 +55,8 @@ interface DotThemeState {
         InputTextModule,
         DotSiteComponent,
         ButtonModule,
-        PopoverModule
+        PopoverModule,
+        CardModule
     ],
     templateUrl: './dot-theme.component.html',
     styleUrl: './dot-theme.component.scss',
@@ -127,7 +129,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
         themes: [],
         loading: false,
         pagination: null,
-        selectedThemeId: null,
+        selectedTheme: null,
         hostId: null,
         searchValue: ''
     });
@@ -138,6 +140,14 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      */
     readonly $currentPageThemes = computed(() => {
         return this.$state.themes();
+    });
+
+    /**
+     * The selected theme's title for display in the button label.
+     * Falls back to "Primary" if no theme is selected.
+     */
+    readonly $selectedThemeTitle = computed(() => {
+        return this.$state.selectedTheme()?.title || 'Primary';
     });
 
     /**
@@ -164,7 +174,14 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
         // Sync model signal changes with ControlValueAccessor and state
         effect(() => {
             const identifier = this.value();
-            patchState(this.$state, { selectedThemeId: identifier });
+            // Find the theme from loaded themes or keep existing if identifier matches
+            const theme = identifier
+                ? this.$state.themes().find((t) => t.identifier === identifier) ||
+                  (this.$state.selectedTheme()?.identifier === identifier
+                      ? this.$state.selectedTheme()
+                      : null)
+                : null;
+            patchState(this.$state, { selectedTheme: theme });
             this.onChangeCallback(identifier);
         });
 
@@ -223,7 +240,8 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
             patchState(this.$state, {
                 hostId: null,
                 themes: [],
-                pagination: null
+                pagination: null,
+                selectedTheme: null
             });
             this.loadedPages.clear();
             return;
@@ -299,7 +317,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      * @param theme The selected theme
      */
     onThemeSelect(theme: DotTheme): void {
-        patchState(this.$state, { selectedThemeId: theme.identifier });
+        patchState(this.$state, { selectedTheme: theme });
         this.value.set(theme.identifier);
         this.onTouchedCallback();
         this.onChange.emit(theme.identifier);
@@ -353,7 +371,20 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
                         ...theme,
                         path: theme.path.replace('/application', '').replace('/', '')
                     }));
-                    patchState(this.$state, { themes: t, pagination, loading: false });
+                    
+                    // If we have a selected theme, check if it's in the newly loaded themes
+                    const selectedId = this.$state.selectedTheme()?.identifier;
+                    const selectedTheme = selectedId
+                        ? t.find((theme) => theme.identifier === selectedId) ||
+                          this.$state.selectedTheme()
+                        : null;
+                    
+                    patchState(this.$state, {
+                        themes: t,
+                        pagination,
+                        loading: false,
+                        selectedTheme
+                    });
 
                     this.loadedPages.add(page);
                 },
@@ -366,7 +397,14 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     // ControlValueAccessor implementation
     writeValue(value: string | null): void {
         this.value.set(value);
-        patchState(this.$state, { selectedThemeId: value });
+        // Try to find the theme from current page themes, or keep existing if identifier matches
+        const theme = value
+            ? this.$state.themes().find((t) => t.identifier === value) ||
+              (this.$state.selectedTheme()?.identifier === value
+                  ? this.$state.selectedTheme()
+                  : null)
+            : null;
+        patchState(this.$state, { selectedTheme: theme });
     }
 
     registerOnChange(fn: (value: string | null) => void): void {
