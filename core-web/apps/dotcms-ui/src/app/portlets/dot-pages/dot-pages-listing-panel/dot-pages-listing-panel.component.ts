@@ -49,6 +49,9 @@ export class DotPagesListingPanelComponent {
     readonly showActionsMenu = output<DotActionsMenuEventParams>();
     readonly pageChange = output<void>();
 
+    // readonly onSearch = output<string>();
+    // readonly onRowSelect = output<DotCMSContentlet>();
+
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly $languageOptions = computed(() => {
@@ -96,7 +99,8 @@ export class DotPagesListingPanelComponent {
      * @param {string} keyword
      * @memberof DotPagesListingPanelComponent
      */
-    filterData(_keyword: string): void {
+    onSearch(_keyword: string): void {
+        // console.log('keyword', keyword);
         // this.store.setKeyword(keyword);
         // this.store.getPages({ offset: 0 });
         // this.store.setSessionStorageFilterParams();
