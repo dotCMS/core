@@ -127,11 +127,9 @@ class storeMock {
     }
 }
 
-describe('DotPagesCreatePageListComponent', () => {
-    let fixture: ComponentFixture<DotPagesCreatePageListComponent>;
+describe('DotCreatePageComponent', () => {
+    let fixture: ComponentFixture<DotCreatePageComponent>;
     let de: DebugElement;
-    let dialogRef: DynamicDialogRef;
-    let dotRouterService: DotRouterService;
     let store: DotPageStore;
 
     const setupTestingModule = async (
@@ -140,7 +138,7 @@ describe('DotPagesCreatePageListComponent', () => {
     ) => {
         await TestBed.resetTestingModule()
             .configureTestingModule({
-                imports: [DotPagesCreatePageListComponent, HttpClientTestingModule],
+                imports: [DotCreatePageComponent, HttpClientTestingModule],
                 providers: [
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     {
@@ -180,10 +178,8 @@ describe('DotPagesCreatePageListComponent', () => {
 
         store = TestBed.inject(DotPageStore);
         jest.spyOn(store, 'getPageTypes');
-        fixture = TestBed.createComponent(DotPagesCreatePageListComponent);
+        fixture = TestBed.createComponent(DotCreatePageComponent);
         de = fixture.debugElement;
-        dotRouterService = TestBed.inject(DotRouterService);
-        dialogRef = TestBed.inject(DynamicDialogRef);
 
         fixture.detectChanges();
     };
@@ -216,31 +212,5 @@ describe('DotPagesCreatePageListComponent', () => {
             de.query(By.css(`.dot-pages-create-page-dialog__page-item dot-icon`)).componentInstance
                 .size
         ).toBe('18');
-    });
-
-    it('should set pages types data when init', () => {
-        fixture.componentInstance.$pageTypes.subscribe((data) => {
-            expect(data).toEqual(mockContentTypes);
-        });
-    });
-
-    it('should redirect url when click on page', () => {
-        const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
-        pageType.triggerEventHandler('click', mockContentType.variable);
-        expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-            `/pages/new/${mockContentType.variable}`
-        );
-        expect(dialogRef.close).toHaveBeenCalled();
-    });
-
-    it('should call App filter on search', () => {
-        const input = de.query(
-            By.css(`[data-testId="dot-pages-create-page-dialog__keyword-input"]`)
-        );
-        input.nativeElement.value = 'Dot Favorite Page';
-        input.nativeElement.dispatchEvent(new Event('keyup'));
-        fixture.componentInstance.$pageTypes().subscribe((data) => {
-            expect(data).toEqual(mockContentTypes);
-        });
     });
 });

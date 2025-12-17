@@ -5,7 +5,6 @@
     [draggable]="false"
     [header]="'create.page' | dm"
     [resizable]="false"
-    [closable]="false"
     [dismissableMask]="true"
     [style]="{ width: '34rem', maxWidth: '92vw' }"
     [pt]="{ content: { class: 'p-0' } }">
@@ -33,7 +32,7 @@
                         <div
                             (click)="goToCreatePage(item.variable)"
                             class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-surface-900 hover:bg-surface-100">
-                            <span class="text-surface-600" style="font-size: 18px;">
+                            <span class="text-surface-600" style="font-size: 18px">
                                 <i class="material-icons">
                                     {{ item.icon }}
                                 </i>
