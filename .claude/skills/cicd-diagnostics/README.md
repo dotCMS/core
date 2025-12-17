@@ -31,6 +31,7 @@ This skill provides automated diagnosis of CI/CD failures across all DotCMS work
 - Creates detailed GitHub issues with proper labels
 - Links failures to related PRs and commits
 - Provides actionable recommendations
+- **HTML scraping for workflow syntax errors** (when API doesn't expose them)
 
 ### ⚡ Efficiency Optimized
 - Progressive disclosure of log analysis
@@ -38,6 +39,7 @@ This skill provides automated diagnosis of CI/CD failures across all DotCMS work
 - Job-specific log downloads
 - Pattern-based error detection
 - Context window optimized
+- Direct HTML scraping for workflow annotations (GitHub API doesn't expose them)
 
 ## Skill Structure
 
@@ -255,6 +257,16 @@ When updating this skill:
 
 ## Version History
 
+- **v2.3.2** (2025-12-09) - Removed redundant API call
+  - Simplified to HTML scraping only (faster, clearer output)
+  - API provides zero unique value for workflow syntax errors
+  - 1-2 seconds performance improvement
+- **v2.3.1** (2025-12-09) - HTML scraping for workflow syntax errors
+  - Added HTML scraping to detect workflow syntax validation errors not exposed by GitHub API
+  - Comprehensive API limitation research and documentation
+- **v2.3.0** (2025-12-09) - Workflow annotations detection
+  - Job state categorization (skipped vs never_evaluated)
+  - Enhanced evidence presentation
 - **v1.0** (2025-11-06) - Initial skill creation
   - Four workflow support
   - Progressive disclosure structure

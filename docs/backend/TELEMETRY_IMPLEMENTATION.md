@@ -198,8 +198,9 @@ The metric will automatically:
 For common patterns, extend base classes:
 
 - **`DBMetricType`**: For database query-based metrics
-- **`ApiMetricType`**: For API call count metrics
 - **Abstract classes**: Various abstract base classes for specific metric families (see package structure)
+
+**Note**: API request counting metrics are not part of the telemetry system. For request-level metrics, use Micrometer Counters (see `com.dotcms.metrics.binders.HttpRequestMetrics`).
 
 ## Profile System
 
@@ -474,12 +475,10 @@ com.dotcms.telemetry/
 │   ├── MetricStatsCollector.java      # Main collector (CDI)
 │   ├── DashboardMetricsProvider.java  # Dashboard provider (CDI)
 │   ├── DBMetricType.java              # Database metric base class
-│   ├── ApiMetricType.java             # API metric base class
 │   ├── ai/                            # AI metrics
 │   ├── container/                     # Container metrics
 │   ├── content/                       # Content metrics
 │   ├── experiment/                    # Experiment metrics
-│   ├── image/                         # Image API metrics
 │   ├── language/                      # Language metrics
 │   ├── site/                          # Site metrics
 │   ├── template/                      # Template metrics
@@ -599,7 +598,7 @@ telemetry.cache.metric.COUNT_OF_EXPERIMENTS.ttl.seconds=600
 
 ### Creating Metrics
 
-1. **Use appropriate base classes**: Extend `DBMetricType` or `ApiMetricType` when applicable
+1. **Use appropriate base classes**: Extend `DBMetricType` when applicable. For request counting metrics, use Micrometer Counters instead (see `com.dotcms.metrics.binders.HttpRequestMetrics`)
 2. **Provide clear descriptions**: Help users understand what the metric measures
 3. **Choose correct category/feature**: Ensures proper classification
 4. **Handle errors gracefully**: Return `Optional.empty()` on failure rather than throwing
