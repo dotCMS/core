@@ -2537,7 +2537,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 throw new RuntimeException(e);
             }
 
-			BulkRequest bulkRequest=indexAPI.createBulkRequest();
+			BulkRequest bulkRequest=indexAPI.createBulkRequestLegacy();
 			bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
 			for(Contentlet cont : contentlets) {
