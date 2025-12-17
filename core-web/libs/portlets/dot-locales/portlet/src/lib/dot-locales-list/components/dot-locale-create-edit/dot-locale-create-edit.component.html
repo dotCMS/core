@@ -9,6 +9,7 @@
         <div class="field flex flex-col gap-2">
             <label for="langEdit">{{ 'locale.display.name' | dm }}</label>
             <input
+            [maxlength]="50"
                 pInputText
                 id="langEdit"
                 aria-describedby="langEdit-help"
