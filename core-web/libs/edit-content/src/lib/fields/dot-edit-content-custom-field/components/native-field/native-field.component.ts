@@ -70,7 +70,6 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      */
     $templateCode = computed(() => {
         const rendered = this.$field().rendered;
-        console.log('rendered 2as', rendered);
         return rendered;
     });
     /**

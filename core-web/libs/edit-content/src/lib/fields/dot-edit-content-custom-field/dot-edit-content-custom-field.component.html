@@ -3,7 +3,6 @@
 @let fieldHasError = $hasError();
 
 <dot-card-field [hasError]="fieldHasError">
-    <h1>Hello</h1>
     @if (showLabel) {
         <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
