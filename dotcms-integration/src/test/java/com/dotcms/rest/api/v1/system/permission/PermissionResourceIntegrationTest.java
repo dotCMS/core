@@ -190,11 +190,11 @@ public class PermissionResourceIntegrationTest {
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
         assertNotNull(data);
-        assertFalse("Cascade should not be initiated", data.isCascadeInitiated());
-        assertEquals(updateTestUser.getUserId(), data.getUserId());
+        assertFalse("Cascade should not be initiated", data.cascadeInitiated());
+        assertEquals(updateTestUser.getUserId(), data.userId());
 
         // Verify asset in response
-        UserPermissionAssetView asset = data.getAsset();
+        UserPermissionAssetView asset = data.asset();
         assertEquals(updateTestHost.getIdentifier(), asset.id());
         Set<String> individualPerms = asset.permissions().get("INDIVIDUAL");
         assertNotNull(individualPerms);
@@ -230,7 +230,7 @@ public class PermissionResourceIntegrationTest {
         // Assert response
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        UserPermissionAssetView asset = data.getAsset();
+        UserPermissionAssetView asset = data.asset();
 
         // Verify all 3 scopes present
         Map<String, Set<String>> permMap = asset.permissions();
@@ -278,14 +278,14 @@ public class PermissionResourceIntegrationTest {
         // Assert response successful
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        assertEquals(childFolder.getInode(), data.getAsset().id());
+        assertEquals(childFolder.getInode(), data.asset().id());
 
         // VERIFY inheritance broken after PUT (critical assertion)
         assertFalse("Child folder should NOT be inheriting after PUT",
                 APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
 
         // Verify permissions set on child
-        UserPermissionAssetView childAsset = data.getAsset();
+        UserPermissionAssetView childAsset = data.asset();
         assertFalse("Child should not be inheriting", childAsset.inheritsPermissions());
         assertTrue("Child should have READ and WRITE",
                 childAsset.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
@@ -320,7 +320,7 @@ public class PermissionResourceIntegrationTest {
         // Assert cascade was initiated
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        assertTrue("Cascade should be initiated for parent permissionable", data.isCascadeInitiated());
+        assertTrue("Cascade should be initiated for parent permissionable", data.cascadeInitiated());
     }
 
     /**
@@ -348,7 +348,7 @@ public class PermissionResourceIntegrationTest {
         ResponseEntitySaveUserPermissionsView setupResponse = resource.updateUserPermissions(
                 request, this.response, updateTestUser.getUserId(), updateTestHost.getIdentifier(), setupForm
         );
-        UserPermissionAssetView hostAsset1 = setupResponse.getEntity().getAsset();
+        UserPermissionAssetView hostAsset1 = setupResponse.getEntity().asset();
         assertTrue("Setup should have all 3 permissions",
                 hostAsset1.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
@@ -363,7 +363,7 @@ public class PermissionResourceIntegrationTest {
 
         // Assert: Should have ONLY READ (replacement not merge)
         assertNotNull(response);
-        UserPermissionAssetView asset = response.getEntity().getAsset();
+        UserPermissionAssetView asset = response.getEntity().asset();
         Set<String> resultPerms = asset.permissions().get("INDIVIDUAL");
         assertEquals("Should have only 1 permission", 1, resultPerms.size());
         assertTrue("Should have READ", resultPerms.contains("READ"));
