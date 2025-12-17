@@ -1,5 +1,8 @@
+import { Subject } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -9,8 +12,10 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
-import { Table, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
+
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
@@ -39,7 +44,9 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     ]
 })
 export class DotPagesListingPanelComponent {
-    readonly table = viewChild<Table>('table');
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #searchTerm$ = new Subject<string>();
 
     readonly $pages = input.required<DotCMSContentlet[]>({ alias: 'pages' });
     readonly $languages = input.required<DotSystemLanguage[]>({ alias: 'languages' });
@@ -49,11 +56,19 @@ export class DotPagesListingPanelComponent {
     readonly showActionsMenu = output<DotActionsMenuEventParams>();
     readonly pageChange = output<void>();
 
-    // readonly onSearch = output<string>();
-    // readonly onRowSelect = output<DotCMSContentlet>();
+    /** Emits the current search term as the user types */
+    readonly search = output<string>();
+    /** Emits the selected language id (or 'all') */
+    readonly languageChange = output<string | number>();
+    /** Emits whether archived pages should be shown */
+    readonly archivedChange = output<boolean>();
+    /** Emits PrimeNG lazy load event (pagination + sort changes) */
+    readonly lazyLoad = output<LazyLoadEvent>();
 
-    readonly #dotMessageService = inject(DotMessageService);
-
+    /**
+     * Computed property for the language options
+     * @returns The language options
+     */
     readonly $languageOptions = computed(() => {
         const availableLanguages = this.$languages().map((language) => ({
             label: `${language.language} (${language.countryCode})`,
@@ -62,6 +77,10 @@ export class DotPagesListingPanelComponent {
         return [{ label: 'All', value: 'all' }, ...availableLanguages];
     });
 
+    /**
+     * Computed property for the dot state labels
+     * @returns The dot state labels
+     */
     readonly dotStateLabels = {
         archived: this.#dotMessageService.get('Archived'),
         published: this.#dotMessageService.get('Published'),
@@ -69,18 +88,20 @@ export class DotPagesListingPanelComponent {
         draft: this.#dotMessageService.get('Draft')
     };
 
+    constructor() {
+        this.#searchTerm$
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((keyword) => this.search.emit(keyword));
+    }
+
     /**
      * Event lazy loads pages data
      *
      * @param {LazyLoadEvent} event
      * @memberof DotPagesListingPanelComponent
      */
-    loadPagesLazy(_event: LazyLoadEvent): void {
-        // this.store.getPages({
-        //     offset: event.first >= 0 ? event.first : 0,
-        //     sortField: event.sortField || '',
-        //     sortOrder: event.sortOrder || null
-        // });
+    loadPagesLazy(event: LazyLoadEvent): void {
+        this.lazyLoad.emit(event);
     }
 
     /**
@@ -99,11 +120,8 @@ export class DotPagesListingPanelComponent {
      * @param {string} keyword
      * @memberof DotPagesListingPanelComponent
      */
-    onSearch(_keyword: string): void {
-        // console.log('keyword', keyword);
-        // this.store.setKeyword(keyword);
-        // this.store.getPages({ offset: 0 });
-        // this.store.setSessionStorageFilterParams();
+    onSearch(keyword: string): void {
+        this.#searchTerm$.next(keyword);
     }
 
     /**
@@ -126,10 +144,8 @@ export class DotPagesListingPanelComponent {
      * @param {string} languageId
      * @memberof DotPagesListingPanelComponent
      */
-    setPagesLanguage(_languageId: string): void {
-        // this.store.setLanguageId(languageId);
-        // this.store.getPages({ offset: 0 });
-        // this.store.setSessionStorageFilterParams();
+    setPagesLanguage(languageId: string | number): void {
+        this.languageChange.emit(languageId);
     }
 
     /**
@@ -138,9 +154,7 @@ export class DotPagesListingPanelComponent {
      * @param {string} archived
      * @memberof DotPagesListingPanelComponent
      */
-    setPagesArchived(_archived: string): void {
-        // this.store.setArchived(archived);
-        // this.store.getPages({ offset: 0 });
-        // this.store.setSessionStorageFilterParams();
+    setPagesArchived(archived: boolean): void {
+        this.archivedChange.emit(archived);
     }
 }

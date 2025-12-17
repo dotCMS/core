@@ -17,6 +17,10 @@
                     (goToUrl)="goToUrl($event)"
                     (showActionsMenu)="showActionsMenu($event)"
                     (pageChange)="scrollToTop()"
+                    (search)="onSearch($event)"
+                    (languageChange)="onLanguageChange($event)"
+                    (archivedChange)="onArchivedChange($event)"
+                    (lazyLoad)="onLazyLoad($event)"
                     data-testId="pages-listing-panel" />
                 @if (vm.pages.addToBundleCTId) {
                     <dot-add-to-bundle

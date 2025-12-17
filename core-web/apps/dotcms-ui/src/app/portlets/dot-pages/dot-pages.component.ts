@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
+import { LazyLoadEvent } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -45,6 +46,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotPageListService } from './dot-page-list.service';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
 import {
@@ -65,6 +67,7 @@ export interface DotActionsMenuEventParams {
         DotPageStore,
         DialogService,
         DotESContentService,
+        DotPageListService,
         DotPageRenderService,
         DotPageTypesService,
         DotTempFileUploadService,
@@ -276,5 +279,21 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
             top: 0,
             left: 0
         });
+    }
+
+    onSearch(keyword: string): void {
+        this.dotCMSPagesStore.searchPages(keyword);
+    }
+
+    onLanguageChange(languageId: number): void {
+        this.dotCMSPagesStore.filterByLanguage(languageId);
+    }
+
+    onArchivedChange(archived: boolean): void {
+        this.dotCMSPagesStore.filterByArchived(archived);
+    }
+
+    onLazyLoad(event: LazyLoadEvent): void {
+        this.dotCMSPagesStore.onLazyLoad(event);
     }
 }
