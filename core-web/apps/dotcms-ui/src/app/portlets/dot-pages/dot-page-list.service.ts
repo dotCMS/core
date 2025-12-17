@@ -14,7 +14,7 @@ export interface ListPagesParams {
     sort: string;
     limit: number;
     offset: number;
-    languageId: number;
+    languageId: number | null;
     host: string;
     archived: boolean;
     userId?: string;
@@ -64,7 +64,7 @@ export class DotPageListService {
         const searchQuery = search
             ? `+(title:${search}* OR path:*${search}* OR urlmap:*${search}*)`
             : '';
-        const langQuery = languageId ? `+languageId:${languageId}` : '';
+        const langQuery = `+languageId:${languageId ?? '*'}`;
         const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const hostQuery = host ? `+conhost:${host}` : '';
 

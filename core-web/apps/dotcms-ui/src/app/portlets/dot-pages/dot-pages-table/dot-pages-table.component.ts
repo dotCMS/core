@@ -72,7 +72,7 @@ export class DotPagesTableComponent {
     /** Emits the current search term as the user types */
     readonly search = output<string>();
     /** Emits the selected language id (or 'all') */
-    readonly languageChange = output<string | number>();
+    readonly languageChange = output<number | null>();
     /** Emits whether archived pages should be shown */
     readonly archivedChange = output<boolean>();
     /** Emits PrimeNG lazy load event (pagination + sort changes) */
@@ -82,7 +82,7 @@ export class DotPagesTableComponent {
     /** Search keyword control (debounced before emitting). */
     readonly searchControl = new FormControl<string>('', { nonNullable: true });
     /** Selected language id control. */
-    readonly languageControl = new FormControl<string | number>('all', { nonNullable: true });
+    readonly languageControl = new FormControl<number | null>(null, { nonNullable: true });
     /** Archived toggle control. */
     readonly archivedControl = new FormControl<boolean>(false, { nonNullable: true });
 
@@ -96,7 +96,7 @@ export class DotPagesTableComponent {
             value: language.id
         }));
 
-        return [{ label: 'All', value: 'all' }, ...availableLanguages];
+        return [{ label: 'All', value: null }, ...availableLanguages];
     });
 
     /**

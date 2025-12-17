@@ -30,7 +30,7 @@ const initialState: DotCMSPagesPortletState = {
         search: '',
         sort: 'title ASC',
         limit: 40,
-        languageId: 1,
+        languageId: null, // null means all languages
         archived: false,
         offset: 0,
         host: '',
