@@ -10,6 +10,8 @@ import {
     subDays
 } from 'date-fns';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import { TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
 import {
     ChartData,
@@ -17,6 +19,7 @@ import {
     Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
+    RequestState,
     TablePageData,
     TimeRangeCubeJS,
     TimeRangeInput,
@@ -34,6 +37,20 @@ const TIME_FORMATS = {
     hour: 'HH:mm',
     day: 'MMM dd'
 };
+
+/**
+ * Creates a typed initial request state.
+ * Use this function when you need type-safe initialization of RequestState.
+ *
+ * @returns A new RequestState object with INIT status and null data/error
+ */
+export function createInitialRequestState<T>(): RequestState<T> {
+    return {
+        status: ComponentStatus.INIT,
+        data: null,
+        error: null
+    };
+}
 
 /**
  * Helper functions to extract numeric values from analytics entities

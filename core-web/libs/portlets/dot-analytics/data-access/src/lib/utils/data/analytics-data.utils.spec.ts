@@ -1,6 +1,9 @@
-import { startOfDay, endOfDay, addHours, format } from 'date-fns';
+import { addHours, endOfDay, format, startOfDay } from 'date-fns';
+
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
+    createInitialRequestState,
     determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
@@ -25,6 +28,31 @@ import type {
 } from '../../types';
 
 describe('Analytics Data Utils', () => {
+    describe('createInitialRequestState', () => {
+        it('should create an initial request state with INIT status', () => {
+            const result = createInitialRequestState();
+
+            expect(result).toEqual({
+                status: ComponentStatus.INIT,
+                data: null,
+                error: null
+            });
+        });
+
+        it('should create a typed initial request state', () => {
+            interface TestData {
+                id: number;
+                name: string;
+            }
+
+            const result = createInitialRequestState<TestData>();
+
+            expect(result.status).toBe(ComponentStatus.INIT);
+            expect(result.data).toBeNull();
+            expect(result.error).toBeNull();
+        });
+    });
+
     describe('Extraction Functions', () => {
         describe('extractPageViews', () => {
             it('should extract page views from valid data', () => {

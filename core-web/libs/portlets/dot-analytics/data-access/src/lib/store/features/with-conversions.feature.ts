@@ -8,6 +8,7 @@ import { inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -18,7 +19,6 @@ import {
     ContentAttributionEntity,
     ConversionsOverviewEntity,
     ConvertingVisitorsEntity,
-    createInitialRequestState,
     RequestState,
     TimeRangeInput,
     TotalConversionsEntity
@@ -26,6 +26,7 @@ import {
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     ConversionTrendEntity,
+    createInitialRequestState,
     toTimeRangeCubeJS,
     TrafficVsConversionsEntity
 } from '../../utils/data/analytics-data.utils';
@@ -49,8 +50,6 @@ export interface ConversionsState {
     contentConversions: RequestState<ContentAttributionEntity[]>;
     /** Conversions overview table data */
     conversionsOverview: RequestState<ConversionsOverviewEntity[]>;
-    /** Flag to track if data has been loaded at least once */
-    conversionsDataLoaded: boolean;
 }
 
 /**
@@ -63,8 +62,7 @@ const initialConversionsState: ConversionsState = {
     conversionTrend: createInitialRequestState(),
     trafficVsConversions: createInitialRequestState(),
     contentConversions: createInitialRequestState(),
-    conversionsOverview: createInitialRequestState(),
-    conversionsDataLoaded: false
+    conversionsOverview: createInitialRequestState()
 };
 
 /**
@@ -74,7 +72,6 @@ const initialConversionsState: ConversionsState = {
  * - State management for all conversion-related metrics
  * - Methods to load individual conversion metrics
  * - Coordinated method to load all conversions data
- * - conversionsDataLoaded flag for lazy loading tracking
  *
  * Note: Data loading is managed by the main store's effect based on active tab.
  * This feature only provides the methods and state management.
@@ -89,12 +86,13 @@ export function withConversions() {
             (
                 store,
                 globalStore = inject(GlobalStore),
-                analyticsService = inject(DotAnalyticsService)
+                analyticsService = inject(DotAnalyticsService),
+                dotMessageService = inject(DotMessageService)
             ) => ({
                 /**
                  * Loads total conversions metric.
                  */
-                loadTotalConversions: rxMethod<{
+                _loadTotalConversions: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -129,13 +127,16 @@ export function withConversions() {
                                         });
                                     },
                                     (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.total-conversions'
+                                            );
                                         patchState(store, {
                                             totalConversions: {
                                                 status: ComponentStatus.ERROR,
                                                 data: null,
-                                                error:
-                                                    error.message ||
-                                                    'Error loading total conversions'
+                                                error: errorMessage
                                             }
                                         });
                                     }
@@ -148,7 +149,7 @@ export function withConversions() {
                 /**
                  * Loads conversion trend timeline data (line chart).
                  */
-                loadConversionTrend: rxMethod<{
+                _loadConversionTrend: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -183,13 +184,16 @@ export function withConversions() {
                                         });
                                     },
                                     (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.conversion-trend'
+                                            );
                                         patchState(store, {
                                             conversionTrend: {
                                                 status: ComponentStatus.ERROR,
                                                 data: null,
-                                                error:
-                                                    error.message ||
-                                                    'Error loading conversion trend'
+                                                error: errorMessage
                                             }
                                         });
                                     }
@@ -202,7 +206,7 @@ export function withConversions() {
                 /**
                  * Loads converting visitors metric (uniqueVisitors and uniqueConvertingVisitors).
                  */
-                loadConvertingVisitors: rxMethod<{
+                _loadConvertingVisitors: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -236,13 +240,16 @@ export function withConversions() {
                                         });
                                     },
                                     (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.converting-visitors'
+                                            );
                                         patchState(store, {
                                             convertingVisitors: {
                                                 status: ComponentStatus.ERROR,
                                                 data: null,
-                                                error:
-                                                    error.message ||
-                                                    'Error loading converting visitors'
+                                                error: errorMessage
                                             }
                                         });
                                     }
@@ -256,7 +263,7 @@ export function withConversions() {
                  * Loads traffic vs conversions chart data (per day).
                  * Returns uniqueVisitors (bars) and conversion rate % (line) per day.
                  */
-                loadTrafficVsConversions: rxMethod<{
+                _loadTrafficVsConversions: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -292,13 +299,16 @@ export function withConversions() {
                                             });
                                         },
                                         (error: HttpErrorResponse) => {
+                                            const errorMessage =
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.traffic-vs-conversions'
+                                                );
                                             patchState(store, {
                                                 trafficVsConversions: {
                                                     status: ComponentStatus.ERROR,
                                                     data: null,
-                                                    error:
-                                                        error.message ||
-                                                        'Error loading traffic vs conversions'
+                                                    error: errorMessage
                                                 }
                                             });
                                         }
@@ -312,7 +322,7 @@ export function withConversions() {
                  * Loads content attribution table data.
                  * Shows content present in conversions with event type, identifier, title, etc.
                  */
-                loadContentConversions: rxMethod<{
+                _loadContentConversions: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -352,13 +362,16 @@ export function withConversions() {
                                         });
                                     },
                                     (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.content-conversions'
+                                            );
                                         patchState(store, {
                                             contentConversions: {
                                                 status: ComponentStatus.ERROR,
                                                 data: null,
-                                                error:
-                                                    error.message ||
-                                                    'Error loading content conversions'
+                                                error: errorMessage
                                             }
                                         });
                                     }
@@ -372,7 +385,7 @@ export function withConversions() {
                  * Loads conversions overview table data.
                  * Shows conversion names with total conversions, conversion rate, and top attributed content.
                  */
-                loadConversionsOverview: rxMethod<{
+                _loadConversionsOverview: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
@@ -414,13 +427,16 @@ export function withConversions() {
                                             });
                                         },
                                         (error: HttpErrorResponse) => {
+                                            const errorMessage =
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.conversions-overview'
+                                                );
                                             patchState(store, {
                                                 conversionsOverview: {
                                                     status: ComponentStatus.ERROR,
                                                     data: null,
-                                                    error:
-                                                        error.message ||
-                                                        'Error loading conversions overview'
+                                                    error: errorMessage
                                                 }
                                             });
                                         }
@@ -432,7 +448,7 @@ export function withConversions() {
 
                 /**
                  * Loads all conversions data.
-                 * This method is called explicitly (lazy) when the conversions tab is activated.
+                 * This method is called when the conversions tab is activated.
                  */
                 loadConversionsData(): void {
                     const currentSiteId = globalStore.currentSiteId();
@@ -442,23 +458,13 @@ export function withConversions() {
                         return;
                     }
 
-                    patchState(store, { conversionsDataLoaded: true });
-
                     // Load all conversions metrics
-                    this.loadTotalConversions({ timeRange, currentSiteId });
-                    this.loadConversionTrend({ timeRange, currentSiteId });
-                    this.loadConvertingVisitors({ timeRange, currentSiteId });
-                    this.loadTrafficVsConversions({ timeRange, currentSiteId });
-                    this.loadContentConversions({ timeRange, currentSiteId });
-                    this.loadConversionsOverview({ timeRange, currentSiteId });
-                },
-
-                /**
-                 * Resets the conversions loaded flag.
-                 * Useful when time range changes and data needs to be reloaded.
-                 */
-                resetConversionsLoaded(): void {
-                    patchState(store, { conversionsDataLoaded: false });
+                    this._loadTotalConversions({ timeRange, currentSiteId });
+                    this._loadConversionTrend({ timeRange, currentSiteId });
+                    this._loadConvertingVisitors({ timeRange, currentSiteId });
+                    this._loadTrafficVsConversions({ timeRange, currentSiteId });
+                    this._loadContentConversions({ timeRange, currentSiteId });
+                    this._loadConversionsOverview({ timeRange, currentSiteId });
                 }
             })
         )

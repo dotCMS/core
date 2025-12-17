@@ -73,17 +73,3 @@ export const INITIAL_REQUEST_STATE: RequestState = {
     data: null,
     error: null
 } as const;
-
-/**
- * Creates a typed initial request state.
- * Use this function when you need type-safe initialization of RequestState.
- *
- * @returns A new RequestState object with INIT status and null data/error
- */
-export function createInitialRequestState<T>(): RequestState<T> {
-    return {
-        status: ComponentStatus.INIT,
-        data: null,
-        error: null
-    };
-}

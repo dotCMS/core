@@ -16,7 +16,6 @@ import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
-    createInitialRequestState,
     DEFAULT_COUNT_LIMIT,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
@@ -29,6 +28,7 @@ import {
 } from '../../types';
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
+    createInitialRequestState,
     determineGranularityForTimeRange,
     fillMissingDates,
     toTimeRangeCubeJS
