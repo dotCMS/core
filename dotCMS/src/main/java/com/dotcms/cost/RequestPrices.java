@@ -22,6 +22,7 @@ public class RequestPrices {
 
 
         // PRICED ITEMS
+        DB_QUERY(1),
         COSTING_INIT(1),
         CONTENT_FROM_CACHE(1),
         CONTENT_FROM_DB(3),

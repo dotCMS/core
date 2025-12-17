@@ -1800,7 +1800,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param searchRequest
      * @return
      */
-    @RequestCost(Price.ES_QUERY)
     SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
         final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();

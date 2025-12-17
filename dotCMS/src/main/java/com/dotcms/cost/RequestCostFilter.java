@@ -23,19 +23,22 @@ public class RequestCostFilter implements Filter {
 
 
     private final RequestCostApi requestCostApi;
+    private final LeakyTokenBucket bucket;
 
     public RequestCostFilter() {
-        this(APILocator.getRequestCostAPI());
+        this(APILocator.getRequestCostAPI(), new LeakyTokenBucket());
     }
-
 
     RequestCostFilter(RequestCostApi requestCostApi) {
-        this.requestCostApi = requestCostApi;
-
+        this(requestCostApi, new LeakyTokenBucket());
     }
 
 
+    RequestCostFilter(RequestCostApi requestCostApi, LeakyTokenBucket bucket) {
+        this.requestCostApi = requestCostApi;
+        this.bucket = bucket;
 
+    }
 
 
     @Override
@@ -46,6 +49,14 @@ public class RequestCostFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) res;
 
         Accounting fullAccounting = requestCostApi.resolveAccounting(request);
+
+        boolean allowed = bucket.allow();
+        response.addHeader("X-dotRateLimit-Toks/Max", bucket.getTokenCount() + "/" + bucket.maximumBucketSize);
+
+        if (!allowed) {
+            response.sendError(429);
+            return;
+        }
 
         HttpServletResponse wrapper =
                 fullAccounting == Accounting.HTML ? new NullServletResponse(response)
@@ -59,6 +70,9 @@ public class RequestCostFilter implements Filter {
             PrintWriter out = response.getWriter();
             out.write(new RequestCostReport().writeAccounting(request));
         }
+        bucket.drainFromBucket(requestCostApi.getRequestCost(request));
+
+
     }
 
     @Override
