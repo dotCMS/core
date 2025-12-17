@@ -467,6 +467,11 @@ public class TagAPIImpl implements TagAPI {
      * @throws DotDataException if there's a data access error
      */
     private String checkTagDeletePermission(final String tagId, final User user) throws DotDataException {
+        // Admin or system user - allow delete without checking contentlet permissions
+        if (user.isAdmin() || user.getUserId().equals(APILocator.systemUser().getUserId())) {
+            return null;
+        }
+
         final List<TagInode> associations = tagFactory.getTagInodesByTagId(tagId);
 
         // Filter to contentlet associations only (fieldVarName != null)
