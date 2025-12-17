@@ -313,15 +313,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if(!(contentsMap instanceof List)) {
                     return List.of();
                 }
-                
-                for (final Map<String, Object> contentMapObject : (List<Map<String, Object>>) contentsMap) {
-                    if (UtilMethods.isSet(contentMapObject)) {
-                        final String type = (String) contentMapObject.get(TYPE_KEY);
-                        if (type !=null && allowedTypes.contains(type)) {
-                            addDependencies(contentletIdList, contentMapObject);
-                        }
-                    }
-                }
+
+                // Recursively process all blocks, including nested ones
+                processBlocksRecursively(contentletIdList, (List<Map<String, Object>>) contentsMap);
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story Block field: " +
@@ -330,6 +324,44 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             
         }
         return contentletIdList.build();
+    }
+
+    /**
+     * Recursively processes blocks to find all dependencies, including those nested
+     * within container blocks like lists, paragraphs, blockquotes, tables, etc.
+     * <p>
+     * This method traverses the entire block tree structure, ensuring that dependencies
+     * (dotImage, dotContent, dotVideo) are found regardless of their nesting level.
+     * </p>
+     *
+     * @param contentletIdList The builder to collect contentlet identifiers
+     * @param blocks           The list of blocks to process
+     */
+    @SuppressWarnings("unchecked")
+    private void processBlocksRecursively(final ImmutableList.Builder<String> contentletIdList,
+                                          final List<Map<String, Object>> blocks) {
+        if (blocks == null || blocks.isEmpty()) {
+            return;
+        }
+
+        for (final Map<String, Object> block : blocks) {
+            if (!UtilMethods.isSet(block)) {
+                continue;
+            }
+
+            final String type = (String) block.get(TYPE_KEY);
+
+            if (type != null && allowedTypes.contains(type)) {
+                addDependencies(contentletIdList, block);
+                continue;
+            }
+
+            // If this block has nested content, recurse into it, commonly listItem, bulletList, orderedList
+            final Object nestedContent = block.get(CONTENT_KEY);
+            if (nestedContent instanceof List) {
+                processBlocksRecursively(contentletIdList, (List<Map<String, Object>>) nestedContent);
+            }
+        }
     }
 
     @Override
