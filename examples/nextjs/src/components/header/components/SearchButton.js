@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { SearchIcon } from './icons';
+import { SearchIcon } from "./icons";
 
 /**
  * SearchButton - A trigger button to open the AI search dialog.
@@ -24,7 +24,8 @@ function SearchButton({ onClick }) {
         <button
             aria-label="toggleSearch"
             className="flex items-center justify-center pl-2 hover:cursor-pointer"
-            onClick={onClick}>
+            onClick={onClick}
+        >
             <SearchIcon className="text-white hover:text-gray-300" />
         </button>
     );
