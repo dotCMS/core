@@ -170,12 +170,60 @@ PublisherConfig config = new PublisherConfig();
 config.setUser(systemUser); // Or user from bundle metadata
 ```
 
+### Workflow Annotations Detection (CRITICAL)
+
+**What are workflow annotations?**
+GitHub Actions workflow syntax validation errors that are:
+- Visible in the GitHub UI but NOT in job logs
+- Returned via the annotations API endpoint
+- The root cause of jobs being skipped or never evaluated
+
+**Pattern indicators:**
+- Jobs marked as "skipped" but no conditional logic (`if`, `needs`) explains it
+- Workflow run shows "completed" but expected jobs didn't run
+- Release phase or deployment jobs missing from run
+- No error messages in job logs despite failed workflow
+
+**Example annotation format:**
+```
+.github/workflows/cicd_6-release.yml (Line: 132, Col: 24): Unexpected value 'true'
+```
+
+**Common annotation error types:**
+1. **Syntax Errors**
+   - Unexpected value types (`true` instead of string, etc.)
+   - Invalid YAML syntax (indentation, quotes, etc.)
+   - Unrecognized keys or properties
+
+2. **Validation Failures**
+   - Invalid job dependencies (`needs` references non-existent job)
+   - Invalid action references (typos in action names)
+   - Invalid workflow triggers or event configurations
+
+3. **Expression Errors**
+   - Invalid GitHub expressions (`${{ }}` syntax errors)
+   - Undefined context variables or secrets
+   - Type mismatches in expressions
+
+**When to check for annotations:**
+- **ALWAYS check first** when analyzing workflow failures
+- **CRITICAL when**: Jobs are marked "skipped" without obvious reason
+- **ESSENTIAL when**: Deployment or release phases are missing from run
+- **IMPORTANT when**: Workflow completed but expected jobs didn't execute
+
+**How annotations affect diagnosis:**
+- **Jobs marked "skipped"** may actually be "never evaluated due to syntax error"
+- **No job logs exist** for jobs prevented by syntax errors
+- **Root cause is in workflow file**, not in application code or tests
+- **Fix requires workflow YAML changes**, not code changes
+
 ### Analytical Methodology
 
 1. **Progressive Investigation:** Start with high-level patterns (30s), drill down only when needed (up to 10+ min for complex issues)
 2. **Evidence-Based Reasoning:** Facts are facts, hypotheses are clearly labeled as such
 3. **Multiple Hypothesis Testing:** Consider competing explanations before committing to root cause
 4. **Efficient Resource Use:** Extract minimal necessary log context (99%+ size reduction for large files)
+5. **Annotations-First Approach:** Check workflow annotations BEFORE diving into job logs
 
 ### Problem-Solving Philosophy
 
