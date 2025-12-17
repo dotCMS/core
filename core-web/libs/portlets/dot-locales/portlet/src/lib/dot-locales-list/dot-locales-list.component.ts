@@ -43,7 +43,7 @@ import {
         ToastModule
     ],
     templateUrl: './dot-locales-list.component.html',
-    styleUrl: './dot-locales-list.component.scss',
+
     providers: [DotLocalesListStore, DialogService, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
