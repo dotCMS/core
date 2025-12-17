@@ -1,0 +1,30 @@
+<script>
+	DotCustomFieldApi.ready(() =>{
+		const titleField = DotCustomFieldApi.getField('title');
+		const urlField = DotCustomFieldApi.getField('url');
+		const friendlyNameField = DotCustomFieldApi.getField('friendlyName');
+
+		const titleBox = document.getElementById('titleBox');
+		titleBox.value = titleField.getValue() || '';
+
+		titleBox.addEventListener('blur', () => {
+			const currentTitleValue = titleBox.value;
+
+			const urlValue = urlField.getValue() || '';
+			if(urlValue.trim() === ''){
+				const generatedUrlValue = currentTitleValue
+					.toLowerCase()
+					.trim()
+					.replace(/[^a-zA-Z0-9]+/g,'-')
+					.replace(/-+$|^-+/g,'');
+				urlField.setValue(generatedUrlValue);
+			}
+
+			const friendlyNameValue = friendlyNameField.getValue() || '';
+			if(friendlyNameValue.trim() === ''){
+				friendlyNameField.setValue(currentTitleValue);
+			}
+		});
+	});
+</script>
+<input type="text" id="titleBox"/>
