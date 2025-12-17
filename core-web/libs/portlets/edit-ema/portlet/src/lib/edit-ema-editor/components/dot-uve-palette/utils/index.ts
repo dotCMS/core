@@ -34,8 +34,8 @@ export const LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, in
  * Sets all pagination values to 0 when data cannot be fetched.
  */
 export const EMPTY_PAGINATION = {
-    currentPage: 0,
-    perPage: 0,
+    currentPage: 1,
+    perPage: DEFAULT_PER_PAGE,
     totalEntries: 0
 };
 

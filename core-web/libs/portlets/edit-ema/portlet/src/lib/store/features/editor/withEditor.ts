@@ -12,13 +12,15 @@ import { computed, inject, untracked } from '@angular/core';
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
     EditorProps,
     EditorState,
     PageData,
     PageDataContainer,
-    ReloadEditorContent
+    ReloadEditorContent,
+    UVE_PALETTE_TABS
 } from './models';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
@@ -27,8 +29,8 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
+import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -45,7 +47,7 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withFlags } from '../flags/withFlags';
+import { PageContextComputed } from '../withPageContext';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
@@ -58,10 +60,15 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 const initialState: EditorState = {
     bounds: [],
     state: EDITOR_STATE.IDLE,
-    contentletArea: null,
     dragItem: null,
     ogTags: null,
-    paletteOpen: true
+    styleSchemas: [],
+    activeContentlet: null,
+    contentArea: null,
+    palette: {
+        open: true,
+        currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+    }
 };
 
 /**
@@ -73,15 +80,46 @@ const initialState: EditorState = {
 export function withEditor() {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState>(),
+            props: type<PageContextComputed>()
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
+            const pageEntity = store.pageAPIResponse;
 
             return {
+                $allowContentDelete: computed<boolean>(() => {
+                    const numberContents = pageEntity()?.numberContents;
+                    const persona = pageEntity()?.viewAs?.persona;
+                    const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
+
+                    return numberContents > 1 || !persona || isDefaultPersona;
+                }),
+                $showContentletControls: computed<boolean>(() => {
+                    const contentletPosition = store.contentArea();
+                    const canEditPage = store.$canEditPage();
+                    const isIdle = store.state() === EDITOR_STATE.IDLE;
+
+                    return !!contentletPosition && canEditPage && isIdle;
+                }),
+                $styleSchema: computed<unknown>(() => {
+                    const contentlet = store.activeContentlet();
+                    const styleSchemas = store.styleSchemas();
+                    const contentSchema = styleSchemas.find(
+                        (schema) => schema.contentType === contentlet?.contentType
+                    );
+                    return contentSchema;
+                }),
+                $isDragging: computed<boolean>(
+                    () =>
+                        store.state() === EDITOR_STATE.DRAGGING ||
+                        store.state() === EDITOR_STATE.SCROLL_DRAG
+                ),
+                $areaContentType: computed<string>(() => {
+                    return store.contentArea()?.payload?.contentlet?.contentType ?? '';
+                }),
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.pageAPIResponse();
 
@@ -115,62 +153,39 @@ export function withEditor() {
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
                 $editorProps: computed<EditorProps>(() => {
-                    const pageAPIResponse = store.pageAPIResponse();
+                    // Use it to create depdencies to the pageAPIResponse
+                    // I did a refactor but need more testing before removing this dependency
+                    store.pageAPIResponse();
                     const socialMedia = store.socialMedia();
                     const ogTags = store.ogTags();
                     const device = store.device();
-                    const canEditPage = store.canEditPage();
+                    const canEditPage = store.$canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
                     const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
-                    const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const paletteOpen = store.paletteOpen();
 
                     const isEditMode = params?.mode === UVE_MODE.EDIT;
 
                     const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
-                    const { dragIsActive, isScrolling } = getEditorStates(state);
+                    const { dragIsActive } = getEditorStates(state);
 
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
-                    const isLockFeatureEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
-                    const isPageLockedByUser =
-                        pageAPIResponse?.page.lockedBy === store.currentUser()?.userId;
-                    const canEditDueToLock = !isLockFeatureEnabled || isPageLockedByUser;
-
-                    const canUserHaveContentletTools =
-                        !!contentletArea &&
-                        canEditPage &&
-                        isEditState &&
-                        !isScrolling &&
-                        isEditMode &&
-                        canEditDueToLock;
-
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-                    const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
 
                     const wrapper = getWrapperMeasures(device, store.orientation());
-
-                    const shouldDisableDeleteButton =
-                        pageAPIResponse?.numberContents === 1 && // If there is only one content, we should disable the delete button
-                        pageAPIResponse?.viewAs?.persona && // If there is a persona, we should disable the delete button
-                        pageAPIResponse?.viewAs?.persona?.identifier !== DEFAULT_PERSONA.identifier; // If the persona is not the default persona, we should disable the delete button
-
-                    const message = 'uve.disable.delete.button.on.personalization';
-
-                    const disableDeleteButton = shouldDisableDeleteButton ? message : null;
 
                     return {
                         showDialogs,
@@ -181,31 +196,12 @@ export function withEditor() {
                             wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
-                        contentletTools: canUserHaveContentletTools
-                            ? {
-                                  isEnterprise,
-                                  contentletArea,
-                                  hide: dragIsActive,
-                                  disableDeleteButton
-                              }
-                            : null,
                         dropzone: showDropzone
                             ? {
                                   bounds,
                                   dragItem
                               }
                             : null,
-                        palette: showPalette
-                            ? {
-                                  languageId: pageAPIResponse?.viewAs.language.id,
-                                  pagePath: pageAPIResponse?.page.pageURI,
-                                  variantId: params?.variantName,
-                                  paletteClass: paletteOpen
-                                      ? PALETTE_CLASSES.OPEN
-                                      : PALETTE_CLASSES.CLOSED
-                              }
-                            : null,
-
                         seoResults: shouldShowSeoResults
                             ? {
                                   ogTags,
@@ -260,7 +256,7 @@ export function withEditor() {
                 updateEditorScrollState() {
                     patchState(store, {
                         bounds: [],
-                        contentletArea: null,
+                        contentArea: null,
                         state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
@@ -278,13 +274,26 @@ export function withEditor() {
                 setEditorDragItem(dragItem: EmaDragItem) {
                     patchState(store, { dragItem, state: EDITOR_STATE.DRAGGING });
                 },
-                setEditorContentletArea(contentletArea: ContentletArea) {
-                    const currentContentletArea = store.contentletArea();
+                setEditorBounds(bounds: Container[]) {
+                    patchState(store, { bounds });
+                },
+                setStyleSchemas(styleSchemas: StyleEditorFormSchema[]) {
+                    patchState(store, { styleSchemas });
+                },
+                resetEditorProperties() {
+                    patchState(store, {
+                        dragItem: null,
+                        contentArea: null,
+                        bounds: [],
+                        state: EDITOR_STATE.IDLE
+                    });
+                },
+                setContentletArea(contentArea: ContentletArea) {
+                    const currentArea = store.contentArea();
+                    const isSameX = currentArea?.x === contentArea?.x;
+                    const isSameY = currentArea?.y === contentArea?.y;
 
-                    if (
-                        currentContentletArea?.x === contentletArea.x &&
-                        currentContentletArea?.y === contentletArea.y
-                    ) {
+                    if (isSameX && isSameY) {
                         // Prevent updating the state if the contentlet area is the same
                         // This is because in inline editing, when we select to not copy the content and edit global
                         // The contentlet area is updated on focus with the same values and IDLE
@@ -293,20 +302,23 @@ export function withEditor() {
 
                         return;
                     }
-
                     patchState(store, {
-                        contentletArea: contentletArea,
+                        contentArea,
                         state: EDITOR_STATE.IDLE
                     });
                 },
-                setEditorBounds(bounds: Container[]) {
-                    patchState(store, { bounds });
-                },
-                resetEditorProperties() {
+                setActiveContentlet(contentlet: ContentletPayload) {
                     patchState(store, {
-                        dragItem: null,
-                        contentletArea: null,
-                        bounds: [],
+                        activeContentlet: contentlet,
+                        palette: {
+                            open: true,
+                            currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
+                        }
+                    });
+                },
+                resetContentletArea() {
+                    patchState(store, {
+                        contentArea: null,
                         state: EDITOR_STATE.IDLE
                     });
                 },
@@ -362,8 +374,15 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
-                setPaletteOpen(paletteOpen: boolean) {
-                    patchState(store, { paletteOpen });
+                setPaletteTab(tab: UVE_PALETTE_TABS) {
+                    patchState(store, {
+                        palette: { open: true, currentTab: tab }
+                    });
+                },
+                setPaletteOpen(open: boolean) {
+                    patchState(store, {
+                        palette: { ...store.palette(), open }
+                    });
                 }
             };
         })
