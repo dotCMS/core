@@ -8,6 +8,7 @@ import {
     HostListener,
     inject,
     OnDestroy,
+    signal,
     ViewChild
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
@@ -24,7 +25,6 @@ import {
     DotESContentService,
     DotEventsService,
     DotFavoritePageService,
-    DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotPageRenderService,
     DotPageTypesService,
@@ -45,6 +45,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { DotCreatePageComponent } from './dot-create-page/dot-create-page.component';
 import { DotPageListService } from './dot-page-list.service';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
@@ -76,27 +77,26 @@ export interface DotActionsMenuEventParams {
         DotWorkflowEventHandlerService,
         DotRouterService,
         DotFavoritePageService,
-        DotCMSPagesStore
+        DotCMSPagesStore,
     ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html',
     imports: [
+        MenuModule,
         CommonModule,
         RouterModule,
+        ProgressSpinnerModule,
         DotAddToBundleComponent,
         DotPagesFavoritePanelComponent,
         DotPagesListingPanelComponent,
-        MenuModule,
-        ProgressSpinnerModule
+        DotCreatePageComponent
     ]
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private dotRouterService = inject(DotRouterService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dotEventsService = inject(DotEventsService);
-    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private dotPageRenderService = inject(DotPageRenderService);
     private element = inject(ElementRef);
     private dotSiteService = inject(SiteService);
 
@@ -104,8 +104,11 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     readonly dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly globalStore = inject(GlobalStore);
 
+
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.#store.vm$;
+
+    protected readonly dialogVisible = signal<boolean>(false);
 
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();

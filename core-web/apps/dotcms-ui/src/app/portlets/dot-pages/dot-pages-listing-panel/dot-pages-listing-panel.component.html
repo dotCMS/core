@@ -42,7 +42,7 @@
                     </label>
                 </div>
             </div>
-            <p-button [label]="'create.page' | dm" styleClass="p-button-sm shrink-0" />
+            <p-button [label]="'create.page' | dm" styleClass="p-button-sm shrink-0" (onClick)="createPage.emit()" />
         </div>
     </ng-template>
     <ng-template #header>

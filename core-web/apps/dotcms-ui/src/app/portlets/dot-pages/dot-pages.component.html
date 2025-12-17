@@ -18,6 +18,7 @@
                     (goToUrl)="goToUrl($event)"
                     (showActionsMenu)="showActionsMenu($event)"
                     (pageChange)="scrollToTop()"
+                    (createPage)="dialogVisible.set(true)"
                     (search)="onSearch($event)"
                     (languageChange)="onLanguageChange($event)"
                     (archivedChange)="onArchivedChange($event)"
@@ -38,5 +39,8 @@
         }
     </div>
 }
+
+
+<dot-create-page [visibility]="dialogVisible()" (visibilityChange)="dialogVisible.set($event)" />
 
 <router-outlet (deactivate)="loadPagesOnDeactivation()" />

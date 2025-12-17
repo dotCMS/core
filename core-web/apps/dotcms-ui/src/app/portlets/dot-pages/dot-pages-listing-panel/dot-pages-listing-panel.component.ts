@@ -55,6 +55,7 @@ export class DotPagesListingPanelComponent {
     readonly goToUrl = output<string>();
     readonly showActionsMenu = output<DotActionsMenuEventParams>();
     readonly pageChange = output<void>();
+    readonly createPage = output<void>();
 
     /** Emits the current search term as the user types */
     readonly search = output<string>();

@@ -17,7 +17,7 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 
-import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog.component';
+import { DotCreatePageComponent } from './dot-create-page.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
 
@@ -127,8 +127,8 @@ class storeMock {
     }
 }
 
-describe('DotPagesCreatePageDialogComponent', () => {
-    let fixture: ComponentFixture<DotPagesCreatePageDialogComponent>;
+describe('DotPagesCreatePageListComponent', () => {
+    let fixture: ComponentFixture<DotPagesCreatePageListComponent>;
     let de: DebugElement;
     let dialogRef: DynamicDialogRef;
     let dotRouterService: DotRouterService;
@@ -140,7 +140,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
     ) => {
         await TestBed.resetTestingModule()
             .configureTestingModule({
-                imports: [DotPagesCreatePageDialogComponent, HttpClientTestingModule],
+                imports: [DotPagesCreatePageListComponent, HttpClientTestingModule],
                 providers: [
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     {
@@ -180,7 +180,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
 
         store = TestBed.inject(DotPageStore);
         jest.spyOn(store, 'getPageTypes');
-        fixture = TestBed.createComponent(DotPagesCreatePageDialogComponent);
+        fixture = TestBed.createComponent(DotPagesCreatePageListComponent);
         de = fixture.debugElement;
         dotRouterService = TestBed.inject(DotRouterService);
         dialogRef = TestBed.inject(DynamicDialogRef);
@@ -219,7 +219,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
     });
 
     it('should set pages types data when init', () => {
-        fixture.componentInstance.pageTypes$.subscribe((data) => {
+        fixture.componentInstance.$pageTypes.subscribe((data) => {
             expect(data).toEqual(mockContentTypes);
         });
     });
@@ -239,7 +239,7 @@ describe('DotPagesCreatePageDialogComponent', () => {
         );
         input.nativeElement.value = 'Dot Favorite Page';
         input.nativeElement.dispatchEvent(new Event('keyup'));
-        fixture.componentInstance.pageTypes$.subscribe((data) => {
+        fixture.componentInstance.$pageTypes().subscribe((data) => {
             expect(data).toEqual(mockContentTypes);
         });
     });
