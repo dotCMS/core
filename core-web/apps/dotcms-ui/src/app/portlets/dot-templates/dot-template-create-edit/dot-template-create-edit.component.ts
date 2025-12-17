@@ -26,18 +26,18 @@ import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.stor
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
-import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
-    styleUrls: ['./dot-template-create-edit.component.scss'],
     providers: [DotTemplateStore, DotTemplatesService, DialogService],
+    host: {
+        'class': 'flex flex-col h-full'
+    },
     imports: [
         ButtonModule,
         CommonModule,
         DotApiLinkComponent,
-        DotPortletBaseComponent,
         DotPortletToolbarComponent,
         DynamicDialogModule,
         DotMessagePipe,

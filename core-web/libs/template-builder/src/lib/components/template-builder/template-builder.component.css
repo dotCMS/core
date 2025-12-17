@@ -11,10 +11,12 @@
 }
 
 .template-builder__container {
+    @apply flex gap-6;
+
     .template-builder__sidebar--small {
         width: 16.25rem; /* 260px */
     }
-    
+
     .template-builder__sidebar--large {
         width: 21.25rem; /* 340px */
     }
@@ -26,24 +28,11 @@
 
 /* Class added by the gridstack library when the widget is being dragged */
 dotcms-add-widget.ui-draggable-dragging {
-    @apply rotate-[-3.66deg];
-    box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
+    @apply rotate-[-3.66deg] shadow-md;
 }
 
 dotcms-add-widget {
     @apply cursor-grab z-[3];
-}
-
-dotcms-template-builder-section {
-    @apply mt-4;
-}
-
-dotcms-template-builder-section:last-child {
-    @apply mb-4;
-}
-
-.template-builder__main {
-    padding: 0 2rem 5rem 2rem;
 }
 
 .grid-stack-item {

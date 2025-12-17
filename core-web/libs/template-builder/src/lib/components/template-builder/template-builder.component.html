@@ -1,25 +1,30 @@
 @if (vm$ | async; as vm) {
-    <p-toolbar>
+    <p-toolbar [dt]="{
+        root: {
+            borderRadius: '0',
+            padding: '0.25rem 1rem'
+        }
+    }">
         <ng-template #start>
             <ng-content select="[toolbar-left]"></ng-content>
         </ng-template>
         <ng-template #end>
             <div class="flex gap-2">
-            <dotcms-add-widget
-                [label]="'dot.template.builder.add.row' | dm"
-                [icon]="rowIcon"
-                [gridstackOptions]="rowOptions"
-                data-widget-type="row"
-                data-testId="add-row" />
-            <dotcms-add-widget
-                [label]="'dot.template.builder.add.box' | dm"
-                [gridstackOptions]="boxOptions"
-                [attr.gs-w]="boxWidth"
-                [icon]="colIcon"
-                id="box-picker"
-                #addBox
-                data-widget-type="col"
-                data-testId="add-box" />
+                <dotcms-add-widget
+                    [label]="'dot.template.builder.add.row' | dm"
+                    [icon]="rowIcon"
+                    [gridstackOptions]="rowOptions"
+                    data-widget-type="row"
+                    data-testId="add-row" />
+                <dotcms-add-widget
+                    [label]="'dot.template.builder.add.box' | dm"
+                    [gridstackOptions]="boxOptions"
+                    [attr.gs-w]="boxWidth"
+                    [icon]="colIcon"
+                    id="box-picker"
+                    #addBox
+                    data-widget-type="col"
+                    data-testId="add-box" />
             </div>
             <p-divider layout="vertical" />
             <dotcms-template-builder-actions
@@ -33,11 +38,11 @@
     <div
         (mousemove)="fixGridStackNodeOptions()"
         [ngStyle]="customStyles"
-        class="template-builder__main h-full overflow-y-auto transition-opacity duration-300 ease-in-out"
+        class="overflow-y-auto overflow-x-hidden transition-opacity duration-300 ease-in-out h-full p-6"
         #templateContainerRef
         data-testId="template-builder-main">
         @if (vm.layoutProperties.header) {
-            <dotcms-template-builder-section
+            <dotcms-template-builder-section class="mb-4"
                 (deleteSection)="deleteSection('header')"
                 data-testId="template-builder-header">
                 {{ 'dot.template.builder.header' | dm }}
@@ -48,7 +53,7 @@
                 'template-builder__container--right':
                     vm.layoutProperties.sidebar.location === 'right'
             }"
-            class="template-builder__container flex gap-6 pt-4">
+            class="template-builder__container">
             @if (vm.layoutProperties.sidebar.location.length) {
                 <dotcms-template-builder-sidebar
                     [ngClass]="{
@@ -107,7 +112,7 @@
             </div>
         </div>
         @if (vm.layoutProperties.footer) {
-            <dotcms-template-builder-section
+            <dotcms-template-builder-section class="mt-2"
                 (deleteSection)="deleteSection('footer')"
                 data-testId="template-builder-footer">
                 {{ 'dot.template.builder.footer' | dm }}

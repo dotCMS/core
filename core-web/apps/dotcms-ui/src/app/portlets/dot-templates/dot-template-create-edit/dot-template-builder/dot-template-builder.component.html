@@ -1,5 +1,6 @@
-<p-tabs [value]="0" styleClass="dot-template-builder__new-template-builder">
-    <p-tablist>
+<!-- ptabs is display flex by default -->
+<p-tabs [value]="0" class="h-full">
+    <p-tablist class="shrink-0">
         <p-tab [value]="0" data-testId="builder">
             {{ item.type === 'advanced' ? ('code' | dm) : ('design' | dm) }}
         </p-tab>
@@ -10,8 +11,8 @@
             {{ 'History' | dm }}
         </p-tab>
     </p-tablist>
-    <p-tabpanels>
-        <p-tabpanel [value]="0" data-testId="builder">
+    <p-tabpanels class="!p-0 overflow-hidden grow basis-0">
+        <p-tabpanel [value]="0" data-testId="builder" class="h-full block">
             @switch (item.type) {
                 @case ('advanced') {
                     <dot-template-advanced
@@ -23,6 +24,7 @@
                 }
                 @case ('design') {
                     <dotcms-template-builder-lib
+                        class="h-full overflow-hidden flex flex-col"
                         (templateChange)="onTemplateItemChange($event)"
                         [layout]="item.layout"
                         [template]="{
