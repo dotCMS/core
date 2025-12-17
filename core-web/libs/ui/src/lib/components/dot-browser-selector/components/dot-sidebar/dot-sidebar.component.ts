@@ -14,8 +14,7 @@ import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
-import { DotTruncatePathPipe } from '@dotcms/ui';
-
+import { DotTruncatePathPipe } from '../../../../pipes/dot-truncate-path/dot-truncate-path.pipe';
 import { SYSTEM_HOST_ID } from '../../store/browser.store';
 
 @Component({

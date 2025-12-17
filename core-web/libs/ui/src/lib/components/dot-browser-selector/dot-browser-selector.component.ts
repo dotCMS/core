@@ -11,11 +11,12 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotContentletService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
 import { DotBrowserSelectorStore } from './store/browser.store';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 type DialogData = {
     mimeTypes: string[];
