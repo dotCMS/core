@@ -1,5 +1,4 @@
 <style>
-    /* Contenedor principal del campo */
     .custom-field-wrapper {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         display: flex;
@@ -7,70 +6,62 @@
         gap: 0.5rem;
         max-width: 100%;
     }
-
-    /* Estilo del Label "Template *" */
     .custom-label {
-        color: #374151; /* Gris oscuro */
+        color: #374151;
         font-size: 0.875rem;
         font-weight: 500;
     }
     .required-asterisk {
-        color: #EF4444; /* Rojo */
+        color: #EF4444;
         margin-left: 2px;
     }
 
-    /* Contenedor del Select para permitir la flecha personalizada */
     .select-wrapper {
         position: relative;
         width: 100%;
     }
 
-    /* El elemento Select estilizado */
     select#templateSel {
-        appearance: none; /* Ocultar flecha nativa */
+        appearance: none; 
         -webkit-appearance: none;
         -moz-appearance: none;
         
         width: 100%;
-        padding: 0.75rem 3rem 0.75rem 1rem; /* Padding extra a la derecha para la flecha */
+        padding: 0.75rem 3rem 0.75rem 1rem;
         font-size: 1rem;
         line-height: 1.5;
         color: #1F2937;
         background-color: #ffffff;
-        border: 1px solid #6366F1; /* Borde Azul Indigo (como en la imagen) */
+        border: 1px solid #6366F1;
         border-radius: 6px;
         cursor: pointer;
         outline: none;
         transition: box-shadow 0.2s, border-color 0.2s;
         
-        /* Truco CSS para la flecha con fondo azul claro */
         background-image: 
             linear-gradient(45deg, transparent 50%, #4F46E5 50%),
             linear-gradient(135deg, #4F46E5 50%, transparent 50%),
-            linear-gradient(to right, #EEF2FF, #EEF2FF); /* Fondo de la flecha */
+            linear-gradient(to right, #EEF2FF, #EEF2FF);
         background-position: 
-            calc(100% - 20px) calc(50% + 2px),  /* Posición parte 1 flecha */
-            calc(100% - 15px) calc(50% + 2px),  /* Posición parte 2 flecha */
-            100% 0; /* Posición del fondo azul claro */
+            calc(100% - 20px) calc(50% + 2px),  
+            calc(100% - 15px) calc(50% + 2px), 
+            100% 0;
         background-size: 
             5px 5px, 
             5px 5px, 
-            40px 100%; /* Ancho del botón de la flecha */
+            40px 100%;
         background-repeat: no-repeat;
     }
 
-    /* Estado Focus */
     select#templateSel:focus {
         border-color: #4F46E5;
-        box-shadow: 0 0 0 2px #C7D2FE; /* Anillo azul claro suave */
+        box-shadow: 0 0 0 2px #C7D2FE; 
     }
 
-    /* Hover */
     select#templateSel:hover {
         border-color: #4338CA;
     }
 
-    /* Estilo para la imagen del thumbnail */
     #templateThumbnailHolder {
         transition: all 0.3s ease;
         max-width: 100%;

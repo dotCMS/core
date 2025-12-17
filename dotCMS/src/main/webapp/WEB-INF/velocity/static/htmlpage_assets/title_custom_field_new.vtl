@@ -12,7 +12,7 @@
 
 			const urlValue = urlField.getValue() || '';
 			if(urlValue.trim() === ''){
-				const urlValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
+				urlValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
 				urlField.setValue(urlValue);
 			}
 
