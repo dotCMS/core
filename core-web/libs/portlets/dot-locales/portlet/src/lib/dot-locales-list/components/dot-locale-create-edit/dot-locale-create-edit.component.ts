@@ -54,7 +54,6 @@ export interface DotLocaleCreateEditData {
         InputIconModule
     ],
     templateUrl: './dot-locale-create-edit.component.html',
-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocaleCreateEditComponent implements OnInit {

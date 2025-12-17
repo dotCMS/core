@@ -131,7 +131,6 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
 
                 const dialogRef: DynamicDialogRef = this.dialogService.open(
                     DotLocaleCreateEditComponent,
-
                     {
                         closable: true,
                         header: this.dotMessageService.get(

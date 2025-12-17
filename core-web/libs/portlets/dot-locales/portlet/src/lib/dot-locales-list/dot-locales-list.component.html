@@ -1,7 +1,8 @@
 @if (vm$ | async; as vm) {
     <div class="flex justify-between mb-2">
-        <p-iconField iconPosition="left">
+        <p-iconField iconPosition="right">
             <input
+                #searchInput
                 (input)="dt.filterGlobal($event.target.value, 'contains')"
                 class="w-[405px]"
                 type="text"

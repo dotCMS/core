@@ -25,7 +25,7 @@ export class DotMenuComponent {
     @ViewChild('menu', { static: true })
     menu: Menu;
 
-    //computed style class based on the float input
+    // computed style class based on the float input
     $styleClass = computed(() =>
         this.$float()
             ? 'p-button-sm p-button-rounded'
