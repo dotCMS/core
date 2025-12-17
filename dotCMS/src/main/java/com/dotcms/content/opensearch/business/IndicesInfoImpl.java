@@ -33,10 +33,9 @@ import java.util.Optional;
 public final class IndicesInfoImpl implements IndicesInfo {
 
     // Modern timestamp format for better readability and sortability
-
-    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
     private static final String CLUSTER_PREFIX = "cluster_";
     private static final String INDEX_NAME_PATTERN = CLUSTER_PREFIX + "%s.%s_%s_v%s";
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     // Immutable fields
     private final String live;
@@ -146,46 +145,6 @@ public final class IndicesInfoImpl implements IndicesInfo {
             Logger.error(IndicesInfoImpl.class, "Error parsing timestamp from index name: " + indexName, e);
             throw new DotRuntimeException("Failed to parse timestamp from index: " + indexName, e);
         }
-    }
-
-    @Override
-    public String createNewIndicesName(IndexType... indexTypes) {
-        String timestamp = simpleDateFormat.format(LocalDateTime.now());
-
-        Builder builder = toBuilder();
-
-        for (IndexType indexType : indexTypes) {
-            String indexName = String.format(
-                INDEX_NAME_PATTERN,
-                ClusterFactory.getClusterId(),
-                indexType.getPrefix(),
-                timestamp,
-                version
-            );
-
-            // Update builder with new index name
-            switch (indexType) {
-                case LIVE:
-                    builder.live(indexName);
-                    break;
-                case WORKING:
-                    builder.working(indexName);
-                    break;
-                case REINDEX_LIVE:
-                    builder.reindexLive(indexName);
-                    break;
-                case REINDEX_WORKING:
-                    builder.reindexWorking(indexName);
-                    break;
-                case SITE_SEARCH:
-                    builder.siteSearch(indexName);
-                    break;
-                default:
-                    Logger.warn(IndicesInfoImpl.class, "Unknown index type: " + indexType);
-            }
-        }
-
-        return timestamp;
     }
 
     @Override
@@ -346,30 +305,40 @@ public final class IndicesInfoImpl implements IndicesInfo {
             return this;
         }
 
-        /**
-         * Set all indices with a specific version
-         */
-        public Builder withVersionedIndices(Map<IndexType, String> indices, String version) {
-            indices.forEach((type, name) -> {
-                switch (type) {
+        public Builder withNewIndicesName(IndexType... indexTypes) {
+            final String timestamp = simpleDateFormat.format(new Date());
+
+            for (IndexType indexType : indexTypes) {
+                String indexName = String.format(
+                        INDEX_NAME_PATTERN,
+                        ClusterFactory.getClusterId(),
+                        indexType.getPrefix(),
+                        timestamp,
+                        version
+                );
+
+                // Update builder with a new index name
+                switch (indexType) {
                     case LIVE:
-                        live(name);
+                        live(indexName);
                         break;
                     case WORKING:
-                        working(name);
+                        working(indexName);
                         break;
                     case REINDEX_LIVE:
-                        reindexLive(name);
+                        reindexLive(indexName);
                         break;
                     case REINDEX_WORKING:
-                        reindexWorking(name);
+                        reindexWorking(indexName);
                         break;
                     case SITE_SEARCH:
-                        siteSearch(name);
+                        siteSearch(indexName);
                         break;
+                    default:
+                        Logger.warn(IndicesInfoImpl.class, "Unknown index type: " + indexType);
                 }
-            });
-            return version(version);
+            }
+            return this;
         }
 
         /**

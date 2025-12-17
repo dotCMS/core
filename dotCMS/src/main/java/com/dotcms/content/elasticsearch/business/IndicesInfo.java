@@ -22,7 +22,5 @@ public interface IndicesInfo {
 
     long getIndexTimeStamp(IndexType indexType);
 
-    String createNewIndicesName(IndexType... indexTypes);
-
     Map<IndexType, String> asMap();
 }

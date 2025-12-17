@@ -1,6 +1,8 @@
 package com.dotcms.content.opensearch.util;
 
 import com.dotmarketing.util.Logger;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Default;
 import org.opensearch.client.opensearch.OpenSearchClient;
 
 import java.io.IOException;
@@ -18,14 +20,9 @@ import java.io.IOException;
  *
  * @author fabrizio
  */
-public final class OpenSearchDefaultClientProvider {
-
-    /**
-     * Initialization-on-demand holder idiom for thread-safe singleton creation
-     */
-    private static final class SingletonHolder {
-        private static final OpenSearchDefaultClientProvider INSTANCE = new OpenSearchDefaultClientProvider();
-    }
+@ApplicationScoped
+@Default
+public class OpenSearchDefaultClientProvider {
 
     /**
      * Immutable internal provider - configured once at startup
@@ -36,17 +33,9 @@ public final class OpenSearchDefaultClientProvider {
      * Private constructor to prevent direct instantiation
      * Creates immutable provider with default configuration from properties
      */
-    private OpenSearchDefaultClientProvider() {
+    public OpenSearchDefaultClientProvider() {
         this.provider = new ConfigurableOpenSearchProvider();
         Logger.info(this.getClass(), "OpenSearchClients initialized with default configuration");
-    }
-
-    /**
-     * Get the singleton instance using initialization-on-demand holder idiom
-     * This is thread-safe and lazy without synchronization overhead
-     */
-    public static OpenSearchDefaultClientProvider getInstance() {
-        return SingletonHolder.INSTANCE;
     }
 
     /**

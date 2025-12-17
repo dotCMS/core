@@ -1,5 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.featureflag.FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_READ;
+import static com.dotcms.featureflag.FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_WRITE;
+
+import com.dotmarketing.util.Config;
 import java.sql.Connection;
 
 
@@ -46,5 +50,22 @@ public interface IndicesAPI {
      * @throws DotDataException if there is an error updating the indices information
      */
     void point(IndicesInfo newInfo) throws DotDataException;
+
+
+    /**
+     *
+     * @return
+     */
+    static boolean isOpenSearchWriteEnabled(){
+        return Config.getBooleanProperty(FEATURE_FLAG_OPEN_SEARCH_WRITE, false);
+    }
+
+    /**
+     *
+     * @return
+     */
+    static boolean isOpenSearchReadEnabled(){
+        return Config.getBooleanProperty(FEATURE_FLAG_OPEN_SEARCH_READ, false);
+    }
 
 }

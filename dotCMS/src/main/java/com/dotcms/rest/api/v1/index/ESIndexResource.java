@@ -276,7 +276,7 @@ public class ESIndexResource {
                 indexName=ContentletIndexAPIImpl.timestampFormatter.format(new Date());
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
-            APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+            APILocator.getContentletIndexAPI().createContentIndexLegacy(indexName, shards);
             ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
             return Response.ok(indexName).build();

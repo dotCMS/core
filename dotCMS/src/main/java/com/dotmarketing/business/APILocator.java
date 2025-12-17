@@ -34,6 +34,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndicesAPI;
 import com.dotcms.content.elasticsearch.business.IndicesAPIImpl;
+import com.dotcms.content.opensearch.business.OpenSearchIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -1394,8 +1395,10 @@ enum APIIndex
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
 	JOB_QUEUE_MANAGER_API,
-   AI_VISION_API,
-	ANALYTICS_CUSTOM_ATTRIBUTE_API;
+    AI_VISION_API,
+	ANALYTICS_CUSTOM_ATTRIBUTE_API,
+    OS_INDEX_API
+    ;
 
 	Object create() {
 		switch(this) {
@@ -1493,6 +1496,7 @@ enum APIIndex
          case AI_VISION_API:
             return new OpenAIVisionAPIImpl();
 			case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
+            case OS_INDEX_API: return CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

@@ -5,14 +5,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.time.Duration;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.Time;
@@ -28,9 +33,14 @@ import org.opensearch.client.opensearch.indices.ExistsRequest;
  *
  * @author fabrizio
  */
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestBase {
 
     private static final String TEST_INDEX = "test-dotcms-opensearch-" + System.currentTimeMillis();
+
+    @Inject
+    OpenSearchDefaultClientProvider singleton;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -64,7 +74,6 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
             assertNotNull("Client should not be null", client);
 
             // Verify the singleton still works independently
-            OpenSearchDefaultClientProvider singleton = OpenSearchDefaultClientProvider.getInstance();
             OpenSearchClient singletonClient = singleton.getClient();
             assertNotNull("Singleton client should not be null", singletonClient);
 
@@ -119,22 +128,6 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
     }
 
     /**
-     * Test that singleton maintains same instance across calls
-     */
-    @Test
-    public void test_singletonProvider_shouldMaintainSameInstance() {
-        // Arrange & Act
-        OpenSearchDefaultClientProvider instance1 = OpenSearchDefaultClientProvider.getInstance();
-        OpenSearchDefaultClientProvider instance2 = OpenSearchDefaultClientProvider.getInstance();
-
-        // Assert
-        assertNotNull("First instance should not be null", instance1);
-        assertNotNull("Second instance should not be null", instance2);
-        assertEquals("Both instances should be the same", instance1, instance2);
-        assertTrue("Should be exact same object", instance1 == instance2);
-    }
-
-    /**
      * Test configuration from properties
      * This tests the properties loading mechanism using local OpenSearch
      */
@@ -147,7 +140,7 @@ public class DotOpenSearchClientProviderIntegrationTest extends IntegrationTestB
         try {
             // Set test properties for local OpenSearch (no auth, security disabled)
             Config.setProperty("OS_ENDPOINTS", "http://localhost:9201");
-            Config.setProperty("OS_TLS_ENABLED", "false");
+            Config.setProperty("OS_TLS_ENABLED", false);
 
             // Act
             ConfigurableOpenSearchProvider provider = new ConfigurableOpenSearchProvider();

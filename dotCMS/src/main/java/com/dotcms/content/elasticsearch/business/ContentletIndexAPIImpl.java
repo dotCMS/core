@@ -12,10 +12,14 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.opensearch.business.IndicesInfoImpl;
+import com.dotcms.content.opensearch.business.IndicesInfoImpl.Builder;
+import com.dotcms.content.opensearch.business.OpenSearchIndexAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -140,9 +144,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @VisibleForTesting
     @CloseDBIfOpened
-    public synchronized boolean indexReady() throws DotDataException {
+    public synchronized boolean indexReadyLegacy() throws DotDataException {
         final IndicesInfo info = APILocator.getIndiciesAPI().loadLegacyIndices();
-
 
         final boolean hasWorking  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getWorking()))
                 .getOrElse(false);
@@ -158,6 +161,29 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return hasWorking && hasLive;
     }
 
+    static final class IndexStatus {
+        final boolean hasLive;
+        final boolean hasWorking;
+
+        public IndexStatus(boolean hasLive, boolean hasWorking) {
+            this.hasLive = hasLive;
+            this.hasWorking = hasWorking;
+        }
+    }
+
+    @CloseDBIfOpened
+    public synchronized boolean indexReady() throws DotDataException {
+        final Optional<IndicesInfo> info = APILocator.getIndiciesAPI().loadIndices();
+        if(info.isEmpty()){
+            return false;
+        }
+        final IndicesInfo indicesInfo = info.get();
+        final OpenSearchIndexAPI openSearchIndexAPI = CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
+        final boolean hasWorking = openSearchIndexAPI.indexExists(indicesInfo.getWorking());
+        final boolean hasLive = openSearchIndexAPI.indexExists(indicesInfo.getLive());
+        return hasWorking && hasLive;
+    }
+
     /**
      * Inits the indexes and starts the reindex process if no indexes are found
      */
@@ -165,11 +191,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public synchronized void checkAndInitialiazeIndex() {
         try {
             // if we don't have a working index, create it
-            if (!indexReady()) {
+            if (!indexReadyLegacy()) {
                 Logger.info(this.getClass(), "No indexes found, creating live and working indexes");
-                initIndex();
+                initIndexLegacy();
             }
-
 
             // if there are indexes but they are empty, start reindex process
             if(Config.getBooleanProperty("REINDEX_IF_NO_INDEXES_FOUND", true)
@@ -188,24 +213,47 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 });
 
             }
-
-
         } catch (Exception e) {
-            Logger.fatal(this.getClass(), "Failed to create new indexes:" + e.getMessage(),e);
+            Logger.fatal(this.getClass(), "Failed to create Legacy indexes:" + e.getMessage(),e);
+        }
 
+        //Activate a new index
+        try {
+            final boolean ok = (IndicesAPI.isOpenSearchReadEnabled() || IndicesAPI.isOpenSearchWriteEnabled());
+            if (ok) {
+                if (!indexReady()) {
+                    final Builder builder = IndicesInfoImpl.builder();
+                    builder.withNewIndicesName(IndexType.WORKING, IndexType.LIVE);
+                    final IndicesInfoImpl info = builder.build();
+                    createContentIndex(info.getWorking(), 0);
+                    createContentIndex(info.getLive(), 0);
+                    APILocator.getIndiciesAPI().point(info);
+                }
+            }
+        } catch (Exception e) {
+            Logger.fatal(this.getClass(), "Failed to create new indexes:" + e.getMessage(), e);
         }
     }
 
-    public synchronized boolean createContentIndex(String indexName)
+    public synchronized boolean createContentIndex(String indexName, int shards)
             throws ElasticsearchException, IOException {
-        boolean result = createContentIndex(indexName, 0);
+       final OpenSearchIndexAPI api = CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
+        final org.opensearch.client.opensearch.indices.CreateIndexResponse index = api.createIndex(
+                indexName, shards);
+        System.out.println(index.index());
+        return index.acknowledged();
+    }
+
+    public synchronized boolean createContentIndexLegacy(String indexName)
+            throws ElasticsearchException, IOException {
+        boolean result = createContentIndexLegacy(indexName, 0);
         ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
         return result;
     }
 
     @Override
-    public synchronized boolean createContentIndex(String indexName, int shards)
+    public synchronized boolean createContentIndexLegacy(String indexName, int shards)
             throws ElasticsearchException, IOException {
         String settings = null;
 
@@ -241,8 +289,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @throws ElasticsearchException if Murphy comes around
      * @throws DotDataException
      */
-    private synchronized String initIndex() throws ElasticsearchException, DotDataException {
-        if (indexReady()) {
+    private synchronized String initIndexLegacy() throws ElasticsearchException, DotDataException {
+        if (indexReadyLegacy()) {
             return "";
         }
         try {
@@ -257,8 +305,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final LegacyIndicesInfo info = builder.build();
             final String timeStamp = info.createNewIndicesName(IndexType.WORKING, IndexType.LIVE);
 
-            createContentIndex(info.getWorking(), 0);
-            createContentIndex(info.getLive(), 0);
+            createContentIndexLegacy(info.getWorking(), 0);
+            createContentIndexLegacy(info.getLive(), 0);
 
             APILocator.getIndiciesAPI().point(info);
 
@@ -337,7 +385,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @WrapInTransaction
     public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
-        if (indexReady() && !isInFullReindex()) {
+        if (indexReadyLegacy() && !isInFullReindex()) {
             try {
 
                 final LegacyIndicesInfo.Builder builder = new LegacyIndicesInfo.Builder();
@@ -360,8 +408,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 final String timeStamp = info.createNewIndicesName(IndexType.REINDEX_WORKING,
                         IndexType.REINDEX_LIVE);
 
-                createContentIndex(info.getReindexWorking(), 0);
-                createContentIndex(info.getReindexLive(), 0);
+                createContentIndexLegacy(info.getReindexWorking(), 0);
+                createContentIndexLegacy(info.getReindexLive(), 0);
 
                 APILocator.getIndiciesAPI().point(info);
 
@@ -373,7 +421,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 throw new ElasticsearchException(e.getMessage(), e);
             }
         } else {
-            return initIndex();
+            return initIndexLegacy();
         }
     }
 
@@ -620,21 +668,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     private void indexContentListNow(final List<Contentlet> contentToIndex) {
-        final BulkRequest bulkRequest = createBulkRequest(contentToIndex);
+        final BulkRequest bulkRequest = createBulkRequestLegacy(contentToIndex);
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
     } // indexContentListNow.
 
     private void indexContentListWaitFor(final List<Contentlet> contentToIndex) {
-        final BulkRequest bulkRequest = createBulkRequest(contentToIndex);
+        final BulkRequest bulkRequest = createBulkRequestLegacy(contentToIndex);
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
     } // indexContentListWaitFor.
 
     private void indexContentListDefer(final List<Contentlet> contentToIndex) {
-        final BulkRequest bulkRequest = createBulkRequest(contentToIndex);
+        final BulkRequest bulkRequest = createBulkRequestLegacy(contentToIndex);
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.NONE);
         putToIndex(bulkRequest);
     } // indexContentListWaitFor.
@@ -679,21 +727,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public BulkRequest createBulkRequest(final List<Contentlet> contentToIndex) {
-        final BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(createBulkRequest());
-        this.appendBulkRequest(bulkIndexWrapper, contentToIndex);
+    public BulkRequest createBulkRequestLegacy(final List<Contentlet> contentToIndex) {
+        final BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(createBulkRequestLegacy());
+        this.appendBulkRequestLegacy(bulkIndexWrapper, contentToIndex);
         return bulkIndexWrapper.getRequestBuilder();
     }
 
     @Override
-    public BulkRequest createBulkRequest() {
+    public BulkRequest createBulkRequestLegacy() {
         final BulkRequest bulkRequest = new BulkRequest();
         bulkRequest.setRefreshPolicy(RefreshPolicy.NONE);
         return bulkRequest;
 
     }
 
-    public BulkProcessor createBulkProcessor(final BulkProcessorListener bulkProcessorListener) {
+    public BulkProcessor createBulkProcessorLegacy(final BulkProcessorListener bulkProcessorListener) {
         BulkProcessor.Builder builder = BulkProcessor.builder(
                 (request, bulkListener) ->
                         RestHighLevelClientProvider.getInstance().getClient()
@@ -717,17 +765,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public BulkRequest appendBulkRequest(final BulkRequest bulkRequest,
+    public BulkRequest appendBulkRequestLegacy(final BulkRequest bulkRequest,
             final Collection<ReindexEntry> idxs)
             throws DotDataException {
 
         for (ReindexEntry idx : idxs) {
-            appendBulkRequest(bulkRequest, idx);
+            appendBulkRequestLegacy(bulkRequest, idx);
         }
         return bulkRequest;
     }
 
-    public void appendToBulkProcessor(final BulkProcessor bulk, final Collection<ReindexEntry> idxs)
+    public void appendToBulkProcessorLegacy(final BulkProcessor bulk, final Collection<ReindexEntry> idxs)
             throws DotDataException {
 
         for (ReindexEntry idx : idxs) {
@@ -736,16 +784,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public BulkRequest appendBulkRequest(BulkRequest bulkRequest, final ReindexEntry idx)
+    public BulkRequest appendBulkRequestLegacy(BulkRequest bulkRequest, final ReindexEntry idx)
             throws DotDataException {
-        bulkRequest = (bulkRequest == null) ? createBulkRequest() : bulkRequest;
+        bulkRequest = (bulkRequest == null) ? createBulkRequestLegacy() : bulkRequest;
         Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
 
         BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(bulkRequest);
         if (idx.isDelete()) {
             appendBulkRemoveRequest(bulkIndexWrapper, idx);
         } else {
-            appendBulkRequest(bulkIndexWrapper, idx);
+            appendBulkRequestLegacy(bulkIndexWrapper, idx);
         }
         return bulkIndexWrapper.getRequestBuilder();
     }
@@ -759,7 +807,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @throws DotDataException An error occurred when processing this request.
      */
     @CloseDBIfOpened
-    public void appendBulkRequest(final BulkIndexWrapper bulk, final ReindexEntry idx)
+    public void appendBulkRequestLegacy(final BulkIndexWrapper bulk, final ReindexEntry idx)
             throws DotDataException {
         final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI()
                 .findContentletVersionInfos(idx.getIdentToIndex());
@@ -789,7 +837,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                 idx
                                         .getPriority()));
                 contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequest(bulk, List.of(contentlet), idx.isReindex());
+                addBulkRequestLegacy(bulk, List.of(contentlet), idx.isReindex());
             }
         } catch (final Exception e) {
             // An error occurred when trying to reindex the Contentlet. Flag it as "failed"
@@ -805,18 +853,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (idx.isDelete()) {
             appendBulkRemoveRequest(bulkIndexWrapper, idx);
         } else {
-            appendBulkRequest(bulkIndexWrapper, idx);
+            appendBulkRequestLegacy(bulkIndexWrapper, idx);
         }
 
         return bulkIndexWrapper.getBulkProcessor();
     }
 
-    private void appendBulkRequest(final BulkIndexWrapper bulk,
+    private void appendBulkRequestLegacy(final BulkIndexWrapper bulk,
             final List<Contentlet> contentToIndex) {
-        this.addBulkRequest(bulk, contentToIndex, false);
+        this.addBulkRequestLegacy(bulk, contentToIndex, false);
     }
 
-    private void addBulkRequest(final BulkIndexWrapper bulk, final List<Contentlet> contentToIndex,
+    private void addBulkRequestLegacy(final BulkIndexWrapper bulk, final List<Contentlet> contentToIndex,
             final boolean forReindex) {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
             Logger.debug(this.getClass(),
@@ -1386,5 +1434,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         return null;
     }
+
+
 
 }

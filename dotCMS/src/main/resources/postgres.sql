@@ -2204,7 +2204,7 @@ ALTER TABLE tag ALTER COLUMN user_id TYPE text;
 create table indicies (
   index_name varchar(100) primary key,
   index_type varchar(16) not null,
-  index_version varchar(16) not null
+  index_version varchar(16) null
 );
 -- We can only have one index type per version
 ALTER TABLE indicies

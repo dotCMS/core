@@ -27,9 +27,9 @@ public interface ContentletIndexAPI {
      */
     public void checkAndInitialiazeIndex();
 
-    public boolean createContentIndex(String indexName) throws DotIndexException, IOException;
+    public boolean createContentIndexLegacy(String indexName) throws DotIndexException, IOException;
 
-    public boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
+    public boolean createContentIndexLegacy(String indexName, int shards) throws DotIndexException, IOException;
 
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
@@ -130,13 +130,13 @@ public interface ContentletIndexAPI {
 
     void addContentToIndex(Contentlet content, boolean deps) throws DotDataException;
 
-    BulkRequest createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
+    BulkRequest createBulkRequestLegacy(List<Contentlet> contentToIndex) throws DotDataException;
 
-    BulkRequest createBulkRequest();
+    BulkRequest createBulkRequestLegacy();
 
-    BulkRequest appendBulkRequest(BulkRequest bulkRequest, Collection<ReindexEntry> idxs) throws DotDataException;
+    BulkRequest appendBulkRequestLegacy(BulkRequest bulkRequest, Collection<ReindexEntry> idxs) throws DotDataException;
 
-    BulkRequest appendBulkRequest(BulkRequest bulkRequest, ReindexEntry idx) throws DotDataException;
+    BulkRequest appendBulkRequestLegacy(BulkRequest bulkRequest, ReindexEntry idx) throws DotDataException;
 
     Optional<String> reindexTimeElapsed();
 
@@ -148,7 +148,7 @@ public interface ContentletIndexAPI {
 
     BulkRequest appendBulkRemoveRequest(BulkRequest bulkRequest, final ReindexEntry entry) throws DotDataException;
 
-    BulkProcessor createBulkProcessor(BulkProcessorListener bulkListener);
+    BulkProcessor createBulkProcessorLegacy(BulkProcessorListener bulkListener);
 
-    void appendToBulkProcessor(final BulkProcessor bulk, final Collection<ReindexEntry> idxs) throws DotDataException;
+    void appendToBulkProcessorLegacy(final BulkProcessor bulk, final Collection<ReindexEntry> idxs) throws DotDataException;
 }

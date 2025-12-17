@@ -74,7 +74,7 @@ public class IndicesFactory {
         synchronized (IndicesFactory.class) {
             final IndicesInfoImpl.Builder builder = new IndicesInfoImpl.Builder();
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT index_name,index_type FROM indicies WHERE index_version is '"
+            dc.setSQL("SELECT index_name,index_type FROM indicies WHERE index_version = '"
                     + IndicesInfo.OPEN_SEARCH_VERSION + "' ");
             @SuppressWarnings("unchecked") final List<Map<String, Object>> results = dc.loadResults();
             if(results.isEmpty()){

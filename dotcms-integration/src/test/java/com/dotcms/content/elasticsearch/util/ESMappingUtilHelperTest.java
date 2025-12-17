@@ -329,7 +329,7 @@ public class ESMappingUtilHelperTest {
 
             Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
             //Create a working index
-            boolean result = contentletIndexAPI.createContentIndex(workingIndex);
+            boolean result = contentletIndexAPI.createContentIndexLegacy(workingIndex);
             //Validate
             assertTrue(result);
 
@@ -422,7 +422,7 @@ public class ESMappingUtilHelperTest {
             workingIndex = IndexType.WORKING.getPrefix() + "_" + System.currentTimeMillis();
 
             //Create a working index
-            boolean result = contentletIndexAPI.createContentIndex(workingIndex);
+            boolean result = contentletIndexAPI.createContentIndexLegacy(workingIndex);
             assertTrue(result);
 
             contentletIndexAPI.activateIndex(workingIndex);
@@ -546,7 +546,7 @@ public class ESMappingUtilHelperTest {
             workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
 
             //Create a working index
-            boolean result = contentletIndexAPI.createContentIndex(workingIndex);
+            boolean result = contentletIndexAPI.createContentIndexLegacy(workingIndex);
             //Validate
             assertTrue(result);
 
