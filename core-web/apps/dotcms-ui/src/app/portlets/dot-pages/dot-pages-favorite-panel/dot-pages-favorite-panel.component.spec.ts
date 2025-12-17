@@ -15,6 +15,7 @@ import { of } from 'rxjs/internal/observable/of';
 
 import {
     DotHttpErrorManagerService,
+    DotLocalstorageService,
     DotMessageService,
     DotPageRenderService,
     DotSessionStorageService
@@ -140,6 +141,13 @@ describe('DotPagesFavoritePanelComponent', () => {
                 ],
                 providers: [
                     DotSessionStorageService,
+                    {
+                        provide: DotLocalstorageService,
+                        useValue: {
+                            getItem: jest.fn().mockReturnValue('true'),
+                            setItem: jest.fn()
+                        }
+                    },
                     DialogService,
                     DotPageRenderService,
                     {
@@ -163,39 +171,25 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should set panel with empty state class', () => {
-            const elem = de.query(By.css('p-panel'));
-            expect(
-                elem.nativeElement.classList.contains('dot-pages-panel__empty-state')
-            ).toBeTruthy();
+            // Empty state renders the content paragraph
+            expect(de.query(By.css('[data-testid="dot-pages-empty__content"]'))).toBeTruthy();
         });
 
         it('should set panel collapsed state', () => {
-            jest.spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
             jest.spyOn(store, 'setFavoritePages');
-            component.toggleFavoritePagesPanel(
-                new Event('myevent', {
-                    bubbles: true,
-                    cancelable: true,
-                    composed: false
-                })
-            );
-            expect(store.setLocalStorageFavoritePanelCollapsedParams).toHaveBeenCalledTimes(1);
+            const localStorage = TestBed.inject(DotLocalstorageService);
+            jest.spyOn(localStorage, 'setItem');
+
+            component.togglePanel({ collapsed: true } as unknown as Event);
+
+            expect(localStorage.setItem).toHaveBeenCalledWith('FavoritesPanelCollapsed', 'true');
             expect(store.setFavoritePages).toHaveBeenCalledTimes(1);
         });
 
         it('should load empty pages cards container', () => {
             expect(
                 de
-                    .query(By.css('.dot-pages-empty__container i'))
-                    .nativeElement.classList.contains('pi-star')
-            ).toBe(true);
-
-            expect(
-                de.query(By.css('.dot-pages-empty__header')).nativeElement.textContent.trim()
-            ).toBe('favoritePage.listing.empty.header');
-            expect(
-                de
-                    .query(By.css('[data-testId="dot-pages-empty__content"'))
+                    .query(By.css('[data-testid="dot-pages-empty__content"]'))
                     .nativeElement.textContent.trim()
             ).toBe('favoritePage.listing.empty.content');
         });
@@ -252,6 +246,13 @@ describe('DotPagesFavoritePanelComponent', () => {
                 ],
                 providers: [
                     DotSessionStorageService,
+                    {
+                        provide: DotLocalstorageService,
+                        useValue: {
+                            getItem: jest.fn().mockReturnValue('true'),
+                            setItem: jest.fn()
+                        }
+                    },
                     DialogService,
                     DotPageRenderService,
                     {

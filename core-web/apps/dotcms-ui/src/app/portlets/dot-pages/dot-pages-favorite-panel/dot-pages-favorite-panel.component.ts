@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, EventEmitter, inject, input, OnInit, Output } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -10,6 +10,7 @@ import { PanelModule } from 'primeng/panel';
 
 import {
     DotHttpErrorManagerService,
+    DotLocalstorageService,
     DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
@@ -23,7 +24,8 @@ import { DotPagesCardComponent } from './dot-pages-card/dot-pages-card.component
 import {
     DotPagesState,
     DotPageStore,
-    FAVORITE_PAGE_LIMIT
+    FAVORITE_PAGE_LIMIT,
+    LOCAL_STORAGE_FAVORITES_PANEL_KEY
 } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
@@ -34,23 +36,31 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     imports: [CommonModule, DotMessagePipe, DotPagesCardComponent, PanelModule, ButtonModule]
 })
 export class DotPagesFavoritePanelComponent implements OnInit {
-    #dotMessageService = inject(DotMessageService);
-    #dialogService = inject(DialogService);
-    #dotPageRenderService = inject(DotPageRenderService);
-    #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dialogService = inject(DialogService);
+    readonly #dotPageRenderService = inject(DotPageRenderService);
+    readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    readonly #dotLocalstorageService = inject(DotLocalstorageService);
     readonly #store = inject(DotPageStore);
 
     readonly $favoritePages = input<DotCMSContentlet[]>([], { alias: 'favoritePages' });
+    readonly goToUrl = output<string>();
+    readonly showActionsMenu = output<DotActionsMenuEventParams>();
 
-    @Output() goToUrl = new EventEmitter<string>();
-    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
+    readonly $isCollapsed = signal<boolean>(true);
 
     vm$: Observable<DotPagesState> = this.#store.vm$;
 
     timeStamp = this.getTimeStamp();
 
     private currentLimitSize = FAVORITE_PAGE_LIMIT;
+
+    constructor() {
+        const isCollapsed = this.#dotLocalstorageService.getItem<boolean>(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY
+        );
+        this.$isCollapsed.set(isCollapsed);
+    }
 
     ngOnInit(): void {
         this.#store.getFavoritePages(this.currentLimitSize);
@@ -62,9 +72,12 @@ export class DotPagesFavoritePanelComponent implements OnInit {
      * @param {Event} event
      * @memberof DotPagesComponent
      */
-    toggleFavoritePagesPanel($event: Event): void {
-        this.#store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
-        this.#store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
+    onToggleChange(collapsed: boolean): void {
+        if (collapsed) {
+            this.collapsePanel();
+        } else {
+            this.expandPanel();
+        }
     }
 
     /**
@@ -105,6 +118,24 @@ export class DotPagesFavoritePanelComponent implements OnInit {
                 this.displayFavoritePageDialog(favoritePage);
             }
         );
+    }
+
+    /**
+     * Collapse the favorite pages panel
+     * @memberof DotPagesFavoritePanelComponent
+     */
+    collapsePanel(): void {
+        this.$isCollapsed.set(true);
+        this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'true');
+    }
+
+    /**
+     * Expand the favorite pages panel
+     * @memberof DotPagesFavoritePanelComponent
+     */
+    expandPanel(): void {
+        this.$isCollapsed.set(false);
+        this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'false');
     }
 
     private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {

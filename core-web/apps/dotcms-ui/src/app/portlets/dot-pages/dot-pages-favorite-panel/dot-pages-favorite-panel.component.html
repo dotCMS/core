@@ -3,9 +3,9 @@
 @let isEmpty = favoritePages.length === 0;
 
 <p-panel
-    (onAfterToggle)="toggleFavoritePagesPanel($event)"
+    (collapsedChange)="onToggleChange($event)"
     [toggleable]="true"
-    [collapsed]="vm.isFavoritePanelCollaped"
+    [collapsed]="$isCollapsed()"
     toggler="header"
     iconPos="end"
     expandIcon="pi pi-angle-down"
