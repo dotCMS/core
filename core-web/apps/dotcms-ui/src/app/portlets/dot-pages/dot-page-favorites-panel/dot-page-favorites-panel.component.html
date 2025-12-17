@@ -1,4 +1,3 @@
-@let vm = vm$ | async;
 @let favoritePages = $favoritePages();
 @let isEmpty = favoritePages.length === 0;
 
@@ -33,17 +32,12 @@
         </div>
     } @else {
         <div class="grid gap-6 [grid-template-columns:repeat(auto-fill,250px)]">
-            @for (item of favoritePages; track $index; let i = $index) {
+            @for (favoritePage of favoritePages; track $index; let i = $index) {
                 <dot-pages-card
                     [actionButtonId]="'favoritePageActionButton-' + i"
-                    [imageUri]="
-                        item.screenshot
-                            ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
-                            : ''
-                    "
-                    [title]="item.title"
-                    [url]="item.url"
-                    [ownerPage]="item.owner === vm.loggedUser.id"
+                    [imageUri]="getScreenshotUri(favoritePage)"
+                    [title]="favoritePage.title"
+                    [url]="favoritePage.url"
                     (showContextMenu)="showContextMenu.emit($event)" />
             }
         </div>

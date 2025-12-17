@@ -1,8 +1,6 @@
-import { Observable } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -21,12 +19,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPagesCardComponent } from './dot-pages-card/dot-pages-card.component';
 
-import {
-    DotPagesState,
-    DotPageStore,
-    FAVORITE_PAGE_LIMIT,
-    LOCAL_STORAGE_FAVORITES_PANEL_KEY
-} from '../dot-pages-store/dot-pages.store';
+import { LOCAL_STORAGE_FAVORITES_PANEL_KEY } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
 @Component({
@@ -35,25 +28,19 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     styleUrls: ['./dot-page-favorites-panel.component.scss'],
     imports: [CommonModule, DotMessagePipe, DotPagesCardComponent, PanelModule, ButtonModule]
 })
-export class DotPageFavoritesPanelComponent implements OnInit {
+export class DotPageFavoritesPanelComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dialogService = inject(DialogService);
     readonly #dotPageRenderService = inject(DotPageRenderService);
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     readonly #dotLocalstorageService = inject(DotLocalstorageService);
-    readonly #store = inject(DotPageStore);
 
     readonly $favoritePages = input<DotCMSContentlet[]>([], { alias: 'favoritePages' });
     readonly goToUrl = output<string>();
     readonly showContextMenu = output<DotActionsMenuEventParams>();
 
     readonly $isCollapsed = signal<boolean>(true);
-
-    vm$: Observable<DotPagesState> = this.#store.vm$;
-
-    timeStamp = this.getTimeStamp();
-
-    private currentLimitSize = FAVORITE_PAGE_LIMIT;
+    readonly $timeStamp = signal<string>(new Date().getTime().toString());
 
     constructor() {
         const isCollapsed = this.#dotLocalstorageService.getItem<boolean>(
@@ -62,8 +49,19 @@ export class DotPageFavoritesPanelComponent implements OnInit {
         this.$isCollapsed.set(isCollapsed);
     }
 
-    ngOnInit(): void {
-        this.#store.getFavoritePages(this.currentLimitSize);
+    /**
+     * Builds the screenshot URL for a favorite page card.
+     * Keeps the template clean and centralizes the query-param formatting.
+     *
+     * @param {DotCMSContentlet} favoritePage - The favorite page contentlet
+     * @returns {string} The screenshot URL with cache-busting params, or empty string if missing.
+     */
+    getScreenshotUri(favoritePage: DotCMSContentlet): string {
+        if (!favoritePage?.screenshot) {
+            return '';
+        }
+
+        return `${favoritePage.screenshot}?language_id=${favoritePage.languageId}&${this.$timeStamp()}`;
     }
 
     /**
@@ -139,6 +137,7 @@ export class DotPageFavoritesPanelComponent implements OnInit {
     }
 
     private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
+        const timeStamp = new Date().getTime().toString();
         this.#dialogService.open(DotFavoritePageComponent, {
             header: this.#dotMessageService.get('favoritePage.dialog.header'),
             width: '80rem',
@@ -148,18 +147,14 @@ export class DotPageFavoritesPanelComponent implements OnInit {
                     favoritePage: favoritePage
                 },
                 onSave: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.#store.getFavoritePages(this.currentLimitSize);
+                    this.$timeStamp.set(timeStamp);
+                    // this.#store.getFavoritePages(this.currentLimitSize);
                 },
                 onDelete: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.#store.getFavoritePages(this.currentLimitSize);
+                    this.$timeStamp.set(timeStamp);
+                    // this.#store.getFavoritePages(this.currentLimitSize);
                 }
             }
         });
-    }
-
-    private getTimeStamp() {
-        return new Date().getTime().toString();
     }
 }

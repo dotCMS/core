@@ -17,7 +17,7 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 
-import { DotCreatePageComponent } from './dot-create-page.component';
+import { DotCreatePageDialogComponent } from './dot-create-page-dialog.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
 
@@ -127,8 +127,8 @@ class storeMock {
     }
 }
 
-describe('DotCreatePageComponent', () => {
-    let fixture: ComponentFixture<DotCreatePageComponent>;
+describe('DotCreatePageDialogComponent', () => {
+    let fixture: ComponentFixture<DotCreatePageDialogComponent>;
     let de: DebugElement;
     let store: DotPageStore;
 
@@ -138,7 +138,7 @@ describe('DotCreatePageComponent', () => {
     ) => {
         await TestBed.resetTestingModule()
             .configureTestingModule({
-                imports: [DotCreatePageComponent, HttpClientTestingModule],
+                imports: [DotCreatePageDialogComponent, HttpClientTestingModule],
                 providers: [
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     {
@@ -178,7 +178,7 @@ describe('DotCreatePageComponent', () => {
 
         store = TestBed.inject(DotPageStore);
         jest.spyOn(store, 'getPageTypes');
-        fixture = TestBed.createComponent(DotCreatePageComponent);
+        fixture = TestBed.createComponent(DotCreatePageDialogComponent);
         de = fixture.debugElement;
 
         fixture.detectChanges();

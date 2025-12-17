@@ -7,6 +7,8 @@ import { map } from 'rxjs/operators';
 
 import { DotCMSAPIResponse, ESContent } from '@dotcms/dotcms-models';
 
+import { FAVORITE_PAGE_LIMIT } from './dot-pages-store/dot-pages.store';
+
 export interface ListPagesParams {
     search: string;
     sort: string;
@@ -46,7 +48,7 @@ export class DotPageListService {
             .post<DotCMSAPIResponse<ESContent>>(this.#url, {
                 query: this.#buildFavoritePagesQuery(params),
                 sort: 'title ASC',
-                limit: 5,
+                limit: FAVORITE_PAGE_LIMIT,
                 offset: 0
             })
             .pipe(map((response) => response.entity));
