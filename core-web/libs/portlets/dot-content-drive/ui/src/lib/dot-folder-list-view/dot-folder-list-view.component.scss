@@ -83,64 +83,6 @@
                         }
                     }
                 }
-
-                .p-datatable-tbody {
-                    tr.content-drive-table__loading-row {
-                        cursor: default;
-                        // This is the height of the row in the table
-                        // We need to set it to the same height as the row in the table
-                        // to avoid the row from being too tall or too short
-                        height: 4.3125rem;
-
-                        td {
-                            text-align: center;
-                            vertical-align: middle;
-
-                            .skeleton-wrapper {
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                height: 100%;
-                            }
-                        }
-
-                        &:hover {
-                            cursor: default;
-                            background-color: transparent;
-                        }
-                    }
-
-                    tr.content-drive-table__row {
-                        td:nth-child(2) {
-                            min-width: 15.625rem;
-                        }
-
-                        .content-drive-table__actions-button {
-                            opacity: 0;
-                            transition: opacity 0.2s ease-in-out;
-                        }
-
-                        &:hover {
-                            .content-drive-table__actions-button {
-                                opacity: 1;
-                            }
-                        }
-
-                        &.is-dragging {
-                            cursor: grabbing;
-                        }
-
-                        &.is-drag-over:not(.p-highlight) {
-                            color: $text-color-hover;
-                            background-color: $color-palette-primary-100;
-                            transition: background-color ease-in $basic-speed;
-                        }
-
-                        &:focus:not(.p-highlight) {
-                            background-color: $white;
-                        }
-                    }
-                }
             }
         }
 
