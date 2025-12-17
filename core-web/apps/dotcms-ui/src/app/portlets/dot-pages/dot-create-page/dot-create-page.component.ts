@@ -10,10 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged, map, startWith } from 'rxjs/operators';
 
-import {
-    DotPageTypesService,
-    DotRouterService,
-} from '@dotcms/data-access';
+import { DotPageTypesService, DotRouterService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 

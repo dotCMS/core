@@ -77,7 +77,7 @@ export interface DotActionsMenuEventParams {
         DotWorkflowEventHandlerService,
         DotRouterService,
         DotFavoritePageService,
-        DotCMSPagesStore,
+        DotCMSPagesStore
     ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
@@ -103,7 +103,6 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     readonly #store = inject(DotPageStore);
     readonly dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly globalStore = inject(GlobalStore);
-
 
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.#store.vm$;
