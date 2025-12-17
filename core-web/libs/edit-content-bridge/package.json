@@ -5,7 +5,7 @@
         "rxjs": "~6.6.3",
         "@angular/core": "21.0.2",
         "@angular/forms": "21.0.2",
-        "vite": "6.3.5"
+        "vite": "7.2.7"
     },
     "type": "module",
     "main": "./index.js",

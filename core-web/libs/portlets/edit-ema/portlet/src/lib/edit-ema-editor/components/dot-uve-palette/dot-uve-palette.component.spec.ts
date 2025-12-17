@@ -19,7 +19,11 @@ function triggerTabChange(
 ): void {
     // PrimeNG v21 p-tabs onChange event structure
     // Directly call the component's handleTabChange method to simulate the event
-    (spectator.component as any).handleTabChange({ value: index });
+    (
+        spectator.component as DotUvePaletteComponent & {
+            handleTabChange: (event: { value: number }) => void;
+        }
+    ).handleTabChange({ value: index });
     spectator.detectChanges();
 }
 
@@ -189,27 +193,35 @@ describe('DotUvePaletteComponent', () => {
             // Trigger the onChange event from p-tabs (PrimeNG v21) by simulating user interaction
             triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
 
-            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.WIDGETS);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(
+                UVE_PALETTE_TABS.WIDGETS
+            );
         });
 
         it('should emit correct tab index when switching tabs', () => {
             // Switch to Favorites tab
             triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
 
-            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.FAVORITES);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(
+                UVE_PALETTE_TABS.FAVORITES
+            );
         });
 
         it('should emit when switching back to Content tab', () => {
             // First go to Widget tab
             triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
-            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.WIDGETS);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(
+                UVE_PALETTE_TABS.WIDGETS
+            );
 
             // Clear the mock
             spectator.hostComponent.onTabChange.mockClear();
 
             // Then go back to Content tab
             triggerTabChange(spectator, UVE_PALETTE_TABS.CONTENT_TYPES);
-            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(UVE_PALETTE_TABS.CONTENT_TYPES);
+            expect(spectator.hostComponent.onTabChange).toHaveBeenCalledWith(
+                UVE_PALETTE_TABS.CONTENT_TYPES
+            );
         });
     });
 

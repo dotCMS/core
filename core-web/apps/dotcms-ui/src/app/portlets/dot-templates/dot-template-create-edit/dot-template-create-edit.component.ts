@@ -10,7 +10,7 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 
 import { takeUntil, tap } from 'rxjs/operators';
 

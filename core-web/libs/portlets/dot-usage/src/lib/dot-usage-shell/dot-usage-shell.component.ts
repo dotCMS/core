@@ -13,7 +13,15 @@ import { DotUsageService, MetricData } from '../services/dot-usage.service';
 
 @Component({
     selector: 'lib-dot-usage-shell',
-    imports: [CommonModule, ButtonModule, CardModule, MessageModule, SkeletonModule, TooltipModule],
+    imports: [
+        CommonModule,
+        ButtonModule,
+        CardModule,
+        MessageModule,
+        SkeletonModule,
+        TooltipModule,
+        DotMessagePipe
+    ],
     templateUrl: './dot-usage-shell.component.html',
     styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
