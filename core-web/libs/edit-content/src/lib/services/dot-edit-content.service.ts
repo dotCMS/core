@@ -1,4 +1,4 @@
-import { Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -7,8 +7,10 @@ import { map, pluck } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
-    DotSiteService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotBrowsingService,
+    DotTagsService,
+    DotContentletService
 } from '@dotcms/data-access';
 import {
     DotCMSContentType,
@@ -16,21 +18,20 @@ import {
     DotCMSContentletVersion,
     DotContentletDepth,
     DotCMSResponse,
-    PaginationParams
-} from '@dotcms/dotcms-models';
-
-import {
+    PaginationParams,
     CustomTreeNode,
     DotFolder,
     TreeNodeItem
-} from '../models/dot-edit-content-host-folder-field.interface';
+} from '@dotcms/dotcms-models';
+
 import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
-import { createPaths } from '../utils/functions.util';
 
 @Injectable()
 export class DotEditContentService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
-    readonly #siteService = inject(DotSiteService);
+    readonly #dotContentletService = inject(DotContentletService);
+    readonly #dotBrowsingService = inject(DotBrowsingService);
+    readonly #dotTagsService = inject(DotTagsService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #http = inject(HttpClient);
 
@@ -58,9 +59,9 @@ export class DotEditContentService {
             httpParams = httpParams.set('depth', depth);
         }
 
-        return this.#http
-            .get(`/api/v1/content/${id}`, { params: httpParams })
-            .pipe(pluck('entity'));
+        return this.#dotContentletService
+            .getContentletByInode(id, httpParams)
+            .pipe(map((contentlet) => contentlet));
     }
 
     /**
@@ -80,12 +81,7 @@ export class DotEditContentService {
      * @returns An Observable that emits an array of tag labels.
      */
     getTags(name: string): Observable<string[]> {
-        const params = new HttpParams().set('name', name);
-
-        return this.#http.get<string[]>('/api/v2/tags', { params }).pipe(
-            pluck('entity'),
-            map((res) => Object.values(res).map((obj) => obj.label))
-        );
+        return this.#dotTagsService.getTags(name).pipe(map((tags) => tags.map((tag) => tag.label)));
     }
     /**
      * Saves a contentlet with the provided data.
@@ -113,25 +109,7 @@ export class DotEditContentService {
         perPage?: number;
         page?: number;
     }): Observable<TreeNodeItem[]> {
-        const { filter, perPage, page } = data;
-
-        return this.#siteService.getSites(filter, perPage, page).pipe(
-            map((sites) => {
-                return sites.map((site) => ({
-                    key: site.identifier,
-                    label: site.hostname,
-                    data: {
-                        id: site.identifier,
-                        hostname: site.hostname,
-                        path: '',
-                        type: 'site'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
-                    leaf: false
-                }));
-            })
-        );
+        return this.#dotBrowsingService.getSitesTreePath(data);
     }
 
     /**
@@ -142,7 +120,7 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getFolders(path: string): Observable<DotFolder[]> {
-        return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
+        return this.#dotBrowsingService.getFolders(path);
     }
 
     /**
@@ -153,28 +131,7 @@ export class DotEditContentService {
      * @returns {Observable<{ parent: DotFolder; folders: TreeNodeItem[] }>} Observable that emits an object containing the parent folder and child folders as TreeNodeItems
      */
     getFoldersTreeNode(path: string): Observable<{ parent: DotFolder; folders: TreeNodeItem[] }> {
-        return this.getFolders(`//${path}`).pipe(
-            map((folders) => {
-                const parent = folders.shift();
-
-                return {
-                    parent,
-                    folders: folders.map((folder) => ({
-                        key: folder.id,
-                        label: `${folder.hostName}${folder.path}`,
-                        data: {
-                            id: folder.id,
-                            hostname: folder.hostName,
-                            path: folder.path,
-                            type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder',
-                        leaf: false
-                    }))
-                };
-            })
-        );
+        return this.#dotBrowsingService.getFoldersTreeNode(path);
     }
 
     /**
@@ -186,43 +143,7 @@ export class DotEditContentService {
      * @returns {Observable<CustomTreeNode>} Observable that emits a CustomTreeNode containing the complete tree structure and the target node
      */
     buildTreeByPaths(path: string): Observable<CustomTreeNode> {
-        const paths = createPaths(path);
-
-        const requests = paths.reverse().map((path) => {
-            const split = path.split('/');
-            const [hostName] = split;
-            const subPath = split.slice(1).join('/');
-
-            const fullPath = `${hostName}/${subPath}`;
-
-            return this.getFoldersTreeNode(fullPath);
-        });
-
-        return forkJoin(requests).pipe(
-            map((response) => {
-                const [mainNode] = response;
-
-                return response.reduce(
-                    (rta, node, index, array) => {
-                        const next = array[index + 1];
-                        if (next) {
-                            const folder = next.folders.find((item) => item.key === node.parent.id);
-                            if (folder) {
-                                folder.children = node.folders;
-                                if (mainNode.parent.id === folder.key) {
-                                    rta.node = folder;
-                                }
-                            }
-                        }
-
-                        rta.tree = node;
-
-                        return rta;
-                    },
-                    { tree: null, node: null }
-                );
-            })
-        );
+        return this.#dotBrowsingService.buildTreeByPaths(path);
     }
 
     /**
@@ -232,21 +153,7 @@ export class DotEditContentService {
      * @returns {Observable<TreeNodeItem>} Observable that emits the current site as a TreeNodeItem
      */
     getCurrentSiteAsTreeNodeItem(): Observable<TreeNodeItem> {
-        return this.#siteService.getCurrentSite().pipe(
-            map((site) => ({
-                key: site.identifier,
-                label: site.hostname,
-                data: {
-                    id: site.identifier,
-                    hostname: site.hostname,
-                    path: '',
-                    type: 'site'
-                },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                leaf: false
-            }))
-        );
+        return this.#dotBrowsingService.getCurrentSiteAsTreeNodeItem();
     }
 
     /**
@@ -268,20 +175,7 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
-        const params = {
-            hostFolderId: folderId,
-            showLinks: false,
-            showDotAssets: true,
-            showPages: false,
-            showFiles: true,
-            showFolders: false,
-            showWorking: true,
-            showArchived: false,
-            sortByDesc: true,
-            mimeTypes: mimeTypes || []
-        };
-
-        return this.#siteService.getContentByFolder(params);
+        return this.#dotBrowsingService.getContentByFolder({ folderId, mimeTypes });
     }
 
     /**

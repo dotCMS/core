@@ -10,13 +10,12 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
+import { DotContentletService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
-import { SelectExisingFileStore } from './store/select-existing-file.store';
-
-import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
+import { DotBrowserSelectorStore } from './store/browser.store';
 
 type DialogData = {
     mimeTypes: string[];
@@ -25,12 +24,12 @@ type DialogData = {
 @Component({
     selector: 'dot-select-existing-file',
     imports: [DotSideBarComponent, DotDataViewComponent, ButtonModule, DotMessagePipe],
-    templateUrl: './dot-select-existing-file.component.html',
-    styleUrls: ['./dot-select-existing-file.component.scss'],
+    templateUrl: './dot-browser-selector.component.html',
+    styleUrls: ['./dot-browser-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [SelectExisingFileStore]
+    providers: [DotBrowserSelectorStore]
 })
-export class DotSelectExistingFileComponent implements OnInit {
+export class DotBrowserSelectorComponent implements OnInit {
     /**
      * Injects the SelectExistingFileStore into the component.
      *
@@ -38,16 +37,16 @@ export class DotSelectExistingFileComponent implements OnInit {
      * @type {SelectExistingFileStore}
      */
     /**
-     * A readonly property that injects the `SelectExisingFileStore` service.
+     * A readonly property that injects the `DotBrowserSelectorStore` service.
      * This store is used to manage the state and actions related to selecting existing files.
      */
-    readonly store = inject(SelectExisingFileStore);
+    readonly store = inject(DotBrowserSelectorStore);
 
     /**
-     * A readonly property that injects the `DotFileFieldUploadService` service.
+     * A readonly property that injects the `dotContentletService` service.
      * This service is used to manage the state and actions related to selecting existing files.
      */
-    readonly #uploadService = inject(DotFileFieldUploadService);
+    readonly #dotContentletService = inject(DotContentletService);
     /**
      * A reference to the dynamic dialog instance.
      * This is a read-only property that is injected using Angular's dependency injection.
@@ -103,8 +102,10 @@ export class DotSelectExistingFileComponent implements OnInit {
      */
     addContent(): void {
         const content = this.store.selectedContent();
-        this.#uploadService.getContentById(content.identifier).subscribe((content) => {
-            this.#dialogRef.close(content);
-        });
+        this.#dotContentletService
+            .getContentletByInodeWithContent(content.inode)
+            .subscribe((content) => {
+                this.#dialogRef.close(content);
+            });
     }
 }

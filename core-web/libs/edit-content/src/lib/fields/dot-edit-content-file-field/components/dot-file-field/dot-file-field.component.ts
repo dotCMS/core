@@ -32,7 +32,8 @@ import {
     DotAIImagePromptComponent,
     DotSpinnerComponent,
     DropZoneFileEvent,
-    DropZoneFileValidity
+    DropZoneFileValidity,
+    DotBrowserSelectorComponent
 } from '@dotcms/ui';
 
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
@@ -42,7 +43,6 @@ import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-fi
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from './../dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './../dot-form-import-url/dot-form-import-url.component';
-import { DotSelectExistingFileComponent } from './../dot-select-existing-file/dot-select-existing-file.component';
 
 import {
     INPUT_TYPE,
@@ -415,7 +415,7 @@ export class DotFileFieldComponent
 
         const header = this.#dotMessageService.get(title);
 
-        this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
+        this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
             header,
             appendTo: 'body',
             closeOnEscape: false,

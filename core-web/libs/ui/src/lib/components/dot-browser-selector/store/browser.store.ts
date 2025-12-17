@@ -14,13 +14,13 @@ import { computed, inject } from '@angular/core';
 
 import { exhaustMap, switchMap, tap, filter, map } from 'rxjs/operators';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-
+import { DotBrowsingService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
+    DotCMSContentlet,
     TreeNodeItem,
     TreeNodeSelectItem
-} from '../../../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
+} from '@dotcms/dotcms-models';
 
 export const PEER_PAGE_LIMIT = 1000;
 
@@ -34,7 +34,7 @@ export interface Content {
     lastModified: Date;
 }
 
-export interface SelectExisingFileState {
+export interface BrowserSelectorState {
     folders: {
         data: TreeNodeItem[];
         status: ComponentStatus;
@@ -51,7 +51,7 @@ export interface SelectExisingFileState {
     mimeTypes: string[];
 }
 
-const initialState: SelectExisingFileState = {
+const initialState: BrowserSelectorState = {
     folders: {
         data: [],
         status: ComponentStatus.INIT,
@@ -68,14 +68,14 @@ const initialState: SelectExisingFileState = {
     mimeTypes: []
 };
 
-export const SelectExisingFileStore = signalStore(
+export const DotBrowserSelectorStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
         foldersIsLoading: computed(() => state.folders().status === ComponentStatus.LOADING),
         contentIsLoading: computed(() => state.content().status === ComponentStatus.LOADING)
     })),
     withMethods((store) => {
-        const dotEditContentService = inject(DotEditContentService);
+        const dotBrowsingService = inject(DotBrowsingService);
 
         return {
             setMimeTypes: (mimeTypes: string[]) => {
@@ -112,7 +112,7 @@ export const SelectExisingFileStore = signalStore(
                         return hasIdentifier;
                     }),
                     switchMap((identifier) => {
-                        return dotEditContentService
+                        return dotBrowsingService
                             .getContentByFolder({
                                 folderId: identifier,
                                 mimeTypes: store.mimeTypes()
@@ -149,7 +149,7 @@ export const SelectExisingFileStore = signalStore(
                         })
                     ),
                     switchMap(() => {
-                        return dotEditContentService
+                        return dotBrowsingService
                             .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                             .pipe(
                                 tapResponse({
@@ -184,7 +184,7 @@ export const SelectExisingFileStore = signalStore(
 
                         const fullPath = `${hostname}/${path}`;
 
-                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
                             tapResponse({
                                 next: ({ folders: children }) => {
                                     node.loading = false;

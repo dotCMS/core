@@ -6,30 +6,28 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { SelectExisingFileStore } from './select-existing-file.store';
+import { DotBrowserSelectorStore } from './browser.store';
 
-import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
+import { DotBrowsingService } from '@dotcms/data-access';
 import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../../../utils/mocks';
 
-describe('SelectExisingFileStore', () => {
-    let store: InstanceType<typeof SelectExisingFileStore>;
-    let editContentService: SpyObject<DotEditContentService>;
+describe('DotBrowserSelectorStore', () => {
+    let store: InstanceType<typeof DotBrowserSelectorStore>;
+    let dotBrowsingService: SpyObject<DotBrowsingService>;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
-                SelectExisingFileStore,
-                mockProvider(DotEditContentService, {
+                DotBrowserSelectorStore,
+                mockProvider(DotBrowsingService, {
                     getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_SITES_MOCK)),
                     getContentByFolder: jest.fn().mockReturnValue(of([]))
                 })
             ]
         });
 
-        store = TestBed.inject(SelectExisingFileStore);
-        editContentService = TestBed.inject(
-            DotEditContentService
-        ) as SpyObject<DotEditContentService>;
+        store = TestBed.inject(DotBrowserSelectorStore);
+        dotBrowsingService = TestBed.inject(DotBrowsingService) as SpyObject<DotBrowsingService>;
     });
 
     it('should be created', () => {

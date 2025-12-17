@@ -70,3 +70,4 @@ export * from './lib/push-publish/push-publish.service';
 export * from './lib/dot-page-contenttype/dot-page-contenttype.service';
 export * from './lib/dot-favorite-contenttype/dot-favorite-contenttype.service';
 export * from './lib/dot-content-drive/dot-content-drive.service';
+export * from './lib/dot-browsing/dot-browsing.service';
