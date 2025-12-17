@@ -28,7 +28,7 @@ const initialState: DotCMSPagesPortletState = {
     favoritePages: [],
     filters: {
         search: '',
-        sort: 'title ASC',
+        sort: 'modDate DESC',
         limit: 40,
         languageId: null, // null means all languages
         archived: false,

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -13,7 +13,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, skip, startWith } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
@@ -78,6 +78,9 @@ export class DotPagesTableComponent {
     /** Emits PrimeNG lazy load event (pagination + sort changes) */
     readonly lazyLoad = output<LazyLoadEvent>();
 
+    /** Whether the lazy load event has been emitted. */
+    readonly #didEmitLazyLoad = signal<boolean>(false);
+
     // Reactive "dynamic" filters form
     /** Search keyword control (debounced before emitting). */
     readonly searchControl = new FormControl<string>('', { nonNullable: true });
@@ -133,16 +136,17 @@ export class DotPagesTableComponent {
                 startWith(this.searchControl.value),
                 debounceTime(300),
                 distinctUntilChanged(),
+                skip(1),
                 takeUntilDestroyed()
             )
             .subscribe((keyword) => this.search.emit(keyword));
 
         this.languageControl.valueChanges
-            .pipe(distinctUntilChanged(), takeUntilDestroyed())
+            .pipe(distinctUntilChanged(), skip(1), takeUntilDestroyed())
             .subscribe((languageId) => this.languageChange.emit(languageId));
 
         this.archivedControl.valueChanges
-            .pipe(distinctUntilChanged(), takeUntilDestroyed())
+            .pipe(distinctUntilChanged(), skip(1), takeUntilDestroyed())
             .subscribe((archived) => this.archivedChange.emit(archived));
     }
 
@@ -152,6 +156,12 @@ export class DotPagesTableComponent {
      * @param {LazyLoadEvent} event - PrimeNG table lazy-load event
      */
     loadPagesLazy(event: LazyLoadEvent): void {
+        // PrimeNG emits an initial lazy-load event on init; skip the first emission
+        // to avoid duplicate loads when the parent already fetches on init.
+        if (!this.#didEmitLazyLoad()) {
+            this.#didEmitLazyLoad.set(true);
+            return;
+        }
         this.lazyLoad.emit(event);
     }
 
