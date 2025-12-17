@@ -21,18 +21,6 @@ import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
-import type { Editor as TinyMCEEditor } from 'tinymce';
-
-/**
- * Event object interface from TinyMCE Angular
- * This matches the EventObj interface from @tinymce/tinymce-angular/editor/Events
- * which is not exported from the main package
- */
-interface EventObj<T> {
-    event: T;
-    editor: TinyMCEEditor;
-}
-
 /**
  * Dot editable text component.
  * This component is responsible to render a text field that can be edited inline.
@@ -200,11 +188,11 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
     /**
      * Handle mouse down event
      *
-     * @param {EventObj<MouseEvent>} { event }
+     * @param {{ event: MouseEvent }} { event }
      * @return {*}
      * @memberof DotCMSEditableTextComponent
      */
-    onMouseDown({ event }: EventObj<MouseEvent>) {
+    onMouseDown({ event }: { event: MouseEvent }) {
         if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }

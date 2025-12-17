@@ -169,10 +169,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             switchMap((locale) =>
                 this.languageService.add(locale).pipe(
                     take(1),
-                    tapResponse(
-                        () => this.updateListAndNotify(),
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
-                    )
+                    tapResponse({
+                        next: () => this.updateListAndNotify(),
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error)
+                    })
                 )
             )
         );
@@ -184,10 +185,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             switchMap((locale) =>
                 this.languageService.update(locale).pipe(
                     take(1),
-                    tapResponse(
-                        () => this.updateListAndNotify(),
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
-                    )
+                    tapResponse({
+                        next: () => this.updateListAndNotify(),
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error)
+                    })
                 )
             )
         );
@@ -199,10 +201,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             switchMap((localeId) =>
                 this.languageService.makeDefault(localeId).pipe(
                     take(1),
-                    tapResponse(
-                        () => this.updateListAndNotify(),
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
-                    )
+                    tapResponse({
+                        next: () => this.updateListAndNotify(),
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error)
+                    })
                 )
             )
         );
@@ -214,10 +217,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             switchMap((languageId) =>
                 this.languageService.delete(languageId).pipe(
                     take(1),
-                    tapResponse(
-                        () => this.updateListAndNotify(true),
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
-                    )
+                    tapResponse({
+                        next: () => this.updateListAndNotify(true),
+                        error: (error: HttpErrorResponse) =>
+                            this.dotHttpErrorManagerService.handle(error)
+                    })
                 )
             )
         )
@@ -352,8 +356,8 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             .get()
             .pipe(
                 take(1),
-                tapResponse(
-                    (languages) => {
+                tapResponse({
+                    next: (languages) => {
                         this.setLocales(languages);
                         if (isDelete) {
                             this.messageService.add({
@@ -376,11 +380,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                                 )
                             });
                         }
-
                         this.setStatus(ComponentStatus.IDLE);
                     },
-                    (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
-                )
+                    error: (error: HttpErrorResponse) =>
+                        this.dotHttpErrorManagerService.handle(error)
+                })
             )
             .subscribe();
     }

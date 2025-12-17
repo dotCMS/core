@@ -55,7 +55,7 @@
     color: $text-color-hover;
 }
 
-.p-contextmenu .p-menuitem-link:focus {
+.p-contextmenu .p-menuitem-link:focus-visible {
     background: $bg-highlight;
     outline: 2px solid colors.$color-palette-primary;
     outline-offset: -2px;

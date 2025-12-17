@@ -3,7 +3,9 @@
     "version": "1.0.0",
     "dependencies": {
         "rxjs": "~6.6.3",
-        "vite": "6.3.5"
+        "@angular/core": "21.0.2",
+        "@angular/forms": "21.0.2",
+        "vite": "7.2.7"
     },
     "type": "module",
     "main": "./index.js",
