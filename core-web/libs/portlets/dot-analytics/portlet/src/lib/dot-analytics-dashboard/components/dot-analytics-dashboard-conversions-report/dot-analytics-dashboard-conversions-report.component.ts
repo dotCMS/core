@@ -1,12 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
-
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     ContentConversionRow,
     DotAnalyticsDashboardStore,
@@ -20,9 +15,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { TIME_PERIOD_OPTIONS } from '../../constants';
 import { ChartData } from '../../types';
+import DotAnalyticsContentConversionsTableComponent from '../dot-analytics-content-conversions-table/dot-analytics-content-conversions-table.component';
+import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conversions-overview-table/dot-analytics-conversions-overview-table.component';
 import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
-import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
  * Conversions Report Component
@@ -38,12 +34,10 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     selector: 'dot-analytics-dashboard-conversions-report',
     imports: [
         CommonModule,
-        CardModule,
-        TableModule,
-        TagModule,
         DotAnalyticsDashboardMetricsComponent,
         DotAnalyticsDashboardChartComponent,
-        DotAnalyticsStateMessageComponent,
+        DotAnalyticsContentConversionsTableComponent,
+        DotAnalyticsConversionsOverviewTableComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard-conversions-report.component.html',
@@ -58,6 +52,10 @@ export default class DotAnalyticsDashboardConversionsReportComponent implements 
     ngOnInit(): void {
         // Lazy load conversions data when component initializes (tab selected)
         this.store.loadConversionsData();
+
+        this.#globalStore.addNewBreadcrumb({
+            label: 'Conversions'
+        });
     }
 
     // Dynamic chart title with time range from filter
@@ -89,23 +87,15 @@ export default class DotAnalyticsDashboardConversionsReportComponent implements 
         () => this.store.contentConversions().status
     );
 
-    // Table state helpers
-    protected readonly $isTableLoading = computed(() => {
-        const status = this.$contentConversionsStatus();
+    // Conversions overview table data from Conversion cube
+    protected readonly $conversionsOverviewData = computed(() => {
+        const conversionsOverview = this.store.conversionsOverview();
 
-        return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+        return conversionsOverview.data || [];
     });
-
-    protected readonly $isTableError = computed(
-        () => this.$contentConversionsStatus() === ComponentStatus.ERROR
+    protected readonly $conversionsOverviewStatus = computed(
+        () => this.store.conversionsOverview().status
     );
-
-    protected readonly $isTableEmpty = computed(() => {
-        const data = this.$contentConversionsData();
-        const status = this.$contentConversionsStatus();
-
-        return status === ComponentStatus.LOADED && (!data || data.length === 0);
-    });
 
     // Computed signals for conversions metrics
     protected readonly $metricsData = computed((): MetricData[] => {

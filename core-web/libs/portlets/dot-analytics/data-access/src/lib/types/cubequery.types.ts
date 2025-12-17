@@ -7,8 +7,9 @@
  * - 'request': Pageview and request analytics
  * - 'EventSummary': Conversion and event analytics
  * - 'ContentAttribution': Content attribution for conversions
+ * - 'Conversion': Conversions overview data
  */
-export type CubePrefix = 'request' | 'EventSummary' | 'ContentAttribution';
+export type CubePrefix = 'request' | 'EventSummary' | 'ContentAttribution' | 'Conversion';
 
 /**
  * Sort direction options for ordering queries.
@@ -67,7 +68,11 @@ const DimensionField = {
     IDENTIFIER: 'identifier',
     TITLE: 'title',
     CONVERSIONS: 'conversions',
-    EVENTS: 'events'
+    EVENTS: 'events',
+    CONVERSION_NAME: 'conversionName',
+    TOTAL_CONVERSION: 'totalConversion',
+    CONV_RATE: 'convRate',
+    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];

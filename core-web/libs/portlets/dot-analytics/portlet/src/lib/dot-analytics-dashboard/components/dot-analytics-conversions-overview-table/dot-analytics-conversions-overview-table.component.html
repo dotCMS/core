@@ -1,0 +1,126 @@
+@let isLoading = $isLoading();
+@let isError = $isError();
+@let isEmpty = $isEmpty();
+@let data = $data();
+
+<p-card>
+    <ng-template pTemplate="header">
+        <h3 class="table-title">
+            {{ 'analytics.table.conversions-overview.title' | dm }}
+        </h3>
+    </ng-template>
+
+    @if (isLoading) {
+        <!-- Loading State -->
+        <div class="flex flex-column gap-3 p-4" data-testid="conversions-overview-loading">
+            @for (i of [1, 2, 3]; track i) {
+                <div class="flex gap-3">
+                    <div
+                        class="skeleton-cell flex-1"
+                        style="
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell flex-1"
+                        style="
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell"
+                        style="
+                            width: 100px;
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell"
+                        style="
+                            width: 100px;
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                    <div
+                        class="skeleton-cell flex-2"
+                        style="
+                            height: 1.5rem;
+                            background: var(--surface-200);
+                            border-radius: 4px;
+                        "></div>
+                </div>
+            }
+        </div>
+    } @else if (isError) {
+        <!-- Error State -->
+        <div class="p-4" style="min-height: 200px" data-testid="conversions-overview-error">
+            <dot-analytics-state-message
+                message="analytics.error.loading.conversions-overview"
+                icon="pi-exclamation-triangle" />
+        </div>
+    } @else if (isEmpty) {
+        <!-- Empty State -->
+        <div class="p-4" style="min-height: 200px" data-testid="conversions-overview-empty">
+            <dot-analytics-state-message
+                message="analytics.table.conversions-overview.empty"
+                icon="pi-info-circle" />
+        </div>
+    } @else {
+        <!-- Data Table -->
+        <p-table
+            [value]="data"
+            styleClass="p-datatable-sm"
+            data-testid="conversions-overview-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>{{ 'analytics.table.conversions-overview.conversion-name' | dm }}</th>
+                    <th class="text-right">
+                        {{ 'analytics.table.conversions-overview.total' | dm }}
+                    </th>
+                    <th class="text-right">
+                        {{ 'analytics.table.conversions-overview.conv-rate' | dm }}
+                    </th>
+                    <th>
+                        {{ 'analytics.table.conversions-overview.top-attributed-content' | dm }}
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+                <tr>
+                    <td>
+                        <p-tag
+                            [value]="row['Conversion.conversionName']"
+                            styleClass="conversion-name-badge" />
+                    </td>
+                    <td class="text-right text-primary font-semibold">
+                        {{ row['Conversion.totalConversion'] | number }}
+                    </td>
+                    <td class="text-right font-semibold">{{ row['Conversion.convRate'] }}%</td>
+                    <td>
+                        <div class="flex flex-column gap-2">
+                            @for (
+                                content of row['Conversion.topAttributedContent'];
+                                track content.identifier
+                            ) {
+                                <div class="flex align-items-center gap-2 text-sm">
+                                    <p-tag
+                                        [value]="content.title"
+                                        styleClass="content-title-badge" />
+                                    <span class="text-color-secondary">
+                                        {{ content.conversions | number }} ({{
+                                            content.conv_rate
+                                        }}%)
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+</p-card>

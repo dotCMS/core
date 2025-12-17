@@ -1,0 +1,43 @@
+@use "variables" as *;
+
+.table-title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-bold;
+    color: $black;
+    line-height: $line-height-relative;
+    margin: 0;
+}
+
+// Ensure consistent row height
+::ng-deep .p-datatable {
+    .p-datatable-tbody > tr {
+        height: 46px;
+        box-sizing: border-box;
+    }
+}
+
+// Custom conversion name badges - blue from dotCMS palette
+::ng-deep {
+    .p-tag.conversion-name-badge {
+        background-color: $color-palette-blue-tint;
+        border: 1px solid $color-palette-blue-op-20;
+        border-radius: $border-radius-sm;
+        color: $color-palette-blue-shade;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semi-bold;
+        padding: $spacing-0 $spacing-2;
+    }
+}
+
+// Custom content title badges - neutral gray with border
+::ng-deep {
+    .p-tag.content-title-badge {
+        background-color: $color-palette-gray-100;
+        border: 1px solid $color-palette-gray-200;
+        border-radius: $border-radius-sm;
+        color: $color-palette-gray-600;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semi-bold;
+        padding: $spacing-0 $spacing-2;
+    }
+}

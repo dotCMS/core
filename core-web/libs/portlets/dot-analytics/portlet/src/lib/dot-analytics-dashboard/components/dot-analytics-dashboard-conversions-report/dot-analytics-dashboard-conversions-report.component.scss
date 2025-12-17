@@ -103,4 +103,24 @@
             border-radius: $border-radius-xl;
         }
     }
+
+    // Element: content-table (Content Conversions table)
+    &__content-table {
+        width: 100%;
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
+
+    // Element: overview-table (Conversions Overview table)
+    &__overview-table {
+        width: 100%;
+
+        ::ng-deep .p-card {
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-xl;
+        }
+    }
 }

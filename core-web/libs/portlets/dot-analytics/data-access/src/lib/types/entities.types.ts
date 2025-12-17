@@ -86,6 +86,28 @@ export interface ContentAttributionEntity {
 }
 
 /**
+ * Top attributed content item for conversions overview.
+ */
+export interface TopAttributedContentItem {
+    conv_rate: string;
+    conversions: string;
+    event_type: string;
+    identifier: string;
+    title: string;
+}
+
+/**
+ * Conversions overview entity response for conversions overview table.
+ * Shows conversion names with their totals, rates, and top attributed content.
+ */
+export interface ConversionsOverviewEntity {
+    'Conversion.conversionName': string;
+    'Conversion.totalConversion': string;
+    'Conversion.convRate': string;
+    'Conversion.topAttributedContent': TopAttributedContentItem[];
+}
+
+/**
  * Chart type options available for visualization.
  * Using const assertion for chart type management.
  */

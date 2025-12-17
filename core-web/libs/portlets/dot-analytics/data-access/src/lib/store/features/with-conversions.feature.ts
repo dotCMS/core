@@ -1,11 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -22,6 +16,7 @@ import { FiltersState } from './with-filters.feature';
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
     ContentAttributionEntity,
+    ConversionsOverviewEntity,
     ConvertingVisitorsEntity,
     createInitialRequestState,
     RequestState,
@@ -52,6 +47,8 @@ export interface ConversionsState {
     trafficVsConversions: RequestState<TrafficVsConversionsEntity[]>;
     /** Content attribution table data */
     contentConversions: RequestState<ContentAttributionEntity[]>;
+    /** Conversions overview table data */
+    conversionsOverview: RequestState<ConversionsOverviewEntity[]>;
     /** Flag to track if data has been loaded at least once */
     conversionsDataLoaded: boolean;
 }
@@ -66,6 +63,7 @@ const initialConversionsState: ConversionsState = {
     conversionTrend: createInitialRequestState(),
     trafficVsConversions: createInitialRequestState(),
     contentConversions: createInitialRequestState(),
+    conversionsOverview: createInitialRequestState(),
     conversionsDataLoaded: false
 };
 
@@ -371,6 +369,68 @@ export function withConversions() {
                 ),
 
                 /**
+                 * Loads conversions overview table data.
+                 * Shows conversion names with total conversions, conversion rate, and top attributed content.
+                 */
+                loadConversionsOverview: rxMethod<{
+                    timeRange: TimeRangeInput;
+                    currentSiteId: string;
+                }>(
+                    pipe(
+                        tap(() =>
+                            patchState(store, {
+                                conversionsOverview: {
+                                    status: ComponentStatus.LOADING,
+                                    data: null,
+                                    error: null
+                                }
+                            })
+                        ),
+                        switchMap(({ currentSiteId }) => {
+                            const query = createCubeQuery()
+                                .fromCube('Conversion')
+                                .dimensions([
+                                    'conversionName',
+                                    'totalConversion',
+                                    'convRate',
+                                    'topAttributedContent'
+                                ])
+                                .siteId(currentSiteId)
+                                // TODO: Uncomment this when the time range is implemented
+                                // .timeRange('day', toTimeRangeCubeJS(timeRange))
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<ConversionsOverviewEntity>(query)
+                                .pipe(
+                                    tapResponse(
+                                        (entities) => {
+                                            patchState(store, {
+                                                conversionsOverview: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data: entities,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        (error: HttpErrorResponse) => {
+                                            patchState(store, {
+                                                conversionsOverview: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error:
+                                                        error.message ||
+                                                        'Error loading conversions overview'
+                                                }
+                                            });
+                                        }
+                                    )
+                                );
+                        })
+                    )
+                ),
+
+                /**
                  * Loads all conversions data.
                  * This method is called explicitly (lazy) when the conversions tab is activated.
                  */
@@ -390,6 +450,7 @@ export function withConversions() {
                     this.loadConvertingVisitors({ timeRange, currentSiteId });
                     this.loadTrafficVsConversions({ timeRange, currentSiteId });
                     this.loadContentConversions({ timeRange, currentSiteId });
+                    this.loadConversionsOverview({ timeRange, currentSiteId });
                 },
 
                 /**

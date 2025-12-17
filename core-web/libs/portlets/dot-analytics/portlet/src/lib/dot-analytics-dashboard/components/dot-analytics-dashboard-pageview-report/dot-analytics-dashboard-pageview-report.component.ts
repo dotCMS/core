@@ -34,7 +34,7 @@ import { DotAnalyticsDashboardTableComponent } from '../dot-analytics-dashboard-
 })
 export default class DotAnalyticsDashboardPageviewReportComponent {
     readonly store = inject(DotAnalyticsDashboardStore);
-    private readonly globalStore = inject(GlobalStore);
+    readonly #globalStore = inject(GlobalStore);
 
     // Metrics signals from store
     protected readonly $totalPageViews = this.store.totalPageViews;
@@ -62,10 +62,8 @@ export default class DotAnalyticsDashboardPageviewReportComponent {
     }
 
     #setupBreadcrumb(): void {
-        this.globalStore.addNewBreadcrumb({
-            label: 'Pages',
-            target: '_self',
-            url: `/dotAdmin/#/analytics/dashboard/pages`
+        this.#globalStore.addNewBreadcrumb({
+            label: 'Pageview'
         });
     }
 
