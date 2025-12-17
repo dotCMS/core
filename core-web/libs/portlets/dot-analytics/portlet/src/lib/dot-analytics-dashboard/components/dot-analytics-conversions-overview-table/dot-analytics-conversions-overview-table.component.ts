@@ -2,8 +2,10 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
+import { ChipModule } from 'primeng/chip';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { ConversionsOverviewEntity } from '@dotcms/portlets/dot-analytics/data-access';
@@ -21,8 +23,10 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     imports: [
         CommonModule,
         CardModule,
+        ChipModule,
         TableModule,
         TagModule,
+        TooltipModule,
         DotAnalyticsStateMessageComponent,
         DotMessagePipe
     ],

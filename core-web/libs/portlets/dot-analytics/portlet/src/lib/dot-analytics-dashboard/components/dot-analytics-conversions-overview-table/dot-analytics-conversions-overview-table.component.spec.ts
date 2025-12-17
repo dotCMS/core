@@ -147,9 +147,9 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
         it('should display top attributed content items', () => {
             const firstRow = spectator.queryAll('p-table tbody tr')[0];
             const lastCell = firstRow.querySelectorAll('td')[3]; // Top Attributed Content column
-            const tags = lastCell.querySelectorAll('p-tag');
+            const contentItems = lastCell.querySelectorAll('.attributed-content-item');
 
-            expect(tags.length).toBe(mockData[0]['Conversion.topAttributedContent'].length);
+            expect(contentItems.length).toBe(mockData[0]['Conversion.topAttributedContent'].length);
         });
 
         it('should display header columns', () => {

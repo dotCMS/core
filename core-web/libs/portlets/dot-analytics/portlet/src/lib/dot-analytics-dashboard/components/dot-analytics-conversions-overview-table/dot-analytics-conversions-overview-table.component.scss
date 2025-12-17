@@ -29,15 +29,58 @@
     }
 }
 
-// Custom content title badges - neutral gray with border
+// Top Attributed Content styling - compact
+.attributed-content-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}
+
+.attributed-content-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-3;
+    font-size: $font-size-sm;
+    line-height: 1.4;
+
+    .content-info {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+        flex: 1;
+        min-width: 0; // Allow text truncation
+    }
+
+    .content-title {
+        color: $black;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-percentage {
+        font-weight: $font-weight-semi-bold;
+        color: $color-palette-primary;
+        min-width: 50px;
+        text-align: right;
+        white-space: nowrap;
+    }
+}
+
+// Conversions chip styling
 ::ng-deep {
-    .p-tag.content-title-badge {
+    .p-chip.conversions-chip {
         background-color: $color-palette-gray-100;
-        border: 1px solid $color-palette-gray-200;
-        border-radius: $border-radius-sm;
-        color: $color-palette-gray-600;
+        color: $color-palette-gray-700;
         font-size: $font-size-xs;
         font-weight: $font-weight-semi-bold;
-        padding: $spacing-0 $spacing-2;
+        padding: 2px $spacing-1;
+        height: auto;
+
+        .p-chip-text {
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semi-bold;
+        }
     }
 }

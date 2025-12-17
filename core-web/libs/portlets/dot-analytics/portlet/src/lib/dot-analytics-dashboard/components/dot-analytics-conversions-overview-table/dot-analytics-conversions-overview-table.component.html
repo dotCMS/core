@@ -74,15 +74,22 @@
         <p-table
             [value]="data"
             styleClass="p-datatable-sm"
+            [paginator]="true"
+            [rows]="20"
+            [rowsPerPageOptions]="[20, 50, 100]"
+            sortField="Conversion.convRate"
+            [sortOrder]="-1"
             data-testid="conversions-overview-table">
             <ng-template pTemplate="header">
                 <tr>
                     <th>{{ 'analytics.table.conversions-overview.conversion-name' | dm }}</th>
-                    <th class="text-right">
+                    <th class="text-right" pSortableColumn="Conversion.totalConversion">
                         {{ 'analytics.table.conversions-overview.total' | dm }}
+                        <p-sortIcon field="Conversion.totalConversion" />
                     </th>
-                    <th class="text-right">
+                    <th class="text-right" pSortableColumn="Conversion.convRate">
                         {{ 'analytics.table.conversions-overview.conv-rate' | dm }}
+                        <p-sortIcon field="Conversion.convRate" />
                     </th>
                     <th>
                         {{ 'analytics.table.conversions-overview.top-attributed-content' | dm }}
@@ -99,21 +106,26 @@
                     <td class="text-right text-primary font-semibold">
                         {{ row['Conversion.totalConversion'] | number }}
                     </td>
-                    <td class="text-right font-semibold">{{ row['Conversion.convRate'] }}%</td>
+                    <td class="text-right font-semibold">
+                        {{ row['Conversion.convRate'] | number: '1.0-2' }}%
+                    </td>
                     <td>
-                        <div class="flex flex-column gap-2">
+                        <div class="attributed-content-list">
                             @for (
                                 content of row['Conversion.topAttributedContent'];
                                 track content.identifier
                             ) {
-                                <div class="flex align-items-center gap-2 text-sm">
-                                    <p-tag
-                                        [value]="content.title"
-                                        styleClass="content-title-badge" />
-                                    <span class="text-color-secondary">
-                                        {{ content.conversions | number }} ({{
-                                            content.conv_rate
-                                        }}%)
+                                <div class="attributed-content-item">
+                                    <div class="content-info">
+                                        <span class="content-title">{{ content.title }}</span>
+                                        <p-chip
+                                            [label]="(content.conversions | number) || '0'"
+                                            styleClass="conversions-chip"
+                                            pTooltip="Conversions"
+                                            tooltipPosition="top" />
+                                    </div>
+                                    <span class="content-percentage">
+                                        {{ content.conv_rate | number: '1.0-2' }}%
                                     </span>
                                 </div>
                             }

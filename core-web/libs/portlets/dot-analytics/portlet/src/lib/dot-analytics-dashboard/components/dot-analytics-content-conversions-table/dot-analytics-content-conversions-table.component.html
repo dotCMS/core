@@ -79,20 +79,34 @@
         </div>
     } @else {
         <!-- Data Table -->
-        <p-table [value]="data" styleClass="p-datatable-sm" data-testid="content-conversions-table">
+        <p-table
+            [value]="data"
+            styleClass="p-datatable-sm"
+            [paginator]="true"
+            [rows]="20"
+            [rowsPerPageOptions]="[20, 50, 100]"
+            sortField="conversions"
+            [sortOrder]="-1"
+            data-testid="content-conversions-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>{{ 'analytics.table.content-conversions.type' | dm }}</th>
+                    <th pSortableColumn="eventType">
+                        {{ 'analytics.table.content-conversions.type' | dm }}
+                        <p-sortIcon field="eventType" />
+                    </th>
                     <th>{{ 'analytics.table.content-conversions.identifier' | dm }}</th>
                     <th>{{ 'analytics.table.content-conversions.title-column' | dm }}</th>
-                    <th class="text-right">
+                    <th class="text-right" pSortableColumn="events">
                         {{ 'analytics.table.content-conversions.count' | dm }}
+                        <p-sortIcon field="events" />
                     </th>
-                    <th class="text-right">
+                    <th class="text-right" pSortableColumn="conversions">
                         {{ 'analytics.table.content-conversions.conversions' | dm }}
+                        <p-sortIcon field="conversions" />
                     </th>
-                    <th class="text-right">
+                    <th class="text-right" pSortableColumn="conversionRate">
                         {{ 'analytics.table.content-conversions.conv-rate' | dm }}
+                        <p-sortIcon field="conversionRate" />
                     </th>
                 </tr>
             </ng-template>
@@ -110,7 +124,7 @@
                     <td class="text-right text-primary font-semibold">
                         {{ row.conversions | number }}
                     </td>
-                    <td class="text-right">{{ row.conversionRate }}%</td>
+                    <td class="text-right">{{ row.conversionRate | number: '1.0-2' }}%</td>
                 </tr>
             </ng-template>
         </p-table>

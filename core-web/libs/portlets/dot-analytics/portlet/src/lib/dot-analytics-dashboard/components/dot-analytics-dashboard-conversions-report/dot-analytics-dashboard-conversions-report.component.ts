@@ -50,7 +50,6 @@ export default class DotAnalyticsDashboardConversionsReportComponent implements 
     readonly #messageService = inject(DotMessageService);
 
     ngOnInit(): void {
-        // Lazy load conversions data when component initializes (tab selected)
         this.store.loadConversionsData();
 
         this.#globalStore.addNewBreadcrumb({
@@ -131,7 +130,7 @@ export default class DotAnalyticsDashboardConversionsReportComponent implements 
             },
             {
                 name: 'analytics.metrics.converting-visitors',
-                value: uniqueConvertingVisitors,
+                value: `${uniqueConvertingVisitors}/${uniqueVisitors}`,
                 subtitle: 'analytics.metrics.converting-visitors.subtitle',
                 icon: 'pi-users',
                 status: convertingVisitors.status,
@@ -139,7 +138,7 @@ export default class DotAnalyticsDashboardConversionsReportComponent implements 
             },
             {
                 name: 'analytics.metrics.site-conversion-rate',
-                value: conversionRate,
+                value: `${conversionRate}%`,
                 subtitle: 'analytics.metrics.site-conversion-rate.subtitle',
                 icon: 'pi-chart-line',
                 status: convertingVisitors.status,
