@@ -30,12 +30,12 @@ import {
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
 @Component({
-    selector: 'dot-pages-favorite-panel',
-    templateUrl: './dot-pages-favorite-panel.component.html',
-    styleUrls: ['./dot-pages-favorite-panel.component.scss'],
+    selector: 'dot-page-favorites-panel',
+    templateUrl: './dot-page-favorites-panel.component.html',
+    styleUrls: ['./dot-page-favorites-panel.component.scss'],
     imports: [CommonModule, DotMessagePipe, DotPagesCardComponent, PanelModule, ButtonModule]
 })
-export class DotPagesFavoritePanelComponent implements OnInit {
+export class DotPageFavoritesPanelComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dialogService = inject(DialogService);
     readonly #dotPageRenderService = inject(DotPageRenderService);
@@ -45,7 +45,7 @@ export class DotPagesFavoritePanelComponent implements OnInit {
 
     readonly $favoritePages = input<DotCMSContentlet[]>([], { alias: 'favoritePages' });
     readonly goToUrl = output<string>();
-    readonly showActionsMenu = output<DotActionsMenuEventParams>();
+    readonly showContextMenu = output<DotActionsMenuEventParams>();
 
     readonly $isCollapsed = signal<boolean>(true);
 

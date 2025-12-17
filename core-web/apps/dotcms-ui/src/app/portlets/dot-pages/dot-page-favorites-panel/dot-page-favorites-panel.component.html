@@ -43,7 +43,8 @@
                     "
                     [title]="item.title"
                     [url]="item.url"
-                    [ownerPage]="item.owner === vm.loggedUser.id" />
+                    [ownerPage]="item.owner === vm.loggedUser.id"
+                    (showContextMenu)="showContextMenu.emit($event)" />
             }
         </div>
     }

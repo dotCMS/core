@@ -52,7 +52,7 @@ import {
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotCreatePageComponent } from '../dot-create-page/dot-create-page.component';
+import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 export interface DotPagesInfo {
     actionMenuDomId?: string;
@@ -366,7 +366,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             this.patchState({
                                 pageTypes
                             });
-                            this.dialogService.open(DotCreatePageComponent, {
+                            this.dialogService.open(DotCreatePageDialogComponent, {
                                 header: this.dotMessageService.get('create.page'),
                                 width: '58rem',
                                 data: {

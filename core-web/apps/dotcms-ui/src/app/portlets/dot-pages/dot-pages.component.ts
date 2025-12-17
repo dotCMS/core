@@ -45,15 +45,15 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
-import { DotCreatePageComponent } from './dot-create-page/dot-create-page.component';
+import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
+import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
 import { DotPageListService } from './dot-page-list.service';
-import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel/dot-pages-favorite-panel.component';
-import { DotPagesListingPanelComponent } from './dot-pages-listing-panel/dot-pages-listing-panel.component';
 import {
     DotPagesState,
     DotPageStore,
     FAVORITE_PAGE_LIMIT
 } from './dot-pages-store/dot-pages.store';
+import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.component';
 import { DotCMSPagesStore } from './store/store';
 
 export interface DotActionsMenuEventParams {
@@ -88,9 +88,9 @@ export interface DotActionsMenuEventParams {
         RouterModule,
         ProgressSpinnerModule,
         DotAddToBundleComponent,
-        DotPagesFavoritePanelComponent,
-        DotPagesListingPanelComponent,
-        DotCreatePageComponent
+        DotPageFavoritesPanelComponent,
+        DotPagesTableComponent,
+        DotCreatePageDialogComponent
     ]
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
@@ -157,7 +157,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      * @param {DotActionsMenuEventParams} params
      * @memberof DotPagesComponent
      */
-    showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
+    showContextMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
         this.#store.clearMenuActions();
         this.menu.hide();

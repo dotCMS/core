@@ -15,7 +15,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
-    selector: 'dot-create-page',
+    selector: 'dot-create-page-dialog',
     imports: [
         CommonModule,
         DotAutofocusDirective,
@@ -28,10 +28,10 @@ import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
         InputIconModule
     ],
     providers: [DotPageTypesService],
-    templateUrl: './dot-create-page.component.html',
-    styleUrls: ['./dot-create-page.component.scss']
+    templateUrl: './dot-create-page-dialog.component.html',
+    styleUrls: ['./dot-create-page-dialog.component.scss']
 })
-export class DotCreatePageComponent {
+export class DotCreatePageDialogComponent {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dotPageTypesService = inject(DotPageTypesService);
 

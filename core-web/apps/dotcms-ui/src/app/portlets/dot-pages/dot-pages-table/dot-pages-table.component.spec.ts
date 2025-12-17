@@ -30,7 +30,7 @@ import {
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
-import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
+import { DotPagesTableComponent } from './dot-pages-table.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
 
@@ -57,9 +57,9 @@ export const favoritePagesInitialTestData = [
     }
 ];
 
-describe('DotPagesListingPanelComponent', () => {
-    let fixture: ComponentFixture<DotPagesListingPanelComponent>;
-    let component: DotPagesListingPanelComponent;
+describe('DotPagesTableComponent', () => {
+    let fixture: ComponentFixture<DotPagesTableComponent>;
+    let component: DotPagesTableComponent;
     let de: DebugElement;
     let store: DotPageStore;
 
@@ -141,7 +141,7 @@ describe('DotPagesListingPanelComponent', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
                 imports: [
-                    DotPagesListingPanelComponent,
+                    DotPagesTableComponent,
                     CommonModule,
                     ButtonModule,
                     CheckboxModule,
@@ -171,7 +171,7 @@ describe('DotPagesListingPanelComponent', () => {
 
         beforeEach(async () => {
             store = TestBed.inject(DotPageStore);
-            fixture = TestBed.createComponent(DotPagesListingPanelComponent);
+            fixture = TestBed.createComponent(DotPagesTableComponent);
             de = fixture.debugElement;
             component = fixture.componentInstance;
 

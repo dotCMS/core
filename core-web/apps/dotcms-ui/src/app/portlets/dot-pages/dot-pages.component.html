@@ -2,21 +2,21 @@
     <div>
         @if (!vm.isPortletLoading) {
             <div class="flex flex-col gap-4">
-                <dot-pages-favorite-panel
+                <dot-page-favorites-panel
                     (goToUrl)="goToUrl($event)"
                     [favoritePages]="dotCMSPagesStore.favoritePages()"
-                    (showActionsMenu)="showActionsMenu($event)" />
+                    (showContextMenu)="showContextMenu($event)" />
                 <p-menu
                     (onHide)="closedActionsMenu($event)"
                     [popup]="true"
                     [model]="vm.pages.menuActions"
                     #menu />
-                <dot-pages-listing-panel
+                <dot-pages-table
                     [pages]="dotCMSPagesStore.pages()"
                     [languages]="globalStore.systemConfig().languages"
                     [totalRecords]="dotCMSPagesStore.$totalRecords()"
                     (goToUrl)="goToUrl($event)"
-                    (showActionsMenu)="showActionsMenu($event)"
+                    (showContextMenu)="showContextMenu($event)"
                     (pageChange)="scrollToTop()"
                     (createPage)="dialogVisible.set(true)"
                     (search)="onSearch($event)"
@@ -40,6 +40,8 @@
     </div>
 }
 
-<dot-create-page [visibility]="dialogVisible()" (visibilityChange)="dialogVisible.set($event)" />
+<dot-create-page-dialog
+    [visibility]="dialogVisible()"
+    (visibilityChange)="dialogVisible.set($event)" />
 
 <router-outlet (deactivate)="loadPagesOnDeactivation()" />

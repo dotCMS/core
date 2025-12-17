@@ -21,5 +21,5 @@ export class DotPagesCardComponent {
 
     readonly edit = output<boolean>();
     readonly goTo = output<boolean>();
-    readonly showActionMenu = output<MouseEvent>();
+    readonly showContextMenu = output<MouseEvent>();
 }

@@ -15,7 +15,6 @@ import { of } from 'rxjs/internal/observable/of';
 
 import {
     DotHttpErrorManagerService,
-    DotLocalstorageService,
     DotMessageService,
     DotPageRenderService,
     DotSessionStorageService
@@ -29,7 +28,7 @@ import {
     mockResponseView
 } from '@dotcms/utils-testing';
 
-import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
+import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
 
@@ -80,9 +79,9 @@ export const favoritePagesInitialTestData = [
     }
 ];
 
-describe('DotPagesFavoritePanelComponent', () => {
-    let fixture: ComponentFixture<DotPagesFavoritePanelComponent>;
-    let component: DotPagesFavoritePanelComponent;
+describe('DotPageFavoritesPanelComponent', () => {
+    let fixture: ComponentFixture<DotPageFavoritesPanelComponent>;
+    let component: DotPageFavoritesPanelComponent;
     let de: DebugElement;
     let store: DotPageStore;
     let dialogService: DialogService;
@@ -132,7 +131,7 @@ describe('DotPagesFavoritePanelComponent', () => {
             await TestBed.configureTestingModule({
                 declarations: [DotPagesCardMockComponent, MockDotIconComponent],
                 imports: [
-                    DotPagesFavoritePanelComponent,
+                    DotPageFavoritesPanelComponent,
                     BrowserAnimationsModule,
                     DotMessagePipe,
                     ButtonModule,
@@ -141,13 +140,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                 ],
                 providers: [
                     DotSessionStorageService,
-                    {
-                        provide: DotLocalstorageService,
-                        useValue: {
-                            getItem: jest.fn().mockReturnValue('true'),
-                            setItem: jest.fn()
-                        }
-                    },
                     DialogService,
                     DotPageRenderService,
                     {
@@ -163,7 +155,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         beforeEach(() => {
             store = TestBed.inject(DotPageStore);
-            fixture = TestBed.createComponent(DotPagesFavoritePanelComponent);
+            fixture = TestBed.createComponent(DotPageFavoritesPanelComponent);
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
@@ -171,25 +163,33 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should set panel with empty state class', () => {
-            // Empty state renders the content paragraph
-            expect(de.query(By.css('[data-testid="dot-pages-empty__content"]'))).toBeTruthy();
+            const elem = de.query(By.css('p-panel'));
+            expect(
+                elem.nativeElement.classList.contains('dot-pages-panel__empty-state')
+            ).toBeTruthy();
         });
 
         it('should set panel collapsed state', () => {
+            jest.spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
             jest.spyOn(store, 'setFavoritePages');
-            const localStorage = TestBed.inject(DotLocalstorageService);
-            jest.spyOn(localStorage, 'setItem');
-
-            component.togglePanel({ collapsed: true } as unknown as Event);
-
-            expect(localStorage.setItem).toHaveBeenCalledWith('FavoritesPanelCollapsed', 'true');
+            component.onToggleChange(true);
+            expect(store.setLocalStorageFavoritePanelCollapsedParams).toHaveBeenCalledTimes(1);
             expect(store.setFavoritePages).toHaveBeenCalledTimes(1);
         });
 
         it('should load empty pages cards container', () => {
             expect(
                 de
-                    .query(By.css('[data-testid="dot-pages-empty__content"]'))
+                    .query(By.css('.dot-pages-empty__container i'))
+                    .nativeElement.classList.contains('pi-star')
+            ).toBe(true);
+
+            expect(
+                de.query(By.css('.dot-pages-empty__header')).nativeElement.textContent.trim()
+            ).toBe('favoritePage.listing.empty.header');
+            expect(
+                de
+                    .query(By.css('[data-testId="dot-pages-empty__content"'))
                     .nativeElement.textContent.trim()
             ).toBe('favoritePage.listing.empty.content');
         });
@@ -237,7 +237,7 @@ describe('DotPagesFavoritePanelComponent', () => {
             TestBed.configureTestingModule({
                 declarations: [DotPagesCardMockComponent, MockDotIconComponent],
                 imports: [
-                    DotPagesFavoritePanelComponent,
+                    DotPageFavoritesPanelComponent,
                     BrowserAnimationsModule,
                     DotMessagePipe,
                     ButtonModule,
@@ -246,13 +246,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                 ],
                 providers: [
                     DotSessionStorageService,
-                    {
-                        provide: DotLocalstorageService,
-                        useValue: {
-                            getItem: jest.fn().mockReturnValue('true'),
-                            setItem: jest.fn()
-                        }
-                    },
                     DialogService,
                     DotPageRenderService,
                     {
@@ -269,14 +262,14 @@ describe('DotPagesFavoritePanelComponent', () => {
             dialogService = TestBed.inject(DialogService);
             dotPageRenderService = TestBed.inject(DotPageRenderService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            fixture = TestBed.createComponent(DotPagesFavoritePanelComponent);
+            fixture = TestBed.createComponent(DotPageFavoritesPanelComponent);
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
             jest.spyOn(store, 'getFavoritePages');
             jest.spyOn(dialogService, 'open');
             jest.spyOn(component.goToUrl, 'emit');
-            jest.spyOn(component.showActionsMenu, 'emit');
+            jest.spyOn(component.showContextMenu, 'emit');
 
             fixture.detectChanges();
         });
@@ -379,7 +372,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 };
                 elem.triggerEventHandler('showActionMenu', expectedParams);
 
-                expect(component.showActionsMenu.emit).toHaveBeenCalledTimes(1);
+                expect(component.showContextMenu.emit).toHaveBeenCalledTimes(1);
             });
 
             it('should call redirect method in DotRouterService', () => {

@@ -1,5 +1,7 @@
 <!-- [loading]="vm.isPagesLoading" -->
 
+@let languageIsoCodeById = $languageIsoCodeById();
+
 <p-table
     (onLazyLoad)="loadPagesLazy($event)"
     (onRowSelect)="onRowSelect($event)"
@@ -20,21 +22,20 @@
             <div class="flex flex-wrap items-center gap-4 min-w-0">
                 <div class="p-input-icon-right w-64 min-w-0">
                     <input
-                        #input
                         class="w-full"
                         [placeholder]="'Type-To-Search' | dm"
-                        (input)="onSearch(input.value)"
                         type="text"
+                        [formControl]="searchControl"
                         pInputText
                         dotAutofocus />
                 </div>
                 <p-select
-                    (onChange)="setPagesLanguage($event.value)"
+                    [formControl]="languageControl"
                     [options]="$languageOptions()"
                     class="w-56" />
                 <div class="flex items-center gap-2 whitespace-nowrap">
                     <p-checkbox
-                        (onChange)="setPagesArchived($event.checked)"
+                        [formControl]="archivedControl"
                         [inputId]="'show-archived'"
                         [binary]="true" />
                     <label [for]="'show-archived'">
@@ -89,7 +90,7 @@
                 <div class="flex items-center gap-2 whitespace-nowrap">
                     <dot-state-icon [labels]="dotStateLabels" [state]="page" size="14px" />
                     <dot-badge [bordered]="true">
-                        {{ page['languageId'] }}
+                        {{ languageIsoCodeById[page['languageId']] }}
                     </dot-badge>
                     <dot-contentlet-lock-icon [locked]="page['locked']" />
                 </div>
