@@ -15,6 +15,7 @@ import { DotPageListService, ListPagesParams } from '../dot-page-list.service';
 
 export interface DotCMSPagesPortletState {
     pages: DotCMSContentlet[];
+    favoritePages: DotCMSContentlet[];
     pagination: DotPagination;
     filters: ListPagesParams;
     languages: DotLanguage[];
@@ -24,6 +25,7 @@ export interface DotCMSPagesPortletState {
 
 const initialState: DotCMSPagesPortletState = {
     pages: [],
+    favoritePages: [],
     filters: {
         search: '',
         sort: 'title ASC',
@@ -31,7 +33,8 @@ const initialState: DotCMSPagesPortletState = {
         languageId: 1,
         archived: false,
         offset: 0,
-        host: ''
+        host: '',
+        userId: 'dotcms.org.1'
     },
     pagination: {
         currentPage: 1,
@@ -77,7 +80,6 @@ export const DotCMSPagesStore = signalStore(
                     });
                 });
         };
-
         return {
             getPages: (params: Partial<ListPagesParams> = {}) => fetchPages(params),
             searchPages: (search: string) => {
@@ -96,6 +98,23 @@ export const DotCMSPagesStore = signalStore(
                     ? `${sortField} ${sortOrder === 1 ? 'ASC' : 'DESC'}`
                     : 'title ASC';
                 fetchPages({ offset, sort });
+            }
+        };
+    }),
+    // This will be a signal feature
+    withMethods((store) => {
+        const dotPageListService = inject(DotPageListService);
+        const fetchFavoritePages = () => {
+            dotPageListService.getFavoritePages(store.filters()).subscribe(({ jsonObjectView }) => {
+                patchState(store, {
+                    favoritePages: jsonObjectView.contentlets
+                });
+            });
+        };
+
+        return {
+            getFavoritePages: () => {
+                fetchFavoritePages();
             }
         };
     })

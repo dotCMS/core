@@ -4,6 +4,7 @@
             <div class="flex flex-col gap-4">
                 <dot-pages-favorite-panel
                     (goToUrl)="goToUrl($event)"
+                    [favoritePages]="dotCMSPagesStore.favoritePages()"
                     (showActionsMenu)="showActionsMenu($event)" />
                 <p-menu
                     (onHide)="closedActionsMenu($event)"
@@ -38,4 +39,4 @@
     </div>
 }
 
-<router-outlet (deactivate)="loadPagesOnDeactivation()"></router-outlet>
+<router-outlet (deactivate)="loadPagesOnDeactivation()" />

@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, input, OnInit, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -34,12 +34,14 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     imports: [CommonModule, DotMessagePipe, DotPagesCardComponent, PanelModule, ButtonModule]
 })
 export class DotPagesFavoritePanelComponent implements OnInit {
-    private dotMessageService = inject(DotMessageService);
-    private dialogService = inject(DialogService);
-    private dotPageRenderService = inject(DotPageRenderService);
-    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    #dotMessageService = inject(DotMessageService);
+    #dialogService = inject(DialogService);
+    #dotPageRenderService = inject(DotPageRenderService);
+    #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     readonly #store = inject(DotPageStore);
+
+    readonly $favoritePages = input<DotCMSContentlet[]>([], { alias: 'favoritePages' });
 
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
@@ -83,7 +85,7 @@ export class DotPagesFavoritePanelComponent implements OnInit {
             urlParams[entry[0]] = entry[1];
         }
 
-        this.dotPageRenderService.checkPermission(urlParams).subscribe(
+        this.#dotPageRenderService.checkPermission(urlParams).subscribe(
             (hasPermission: boolean) => {
                 if (hasPermission) {
                     this.displayFavoritePageDialog(favoritePage);
@@ -96,7 +98,7 @@ export class DotPagesFavoritePanelComponent implements OnInit {
                             url: ''
                         })
                     );
-                    this.dotHttpErrorManagerService.handle(error);
+                    this.#dotHttpErrorManagerService.handle(error);
                 }
             },
             () => {
@@ -106,8 +108,8 @@ export class DotPagesFavoritePanelComponent implements OnInit {
     }
 
     private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
-        this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header'),
+        this.#dialogService.open(DotFavoritePageComponent, {
+            header: this.#dotMessageService.get('favoritePage.dialog.header'),
             width: '80rem',
             data: {
                 page: {

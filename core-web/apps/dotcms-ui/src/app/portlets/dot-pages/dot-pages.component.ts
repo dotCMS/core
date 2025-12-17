@@ -1,7 +1,6 @@
 import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
     AfterViewInit,
     Component,
@@ -19,7 +18,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, take, takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -36,7 +35,7 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { HttpCode, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     DotCMSContentlet,
@@ -114,11 +113,12 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     constructor() {
         this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
         this.dotCMSPagesStore.getPages();
+        this.dotCMSPagesStore.getFavoritePages();
     }
 
     /**
      * Event to redirect to Edit Page when Page selected
-     *
+     *goToUrl
      * @param {string} url
      * @memberof DotPagesComponent
      */
@@ -133,31 +133,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
             urlParams[entry[0]] = entry[1];
         }
 
-        this.dotPageRenderService
-            .checkPermission(urlParams)
-            .pipe(take(1))
-            .subscribe(
-                (hasPermission: boolean) => {
-                    if (hasPermission) {
-                        this.dotRouterService.goToEditPage(urlParams);
-                    } else {
-                        const error = new HttpErrorResponse(
-                            new HttpResponse({
-                                body: null,
-                                status: HttpCode.FORBIDDEN,
-                                headers: null,
-                                url: ''
-                            })
-                        );
-                        this.dotHttpErrorManagerService.handle(error);
-                        this.#store.setPortletStatus(ComponentStatus.LOADED);
-                    }
-                },
-                (error: HttpErrorResponse) => {
-                    this.dotHttpErrorManagerService.handle(error);
-                    this.#store.setPortletStatus(ComponentStatus.LOADED);
-                }
-            );
+        this.dotRouterService.goToEditPage(urlParams);
     }
 
     /**

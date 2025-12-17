@@ -1,57 +1,50 @@
-@if (vm$ | async; as vm) {
-    <p-panel
-        (onAfterToggle)="toggleFavoritePagesPanel($event)"
-        [toggleable]="true"
-        [collapsed]="vm.isFavoritePanelCollaped"
-        toggler="header"
-        iconPos="end"
-        expandIcon="pi pi-angle-down"
-        collapseIcon="pi pi-angle-up">
-        <ng-template pTemplate="header">
-            <span class="flex items-center gap-2">
-                <i class="pi pi-star-fill" data-testId="bookmarksIcon"></i>
-                <span class="font-bold">{{ 'favoritePage.panel.header' | dm }}</span>
+@let vm = vm$ | async;
+@let favoritePages = $favoritePages();
+@let isEmpty = favoritePages.length === 0;
+
+<p-panel
+    (onAfterToggle)="toggleFavoritePagesPanel($event)"
+    [toggleable]="true"
+    [collapsed]="vm.isFavoritePanelCollaped"
+    toggler="header"
+    iconPos="end"
+    expandIcon="pi pi-angle-down"
+    collapseIcon="pi pi-angle-up">
+    <ng-template pTemplate="header">
+        <span class="flex items-center gap-2">
+            <i class="pi pi-star-fill" data-testId="bookmarksIcon"></i>
+            <span class="font-bold">{{ 'favoritePage.panel.header' | dm }}</span>
+        </span>
+    </ng-template>
+
+    @if (isEmpty) {
+        <div class="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+            <span
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-100 text-surface-600">
+                <i class="pi pi-star text-2xl"></i>
             </span>
-        </ng-template>
-        @if (vm.favoritePages?.items?.length !== 0) {
-            <div class="grid gap-6 [grid-template-columns:repeat(auto-fill,250px)]">
-                @for (item of vm.favoritePages.items; track $index; let i = $index) {
-                    <dot-pages-card
-                        (edit)="editFavoritePage(item)"
-                        (goTo)="goToUrl.emit(item.url)"
-                        (showActionMenu)="
-                            showActionsMenu.emit({
-                                event: $event,
-                                actionMenuDomId: 'favoritePageActionButton-' + i,
-                                item
-                            })
-                        "
-                        [actionButtonId]="'favoritePageActionButton-' + i"
-                        [imageUri]="
-                            item.screenshot
-                                ? item.screenshot +
-                                  '?language_id=' +
-                                  item.languageId +
-                                  '&' +
-                                  timeStamp
-                                : ''
-                        "
-                        [title]="item.title"
-                        [url]="item.url"
-                        [ownerPage]="item.owner === vm.loggedUser.id" />
-                }
+            <div class="text-base font-semibold text-surface-900">
+                {{ 'favoritePage.listing.empty.header' | dm }}
             </div>
-        } @else {
-            <div class="dot-pages-empty__container">
-                <i class="pi pi-star"></i>
-                <div class="dot-pages-empty__header">
-                    {{ 'favoritePage.listing.empty.header' | dm }}
-                </div>
-                <p
-                    class="dot-pages-empty__content"
-                    data-testid="dot-pages-empty__content"
-                    innerHTML="{{ 'favoritePage.listing.empty.content' | dm }}"></p>
-            </div>
-        }
-    </p-panel>
-}
+            <p
+                class="max-w-prose text-sm text-surface-600"
+                data-testid="dot-pages-empty__content"
+                innerHTML="{{ 'favoritePage.listing.empty.content' | dm }}"></p>
+        </div>
+    } @else {
+        <div class="grid gap-6 [grid-template-columns:repeat(auto-fill,250px)]">
+            @for (item of favoritePages; track $index; let i = $index) {
+                <dot-pages-card
+                    [actionButtonId]="'favoritePageActionButton-' + i"
+                    [imageUri]="
+                        item.screenshot
+                            ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
+                            : ''
+                    "
+                    [title]="item.title"
+                    [url]="item.url"
+                    [ownerPage]="item.owner === vm.loggedUser.id" />
+            }
+        </div>
+    }
+</p-panel>
