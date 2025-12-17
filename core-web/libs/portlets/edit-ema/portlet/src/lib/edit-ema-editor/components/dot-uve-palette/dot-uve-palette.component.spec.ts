@@ -19,8 +19,12 @@ function triggerTabChange(
 ): void {
     // PrimeNG v21 p-tabs onChange event structure
     // Directly call the component's handleTabChange method to simulate the event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (spectator.component as any).handleTabChange({ value: index });
+    (
+        spectator.component as DotUvePaletteComponent & {
+            handleTabChange: (event: { value: number }) => void;
+        }
+    ).handleTabChange({ value: index });
+
     spectator.detectChanges();
 }
 

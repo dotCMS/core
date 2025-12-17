@@ -1,0 +1,100 @@
+<script>
+    function ogPreviewClicked(){
+        dijit.byId('ogPreview').show();
+
+        var ogt = dojo.byId('ogTitle').value;
+        var ogd = dojo.byId('ogDescription').value;
+        var img_src = dojo.query('#ogImage img')[0];
+        var img_url = dojo.attr(img_src, 'src');
+
+        img_url = img_url.replace("250w", "1200maxw/1200cw/630ch");
+
+        var num = 92;
+        if (ogd.length > num) {
+            ogd = ogd.substring(0, num);
+            ogd = ogd + "...";
+        } 
+ 
+        dojo.query("#cardImage").attr("src", img_url);
+        dojo.html.set(dojo.byId("cardTitle"), ogt);
+        dojo.html.set(dojo.byId("cardDescription"), ogd);
+        
+    }
+</script>
+
+<style>
+    #ogPreview_tag {display: none;}
+
+    .preview-btn-wrapper {
+        position: absolute;
+        right: 0;
+        top: 15px;
+        z-index: 99999999;
+    }
+
+    .card-wrapper {
+        width: 600px;
+        height: 395px;
+        border: solid 1px #d3d3d3;
+        overflow: hidden;
+    }
+    .img-wrapper {
+        height: 313px;
+        overflow: hidden;
+    }
+    #cardImage {
+        object-fit: cover;
+        object-position: center center;
+        width: 600px;
+        height: 313px;
+    }
+    .text-wrapper {
+        text-align: left;
+        padding: 10px 12px;
+        background-color: #f2f3f5;
+        line-height: 16.8px;
+        height: 83px;
+    }
+    #cardHost {
+        text-transform: uppercase;
+        margin: 0;
+        color: #606770;
+        font-size: 12px;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 16px;
+        margin-bottom: 2px;
+    }
+    #cardTitle {
+        font-weight: bold;
+        margin: 0 0 0.15em;
+        font-size: 16px;
+        color: #1d2129;
+        line-height: 20px;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    }
+    #cardDescription {
+        color: #606770;
+        font-size: 14px;
+        line-height: 20px;
+        word-break: break-word;
+    }
+</style>
+
+<div class="preview-btn-wrapper">
+    <button dojoType="dijit.form.Button" onClick="ogPreviewClicked()">Preview</button>
+</div>
+
+<div id="ogPreview" dojoType="dijit.Dialog" style="display: none;" title="Facebook">
+    <div class="card-wrapper">
+        <div class="img-wrapper"><img id="cardImage" src=""></div>
+        <div class="text-wrapper">
+            <div id="cardHost">$!{host.map.aliases}</div>
+            <div id="cardTitle"></div>
+            <div id="cardDescription"></div>
+        </div>
+    </div>
+</div>
+

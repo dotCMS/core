@@ -361,8 +361,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             switchMap(() => {
                 return this.dotPageTypesService.getPageContentTypes().pipe(
                     take(1),
-                    tapResponse(
-                        (pageTypes: DotCMSContentType[]) => {
+                    tapResponse({
+                        next: (pageTypes: DotCMSContentType[]) => {
                             this.patchState({
                                 pageTypes
                             });
@@ -374,10 +374,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 }
                             });
                         },
-                        (error: HttpErrorResponse) => {
+                        error: (error: HttpErrorResponse) => {
                             return this.httpErrorManagerService.handle(error);
                         }
-                    )
+                    })
                 );
             })
         )
@@ -786,24 +786,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     const sortOrderValue = this.getSortOrderValue(sortField, sortOrder);
 
                     return this.getPagesData(offset, sortOrderValue, sortField).pipe(
-                        tapResponse(
-                            (items) => {
+                        tapResponse({
+                            next: (items) => {
                                 this.setPages({
                                     items: items.jsonObjectView.contentlets as DotCMSContentlet[],
                                     total: items.resultsSize
                                 });
                             },
-                            (error: HttpErrorResponse) => {
+                            error: (error: HttpErrorResponse) => {
                                 this.setPagesStatus(ComponentStatus.LOADED);
-
                                 // Set message to throw a custom Favorite Page error message
                                 error.error.message = this.dotMessageService.get(
                                     'favoritePage.error.fetching.data'
                                 );
-
                                 return this.httpErrorManagerService.handle(error, true);
                             }
-                        )
+                        })
                     );
                 })
             );
@@ -835,13 +833,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return itemsPerPage$.pipe(
             switchMap((itemsPerPage: number) =>
                 this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
-                    tapResponse(
-                        (items) => {
+                    tapResponse({
+                        next: (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
                             this.patchState({ favoritePages });
                         },
-                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.httpErrorManagerService.handle(error)
+                    })
                 )
             )
         );
@@ -858,13 +857,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             switchMap(() => {
                 return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
                     take(1),
-                    tapResponse(
-                        (items) => {
+                    tapResponse({
+                        next: (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
                             this.patchState({ favoritePages });
                         },
-                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.httpErrorManagerService.handle(error)
+                    })
                 );
             }),
             catchError((error: HttpErrorResponse) => this.httpErrorManagerService.handle(error))
@@ -889,8 +889,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         })
                     }).pipe(
                         take(1),
-                        tapResponse(
-                            ({ workflowsData, dotFavorite }) => {
+                        tapResponse({
+                            next: ({ workflowsData, dotFavorite }) => {
                                 if (workflowsData) {
                                     this.setMenuActions({
                                         actions: this.getSelectActions(
@@ -902,8 +902,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                     });
                                 }
                             },
-                            (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
-                        )
+                            error: (error: HttpErrorResponse) =>
+                                this.httpErrorManagerService.handle(error)
+                        })
                     );
                 })
             );

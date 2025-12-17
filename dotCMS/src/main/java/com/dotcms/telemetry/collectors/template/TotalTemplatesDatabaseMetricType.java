@@ -3,6 +3,8 @@ package com.dotcms.telemetry.collectors.template;
 import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -10,6 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
  * Collects the total count of templates
  */
 @ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})
 @DashboardMetric(category = "site", priority = 4)
 public class TotalTemplatesDatabaseMetricType implements DBMetricType {
 

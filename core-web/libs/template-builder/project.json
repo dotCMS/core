@@ -4,13 +4,15 @@
     "projectType": "library",
     "sourceRoot": "libs/template-builder/src",
     "prefix": "dotcms",
+    "tags": [],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/template-builder/jest.config.ts",
-                "passWithNoTests": false
+                "passWithNoTests": false,
+                "tsConfig": "libs/template-builder/tsconfig.spec.json"
             }
         },
         "lint": {
@@ -66,6 +68,5 @@
                 }
             }
         }
-    },
-    "tags": []
+    }
 }

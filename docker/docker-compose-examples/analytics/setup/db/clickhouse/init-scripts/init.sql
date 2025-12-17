@@ -263,7 +263,7 @@ SELECT customer_id,
        context_site_id,
        toStartOfDay(utc_time) as day,
        (CASE
-           WHEN event_type = 'pageview' THEN url
+           WHEN event_type = 'pageview' THEN doc_path
            WHEN event_type = 'conversion' THEN conversion_name
            ELSE content_identifier
         END) as identifier,
@@ -396,13 +396,13 @@ WITH conversion AS (
                                                              e.context_user_id = conversion_time.context_user_id AND e.context_site_id = conversion_time.context_site_id
     WHERE event_type = 'conversion'
     group by context_user_id,utc_time, _timestamp, conversion_name
-    HAVING (_timestamp >  last_timestamp_previous_batch AND _timestamp <= now())
+    HAVING (_timestamp >=  last_timestamp_previous_batch AND _timestamp <= now())
 )
 SELECT
     toStartOfDay(conversion.conversion_time) as day,
     customer_id,
     cluster_id,
-    (CASE WHEN event_type = 'pageview' THEN url ELSE content_identifier END) as identifier,
+    (CASE WHEN event_type = 'pageview' THEN doc_path ELSE content_identifier END) as identifier,
     (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
     event_type,
     context_user_id,

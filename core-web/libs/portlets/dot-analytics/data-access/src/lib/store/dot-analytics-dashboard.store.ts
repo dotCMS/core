@@ -80,8 +80,8 @@ export const DotAnalyticsDashboardStore = signalStore(
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             return analyticsService.totalPageViews(timeRange, currentSiteId).pipe(
-                                tapResponse(
-                                    (data: TotalPageViewsEntity) => {
+                                tapResponse({
+                                    next: (data: TotalPageViewsEntity) => {
                                         patchState(store, {
                                             totalPageViews: {
                                                 status: ComponentStatus.LOADED,
@@ -90,7 +90,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -104,7 +104,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -124,8 +124,8 @@ export const DotAnalyticsDashboardStore = signalStore(
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             return analyticsService.uniqueVisitors(timeRange, currentSiteId).pipe(
-                                tapResponse(
-                                    (data: UniqueVisitorsEntity) => {
+                                tapResponse({
+                                    next: (data: UniqueVisitorsEntity) => {
                                         patchState(store, {
                                             uniqueVisitors: {
                                                 status: ComponentStatus.LOADED,
@@ -134,7 +134,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -148,7 +148,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -173,8 +173,8 @@ export const DotAnalyticsDashboardStore = signalStore(
                             return analyticsService
                                 .topPagePerformance(timeRange, currentSiteId)
                                 .pipe(
-                                    tapResponse(
-                                        (data: TopPagePerformanceEntity) => {
+                                    tapResponse({
+                                        next: (data: TopPagePerformanceEntity) => {
                                             patchState(store, {
                                                 topPagePerformance: {
                                                     status: ComponentStatus.LOADED,
@@ -183,7 +183,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -197,7 +197,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )
@@ -220,8 +220,8 @@ export const DotAnalyticsDashboardStore = signalStore(
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             return analyticsService.pageViewTimeLine(timeRange, currentSiteId).pipe(
-                                tapResponse(
-                                    (data: PageViewTimeLineEntity[]) => {
+                                tapResponse({
+                                    next: (data: PageViewTimeLineEntity[]) => {
                                         patchState(store, {
                                             pageViewTimeLine: {
                                                 status: ComponentStatus.LOADED,
@@ -230,7 +230,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -244,7 +244,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -269,8 +269,8 @@ export const DotAnalyticsDashboardStore = signalStore(
                             return analyticsService
                                 .pageViewDeviceBrowsers(timeRange, currentSiteId)
                                 .pipe(
-                                    tapResponse(
-                                        (data: PageViewDeviceBrowsersEntity[]) => {
+                                    tapResponse({
+                                        next: (data: PageViewDeviceBrowsersEntity[]) => {
                                             patchState(store, {
                                                 pageViewDeviceBrowsers: {
                                                     status: ComponentStatus.LOADED,
@@ -279,7 +279,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -293,7 +293,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )
@@ -315,8 +315,8 @@ export const DotAnalyticsDashboardStore = signalStore(
                             return analyticsService
                                 .getTopPagePerformanceTable(timeRange, currentSiteId)
                                 .pipe(
-                                    tapResponse(
-                                        (data: TopPerformaceTableEntity[]) => {
+                                    tapResponse({
+                                        next: (data: TopPerformaceTableEntity[]) => {
                                             patchState(store, {
                                                 topPagesTable: {
                                                     status: ComponentStatus.LOADED,
@@ -325,7 +325,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -339,7 +339,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )
