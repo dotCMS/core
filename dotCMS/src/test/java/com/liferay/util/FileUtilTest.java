@@ -261,12 +261,13 @@ public class FileUtilTest {
     }
 
     /**
-     * Test to validate FileUtil.listFileHandles with nested directory structure.
-     * Verifies that files within multiple levels of subfolders are retrieved correctly.
+     * Test to validate FileUtil.getFilesByPattern with nested directory structure.
+     * Verifies that files within multiple levels of subfolders are retrieved correctly
+     * using pattern matching instead of the deprecated listFileHandles method.
      * @throws Exception
      */
     @Test
-    public void testListFileHandlesRecursive() throws Exception {
+    public void testGetFilesByPatternRecursive() throws Exception {
         final Path rootDir = Files.createTempDirectory("test-listFileHandles-recursive");
         try {
             // Create nested directory structure
@@ -298,14 +299,14 @@ public class FileUtilTest {
             Files.write(level3File1, "Level 3 file 1 content".getBytes());
             Files.write(level3File2, "header1,header2\nvalue1,value2".getBytes());
 
-            // Test recursive file listing (includeSubDirs = true)
-            final File[] recursiveFiles = FileUtil.listFileHandles(rootDir.toFile(), true);
+            // Test pattern matching for all files (*)
+            final Collection<File> allFiles = FileUtil.getFilesByPattern(rootDir.toFile(), "*");
 
             // Should find all 8 files across all directory levels
-            Assert.assertEquals("Should find all 8 files recursively", 8, recursiveFiles.length);
+            Assert.assertEquals("Should find all 8 files with * pattern", 8, allFiles.size());
 
             // Convert to file names for easier verification
-            Set<String> fileNames = Arrays.stream(recursiveFiles)
+            Set<String> fileNames = allFiles.stream()
                 .map(File::getName)
                 .collect(Collectors.toSet());
 
@@ -319,27 +320,25 @@ public class FileUtilTest {
             Assert.assertTrue("Should contain level 3 txt file", fileNames.contains("level3_file1.txt"));
             Assert.assertTrue("Should contain level 3 csv file", fileNames.contains("level3_file2.csv"));
 
-            // Test non-recursive file listing (includeSubDirs = false)
-            final File[] nonRecursiveFiles = FileUtil.listFileHandles(rootDir.toFile(), false);
+            // Test pattern matching for specific file types
+            final Collection<File> txtFiles = FileUtil.getFilesByPattern(rootDir.toFile(), "*.txt");
 
-            // Should only find files at root level (2 files)
-            Assert.assertEquals("Should find only 2 files at root level", 2, nonRecursiveFiles.length);
+            // Should find 3 txt files across all directory levels
+            Assert.assertEquals("Should find 3 txt files with *.txt pattern", 3, txtFiles.size());
 
-            Set<String> nonRecursiveFileNames = Arrays.stream(nonRecursiveFiles)
+            Set<String> txtFileNames = txtFiles.stream()
                 .map(File::getName)
                 .collect(Collectors.toSet());
 
-            // Should only contain root level files
-            Assert.assertTrue("Should contain root file 1", nonRecursiveFileNames.contains("root_file1.txt"));
-            Assert.assertTrue("Should contain root file 2", nonRecursiveFileNames.contains("root_file2.log"));
+            // Should only contain txt files
+            Assert.assertTrue("Should contain root txt file", txtFileNames.contains("root_file1.txt"));
+            Assert.assertTrue("Should contain level 1 txt file", txtFileNames.contains("level1_file1.txt"));
+            Assert.assertTrue("Should contain level 3 txt file", txtFileNames.contains("level3_file1.txt"));
 
-            // Should not contain files from subdirectories
-            Assert.assertFalse("Should not contain level 1 files",
-                nonRecursiveFileNames.contains("level1_file1.txt"));
-            Assert.assertFalse("Should not contain level 2 files",
-                nonRecursiveFileNames.contains("level2_file1.xml"));
-            Assert.assertFalse("Should not contain level 3 files",
-                nonRecursiveFileNames.contains("level3_file1.txt"));
+            // Should not contain non-txt files
+            Assert.assertFalse("Should not contain log files", txtFileNames.contains("root_file2.log"));
+            Assert.assertFalse("Should not contain json files", txtFileNames.contains("level1_file2.json"));
+            Assert.assertFalse("Should not contain xml files", txtFileNames.contains("level2_file1.xml"));
 
         } finally {
             // Clean up
