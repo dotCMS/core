@@ -143,85 +143,6 @@ describe('DotThemeComponent', () => {
         }));
     });
 
-    describe('ControlValueAccessor - writeValue', () => {
-        let onChangeSpy: jest.Mock;
-        let onTouchedSpy: jest.Mock;
-        let onChangeOutputSpy: jest.Mock;
-
-        beforeEach(fakeAsync(() => {
-            onChangeSpy = jest.fn();
-            onTouchedSpy = jest.fn();
-            onChangeOutputSpy = jest.fn();
-
-            spectator.component.registerOnChange(onChangeSpy);
-            spectator.component.registerOnTouched(onTouchedSpy);
-            spectator.component.onChange.subscribe(onChangeOutputSpy);
-
-            // Setup themes in state
-            globalStoreSignal.set('site1');
-            spectator.detectChanges();
-            tick();
-        }));
-
-        it('should update internal value when writeValue is called', () => {
-            spectator.component.writeValue('theme1');
-            spectator.detectChanges();
-
-            expect(spectator.component.value()).toBe('theme1');
-        });
-
-        it('should NOT emit onChange callback when writeValue is called', () => {
-            spectator.component.writeValue('theme1');
-            spectator.detectChanges();
-
-            expect(onChangeSpy).not.toHaveBeenCalled();
-            expect(onTouchedSpy).not.toHaveBeenCalled();
-            expect(onChangeOutputSpy).not.toHaveBeenCalled();
-        });
-
-        it('should update selectedTheme when writeValue is called with existing theme', fakeAsync(() => {
-            spectator.component.writeValue('theme1');
-            spectator.detectChanges();
-            tick();
-
-            expect(spectator.component.$state.selectedTheme()?.identifier).toBe('theme1');
-        }));
-
-        it('should fetch theme when writeValue is called with theme not in loaded list', fakeAsync(() => {
-            const newTheme: DotTheme = {
-                identifier: 'theme3',
-                inode: 'inode3',
-                path: '/application/themes/theme3',
-                title: 'Theme 3',
-                themeThumbnail: null,
-                name: 'Theme 3',
-                hostId: 'site1'
-            };
-
-            themesService.get.mockReturnValue(of(newTheme));
-
-            spectator.component.writeValue('theme3');
-            spectator.detectChanges();
-            tick();
-
-            expect(themesService.get).toHaveBeenCalledWith('theme3');
-            expect(spectator.component.$state.selectedTheme()?.identifier).toBe('theme3');
-            expect(onChangeSpy).not.toHaveBeenCalled();
-        }));
-
-        it('should clear selectedTheme when writeValue is called with null', () => {
-            spectator.component.writeValue('theme1');
-            spectator.detectChanges();
-            expect(spectator.component.$state.selectedTheme()).toBeTruthy();
-
-            spectator.component.writeValue(null);
-            spectator.detectChanges();
-
-            expect(spectator.component.value()).toBeNull();
-            expect(spectator.component.$state.selectedTheme()).toBeNull();
-            expect(onChangeSpy).not.toHaveBeenCalled();
-        });
-    });
 
     describe('User Selection - onThemeSelect', () => {
         let onChangeSpy: jest.Mock;
@@ -358,6 +279,116 @@ describe('DotThemeComponent', () => {
             const url = spectator.component.getThemeThumbnailUrl(mockThemes[2]);
             expect(url).toBe('/path/to/thumb.png');
         });
+    });
+});
+
+describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
+    let hostSpectator: SpectatorHost<DotThemeComponent, FormHostComponent>;
+    let hostComponent: FormHostComponent;
+    let hostThemesService: SpyObject<DotThemesService>;
+    let hostGlobalStoreSignal: ReturnType<typeof signal<string | null>>;
+    let onChangeOutputSpy: jest.Mock;
+
+    const createHost = createHostFactory({
+        component: DotThemeComponent,
+        host: FormHostComponent,
+        imports: [ReactiveFormsModule],
+        providers: [
+            mockProvider(DotThemesService),
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            {
+                provide: GlobalStore,
+                useFactory: () => ({
+                    currentSiteId: hostGlobalStoreSignal
+                })
+            }
+        ],
+        detectChanges: false
+    });
+
+    beforeEach(fakeAsync(() => {
+        onChangeOutputSpy = jest.fn();
+        hostGlobalStoreSignal = signal<string | null>('site1');
+
+        hostSpectator = createHost(
+            `<dot-theme [formControl]="themeControl"></dot-theme>`
+        );
+        hostComponent = hostSpectator.hostComponent;
+        hostThemesService = hostSpectator.inject(DotThemesService, true);
+
+        hostThemesService.getThemes.mockReturnValue(
+            of({
+                themes: mockThemes,
+                pagination: mockPagination
+            })
+        );
+        hostThemesService.get.mockImplementation((id: string) =>
+            of(mockThemes.find((t) => t.identifier === id) || mockThemes[0])
+        );
+
+        hostSpectator.component.onChange.subscribe(onChangeOutputSpy);
+
+        hostSpectator.detectChanges();
+        tick();
+        hostSpectator.detectChanges();
+    }));
+
+    it('should update internal value when FormControl sets value', () => {
+        hostComponent.themeControl.setValue('theme1');
+        hostSpectator.detectChanges();
+
+        expect(hostSpectator.component.value()).toBe('theme1');
+    });
+
+    it('should NOT emit onChange callback when FormControl sets value', () => {
+        hostComponent.themeControl.setValue('theme1');
+        hostSpectator.detectChanges();
+
+        expect(onChangeOutputSpy).not.toHaveBeenCalled();
+    });
+
+    it('should update selectedTheme when FormControl sets value with existing theme', fakeAsync(() => {
+        hostComponent.themeControl.setValue('theme1');
+        hostSpectator.detectChanges();
+        tick();
+
+        expect(hostSpectator.component.$state.selectedTheme()?.identifier).toBe('theme1');
+    }));
+
+    it('should fetch theme when FormControl sets value with theme not in loaded list', fakeAsync(() => {
+        const newTheme: DotTheme = {
+            identifier: 'theme3',
+            inode: 'inode3',
+            path: '/application/themes/theme3',
+            title: 'Theme 3',
+            themeThumbnail: null,
+            name: 'Theme 3',
+            hostId: 'site1'
+        };
+
+        hostThemesService.get.mockReturnValue(of(newTheme));
+
+        hostComponent.themeControl.setValue('theme3');
+        hostSpectator.detectChanges();
+        tick();
+
+        expect(hostThemesService.get).toHaveBeenCalledWith('theme3');
+        expect(hostSpectator.component.$state.selectedTheme()?.identifier).toBe('theme3');
+        expect(onChangeOutputSpy).not.toHaveBeenCalled();
+    }));
+
+    it('should clear selectedTheme when FormControl sets value to null', () => {
+        hostComponent.themeControl.setValue('theme1');
+        hostSpectator.detectChanges();
+        expect(hostSpectator.component.$state.selectedTheme()).toBeTruthy();
+
+        hostComponent.themeControl.setValue(null);
+        hostSpectator.detectChanges();
+
+        expect(hostSpectator.component.value()).toBeNull();
+        expect(hostSpectator.component.$state.selectedTheme()).toBeNull();
+        expect(onChangeOutputSpy).not.toHaveBeenCalled();
     });
 });
 
