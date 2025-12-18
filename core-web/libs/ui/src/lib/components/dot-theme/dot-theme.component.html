@@ -23,7 +23,8 @@
         severity="secondary"
         icon="pi pi-chevron-down"
         iconPos="right"
-        (click)="popover.toggle($event)" />
+        [disabled]="$disabled()"
+        (click)="!$disabled() && popover.toggle($event)" />
 }
 
 <p-popover #popover>
@@ -62,24 +63,32 @@
             layout="grid">
             <ng-template #header>
                 <!-- Header with site selector and search -->
-                <div class="flex flex-row gap-4 items-center mb-4">
-                    <dot-site
-                        [value]="$state.hostId()"
-                        (onChange)="onSiteChange($event)"
-                        [placeholder]="placeholder()"
-                        [disabled]="$disabled()"
-                        class="flex-1" />
-                    <p-iconfield class="flex-1">
-                        <input
-                            pInputText
-                            type="text"
-                            class="w-full"
-                            [value]="$state.searchValue()"
+                <div class="flex flex-col gap-4">
+                    @if ($state.error()) {
+                        <div class="p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+                            <i class="pi pi-exclamation-triangle mr-2"></i>
+                            {{ $state.error() }}
+                        </div>
+                    }
+                    <div class="flex flex-row gap-4 items-center">
+                        <dot-site
+                            [value]="$state.hostId()"
+                            (onChange)="onSiteChange($event)"
+                            [placeholder]="placeholder()"
                             [disabled]="$disabled()"
-                            (input)="onSearchChange($any($event.target).value)"
-                            placeholder="Search themes..." />
-                        <p-inputicon class="pi pi-search" />
-                    </p-iconfield>
+                            class="flex-1" />
+                        <p-iconfield class="flex-1">
+                            <input
+                                pInputText
+                                type="text"
+                                class="w-full"
+                                [value]="$state.searchValue()"
+                                [disabled]="$disabled()"
+                                (input)="onSearchChange($any($event.target).value)"
+                                placeholder="Search themes..." />
+                            <p-inputicon class="pi pi-search" />
+                        </p-iconfield>
+                    </div>
                 </div>
             </ng-template>
             <ng-template #grid let-items>
@@ -92,7 +101,8 @@
                                         [inputId]="'theme-' + theme.identifier"
                                         name="theme-selection"
                                         [value]="theme.identifier"
-                                        [(ngModel)]="value"
+                                        [ngModel]="value()"
+                                        (ngModelChange)="onThemeSelect($event)"
                                         [disabled]="$disabled()" />
                                 </div>
                                 <p-card

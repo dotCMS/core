@@ -1,10 +1,10 @@
 import { signalState, patchState } from '@ngrx/signals';
+import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    model,
     output,
     input,
     inject,
@@ -12,12 +12,13 @@ import {
     effect,
     forwardRef,
     computed,
-    OnInit,
     OnDestroy,
     ViewChild,
     contentChild,
-    TemplateRef
+    TemplateRef,
+    DestroyRef
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -30,6 +31,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
+import { switchMap } from 'rxjs/operators';
+
 import { DotThemesService } from '@dotcms/data-access';
 import { DotTheme, DotPagination } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -39,6 +42,7 @@ import { DotSiteComponent } from '../dot-site/dot-site.component';
 interface DotThemeState {
     themes: DotTheme[];
     loading: boolean;
+    error: string | null;
     pagination: DotPagination | null;
     selectedTheme: DotTheme | null;
     hostId: string | null;
@@ -60,8 +64,10 @@ interface DotThemeState {
         PopoverModule,
         CardModule
     ],
+    host: {
+        class: 'block'
+    },
     templateUrl: './dot-theme.component.html',
-    styleUrl: './dot-theme.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
@@ -71,9 +77,10 @@ interface DotThemeState {
         }
     ]
 })
-export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestroy {
+export class DotThemeComponent implements ControlValueAccessor, OnDestroy {
     private readonly themesService = inject(DotThemesService);
     private readonly globalStore = inject(GlobalStore);
+    private readonly destroyRef = inject(DestroyRef);
 
     @ViewChild('dataView') dataView: DataView | undefined;
 
@@ -89,10 +96,17 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     disabled = input<boolean>(false);
 
     /**
-     * Two-way model binding for the selected theme identifier.
-     * Accepts a string (theme identifier) or null if no theme is selected.
+     * Internal value signal for the selected theme identifier.
+     * Used internally by ControlValueAccessor; external updates via writeValue().
+     * @internal
      */
-    value = model<string | null>(null);
+    private readonly $value = signal<string | null>(null);
+
+    /**
+     * Public getter for the current value (for template binding).
+     * @internal
+     */
+    value = this.$value.asReadonly();
 
     /**
      * Disabled state from the ControlValueAccessor interface.
@@ -103,8 +117,16 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
     /**
      * Combined disabled state: true if either the input or ControlValueAccessor disabled state is true.
+     * Also clears pending search debounce when disabled.
      */
-    $disabled = computed(() => this.disabled() || this.$isDisabled());
+    $disabled = computed(() => {
+        const isDisabled = this.disabled() || this.$isDisabled();
+        if (isDisabled && this.filterDebounceTimeout) {
+            clearTimeout(this.filterDebounceTimeout);
+            this.filterDebounceTimeout = null;
+        }
+        return isDisabled;
+    });
 
     /**
      * Output event emitted whenever the selected theme changes.
@@ -136,6 +158,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     readonly $state = signalState<DotThemeState>({
         themes: [],
         loading: false,
+        error: null,
         pagination: null,
         selectedTheme: null,
         hostId: null,
@@ -155,7 +178,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      * Falls back to "Primary" if no theme is selected.
      */
     readonly $selectedThemeTitle = computed(() => {
-        return this.$state.selectedTheme()?.title || 'Primary';
+        return this.$state.selectedTheme()?.title || 'Select a theme';
     });
 
     /**
@@ -172,55 +195,117 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     private filterDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     /**
-     * Set of page numbers that have already been loaded from the backend.
-     * Used to prevent redundant page fetching.
+     * Subject for canceling pending theme load requests when new requests are made.
+     * Used to prevent race conditions from rapid pagination or search changes.
      * @private
      */
-    private loadedPages = new Set<number>();
+    private readonly loadRequest$ = new Subject<{ page: number; hostId: string; search?: string }>();
+
+    /**
+     * Tracks the identifier of a theme currently being fetched individually.
+     * Used to prevent duplicate fetches and race conditions.
+     * @private
+     */
+    private pendingThemeFetch: string | null = null;
 
     constructor() {
-        // Sync model signal changes with ControlValueAccessor and state
+        /**
+         * State Update Flow:
+         *
+         * 1. Effect (lines 210-220): Watches $value() changes and syncs selectedTheme.
+         *    - Finds theme in loaded themes or current selectedTheme
+         *    - If not found and identifier exists, triggers individual fetch
+         *
+         * 2. loadRequest$ subscription (lines 235-272): Handles paginated theme list loads.
+         *    - Cancels previous requests via switchMap
+         *    - Updates themes list and syncs selectedTheme if value matches loaded themes
+         *    - Effect will re-run if selectedTheme changes, but won't duplicate fetch
+         *
+         * 3. fetchThemeByIdentifier() (lines 496-515): Fetches individual theme.
+         *    - Only called when theme not in loaded list
+         *    - Checks value hasn't changed before updating (prevents stale updates)
+         *
+         * Race condition prevention:
+         * - loadRequest$ uses switchMap to cancel previous requests
+         * - fetchThemeByIdentifier checks pendingThemeFetch to prevent duplicates
+         * - Both check $value() before updating selectedTheme to ensure consistency
+         */
+
+        // Sync internal value signal changes with state (but don't trigger callbacks - those are for user interaction only)
+        // The effect handles finding and setting selectedTheme whenever $value changes
         effect(() => {
-            const identifier = this.value();
-            // Find the theme from loaded themes or keep existing if identifier matches
-            const theme = identifier
-                ? this.$state.themes().find((t) => t.identifier === identifier) ||
-                  (this.$state.selectedTheme()?.identifier === identifier
-                      ? this.$state.selectedTheme()
-                      : null)
-                : null;
+            const identifier = this.$value();
+            const theme = this.findThemeByIdentifier(identifier);
             patchState(this.$state, { selectedTheme: theme });
-            this.onChangeCallback(identifier);
-            this.onChange.emit(identifier);
-            this.onTouchedCallback();
+
+            // If theme not found in loaded themes and we have an identifier, fetch it
+            // Skip if already fetching this theme to prevent duplicate requests
+            if (identifier && !theme && this.pendingThemeFetch !== identifier) {
+                this.fetchThemeByIdentifier(identifier);
+            }
         });
 
         // Watch for current site changes from global store
-        // This handles both initial load (when store loads asynchronously) and subsequent changes
+        // Only initializes hostId when it's null (initial load). Once user selects a site,
+        // this effect will not overwrite their selection even if GlobalStore changes.
         effect(() => {
             const currentSiteId = this.globalStore.currentSiteId();
             const currentHostId = this.$state.hostId();
 
-            // Update hostId if it's different and we have a valid site ID
-            if (currentSiteId && currentSiteId !== currentHostId) {
+            // Only set hostId if it's null and we have a valid site ID (initialization only)
+            if (currentSiteId && currentHostId === null) {
                 patchState(this.$state, { hostId: currentSiteId });
-                // Only load themes if we don't have any loaded yet (initial load)
-                // If themes are already loaded, user might have changed the site selector
-                if (this.$state.themes().length === 0) {
-                    this.loadThemes(1, currentSiteId);
-                }
+                // Load themes on initial setup
+                this.loadThemes(1, currentSiteId);
             }
         });
-    }
 
-    ngOnInit(): void {
-        // Effect will handle the initial load when store becomes available
-        // But also check immediately in case store is already loaded
-        const currentSiteId = this.globalStore.currentSiteId();
-        if (currentSiteId && !this.$state.hostId()) {
-            patchState(this.$state, { hostId: currentSiteId });
-            this.loadThemes(1, currentSiteId);
-        }
+        // Set up request cancellation for theme loading
+        // Uses switchMap to cancel previous requests when new ones arrive
+        this.loadRequest$
+            .pipe(
+                switchMap(({ page, hostId, search }) => {
+                    patchState(this.$state, { loading: true, error: null });
+                    return this.themesService.getThemes({
+                        hostId,
+                        page,
+                        per_page: this.pageSize,
+                        ...(search ? { searchParam: search } : {})
+                    });
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe({
+                next: ({ themes, pagination }) => {
+                    const normalizedThemes = themes.map((theme) => this.normalizeThemePath(theme));
+
+                    // Sync selectedTheme if we have a value set
+                    // Check current value to prevent race conditions (value might have changed during load)
+                    const currentValue = this.$value();
+                    const selectedTheme = currentValue
+                        ? this.findThemeByIdentifier(currentValue, normalizedThemes)
+                        : null;
+
+                    // If we found the theme in the loaded list, clear any pending individual fetch
+                    if (selectedTheme && this.pendingThemeFetch === currentValue) {
+                        this.pendingThemeFetch = null;
+                    }
+
+                    patchState(this.$state, {
+                        themes: normalizedThemes,
+                        pagination,
+                        loading: false,
+                        error: null,
+                        selectedTheme
+                    });
+                },
+                error: (error) => {
+                    patchState(this.$state, {
+                        loading: false,
+                        error: error?.message || 'Failed to load themes'
+                    });
+                }
+            });
     }
 
     ngOnDestroy(): void {
@@ -228,6 +313,8 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
             clearTimeout(this.filterDebounceTimeout);
             this.filterDebounceTimeout = null;
         }
+        // Complete the subject to clean up the subscription
+        this.loadRequest$.complete();
     }
 
     // ControlValueAccessor callback functions
@@ -242,24 +329,29 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
     /**
      * Handles the event when the selected site changes.
      * Updates hostId and reloads themes with the new hostId.
+     * Clears search value and selected value when site changes.
      *
      * @param siteId The selected site identifier, or null if cleared
      */
     onSiteChange(siteId: string | null): void {
         if (!siteId) {
+            // Clear all state when site is cleared
+            this.$value.set(null);
             patchState(this.$state, {
                 hostId: null,
                 themes: [],
                 pagination: null,
-                selectedTheme: null
+                selectedTheme: null,
+                searchValue: ''
             });
-            this.loadedPages.clear();
             return;
         }
 
-        patchState(this.$state, { hostId: siteId });
-        this.loadedPages.clear();
-        this.loadThemes(1, siteId, this.$state.searchValue());
+        // Clear search value and selected value when switching sites
+        // This prevents trying to fetch themes from the wrong site context
+        this.$value.set(null);
+        patchState(this.$state, { hostId: siteId, searchValue: '' });
+        this.loadThemes(1, siteId);
     }
 
     /**
@@ -282,7 +374,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
                 return;
             }
 
-            this.loadedPages.clear();
             patchState(this.$state, {
                 themes: [],
                 pagination: null
@@ -293,6 +384,28 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
             this.filterDebounceTimeout = null;
         }, 300);
+    }
+
+    /**
+     * Handles user selection of a theme.
+     * This method is called when the user interacts with the radio buttons.
+     * It updates the value (which triggers effect to sync selectedTheme) and emits events.
+     *
+     * @param identifier The theme identifier selected by the user, or null to clear selection
+     */
+    onThemeSelect(identifier: string | null): void {
+        // Prevent selection when disabled
+        if (this.$disabled()) {
+            return;
+        }
+
+        // Update the internal value signal (effect will handle finding and setting selectedTheme)
+        this.$value.set(identifier);
+
+        // Emit callbacks and events ONLY on user interaction (not from writeValue)
+        this.onChangeCallback(identifier);
+        this.onChange.emit(identifier);
+        this.onTouchedCallback();
     }
 
     /**
@@ -344,6 +457,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
     /**
      * Loads themes from the service with pagination support.
+     * Uses request cancellation to prevent race conditions from rapid calls.
      *
      * @private
      * @param page The page number to load (1-indexed)
@@ -351,59 +465,15 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
      * @param search Optional search parameter
      */
     private loadThemes(page: number, hostId: string, search?: string): void {
-        if (this.$state.loading()) {
-            return;
-        }
-
-        patchState(this.$state, { loading: true });
-
-        this.themesService
-            .getThemes({
-                hostId,
-                page,
-                per_page: this.pageSize,
-                ...(search ? { searchParam: search } : {})
-            })
-            .subscribe({
-                next: ({ themes, pagination }) => {
-                    const t = themes.map((theme) => ({
-                        ...theme,
-                        path: theme.path.replace('/application', '').replace('/', '')
-                    }));
-
-                    // If we have a selected theme, check if it's in the newly loaded themes
-                    const selectedId = this.$state.selectedTheme()?.identifier;
-                    const selectedTheme = selectedId
-                        ? t.find((theme) => theme.identifier === selectedId) ||
-                          this.$state.selectedTheme()
-                        : null;
-
-                    patchState(this.$state, {
-                        themes: t,
-                        pagination,
-                        loading: false,
-                        selectedTheme
-                    });
-
-                    this.loadedPages.add(page);
-                },
-                error: () => {
-                    patchState(this.$state, { loading: false });
-                }
-            });
+        this.loadRequest$.next({ page, hostId, search });
     }
 
     // ControlValueAccessor implementation
     writeValue(value: string | null): void {
-        this.value.set(value);
-        // Try to find the theme from current page themes, or keep existing if identifier matches
-        const theme = value
-            ? this.$state.themes().find((t) => t.identifier === value) ||
-              (this.$state.selectedTheme()?.identifier === value
-                  ? this.$state.selectedTheme()
-                  : null)
-            : null;
-        patchState(this.$state, { selectedTheme: theme });
+        // Update internal value signal (effect will handle finding and setting selectedTheme)
+        // NOTE: This does NOT emit onChange/onChangeCallback - only user interaction does
+        this.$value.set(value);
+        // Effect handles the rest: finding theme, fetching if needed, updating selectedTheme
     }
 
     registerOnChange(fn: (value: string | null) => void): void {
@@ -416,5 +486,96 @@ export class DotThemeComponent implements ControlValueAccessor, OnInit, OnDestro
 
     setDisabledState(isDisabled: boolean): void {
         this.$isDisabled.set(isDisabled);
+        // Note: Debounce cleanup is handled by $disabled computed signal
+    }
+
+    /**
+     * Finds a theme by identifier from the provided themes array or current state.
+     * Falls back to checking selectedTheme if not found in themes array.
+     *
+     * @private
+     * @param identifier The theme identifier to find, or null
+     * @param themes Optional themes array to search. If not provided, uses current state themes.
+     * @returns The found theme or null
+     */
+    private findThemeByIdentifier(
+        identifier: string | null,
+        themes?: DotTheme[]
+    ): DotTheme | null {
+        if (!identifier) {
+            return null;
+        }
+
+        const themesToSearch = themes || this.$state.themes();
+        const foundTheme = themesToSearch.find((t) => t.identifier === identifier);
+
+        if (foundTheme) {
+            return foundTheme;
+        }
+
+        // Fallback: check if current selectedTheme matches
+        const currentSelected = this.$state.selectedTheme();
+        if (currentSelected?.identifier === identifier) {
+            return currentSelected;
+        }
+
+        return null;
+    }
+
+    /**
+     * Fetches a theme by identifier from the service.
+     * Used when writeValue() is called with an identifier not in loaded themes.
+     * Tracks pending fetches to prevent duplicate requests.
+     *
+     * @private
+     * @param identifier The theme identifier to fetch
+     */
+    private fetchThemeByIdentifier(identifier: string): void {
+        // Mark as pending to prevent duplicate fetches
+        this.pendingThemeFetch = identifier;
+
+        this.themesService
+            .get(identifier)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (fetchedTheme) => {
+                    const transformedTheme = this.normalizeThemePath(fetchedTheme);
+                    // Only update if the value hasn't changed (user might have selected something else)
+                    // and we're still the pending fetch (prevents race with loadRequest$)
+                    if (this.$value() === identifier && this.pendingThemeFetch === identifier) {
+                        patchState(this.$state, { selectedTheme: transformedTheme });
+                    }
+                    // Always clear pending flag if this was the pending fetch
+                    if (this.pendingThemeFetch === identifier) {
+                        this.pendingThemeFetch = null;
+                    }
+                },
+                error: () => {
+                    // If fetch fails, clear selection if value still matches
+                    if (this.$value() === identifier && this.pendingThemeFetch === identifier) {
+                        patchState(this.$state, { selectedTheme: null });
+                    }
+                    // Always clear pending flag on error
+                    if (this.pendingThemeFetch === identifier) {
+                        this.pendingThemeFetch = null;
+                    }
+                }
+            });
+    }
+
+    /**
+     * Normalizes theme path by removing '/application' prefix and leading slash.
+     * This transformation is needed because the API returns paths like '/application/themes/theme-name'
+     * but the UI displays them as 'themes/theme-name'.
+     *
+     * @private
+     * @param theme The theme to normalize
+     * @returns Theme with normalized path
+     */
+    private normalizeThemePath(theme: DotTheme): DotTheme {
+        return {
+            ...theme,
+            path: theme.path.replace(/^\/application/, '').replace(/^\//, '')
+        };
     }
 }
