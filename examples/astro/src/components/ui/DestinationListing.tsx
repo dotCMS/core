@@ -11,9 +11,7 @@ interface DestinationListingProps {
   destinations: Destination[];
 }
 
-export function DestinationListing({
-  destinations,
-}: DestinationListingProps) {
+export function DestinationListing({ destinations }: DestinationListingProps) {
   if (!destinations || !destinations.length) {
     return <div>No destinations found</div>;
   }

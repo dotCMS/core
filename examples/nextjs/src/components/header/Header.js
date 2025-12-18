@@ -3,12 +3,15 @@
 import Link from "next/link";
 
 import { useIsEditMode } from "@/hooks/isEditMode";
-import { ReorderMenuButton } from "./editor/ReorderMenuButton";
+import { ReorderMenuButton } from "../editor/ReorderMenuButton";
 import { usePathname } from "next/navigation";
+import SearchButton from "./components/SearchButton";
+import AISearchDialog from "./components/AISearchDialog";
+import { useState } from "react";
 
 function Header({ navItems }) {
     const isEditMode = useIsEditMode();
-
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     return (
         <div className="flex items-center justify-between p-4 bg-blue-500">
             <div className="flex items-center">
@@ -19,7 +22,14 @@ function Header({ navItems }) {
                 {isEditMode && <ReorderMenuButton />}
             </div>
 
-            {navItems && <Navigation navItems={navItems} />}
+            <div className="flex items-center space-x-4">
+                {navItems && <Navigation navItems={navItems} />}
+                <SearchButton onClick={() => setIsSearchOpen(true)} />
+            </div>
+            <AISearchDialog
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
+            />
         </div>
     );
 }

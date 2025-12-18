@@ -48,15 +48,6 @@
                     }
 
                     tr.content-drive-table__row {
-                        // Title column with thumbnail and text layout
-                        .list-view-title {
-                            display: grid;
-                            grid-template-columns: 4.5rem minmax(0, 1fr) min-content;
-                            align-items: center;
-                            gap: $spacing-1;
-                            width: 100%;
-                        }
-
                         .content-drive-table__actions-button {
                             opacity: 0;
                             transition: opacity 0.2s ease-in-out;
@@ -111,10 +102,10 @@
     align-items: center;
     gap: $spacing-1;
     width: 100%;
+    padding-left: $spacing-3;
 
     .container-thumbnail {
         background-color: $color-palette-primary-100;
-        // min-width: 72px;
 
         .folder-icon {
             font-size: 2.25rem;
