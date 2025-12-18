@@ -41,11 +41,22 @@ describe('CubeQueryBuilder', () => {
     });
 
     describe('Pageviews Filter', () => {
-        it('should add pageview filter', () => {
-            const query = builder.pageviews().build();
+        it('should add pageview filter with current cube prefix', () => {
+            const query = builder.fromCube('request').pageviews().build();
             expect(query.filters).toEqual([
                 {
                     member: 'request.eventType',
+                    operator: 'equals',
+                    values: ['pageview']
+                }
+            ]);
+        });
+
+        it('should use current prefix for pageviews filter', () => {
+            const query = builder.fromCube('EventSummary').pageviews().build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'EventSummary.eventType',
                     operator: 'equals',
                     values: ['pageview']
                 }
@@ -400,6 +411,116 @@ describe('CubeQueryBuilder', () => {
                 ],
                 limit: 50
             });
+        });
+    });
+
+    describe('Conversions Filter', () => {
+        it('should add conversion filter with current cube prefix', () => {
+            const query = createCubeQuery().fromCube('EventSummary').conversions().build();
+            expect(query.filters).toEqual([
+                {
+                    member: 'EventSummary.eventType',
+                    operator: 'equals',
+                    values: ['conversion']
+                }
+            ]);
+        });
+
+        it('should use current prefix for conversions filter', () => {
+            // If in the future conversions could come from another cube
+            const query = createCubeQuery().fromCube('request').conversions().build();
+
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.eventType',
+                    operator: 'equals',
+                    values: ['conversion']
+                }
+            ]);
+        });
+    });
+
+    describe('Cube Prefix Switching', () => {
+        it('should switch to EventSummary prefix with fromCube() method', () => {
+            const query = createCubeQuery()
+                .fromCube('EventSummary')
+                .measures(['totalEvents'])
+                .build();
+
+            expect(query.measures).toEqual(['EventSummary.totalEvents']);
+        });
+
+        it('should default to request prefix', () => {
+            const query = createCubeQuery().measures(['totalRequest']).build();
+            expect(query.measures).toEqual(['request.totalRequest']);
+        });
+
+        it('should not double-prefix already prefixed fields', () => {
+            const query = createCubeQuery().measures(['EventSummary.totalEvents']).build();
+
+            expect(query.measures).toEqual(['EventSummary.totalEvents']);
+        });
+    });
+
+    describe('Complete Conversion Query Building', () => {
+        it('should build totalConversions query', () => {
+            const query = createCubeQuery()
+                .fromCube('EventSummary')
+                .conversions()
+                .measures(['totalEvents'])
+                .build();
+
+            expect(query).toEqual({
+                measures: ['EventSummary.totalEvents'],
+                filters: [
+                    {
+                        member: 'EventSummary.eventType',
+                        operator: 'equals',
+                        values: ['conversion']
+                    }
+                ]
+            });
+        });
+
+        it('should build totalConversions query with siteId', () => {
+            const query = createCubeQuery()
+                .fromCube('EventSummary')
+                .conversions()
+                .measures(['totalEvents'])
+                .siteId('site-123')
+                .build();
+
+            expect(query).toEqual({
+                measures: ['EventSummary.totalEvents'],
+                filters: [
+                    {
+                        member: 'EventSummary.eventType',
+                        operator: 'equals',
+                        values: ['conversion']
+                    },
+                    {
+                        member: 'EventSummary.siteId',
+                        operator: 'equals',
+                        values: ['site-123']
+                    }
+                ]
+            });
+        });
+
+        it('should build conversions query with time range', () => {
+            const query = createCubeQuery()
+                .fromCube('EventSummary')
+                .conversions()
+                .measures(['totalEvents'])
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last7days)
+                .build();
+
+            expect(query.timeDimensions).toEqual([
+                {
+                    dimension: 'EventSummary.createdAt',
+                    dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days
+                }
+            ]);
         });
     });
 });
