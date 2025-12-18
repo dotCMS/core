@@ -337,7 +337,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      */
     private void processBlocksRecursively(final ImmutableList.Builder<String> contentletIdList,
                                           final List<Map<String, Object>> blocks) {
-        if (UtilMethods.isSet(blocks)) {
+        if (!UtilMethods.isSet(blocks)) {
             return;
         }
 
