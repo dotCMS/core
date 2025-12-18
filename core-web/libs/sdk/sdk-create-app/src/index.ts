@@ -35,33 +35,23 @@ const program = new Command();
 program
     .name('dotcms-create-app')
     .description('dotCMS CLI for creating applications')
-    .version('0.1.0');
+    .version('0.1.0-beta');
 
 program
     .argument('<project-name>', 'Name of the project folder')
-    // framework flags
-    .option('--nextjs', 'Use Next.js')
-    .option('--angular', 'Use Angular')
-    .option('--angular-ssr', 'Use Angular SSR')
-    .option('--astro', 'Use Astro')
+    .option('-f, --framework <framework>', 'Framework to use [nextjs,astro,angular,angular-ssr]')
+    // directory flags
+    .option('-d, --directory <path>', 'Project directory')
 
     // cloud / no-cloud
-    .option('--no-cloud', 'Use dotCMS local instance using docker')
-    .option('--cloud', 'Use dotCMS Cloud')
-    // .option(
-    //     '-f, --framework <framework>',
-    //     `Choose frontend framework. Options: ${FRAMEWORKS.join(', ')}`,
-    //     (value) => {
-    //         if (!FRAMEWORKS.includes(value as SupportedFrontEndFrameworks)) {
-    //             throw new Error(
-    //                 `Invalid framework "${value}". Choose one of: ${FRAMEWORKS.join(', ')}`
-    //             );
-    //         }
-    //         return value;
-    //     }
-    // )
+    .option('--local', 'Use local dotCMS instance using docker')
 
-    .action(async (projectName, options) => {
+    // cloud options (if cloud selected)
+    .option('--url <url>', 'DotCMS instance url (skip in case of local)')
+    .option('-u, --username <username>', 'DotCMS instance username (skip in case of local)')
+    .option('-p, --password <password>', 'DotCMS instance password (skip in case of local)')
+
+    .action(async (projectName: string, options) => {
         // <-- Add beta notice here
         console.log(chalk.bgYellow.black(' ⚠️  Beta Version Notice  ⚠️ '));
         console.log(
@@ -70,68 +60,63 @@ program
             )
         );
 
-        // Ask directory location
-        const directoryInput = await askDirectory();
-        const finalDirectory = await prepareDirectory(directoryInput, projectName);
+        console.log(options);
 
-        /* -------------------------------------------------------
-         * RESOLVE FRAMEWORK
-         * -----------------------------------------------------*/
+        const { dir, directory } = options;
+        const { url } = options;
+        const { user, username } = options;
+        const { pass, password } = options;
+        const { framework, f } = options;
 
-        const resolveFramework = (): SupportedFrontEndFrameworks | undefined => {
-            if (options.nextjs) return 'nextjs';
-            if (options.angular) return 'angular';
-            if (options['angular-ssr']) return 'angular-ssr';
-            if (options.astro) return 'astro';
-            return options.framework;
-        };
+        let directoryInput: string;
+        let finalDirectory: string;
 
-        const selectedFrameworkFlags: SupportedFrontEndFrameworks[] = (
-            ['nextjs', 'angular', 'angular-ssr', 'astro'] as SupportedFrontEndFrameworks[]
-        ).filter((f) => options[f]);
-
-        if (selectedFrameworkFlags.length > 1) {
-            console.log(chalk.red('❌ Please select only one framework flag.'));
-            process.exit(1);
+        if (dir === undefined || directory === undefined) {
+            directoryInput = await askDirectory();
+            finalDirectory = await prepareDirectory(directoryInput, projectName);
+        } else {
+            directoryInput = dir || directory;
+            finalDirectory = await prepareDirectory(directoryInput, projectName);
         }
 
-        let framework = resolveFramework();
+        let selectedFramework: string;
 
-        if (!framework) {
-            framework = await askFramework();
+        if (framework === undefined || f === undefined) {
+            selectedFramework = await askFramework();
+        } else {
+            selectedFramework = framework || f;
         }
 
-        // let { framework } = options;
-
-        // console.log(chalk.cyan("📁 Preparing project..."));
-
-        // Ask framework
-        if (!framework) framework = await askFramework();
-
-        const isCloudInstanceSelected =
-            typeof options.cloud === 'boolean' ? options.cloud : await askCloudOrLocalInstance();
-
-        // console.log(chalk.green("✔ Starting DotCMS app setup...\n"));
-        // const spinner = ora(`Scaffolding ${framework} application ...`).start();
+        const isCloudInstanceSelected: boolean =
+            options.local === undefined ? await askCloudOrLocalInstance() : false;
 
         if (isCloudInstanceSelected) {
-            const urlDotcmsInstance = await askDotcmsCloudUrl();
-            const userNameDotCmsInstance = await askUserNameForDotcmsCloud();
-            const passwordDotCmsInstance = await askPasswordForDotcmsCloud();
+            let urlDotcmsInstance: string;
+            let userNameDotCmsInstance: string;
+            let passwordDotCmsInstance: string;
 
-            const spinner = ora(`Scaffolding ${framework} application ...`).start();
+            if (url === undefined) await askDotcmsCloudUrl();
+            else urlDotcmsInstance = url;
+
+            if (user === undefined || username === undefined) await askUserNameForDotcmsCloud();
+            else userNameDotCmsInstance = user || username;
+
+            if (pass === undefined || password === undefined) await askPasswordForDotcmsCloud();
+            else passwordDotCmsInstance = pass || password;
+
+            const spinner = ora(`Scaffolding ${selectedFramework} application ...`).start();
 
             const created = await scaffoldFrontendProject({
-                framework,
+                framework: selectedFramework as SupportedFrontEndFrameworks,
                 directory: finalDirectory
             });
 
             if (!created.ok) {
-                spinner.fail(`Failed to scaffold frontend project (${framework}).`);
+                spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
                 return;
             }
 
-            spinner.succeed(`Frontend project (${framework}) scaffolded successfully.`);
+            spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
 
             const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
             const emaConfigApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
@@ -184,7 +169,7 @@ program
                     configuration: {
                         hidden: false,
                         value: getUVEConfigValue(
-                            `http://localhost:${getPortByFramework(framework)}`
+                            `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
                         )
                     }
                 },
@@ -231,20 +216,23 @@ program
             return;
         }
 
-        const spinner = ora(`Scaffolding ${framework} application ...`).start();
+        // console.log(chalk.green("✔ Starting DotCMS app setup...\n"));
+        // const spinner = ora(`Scaffolding ${framework} application ...`).start();
+
+        const spinner = ora(`Scaffolding ${selectedFramework} application ...`).start();
 
         // STEP 1 — Scaffold front-end
         const created = await scaffoldFrontendProject({
-            framework,
+            framework: selectedFramework as SupportedFrontEndFrameworks,
             directory: finalDirectory
         });
 
         if (!created.ok) {
-            spinner.fail(`Failed to scaffold frontend project (${framework}).`);
+            spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
             return;
         }
 
-        spinner.succeed(`Frontend project (${framework}) scaffolded successfully.`);
+        spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
 
         spinner.start('Setting up dotCMS with Docker Compose...');
 
@@ -313,7 +301,9 @@ program
             payload: {
                 configuration: {
                     hidden: false,
-                    value: getUVEConfigValue(`http://localhost:${getPortByFramework(framework)}`)
+                    value: getUVEConfigValue(
+                        `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
+                    )
                 }
             },
             siteId: demoSite.val.entity.identifier,

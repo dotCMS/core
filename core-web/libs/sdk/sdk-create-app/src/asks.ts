@@ -36,7 +36,7 @@ export async function askDirectory() {
         {
             type: 'input',
             name: 'directory',
-            message: 'Where should the project be created?',
+            message: 'Project directory:',
             default: `.`
         }
     ]);
@@ -51,7 +51,7 @@ export async function askDotcmsCloudUrl() {
         {
             type: 'input',
             name: 'url',
-            message: 'What’s the URL of your dotCMS cloud instance?',
+            message: 'DotCMS instance URL:',
             default: `https://demo.dotcms.com`
         }
     ]);
@@ -66,7 +66,7 @@ export async function askUserNameForDotcmsCloud() {
         {
             type: 'input',
             name: 'username',
-            message: 'What’s the username of your dotCMS cloud instance?',
+            message: 'Username:',
             default: `admin@dotcms.com`
         }
     ]);
@@ -81,8 +81,8 @@ export async function askPasswordForDotcmsCloud() {
         {
             type: 'input',
             name: 'password',
-            message: 'What’s the password of your dotCMS cloud instance?',
-            default: ``
+            message: 'Password:',
+            default: `admin`
         }
     ]);
     return ans.password;
@@ -98,7 +98,7 @@ export async function askCloudOrLocalInstance(): Promise<boolean> {
         {
             type: 'confirm',
             name: 'confirm',
-            message: `Do you want to use a dotCMS Cloud instance? (Otherwise a local DotCMS will be used using docker)`,
+            message: `Running dotCMS in the cloud? If not, no worries — select No to spin up dotCMS using Docker.`,
             default: false
         }
     ]);

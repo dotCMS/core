@@ -26,7 +26,7 @@ export const cloneFrontEndSample = async ({
         cwd: directory
     });
 
-    await fs.ensureDir(path.join(directory, framework));
+    // await fs.ensureDir(path.join(directory, framework));
 
     // 3. Checkout main branch (only the selected folder is downloaded)
     await execa('git', ['checkout', 'main'], {
@@ -35,19 +35,29 @@ export const cloneFrontEndSample = async ({
     });
 
     const src = path.join(directory, 'examples', `${framework}`);
-    const dest = path.join(directory, framework);
+    const dest = directory;
+    // const dest = path.join(directory, framework);
 
     // Ensure framework directory exists
-    await fs.ensureDir(dest);
+    // await fs.ensureDir(dest);
+
+    // Remove EVERYTHING in repo except the examples folder
+    const items = await fs.readdir(directory);
+
+    for (const item of items) {
+        if (item !== 'examples') {
+            await fs.remove(path.join(directory, item));
+        }
+    }
 
     // Copy only the nextjs folder into the framework folder
     await fs.copy(src, dest, { overwrite: true });
 
-    // Remove EVERYTHING in repo except the destination folder
-    const items = await fs.readdir(directory);
+    // Remove the remaining examples folder
+    const allItems = await fs.readdir(directory);
 
-    for (const item of items) {
-        if (item !== framework) {
+    for (const item of allItems) {
+        if (item === 'examples') {
             await fs.remove(path.join(directory, item));
         }
     }
