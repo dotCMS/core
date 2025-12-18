@@ -8,7 +8,6 @@ import { Result, Ok, Err } from 'ts-results';
 
 import { DotCMSApi } from './api';
 import {
-    askCloudOrLocalInstance,
     askDirectory,
     askDotcmsCloudUrl,
     askFramework,
@@ -60,8 +59,6 @@ program
             )
         );
 
-        console.log(options);
-
         const { dir, directory } = options;
         const { url } = options;
         const { user, username } = options;
@@ -71,7 +68,7 @@ program
         let directoryInput: string;
         let finalDirectory: string;
 
-        if (dir === undefined || directory === undefined) {
+        if (dir === undefined && directory === undefined) {
             directoryInput = await askDirectory();
             finalDirectory = await prepareDirectory(directoryInput, projectName);
         } else {
@@ -81,14 +78,13 @@ program
 
         let selectedFramework: string;
 
-        if (framework === undefined || f === undefined) {
+        if (framework === undefined && f === undefined) {
             selectedFramework = await askFramework();
         } else {
             selectedFramework = framework || f;
         }
 
-        const isCloudInstanceSelected: boolean =
-            options.local === undefined ? await askCloudOrLocalInstance() : false;
+        const isCloudInstanceSelected: boolean = options.local === undefined;
 
         if (isCloudInstanceSelected) {
             let urlDotcmsInstance: string;
@@ -98,10 +94,10 @@ program
             if (url === undefined) await askDotcmsCloudUrl();
             else urlDotcmsInstance = url;
 
-            if (user === undefined || username === undefined) await askUserNameForDotcmsCloud();
+            if (user === undefined && username === undefined) await askUserNameForDotcmsCloud();
             else userNameDotCmsInstance = user || username;
 
-            if (pass === undefined || password === undefined) await askPasswordForDotcmsCloud();
+            if (pass === undefined && password === undefined) await askPasswordForDotcmsCloud();
             else passwordDotCmsInstance = pass || password;
 
             const spinner = ora(`Scaffolding ${selectedFramework} application ...`).start();
