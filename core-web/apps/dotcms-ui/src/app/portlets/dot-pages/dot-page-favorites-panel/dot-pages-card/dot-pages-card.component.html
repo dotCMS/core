@@ -6,7 +6,7 @@
 <p-card
     class="cursor-pointer"
     [style]="{ width: '250px', overflow: 'hidden' }"
-    (click)="goTo.emit(true)"
+    (click)="navigateToPage.emit(true)"
     data-testid="pageCard">
     <ng-template #header>
         @if (!cardImage) {
@@ -27,7 +27,7 @@
                 {{ cardUrl }}
             </span>
             <p-button
-                (click)="$event.stopPropagation(); showContextMenu.emit($event)"
+                (onClick)="openMenu.emit($event)"
                 [id]="$actionButtonId()"
                 icon="pi pi-ellipsis-v"
                 styleClass="p-button-rounded p-button-text p-button-sm shrink-0" />

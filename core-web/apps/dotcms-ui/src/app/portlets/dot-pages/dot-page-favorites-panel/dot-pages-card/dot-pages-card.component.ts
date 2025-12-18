@@ -19,6 +19,6 @@ export class DotPagesCardComponent {
     readonly $url = input<string>('', { alias: 'url' });
 
     readonly edit = output<boolean>();
-    readonly goTo = output<boolean>();
-    readonly showContextMenu = output<MouseEvent>();
+    readonly navigateToPage = output<boolean>();
+    readonly openMenu = output<MouseEvent>();
 }

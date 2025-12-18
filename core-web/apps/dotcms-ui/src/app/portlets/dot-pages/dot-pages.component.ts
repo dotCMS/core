@@ -1,13 +1,21 @@
 import { signalMethod } from '@ngrx/signals';
 
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, ElementRef, HostListener, inject, signal } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    ElementRef,
+    HostListener,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 
-import { LazyLoadEvent } from 'primeng/api';
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import {
@@ -42,9 +50,8 @@ import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.compon
 import { DotCMSPagesStore } from './store/store';
 
 export interface DotActionsMenuEventParams {
-    event: MouseEvent;
-    actionMenuDomId: string;
-    item: DotCMSContentlet;
+    originalEvent: MouseEvent;
+    data: DotCMSContentlet;
 }
 
 type SavePageEventData = {
@@ -99,6 +106,9 @@ export class DotPagesComponent {
 
     protected readonly dialogVisible = signal<boolean>(false);
 
+    readonly menu = viewChild<Menu>('menu');
+    readonly menuItems = signal<MenuItem[]>([{ label: 'Test' }]);
+
     /**
      * Handle switch site
      *
@@ -120,11 +130,10 @@ export class DotPagesComponent {
 
     /**
      * Event to redirect to Edit Page when Page selected
-     *goToUrl
      * @param {string} url
      * @memberof DotPagesComponent
      */
-    goToUrl(url: string): void {
+    protected navigateToPage(url: string): void {
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -143,17 +152,18 @@ export class DotPagesComponent {
      */
     @HostListener('window:click')
     closeMenu(): void {
-        // this.menu.hide();
+        this.menu().hide();
     }
 
     /**
      * Event to show/hide actions menu when each contentlet is clicked
      *
-     * @param {DotActionsMenuEventParams} params
+     * @param {DotActionsMenuEventParams} event
      * @memberof DotPagesComponent
      */
-    protected showContextMenu({ event }: DotActionsMenuEventParams): void {
-        event.stopPropagation();
+    protected openMenu({ originalEvent }: DotActionsMenuEventParams): void {
+        originalEvent.stopPropagation();
+        this.menu().toggle(originalEvent);
         // this.#store.clearMenuActions();
         // this.menu.hide();
 

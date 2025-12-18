@@ -101,6 +101,7 @@
             <td>{{ page['modDate'] | dotRelativeDate }}</td>
             <td>
                 <p-button
+                    (onClick)="handleOpenMenu($event, page)"
                     id="pageActionButton-{{ rowIndex }}"
                     icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text" />

@@ -61,9 +61,9 @@ export class DotPagesTableComponent {
     readonly $totalRecords = input.required<number>({ alias: 'totalRecords' });
 
     /** Emits a navigation URL when the user selects a row. */
-    readonly goToUrl = output<string>();
+    readonly navigateToPage = output<string>();
     /** Emits when the actions menu should be opened for a row. */
-    readonly showContextMenu = output<DotActionsMenuEventParams>();
+    readonly openMenu = output<DotActionsMenuEventParams>();
     /** Emits when the paginator changes page. */
     readonly pageChange = output<void>();
     /** Emits when the user clicks the create-page button. */
@@ -166,15 +166,6 @@ export class DotPagesTableComponent {
     }
 
     /**
-     * Stops row click propagation when opening the actions context menu.
-     *
-     * @param {DotActionsMenuEventParams} params - click event + row metadata
-     */
-    showActionsContextMenu({ event }: DotActionsMenuEventParams): void {
-        event.stopPropagation();
-    }
-
-    /**
      * Emits a constructed edit URL when the user selects a row.
      *
      * @param {TableRowSelectEvent<DotCMSContentlet>} event - PrimeNG row select event
@@ -189,8 +180,18 @@ export class DotPagesTableComponent {
         const languageId = data.languageId ?? '';
         const url = `${urlValue}?language_id=${languageId}&device_inode=`;
 
-        this.goToUrl.emit(url);
+        this.navigateToPage.emit(url);
     }
 
-    // Note: output emission is handled via the reactive form control subscriptions above.
+    /**
+     * Handle open menu
+     *
+     * @param {MouseEvent} originalEvent
+     * @param {DotCMSContentlet} data
+     * @memberof DotPagesTableComponent
+     */
+    protected handleOpenMenu(originalEvent: MouseEvent, data: DotCMSContentlet): void {
+        originalEvent.stopPropagation();
+        this.openMenu.emit({ originalEvent, data });
+    }
 }

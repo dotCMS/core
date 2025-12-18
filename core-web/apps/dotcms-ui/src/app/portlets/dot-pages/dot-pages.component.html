@@ -1,15 +1,15 @@
 <div>
     <div class="flex flex-col gap-4">
         <dot-page-favorites-panel
-            (goToUrl)="goToUrl($event)"
+            (navigateToPage)="navigateToPage($event)"
             [favoritePages]="dotCMSPagesStore.favoritePages()"
-            (showContextMenu)="showContextMenu($event)" />
+            (openMenu)="openMenu($event)" />
         <dot-pages-table
             [pages]="dotCMSPagesStore.pages()"
             [languages]="globalStore.systemConfig().languages"
             [totalRecords]="dotCMSPagesStore.$totalRecords()"
-            (goToUrl)="goToUrl($event)"
-            (showContextMenu)="showContextMenu($event)"
+            (navigateToPage)="navigateToPage($event)"
+            (openMenu)="openMenu($event)"
             (pageChange)="scrollToTop()"
             (createPage)="dialogVisible.set(true)"
             (search)="onSearch($event)"
@@ -30,7 +30,7 @@
     [visibility]="dialogVisible()"
     (visibilityChange)="dialogVisible.set($event)" />
 
-<p-menu (onHide)="closeMenu()" [popup]="true" #menu />
+<p-menu (onHide)="closeMenu()" [popup]="true" #menu [model]="menuItems()" />
 
 <!-- @if (vm.pages.addToBundleCTId) {
     <dot-add-to-bundle

@@ -38,7 +38,7 @@
                     [imageUri]="getScreenshotUri(favoritePage)"
                     [title]="favoritePage.title"
                     [url]="favoritePage.url"
-                    (showContextMenu)="showContextMenu.emit($event)" />
+                    (openMenu)="handleOpenMenu($event, favoritePage)" />
             }
         </div>
     }

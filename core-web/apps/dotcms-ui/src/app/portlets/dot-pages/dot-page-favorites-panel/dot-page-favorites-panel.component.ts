@@ -36,8 +36,8 @@ export class DotPageFavoritesPanelComponent {
     readonly #dotLocalstorageService = inject(DotLocalstorageService);
 
     readonly $favoritePages = input<DotCMSContentlet[]>([], { alias: 'favoritePages' });
-    readonly goToUrl = output<string>();
-    readonly showContextMenu = output<DotActionsMenuEventParams>();
+    readonly navigateToPage = output<string>();
+    readonly openMenu = output<DotActionsMenuEventParams>();
 
     readonly $isCollapsed = signal<boolean>(true);
     readonly $timeStamp = signal<string>(new Date().getTime().toString());
@@ -134,6 +134,11 @@ export class DotPageFavoritesPanelComponent {
     expandPanel(): void {
         this.$isCollapsed.set(false);
         this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'false');
+    }
+
+    protected handleOpenMenu(originalEvent: MouseEvent, data: DotCMSContentlet): void {
+        originalEvent.stopPropagation();
+        this.openMenu.emit({ originalEvent, data });
     }
 
     private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
