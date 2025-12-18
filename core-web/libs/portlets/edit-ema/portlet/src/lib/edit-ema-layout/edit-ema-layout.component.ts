@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -35,7 +34,7 @@ export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-ema-layout',
-    imports: [CommonModule, TemplateBuilderComponent],
+    imports: [TemplateBuilderComponent],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

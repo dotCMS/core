@@ -10,35 +10,41 @@
     [appendTo]="'body'"
     maskStyleClass="page-tools-dialog"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}">
-    <div *ngIf="tools$ | async as tools" class="page-tools">
-        <ul class="page-tools-list">
-            <li
-                *ngFor="let tool of tools.pageTools"
-                class="page-tools-list__item"
-                data-testId="page-tools-list-item">
-                <a
-                    (click)="toggleDialog()"
-                    class="page-tools-list__link"
-                    data-testId="page-tools-list-link"
-                    href="{{ tool.runnableLink }}"
-                    target="_blank"
-                    rel="noopener">
-                    <img src="{{ tool.icon }}" alt="{{ tool.title }}" width="42" height="42" />
-                    <div class="page-tools-list__content">
-                        <span class="page-tools-list__title">
-                            {{ tool.title }}
-                            <i class="pi pi-external-link page-tools-external-link"></i>
-                        </span>
-                        <p class="page-tools-list__description">
-                            {{ tool.description }}
-                        </p>
-
-                        <div class="page-tools-list__chips">
-                            <p-chip *ngFor="let tag of tool.tags" label="{{ tag }}"></p-chip>
-                        </div>
-                    </div>
-                </a>
-            </li>
-        </ul>
-    </div>
+    @if (tools$ | async; as tools) {
+        <div class="page-tools">
+            <ul class="page-tools-list">
+                @for (tool of tools.pageTools; track tool) {
+                    <li class="page-tools-list__item" data-testId="page-tools-list-item">
+                        <a
+                            (click)="toggleDialog()"
+                            class="page-tools-list__link"
+                            data-testId="page-tools-list-link"
+                            href="{{ tool.runnableLink }}"
+                            target="_blank"
+                            rel="noopener">
+                            <img
+                                src="{{ tool.icon }}"
+                                alt="{{ tool.title }}"
+                                width="42"
+                                height="42" />
+                            <div class="page-tools-list__content">
+                                <span class="page-tools-list__title">
+                                    {{ tool.title }}
+                                    <i class="pi pi-external-link page-tools-external-link"></i>
+                                </span>
+                                <p class="page-tools-list__description">
+                                    {{ tool.description }}
+                                </p>
+                                <div class="page-tools-list__chips">
+                                    @for (tag of tool.tags; track tag) {
+                                        <p-chip label="{{ tag }}"></p-chip>
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
 </p-dialog>

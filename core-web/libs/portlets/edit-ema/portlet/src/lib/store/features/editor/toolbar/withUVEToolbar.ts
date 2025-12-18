@@ -16,9 +16,8 @@ import { DEFAULT_DEVICE, DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../../
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
 import {
-    computePageIsLocked,
+    computeIsPageLocked,
     createFavoritePagesURL,
-    createFullURL,
     getFullPageURL,
     getIsDefaultVariant,
     getOrientation
@@ -71,7 +70,7 @@ export function withUVEToolbar() {
                     siteId: pageAPIResponse?.site?.identifier
                 });
 
-                const isPageLocked = computePageIsLocked(
+                const isPageLocked = computeIsPageLocked(
                     pageAPIResponse?.page,
                     store.currentUser(),
                     store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
@@ -84,7 +83,6 @@ export function withUVEToolbar() {
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
-                const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
                 const isPreview = params?.mode === UVE_MODE.PREVIEW;
@@ -100,7 +98,6 @@ export function withUVEToolbar() {
                 return {
                     editor: {
                         bookmarksUrl,
-                        copyUrl: createFullURL(params, siteId),
                         apiUrl: pageAPI
                     },
                     preview: prevewItem,
@@ -125,7 +122,7 @@ export function withUVEToolbar() {
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();
 
-                const isLocked = computePageIsLocked(
+                const isLocked = computeIsPageLocked(
                     pageAPIResponse.page,
                     currentUser,
                     isToggleUnlockEnabled

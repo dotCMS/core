@@ -13,12 +13,14 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.Type;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -62,6 +64,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +72,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -137,14 +141,13 @@ public class BrowserAPIImpl implements BrowserAPI {
         final SelectAndCountQueries sqlQuery = this.selectAndCountQueries(browserQuery);
         final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.countQuery);
         sqlQuery.params.forEach(dcCount::addParam);
-        final int count = dcCount.getInt("count");
-
+        final AtomicInteger count = new AtomicInteger(dcCount.getInt("count"));
         final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
         try {
             final Set<String> collectedInodes = new LinkedHashSet<>();
             if(useElasticSearchForTextFiltering){
                //If set to "ON" we use ES to filter when text is passed
-               collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, startRow, maxRows, sqlQuery));
+                collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows, sqlQuery));
             } else {
                 final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
                 sqlQuery.params.forEach(dcSelect::addParam);
@@ -164,7 +167,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                     PERMISSION_READ, true, browserQuery.user);
-            return new ContentUnderParent(filtered, count);
+            return new ContentUnderParent(filtered, count.get());
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -185,10 +188,23 @@ public class BrowserAPIImpl implements BrowserAPI {
         PURE_ES
     }
 
-    private Set<String> doElasticSearchTextFiltering(BrowserQuery browserQuery, int startRow, int maxRows,
+    /**
+     * Performs text filtering using Elasticsearch based on the specified heuristic search type.
+     * The method processes the provided query parameters and executes the appropriate
+     * heuristic strategy for fetching results from Elasticsearch.
+     *
+     * @param browserQuery the query object containing the search criteria
+     * @param startRow     the starting row index for the search result set
+     * @param maxRows      the maximum number of rows to be retrieved
+     * @param count        the total number of rows matching the query criteria used for pagination (before applying any startRow, maxRow, limits)
+     * @param sqlQuery     the SQL query object for selecting and counting rows
+     * @return a set of strings representing the filtered results from the Elasticsearch query
+     * @throws DotDataException if an error occurs during the query execution
+     */
+    private Set<String> doElasticSearchTextFiltering(BrowserQuery browserQuery, AtomicInteger count, int startRow, int maxRows,
             SelectAndCountQueries sqlQuery) throws DotDataException {
 
-        // Get the heuristic strategy from lazy configuration
+        // Get the heuristic strategy from a lazy configuration
         final SearchHeuristicType heuristicType = HEURISTIC_TYPE.get();
 
         // Track execution time for heuristic performance analysis using modern time APIs
@@ -196,10 +212,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         try {
             switch (heuristicType) {
                 case HYBRID_SINGLE_CHUNKED_QUERY_ES:
-                    return doHybridSingleChunkedQueryES(browserQuery, startRow, maxRows, sqlQuery);
+                    return doHybridSingleChunkedQueryES(browserQuery, count, startRow, maxRows, sqlQuery);
                 case PURE_ES:
                 default:
-                    return doPureESQuery(browserQuery, startRow, maxRows);
+                    return doPureESQuery(browserQuery, count, startRow, maxRows);
             }
         } finally {
             final boolean debugEnabled = Logger.isDebugEnabled(BrowserAPIImpl.class);
@@ -231,7 +247,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Single Query Chunked: Fetches all inodes in a single database query without pagination,
      * then processes them in optimally-sized ES chunks based on total count percentage.
      */
-    Set<String> doHybridSingleChunkedQueryES(BrowserQuery browserQuery, int startRow, int maxRows,
+    Set<String> doHybridSingleChunkedQueryES(BrowserQuery browserQuery,  AtomicInteger count, int startRow, int maxRows,
             SelectAndCountQueries sqlQuery) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
 
@@ -265,7 +281,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int listSize = list.size();
         final int safeStartRow = Math.max(0, Math.min(startRow, listSize));
         final int safeEndRow = Math.min(listSize, safeStartRow + Math.max(0, maxRows));
-
+        //Update the count (before slicing) so it can be accurately read from the upper calling layers this function
+        count.set(listSize);
         // Create a LinkedHashSet from the sliced sublist to preserve order
         return new LinkedHashSet<>(list.subList(safeStartRow, safeEndRow));
     }
@@ -350,7 +367,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Constructs a comprehensive ES query from browserQuery and uses the appropriate search API
      * to return contentlets directly, bypassing all database operations.
      */
-    private Set<String> doPureESQuery(BrowserQuery browserQuery, int startRow, int maxRows) throws DotDataException {
+    private Set<String> doPureESQuery(BrowserQuery browserQuery, AtomicInteger count ,int startRow, int maxRows) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
 
         Logger.debug(this, "::::: Using Pure ES for text filtering (no database queries) ::::");
@@ -373,6 +390,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 browserQuery.user,
                 false // respectFrontendRoles - use false for backend searches
             );
+
+            //Update the count
+            count.set((int)contentletAPI.indexCount(esQuery, browserQuery.user, false));
 
             // Extract inodes from the results
             contentlets.forEach(contentlet -> collectedInodes.add(contentlet.getInode()));
@@ -914,12 +934,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param contentlets List of contentlets to hydrate
      * @param browserQuery Browser query parameters for hydration
      * @param roles User roles for permission checking
-     * @param resultList Output list to add hydrated results to
      */
-    private void hydrateContentletsInParallel(final List<Contentlet> contentlets,
+    private List<Map<String, Object>> hydrateContentletsInParallel(final List<Contentlet> contentlets,
                                               final BrowserQuery browserQuery,
-                                              final Role[] roles,
-                                              final List<Map<String, Object>> resultList) {
+                                              final Role[] roles) {
+        final List<Map<String, Object>> resultList = new ArrayList<>();
         final int totalContentlets = contentlets.size();
         final int chunkSize = Math.max(1, Math.min(10, totalContentlets / 4));
         final List<List<Contentlet>> chunks = createChunks(contentlets, chunkSize);
@@ -952,6 +971,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 throw new DotRuntimeException("Failed to hydrate contentlets in parallel", e);
             }
         }
+        return resultList;
     }
 
     /**
@@ -962,19 +982,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return List of chunks, each containing at most chunkSize elements
      */
     private <T> List<List<T>> createChunks(List<T> list, int chunkSize) {
-        /*
-        if (list == null || list.isEmpty() || chunkSize <= 0) {
-            return new ArrayList<>();
-        }
-
-        final List<List<T>> chunks = new ArrayList<>();
-        final int totalSize = list.size();
-
-        for (int i = 0; i < totalSize; i += chunkSize) {
-            final int endIndex = Math.min(i + chunkSize, totalSize);
-            chunks.add(list.subList(i, endIndex));
-        }*/
-
         return Lists.partition(list, chunkSize);
     }
 
@@ -1163,7 +1170,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         // 1. Folders
         if (browserQuery.showFolders) {
-            final List<Map<String, Object>> folders = getFolders(browserQuery, roles);
+            final List<Map<String, Object>> folders = foldersDefaultView(browserQuery, roles);
             folderCount = folders.size();
 
             // Calculate if the offset still falls within folders
@@ -1182,10 +1189,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Now the offset is adjusted (subtracting folders already seen)
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
             contentTotalCount = fromDB.totalResults;
-            contentCount = fromDB.contentlets.size();
 
             // Parallelize hydration with chunks
-            hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles, list);
+            final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
+            // Extract the size of the contentlets loaded and filtered
+            contentCount = contentlets.size();
+            // And finally add them all into the result list
+            list.addAll(contentlets);
         }
 
         // Final sorting (optional: maybe you only need to sort within each block before slicing)
@@ -1226,12 +1236,14 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final long hydrationStartTime = System.nanoTime();
         final String contentletId = contentlet.getInode();
-        final String contentType = contentlet.getContentType().variable();
+        final ContentType contentType = contentlet.getContentType();
+        final String contentTypeVar = contentType.variable();
 
         try {
             // Step 1: Content mapping based on type
             final long mappingStartTime = System.nanoTime();
             Map<String, Object> contentMap = createContentMap(contentlet);
+            contentMap.put("icon", contentType.icon());
             final long mappingDuration = System.nanoTime() - mappingStartTime;
 
             // Step 2: Shorty identifiers (if requested)
@@ -1264,7 +1276,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (totalMillis > 100) {
                 Logger.warn(this, String.format(
                     "SLOW HYDRATION: contentlet=%s, type=%s, total=%dms [mapping=%dms, shorties=%dms, permissions=%dms, workflow=%dms]",
-                    contentletId, contentType, totalMillis,
+                    contentletId, contentTypeVar, totalMillis,
                     TimeUnit.NANOSECONDS.toMillis(mappingDuration),
                     TimeUnit.NANOSECONDS.toMillis(shortiesDuration),
                     TimeUnit.NANOSECONDS.toMillis(permissionsDuration),
@@ -1279,7 +1291,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
             Logger.error(this, String.format(
                 "HYDRATION ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
-                contentletId, contentType, totalMillis, e.getMessage()
+                contentletId, contentTypeVar, totalMillis, e.getMessage()
             ), e);
             throw e;
         } catch (Exception e) {
@@ -1287,7 +1299,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
             Logger.error(this, String.format(
                 "HYDRATION UNEXPECTED ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
-                contentletId, contentType, totalMillis, e.getMessage()
+                contentletId, contentTypeVar, totalMillis, e.getMessage()
             ), e);
             throw new DotRuntimeException("Failed to hydrate contentlet: " + contentletId, e);
         }
@@ -1379,13 +1391,20 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendLanguageQuery(countQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
-        if (browserQuery.site != null) {
-            appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, parameters);
-            appendSiteQuery(countQuery, browserQuery.site.getIdentifier(), browserQuery.forceSystemHost, dump);
-        } else {
-            if (browserQuery.forceSystemHost) {
-                appendSystemHostQuery(selectQuery);
-                appendSystemHostQuery(countQuery);
+        // Handle site filtering based on ignoreSiteForFolders flag
+        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
+
+        if (shouldApplySiteFiltering) {
+            if (browserQuery.site != null) {
+                appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
+                        browserQuery.forceSystemHost, parameters);
+                appendSiteQuery(countQuery, browserQuery.site.getIdentifier(),
+                        browserQuery.forceSystemHost, dump);
+            } else {
+                if (browserQuery.forceSystemHost) {
+                    appendSystemHostQuery(selectQuery);
+                    appendSystemHostQuery(countQuery);
+                }
             }
         }
         //This property allows the exclusion of the folder in the base query
@@ -1411,6 +1430,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (!browserQuery.showArchived) {
             appendExcludeArchivedQuery(selectQuery);
             appendExcludeArchivedQuery(countQuery);
+        }
+
+        if (null != browserQuery.sortBy) {
+            appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
@@ -1649,6 +1672,20 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Appends an order by condition to the main query
+     * @param sqlQuery
+     * @param orderByDesc
+     */
+    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc) {
+        sqlQuery.append(" order by ");
+        if (orderByDesc) {
+            sqlQuery.append(" c.mod_date desc");
+        } else  {
+            sqlQuery.append(" c.mod_date asc");
+        }
+    }
+
+    /**
      * Returns the appropriate column for the {@code Asset Name} field depending on the database that dotCMS is running
      * on. That is, if the value is inside the "Content as JSON" column, or the legacy "text" column.
      *
@@ -1731,38 +1768,74 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
 
-
-    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) throws DotDataException, DotSecurityException {
+    /**
+     * Retrieves a list of folders transformed into a list of maps based on the specified browser query
+     * and roles. If the `directParent` property of the browser query is not null, it processes the folders
+     * using a transformer. If `directParent` is null, it returns an empty list.
+     *
+     * @param browserQuery an instance of BrowserQuery containing query details and user information.
+     *                      The `directParent` field is checked to determine whether to process folders.
+     * @param roles an array of Role instances associated with the user, used in the folder transformation process.
+     * @return a list of maps where each map represents a folder and its attributes, or an empty list
+     *         if `directParent` is null.
+     */
+    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) {
 
         if (browserQuery.directParent != null) {
-
-            List<Folder> folders = Collections.emptyList();
-            try {
-
-                folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
-                        .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
-
-            } catch (Exception e1) {
-
-                Logger.error(this, "Could not load folders : ", e1);
-            }
-
-
-            if(browserQuery.showMenuItemsOnly) {
-                folders.removeIf(f->!f.isShowOnMenu());
-            }
-
-            if(browserQuery.filterFolderNames){
-                folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
-            }
-
+            final List<Folder> folders = getFolders(browserQuery);
             final DotMapViewTransformer transformer = new DotFolderTransformerBuilder().withFolders(folders)
                     .withUserAndRoles(browserQuery.user, roles).build();
             return transformer.toMaps();
-
         }
         return List.of();
     } // getFolders.
+
+    /**
+     * Generates a default view of folders based on the given browser query and roles.
+     *
+     * @param browserQuery an object containing the query parameters related to folders
+     * @param roles an array of roles associated with the user to determine access and visibility
+     * @return a list of maps representing the default view of folders; returns an empty list if no direct parent exists in the browser query
+     */
+    private List<Map<String, Object>> foldersDefaultView(final BrowserQuery browserQuery, final Role[] roles) {
+        if (browserQuery.directParent != null) {
+            final List<Folder> folders = getFolders(browserQuery);
+            final DotMapViewTransformer transformer = new DotFolderTransformerBuilder()
+                    .withFolders(folders)
+                    .withDefaultView(browserQuery.user, roles).build();
+            return transformer.toMaps();
+        }
+        return List.of();
+    }
+
+    /**
+     * Retrieves the list of subfolders based on the specified browser query parameters.
+     *
+     * @param browserQuery the query object containing filtering parameters, parent folder information,
+     *                     and other flags used to retrieve and filter the subfolders
+     * @return a list of folders that match the filtering criteria specified in the browser query
+     */
+    private List<Folder> getFolders(BrowserQuery browserQuery) {
+        List<Folder> folders = Collections.emptyList();
+        try {
+
+            folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
+                    .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
+
+        } catch (Exception e1) {
+
+            Logger.error(this, "Could not load folders : ", e1);
+        }
+
+        if(browserQuery.showMenuItemsOnly) {
+            folders.removeIf(f->!f.isShowOnMenu());
+        }
+
+        if(browserQuery.filterFolderNames){
+            folders.removeIf(f->!f.getName().toLowerCase().contains(browserQuery.filter.toLowerCase()));
+        }
+        return folders;
+    }
 
     private Map<String,Object> htmlPageMap(final HTMLPageAsset page) throws DotStateException {
         return new DotTransformerBuilder().webAssetOptions().content(page).build().toMaps().get(0);

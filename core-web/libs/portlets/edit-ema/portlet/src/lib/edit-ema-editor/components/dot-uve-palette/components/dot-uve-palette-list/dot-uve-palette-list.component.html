@@ -1,5 +1,5 @@
 <div class="dot-uve-palette-list__controls">
-    @if ($currentView() === DotUVEPaletteListView.CONTENTLETS) {
+    @if ($isContentletsView()) {
         <p-button
             data-testid="back-to-content-types-button"
             icon="pi pi-chevron-left"
@@ -9,36 +9,30 @@
             (onClick)="onBackToContentTypes()" />
     }
 
-    <p-iconField iconPosition="left" [style]="{ width: '100%' }">
-        <p-inputIcon styleClass="pi pi-search" />
-        <input
-            pInputText
-            data-testid="palette-search-input"
-            styleClass="input-text-sm"
-            [formControl]="searchControl"
-            [placeholder]="'search' | dm"
-            [style]="{ width: '100%' }" />
-    </p-iconField>
+    @if (!$shouldHideControls()) {
+        <p-iconField iconPosition="left" [style]="{ width: '100%' }">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                data-testid="palette-search-input"
+                styleClass="input-text-sm"
+                [formControl]="searchControl"
+                [placeholder]="'search' | dm"
+                [style]="{ width: '100%' }" />
+        </p-iconField>
 
-    @if ($showSortButton()) {
-        <p-button
-            data-testid="sort-menu-button"
-            icon="pi pi-arrow-right-arrow-left"
-            styleClass="options-menu-button"
-            [text]="true"
-            [rounded]="true"
-            (onClick)="menu.toggle($event)" />
-    } @else if ($isFavoritesList()) {
-        <p-button
-            data-testid="add-favorites-button"
-            icon="pi pi-plus"
-            styleClass="options-menu-button"
-            [text]="true"
-            [rounded]="true"
-            (onClick)="favoritesPanel.toggle($event)" />
+        @if ($isContentTypesView()) {
+            @let actionBtn = $actionButton();
+            <p-button
+                styleClass="options-menu-button"
+                [attr.data-testid]="actionBtn.testId"
+                [icon]="actionBtn.icon"
+                [text]="true"
+                [rounded]="true"
+                (onClick)="actionBtn.onClick($event)" />
+        }
     }
 </div>
-
 <div
     class="dot-uve-palette-list__grid"
     [class.dot-uve-palette-list__grid--list]="$showListLayout()"
@@ -64,13 +58,16 @@
 <ng-template #emptyStateTemplate>
     <div class="dot-uve-palette-list__empty">
         <div class="dot-uve-palette-list__empty-icon">
-            <i class="pi pi-plus"></i>
+            <i [class]="$emptyState().icon"></i>
         </div>
-        <p
-            data-testid="empty-state-message"
-            class="dot-uve-palette-list__empty-text"
-            [innerHTML]="$emptyStateMessage() | dm"
-            (click)="onEmptyStateClick($event)"></p>
+        <div>
+            <span class="dot-uve-palette-list__empty-title">{{ $emptyState().title | dm }}</span>
+            <p
+                data-testid="empty-state-message"
+                class="dot-uve-palette-list__empty-text"
+                [innerHTML]="$emptyState().message | dm"
+                (click)="onEmptyStateClick($event)"></p>
+        </div>
     </div>
 </ng-template>
 
@@ -114,7 +111,16 @@
     [popup]="true"
     appendTo="body"
     styleClass="options-menu-popup"
-    showTransitionOptions="0ms" />
+    showTransitionOptions="0ms">
+    <ng-template pTemplate="submenuheader" let-item>
+        <span>{{ item.label | dm }}</span>
+    </ng-template>
+    <ng-template pTemplate="item" let-item>
+        <a class="p-ripple p-element p-menuitem-link">
+            <span class="p-menuitem-text">{{ item.label | dm }}</span>
+        </a>
+    </ng-template>
+</p-menu>
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
 

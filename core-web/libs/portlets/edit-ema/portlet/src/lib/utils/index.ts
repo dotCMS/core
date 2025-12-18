@@ -434,7 +434,7 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
         paramsCopy['host_id'] = siteId;
     }
 
-    const clientHost = paramsCopy?.clientHost ?? window.location.origin;
+    const clientHost = paramsCopy?.clientHost || window.location.origin;
     const url = paramsCopy?.url;
 
     // Clean the params that are not needed for the page
@@ -471,7 +471,7 @@ export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUs
  * @param {boolean} isFeatureFlagEnabled - Whether the lock toggle feature is enabled
  * @return {boolean} True if page is considered locked based on feature flag
  */
-export function computePageIsLocked(
+export function computeIsPageLocked(
     page: DotCMSPage,
     currentUser: CurrentUser,
     isFeatureFlagEnabled: boolean
@@ -522,7 +522,7 @@ export function computeCanEditPage(
     }
 
     // Legacy behavior: user can access to Draft mode (edit) if page is not locked by another user
-    const isLocked = computePageIsLocked(page, currentUser, isFeatureFlagEnabled);
+    const isLocked = computeIsPageLocked(page, currentUser, isFeatureFlagEnabled);
     // If the page is locked, the user cannot access to Draft mode (edit)
     return !isLocked;
 }
@@ -861,6 +861,29 @@ export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) =
 
     // Optionally remove milliseconds
     return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+};
+
+/**
+ * Converts a Date object (representing a UTC time) to a Local Date object
+ * where the Local time matches the UTC time of the input.
+ * This is the inverse of convertLocalTimeToUTC.
+ * @param {Date} date - Reference Date object (treated as UTC)
+ * @returns {Date} Date object where Local time matches input's UTC time
+ */
+export const convertUTCToLocalTime = (date: Date) => {
+    if (!(date instanceof Date)) {
+        throw new Error('Parameter must be a Date object');
+    }
+
+    return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+        date.getUTCMilliseconds()
+    );
 };
 
 export const removeUndefinedValues = (params: DotPageAssetParams) => {

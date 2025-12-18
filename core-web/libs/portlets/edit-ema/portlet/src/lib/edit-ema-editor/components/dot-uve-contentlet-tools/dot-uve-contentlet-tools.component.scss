@@ -1,0 +1,82 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+
+    &.hide {
+        visibility: hidden;
+    }
+
+    ::ng-deep {
+        .p-button-raised {
+            background-color: $white;
+            color: $black;
+            box-shadow: $shadow-s;
+            transition: all 0.15s ease-in-out;
+
+            &:disabled {
+                pointer-events: auto;
+            }
+
+            &:hover:enabled,
+            &:focus:enabled {
+                background-color: $color-palette-primary-100;
+                color: $color-palette-primary-500;
+                box-shadow: $shadow-s;
+                transform: scale(1.1);
+            }
+        }
+
+        .delete {
+            color: $color-palette-gray-500;
+        }
+    }
+}
+
+.bounds {
+    position: absolute;
+    pointer-events: none;
+    outline: solid 2px $color-palette-primary-500;
+    background-color: transparent;
+    container-type: inline-size;
+
+    .add-button-top,
+    .add-button-bottom {
+        position: absolute;
+        left: 50%;
+        z-index: 1;
+        pointer-events: all;
+    }
+
+    .add-button-top {
+        top: 0px;
+        transform: translate(-50%, -50%);
+    }
+
+    .add-button-bottom {
+        bottom: 0px;
+        transform: translate(-50%, 50%);
+    }
+
+    .actions {
+        position: absolute;
+        right: $spacing-1;
+        top: 0px;
+        transform: translate(0, -50%);
+        pointer-events: all;
+        z-index: 1;
+    }
+
+    @container (max-width: 400px) {
+        .add-button-top {
+            left: 0;
+            transform: translate(0, -50%);
+        }
+    }
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-0;
+}

@@ -10,7 +10,6 @@
     border-radius: $border-radius-md;
     background: $white;
     cursor: pointer;
-    transition: all $basic-speed ease-in-out;
 
     &:hover {
         border-color: $color-palette-primary;
@@ -47,6 +46,11 @@
         color: $color-palette-bluegray-800;
         font-weight: $font-weight-semi-bold;
         line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
     }
 
     .drag-handle {
@@ -102,6 +106,7 @@
 
     .name {
         text-align: center;
+        -webkit-line-clamp: 2;
     }
 }
 
@@ -125,5 +130,6 @@
     .name {
         flex: 1;
         text-align: left;
+        -webkit-line-clamp: 1;
     }
 }

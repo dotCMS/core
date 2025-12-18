@@ -284,7 +284,10 @@ describe('DotContentEditorComponent', () => {
                 expect(code).not.toBeNull();
                 expect(code.attributes.formControlName).toBe('code');
                 expect(code.attributes.language).toBe('html');
-                expect(code.attributes['ng-reflect-show']).toBe('code');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the show property directly on the component instance
+                const codeComponent = code.componentInstance;
+                expect(codeComponent?.show).toEqual(['code']);
                 expect(contentTypes.length).toEqual(2);
                 expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(
                     1
@@ -337,7 +340,10 @@ describe('DotContentEditorComponent', () => {
                 expect(code).not.toBeNull();
                 expect(code.attributes.formControlName).toBe('code');
                 expect(code.attributes.language).toBe('html');
-                expect(code.attributes['ng-reflect-show']).toBe('code');
+                // In Angular 20, ng-reflect-* attributes are not available
+                // Verify the show property directly on the component instance
+                const codeComponent = code.componentInstance;
+                expect(codeComponent?.show).toEqual(['code']);
                 expect(selectedContentType.nativeElement.textContent.trim().toLowerCase()).toBe(
                     mockContentTypes[1].name.toLowerCase()
                 );

@@ -2,6 +2,7 @@ import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/j
 
 import { DatePipe } from '@angular/common';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
@@ -184,11 +185,19 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should configure p-scroller with correct properties', () => {
-            const scroller = spectator.query('p-scroller');
-            expect(scroller).toBeTruthy();
-            expect(scroller.getAttribute('ng-reflect-item-size')).toBe('83');
-            expect(scroller.getAttribute('ng-reflect-lazy')).toBe('true');
-            expect(scroller.getAttribute('scrollHeight')).toBe('100%');
+            const scrollerElement = spectator.query('p-scroller');
+            expect(scrollerElement).toBeTruthy();
+
+            // Verify scrollHeight attribute is set correctly
+            expect(scrollerElement.getAttribute('scrollHeight')).toBe('100%');
+
+            // Access the PrimeNG Scroller component instance to verify properties
+            const scrollerDebugElement = spectator.debugElement.query(By.css('p-scroller'));
+            const scrollerComponent = scrollerDebugElement?.componentInstance;
+
+            expect(scrollerComponent).toBeTruthy();
+            expect(scrollerComponent.itemSize).toBe(83);
+            expect(scrollerComponent.lazy).toBe(true);
         });
     });
 
@@ -489,17 +498,29 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.setInput('pushPublishHistoryItems', []);
                 spectator.detectChanges();
 
-                const menuButton = spectator.query(
+                const menuButtonComponent = spectator.query(
                     '[data-testid="push-publish-menu-button"]'
-                ) as HTMLElement;
-                expect(menuButton.getAttribute('ng-reflect-disabled')).toBe('true');
+                );
+                expect(menuButtonComponent).toBeTruthy();
+                // Access the actual button element inside PrimeNG component
+                const actualButton = menuButtonComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton).toBeTruthy();
+                expect(actualButton.disabled).toBe(true);
             });
 
             it('should enable menu button when push publish history items exist', () => {
-                const menuButton = spectator.query(
+                const menuButtonComponent = spectator.query(
                     '[data-testid="push-publish-menu-button"]'
-                ) as HTMLElement;
-                expect(menuButton.getAttribute('ng-reflect-disabled')).toBe('false');
+                );
+                expect(menuButtonComponent).toBeTruthy();
+                // Access the actual button element inside PrimeNG component
+                const actualButton = menuButtonComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton).toBeTruthy();
+                expect(actualButton.disabled).toBe(false);
             });
         });
 

@@ -1040,6 +1040,107 @@
 			"response": []
 		},
 		{
+			"name": "Get Permission Metadata",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"var entity = jsonData.entity;",
+							"",
+							"pm.test(\"Response should have entity object\", function () {",
+							"    pm.expect(entity).to.be.an('object');",
+							"});",
+							"",
+							"pm.test(\"Entity should have levels array\", function () {",
+							"    pm.expect(entity.levels).to.be.an('array');",
+							"    pm.expect(entity.levels.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"Entity should have scopes array\", function () {",
+							"    pm.expect(entity.scopes).to.be.an('array');",
+							"    pm.expect(entity.scopes.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"Levels should include all 5 expected permissions\", function () {",
+							"    pm.expect(entity.levels).to.include('READ');",
+							"    pm.expect(entity.levels).to.include('WRITE');",
+							"    pm.expect(entity.levels).to.include('PUBLISH');",
+							"    pm.expect(entity.levels).to.include('EDIT_PERMISSIONS');",
+							"    pm.expect(entity.levels).to.include('CAN_ADD_CHILDREN');",
+							"    pm.expect(entity.levels.length).to.equal(5);",
+							"});",
+							"",
+							"pm.test(\"Scopes should include all 12 expected types\", function () {",
+							"    pm.expect(entity.scopes).to.include('INDIVIDUAL');",
+							"    pm.expect(entity.scopes).to.include('PAGE');",
+							"    pm.expect(entity.scopes).to.include('CONTAINER');",
+							"    pm.expect(entity.scopes).to.include('FOLDER');",
+							"    pm.expect(entity.scopes).to.include('LINK');",
+							"    pm.expect(entity.scopes).to.include('TEMPLATE');",
+							"    pm.expect(entity.scopes).to.include('TEMPLATE_LAYOUT');",
+							"    pm.expect(entity.scopes).to.include('CONTENT_TYPE');",
+							"    pm.expect(entity.scopes).to.include('CONTENT');",
+							"    pm.expect(entity.scopes).to.include('CATEGORY');",
+							"    pm.expect(entity.scopes).to.include('RULE');",
+							"    pm.expect(entity.scopes).to.include('HOST');",
+							"    pm.expect(entity.scopes.length).to.equal(12);",
+							"});",
+							"",
+							"pm.test(\"No duplicates in levels array\", function () {",
+							"    const uniqueLevels = new Set(entity.levels);",
+							"    pm.expect(uniqueLevels.size).to.equal(entity.levels.length);",
+							"});",
+							"",
+							"pm.test(\"No duplicates in scopes array\", function () {",
+							"    const uniqueScopes = new Set(entity.scopes);",
+							"    pm.expect(uniqueScopes.size).to.equal(entity.scopes.length);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/permissions/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"permissions",
+						""
+					]
+				},
+				"description": "Get available permission levels and scopes that can be assigned to users and roles"
+			},
+			"response": []
+		},
+		{
 			"name": "Asset Permissions (GET /permissions/{assetId})",
 			"item": [
 				{

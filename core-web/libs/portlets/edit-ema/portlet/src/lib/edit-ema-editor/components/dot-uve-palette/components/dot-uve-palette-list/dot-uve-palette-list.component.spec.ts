@@ -17,6 +17,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUvePaletteListComponent } from './dot-uve-palette-list.component';
@@ -26,7 +27,6 @@ import { DotPaletteListStatus, DotUVEPaletteListTypes, DotUVEPaletteListView } f
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 
 const mockStore = {
-    // signals/derived used by component/template
     contenttypes: signal([]),
     contentlets: signal([]),
     pagination: {
@@ -44,20 +44,132 @@ const mockStore = {
     currentView: signal(DotUVEPaletteListView.CONTENT_TYPES),
     status: signal(DotPaletteListStatus.LOADING),
     layoutMode: signal('grid' as 'grid' | 'list'),
+    initialLoad: signal(false),
     $isLoading: signal(false),
     $isEmpty: signal(false),
     $showListLayout: signal(false),
-    $emptyStateMessage: signal('empty'),
     $currentSort: signal({
         orderby: 'name' as 'name' | 'usage',
         direction: 'ASC' as 'ASC' | 'DESC'
     }),
     $isContentletsView: signal(false),
     $isContentTypesView: signal(true),
+    $isFavoritesList: signal(false),
     // methods we assert on
     getContentTypes: jest.fn(),
     getContentlets: jest.fn(),
     setLayoutMode: jest.fn()
+};
+
+// ===== Test Helper Functions =====
+
+/**
+ * Simulates user typing in the search input
+ */
+const triggerSearch = ({
+    spectator,
+    searchTerm
+}: {
+    spectator: Spectator<DotUvePaletteListComponent>;
+    searchTerm: string;
+}) => {
+    const searchInput = spectator.query('[data-testid="palette-search-input"]') as HTMLInputElement;
+    spectator.typeInElement(searchTerm, searchInput);
+};
+
+/**
+ * Configures the mock store to display contentlets view
+ */
+const switchToContentletsView = (status = DotPaletteListStatus.LOADED) => {
+    mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
+    mockStore.searchParams.selectedContentType.set('Blog'); // Non-empty = contentlets view
+    mockStore.$isContentletsView.set(true);
+    mockStore.$isContentTypesView.set(false);
+    mockStore.status.set(status);
+};
+
+/**
+ * Configures the mock store to display content types view
+ */
+const switchToContentTypesView = (status = DotPaletteListStatus.LOADED) => {
+    mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+    mockStore.searchParams.selectedContentType.set(''); // Empty = content types view
+    mockStore.$isContentletsView.set(false);
+    mockStore.$isContentTypesView.set(true);
+    mockStore.$isFavoritesList.set(false);
+    mockStore.status.set(status);
+};
+
+/**
+ * Configures the component and store for favorites list view
+ */
+const setFavoritesList = ({ spectator }: { spectator: Spectator<DotUvePaletteListComponent> }) => {
+    switchToContentTypesView();
+    spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
+    mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+    mockStore.$isFavoritesList.set(true);
+};
+
+/**
+ * Configures the mock store for an empty state
+ */
+const setEmptyState = ({
+    listType = DotUVEPaletteListTypes.CONTENT
+}: { listType?: DotUVEPaletteListTypes } = {}) => {
+    mockStore.status.set(DotPaletteListStatus.EMPTY);
+    mockStore.$isEmpty.set(true);
+    mockStore.contenttypes.set([]);
+    mockStore.contentlets.set([]);
+    mockStore.searchParams.listType.set(listType);
+};
+
+/**
+ * Configures the mock store with loaded content types
+ */
+const setLoadedContentTypes = ({
+    contentTypes = [basicContentType]
+}: { contentTypes?: DotCMSContentType[] } = {}) => {
+    mockStore.status.set(DotPaletteListStatus.LOADED);
+    mockStore.contenttypes.set(contentTypes);
+    mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+    mockStore.$isContentTypesView.set(true);
+    mockStore.$isContentletsView.set(false);
+    mockStore.$isEmpty.set(false);
+};
+
+/**
+ * Configures the mock store with loaded contentlets
+ */
+const setLoadedContentlets = ({
+    contentlets = [basicContentlet]
+}: { contentlets?: DotCMSContentlet[] } = {}) => {
+    switchToContentletsView();
+    mockStore.contentlets.set(contentlets);
+    mockStore.$isEmpty.set(false);
+};
+
+/**
+ * Advances timers to trigger debounced search
+ */
+const advanceSearchDebounce = () => {
+    jest.advanceTimersByTime(400);
+};
+
+const basicContentType = {
+    id: '1',
+    name: 'Blog',
+    variable: 'blog',
+    baseType: 'CONTENT'
+} as DotCMSContentType;
+
+const basicContentlet = {
+    identifier: '123',
+    title: 'My Blog Post',
+    contentType: 'Blog'
+} as DotCMSContentlet;
+
+const mockGlobalStore = {
+    currentSiteId: signal('demo.dotcms.com')
 };
 
 describe('DotUvePaletteListComponent', () => {
@@ -68,6 +180,10 @@ describe('DotUvePaletteListComponent', () => {
         component: DotUvePaletteListComponent,
         imports: [HttpClientTestingModule],
         providers: [
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
+            },
             {
                 provide: DotPageContentTypeService,
                 useValue: {
@@ -125,15 +241,16 @@ describe('DotUvePaletteListComponent', () => {
 
     beforeEach(() => {
         jest.useFakeTimers();
+        // Reset mockGlobalStore signal
+        mockGlobalStore.currentSiteId.set('demo.dotcms.com');
         spectator = createComponent({
-            providers: [mockProvider(DotPaletteListStore, mockStore)]
+            providers: [mockProvider(DotPaletteListStore, mockStore)],
+            detectChanges: false
         });
         store = spectator.inject(DotPaletteListStore, true);
-        // Use componentRef.setInput for required signal inputs with aliases
         spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
         spectator.fixture.componentRef.setInput('languageId', 1);
         spectator.fixture.componentRef.setInput('pagePath', '/test-page');
-        spectator.detectChanges();
     });
 
     afterEach(() => {
@@ -143,18 +260,12 @@ describe('DotUvePaletteListComponent', () => {
     });
 
     it('search (content types): debounces and calls getContentTypes with filter and page 1', () => {
-        // ensure we are in content types view
-        mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+        setLoadedContentTypes();
+        spectator.detectChanges();
 
-        // Simulate user typing in the search input
-        const searchInput = spectator.query(
-            '[data-testid="palette-search-input"]'
-        ) as HTMLInputElement;
-        spectator.typeInElement('blog', searchInput);
+        triggerSearch({ spectator, searchTerm: 'blog' });
+        advanceSearchDebounce();
 
-        jest.advanceTimersByTime(300);
-
-        expect(store.getContentTypes).toHaveBeenCalled();
         expect(store.getContentTypes).toHaveBeenCalledWith({
             filter: 'blog',
             page: 1
@@ -162,46 +273,20 @@ describe('DotUvePaletteListComponent', () => {
     });
 
     it('search (contentlets): debounces and calls getContentlets with filter and page 1', () => {
-        // switch to contentlets view by setting selectedContentType (which determines $isContentTypesView)
-        mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
-        mockStore.searchParams.selectedContentType.set('Blog'); // Non-empty = contentlets view
-        mockStore.$isContentletsView.set(true);
-        mockStore.$isContentTypesView.set(false);
+        setLoadedContentlets();
+        spectator.detectChanges();
 
-        // Simulate user typing in the search input
-        const searchInput = spectator.query(
-            '[data-testid="palette-search-input"]'
-        ) as HTMLInputElement;
-        spectator.typeInElement('news', searchInput);
+        triggerSearch({ spectator, searchTerm: 'news' });
+        advanceSearchDebounce();
 
-        jest.advanceTimersByTime(300);
-
-        expect(store.getContentlets).toHaveBeenCalled();
-        expect(store.getContentlets).toHaveBeenCalledWith({
-            filter: 'news',
-            page: 1
-        });
+        expect(store.getContentlets).toHaveBeenCalledWith({ filter: 'news', page: 1 });
     });
 
     describe('template', () => {
         it('should render dot-uve-palette-contenttype when in content types view', () => {
-            // Set up content types view with mock data
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.contenttypes.set([
-                {
-                    id: '1',
-                    name: 'Blog',
-                    variable: 'blog',
-                    baseType: 'CONTENT'
-                } as DotCMSContentType
-            ]);
-            mockStore.$isContentTypesView.set(true);
-            mockStore.$isContentletsView.set(false);
-
+            setLoadedContentTypes();
             spectator.detectChanges();
 
-            // Verify content type component is rendered
             const contentTypeComponent = spectator.query('dot-uve-palette-contenttype');
             const contentletComponent = spectator.query('dot-uve-palette-contentlet');
 
@@ -210,22 +295,9 @@ describe('DotUvePaletteListComponent', () => {
         });
 
         it('should render dot-uve-palette-contentlet when in contentlets view', () => {
-            // Set up contentlets view with mock data
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.contentlets.set([
-                {
-                    identifier: '123',
-                    title: 'My Blog Post',
-                    contentType: 'Blog'
-                } as DotCMSContentlet
-            ]);
-            mockStore.$isContentletsView.set(true);
-            mockStore.$isContentTypesView.set(false);
-
+            setLoadedContentlets();
             spectator.detectChanges();
 
-            // Verify contentlet component is rendered
             const contentletComponent = spectator.query('dot-uve-palette-contentlet');
             const contentTypeComponent = spectator.query('dot-uve-palette-contenttype');
 
@@ -234,29 +306,15 @@ describe('DotUvePaletteListComponent', () => {
         });
 
         it('should switch from content types to contentlets view when onSelectContentType is emitted', () => {
-            // Set up initial content types view
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.contenttypes.set([
-                {
-                    id: '1',
-                    name: 'Blog',
-                    variable: 'blog',
-                    baseType: 'CONTENT'
-                } as DotCMSContentType
-            ]);
-            mockStore.$isContentTypesView.set(true);
-            mockStore.$isContentletsView.set(false);
-
-            // Set a search value initially
-            spectator.component.searchControl.setValue('test search');
+            setLoadedContentTypes();
             spectator.detectChanges();
 
-            // Verify initial state - content type component should be visible
-            let contentTypeComponent = spectator.query('dot-uve-palette-contenttype');
-            let contentletComponent = spectator.query('dot-uve-palette-contentlet');
-            expect(contentTypeComponent).toBeTruthy();
-            expect(contentletComponent).toBeNull();
+            triggerSearch({ spectator, searchTerm: 'test search' });
+            advanceSearchDebounce();
+            spectator.detectChanges();
+
+            expect(spectator.query('dot-uve-palette-contenttype')).toBeTruthy();
+            expect(spectator.query('dot-uve-palette-contentlet')).toBeNull();
 
             // Trigger the onSelectContentType event
             spectator.triggerEventHandler(
@@ -265,54 +323,22 @@ describe('DotUvePaletteListComponent', () => {
                 'Blog'
             );
 
-            // Update mock store to reflect the new state after selection
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
-            mockStore.contentlets.set([
-                {
-                    identifier: '123',
-                    title: 'My Blog Post',
-                    contentType: 'Blog'
-                } as DotCMSContentlet
-            ]);
-            mockStore.$isContentTypesView.set(false);
-            mockStore.$isContentletsView.set(true);
-
+            setLoadedContentlets();
             spectator.detectChanges();
 
-            // Verify getContentlets was called with correct arguments
             expect(store.getContentlets).toHaveBeenCalledWith({
                 selectedContentType: 'Blog',
                 filter: '',
                 page: 1
             });
 
-            // Verify search input was cleared in the DOM
-            const searchInput = spectator.query(
-                '[data-testid="palette-search-input"]'
-            ) as HTMLInputElement;
-            expect(searchInput.value).toBe('');
-
             // Verify template switched to contentlets view
-            contentTypeComponent = spectator.query('dot-uve-palette-contenttype');
-            contentletComponent = spectator.query('dot-uve-palette-contentlet');
-            expect(contentTypeComponent).toBeNull();
-            expect(contentletComponent).toBeTruthy();
+            expect(spectator.query('dot-uve-palette-contentlet')).toBeTruthy();
+            expect(spectator.query('dot-uve-palette-contenttype')).toBeNull();
         });
 
         it('should switch back to content types view when back button is clicked', () => {
-            // Setup: Start in contentlets view
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENTLETS);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.contentlets.set([
-                {
-                    identifier: '123',
-                    title: 'My Blog Post',
-                    contentType: 'Blog'
-                } as DotCMSContentlet
-            ]);
-            mockStore.$isContentTypesView.set(false);
-            mockStore.$isContentletsView.set(true);
-
+            setLoadedContentlets();
             spectator.detectChanges();
 
             // Verify initial state - contentlet view should be visible
@@ -320,15 +346,9 @@ describe('DotUvePaletteListComponent', () => {
             expect(spectator.query('dot-uve-palette-contenttype')).toBeNull();
             expect(spectator.query('[data-testid="back-to-content-types-button"]')).toBeTruthy();
 
-            // Set a search value to verify it gets cleared
-            const searchInput = spectator.query(
-                '[data-testid="palette-search-input"]'
-            ) as HTMLInputElement;
-            spectator.typeInElement('blog search', searchInput);
-            expect(searchInput.value).toBe('blog search');
-
-            // Clear the mock to only check the call from the back button
-            store.getContentTypes.mockClear();
+            triggerSearch({ spectator, searchTerm: 'blog search' });
+            advanceSearchDebounce();
+            spectator.detectChanges();
 
             // Click the back button using triggerEventHandler for PrimeNG components
             spectator.triggerEventHandler(
@@ -337,30 +357,14 @@ describe('DotUvePaletteListComponent', () => {
                 new Event('click')
             );
 
-            // Update mock store to reflect new state
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
-            mockStore.contenttypes.set([
-                {
-                    id: '1',
-                    name: 'Blog',
-                    variable: 'blog',
-                    baseType: 'CONTENT'
-                } as DotCMSContentType
-            ]);
-            mockStore.$isContentTypesView.set(true);
-            mockStore.$isContentletsView.set(false);
-
+            setLoadedContentTypes();
             spectator.detectChanges();
 
-            // Verify getContentTypes was called with correct arguments
             expect(store.getContentTypes).toHaveBeenCalledWith({
                 selectedContentType: '',
                 filter: '',
                 page: 1
             });
-
-            // Verify search input was cleared in the DOM
-            expect(searchInput.value).toBe('');
 
             // Verify template switched back to content types view
             expect(spectator.query('dot-uve-palette-contenttype')).toBeTruthy();
@@ -369,19 +373,8 @@ describe('DotUvePaletteListComponent', () => {
         });
 
         it('should call favoritesPanel.toggle when add button is clicked in favorites view', () => {
-            // Setup: Configure for favorites list type
-            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
-            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.contenttypes.set([
-                {
-                    id: '1',
-                    name: 'Blog',
-                    variable: 'blog',
-                    baseType: 'CONTENT'
-                } as DotCMSContentType
-            ]);
+            setFavoritesList({ spectator });
+            mockStore.contenttypes.set([basicContentType]);
 
             spectator.detectChanges();
 
@@ -408,97 +401,344 @@ describe('DotUvePaletteListComponent', () => {
             expect(toggleSpy).toHaveBeenCalledWith(mockEvent);
         });
 
-        it('should display the empty state message from store', () => {
-            // Setup: Empty state with no content
+        it('should display the empty state message for CONTENT list type', () => {
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
+            setEmptyState({ listType: DotUVEPaletteListTypes.CONTENT });
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            spectator.detectChanges();
+
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+
+            expect(emptyStateMessage).toBeTruthy();
+            // Note: DotMessageService mock returns the key itself
+            expect(emptyStateMessage?.textContent).toBe(
+                'uve.palette.empty.state.contenttypes.message'
+            );
+        });
+
+        it('should display the empty state message for FAVORITES list type', () => {
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.FAVORITES);
+            setEmptyState({ listType: DotUVEPaletteListTypes.FAVORITES });
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            spectator.detectChanges();
+
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+
+            expect(emptyStateMessage).toBeTruthy();
+            expect(emptyStateMessage?.textContent).toBe(
+                'uve.palette.empty.state.favorites.message'
+            );
+        });
+
+        it('should display the empty state message for WIDGET list type', () => {
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.WIDGET);
+            setEmptyState({ listType: DotUVEPaletteListTypes.WIDGET });
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            spectator.detectChanges();
+
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+
+            expect(emptyStateMessage).toBeTruthy();
+            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.state.widgets.message');
+        });
+
+        it('should display the search empty state message when search returns no results', () => {
+            // Setup: Empty state with search term
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             mockStore.status.set(DotPaletteListStatus.EMPTY);
-            mockStore.$isEmpty.set(true); // Set isEmpty to true for empty state to render
+            mockStore.$isEmpty.set(true);
             mockStore.contenttypes.set([]);
-            mockStore.$emptyStateMessage.set('uve.palette.empty.content-types.message');
 
+            // Simulate user having typed a search term - set form control and $isSearching
+            // (This test focuses on empty state display, not search debouncing which is tested elsewhere)
+            spectator.component.searchControl.setValue('nonexistent search term');
+            spectator.component['$isSearching'].set(true);
             spectator.detectChanges();
 
             // Query the empty state message element
             const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
             expect(emptyStateMessage).toBeTruthy();
 
-            // Verify the message displayed matches the store's $emptyStateMessage
-            // Note: DotMessageService mock returns the key itself (line 111: get: (key: string) => key)
-            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.content-types.message');
+            // Verify the message displayed matches the search empty state message
+            expect(emptyStateMessage?.textContent).toBe('uve.palette.empty.search.state.message');
+        });
+
+        it('should display the empty state message for CONTENTLETS view (drilling into a content type)', () => {
+            switchToContentletsView();
+            setEmptyState();
+            mockStore.$isContentletsView.set(true);
+            mockStore.$isContentTypesView.set(false);
+            mockStore.searchParams.selectedContentType.set('Blog');
+            spectator.detectChanges();
+
+            const emptyStateMessage = spectator.query('[data-testid="empty-state-message"]');
+
+            expect(emptyStateMessage).toBeTruthy();
+            expect(emptyStateMessage?.textContent).toBe(
+                'uve.palette.empty.state.contentlets.message'
+            );
+        });
+
+        it('should display the correct icon for CONTENT list type empty state', () => {
+            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
+            setEmptyState({ listType: DotUVEPaletteListTypes.CONTENT });
+            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
+            spectator.detectChanges();
+
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+
+            expect(emptyStateIcon).toBeTruthy();
+            expect(emptyStateIcon?.className).toContain('pi-folder-open');
+        });
+
+        it('should display the correct icon for FAVORITES list type empty state', () => {
+            // Setup favorites list type with empty state - order matters!
+            setFavoritesList({ spectator });
+            setEmptyState({ listType: DotUVEPaletteListTypes.FAVORITES });
+            spectator.detectChanges();
+
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+
+            expect(emptyStateIcon).toBeTruthy();
+            expect(emptyStateIcon?.className).toContain('pi-plus');
+        });
+
+        it('should display the correct icon for search empty state', () => {
+            switchToContentTypesView();
+            spectator.detectChanges();
+
+            // Set search state before detecting changes
+            triggerSearch({ spectator, searchTerm: 'nonexistent 123' });
+            advanceSearchDebounce();
+            setEmptyState();
+            spectator.detectChanges();
+
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+
+            expect(emptyStateIcon).toBeTruthy();
+            expect(emptyStateIcon?.className).toContain('pi-search');
+        });
+
+        it('should display the correct icon for CONTENTLETS view empty state', () => {
+            switchToContentletsView();
+            setEmptyState();
+            spectator.detectChanges();
+
+            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
+
+            expect(emptyStateIcon).toBeTruthy();
+            expect(emptyStateIcon?.className).toContain('pi-folder-open');
         });
 
         it('should call menu.toggle when sort menu button is clicked in content types view', () => {
-            // Setup: Content types view with CONTENT list type (not FAVORITES)
-            spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
-            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.CONTENT);
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.contenttypes.set([
-                {
-                    id: '1',
-                    name: 'Blog',
-                    variable: 'blog',
-                    baseType: 'CONTENT'
-                } as DotCMSContentType
-            ]);
-
+            switchToContentTypesView();
             spectator.detectChanges();
 
-            // Verify sort menu button is visible
             const sortMenuButton = spectator.query('[data-testid="sort-menu-button"]');
             expect(sortMenuButton).toBeTruthy();
 
-            // Query the PrimeNG Menu component using Spectator
             const menuComponent = spectator.query(Menu);
             expect(menuComponent).toBeTruthy();
 
-            // Create spy on the menu's toggle method
             const toggleSpy = jest.spyOn(menuComponent, 'toggle');
-
-            // Trigger click on the sort menu button
             const mockEvent = new MouseEvent('click');
             spectator.triggerEventHandler('[data-testid="sort-menu-button"]', 'onClick', mockEvent);
 
-            // Verify toggle was called with the event
             expect(toggleSpy).toHaveBeenCalledWith(mockEvent);
         });
 
         it('should call contextMenu.show when content type is right-clicked', () => {
-            // Setup: Content types view with mock data
-            mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
-            mockStore.status.set(DotPaletteListStatus.LOADED);
-            mockStore.$isLoading.set(false); // Ensure content renders (not loading)
-            mockStore.$isEmpty.set(false); // Ensure content renders (not empty)
-            mockStore.contenttypes.set([
-                {
-                    id: '1',
-                    name: 'Blog',
-                    variable: 'blog',
-                    baseType: 'CONTENT'
-                } as DotCMSContentType
-            ]);
-            mockStore.$isContentTypesView.set(true);
-            mockStore.$isContentletsView.set(false);
-
+            setLoadedContentTypes();
             spectator.detectChanges();
 
-            // Verify content type component is rendered
             const contentTypeComponent = spectator.query('dot-uve-palette-contenttype');
             expect(contentTypeComponent).toBeTruthy();
 
-            // Query the PrimeNG ContextMenu component using Spectator
             const contextMenuComponent = spectator.query(ContextMenu);
             expect(contextMenuComponent).toBeTruthy();
 
-            // Create spy on the context menu's show method
             const showSpy = jest.spyOn(contextMenuComponent, 'show');
-
-            // Trigger context menu event on the content type component
             const mockEvent = new MouseEvent('contextmenu');
             spectator.triggerEventHandler('dot-uve-palette-contenttype', 'contextMenu', mockEvent);
 
-            // Verify show was called with the event
             expect(showSpy).toHaveBeenCalledWith(mockEvent);
+        });
+    });
+
+    describe('control visibility behavior', () => {
+        it('should hide controls initially when status is first LOADING', () => {
+            mockStore.status.set(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
+            // Verify controls are hidden during loading
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+
+        it('should show controls when status changes to LOADED', () => {
+            mockStore.status.set(DotPaletteListStatus.LOADED);
+            spectator.detectChanges();
+
+            // Trigger view change to start listening for status changes
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+        });
+
+        it('should hide controls when status changes to EMPTY', () => {
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+
+        it('should update control visibility when switching between content types and contentlets views', () => {
+            switchToContentTypesView();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+
+            switchToContentletsView(DotPaletteListStatus.EMPTY);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+
+        it('should only listen the first status change from LOADING to LOADED or EMPTY', () => {
+            mockStore.status.set(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+
+            mockStore.status.set(DotPaletteListStatus.LOADED);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+        });
+
+        it('should listen the first change again if view changes', () => {
+            switchToContentTypesView();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+
+            // Should ignore the change in status
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+
+            // Should start listening the first status change again
+            switchToContentletsView(DotPaletteListStatus.EMPTY);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+
+            // Should ignore second status change
+            mockStore.status.set(DotPaletteListStatus.LOADED);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+    });
+
+    describe('host parameter (from $siteId)', () => {
+        it('should pass host parameter from $siteId to getContentTypes on initialization', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/test-page',
+                    language: 1,
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
+        });
+
+        it('should pass updated host when $siteId changes', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear previous calls
+            jest.clearAllMocks();
+
+            // Update the siteId
+            mockGlobalStore.currentSiteId.set('new-site.dotcms.com');
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'new-site.dotcms.com',
+                    pagePathOrId: '/test-page',
+                    language: 1,
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
+        });
+
+        it('should include host parameter when sorting content types', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear initial calls
+            jest.clearAllMocks();
+
+            // Trigger sort
+            spectator.component['onSortSelect']({ orderby: 'usage', direction: 'DESC' });
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    orderby: 'usage',
+                    direction: 'DESC',
+                    page: 1
+                })
+            );
+        });
+
+        it('should pass host parameter with other input changes (languageId)', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear initial calls
+            jest.clearAllMocks();
+
+            // Change languageId
+            spectator.fixture.componentRef.setInput('languageId', 2);
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'demo.dotcms.com',
+                    language: 2,
+                    pagePathOrId: '/test-page',
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
+        });
+
+        it('should pass host parameter with other input changes (pagePath)', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            // Clear initial calls
+            jest.clearAllMocks();
+
+            // Change pagePath
+            spectator.fixture.componentRef.setInput('pagePath', '/new-page');
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    host: 'demo.dotcms.com',
+                    pagePathOrId: '/new-page',
+                    language: 1,
+                    listType: DotUVEPaletteListTypes.CONTENT
+                })
+            );
         });
     });
 });

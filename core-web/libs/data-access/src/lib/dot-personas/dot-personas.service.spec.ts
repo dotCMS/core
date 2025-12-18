@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotPersona } from '@dotcms/utils-testing';
@@ -7,7 +7,6 @@ import { CoreWebServiceMock, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPersonasService } from './dot-personas.service';
 
 describe('DotPersonasService', () => {
-    let injector: TestBed;
     let dotPersonasService: DotPersonasService;
     let httpMock: HttpTestingController;
 
@@ -19,9 +18,8 @@ describe('DotPersonasService', () => {
                 DotPersonasService
             ]
         });
-        injector = getTestBed();
-        dotPersonasService = injector.get(DotPersonasService);
-        httpMock = injector.get(HttpTestingController);
+        dotPersonasService = TestBed.inject(DotPersonasService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get Personas', () => {

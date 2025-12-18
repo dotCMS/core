@@ -1,3 +1,5 @@
+import { MenuItem } from 'primeng/api';
+
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
@@ -5,7 +7,13 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from '../models';
+import {
+    DEFAULT_PER_PAGE,
+    DotPaletteSortOption,
+    DotPaletteListStatus,
+    DotPaletteViewMode,
+    DotUVEPaletteListTypes
+} from '../models';
 
 /**
  * Mock array for loading skeleton rows.
@@ -26,8 +34,8 @@ export const LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, in
  * Sets all pagination values to 0 when data cannot be fetched.
  */
 export const EMPTY_PAGINATION = {
-    currentPage: 0,
-    perPage: 0,
+    currentPage: 1,
+    perPage: DEFAULT_PER_PAGE,
     totalEntries: 0
 };
 
@@ -46,7 +54,8 @@ export const EMPTY_CONTENTTYPE_RESPONSE = {
  */
 export const EMPTY_CONTENTLET_RESPONSE = {
     contentlets: [] as DotCMSContentlet[],
-    pagination: EMPTY_PAGINATION
+    pagination: EMPTY_PAGINATION,
+    status: DotPaletteListStatus.EMPTY
 };
 
 export const DEFAULT_SORT_OPTIONS: DotPaletteSortOption = {
@@ -81,6 +90,65 @@ export function getSortActiveClass(
     const isActive = sameOrderby && sameDirection;
 
     return isActive ? 'active-menu-item' : '';
+}
+
+export function buildPaletteMenuItems({
+    viewMode,
+    currentSort,
+    onSortSelect,
+    onViewSelect
+}: {
+    viewMode: DotPaletteViewMode;
+    currentSort: DotPaletteSortOption;
+    onSortSelect: (sortOption: DotPaletteSortOption) => void;
+    onViewSelect: (viewMode: DotPaletteViewMode) => void;
+}): MenuItem[] {
+    return [
+        {
+            label: 'uve.palette.menu.sort.title',
+            items: [
+                {
+                    label: 'uve.palette.menu.sort.option.popular',
+                    command: () => onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'usage', direction: 'ASC' },
+                        currentSort
+                    )
+                },
+                {
+                    label: 'uve.palette.menu.sort.option.a-to-z',
+                    command: () => onSortSelect({ orderby: 'name', direction: 'ASC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'name', direction: 'ASC' },
+                        currentSort
+                    )
+                },
+                {
+                    label: 'uve.palette.menu.sort.option.z-to-a',
+                    command: () => onSortSelect({ orderby: 'name', direction: 'DESC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'name', direction: 'DESC' },
+                        currentSort
+                    )
+                }
+            ]
+        },
+        {
+            label: 'uve.palette.menu.view.title',
+            items: [
+                {
+                    label: 'uve.palette.menu.view.option.grid',
+                    command: () => onViewSelect('grid'),
+                    styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
+                },
+                {
+                    label: 'uve.palette.menu.view.option.list',
+                    command: () => onViewSelect('list'),
+                    styleClass: viewMode === 'list' ? 'active-menu-item' : ''
+                }
+            ]
+        }
+    ];
 }
 
 /**
@@ -120,7 +188,7 @@ export function getPaletteState(
  *
  * @example
  * ```typescript
- * const result = filterAndBuildFavoriteResponse({
+ * const result = buildPaletteFavorite({
  *   contentTypes: allContentTypes,
  *   filter: 'blog',
  *   page: 2
@@ -131,7 +199,7 @@ export function getPaletteState(
  * // }
  * ```
  */
-export function filterAndBuildFavoriteResponse({
+export function buildPaletteFavorite({
     contentTypes,
     filter = '',
     page = 1
@@ -142,6 +210,7 @@ export function filterAndBuildFavoriteResponse({
 }): {
     contenttypes: DotCMSContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
+    status: DotPaletteListStatus;
 } {
     // Filter and sort all content types
     const filteredContentTypes = contentTypes.filter(
@@ -161,7 +230,7 @@ export function filterAndBuildFavoriteResponse({
         totalEntries
     };
 
-    return { contenttypes, pagination };
+    return { contenttypes, pagination, status: getPaletteState(contenttypes) };
 }
 
 /**
@@ -184,12 +253,13 @@ export function filterAndBuildFavoriteResponse({
  * // }
  * ```
  */
-export function buildContentletsResponse(
+export function buildPaletteContent(
     response: ESContent,
     offset: number
 ): {
     contentlets: DotCMSContentlet[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
+    status: DotPaletteListStatus;
 } {
     const contentlets = response.jsonObjectView.contentlets;
     const totalEntries = response.resultsSize;
@@ -197,7 +267,8 @@ export function buildContentletsResponse(
 
     return {
         contentlets,
-        pagination: { currentPage, perPage: contentlets.length, totalEntries }
+        pagination: { currentPage, perPage: contentlets.length, totalEntries },
+        status: getPaletteState(contentlets)
     };
 }
 
@@ -282,3 +353,42 @@ export const DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY = 'dot-uve-palette-layout-mode'
  * Key for storing the orderby in the local storage.
  */
 export const DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY = 'dot-uve-palette-sort-options';
+
+/**
+ * Object containing the empty message for the search state.
+ * @type {Object}
+ */
+export const EMPTY_MESSAGE_SEARCH = {
+    icon: 'pi pi-search',
+    title: 'uve.palette.empty.search.state.title',
+    message: 'uve.palette.empty.search.state.message'
+};
+
+export const EMPTY_MESSAGE_CONTENTLETS = {
+    icon: 'pi pi-folder-open',
+    title: 'uve.palette.empty.state.contentlets.title',
+    message: 'uve.palette.empty.state.contentlets.message'
+};
+
+/**
+ * Object containing empty messages for different list types.
+ * Each key corresponds to a DotUVEPaletteListTypes enum value.
+ * @type {Record<DotUVEPaletteListTypes, { icon: string; title: string; message: string }>}
+ */
+export const EMPTY_MESSAGES = {
+    [DotUVEPaletteListTypes.CONTENT]: {
+        icon: 'pi pi-folder-open',
+        title: 'uve.palette.empty.state.contenttypes.title',
+        message: 'uve.palette.empty.state.contenttypes.message'
+    },
+    [DotUVEPaletteListTypes.FAVORITES]: {
+        icon: 'pi pi-plus',
+        title: 'uve.palette.empty.state.favorites.title',
+        message: 'uve.palette.empty.state.favorites.message'
+    },
+    [DotUVEPaletteListTypes.WIDGET]: {
+        icon: 'pi pi-folder-open',
+        title: 'uve.palette.empty.state.widgets.title',
+        message: 'uve.palette.empty.state.widgets.message'
+    }
+};

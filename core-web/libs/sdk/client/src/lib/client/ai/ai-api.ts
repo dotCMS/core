@@ -60,7 +60,7 @@ export class AIClient extends BaseApiClient {
      * @example
      * @example
      * ```typescript
-     * const results = await client.ai.search('machine learning articles', 'content_index', {
+     * const response = await client.ai.search('machine learning articles', 'content_index', {
      *   query: {
      *     limit: 20,
      *     contentType: 'BlogPost',
@@ -83,8 +83,8 @@ export class AIClient extends BaseApiClient {
      *     threshold: 0.7,
      *     distanceFunction: DISTANCE_FUNCTIONS.cosine
      *   }
-     * }).then((results) => {
-     *   console.log(results);
+     * }).then((response) => {
+     *   console.log(response.results);
      * }).catch((error) => {
      *   console.error(error);
      * });
