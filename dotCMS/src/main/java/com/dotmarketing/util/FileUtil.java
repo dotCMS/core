@@ -9,6 +9,8 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mozilla.universalchardet.UniversalDetector;
@@ -223,6 +225,106 @@ public class FileUtil {
       Arrays.sort(illegalCharacters);
       return illegalCharacters;
   });
+
+    /**
+     * Validates if a file path is safe and follows acceptable patterns
+     * Accepts: "file.log", "subfolder/file.log", "folder/subfolder/file.log"
+     * Rejects: "../attack", "/etc/passwd", "folder//file", etc.
+     *
+     * @param filePath The file path to validate
+     * @return true if the path is safe
+     */
+    public static boolean isValidFilePath(final String filePath) {
+
+        if (UtilMethods.isNotSet(filePath)) {
+            return false;
+        }
+
+        // Reject directory traversal
+        if (filePath.contains("..")) {
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Directory traversal detected in path: " + filePath);
+            return false;
+        }
+
+        // Reject absolute paths
+        if (filePath.startsWith("/") || filePath.startsWith("\\") ||
+                filePath.matches("^[a-zA-Z]:.*")) {  // Windows drive letter
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Absolute path detected: " + filePath);
+            return false;
+        }
+
+        // Reject double slashes
+        if (filePath.contains("//") || filePath.contains("\\\\")) {
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Double slash detected in path: " + filePath);
+            return false;
+        }
+
+        // Only allow alphanumeric, dash, underscore, dot, and single forward slash
+        // Examples: "file.log", "logs/file.log", "app-logs/server_01/tomcat.2024.log"
+        if (!filePath.matches("^[a-zA-Z0-9._-]+(/[a-zA-Z0-9._-]+)*$")) {
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Invalid characters in path: " + filePath);
+            return false;
+        }
+
+        // Optional: limit path depth
+        final int depth = filePath.split("/").length;
+        if (depth > 10) {  // Max 10 levels
+            SecurityLogger.logInfo(FileUtil.class,
+                    "Excessive path depth (" + depth + "): " + filePath);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Process a file path that may contain subdirectories
+     * Validates first, then sanitizes each component
+     *
+     * @param filePath Path like "subfolder/file.log"
+     * @return Processed safe path
+     * @throws IllegalArgumentException if path is invalid
+     */
+    public static String processFilePath(final String filePath) {
+
+        // First validate the pattern
+        if (!isValidFilePath(filePath)) {
+            throw new IllegalArgumentException("Invalid or unsafe file path: " + filePath);
+        }
+
+        // Check if it contains subdirectories
+        if (!filePath.contains("/")) {
+            // Simple file, use existing sanitization
+            return sanitizeFileName(filePath);
+        }
+
+        // Has subdirectories - process each part
+        final String[] parts = filePath.split("/");
+        final List<String> sanitizedParts = new ArrayList<>();
+
+        for (String part : parts) {
+            if (UtilMethods.isNotSet(part)) {
+                continue;  // Skip empty parts (shouldn't happen after validation)
+            }
+
+            final String sanitized = sanitizeFileName(part);
+
+            // Verify sanitization didn't destroy the part
+            if (UtilMethods.isNotSet(sanitized)) {
+                SecurityLogger.logInfo(FileUtil.class,
+                        "Sanitization removed entire path component: " + part);
+                throw new IllegalArgumentException("Path component invalid after sanitization: " + part);
+            }
+
+            sanitizedParts.add(sanitized);
+        }
+
+        return String.join("/", sanitizedParts);
+    }
 
   /**
    * cleans filenames and allows unicode- taken from

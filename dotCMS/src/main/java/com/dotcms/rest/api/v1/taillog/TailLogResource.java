@@ -30,6 +30,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -44,11 +45,11 @@ public class TailLogResource {
 
     public static final int LINES_PER_PAGE = Config.getIntProperty("TAIL_LOG_LINES_PER_PAGE",10);
 
-    //This is in secodns
+    //This is in seconds
     public static final int KEEP_ALIVE_EVENT_INTERVAL = Config.getIntProperty("KEEP_ALIVE_EVENT_INTERVAL",20);
 
     @GET
-    @Path("/{fileName}/_tail")
+    @Path("/{fileName:.+}/_tail")
     @JSONP
     @NoCache
     @Produces(SseFeature.SERVER_SENT_EVENTS)
@@ -67,8 +68,12 @@ public class TailLogResource {
             return sendError("Empty File name param");
         }
 
+        //This prevents any evil attack attempt allowing for paths including subfolders
+        if(!FileUtil.isValidFilePath(fileName)){
+            return sendError("Invalid File name param");
+        }
 
-        final String sanitizedFileName = FileUtil.sanitizeFileName(fileName);
+        final String sanitizedFileName = sanitizeFilePath(fileName);
         String tailLogLofFolder = Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
         if (!tailLogLofFolder.endsWith(File.separator)) {
             tailLogLofFolder = tailLogLofFolder + File.separator;
@@ -143,6 +148,36 @@ public class TailLogResource {
         return eventOutput;
     }
 
+    /**
+     * Sanitizes a file path by decomposing it into individual components and sanitizing each part separately.
+     * This provides enhanced security by ensuring that both directory names and file names are properly cleaned
+     * to prevent directory traversal attacks and other malicious file path manipulations.
+     *
+     * @param fileName the file path to sanitize, can include directory components
+     * @return the sanitized file path with all components individually cleaned
+     */
+    private String sanitizeFilePath(final String fileName) {
+        // Decompose fileName into directory parts and file name, sanitize each individually
+        final java.nio.file.Path filePath = Paths.get(fileName);
+
+        if (filePath.getParent() != null) {
+            // Has directory components - sanitize each part individually
+            final StringBuilder sanitizedPath = new StringBuilder();
+
+            for (java.nio.file.Path part : filePath) {
+                if (sanitizedPath.length() > 0) {
+                    sanitizedPath.append(File.separator);
+                }
+                sanitizedPath.append(FileUtil.sanitizeFileName(part.toString()));
+            }
+
+            return sanitizedPath.toString();
+        } else {
+            // No directory components - sanitize as single file name
+            return FileUtil.sanitizeFileName(fileName);
+        }
+    }
+
 
     static class MyTailerListener extends TailerListenerAdapter {
 
@@ -184,7 +219,7 @@ public class TailLogResource {
                 int pageNumber = 1;
                 while (!eventOutput.isClosed()) {
                     final String write = listener.getThenDispose();
-                    if (write.length() > 0) {
+                    if (!write.isEmpty()) {
                         final String prepWrite = String.format(
                                 "<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>",
                                 pageNumber, pageNumber, logNumber, write);
