@@ -1,7 +1,5 @@
 import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 
-import { Params } from '@angular/router';
-
 import { DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../../constants';
 import { TimeRangeInput } from '../../types';
 
@@ -23,24 +21,6 @@ const initialFiltersState: FiltersState = {
     timeRange: TIME_RANGE_OPTIONS.last7days,
     currentTab: DASHBOARD_TABS.pageview
 };
-
-/**
- * Validates if a string is a valid DashboardTab
- */
-export function isValidTab(tab: string): tab is DashboardTab {
-    return Object.values(DASHBOARD_TABS).includes(tab as DashboardTab);
-}
-
-/**
- * Converts URL query params to TimeRangeInput
- */
-export function paramsToTimeRange(params: Params): TimeRangeInput {
-    if (params['time_range'] === TIME_RANGE_OPTIONS.custom && params['from'] && params['to']) {
-        return [params['from'], params['to']];
-    }
-
-    return params['time_range'] || TIME_RANGE_OPTIONS.last7days;
-}
 
 /**
  * Signal Store Feature for managing shared filters in the analytics dashboard.

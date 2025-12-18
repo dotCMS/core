@@ -6,11 +6,12 @@ import { ActivatedRoute, Params, Router } from '@angular/router';
 import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
-import { isValidTab, paramsToTimeRange, withFilters } from './features/with-filters.feature';
+import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
 
 import { DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
 import { TimeRangeInput } from '../types';
+import { isValidTab, paramsToTimeRange } from '../utils/filters.utils';
 
 /**
  * Analytics Dashboard Store
@@ -26,22 +27,6 @@ import { TimeRangeInput } from '../types';
  * - Automatically loads data for the active tab when tab, timeRange, or siteId changes
  * - Pageview data is loaded when the pageview tab is active
  * - Conversions data is loaded lazily when the conversions tab is first activated
- *
- * @example
- * ```typescript
- * // In component
- * readonly store = inject(DotAnalyticsDashboardStore);
- *
- * // Access filter state
- * const timeRange = this.store.timeRange();
- * this.store.updateTimeRange('last30days');
- *
- * // Access pageview data (auto-loaded when tab is active)
- * const totalPageViews = this.store.totalPageViews();
- *
- * // Data loads automatically when switching tabs
- * this.store.setCurrentTabAndNavigate('conversions');
- * ```
  */
 export const DotAnalyticsDashboardStore = signalStore(
     withFilters(),
