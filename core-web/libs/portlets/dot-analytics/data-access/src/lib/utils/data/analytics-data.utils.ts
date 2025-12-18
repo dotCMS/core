@@ -25,6 +25,7 @@ import {
     TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
+    TotalConversionsEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
@@ -154,6 +155,31 @@ export const extractTopPageValue = (data: TopPagePerformanceEntity | null): numb
  */
 export const extractPageTitle = (data: TopPagePerformanceEntity | null): string =>
     data?.['request.pageTitle'] || 'analytics.metrics.pageTitle.not-available';
+
+/**
+ * Aggregates total conversions from an array of TotalConversionsEntity.
+ * Sums all EventSummary.totalEvents values and returns a single TotalConversionsEntity with the total.
+ *
+ * @param entities - Array of TotalConversionsEntity (one per day/period)
+ * @returns A single TotalConversionsEntity with the sum of all events, or null if array is empty
+ */
+export const aggregateTotalConversions = (
+    entities: TotalConversionsEntity[]
+): TotalConversionsEntity | null => {
+    if (!entities || entities.length === 0) {
+        return null;
+    }
+
+    const totalEvents = entities.reduce((sum, entity) => {
+        const events = parseInt(entity['EventSummary.totalEvents'] || '0', 10);
+
+        return sum + events;
+    }, 0);
+
+    return {
+        'EventSummary.totalEvents': totalEvents.toString()
+    };
+};
 
 /**
  * Transforms TopPerformaceTableEntity array to table-friendly format

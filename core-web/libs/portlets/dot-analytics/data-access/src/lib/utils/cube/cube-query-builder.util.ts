@@ -3,6 +3,7 @@ import {
     CubeJSQuery,
     CubeJSTimeDimension,
     CubePrefix,
+    DimensionField,
     FilterOperator,
     Granularity,
     SortDirection,
@@ -66,8 +67,10 @@ export class CubeQueryBuilder {
     /**
      * Add dimensions to the query.
      * Automatically prefixes with current cube.
+     *
+     * @param dimensions - Array of dimension field names (e.g., ['path', 'pageTitle'])
      */
-    dimensions(dimensions: string[]): CubeQueryBuilder {
+    dimensions(dimensions: DimensionField[]): CubeQueryBuilder {
         const prefixedDimensions = dimensions.map((d) => this.prefixField(d));
         this.query.dimensions = prefixedDimensions;
 

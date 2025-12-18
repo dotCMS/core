@@ -25,6 +25,7 @@ import {
 } from '../../types';
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
+    aggregateTotalConversions,
     ConversionTrendEntity,
     createInitialRequestState,
     toTimeRangeCubeJS,
@@ -118,10 +119,12 @@ export function withConversions() {
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
                                 tapResponse(
                                     (entities) => {
+                                        const totalConversionsEntity = aggregateTotalConversions(entities);
+
                                         patchState(store, {
                                             totalConversions: {
                                                 status: ComponentStatus.LOADED,
-                                                data: entities[0] ?? null,
+                                                data: totalConversionsEntity,
                                                 error: null
                                             }
                                         });
