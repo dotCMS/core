@@ -283,7 +283,6 @@ export type StyleEditorInputField =
  * ```
  */
 export interface StyleEditorDropdownField extends StyleEditorBaseField {
-
     /** Discriminator: must be 'dropdown' */
     type: 'dropdown';
     /** Array of selectable options. Can be strings or objects with label and value properties */
