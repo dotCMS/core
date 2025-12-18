@@ -24,7 +24,7 @@ import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboar
  * Conversions Report Component
  *
  * Displays conversion analytics including metrics, charts, and content conversions table.
- * Uses lazy loading - data is loaded when the component initializes (when tab is selected).
+ * Data loading is handled automatically by the store when the tab becomes active.
  *
  * TODO: Implement date range validation for conversions dashboard.
  * The date range filter should not allow more than 1 month between start and end dates.
@@ -50,8 +50,6 @@ export default class DotAnalyticsDashboardConversionsReportComponent implements 
     readonly #messageService = inject(DotMessageService);
 
     ngOnInit(): void {
-        this.store.loadConversionsData();
-
         this.#globalStore.addNewBreadcrumb({
             label: 'Conversions'
         });
