@@ -12,8 +12,12 @@
 
 			const urlValue = urlField.getValue() || '';
 			if(urlValue.trim() === ''){
-				const slugValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
-                urlField.setValue(slugValue);
+				const generatedUrlValue = currentTitleValue
+					.toLowerCase()
+					.trim()
+					.replace(/[^a-zA-Z0-9]+/g,'-')
+					.replace(/-+$|^-+/g,'');
+				urlField.setValue(generatedUrlValue);
 			}
 
 			const friendlyNameValue = friendlyNameField.getValue() || '';
