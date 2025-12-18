@@ -23,6 +23,14 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotThemeComponent } from './dot-theme.component';
 
+jest.mock('@primeuix/motion', () => ({
+    createMotion: () => ({
+        enter: jest.fn(),
+        leave: jest.fn().mockResolvedValue(undefined),
+        cancel: jest.fn()
+    })
+}));
+
 const mockThemes: DotTheme[] = [
     {
         identifier: 'theme1',
@@ -163,6 +171,31 @@ describe('DotThemeComponent', () => {
             tick();
         }));
 
+        it('should call onThemeSelect when radio button ngModelChange fires (template binding)', fakeAsync(() => {
+            // Spy on onThemeSelect to verify it's called from the template binding:
+            // (ngModelChange)="onThemeSelect($event)"
+            const onThemeSelectSpy = jest.spyOn(spectator.component, 'onThemeSelect');
+
+            const triggerButton = spectator.query('button');
+            expect(triggerButton).toBeTruthy();
+
+            spectator.click(triggerButton as HTMLButtonElement);
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            // Radio input uses [inputId]="'theme-' + theme.identifier"
+            const theme1RadioInput = spectator.query('#theme-theme1', { root: true });
+            expect(theme1RadioInput).toBeTruthy();
+
+            spectator.click(theme1RadioInput as HTMLInputElement);
+            spectator.detectChanges();
+
+            expect(onThemeSelectSpy).toHaveBeenCalledTimes(1);
+            expect(onThemeSelectSpy).toHaveBeenCalledWith('theme1');
+        }));
+
+        // Since I already tested the binding with the template, I can call the method directly and test the callback
         it('should emit onChange callback exactly once when user selects theme', () => {
             spectator.component.onThemeSelect('theme1');
             spectator.detectChanges();
