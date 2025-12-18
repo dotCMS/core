@@ -241,9 +241,7 @@ describe('styleEditorField', () => {
                     {
                         label: 'Light',
                         value: 'light',
-                        imageURL: 'https://example.com/light-theme.png',
-                        width: 100,
-                        height: 60
+                        imageURL: 'https://example.com/light-theme.png'
                     },
                     { label: 'Dark', value: 'dark' }
                 ],
@@ -255,9 +253,7 @@ describe('styleEditorField', () => {
             expect(result.options[0]).toEqual({
                 label: 'Light',
                 value: 'light',
-                imageURL: 'https://example.com/light-theme.png',
-                width: 100,
-                height: 60
+                imageURL: 'https://example.com/light-theme.png'
             });
         });
 
@@ -269,9 +265,7 @@ describe('styleEditorField', () => {
                     {
                         label: 'Light',
                         value: 'light',
-                        imageURL: 'https://example.com/light-theme.png',
-                        width: 100,
-                        height: 60
+                        imageURL: 'https://example.com/light-theme.png'
                     },
                     { label: 'Dark', value: 'dark' },
                     'Auto'
@@ -319,8 +313,6 @@ describe('styleEditorField', () => {
                 value: 'light',
                 imageURL: 'https://example.com/light.png'
             });
-            expect(result.options[0]).not.toHaveProperty('width');
-            expect(result.options[0]).not.toHaveProperty('height');
         });
     });
 

@@ -65,13 +65,13 @@ export class DotUveStyleEditorFormComponent {
                 const config = field.config;
 
                 switch (field.type) {
-                    case 'dropdown':
+                    case STYLE_EDITOR_FIELD_TYPES.DROPDOWN:
                         formControls[fieldKey] = this.#fb.control(
                             this.#getDropdownDefaultValue(config)
                         );
                         break;
 
-                    case 'checkboxGroup': {
+                    case STYLE_EDITOR_FIELD_TYPES.CHECKBOX_GROUP: {
                         const options = config?.options || [];
                         const checkboxDefaults = this.#getCheckboxGroupDefaultValue(config);
                         const checkboxGroupControls: Record<string, FormControl> = {};
@@ -86,13 +86,13 @@ export class DotUveStyleEditorFormComponent {
                         break;
                     }
 
-                    case 'radio':
+                    case STYLE_EDITOR_FIELD_TYPES.RADIO:
                         formControls[fieldKey] = this.#fb.control(
                             this.#getRadioDefaultValue(config)
                         );
                         break;
 
-                    case 'input':
+                    case STYLE_EDITOR_FIELD_TYPES.INPUT:
                         formControls[fieldKey] = this.#fb.control(
                             this.#getInputDefaultValue(config)
                         );
@@ -110,7 +110,7 @@ export class DotUveStyleEditorFormComponent {
 
     #getDropdownDefaultValue(config: StyleEditorFieldSchema['config']): string {
         if (typeof config?.defaultValue === 'string') {
-            return config.defaultValue;
+            return config.defaultValue.trim();
         }
         return config?.options?.[0]?.value || '';
     }

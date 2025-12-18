@@ -47,7 +47,7 @@
 
 .radio-image-label:hover {
     border-color: $color-palette-surface-800;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    box-shadow: $shadow-m;
 }
 
 .radio-image-input:checked + .radio-image-label {
@@ -58,6 +58,7 @@
     max-width: 100%;
     height: auto;
     display: block;
+    width: 100%;
 }
 
 .radio-image-input:checked + .radio-image-label .radio-image-text {
