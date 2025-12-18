@@ -81,7 +81,6 @@ export class DotPagesTableComponent {
     /** Whether the lazy load event has been emitted. */
     readonly #didEmitLazyLoad = signal<boolean>(false);
 
-    // Reactive "dynamic" filters form
     /** Search keyword control (debounced before emitting). */
     readonly searchControl = new FormControl<string>('', { nonNullable: true });
     /** Selected language id control. */

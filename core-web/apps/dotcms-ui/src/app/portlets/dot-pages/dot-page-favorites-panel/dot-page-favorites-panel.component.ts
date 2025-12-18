@@ -70,12 +70,57 @@ export class DotPageFavoritesPanelComponent {
      * @param {Event} event
      * @memberof DotPagesComponent
      */
-    onToggleChange(collapsed: boolean): void {
+    protected onToggleChange(collapsed: boolean): void {
         if (collapsed) {
             this.collapsePanel();
         } else {
             this.expandPanel();
         }
+    }
+
+    /**
+     * Collapse the favorite pages panel
+     * @memberof DotPagesFavoritePanelComponent
+     */
+    protected collapsePanel(): void {
+        this.$isCollapsed.set(true);
+        this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'true');
+    }
+
+    /**
+     * Expand the favorite pages panel
+     * @memberof DotPagesFavoritePanelComponent
+     */
+    protected expandPanel(): void {
+        this.$isCollapsed.set(false);
+        this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'false');
+    }
+
+    protected handleOpenMenu(originalEvent: MouseEvent, data: DotCMSContentlet): void {
+        originalEvent.stopPropagation();
+        this.openMenu.emit({ originalEvent, data });
+    }
+
+    private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
+        const timeStamp = new Date().getTime().toString();
+        this.#dialogService.open(DotFavoritePageComponent, {
+            header: this.#dotMessageService.get('favoritePage.dialog.header'),
+            width: '80rem',
+            data: {
+                page: {
+                    favoritePageUrl: favoritePage.url,
+                    favoritePage: favoritePage
+                },
+                onSave: () => {
+                    this.$timeStamp.set(timeStamp);
+                    // this.#store.getFavoritePages(this.currentLimitSize);
+                },
+                onDelete: () => {
+                    this.$timeStamp.set(timeStamp);
+                    // this.#store.getFavoritePages(this.currentLimitSize);
+                }
+            }
+        });
     }
 
     /**
@@ -116,50 +161,5 @@ export class DotPageFavoritesPanelComponent {
                 this.displayFavoritePageDialog(favoritePage);
             }
         );
-    }
-
-    /**
-     * Collapse the favorite pages panel
-     * @memberof DotPagesFavoritePanelComponent
-     */
-    collapsePanel(): void {
-        this.$isCollapsed.set(true);
-        this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'true');
-    }
-
-    /**
-     * Expand the favorite pages panel
-     * @memberof DotPagesFavoritePanelComponent
-     */
-    expandPanel(): void {
-        this.$isCollapsed.set(false);
-        this.#dotLocalstorageService.setItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY, 'false');
-    }
-
-    protected handleOpenMenu(originalEvent: MouseEvent, data: DotCMSContentlet): void {
-        originalEvent.stopPropagation();
-        this.openMenu.emit({ originalEvent, data });
-    }
-
-    private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
-        const timeStamp = new Date().getTime().toString();
-        this.#dialogService.open(DotFavoritePageComponent, {
-            header: this.#dotMessageService.get('favoritePage.dialog.header'),
-            width: '80rem',
-            data: {
-                page: {
-                    favoritePageUrl: favoritePage.url,
-                    favoritePage: favoritePage
-                },
-                onSave: () => {
-                    this.$timeStamp.set(timeStamp);
-                    // this.#store.getFavoritePages(this.currentLimitSize);
-                },
-                onDelete: () => {
-                    this.$timeStamp.set(timeStamp);
-                    // this.#store.getFavoritePages(this.currentLimitSize);
-                }
-            }
-        });
     }
 }

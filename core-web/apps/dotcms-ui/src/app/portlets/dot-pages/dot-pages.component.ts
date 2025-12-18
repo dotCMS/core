@@ -45,6 +45,7 @@ import { DotAddToBundleComponent } from '@dotcms/ui';
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
 import { DotPageListService } from './dot-page-list.service';
+import { DotPageActionsService } from './dot-page.actions.service';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.component';
 import { DotCMSPagesStore } from './store/store';
@@ -78,7 +79,8 @@ type SavePageEventData = {
         DotWorkflowEventHandlerService,
         DotRouterService,
         DotFavoritePageService,
-        DotCMSPagesStore
+        DotCMSPagesStore,
+        DotPageActionsService
     ],
     selector: 'dot-pages',
     styleUrls: ['./dot-pages.component.scss'],
@@ -98,6 +100,7 @@ export class DotPagesComponent {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
     readonly #dotEventsService = inject(DotEventsService);
+    readonly #dotPageActionsService = inject(DotPageActionsService);
     readonly #element = inject(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -161,13 +164,12 @@ export class DotPagesComponent {
      * @param {DotActionsMenuEventParams} event
      * @memberof DotPagesComponent
      */
-    protected openMenu({ originalEvent }: DotActionsMenuEventParams): void {
+    protected openMenu({ originalEvent, data }: DotActionsMenuEventParams): void {
         originalEvent.stopPropagation();
         this.menu().toggle(originalEvent);
-        // this.#store.clearMenuActions();
-        // this.menu.hide();
-
-        // this.#store.showActionsMenu({ item, actionMenuDomId });
+        this.#dotPageActionsService.getItems(data).subscribe((actions) => {
+            this.menuItems.set(actions);
+        });
     }
 
     /**
