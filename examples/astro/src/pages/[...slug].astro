@@ -7,9 +7,7 @@ import { DotCMSPage } from "@/views/DotCMSPage";
 
 const params = Astro.params;
 
-const pageResponse = await getDotCMSPage(
-  params?.slug ?? ""
-);
+const pageResponse = await getDotCMSPage(params?.slug ?? "");
 
 const pageAsset = pageResponse?.pageAsset;
 const errors = pageResponse?.error;
@@ -28,10 +26,7 @@ const title = pageAsset ? pageAsset.page.title : "Error";
       {errors ? (
         <Error error={errors} />
       ) : (
-        <DotCMSPage
-          client:only="react"
-          pageResponse={pageResponse}
-        />
+        <DotCMSPage client:only="react" pageResponse={pageResponse} />
       )}
     </Layout>
   )
