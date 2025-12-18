@@ -2,14 +2,14 @@
     (ngSubmit)="handleSubmit()"
     [ngClass]="{ 'min-h-80': languageId?.value, 'min-h-122': !languageId?.value }"
     [formGroup]="form"
-    class="p-fluid flex flex-col gap-6">
+    class="flex flex-col gap-6">
     @if (languageId?.value) {
         <!--Edit language-->
 
         <div class="field flex flex-col gap-2">
             <label for="langEdit">{{ 'locale.display.name' | dm }}</label>
             <input
-            [maxlength]="50"
+                [maxlength]="50"
                 pInputText
                 id="langEdit"
                 aria-describedby="langEdit-help"
