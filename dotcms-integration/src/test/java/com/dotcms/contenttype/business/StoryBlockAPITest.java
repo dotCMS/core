@@ -456,6 +456,111 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         assertTrue(contentletIdList.isEmpty());
     }
 
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Creates a story block with nested images inside lists.
+     * This tests the recursive dependency detection fix where images nested
+     * within list items were not being detected for push publishing bundles.
+     * ExpectedResult: The nested image identifiers should be retrieved
+     */
+    @Test
+    public void test_get_dependencies_with_nested_images_in_lists() throws Exception {
+
+        final Host host = APILocator.systemHost();
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+        File tempFile1 = File.createTempFile("nestedImageTest1", ".jpg");
+        File tempFile2 = File.createTempFile("nestedImageTest2", ".jpg");
+
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        Assert.assertNotNull("Can't find the test image file", url);
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile1);
+        FileUtils.copyFile(testImage, tempFile2);
+
+        try {
+            final Contentlet imageFileAsset1 = new FileAssetDataGen(tempFile1)
+                    .host(host)
+                    .languageId(1L)
+                    .folder(imageFolder)
+                    .nextPersisted();
+
+            final Contentlet imageFileAsset2 = new FileAssetDataGen(tempFile2)
+                    .host(host)
+                    .languageId(1L)
+                    .folder(imageFolder)
+                    .nextPersisted();
+
+            // JSON with top level image and a bullet list containing a nested image
+            final String storyBlockJsonWithNestedImages = String.format(
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotImage\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": {" +
+                    "          \"identifier\": \"%s\"," +
+                    "          \"languageId\": 1" +
+                    "        }" +
+                    "      }" +
+                    "    }," +
+                    "    {" +
+                    "      \"type\": \"bulletList\"," +
+                    "      \"content\": [" +
+                    "        {" +
+                    "          \"type\": \"listItem\"," +
+                    "          \"content\": [" +
+                    "            {" +
+                    "              \"type\": \"paragraph\"," +
+                    "              \"content\": [" +
+                    "                {" +
+                    "                  \"type\": \"text\"," +
+                    "                  \"text\": \"Image inside list:\"" +
+                    "                }" +
+                    "              ]" +
+                    "            }," +
+                    "            {" +
+                    "              \"type\": \"dotImage\"," +
+                    "              \"attrs\": {" +
+                    "                \"data\": {" +
+                    "                  \"identifier\": \"%s\"," +
+                    "                  \"languageId\": 1" +
+                    "                }" +
+                    "              }" +
+                    "            }" +
+                    "          ]" +
+                    "        }" +
+                    "      ]" +
+                    "    }" +
+                    "  ]" +
+                    "}",
+                    imageFileAsset1.getIdentifier(),
+                    imageFileAsset2.getIdentifier()
+            );
+
+
+            final List<String> contentletIdList = APILocator.getStoryBlockAPI()
+                    .getDependencies(storyBlockJsonWithNestedImages);
+
+            // Verify both images are detected
+            assertNotNull("Dependency list should not be null", contentletIdList);
+            assertEquals("Should find 2 image dependencies", 2, contentletIdList.size());
+            assertTrue("Should contain top-level image",
+                    contentletIdList.contains(imageFileAsset1.getIdentifier()));
+            assertTrue("Should contain nested image inside list",
+                    contentletIdList.contains(imageFileAsset2.getIdentifier()));
+
+        } finally {
+            
+            if (tempFile1.exists()) {
+                tempFile1.delete();
+            }
+            if (tempFile2.exists()) {
+                tempFile2.delete();
+            }
+        }
+    }
+
     @Test
     public void test_get_refreshStoryBlockValueReferences_with_bad_content_value()  {
     
