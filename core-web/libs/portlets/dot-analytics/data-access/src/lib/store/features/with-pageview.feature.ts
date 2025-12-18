@@ -93,11 +93,11 @@ export function withPageview() {
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
-                                .fromCube('request')
+                                .fromCube('EventSummary')
                                 .pageviews()
-                                .measures(['totalRequest'])
+                                .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
@@ -146,11 +146,11 @@ export function withPageview() {
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
-                                .fromCube('request')
+                                .fromCube('EventSummary')
                                 .pageviews()
-                                .measures(['totalUsers'])
+                                .measures(['uniqueVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
@@ -202,13 +202,13 @@ export function withPageview() {
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
-                                .fromCube('request')
+                                .fromCube('EventSummary')
                                 .pageviews()
-                                .dimensions(['path', 'pageTitle'])
-                                .measures(['totalRequest'])
+                                .dimensions(['identifier', 'title'])
+                                .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .orderBy('totalRequest', 'desc')
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
+                                .orderBy('totalEvents', 'desc')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .limit(1)
                                 .build();
 
@@ -262,11 +262,11 @@ export function withPageview() {
                         switchMap(({ timeRange, currentSiteId }) => {
                             const granularity = determineGranularityForTimeRange(timeRange);
                             const query = createCubeQuery()
-                                .fromCube('request')
+                                .fromCube('EventSummary')
                                 .pageviews()
-                                .measures(['totalRequest'])
+                                .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange), granularity)
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), granularity)
                                 .build();
 
                             return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
@@ -322,7 +322,7 @@ export function withPageview() {
                                 .fromCube('request')
                                 .pageviews()
                                 .dimensions(['userAgent'])
-                                .measures(['totalRequest'])
+                                .measures(['count'])
                                 .siteId(currentSiteId)
                                 .orderBy('totalRequest', 'desc')
                                 .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
@@ -376,13 +376,13 @@ export function withPageview() {
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
-                                .fromCube('request')
+                                .fromCube('EventSummary')
                                 .pageviews()
-                                .dimensions(['path', 'pageTitle'])
-                                .measures(['totalRequest'])
+                                .dimensions(['identifier', 'title'])
+                                .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .orderBy('totalRequest', 'desc')
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
+                                .orderBy('totalEvents', 'desc')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .limit(DEFAULT_COUNT_LIMIT)
                                 .build();
 

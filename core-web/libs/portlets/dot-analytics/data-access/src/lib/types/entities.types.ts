@@ -6,48 +6,48 @@
  * Total page views entity response
  */
 export interface TotalPageViewsEntity {
-    'request.totalRequest': string;
+    'EventSummary.totalEvents': string;
 }
 
 /**
  * Unique visitors entity response
  */
 export interface UniqueVisitorsEntity {
-    'request.totalUsers': string;
+    'EventSummary.uniqueVisitors': string;
 }
 
 /**
  * Top page performance entity response
  */
 export interface TopPagePerformanceEntity {
-    'request.totalRequest': string;
-    'request.pageTitle': string;
-    'request.path': string;
+    'EventSummary.totalEvents': string;
+    'EventSummary.title': string;
+    'EventSummary.identifier': string;
 }
 
 /**
  * Top performance table entity response
  */
 export interface TopPerformaceTableEntity {
-    'request.totalRequest': string;
-    'request.pageTitle': string;
-    'request.path': string;
+    'EventSummary.totalEvents': string;
+    'EventSummary.title': string;
+    'EventSummary.identifier': string;
 }
 
 /**
  * Page view timeline entity response
  */
 export interface PageViewTimeLineEntity {
-    'request.totalRequest': string;
-    'request.createdAt': string;
-    'request.createdAt.day': string;
+    'EventSummary.totalEvents': string;
+    'EventSummary.day': string;
+    'EventSummary.day.day': string;
 }
 
 /**
  * Page view device browsers entity response
  */
 export interface PageViewDeviceBrowsersEntity {
-    'request.totalRequest': string;
+    'request.count': string;
     'request.userAgent': string;
 }
 

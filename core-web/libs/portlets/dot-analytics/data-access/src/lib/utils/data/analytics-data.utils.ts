@@ -136,25 +136,25 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['request.totalRequest'] ?? 0) : 0;
+    data ? Number(data['EventSummary.totalEvents'] ?? 0) : 0;
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['request.totalUsers']) : 0;
+    data ? Number(data['EventSummary.uniqueVisitors']) : 0;
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
  */
 export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number =>
-    data ? Number(data['request.totalRequest']) : 0;
+    data ? Number(data['EventSummary.totalEvents']) : 0;
 
 /**
  * Extracts page title from TopPagePerformanceEntity
  */
 export const extractPageTitle = (data: TopPagePerformanceEntity | null): string =>
-    data?.['request.pageTitle'] || 'analytics.metrics.pageTitle.not-available';
+    data?.['EventSummary.title'] || 'analytics.metrics.pageTitle.not-available';
 
 /**
  * Aggregates total conversions from an array of TotalConversionsEntity.
@@ -192,9 +192,9 @@ export const transformTopPagesTableData = (
     }
 
     return data.map((item) => ({
-        pageTitle: item['request.pageTitle'] || 'analytics.table.data.not-available',
-        path: item['request.path'] || 'analytics.table.data.not-available',
-        views: Number(item['request.totalRequest']) || 0
+        pageTitle: item['EventSummary.title'] || 'analytics.table.data.not-available',
+        path: item['EventSummary.identifier'] || 'analytics.table.data.not-available',
+        views: Number(item['EventSummary.totalEvents']) || 0
     }));
 };
 
@@ -221,8 +221,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['request.createdAt']),
-            value: extractPageViews(item)
+            date: new Date(item['EventSummary.day']),
+            value: Number(item['EventSummary.totalEvents'] || '0')
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -489,7 +489,7 @@ export const transformDeviceBrowsersData = (
 
     data.forEach((item) => {
         const userAgent = item['request.userAgent'];
-        const totalRequests = parseInt(item['request.totalRequest'] || '0', 10);
+        const totalRequests = parseInt(item['request.count'] || '0', 10);
 
         if (userAgent && totalRequests > 0) {
             const parsed = parseUserAgent(userAgent);
@@ -578,7 +578,7 @@ export const fillMissingDates = (
 
     const dataMap = new Map();
     data.forEach((item) => {
-        const dateKey = new Date(item['request.createdAt']).toISOString();
+        const dateKey = new Date(item['EventSummary.day']).toISOString();
         dataMap.set(dateKey, item);
     });
 
@@ -591,8 +591,9 @@ export const fillMissingDates = (
             filledData.push(dataMap.get(currentDateKey));
         } else {
             filledData.push({
-                'request.createdAt': currentDateKey,
-                'request.totalRequest': '0'
+                'EventSummary.day': currentDateKey,
+                'EventSummary.day.day': format(currentDate, 'yyyy-MM-dd'),
+                'EventSummary.totalEvents': '0'
             });
         }
         currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
