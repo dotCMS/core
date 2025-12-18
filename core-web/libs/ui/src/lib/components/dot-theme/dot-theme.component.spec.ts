@@ -23,6 +23,8 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotThemeComponent } from './dot-theme.component';
 
+import { DotSiteComponent } from '../dot-site/dot-site.component';
+
 jest.mock('@primeuix/motion', () => ({
     createMotion: () => ({
         enter: jest.fn(),
@@ -245,19 +247,36 @@ describe('DotThemeComponent', () => {
     });
 
     describe('Host ID Local Override', () => {
+        let dotSite: DotSiteComponent;
+
         beforeEach(fakeAsync(() => {
             globalStoreSignal.set('site1');
             spectator.detectChanges();
             tick();
+
+            // Open the popover so <dot-site> is rendered (it's inside the popover overlay).
+            const triggerButton = spectator.query('button');
+            expect(triggerButton).toBeTruthy();
+
+            spectator.click(triggerButton as HTMLButtonElement);
+            spectator.detectChanges();
+            tick();
+            spectator.detectChanges();
+
+            dotSite = spectator.query(DotSiteComponent, { root: true }) as DotSiteComponent;
+            expect(dotSite).toBeTruthy();
         }));
 
         it('should initialize hostId from GlobalStore when null', () => {
             expect(spectator.component.$state.hostId()).toBe('site1');
+            // Binding: [value]="$state.hostId()"
+            expect(dotSite.value()).toBe('site1');
         });
 
         it('should NOT overwrite hostId when user changes site via onSiteChange', fakeAsync(() => {
-            // User changes site
-            spectator.component.onSiteChange('site2');
+            // User changes site via dot-site output binding:
+            // (onChange)="onSiteChange($event)"
+            dotSite.onChange.emit('site2');
             spectator.detectChanges();
             tick();
 
@@ -273,9 +292,14 @@ describe('DotThemeComponent', () => {
         }));
 
         it('should allow GlobalStore to initialize when hostId is null', fakeAsync(() => {
-            // Clear hostId and reset globalStoreSignal
+            // Clear hostId and reset globalStoreSignal so the GlobalStore effect doesn't immediately re-initialize.
             globalStoreSignal.set(null);
-            spectator.component.onSiteChange(null);
+            spectator.detectChanges();
+            tick();
+
+            // User clears site via dot-site output binding:
+            // (onChange)="onSiteChange($event)"
+            dotSite.onChange.emit(null);
             spectator.detectChanges();
             tick();
 
