@@ -107,7 +107,7 @@ describe('DotThemeComponent', () => {
     });
 
     describe('Component Initialization', () => {
-    it('should create', () => {
+        it('should create', () => {
             expect(spectator.component).toBeTruthy();
         });
 
@@ -142,7 +142,6 @@ describe('DotThemeComponent', () => {
             );
         }));
     });
-
 
     describe('User Selection - onThemeSelect', () => {
         let onChangeSpy: jest.Mock;
@@ -311,9 +310,7 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
         onChangeOutputSpy = jest.fn();
         hostGlobalStoreSignal = signal<string | null>('site1');
 
-        hostSpectator = createHost(
-            `<dot-theme [formControl]="themeControl"></dot-theme>`
-        );
+        hostSpectator = createHost(`<dot-theme [formControl]="themeControl"></dot-theme>`);
         hostComponent = hostSpectator.hostComponent;
         hostThemesService = hostSpectator.inject(DotThemesService, true);
 
