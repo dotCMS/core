@@ -1,0 +1,42 @@
+<script type="application/javascript">
+	DotCustomFieldApi.ready(() => {
+		const redirectField = DotCustomFieldApi.getField('redirecturl');
+		const redirectURLBox = document.getElementById('redirectURLBox');
+		const selectLinkButton = document.getElementById('selectLinkButton');
+		
+		// Initialize input with current field value
+		const currentValue = redirectField.getValue() || '';
+		redirectURLBox.value = currentValue;
+		
+		// Handle page selector button click
+		selectLinkButton.addEventListener('click', () => {
+			DotCustomFieldApi.openBrowserModal({
+				header: 'Select a Page',
+				mimeTypes: [''],
+				onClose: (result) => {
+					console.log('result', result);
+					if (result && result.pageURI) {
+						redirectURLBox.value = result.pageURI;
+						redirectField.setValue(result.pageURI);
+					}
+				}
+			});
+		});
+	});
+</script>
+
+<div style="display: flex; gap: 8px; align-items: center;">
+	<input 
+		type="text" 
+		id="redirectURLBox" 
+		name="redirectURLBox"
+		readonly
+		style="flex: 1;"
+	/>
+	<button 
+		id="selectLinkButton" 
+		type="button"
+	>
+		$text.get("select-link")
+	</button>
+</div>

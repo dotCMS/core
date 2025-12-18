@@ -19,6 +19,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -45,7 +46,8 @@ import { WINDOW } from '@dotcms/utils';
         {
             provide: WINDOW,
             useValue: window
-        }
+        },
+        DialogService
     ],
     imports: [ButtonModule, InputTextModule, DialogModule, ReactiveFormsModule]
 })
@@ -64,6 +66,12 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      * The content type to render the field for.
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    /**
+     * A readonly private field that holds an instance of the DialogService.
+     * This service is injected using Angular's dependency injection mechanism.
+     * It is used to manage dialog interactions within the component.
+     */
+    readonly #dialogService = inject(DialogService);
     /**
      * The template code of the field.
      * This content is expected to be sanitized on the backend before reaching this component.
@@ -115,7 +123,8 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
         this.#formBridge = createFormBridge({
             type: 'angular',
             form,
-            zone: this.#zone
+            zone: this.#zone,
+            dialogService: this.#dialogService
         });
 
         this.#window['DotCustomFieldApi'] = this.#formBridge;

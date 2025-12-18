@@ -31,6 +31,17 @@ const mockNgZone = {
     run: (fn: () => void) => fn()
 };
 
+const mockDialogRef = {
+    close: jest.fn(),
+    onClose: {
+        subscribe: jest.fn()
+    }
+};
+
+const mockDialogService = {
+    open: jest.fn().mockReturnValue(mockDialogRef)
+};
+
 describe('AngularFormBridge', () => {
     let bridge: AngularFormBridge;
 
@@ -38,7 +49,11 @@ describe('AngularFormBridge', () => {
         // Reset singleton instance before each test
         AngularFormBridge.resetInstance();
         mockFormGroup.get.mockReturnValue(mockFormControl);
-        bridge = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+        bridge = AngularFormBridge.getInstance(
+            mockFormGroup as any,
+            mockNgZone as any,
+            mockDialogService as any
+        );
         jest.clearAllMocks();
     });
 
@@ -175,7 +190,8 @@ describe('AngularFormBridge', () => {
             const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
             const testBridge = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             const callback = jest.fn();
 
@@ -244,11 +260,13 @@ describe('AngularFormBridge', () => {
         it('should return the same instance when getInstance is called multiple times', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             const instance2 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
 
             expect(instance1).toBe(instance2);
@@ -260,9 +278,14 @@ describe('AngularFormBridge', () => {
 
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
-            const instance2 = AngularFormBridge.getInstance(differentFormGroup, mockNgZone as any);
+            const instance2 = AngularFormBridge.getInstance(
+                differentFormGroup,
+                mockNgZone as any,
+                mockDialogService as any
+            );
 
             expect(instance1).toBe(instance2);
             expect(consoleSpy).toHaveBeenCalledWith(
@@ -277,12 +300,14 @@ describe('AngularFormBridge', () => {
         it('should reset instance when resetInstance is called', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             AngularFormBridge.resetInstance();
             const instance2 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
 
             expect(instance1).not.toBe(instance2);
@@ -292,7 +317,11 @@ describe('AngularFormBridge', () => {
             const unsubscribeSpy = jest.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
-            const instance = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+            const instance = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
             instance.onChangeField('testField', () => {});
 
             AngularFormBridge.resetInstance();
@@ -303,20 +332,26 @@ describe('AngularFormBridge', () => {
         it('should not allow direct instantiation with new', () => {
             // TypeScript will prevent this at compile time, but we can verify the constructor is private
             // by checking that getInstance is the only way to create an instance
-            const instance = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+            const instance = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
             expect(instance).toBeInstanceOf(AngularFormBridge);
         });
 
         it('should reset instance in destroy method', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             instance1.destroy();
 
             const instance2 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             expect(instance1).not.toBe(instance2);
         });

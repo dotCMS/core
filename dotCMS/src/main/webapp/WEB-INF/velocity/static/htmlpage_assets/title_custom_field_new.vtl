@@ -12,8 +12,8 @@
 
 			const urlValue = urlField.getValue() || '';
 			if(urlValue.trim() === ''){
-				urlValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
-				urlField.setValue(urlValue);
+				const slugValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
+                urlField.setValue(slugValue);
 			}
 
 			const friendlyNameValue = friendlyNameField.getValue() || '';
