@@ -344,3 +344,164 @@ def is_macos() -> bool:
     return platform.system() == "Darwin"
 
 
+def get_workflow_run_annotations(run_id: str, output_file: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """Get workflow run annotations (syntax errors, validation failures, etc.).
+
+    Annotations include GitHub Actions workflow syntax validation errors that are
+    shown in the UI but not in job logs. These can indicate why jobs were skipped
+    or never evaluated.
+
+    Example annotation:
+    {
+        "path": ".github/workflows/cicd_6-release.yml",
+        "start_line": 132,
+        "end_line": 132,
+        "start_column": 24,
+        "end_column": 28,
+        "annotation_level": "failure",
+        "title": "Invalid workflow file",
+        "message": "Unexpected value 'true'",
+        "raw_details": "..."
+    }
+
+    Args:
+        run_id: GitHub Actions run ID
+        output_file: Optional path to save JSON output
+
+    Returns:
+        List of annotation dictionaries
+    """
+    try:
+        # Use gh api to get check runs for the workflow run
+        # First, get the check suite ID from the run
+        run_result = subprocess.run(
+            [
+                "gh", "api",
+                f"/repos/dotCMS/core/actions/runs/{run_id}",
+                "--jq", ".check_suite_id"
+            ],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        check_suite_id = run_result.stdout.strip()
+
+        if not check_suite_id:
+            return []
+
+        # Get check runs for the check suite
+        check_runs_result = subprocess.run(
+            [
+                "gh", "api",
+                f"/repos/dotCMS/core/check-suites/{check_suite_id}/check-runs",
+                "--paginate"
+            ],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        check_runs_data = json.loads(check_runs_result.stdout)
+
+        # Collect all annotations from all check runs
+        all_annotations = []
+        for check_run in check_runs_data.get('check_runs', []):
+            check_run_id = check_run.get('id')
+            if not check_run_id:
+                continue
+
+            # Get annotations for this check run
+            annotations_result = subprocess.run(
+                [
+                    "gh", "api",
+                    f"/repos/dotCMS/core/check-runs/{check_run_id}/annotations",
+                    "--paginate"
+                ],
+                capture_output=True,
+                text=True
+            )
+
+            if annotations_result.returncode == 0 and annotations_result.stdout.strip():
+                try:
+                    annotations = json.loads(annotations_result.stdout)
+                    if isinstance(annotations, list):
+                        all_annotations.extend(annotations)
+                except json.JSONDecodeError:
+                    continue
+
+        if output_file:
+            output_file.write_text(json.dumps(all_annotations, indent=2), encoding='utf-8')
+
+        return all_annotations
+
+    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError) as e:
+        # Return empty list if annotations cannot be fetched
+        # This is not a critical failure - annotations may not exist for all runs
+        return []
+
+
+def get_skipped_jobs(jobs_file: Path) -> List[Dict[str, Any]]:
+    """Get skipped jobs from detailed jobs file.
+
+    Args:
+        jobs_file: Path to jobs JSON file
+
+    Returns:
+        List of skipped job dictionaries
+    """
+    jobs_data = json.loads(jobs_file.read_text(encoding='utf-8'))
+    return [job for job in jobs_data.get('jobs', []) if job.get('conclusion') == 'skipped']
+
+
+def categorize_job_states(jobs_file: Path) -> Dict[str, List[Dict[str, Any]]]:
+    """Categorize jobs by their state.
+
+    Distinguishes between:
+    - failed: Jobs that ran and failed
+    - skipped: Jobs that were intentionally skipped (e.g., due to conditions)
+    - cancelled: Jobs that were cancelled
+    - never_evaluated: Jobs that never ran due to syntax errors or workflow issues
+
+    Args:
+        jobs_file: Path to jobs JSON file
+
+    Returns:
+        Dictionary with categorized jobs
+    """
+    jobs_data = json.loads(jobs_file.read_text(encoding='utf-8'))
+    jobs = jobs_data.get('jobs', [])
+
+    categorized = {
+        'failed': [],
+        'skipped': [],
+        'cancelled': [],
+        'success': [],
+        'in_progress': [],
+        'queued': [],
+        'never_evaluated': []
+    }
+
+    for job in jobs:
+        conclusion = job.get('conclusion')
+        status = job.get('status')
+
+        if conclusion == 'failure':
+            categorized['failed'].append(job)
+        elif conclusion == 'skipped':
+            categorized['skipped'].append(job)
+        elif conclusion == 'cancelled':
+            categorized['cancelled'].append(job)
+        elif conclusion == 'success':
+            categorized['success'].append(job)
+        elif status == 'in_progress':
+            categorized['in_progress'].append(job)
+        elif status == 'queued':
+            categorized['queued'].append(job)
+        else:
+            # Job may have been never evaluated if no conclusion and not in progress/queued
+            if not conclusion and status == 'completed':
+                categorized['never_evaluated'].append(job)
+
+    return categorized
+
+
