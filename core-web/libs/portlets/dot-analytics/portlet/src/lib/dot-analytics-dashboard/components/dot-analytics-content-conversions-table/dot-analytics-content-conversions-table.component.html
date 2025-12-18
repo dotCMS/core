@@ -30,13 +30,6 @@
                             border-radius: 4px;
                         "></div>
                     <div
-                        class="skeleton-cell flex-1"
-                        style="
-                            height: 1.5rem;
-                            background: var(--surface-200);
-                            border-radius: 4px;
-                        "></div>
-                    <div
                         class="skeleton-cell"
                         style="
                             width: 80px;
@@ -94,7 +87,6 @@
                         {{ 'analytics.table.content-conversions.type' | dm }}
                         <p-sortIcon field="eventType" />
                     </th>
-                    <th>{{ 'analytics.table.content-conversions.identifier' | dm }}</th>
                     <th>{{ 'analytics.table.content-conversions.title-column' | dm }}</th>
                     <th class="text-right" pSortableColumn="events">
                         {{ 'analytics.table.content-conversions.count' | dm }}
@@ -118,8 +110,12 @@
                             severity="secondary"
                             [styleClass]="'event-type-badge ' + row.eventType" />
                     </td>
-                    <td class="font-mono text-sm">{{ row.identifier }}</td>
-                    <td>{{ row.title }}</td>
+                    <td>
+                        <div class="content-title-cell">
+                            <div class="content-title">{{ row.title }}</div>
+                            <div class="content-identifier">{{ row.identifier }}</div>
+                        </div>
+                    </td>
                     <td class="text-right">{{ row.events | number }}</td>
                     <td class="text-right text-primary font-semibold">
                         {{ row.conversions | number }}
