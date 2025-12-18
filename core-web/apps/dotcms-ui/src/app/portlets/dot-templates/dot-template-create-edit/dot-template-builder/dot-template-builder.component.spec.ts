@@ -138,33 +138,43 @@ describe('DotTemplateBuilderComponent', () => {
         );
     });
 
-    it('should render advanced editor and forward its outputs', () => {
-        const item = createAdvancedItem({ body: 'ADV_BODY' });
-        spectator.setInput('item', item);
-        spectator.setInput('didTemplateChanged', true);
+    describe('<dot-template-advanced> (dot-template-builder.component.html:18-23)', () => {
+        it('should pass the correct inputs', () => {
+            const item = createAdvancedItem({ body: 'ADV_BODY' });
+            spectator.setInput('item', item);
+            spectator.setInput('didTemplateChanged', true);
 
-        const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
-        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-        const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
+            spectator.detectChanges();
 
-        spectator.detectChanges();
+            const advancedDe = spectator.debugElement.query(By.css('dot-template-advanced'));
+            expect(advancedDe).toBeTruthy();
+            expect(advancedDe.componentInstance.body).toBe('ADV_BODY');
+            expect(advancedDe.componentInstance.didTemplateChanged).toBe(true);
+        });
 
-        const advancedDe = spectator.debugElement.query(By.css('dot-template-advanced'));
-        expect(advancedDe).toBeTruthy();
-        expect(advancedDe.componentInstance.body).toBe('ADV_BODY');
-        expect(advancedDe.componentInstance.didTemplateChanged).toBe(true);
+        it('should forward outputs', () => {
+            const item = createAdvancedItem({ body: 'ADV_BODY' });
+            spectator.setInput('item', item);
+            spectator.setInput('didTemplateChanged', true);
 
-        const updated = createAdvancedItem({ identifier: 'new-id' });
-        spectator.triggerEventHandler('dot-template-advanced', 'updateTemplate', updated);
-        spectator.triggerEventHandler('dot-template-advanced', 'save', updated);
-        spectator.triggerEventHandler('dot-template-advanced', 'cancel', null);
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
 
-        expect(updateSpy).toHaveBeenCalledWith(updated);
-        expect(saveSpy).toHaveBeenCalledWith(updated);
-        expect(cancelSpy).toHaveBeenCalled();
+            spectator.detectChanges();
+
+            const updated = createAdvancedItem({ identifier: 'new-id' });
+            spectator.triggerEventHandler('dot-template-advanced', 'updateTemplate', updated);
+            spectator.triggerEventHandler('dot-template-advanced', 'save', updated);
+            spectator.triggerEventHandler('dot-template-advanced', 'cancel', null);
+
+            expect(updateSpy).toHaveBeenCalledWith(updated);
+            expect(saveSpy).toHaveBeenCalledWith(updated);
+            expect(cancelSpy).toHaveBeenCalled();
+        });
     });
 
-    describe('<dotcms-template-builder-lib>', () => {
+    describe('<dotcms-template-builder-lib> (dot-template-builder.component.html:26-37)', () => {
         it('should pass the correct inputs', () => {
             const item = createDesignItem({
                 identifier: 'id-1',
