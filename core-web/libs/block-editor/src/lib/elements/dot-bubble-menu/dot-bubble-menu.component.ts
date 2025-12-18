@@ -35,6 +35,7 @@ import { DotImageEditorPopoverComponent } from './components/dot-image-editor-po
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
 import { getContentletDataFromSelection } from './utils';
 
+import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../../extensions/ai-content-prompt/ai-content-prompt.extension';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions/ai-image-prompt/ai-image-prompt.extension';
 import {
     codeIcon,
@@ -99,7 +100,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected readonly showImageMenu = computed(() => this.currentNodeType() === 'dotImage');
     protected readonly showContentMenu = computed(() => this.currentNodeType() === 'dotContent');
 
-    protected nodeTypeOptions = [
+    protected nodeTypeOptions: NodeTypeOption[] = [
         {
             name: 'Paragraph',
             value: 'paragraph',
@@ -108,42 +109,42 @@ export class DotBubbleMenuComponent implements OnInit {
         },
         {
             name: 'Heading 1',
-            value: 'heading-1',
+            value: 'heading1',
             icon: headerIcons[0],
             command: () =>
                 this.editor().chain().focus().clearNodes().toggleHeading({ level: 1 }).run()
         },
         {
             name: 'Heading 2',
-            value: 'heading-2',
+            value: 'heading2',
             icon: headerIcons[1],
             command: () =>
                 this.editor().chain().focus().clearNodes().toggleHeading({ level: 2 }).run()
         },
         {
             name: 'Heading 3',
-            value: 'heading-3',
+            value: 'heading3',
             icon: headerIcons[2],
             command: () =>
                 this.editor().chain().focus().clearNodes().toggleHeading({ level: 3 }).run()
         },
         {
             name: 'Heading 4',
-            value: 'heading-4',
+            value: 'heading4',
             icon: headerIcons[3],
             command: () =>
                 this.editor().chain().focus().clearNodes().toggleHeading({ level: 4 }).run()
         },
         {
             name: 'Heading 5',
-            value: 'heading-5',
+            value: 'heading5',
             icon: headerIcons[4],
             command: () =>
                 this.editor().chain().focus().clearNodes().toggleHeading({ level: 5 }).run()
         },
         {
             name: 'Heading 6',
-            value: 'heading-6',
+            value: 'heading6',
             icon: headerIcons[5],
             command: () =>
                 this.editor().chain().focus().clearNodes().toggleHeading({ level: 6 }).run()
@@ -205,15 +206,18 @@ export class DotBubbleMenuComponent implements OnInit {
     };
 
     ngOnInit() {
+        // Initial filter without AI entries
+        this.nodeTypeOptions = this.filterByAllowed(this.nodeTypeOptions);
+
         this.dotAiService
             .checkPluginInstallation()
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((isInstalled) => {
                 if (isInstalled) {
-                    this.nodeTypeOptions = [
+                    const withAI = [
                         {
                             name: 'AI Content',
-                            value: 'aiContent',
+                            value: AI_CONTENT_PROMPT_EXTENSION_NAME,
                             icon: listStarsIcon,
                             command: () =>
                                 this.editor().chain().focus().clearNodes().openAIPrompt().run()
@@ -227,6 +231,8 @@ export class DotBubbleMenuComponent implements OnInit {
                         },
                         ...this.nodeTypeOptions
                     ];
+
+                    this.nodeTypeOptions = this.filterByAllowed(withAI);
                 }
             });
     }
@@ -360,13 +366,22 @@ export class DotBubbleMenuComponent implements OnInit {
         const currentNodeType = getCurrentLeafBlock(this.editor());
         const baseNodeType = currentNodeType.startsWith('heading') ? 'heading' : currentNodeType;
 
-        // For the dropdown, we need the heading with the level. E.g. heading-1, heading-2, etc.
+        // For the dropdown, we need the heading with the level. E.g. heading1, heading2, etc.
         const foundOption = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
 
         // Use the found reference or the first item's reference
         this.dropdownItem.set(foundOption ?? this.nodeTypeOptions[0]);
         this.currentNodeType.set(baseNodeType);
         this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType]);
+    }
+
+    /**
+     * Filters node type options against the allowedBlocks list from editor config.
+     * If allowedBlocks is not provided or empty, returns the options unchanged.
+     */
+    private filterByAllowed(options: NodeTypeOption[]): NodeTypeOption[] {
+        const allowedBlocks = this.editor().storage.dotConfig?.allowedBlocks || [];
+        return options.filter((opt) => allowedBlocks.includes(opt.value));
     }
 
     /**
