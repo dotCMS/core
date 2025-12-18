@@ -394,46 +394,17 @@ public class ResourceCollectorUtil {
          * @return String Java version
          */
         private static String majorVersionToJavaVersion(final int majorVersion) {
-            switch (majorVersion) {
-                case 65:
-                    return "Java 21";
-                case 64:
-                    return "Java 20";
-                case 63:
-                    return "Java 19";
-                case 62:
-                    return "Java 18";
-                case 61:
-                    return "Java 17";
-                case 60:
-                    return "Java 16";
-                case 59:
-                    return "Java 15";
-                case 58:
-                    return "Java 14";
-                case 57:
-                    return "Java 13";
-                case 56:
-                    return "Java 12";
-                case 55:
-                    return "Java 11";
-                case 54:
-                    return "Java 10";
-                case 53:
-                    return "Java 9";
-                case 52:
-                    return "Java 8";
-                case 51:
-                    return "Java 7";
-                case 50:
-                    return "Java 6";
-                case 49:
-                    return "Java 5";
-                case 48:
-                    return "Java 1.4";
-                default:
-                    return majorVersion >= 45 ? "Java " + (majorVersion - 44) : "Unknown (version " + majorVersion + ")";
+            // Handle legacy Java 1.4 naming convention
+            if (majorVersion == 48) {
+                return "Java 1.4";
             }
+            // Formula works for Java 5+ (version 49+)
+            // Java 21 = 65, Java 22 = 66, etc.
+            // majorVersion - 44 = Java version number
+            if (majorVersion >= 45) {
+                return "Java " + (majorVersion - 44);
+            }
+            return "Unknown (version " + majorVersion + ")";
         }
     }
 
