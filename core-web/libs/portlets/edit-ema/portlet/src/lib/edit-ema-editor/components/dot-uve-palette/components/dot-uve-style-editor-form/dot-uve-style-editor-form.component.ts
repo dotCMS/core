@@ -34,8 +34,7 @@ import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor
         UveStyleEditorFieldDropdownComponent,
         UveStyleEditorFieldCheckboxGroupComponent,
         UveStyleEditorFieldRadioComponent
-    ],
-    standalone: true
+    ]
 })
 export class DotUveStyleEditorFormComponent {
     $schema = input.required<StyleEditorFormSchema>({ alias: 'schema' });
@@ -46,22 +45,12 @@ export class DotUveStyleEditorFormComponent {
     $sections = computed(() => this.$schema().sections);
     $form = computed(() => this.#form());
 
-    constructor() {
-        // Rebuild form whenever schema changes
-        effect(() => {
-            const schema = this.$schema();
-            if (schema) {
-                this.#buildForm(schema);
-            }
-        });
-    }
-
-    printFormValues(): void {
-        const form = this.#form();
-        if (form) {
-            console.log('Form Values:', form.value); // eslint-disable-line no-console
+    $reloadSchemaEffect = effect(() => {
+        const schema = this.$schema();
+        if (schema) {
+            this.#buildForm(schema);
         }
-    }
+    });
 
     #buildForm(schema: StyleEditorFormSchema): void {
         const formControls: Record<string, AbstractControl> = {};
