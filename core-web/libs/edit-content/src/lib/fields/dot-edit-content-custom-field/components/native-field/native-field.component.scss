@@ -55,14 +55,12 @@
             }
         }
 
-        // Textarea - ajustes específicos
         textarea {
             padding: $spacing-1;
             min-height: 4rem;
             resize: vertical;
         }
 
-        // Select - estilos adicionales
         select {
             cursor: pointer;
             appearance: none;
@@ -72,7 +70,6 @@
             padding-right: $spacing-6;
         }
 
-        // Botones - Estilos básicos consistentes con PrimeNG
         button:not(.p-button),
         input[type="button"],
         input[type="submit"],

@@ -540,12 +540,218 @@ def extract_error_keywords(log_file: Path) -> str:
     return " ".join(keywords)
 
 
-def present_complete_diagnostic(log_file: Path) -> str:
+def present_workflow_annotations(annotations_file: Path) -> str:
+    """Present workflow run annotations (syntax errors, validation failures).
+
+    Args:
+        annotations_file: Path to annotations JSON file
+
+    Returns:
+        Formatted annotations string
+    """
+    if not annotations_file.exists():
+        return "=== WORKFLOW ANNOTATIONS ===\n\nNo annotations file found (run fetch-annotations.py to check for syntax errors)"
+
+    try:
+        annotations = json.loads(annotations_file.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, IOError):
+        return "=== WORKFLOW ANNOTATIONS ===\n\nError reading annotations file"
+
+    output = []
+    output.append("=== WORKFLOW ANNOTATIONS ===")
+    output.append("")
+
+    if not annotations:
+        output.append("✅ No workflow syntax errors or validation failures detected")
+        output.append("")
+        output.append("All jobs were evaluated normally. If jobs were skipped, it was due to")
+        output.append("conditional logic (if/needs), not workflow file syntax errors.")
+        return "\n".join(output)
+
+    # We have annotations - this is critical!
+    output.append(f"🚨 CRITICAL: Found {len(annotations)} workflow annotation(s)")
+    output.append("")
+    output.append("Workflow annotations indicate syntax errors or validation failures in the")
+    output.append("workflow YAML file. These errors prevent jobs from being evaluated and")
+    output.append("are visible in the GitHub UI but NOT in job logs.")
+    output.append("")
+
+    # Group by severity
+    by_level = {}
+    for annotation in annotations:
+        level = annotation.get('annotation_level', 'unknown')
+        if level not in by_level:
+            by_level[level] = []
+        by_level[level].append(annotation)
+
+    # Display failures first (most critical)
+    for level in ['failure', 'error', 'warning', 'notice', 'unknown']:
+        if level not in by_level:
+            continue
+
+        level_annotations = by_level[level]
+        output.append(f"{'=' * 40}")
+        output.append(f"{level.upper()} ({len(level_annotations)} annotation(s))")
+        output.append(f"{'=' * 40}")
+        output.append("")
+
+        for i, annotation in enumerate(level_annotations, 1):
+            path = annotation.get('path', 'unknown')
+            line = annotation.get('start_line', '?')
+            col = annotation.get('start_column', '?')
+            end_line = annotation.get('end_line', line)
+            title = annotation.get('title', 'No title')
+            message = annotation.get('message', 'No message')
+            raw_details = annotation.get('raw_details', '')
+
+            output.append(f"Annotation {i}:")
+            output.append(f"  File: {path}")
+            output.append(f"  Location: Line {line}, Col {col}" + (f" - Line {end_line}" if end_line != line else ""))
+            output.append(f"  Title: {title}")
+            output.append(f"  Message: {message}")
+
+            if raw_details:
+                output.append(f"  Details:")
+                # Indent raw details
+                for detail_line in raw_details.split('\n')[:10]:  # Limit to 10 lines
+                    output.append(f"    {detail_line}")
+
+            output.append("")
+
+    output.append("=" * 80)
+    output.append("IMPACT ANALYSIS")
+    output.append("=" * 80)
+    output.append("")
+    output.append("When workflow syntax errors exist:")
+    output.append("  • Jobs may be marked as 'skipped' even though they never ran")
+    output.append("  • The workflow run may show as 'completed' despite not running all jobs")
+    output.append("  • Error details are ONLY visible via annotations API, not in logs")
+    output.append("  • Fix the syntax error and re-run the workflow")
+    output.append("")
+
+    return "\n".join(output)
+
+
+def present_job_state_analysis(jobs_file: Path, annotations_file: Optional[Path] = None) -> str:
+    """Present analysis of job states (failed/skipped/never-evaluated).
+
+    Args:
+        jobs_file: Path to jobs JSON file
+        annotations_file: Optional path to annotations JSON file
+
+    Returns:
+        Formatted job state analysis string
+    """
+    try:
+        jobs_data = json.loads(jobs_file.read_text(encoding='utf-8'))
+        jobs = jobs_data.get('jobs', [])
+    except (json.JSONDecodeError, IOError):
+        return "=== JOB STATE ANALYSIS ===\n\nError reading jobs file"
+
+    # Check for annotations
+    has_syntax_errors = False
+    if annotations_file and annotations_file.exists():
+        try:
+            annotations = json.loads(annotations_file.read_text(encoding='utf-8'))
+            has_syntax_errors = len(annotations) > 0
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    output = []
+    output.append("=== JOB STATE ANALYSIS ===")
+    output.append("")
+
+    # Categorize jobs
+    categorized = {
+        'failed': [],
+        'skipped': [],
+        'cancelled': [],
+        'success': [],
+        'in_progress': [],
+        'queued': [],
+        'other': []
+    }
+
+    for job in jobs:
+        conclusion = job.get('conclusion')
+        status = job.get('status')
+        job_summary = {
+            'name': job.get('name', 'Unknown'),
+            'id': job.get('id'),
+            'conclusion': conclusion,
+            'status': status
+        }
+
+        if conclusion == 'failure':
+            categorized['failed'].append(job_summary)
+        elif conclusion == 'skipped':
+            categorized['skipped'].append(job_summary)
+        elif conclusion == 'cancelled':
+            categorized['cancelled'].append(job_summary)
+        elif conclusion == 'success':
+            categorized['success'].append(job_summary)
+        elif status == 'in_progress':
+            categorized['in_progress'].append(job_summary)
+        elif status == 'queued':
+            categorized['queued'].append(job_summary)
+        else:
+            categorized['other'].append(job_summary)
+
+    # Display summary
+    total_jobs = len(jobs)
+    output.append(f"Total jobs: {total_jobs}")
+    output.append("")
+
+    for category, job_list in categorized.items():
+        if job_list:
+            emoji = {
+                'failed': '❌',
+                'skipped': '⏭️',
+                'cancelled': '🚫',
+                'success': '✅',
+                'in_progress': '⏳',
+                'queued': '⏸️',
+                'other': '❓'
+            }.get(category, '•')
+
+            output.append(f"{emoji} {category.upper()}: {len(job_list)}")
+            for job in job_list:
+                output.append(f"   - {job['name']} (ID: {job['id']})")
+            output.append("")
+
+    # Analyze skipped jobs in context of syntax errors
+    if categorized['skipped'] and has_syntax_errors:
+        output.append("=" * 80)
+        output.append("⚠️  CRITICAL FINDING: SKIPPED JOBS + WORKFLOW SYNTAX ERRORS")
+        output.append("=" * 80)
+        output.append("")
+        output.append(f"Found {len(categorized['skipped'])} skipped job(s) AND workflow syntax errors.")
+        output.append("")
+        output.append("These jobs were likely skipped due to the syntax errors in the workflow file,")
+        output.append("NOT due to normal conditional logic (if/needs). The workflow syntax error")
+        output.append("prevented these jobs from being evaluated at all.")
+        output.append("")
+        output.append("ACTION REQUIRED:")
+        output.append("1. Review workflow annotations above for specific syntax errors")
+        output.append("2. Fix the syntax error in the workflow YAML file")
+        output.append("3. Re-run the workflow after fixing")
+        output.append("")
+
+    elif categorized['skipped'] and not has_syntax_errors:
+        output.append("ℹ️  Jobs were skipped due to normal conditional logic (if/needs),")
+        output.append("   not workflow syntax errors.")
+        output.append("")
+
+    return "\n".join(output)
+
+
+def present_complete_diagnostic(log_file: Path, workspace: Optional[Path] = None) -> str:
     """Present complete diagnostic package for AI.
-    
+
     Args:
         log_file: Path to log file
-        
+        workspace: Optional workspace path for checking annotations
+
     Returns:
         Complete diagnostic string
     """
@@ -554,33 +760,57 @@ def present_complete_diagnostic(log_file: Path) -> str:
     output.append("COMPLETE DIAGNOSTIC EVIDENCE")
     output.append("=" * 80)
     output.append("")
-    
+
+    # 0. Check for workflow annotations first (critical for understanding skipped jobs)
+    if workspace:
+        annotations_file = workspace / "annotations.json"
+        jobs_file = workspace / "jobs-detailed.json"
+
+        if annotations_file.exists() or jobs_file.exists():
+            output.append("=" * 80)
+            output.append("STEP 0: WORKFLOW-LEVEL ISSUES (Check First!)")
+            output.append("=" * 80)
+            output.append("")
+            output.append("Checking for workflow syntax errors and job state issues...")
+            output.append("These issues explain why jobs may have been skipped or never run.")
+            output.append("")
+
+            if annotations_file.exists():
+                output.append(present_workflow_annotations(annotations_file))
+                output.append("")
+                output.append("")
+
+            if jobs_file.exists():
+                output.append(present_job_state_analysis(jobs_file, annotations_file if annotations_file.exists() else None))
+                output.append("")
+                output.append("")
+
     # 1. Failure evidence
     output.append(present_failure_evidence(log_file))
     output.append("")
     output.append("")
-    
+
     # 2. First error context
     output.append(get_first_error_context(log_file))
     output.append("")
     output.append("")
-    
+
     # 3. Timeline
     output.append(get_failure_timeline(log_file))
     output.append("")
     output.append("")
-    
+
     # 4. Known issues
     test_name = extract_test_name(log_file)
     if test_name:
         error_keywords = extract_error_keywords(log_file)
         output.append(present_known_issues(test_name, error_keywords))
-    
+
     output.append("")
     output.append("=" * 80)
     output.append("END DIAGNOSTIC EVIDENCE - READY FOR AI ANALYSIS")
     output.append("=" * 80)
-    
+
     return "\n".join(output)
 
 
