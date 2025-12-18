@@ -82,28 +82,14 @@ export class DotAnalyticsDashboardChartComponent {
      * A combo chart has datasets with different types or uses yAxisID.
      */
     protected readonly $isComboChart = computed(() => {
-        const data = this.$data();
-        if (!data?.datasets || data.datasets.length < 2) {
-            return false;
-        }
+        const datasets = (this.$data()?.datasets as ComboChartDataset[]) || [];
+        if (datasets.length < 2) return false;
 
-        const datasets = data.datasets as ComboChartDataset[];
-
-        // Check if any dataset has yAxisID (dual Y-axes)
-        const hasYAxisID = datasets.some((ds) => ds.yAxisID);
-        if (hasYAxisID) {
-            return true;
-        }
-
-        // Check if datasets have different types
-        const types = datasets.map((ds) => ds.type).filter(Boolean);
-        if (types.length > 1) {
-            const uniqueTypes = new Set(types);
-
-            return uniqueTypes.size > 1;
-        }
-
-        return false;
+        // Has yAxisID OR multiple unique types
+        return (
+            datasets.some((ds) => ds.yAxisID) ||
+            new Set(datasets.map((ds) => ds.type).filter(Boolean)).size > 1
+        );
     });
 
     /** Chart height determined automatically by chart type */

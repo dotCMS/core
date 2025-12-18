@@ -22,7 +22,7 @@ import {
     RequestState,
     TimeRangeInput,
     TopPagePerformanceEntity,
-    TopPerformaceTableEntity,
+    TopPerformanceTableEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
@@ -44,7 +44,7 @@ export interface PageviewState {
     topPagePerformance: RequestState<TopPagePerformanceEntity>;
     pageViewTimeLine: RequestState<PageViewTimeLineEntity[]>;
     pageViewDeviceBrowsers: RequestState<PageViewDeviceBrowsersEntity[]>;
-    topPagesTable: RequestState<TopPerformaceTableEntity[]>;
+    topPagesTable: RequestState<TopPerformanceTableEntity[]>;
 }
 
 /**
@@ -386,33 +386,35 @@ export function withPageview() {
                                 .limit(DEFAULT_COUNT_LIMIT)
                                 .build();
 
-                            return analyticsService.cubeQuery<TopPerformaceTableEntity>(query).pipe(
-                                tapResponse(
-                                    (data) => {
-                                        patchState(store, {
-                                            topPagesTable: {
-                                                status: ComponentStatus.LOADED,
-                                                data,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.top-pages-table'
-                                            );
-                                        patchState(store, {
-                                            topPagesTable: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
-                                )
-                            );
+                            return analyticsService
+                                .cubeQuery<TopPerformanceTableEntity>(query)
+                                .pipe(
+                                    tapResponse(
+                                        (data) => {
+                                            patchState(store, {
+                                                topPagesTable: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        (error: HttpErrorResponse) => {
+                                            const errorMessage =
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.top-pages-table'
+                                                );
+                                            patchState(store, {
+                                                topPagesTable: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error: errorMessage
+                                                }
+                                            });
+                                        }
+                                    )
+                                );
                         })
                     )
                 )

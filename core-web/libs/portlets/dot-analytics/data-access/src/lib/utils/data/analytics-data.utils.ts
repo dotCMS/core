@@ -24,7 +24,7 @@ import {
     TimeRangeCubeJS,
     TimeRangeInput,
     TopPagePerformanceEntity,
-    TopPerformaceTableEntity,
+    TopPerformanceTableEntity,
     TotalConversionsEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
@@ -182,10 +182,10 @@ export const aggregateTotalConversions = (
 };
 
 /**
- * Transforms TopPerformaceTableEntity array to table-friendly format
+ * Transforms TopPerformanceTableEntity array to table-friendly format
  */
 export const transformTopPagesTableData = (
-    data: TopPerformaceTableEntity[] | null
+    data: TopPerformanceTableEntity[] | null
 ): TablePageData[] => {
     if (!data || !Array.isArray(data)) {
         return [];

@@ -120,14 +120,32 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
         it('should display content data correctly', () => {
             const firstRowCells = spectator.queryAll('p-table tbody tr')[0].querySelectorAll('td');
 
-            expect(firstRowCells[1].textContent?.trim()).toBe(mockData[0].identifier);
-            expect(firstRowCells[2].textContent?.trim()).toBe(mockData[0].title);
+            // Column 0: Event Type badge
+            expect(firstRowCells[0].querySelector('p-tag')).toBeTruthy();
+
+            // Column 1: Title cell contains both title and identifier
+            const titleCell = firstRowCells[1];
+            expect(titleCell.querySelector('.content-title')?.textContent?.trim()).toBe(
+                mockData[0].title
+            );
+            expect(titleCell.querySelector('.content-identifier')?.textContent?.trim()).toBe(
+                mockData[0].identifier
+            );
+
+            // Column 2: Events count
+            expect(firstRowCells[2].textContent?.trim()).toBe(mockData[0].events.toString());
+
+            // Column 3: Conversions
+            expect(firstRowCells[3].textContent?.trim()).toBe(mockData[0].conversions.toString());
+
+            // Column 4: Conversion Rate
+            expect(firstRowCells[4].textContent?.trim()).toContain('25.5');
         });
 
         it('should display header columns', () => {
             const headers = spectator.queryAll('p-table thead th');
 
-            expect(headers.length).toBe(6);
+            expect(headers.length).toBe(5);
         });
     });
 });

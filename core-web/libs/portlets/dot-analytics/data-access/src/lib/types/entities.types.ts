@@ -28,7 +28,7 @@ export interface TopPagePerformanceEntity {
 /**
  * Top performance table entity response
  */
-export interface TopPerformaceTableEntity {
+export interface TopPerformanceTableEntity {
     'EventSummary.totalEvents': string;
     'EventSummary.title': string;
     'EventSummary.identifier': string;

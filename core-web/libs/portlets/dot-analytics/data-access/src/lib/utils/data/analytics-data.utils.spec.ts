@@ -23,7 +23,7 @@ import type {
     TablePageData,
     TimeRange,
     TopPagePerformanceEntity,
-    TopPerformaceTableEntity,
+    TopPerformanceTableEntity,
     TotalConversionsEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
@@ -59,7 +59,7 @@ describe('Analytics Data Utils', () => {
         describe('extractPageViews', () => {
             it('should extract page views from valid data', () => {
                 const mockData: TotalPageViewsEntity = {
-                    'request.totalRequest': '1250'
+                    'EventSummary.totalEvents': '1250'
                 };
 
                 const result = extractPageViews(mockData);
@@ -80,7 +80,7 @@ describe('Analytics Data Utils', () => {
 
             it('should handle string numbers correctly', () => {
                 const mockData: TotalPageViewsEntity = {
-                    'request.totalRequest': '5000'
+                    'EventSummary.totalEvents': '5000'
                 };
 
                 const result = extractPageViews(mockData);
@@ -91,7 +91,7 @@ describe('Analytics Data Utils', () => {
         describe('extractSessions', () => {
             it('should extract sessions from valid data', () => {
                 const mockData: UniqueVisitorsEntity = {
-                    'request.totalUsers': '342'
+                    'EventSummary.uniqueVisitors': '342'
                 };
 
                 const result = extractSessions(mockData);
@@ -114,9 +114,9 @@ describe('Analytics Data Utils', () => {
         describe('extractTopPageValue', () => {
             it('should extract top page value from valid data', () => {
                 const mockData: TopPagePerformanceEntity = {
-                    'request.totalRequest': '890',
-                    'request.pageTitle': 'Home Page',
-                    'request.path': '/home'
+                    'EventSummary.totalEvents': '890',
+                    'EventSummary.title': 'Home Page',
+                    'EventSummary.identifier': '/home'
                 };
 
                 const result = extractTopPageValue(mockData);
@@ -130,8 +130,8 @@ describe('Analytics Data Utils', () => {
 
             it('should return NaN when totalRequest is missing', () => {
                 const mockData: Partial<TopPagePerformanceEntity> = {
-                    'request.pageTitle': 'Home Page',
-                    'request.path': '/home'
+                    'EventSummary.title': 'Home Page',
+                    'EventSummary.identifier': '/home'
                 };
 
                 const result = extractTopPageValue(mockData as TopPagePerformanceEntity);
@@ -142,9 +142,9 @@ describe('Analytics Data Utils', () => {
         describe('extractPageTitle', () => {
             it('should extract page title from valid data', () => {
                 const mockData: TopPagePerformanceEntity = {
-                    'request.totalRequest': '100',
-                    'request.pageTitle': 'Home Page',
-                    'request.path': '/home'
+                    'EventSummary.totalEvents': '100',
+                    'EventSummary.title': 'Home Page',
+                    'EventSummary.identifier': '/home'
                 };
 
                 const result = extractPageTitle(mockData);
@@ -158,8 +158,8 @@ describe('Analytics Data Utils', () => {
 
             it('should return default message when pageTitle is missing', () => {
                 const mockData: Partial<TopPagePerformanceEntity> = {
-                    'request.totalRequest': '100',
-                    'request.path': '/home'
+                    'EventSummary.totalEvents': '100',
+                    'EventSummary.identifier': '/home'
                 };
 
                 const result = extractPageTitle(mockData as TopPagePerformanceEntity);
@@ -168,9 +168,9 @@ describe('Analytics Data Utils', () => {
 
             it('should return default message when pageTitle is empty', () => {
                 const mockData: TopPagePerformanceEntity = {
-                    'request.totalRequest': '100',
-                    'request.pageTitle': '',
-                    'request.path': '/home'
+                    'EventSummary.totalEvents': '100',
+                    'EventSummary.title': '',
+                    'EventSummary.identifier': '/home'
                 };
 
                 const result = extractPageTitle(mockData);
@@ -267,16 +267,16 @@ describe('Analytics Data Utils', () => {
     describe('Transformation Functions', () => {
         describe('transformTopPagesTableData', () => {
             it('should transform valid table data correctly', () => {
-                const mockData: TopPerformaceTableEntity[] = [
+                const mockData: TopPerformanceTableEntity[] = [
                     {
-                        'request.pageTitle': 'Home Page',
-                        'request.path': '/home',
-                        'request.totalRequest': '1250'
+                        'EventSummary.title': 'Home Page',
+                        'EventSummary.identifier': '/home',
+                        'EventSummary.totalEvents': '1250'
                     },
                     {
-                        'request.pageTitle': 'About Us',
-                        'request.path': '/about',
-                        'request.totalRequest': '890'
+                        'EventSummary.title': 'About Us',
+                        'EventSummary.identifier': '/about',
+                        'EventSummary.totalEvents': '890'
                     }
                 ];
 
@@ -304,19 +304,19 @@ describe('Analytics Data Utils', () => {
 
             it('should return empty array when data is not an array', () => {
                 const result = transformTopPagesTableData(
-                    {} as unknown as TopPerformaceTableEntity[]
+                    {} as unknown as TopPerformanceTableEntity[]
                 );
                 expect(result).toEqual([]);
             });
 
             it('should handle missing fields with defaults', () => {
-                const mockData: Partial<TopPerformaceTableEntity>[] = [
+                const mockData: Partial<TopPerformanceTableEntity>[] = [
                     {
-                        'request.totalRequest': '500'
+                        'EventSummary.totalEvents': '500'
                     }
                 ];
 
-                const result = transformTopPagesTableData(mockData as TopPerformaceTableEntity[]);
+                const result = transformTopPagesTableData(mockData as TopPerformanceTableEntity[]);
                 const expected: TablePageData[] = [
                     {
                         pageTitle: 'analytics.table.data.not-available',
@@ -338,14 +338,14 @@ describe('Analytics Data Utils', () => {
             it('should transform valid timeline data correctly', () => {
                 const mockData: PageViewTimeLineEntity[] = [
                     {
-                        'request.createdAt': '2023-12-01T00:00:00Z',
-                        'request.createdAt.day': '2023-12-01',
-                        'request.totalRequest': '100'
+                        'EventSummary.day': '2023-12-01T00:00:00Z',
+                        'EventSummary.day.day': '2023-12-01',
+                        'EventSummary.totalEvents': '100'
                     },
                     {
-                        'request.createdAt': '2023-12-02T00:00:00Z',
-                        'request.createdAt.day': '2023-12-02',
-                        'request.totalRequest': '150'
+                        'EventSummary.day': '2023-12-02T00:00:00Z',
+                        'EventSummary.day.day': '2023-12-02',
+                        'EventSummary.totalEvents': '150'
                     }
                 ];
 
@@ -382,19 +382,19 @@ describe('Analytics Data Utils', () => {
             it('should sort data by date correctly', () => {
                 const mockData: PageViewTimeLineEntity[] = [
                     {
-                        'request.createdAt': '2023-12-03T00:00:00Z',
-                        'request.createdAt.day': '2023-12-03',
-                        'request.totalRequest': '200'
+                        'EventSummary.day': '2023-12-03T00:00:00Z',
+                        'EventSummary.day.day': '2023-12-03',
+                        'EventSummary.totalEvents': '200'
                     },
                     {
-                        'request.createdAt': '2023-12-01T00:00:00Z',
-                        'request.createdAt.day': '2023-12-01',
-                        'request.totalRequest': '100'
+                        'EventSummary.day': '2023-12-01T00:00:00Z',
+                        'EventSummary.day.day': '2023-12-01',
+                        'EventSummary.totalEvents': '100'
                     },
                     {
-                        'request.createdAt': '2023-12-02T00:00:00Z',
-                        'request.createdAt.day': '2023-12-02',
-                        'request.totalRequest': '150'
+                        'EventSummary.day': '2023-12-02T00:00:00Z',
+                        'EventSummary.day.day': '2023-12-02',
+                        'EventSummary.totalEvents': '150'
                     }
                 ];
 
@@ -407,8 +407,8 @@ describe('Analytics Data Utils', () => {
             it('should handle missing totalRequest fields', () => {
                 const mockData: Partial<PageViewTimeLineEntity>[] = [
                     {
-                        'request.createdAt': '2023-12-01T00:00:00Z',
-                        'request.createdAt.day': '2023-12-01'
+                        'EventSummary.day': '2023-12-01T00:00:00Z',
+                        'EventSummary.day.day': '2023-12-01'
                     }
                 ];
 
@@ -423,25 +423,25 @@ describe('Analytics Data Utils', () => {
                     const baseDate = new Date('2023-12-01T12:00:00'); // Local time, midday
                     const mockData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': new Date(
+                            'EventSummary.day': new Date(
                                 baseDate.getTime() - 3 * 60 * 60 * 1000
                             ).toISOString(), // 9 AM
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '100'
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': new Date(
+                            'EventSummary.day': new Date(
                                 baseDate.getTime() + 2 * 60 * 60 * 1000
                             ).toISOString(), // 2 PM
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '150'
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '150'
                         },
                         {
-                            'request.createdAt': new Date(
+                            'EventSummary.day': new Date(
                                 baseDate.getTime() + 6 * 60 * 60 * 1000
                             ).toISOString(), // 6 PM
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '200'
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '200'
                         }
                     ];
 
@@ -459,19 +459,19 @@ describe('Analytics Data Utils', () => {
                 it('should format labels as short date when data spans multiple days', () => {
                     const mockData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': '2023-12-01T12:00:00',
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '100'
+                            'EventSummary.day': '2023-12-01T12:00:00',
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': '2023-12-02T12:00:00',
-                            'request.createdAt.day': '2023-12-02',
-                            'request.totalRequest': '150'
+                            'EventSummary.day': '2023-12-02T12:00:00',
+                            'EventSummary.day.day': '2023-12-02',
+                            'EventSummary.totalEvents': '150'
                         },
                         {
-                            'request.createdAt': '2023-12-03T12:00:00',
-                            'request.createdAt.day': '2023-12-03',
-                            'request.totalRequest': '200'
+                            'EventSummary.day': '2023-12-03T12:00:00',
+                            'EventSummary.day.day': '2023-12-03',
+                            'EventSummary.totalEvents': '200'
                         }
                     ];
 
@@ -492,14 +492,14 @@ describe('Analytics Data Utils', () => {
 
                     const sameDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': startOfDay(baseDate).toISOString(), // startOfDay
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '50'
+                            'EventSummary.day': startOfDay(baseDate).toISOString(), // startOfDay
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '50'
                         },
                         {
-                            'request.createdAt': endOfDay(baseDate).toISOString(), // endOfDay
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '75'
+                            'EventSummary.day': endOfDay(baseDate).toISOString(), // endOfDay
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '75'
                         }
                     ];
 
@@ -517,14 +517,14 @@ describe('Analytics Data Utils', () => {
                     // Use dates that will definitely be different days even after timezone conversion
                     const twoDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': '2023-12-01T12:00:00.000', // Noon UTC - safe for most timezones
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '100'
+                            'EventSummary.day': '2023-12-01T12:00:00.000', // Noon UTC - safe for most timezones
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': '2023-12-03T12:00:00.000', // Two days later at noon UTC
-                            'request.createdAt.day': '2023-12-03',
-                            'request.totalRequest': '120'
+                            'EventSummary.day': '2023-12-03T12:00:00.000', // Two days later at noon UTC
+                            'EventSummary.day.day': '2023-12-03',
+                            'EventSummary.totalEvents': '120'
                         }
                     ];
 
@@ -543,19 +543,19 @@ describe('Analytics Data Utils', () => {
                     const baseDate = startOfDay(new Date('2023-12-01T12:00:00'));
                     const unorderedSameDayData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': addHours(baseDate, 7).toISOString(), // 7am
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '200'
+                            'EventSummary.day': addHours(baseDate, 7).toISOString(), // 7am
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '200'
                         },
                         {
-                            'request.createdAt': addHours(baseDate, 1).toISOString(), // 1am
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '100'
+                            'EventSummary.day': addHours(baseDate, 1).toISOString(), // 1am
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': addHours(baseDate, 13).toISOString(), // 3pm
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '150'
+                            'EventSummary.day': addHours(baseDate, 13).toISOString(), // 3pm
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '150'
                         }
                     ];
 
@@ -577,14 +577,14 @@ describe('Analytics Data Utils', () => {
                     // These should be converted to user's local timezone
                     const mockData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': '2023-12-01T14:00:00.000', // 2 PM UTC (from endpoint format)
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '100'
+                            'EventSummary.day': '2023-12-01T14:00:00.000', // 2 PM UTC (from endpoint format)
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': '2023-12-01T18:30:00.000', // 6:30 PM UTC (from endpoint format)
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '150'
+                            'EventSummary.day': '2023-12-01T18:30:00.000', // 6:30 PM UTC (from endpoint format)
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '150'
                         }
                     ];
 
@@ -606,14 +606,14 @@ describe('Analytics Data Utils', () => {
                 it('should handle dates across different days in local timezone', () => {
                     const mockData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': '2023-12-01T22:00:00.000', // 10 PM UTC (endpoint format)
-                            'request.createdAt.day': '2023-12-01',
-                            'request.totalRequest': '100'
+                            'EventSummary.day': '2023-12-01T22:00:00.000', // 10 PM UTC (endpoint format)
+                            'EventSummary.day.day': '2023-12-01',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': '2023-12-02T02:00:00.000', // 2 AM UTC next day (endpoint format)
-                            'request.createdAt.day': '2023-12-02',
-                            'request.totalRequest': '150'
+                            'EventSummary.day': '2023-12-02T02:00:00.000', // 2 AM UTC next day (endpoint format)
+                            'EventSummary.day.day': '2023-12-02',
+                            'EventSummary.totalEvents': '150'
                         }
                     ];
 
@@ -636,14 +636,14 @@ describe('Analytics Data Utils', () => {
                     // Test with the exact format that comes from the endpoint
                     const mockData: PageViewTimeLineEntity[] = [
                         {
-                            'request.createdAt': '2025-08-05T16:00:00.000', // Endpoint format (no Z)
-                            'request.createdAt.day': '2025-08-05',
-                            'request.totalRequest': '100'
+                            'EventSummary.day': '2025-08-05T16:00:00.000', // Endpoint format (no Z)
+                            'EventSummary.day.day': '2025-08-05',
+                            'EventSummary.totalEvents': '100'
                         },
                         {
-                            'request.createdAt': '2025-08-05T17:00:00.000', // Endpoint format (no Z)
-                            'request.createdAt.day': '2025-08-05',
-                            'request.totalRequest': '150'
+                            'EventSummary.day': '2025-08-05T17:00:00.000', // Endpoint format (no Z)
+                            'EventSummary.day.day': '2025-08-05',
+                            'EventSummary.totalEvents': '150'
                         }
                     ];
 
@@ -668,12 +668,12 @@ describe('Analytics Data Utils', () => {
                     {
                         'request.userAgent':
                             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.totalRequest': '500'
+                        'request.count': '500'
                     },
                     {
                         'request.userAgent':
                             'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-                        'request.totalRequest': '300'
+                        'request.count': '300'
                     }
                 ];
 
@@ -708,7 +708,7 @@ describe('Analytics Data Utils', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
                     {
                         'request.userAgent': 'Some browser',
-                        'request.totalRequest': '0'
+                        'request.count': '0'
                     }
                 ];
 
@@ -724,12 +724,12 @@ describe('Analytics Data Utils', () => {
                     {
                         'request.userAgent':
                             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.totalRequest': '200'
+                        'request.count': '200'
                     },
                     {
                         'request.userAgent':
                             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.totalRequest': '300'
+                        'request.count': '300'
                     }
                 ];
 
@@ -746,12 +746,12 @@ describe('Analytics Data Utils', () => {
                     {
                         'request.userAgent':
                             'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-                        'request.totalRequest': '100' // Less usage
+                        'request.count': '100' // Less usage
                     },
                     {
                         'request.userAgent':
                             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.totalRequest': '500' // More usage
+                        'request.count': '500' // More usage
                     }
                 ];
 
@@ -767,10 +767,10 @@ describe('Analytics Data Utils', () => {
                 const mockData: Partial<PageViewDeviceBrowsersEntity>[] = [
                     {
                         'request.userAgent': '',
-                        'request.totalRequest': '100'
+                        'request.count': '100'
                     },
                     {
-                        'request.totalRequest': '200'
+                        'request.count': '200'
                     }
                 ];
 

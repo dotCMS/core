@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotAnalyticsDashboardStore,
     extractPageTitle,
@@ -35,6 +36,7 @@ import { DotAnalyticsDashboardTableComponent } from '../dot-analytics-dashboard-
 export default class DotAnalyticsDashboardPageviewReportComponent {
     readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
+    readonly #messageService = inject(DotMessageService);
 
     // Metrics signals from store
     protected readonly $totalPageViews = this.store.totalPageViews;
@@ -63,7 +65,7 @@ export default class DotAnalyticsDashboardPageviewReportComponent {
 
     #setupBreadcrumb(): void {
         this.#globalStore.addNewBreadcrumb({
-            label: 'Pageview'
+            label: this.#messageService.get('analytics.dashboard.tabs.pageview')
         });
     }
 
