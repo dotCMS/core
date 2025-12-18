@@ -119,7 +119,8 @@ export function withConversions() {
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
                                 tapResponse(
                                     (entities) => {
-                                        const totalConversionsEntity = aggregateTotalConversions(entities);
+                                        const totalConversionsEntity =
+                                            aggregateTotalConversions(entities);
 
                                         patchState(store, {
                                             totalConversions: {
