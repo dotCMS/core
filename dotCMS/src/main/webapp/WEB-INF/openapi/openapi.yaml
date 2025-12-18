@@ -701,58 +701,6 @@ paths:
           description: default response
       tags:
       - System Configuration
-  /content/_search:
-    post:
-      description: "Performs a comprehensive content search using Lucene query syntax.\
-        \ Supports filtering, sorting, pagination, and depth-based relationship loading.\
-        \ Returns structured JSON with search metadata and contentlet results."
-      operationId: search
-      parameters:
-      - description: Store query in session for Query Tool portlet
-        in: query
-        name: rememberQuery
-        schema:
-          type: boolean
-          default: false
-      requestBody:
-        content:
-          application/json:
-            example:
-              query: +systemType:false +languageId:1 +deleted:false +working:true
-                +variant:default
-              sort: modDate desc
-              limit: 20
-              offset: 0
-            schema:
-              $ref: "#/components/schemas/SearchForm"
-        description: "Search criteria including query, sort, pagination and filters"
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySearchView"
-          description: Search completed successfully
-        "400":
-          content:
-            application/json: {}
-          description: Invalid search parameters or malformed query
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Insufficient permissions to access content
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error during search
-      summary: Search content with advanced parameters
-      tags:
-      - Content Delivery
   /content/canLock/{params}:
     put:
       deprecated: true
@@ -1243,7 +1191,7 @@ paths:
       - Search
   /es/search:
     get:
-      operationId: search_2
+      operationId: search_1
       parameters:
       - in: query
         name: depth
@@ -6130,6 +6078,59 @@ paths:
       summary: Lock a given contentlet by the current user
       tags:
       - Content
+  /v1/content/_search:
+    post:
+      description: |-
+        Performs a comprehensive content search using [Lucene query syntax](https://dev.dotcms.com/docs/content-search-syntax). Supports filtering, sorting, pagination, and depth-based relationship loading. Returns structured JSON with search metadata and contentlet results.
+
+        > **Note:** This is a wrapper around the former `api/content/_search`. Both paths remain valid for backwards compatibility, but the `v1` path is preferred.
+      operationId: wrapperLuceneSearch
+      parameters:
+      - description: Store query in session for Query Tool portlet
+        in: query
+        name: rememberQuery
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          application/json:
+            example:
+              query: +systemType:false +languageId:1 +deleted:false +working:true
+                +variant:default
+              sort: modDate desc
+              limit: 20
+              offset: 0
+            schema:
+              $ref: "#/components/schemas/SearchForm"
+        description: "Search criteria including query, sort, pagination and filters"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySearchView"
+          description: Search completed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid search parameters or malformed query
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Insufficient permissions to access content
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during search
+      summary: Search content with Lucene syntax
+      tags:
+      - Content
   /v1/content/_unlock/{inodeOrIdentifier}:
     put:
       description: "If the user is allowed to unlock the contentlet specified by its\
@@ -6321,18 +6322,61 @@ paths:
   /v1/content/search:
     post:
       description: "Abstracts the generation of the required Lucene query to look\
-        \ for user searchable fields in a Content Type, and returns the expected results."
-      operationId: search_1
+        \ for user searchable fields in a Content Type, and returns the expected results.\
+        \ Payload info:\n\n| Property                        | Type    | Description\
+        \                                           |\n|---------------------------------|---------|-------------------------------------------------------|\n\
+        | `globalSearch`                  | String  | Global search term (like the\
+        \ main search box)         |\n| `searchableFieldsByContentType` | Object \
+        \ | Content-type specific field searches. Value object consists of content\
+        \ type variables as keys, and objects as values, the latter consisting of\
+        \ the system variables of fields as keys, and query strings as values. See\
+        \ table below for how to interact with different field types, and the example\
+        \ request for how to structure the payload. |\n| `systemSearchableFields`\
+        \        | Object  | System-level filters: `siteid`, `languageId`, `folderId`,\
+        \ `workflowSchemeId`, `workflowStepId`, and `variantName` (defaults to \"\
+        DEFAULT\"). `systemHostContent` determines whether to include content from\
+        \ the SYSTEM_HOST (defaults to \"true\"). |\n| `archivedContent`         \
+        \      | Boolean String | Include archived content (\"true\"/\"false\")  \
+        \       |\n| `unpublishedContent`            | Boolean String | Include unpublished\
+        \ content (\"true\"/\"false\")      |\n| `lockedContent`                 |\
+        \ Boolean String | Include locked content (\"true\"/\"false\")           |\n\
+        | `orderBy`                       | String  | Sort criteria (defaults to \"\
+        score,modDate desc\")    |\n| `page`                          | Integer |\
+        \ Page number for pagination                            |\n| `perPage`   \
+        \                    | Integer | Results per page                        \
+        \              |\n\nWhen using `searchableFieldsByContentType`, different\
+        \ fields may require different string types:\n\n| Field Type             \
+        \     | Description                                 |\n|-----------------------------|---------------------------------------------|\n\
+        | title, textArea, wysiwyg    | Text search                              \
+        \   |\n| category                    | Comma-separated category IDs      \
+        \          |\n| checkbox, multiSelect       | Comma-separated values (not\
+        \ labels)         |\n| radio, select               | Values (not labels) \
+        \                        |\n| date, dateAndTime           | Date or range:\
+        \ \"2023-01-01 TO 2023-12-31\" |\n| time                        | Time or\
+        \ range with TO                       |\n| tag                         | Comma-separated\
+        \ tag names                   |\n| relationships               | Child contentlet\
+        \ ID                         |\n| json, keyValue              | Matches any\
+        \ string in JSON                  |\n| binary, blockEditor, custom | Text\
+        \ search     "
+      operationId: search
       requestBody:
         content:
           application/json:
             example:
               globalSearch: test
+              searchableFieldsByContentType:
+                Blog:
+                  title: test
+                  tags: tag1
+              systemSearchableFields:
+                siteId: 173aff42881a55a562cec436180999cf
+                languageId: 1
+              orderBy: modDate desc
               perPage: 20
               page: 1
             schema:
               $ref: "#/components/schemas/ContentSearchForm"
-        description: Content search parameters
+        description: Content search parameters.
         required: true
       responses:
         "200":
@@ -21217,6 +21261,35 @@ components:
           format: int64
     ContentSearchForm:
       type: object
+      description: "Form for searching content with support for global search, content\
+        \ type specific fields, and system filters"
+      properties:
+        archivedContent:
+          type: string
+        globalSearch:
+          type: string
+        lockedContent:
+          type: string
+        orderBy:
+          type: string
+        page:
+          type: integer
+          format: int32
+        perPage:
+          type: integer
+          format: int32
+        searchableFieldsByContentType:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
+        systemSearchableFields:
+          type: object
+          additionalProperties:
+            type: object
+        unpublishedContent:
+          type: string
     ContentType:
       type: object
       discriminator:

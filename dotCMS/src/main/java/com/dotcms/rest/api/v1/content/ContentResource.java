@@ -5,20 +5,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.rest.AnonymousAccess;
-import com.dotcms.rest.ContentHelper;
-import com.dotcms.rest.CountView;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.rest.ResponseEntityContentletView;
-import com.dotcms.rest.ResponseEntityListMapView;
-import com.dotcms.rest.ResponseEntityCountView;
-import com.dotcms.rest.ResponseEntityMapView;
-import com.dotcms.rest.ResponseEntityPaginatedDataView;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.SearchForm;
-import com.dotcms.rest.SearchView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
@@ -1048,7 +1035,36 @@ public class ContentResource {
     @Path("/search")
     @Operation(operationId = "search", summary = "Retrieves content from the dotCMS repository",
             description = "Abstracts the generation of the required Lucene query to look for user searchable fields " +
-                    "in a Content Type, and returns the expected results.",
+                    "in a Content Type, and returns the expected results. Payload info:\n\n" +
+                    "| Property                        | Type    | Description                                           |\n" +
+                    "|---------------------------------|---------|-------------------------------------------------------|\n" +
+                    "| `globalSearch`                  | String  | Global search term (like the main search box)         |\n" +
+                    "| `searchableFieldsByContentType` | Object  | Content-type specific field searches. Value object " +
+                      "consists of content type variables as keys, and objects as values, the latter consisting of " +
+                      "the system variables of fields as keys, and query strings as values. See table below for " +
+                      "how to interact with different field types, and the example request for how to structure the payload. |\n" +
+                    "| `systemSearchableFields`        | Object  | System-level filters: `siteid`, `languageId`, " +
+                      "`folderId`, `workflowSchemeId`, `workflowStepId`, and `variantName` (defaults to \"DEFAULT\"). " +
+                      "`systemHostContent` determines whether to include content from the SYSTEM_HOST (defaults to \"true\"). |\n" +
+                    "| `archivedContent`               | Boolean String | Include archived content (\"true\"/\"false\")         |\n" +
+                    "| `unpublishedContent`            | Boolean String | Include unpublished content (\"true\"/\"false\")      |\n" +
+                    "| `lockedContent`                 | Boolean String | Include locked content (\"true\"/\"false\")           |\n" +
+                    "| `orderBy`                       | String  | Sort criteria (defaults to \"score,modDate desc\")    |\n" +
+                    "| `page`                          | Integer | Page number for pagination                            |\n" +
+                    "| `perPage`                       | Integer | Results per page                                      |\n\n" +
+                    "When using `searchableFieldsByContentType`, different fields may require different string types:\n\n" +
+                    "| Field Type                  | Description                                 |\n" +
+                    "|-----------------------------|---------------------------------------------|\n" +
+                    "| title, textArea, wysiwyg    | Text search                                 |\n" +
+                    "| category                    | Comma-separated category IDs                |\n" +
+                    "| checkbox, multiSelect       | Comma-separated values (not labels)         |\n" +
+                    "| radio, select               | Values (not labels)                         |\n" +
+                    "| date, dateAndTime           | Date or range: \"2023-01-01 TO 2023-12-31\" |\n" +
+                    "| time                        | Time or range with TO                       |\n" +
+                    "| tag                         | Comma-separated tag names                   |\n" +
+                    "| relationships               | Child contentlet ID                         |\n" +
+                    "| json, keyValue              | Matches any string in JSON                  |\n" +
+                    "| binary, blockEditor, custom | Text search     ",
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "The query has been executed. It's possible that " +
@@ -1065,11 +1081,22 @@ public class ContentResource {
     )
     public ResponseEntityView<SearchView> search(@Context final HttpServletRequest request,
                              @Context final HttpServletResponse response,
-                             @RequestBody(description = "Content search parameters", required = true,
+                             @RequestBody(description = "Content search parameters.", required = true,
                                         content = @Content(schema = @Schema(implementation = ContentSearchForm.class),
                                                 examples = @ExampleObject(
                                                              value = "{\n" +
                                                              "  \"globalSearch\": \"test\",\n" +
+                                                             "  \"searchableFieldsByContentType\": {\n" +
+                                                             "    \"Blog\": {\n" +
+                                                             "      \"title\": \"test\",\n" +
+                                                             "      \"tags\": \"tag1\"\n" +
+                                                             "    }\n" +
+                                                             "  },\n" +
+                                                             "  \"systemSearchableFields\": {\n" +
+                                                             "    \"siteId\": \"173aff42881a55a562cec436180999cf\",\n" +
+                                                             "    \"languageId\": 1\n" +
+                                                             "  },\n" +
+                                                             "  \"orderBy\": \"modDate desc\",\n" +
                                                              "  \"perPage\": 20,\n" +
                                                              "  \"page\": 1\n" +
                                                              "}")
@@ -1089,5 +1116,78 @@ public class ContentResource {
                 luceneQueryBuilder.getOrderByClause(), pageMode);
         return new ResponseEntityView<>(searchView);
     }
+
+    /**
+     * Legacy search wrapper method that delegates to the original ContentResource search functionality.
+     * This method calls the search method from the legacy {@link com.dotcms.rest.ContentResource} class.
+     *
+     * @param request           The current instance of the {@link HttpServletRequest}.
+     * @param response          The current instance of the {@link HttpServletResponse}.
+     * @param rememberQuery     Flag to store the query in session for Query Tool portlet usage.
+     * @param searchForm        The {@link SearchForm} object containing the search parameters.
+     *
+     * @return The {@link Response} object containing the search results from the legacy endpoint.
+     *
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws DotSecurityException The User accessing this endpoint doesn't have the required
+     *                              permissions.
+     */
+    @Operation(
+            summary = "Search content with Lucene syntax",
+            description = "Performs a comprehensive content search using [Lucene query syntax]" +
+                    "(https://dev.dotcms.com/docs/content-search-syntax). " +
+                    "Supports filtering, sorting, pagination, and depth-based relationship loading. " +
+                    "Returns structured JSON with search metadata and contentlet results.\n\n" +
+                    "> **Note:** This is a wrapper around the former `api/content/_search`. Both " +
+                    "paths remain valid for backwards compatibility, but the `v1` path is preferred."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Search completed successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySearchView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Invalid search parameters or malformed query",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Insufficient permissions to access content",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal server error during search",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST
+    @Path("/_search")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response wrapperLuceneSearch(@Context final HttpServletRequest request,
+                                @Context final HttpServletResponse response,
+                                @Parameter(description = "Store query in session for Query Tool portlet") 
+                                @QueryParam("rememberQuery") @DefaultValue("false") final boolean rememberQuery,
+                                @RequestBody(description = "Search criteria including query, sort, pagination and filters",
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = SearchForm.class),
+                                         examples = @ExampleObject(
+                                              value = "{\n" +
+                                                      "  \"query\": \"+systemType:false " +
+                                                      "+languageId:1 +deleted:false " +
+                                                      "+working:true +variant:default\",\n" +
+                                                      "  \"sort\": \"modDate desc\",\n" +
+                                                      "  \"limit\": 20,\n" +
+                                                      "  \"offset\": 0\n" +
+                                                      "}")
+                                         ))
+                                final SearchForm searchForm) throws DotDataException, DotSecurityException {
+        
+        // Create an instance of the legacy ContentResource
+        final com.dotcms.rest.ContentResource legacyContentResource = new com.dotcms.rest.ContentResource();
+        
+        // Delegate to the legacy search method
+        return legacyContentResource.search(request, response, rememberQuery, searchForm);
+    }
+
 
 }
