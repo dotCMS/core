@@ -1,0 +1,56 @@
+.main-container {
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #faf5ff 100%);
+}
+
+.card {
+    width: 324px;
+    box-shadow:
+        0px 4px 6px -4px #0000001a,
+        0px 10px 15px -3px #0000001a;
+    cursor: pointer;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    position: relative;
+}
+
+.check-circle {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    visibility: hidden;
+}
+
+.card:hover {
+    border: 1px solid #426bf0;
+    border-radius: 16px;
+
+    .check-circle {
+        visibility: visible;
+    }
+}
+
+.heading {
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 24px;
+    letter-spacing: -0.31px;
+    text-align: center;
+}
+
+.paragraph {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 28px;
+    letter-spacing: -0.44px;
+    text-align: center;
+}
+
+.card-heading {
+    font-weight: 400;
+    font-size: 16px;
+    leading-trim: NONE;
+    line-height: 24px;
+    letter-spacing: -0.31px;
+    text-align: center;
+}

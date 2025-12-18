@@ -2,7 +2,16 @@ import { patchState } from '@ngrx/signals';
 import { MarkdownModule } from 'ngx-markdown';
 
 import { isPlatformBrowser, CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    OnInit,
+    PLATFORM_ID,
+    ViewChild,
+    inject,
+    Output,
+    EventEmitter
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -44,6 +53,7 @@ import { state } from './store';
 export class DotOnboardingDevComponent implements OnInit {
     readonly state = state;
     readonly content = ONBOARDING_CONTENT;
+    @Output() eventEmitter = new EventEmitter<'reset-user-profile'>();
 
     selectedFramework = 'nextjs';
     frameworks: OnboardingFramework[] = [
@@ -137,10 +147,7 @@ ${substep.code}
         }, 500);
     }
 
-    showFrameworkInfo(
-        event: Event,
-        framework: OnboardingFramework
-    ): void {
+    showFrameworkInfo(event: Event, framework: OnboardingFramework): void {
         this.selectedFrameworkInfo = framework;
         this.frameworkInfoOverlay?.toggle(event);
     }
@@ -163,7 +170,6 @@ ${substep.code}
             }
 
             this.activeIndexChange(parseInt(saved));
-
         } catch {
             localStorage.removeItem(STORAGE_KEY);
         }
@@ -182,10 +188,17 @@ ${substep.code}
             return;
         }
         const container = this.onboardingContainer.nativeElement;
-        const activeTab = container.querySelector('.p-accordion-tab-active .p-accordion-header') as HTMLElement;
+        const activeTab = container.querySelector(
+            '.p-accordion-tab-active .p-accordion-header'
+        ) as HTMLElement;
         activeTab.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
         });
+    }
+
+    public resetUserProfile(): void {
+        localStorage.removeItem('user_profile');
+        this.eventEmitter.emit('reset-user-profile');
     }
 }

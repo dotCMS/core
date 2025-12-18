@@ -1,4 +1,4 @@
-import { OnboardingContent } from "./models";
+import { OnboardingContent } from './models';
 
 export const STORAGE_KEY = 'dotcmsDeveloperOnboarding';
 

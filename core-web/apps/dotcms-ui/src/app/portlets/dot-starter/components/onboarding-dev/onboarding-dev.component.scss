@@ -98,7 +98,8 @@ markdown {
                 padding: 0;
             }
         }
-        ul, ol {
+        ul,
+        ol {
             padding-inline-start: $spacing-4;
         }
         ul ul,
@@ -146,7 +147,6 @@ markdown {
 }
 
 .logo-item {
-
     img {
         width: 24px;
         height: 24px;
@@ -180,12 +180,14 @@ markdown {
     padding-block-start: $spacing-4;
     flex: 1;
     overflow: auto;
+    position: relative;
 
     &__step-completed {
         color: $color-palette-green;
     }
 
-    &__content, &__progress-container {
+    &__content,
+    &__progress-container {
         max-width: 60rem;
         margin: 0 auto;
         padding: 0 $spacing-4;
@@ -268,7 +270,8 @@ markdown {
 
     &::ng-deep {
         markdown {
-            pre, code {
+            pre,
+            code {
                 white-space: pre; // prevent wrapping
                 overflow-x: auto;
                 max-height: 400px;
@@ -303,7 +306,6 @@ markdown {
         }
     }
 
-
     &__video {
         width: 100%;
         height: 360px;
@@ -315,7 +317,6 @@ markdown {
         padding: 0 $spacing-2;
         margin-bottom: $spacing-6;
     }
-
 
     &__substep-description {
         display: block;
@@ -335,4 +336,12 @@ markdown {
     &__next-button {
         margin-inline-start: $spacing-2;
     }
+}
+
+.button-link {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+    color: #515667;
 }

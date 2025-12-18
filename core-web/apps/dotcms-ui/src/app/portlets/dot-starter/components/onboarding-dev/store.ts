@@ -1,8 +1,8 @@
 import { signalState } from '@ngrx/signals';
 
 type OnBoardingState = {
-    progress: number,
-    activeAccordionIndex: number,
+    progress: number;
+    activeAccordionIndex: number;
     currentStateLabel: string;
 };
 

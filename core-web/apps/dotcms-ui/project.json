@@ -128,7 +128,7 @@
                     "outputHashing": "none",
                     "commonChunk": true,
                     "budgets": [],
-                    "externalDependencies": ["date-fns/locale"],
+                    "externalDependencies": ["date-fns/locale"]
                 }
             },
             "defaultConfiguration": "production",

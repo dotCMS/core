@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, inject, OnInit, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
@@ -9,7 +9,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 
 import { map, mergeMap } from 'rxjs/operators';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotCurrentUserService } from '@dotcms/data-access';
 import {
     DotCurrentUser,
@@ -19,6 +18,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAccountService } from '../../../../api/services/dot-account-service';
 
 @Component({
     selector: 'dot-onboarding-author',
@@ -30,6 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotOnboardingAuthorComponent implements OnInit {
     private dotAccountService = inject(DotAccountService);
+    @Output() eventEmitter = new EventEmitter<'reset-user-profile'>();
 
     userData$: Observable<{
         username: string;
@@ -103,5 +104,10 @@ export class DotOnboardingAuthorComponent implements OnInit {
             : this.dotAccountService.addStarterPage();
 
         subscription.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe();
+    }
+
+    public resetUserProfile(): void {
+        localStorage.removeItem('user_profile');
+        this.eventEmitter.emit('reset-user-profile');
     }
 }

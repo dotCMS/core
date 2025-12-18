@@ -20,7 +20,6 @@ export interface OnboardingSubstep {
     filePath?: string;
 }
 
-
 export interface OnboardingContent {
     title: string;
     description: string;
