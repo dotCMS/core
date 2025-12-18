@@ -1,307 +1,230 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
+import { Subject } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { NO_ERRORS_SCHEMA, Component, EventEmitter, Input, Output } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-import { DialogService } from 'primeng/dynamicdialog';
-import { TabsModule } from 'primeng/tabs';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 
 import {
-    DotEventsService,
-    DotMessageService,
-    DotRouterService,
-    PaginatorService,
-    DotContainersService,
-    DotPropertiesService
-} from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
-import {
-    MockDotMessageService,
-    MockDotRouterService,
-    DotContainersServiceMock
-} from '@dotcms/utils-testing';
+    AUTOSAVE_DEBOUNCE_TIME,
+    DotTemplateBuilderComponent
+} from './dot-template-builder.component';
 
-import { DotTemplateBuilderComponent } from './dot-template-builder.component';
-
-// Mock components
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotTemplateAdvancedComponent } from '../dot-template-advanced/dot-template-advanced.component';
-// import { DotShowHideFeatureDirective } from '../../../../view/components/_common/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotTemplateItem, DotTemplateItemDesign } from '../store/dot-template.store';
 
-// Mock data
-const ITEM_FOR_NEW_TEMPLATE_BUILDER: DotTemplateDesigner = {
-    type: 'design',
-    theme: '123',
-    themeId: '123',
-    identifier: '123',
-    layout: {
-        header: true,
-        footer: true,
-        body: {
-            rows: []
-        },
-        sidebar: {
-            location: '',
-            containers: []
-        },
-        width: '100%'
-    } as DotLayout,
-    containers: {}
-};
+@Component({
+    selector: 'dot-iframe',
+    template: '',
+    standalone: true
+})
+class MockIframeComponent {
+    @Input() src: string;
+    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
-const ITEM_FOR_ADVANCED_TEMPLATE: DotTemplateDesigner = {
-    type: 'advanced',
-    theme: '123',
-    themeId: '123',
-    identifier: '123',
-    body: '<html><body>Test</body></html>',
-    layout: {
-        header: true,
-        footer: true,
-        body: {
-            rows: []
-        },
-        sidebar: {
-            location: '',
-            containers: []
-        },
-        width: '100%'
-    } as DotLayout,
-    containers: {}
-};
-
-// Service mocks using Spectator's mockProvider
-const messageServiceMock = new MockDotMessageService({
-    design: 'Design',
-    code: 'Code',
-    Permissions: 'Permissions',
-    History: 'History'
-});
-
-const routerServiceMock = new MockDotRouterService();
-
-// Create a proper DotEventsService mock
-class DotEventsServiceMock {
-    listen = jest.fn().mockReturnValue(of({}));
-    notify = jest.fn();
-}
-
-// Create a proper PaginatorService mock
-class PaginatorServiceMock {
-    getWithOffset = jest.fn().mockReturnValue(of({}));
-    get = jest.fn().mockReturnValue(of({}));
-}
-
-// Create a proper DotPropertiesService mock
-class DotPropertiesServiceMock {
-    getKey = jest.fn().mockReturnValue(of(''));
-    getKeys = jest.fn().mockReturnValue(of([]));
+    iframeElement = {
+        nativeElement: {
+            contentWindow: {
+                location: {
+                    reload: jest.fn()
+                }
+            }
+        }
+    };
 }
 
 describe('DotTemplateBuilderComponent', () => {
     let spectator: Spectator<DotTemplateBuilderComponent>;
+    let dotRouterService: SpyObject<DotRouterService>;
+    let pageLeaveRequest$: Subject<void>;
 
     const createComponent = createComponentFactory({
         component: DotTemplateBuilderComponent,
-        imports: [
-            ButtonModule,
-            TabsModule,
-            DotMessagePipe,
-            DotIconComponent,
-            DotTemplateAdvancedComponent,
-            IframeComponent,
-            DotPortletBoxComponent,
-            DotGlobalMessageComponent
-            // DotShowHideFeatureDirective
-        ],
-        mocks: [PaginatorService],
+        imports: [DotTemplateBuilderComponent],
+        detectChanges: false,
+        schemas: [NO_ERRORS_SCHEMA],
         providers: [
-            // HTTP providers
-            provideHttpClient(),
-            provideHttpClientTesting(),
-
-            // Core services using proper mock classes
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
-            {
-                provide: DotRouterService,
-                useValue: routerServiceMock
-            },
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
-            {
-                provide: DotEventsService,
-                useClass: DotEventsServiceMock
-            },
-            {
-                provide: PaginatorService,
-                useClass: PaginatorServiceMock
-            },
-            {
-                provide: DotContainersService,
-                useClass: DotContainersServiceMock
-            },
-            {
-                provide: DotPropertiesService,
-                useClass: DotPropertiesServiceMock
-            },
-            DialogService
+            mockProvider(DotMessageService, {
+                get: jest.fn().mockImplementation((key: string) => key)
+            })
         ],
-        detectChanges: false
+        componentImports: [
+            [DotTemplateAdvancedComponent, MockComponent(DotTemplateAdvancedComponent)],
+            [TemplateBuilderComponent, MockComponent(TemplateBuilderComponent)],
+            [DotPortletBoxComponent, MockComponent(DotPortletBoxComponent)],
+            [DotGlobalMessageComponent, MockComponent(DotGlobalMessageComponent)],
+            [IframeComponent, MockIframeComponent]
+        ]
     });
+
+    const createDesignItem = (overrides: Partial<any> = {}): DotTemplateItemDesign => {
+        return {
+            type: 'design',
+            identifier: 'template-id',
+            title: 'Template Title',
+            friendlyName: 'Template Friendly Name',
+            theme: 'theme-id',
+            layout: { body: { rows: [] } },
+            containers: {},
+            ...overrides
+        } as DotTemplateItemDesign;
+    };
+
+    const createAdvancedItem = (overrides: Partial<any> = {}): DotTemplateItem => {
+        return {
+            type: 'advanced',
+            identifier: 'template-id',
+            title: 'Template Title',
+            friendlyName: 'Template Friendly Name',
+            body: '<h1>hi</h1>',
+            ...overrides
+        } as DotTemplateItem;
+    };
 
     beforeEach(() => {
-        // Suppress console errors for this test suite
-        jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        pageLeaveRequest$ = new Subject<void>();
 
-        spectator = createComponent();
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotRouterService, {
+                    forbidRouteDeactivation: jest.fn(),
+                    pageLeaveRequest$
+                })
+            ]
+        });
+
+        dotRouterService = spectator.inject(DotRouterService);
     });
 
-    afterEach(() => {
-        // Restore console.error
-        jest.restoreAllMocks();
+    it('should set lastTemplate when item input is set', () => {
+        const item = createDesignItem();
+        spectator.setInput('item', item);
+
+        expect(spectator.component.item).toBe(item);
+        expect(spectator.component.lastTemplate).toBe(item);
     });
 
-    describe('design', () => {
-        beforeEach(() => {
-            spectator.setInput('item', ITEM_FOR_NEW_TEMPLATE_BUILDER);
-            spectator.detectChanges();
-        });
+    it('should set permissionsUrl and historyUrl on init', () => {
+        const item = createDesignItem({ identifier: 'abc' });
+        spectator.setInput('item', item);
 
-        it('should have tab title "Design"', () => {
-            // In Angular 20, ng-reflect-* attributes are not available
-            // Verify the header by checking the PrimeNG TabPanel component instance
-            const panelDebugElement = spectator.debugElement.query(
-                By.css('[data-testId="builder"]')
-            );
-            const tabPanelComponent = panelDebugElement?.componentInstance;
-            expect(tabPanelComponent?.header).toBe('Design');
-        });
+        spectator.detectChanges();
 
-        it('should not show <dot-template-advanced>', () => {
-            const advancedComponent = spectator.query('dot-template-advanced');
-            expect(advancedComponent).not.toExist();
-        });
+        expect(spectator.component.permissionsUrl).toBe(
+            '/html/templates/permissions.jsp?templateId=abc&popup=true'
+        );
+        expect(spectator.component.historyUrl).toBe(
+            '/html/templates/push_history.jsp?templateId=abc&popup=true'
+        );
+
+        const permissionsIframeDe = spectator.debugElement.query(
+            By.css('dot-iframe[data-testId="permissionsIframe"]')
+        );
+        const historyIframeDe = spectator.debugElement.query(By.css('dot-iframe[data-testId="historyIframe"]'));
+
+        expect(permissionsIframeDe.componentInstance.src).toBe(
+            '/html/templates/permissions.jsp?templateId=abc&popup=true'
+        );
+        expect(historyIframeDe.componentInstance.src).toBe(
+            '/html/templates/push_history.jsp?templateId=abc&popup=true'
+        );
     });
 
-    describe('New template design', () => {
-        beforeEach(() => {
-            spectator.setInput('item', ITEM_FOR_NEW_TEMPLATE_BUILDER);
-            spectator.detectChanges();
-        });
+    it('should render advanced editor and forward its outputs', () => {
+        const item = createAdvancedItem({ body: 'ADV_BODY' });
+        spectator.setInput('item', item);
+        spectator.setInput('didTemplateChanged', true);
 
-        it('should show new template builder component', () => {
-            const templateBuilder = spectator.query(byTestId('new-template-builder'));
-            expect(templateBuilder).toExist();
-        });
+        const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+        const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
 
-        it('should set the themeId @Input correctly', () => {
-            const templateBuilder = spectator.query(byTestId('new-template-builder'));
-            // In Angular 20, ng-reflect-* attributes are not available
-            // Verify the component exists and has the template input bound by checking the component instance
-            expect(templateBuilder).toExist();
-            const templateBuilderDebugElement = spectator.debugElement.query(
-                By.css('[data-testId="new-template-builder"]')
-            );
-            const templateBuilderComponent = templateBuilderDebugElement?.componentInstance;
-            expect(templateBuilderComponent?.template).toBeDefined();
-        });
+        spectator.detectChanges();
 
-        it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {
-            const templateBuilder = spectator.query(byTestId('new-template-builder'));
-            const spy = jest.spyOn(spectator.component, 'onTemplateItemChange');
+        const advancedDe = spectator.debugElement.query(By.css('dot-template-advanced'));
+        expect(advancedDe).toBeTruthy();
+        expect(advancedDe.componentInstance.body).toBe('ADV_BODY');
+        expect(advancedDe.componentInstance.didTemplateChanged).toBe(true);
 
-            templateBuilder?.dispatchEvent(new Event('templateChange'));
+        const updated = createAdvancedItem({ identifier: 'new-id' });
+        spectator.triggerEventHandler('dot-template-advanced', 'updateTemplate', updated);
+        spectator.triggerEventHandler('dot-template-advanced', 'save', updated);
+        spectator.triggerEventHandler('dot-template-advanced', 'cancel', null);
 
-            expect(spy).toHaveBeenCalled();
-        });
-
-        it('should add style classes if new template builder feature flag is on', () => {
-            // When the feature flag is on, the tabView should have the new template builder class
-            const tabView = spectator.query('.dot-template-builder__new-template-builder');
-            expect(tabView).toExist();
-        });
+        expect(updateSpy).toHaveBeenCalledWith(updated);
+        expect(saveSpy).toHaveBeenCalledWith(updated);
+        expect(cancelSpy).toHaveBeenCalled();
     });
 
-    describe('advanced', () => {
-        beforeEach(() => {
-            spectator.setInput('item', ITEM_FOR_ADVANCED_TEMPLATE);
-            spectator.detectChanges();
+    it('should render design builder with correct inputs', () => {
+        const item = createDesignItem({
+            identifier: 'id-1',
+            theme: 't-1',
+            layout: { body: { rows: [{ foo: 'bar' }] } },
+            containers: { c1: { identifier: 'container-1' } }
         });
+        spectator.setInput('item', item);
 
-        it('should have tab title "Code"', () => {
-            // In Angular 20, ng-reflect-* attributes are not available
-            // Verify the header by checking the PrimeNG TabPanel component instance
-            const panelDebugElement = spectator.debugElement.query(
-                By.css('[data-testId="builder"]')
-            );
-            const tabPanelComponent = panelDebugElement?.componentInstance;
-            expect(tabPanelComponent?.header).toBe('Code');
-        });
+        spectator.detectChanges();
 
-        it('should show dot-template-advanced and pass attr', () => {
-            const advancedComponent = spectator.query('dot-template-advanced');
-            expect(advancedComponent).toExist();
-            // In Angular 20, ng-reflect-* attributes are not available
-            // Verify the body property directly on the component instance using debugElement
-            const advancedComponentDebugElement = spectator.debugElement.query(
-                By.css('dot-template-advanced')
-            );
-            const advancedComponentInstance = advancedComponentDebugElement?.componentInstance;
-            expect(advancedComponentInstance?.body).toBe('<html><body>Test</body></html>');
-        });
-
-        it('should emit events from dot-template-advanced', () => {
-            const advancedComponent = spectator.query('dot-template-advanced');
-            const spy = jest.spyOn(spectator.component.updateTemplate, 'emit');
-
-            advancedComponent?.dispatchEvent(new Event('updateTemplate'));
-
-            expect(spy).toHaveBeenCalled();
+        const builderDe = spectator.debugElement.query(By.css('dotcms-template-builder-lib'));
+        expect(builderDe).toBeTruthy();
+        expect(builderDe.componentInstance.layout).toEqual(item.layout as any);
+        expect(builderDe.componentInstance.containerMap).toEqual(item.containers as any);
+        expect(builderDe.componentInstance.template).toEqual({
+            themeId: 't-1',
+            identifier: 'id-1'
         });
     });
 
-    describe('permissions and history', () => {
-        beforeEach(() => {
-            spectator.setInput('item', ITEM_FOR_NEW_TEMPLATE_BUILDER);
-            spectator.detectChanges();
-        });
+    it('should handle templateChange: reload history iframe, forbid navigation, emit updateTemplate and autosave after debounce', fakeAsync(() => {
+        const item = createDesignItem({ identifier: 'id-1', theme: 't-1' });
+        spectator.setInput('item', item);
 
-        it('should set iframe permissions url', () => {
-            // The iframe might be in an inactive tab, so let's check the component properties instead
-            // Check that the component has set the URL correctly
-            expect(spectator.component.permissionsUrl).toContain('permissions');
-            expect(spectator.component.permissionsUrl).toContain('123');
-            expect(spectator.component.permissionsUrl).toContain('templateId=123');
-        });
+        const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
 
-        it('should set iframe history url', () => {
-            // The iframe might be in an inactive tab, so let's check the component properties instead
-            // Check that the component has set the URL correctly
-            expect(spectator.component.historyUrl).toContain('history');
-            expect(spectator.component.historyUrl).toContain('123');
-            expect(spectator.component.historyUrl).toContain('templateId=123');
-        });
+        spectator.detectChanges();
 
-        it('should handle custom event', () => {
-            const spy = jest.spyOn(spectator.component.custom, 'emit');
+        const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement.contentWindow
+            .location.reload as jest.Mock;
 
-            // Since the iframe might be in an inactive tab, let's test the event emitter directly
-            // by calling the custom event emitter
-            spectator.component.custom.emit(new CustomEvent('test'));
+        const updated = createDesignItem({ identifier: 'id-2', theme: 't-2' });
+        spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
 
-            expect(spy).toHaveBeenCalled();
-        });
-    });
+        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        expect(dotRouterService.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
+        expect(updateSpy).toHaveBeenCalledWith(updated);
+
+        tick(AUTOSAVE_DEBOUNCE_TIME - 1);
+        expect(saveSpy).not.toHaveBeenCalled();
+
+        tick(1);
+        expect(saveSpy).toHaveBeenCalledWith(updated);
+    }));
+
+    it('should save current lastTemplate when page leave is requested', fakeAsync(() => {
+        const item = createDesignItem();
+        spectator.setInput('item', item);
+
+        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+        spectator.detectChanges();
+
+        const updated = createDesignItem({ identifier: 'id-2' });
+        spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
+
+        saveSpy.mockClear();
+        pageLeaveRequest$.next();
+
+        expect(saveSpy).toHaveBeenCalledWith(updated);
+    }));
 });

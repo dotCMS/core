@@ -28,8 +28,8 @@
                         (templateChange)="onTemplateItemChange($event)"
                         [layout]="item.layout"
                         [template]="{
-                            themeId: item.theme ?? item.themeId,
-                            identifier: item.identifier
+                            themeId: lastTemplate.theme ?? lastTemplate.themeId,
+                            identifier: lastTemplate.identifier
                         }"
                         [containerMap]="item.containers"
                         data-testId="new-template-builder">

@@ -46,7 +46,16 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     readonly #dotRouterService = inject(DotRouterService);
 
-    @Input() item: DotTemplateItem;
+    private _item: DotTemplateItem;
+
+    @Input()
+    set item(value: DotTemplateItem) {
+        this._item = value;
+        this.lastTemplate = value;
+    }
+    get item(): DotTemplateItem {
+        return this._item;
+    }
     @Input() didTemplateChanged: boolean;
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
@@ -86,7 +95,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
 
         this.#dotRouterService.forbidRouteDeactivation();
         this.lastTemplate = item;
-
+        this.updateTemplate.emit(item);
         this.templateUpdate$.next(item);
     }
 
