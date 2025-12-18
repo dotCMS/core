@@ -28,8 +28,8 @@
             </div>
             <p-divider layout="vertical" />
             <dotcms-template-builder-actions
-                [themeId]="vm.themeId"
-                (selectTheme)="openThemeSelectorDynamicDialog($event)"
+                [themeId]="template.themeId"
+                (selectTheme)="updateTheme($event)"
                 [layoutProperties]="vm.layoutProperties"
                 data-testId="template-builder-actions"></dotcms-template-builder-actions>
             <ng-content select="[toolbar-actions-right]"></ng-content>

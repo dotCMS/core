@@ -299,7 +299,8 @@ describe('TemplateBuilderComponent', () => {
             '[data-testId="delete-section-button"]'
         );
 
-        spectator.click(deleteSectionButton);
+        // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
+        spectator.click(deleteSectionButton.querySelector('button'));
 
         expect(deleteSectionMock).toHaveBeenCalledWith('header');
     });
@@ -311,27 +312,17 @@ describe('TemplateBuilderComponent', () => {
             '[data-testId="delete-section-button"]'
         );
 
-        spectator.click(deleteSectionButton);
+        // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
+        spectator.click(deleteSectionButton.querySelector('button'));
 
         expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });
 
     it("should emit changes with a not null layout when the theme is changed and layoutProperties or rows weren't touched", () => {
-        const templateBuilderActions = spectator.query(byTestId('template-builder-actions'));
         const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
 
-        spectator.dispatchFakeEvent(templateBuilderActions, 'selectTheme');
-
-        // This queries from the body
-        const templateBuilderThemeSelector = spectator.fixture.debugElement.parent.query(
-            By.css('dotcms-template-builder-theme-selector')
-        ).componentInstance;
-
-        templateBuilderThemeSelector.currentTheme = {
-            identifier: 'test-123'
-        };
-
-        templateBuilderThemeSelector.apply();
+        // Theme changes are routed through TemplateBuilderActions -> TemplateBuilderComponent.updateTheme()
+        spectator.component.updateTheme('test-123');
 
         expect(layoutChangeMock).toHaveBeenCalledWith({
             layout: {

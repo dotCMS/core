@@ -225,7 +225,6 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 takeUntil(this.destroy$)
             )
             .subscribe(([rows, layoutProperties, themeId]) => {
-                console.log('themeId', themeId);
                 this.dotLayout = {
                     ...this.layout,
                     ...layoutProperties,
@@ -354,7 +353,20 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         });
 
         this.addWidget.toArray().forEach(({ nativeElement }) => {
-            nativeElement.ddElement
+            type DDElementHostWithOn = DDElementHost & {
+                on: (eventName: string, cb: (...args: unknown[]) => void) => DDElementHostWithOn;
+            };
+
+            const ddElement = (nativeElement as unknown as { ddElement?: DDElementHostWithOn })
+                ?.ddElement;
+
+            // In unit tests (and some non-browser environments) `ddElement` may not be initialized.
+            // Guard so grid setup doesn't crash; runtime behavior is unchanged when ddElement exists.
+            if (!ddElement?.on) {
+                return;
+            }
+
+            ddElement
                 .on('dragstart', ({ target }) => {
                     const helper = (target as DDElementHost).ddElement.ddDraggable?.helper;
                     this.draggingElement = (helper || target) as HTMLElement;
@@ -480,8 +492,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      *
      * @memberof TemplateBuilderComponent
      */
-    openThemeSelectorDynamicDialog(themeId: string): void {
-        console.log('themeId in openThemeSelectorDynamicDialog', themeId);
+    updateTheme(themeId: string): void {
         this.store.updateThemeId(themeId);
     }
 
