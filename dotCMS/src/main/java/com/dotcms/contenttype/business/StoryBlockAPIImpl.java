@@ -335,10 +335,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @param contentletIdList The builder to collect contentlet identifiers
      * @param blocks           The list of blocks to process
      */
-    @SuppressWarnings("unchecked")
     private void processBlocksRecursively(final ImmutableList.Builder<String> contentletIdList,
                                           final List<Map<String, Object>> blocks) {
-        if (blocks == null || blocks.isEmpty()) {
+        if (UtilMethods.isSet(blocks)) {
             return;
         }
 
