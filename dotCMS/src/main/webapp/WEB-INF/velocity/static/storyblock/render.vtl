@@ -65,6 +65,9 @@
 #*      *##elseif( $element.type == "dotImage" )#*
             *##set($item = $element)#*
             *##parse("static/storyblock/dotImage.vtl")#*
+        *##elseif( $element.type == "dotContent" )#*
+            *##set($item = $element)#*
+            *##parse("static/storyblock/dotContent.vtl")#*
         *##elseif( $element.type == "dotVideo" )#*
             *##set($item = $element)#*
             *##parse("static/storyblock/dotVideo.vtl")#*

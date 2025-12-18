@@ -329,10 +329,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     /**
      * Recursively processes blocks to find all dependencies, including those nested
      * within container blocks like lists, paragraphs, blockquotes, tables, etc.
-     * <p>
      * This method traverses the entire block tree structure, ensuring that dependencies
      * (dotImage, dotContent, dotVideo) are found regardless of their nesting level.
-     * </p>
      *
      * @param contentletIdList The builder to collect contentlet identifiers
      * @param blocks           The list of blocks to process
