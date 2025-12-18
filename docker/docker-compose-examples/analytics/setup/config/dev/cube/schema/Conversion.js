@@ -32,6 +32,7 @@ cube('Conversion', {
                         'identifier', identifier,
                         'title', title,
                         'conversions', toString(total_conversion_count),
+                        'events', toString(total_events_count),
                         'event_type', event_type
                     )
                 ) as top_attributed_content
@@ -44,7 +45,8 @@ cube('Conversion', {
                         title,
                         context_site_id,
                         event_type,
-                        SUM(conversion_count) AS total_conversion_count
+                        SUM(conversion_count) AS total_conversion_count,
+                        SUM(events_count) AS total_events_count
                     FROM content_presents_in_conversion
                     WHERE ${FILTER_PARAMS.Conversion.customerId.filter('customer_id')} AND (
                         ${FILTER_PARAMS.Conversion.clusterId ? FILTER_PARAMS.Conversion.clusterId.filter('cluster_id') : '1=1'}
