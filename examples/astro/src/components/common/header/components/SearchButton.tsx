@@ -25,7 +25,7 @@ interface SearchButtonProps {
 function SearchButton({ onClick }: SearchButtonProps) {
   return (
     <button
-      aria-label="Toggle search"
+      aria-label="toggle-search"
       className="flex items-center justify-center pl-2 hover:cursor-pointer"
       onClick={onClick}
     >

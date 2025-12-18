@@ -87,7 +87,7 @@ function AISearchDialog({ isOpen, onClose }) {
         document.documentElement.style.overflow = isOpen ? "hidden" : "unset";
 
         return () => {
-            document.body.style.overflow = "unset";
+            document.documentElement.style.overflow = "unset";
         };
     }, [isOpen]);
 

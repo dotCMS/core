@@ -29,7 +29,6 @@ const getURL = (result) => {
     }
     if (contentType === "Product") {
         const category = Object.keys(result.category?.[0])[0];
-        // return `/store/${category}`;
         return `/store/${category}`;
     }
     return url;

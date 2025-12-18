@@ -22,7 +22,7 @@ import { SearchIcon } from "./icons";
 function SearchButton({ onClick }) {
     return (
         <button
-            aria-label="toggleSearch"
+            aria-label="toggle-search"
             className="flex items-center justify-center pl-2 hover:cursor-pointer"
             onClick={onClick}
         >
