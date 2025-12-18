@@ -6,16 +6,16 @@
                     <div class="form-fields">
                         @for (field of section.fields; track field.id) {
                             @switch (field.type) {
-                                @case ('dropdown') {
+                                @case (STYLE_EDITOR_FIELD_TYPES.DROPDOWN) {
                                     <dot-uve-style-editor-field-dropdown [field]="field" />
                                 }
-                                @case ('checkboxGroup') {
+                                @case (STYLE_EDITOR_FIELD_TYPES.CHECKBOX_GROUP) {
                                     <dot-uve-style-editor-field-checkbox-group [field]="field" />
                                 }
-                                @case ('radio') {
+                                @case (STYLE_EDITOR_FIELD_TYPES.RADIO) {
                                     <dot-uve-style-editor-field-radio [field]="field" />
                                 }
-                                @case ('input') {
+                                @case (STYLE_EDITOR_FIELD_TYPES.INPUT) {
                                     <dot-uve-style-editor-field-input [field]="field" />
                                 }
                             }

@@ -22,6 +22,8 @@ import { UveStyleEditorFieldDropdownComponent } from './components/uve-style-edi
 import { UveStyleEditorFieldInputComponent } from './components/uve-style-editor-field-input/uve-style-editor-field-input.component';
 import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor-field-radio/uve-style-editor-field-radio.component';
 
+import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+
 @Component({
     selector: 'dot-uve-style-editor-form',
     templateUrl: './dot-uve-style-editor-form.component.html',
@@ -51,6 +53,8 @@ export class DotUveStyleEditorFormComponent {
             this.#buildForm(schema);
         }
     });
+
+    readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
     #buildForm(schema: StyleEditorFormSchema): void {
         const formControls: Record<string, AbstractControl> = {};
