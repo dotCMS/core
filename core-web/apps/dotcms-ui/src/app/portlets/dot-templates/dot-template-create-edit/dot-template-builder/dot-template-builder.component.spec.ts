@@ -164,52 +164,54 @@ describe('DotTemplateBuilderComponent', () => {
         expect(cancelSpy).toHaveBeenCalled();
     });
 
-    it('should render design builder with correct inputs', () => {
-        const item = createDesignItem({
-            identifier: 'id-1',
-            theme: 't-1',
-            layout: { body: { rows: [{ foo: 'bar' }] } },
-            containers: { c1: { identifier: 'container-1' } }
-        });
-        spectator.setInput('item', item);
+    describe('<dotcms-template-builder-lib>', () => {
+        it('should pass the correct inputs', () => {
+            const item = createDesignItem({
+                identifier: 'id-1',
+                theme: 't-1',
+                layout: { body: { rows: [{ foo: 'bar' }] } },
+                containers: { c1: { identifier: 'container-1' } }
+            });
+            spectator.setInput('item', item);
 
-        spectator.detectChanges();
+            spectator.detectChanges();
 
-        const builderDe = spectator.debugElement.query(By.css('dotcms-template-builder-lib'));
-        expect(builderDe).toBeTruthy();
-        expect(builderDe.componentInstance.layout).toEqual(item.layout as any);
-        expect(builderDe.componentInstance.containerMap).toEqual(item.containers as any);
-        expect(builderDe.componentInstance.template).toEqual({
-            themeId: 't-1',
-            identifier: 'id-1'
+            const builderDe = spectator.debugElement.query(By.css('dotcms-template-builder-lib'));
+            expect(builderDe).toBeTruthy();
+            expect(builderDe.componentInstance.layout).toEqual(item.layout as any);
+            expect(builderDe.componentInstance.containerMap).toEqual(item.containers as any);
+            expect(builderDe.componentInstance.template).toEqual({
+                themeId: 't-1',
+                identifier: 'id-1'
+            });
         });
+
+        it('should react to templateChange output', fakeAsync(() => {
+            const item = createDesignItem({ identifier: 'id-1', theme: 't-1' });
+            spectator.setInput('item', item);
+
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.detectChanges();
+
+            const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement.contentWindow
+                .location.reload as jest.Mock;
+
+            const updated = createDesignItem({ identifier: 'id-2', theme: 't-2' });
+            spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
+
+            expect(reloadSpy).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
+            expect(updateSpy).toHaveBeenCalledWith(updated);
+
+            tick(AUTOSAVE_DEBOUNCE_TIME - 1);
+            expect(saveSpy).not.toHaveBeenCalled();
+
+            tick(1);
+            expect(saveSpy).toHaveBeenCalledWith(updated);
+        }));
     });
-
-    it('should handle templateChange: reload history iframe, forbid navigation, emit updateTemplate and autosave after debounce', fakeAsync(() => {
-        const item = createDesignItem({ identifier: 'id-1', theme: 't-1' });
-        spectator.setInput('item', item);
-
-        const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
-        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-
-        spectator.detectChanges();
-
-        const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement.contentWindow
-            .location.reload as jest.Mock;
-
-        const updated = createDesignItem({ identifier: 'id-2', theme: 't-2' });
-        spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
-
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
-        expect(dotRouterService.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
-        expect(updateSpy).toHaveBeenCalledWith(updated);
-
-        tick(AUTOSAVE_DEBOUNCE_TIME - 1);
-        expect(saveSpy).not.toHaveBeenCalled();
-
-        tick(1);
-        expect(saveSpy).toHaveBeenCalledWith(updated);
-    }));
 
     it('should save current lastTemplate when page leave is requested', fakeAsync(() => {
         const item = createDesignItem();
