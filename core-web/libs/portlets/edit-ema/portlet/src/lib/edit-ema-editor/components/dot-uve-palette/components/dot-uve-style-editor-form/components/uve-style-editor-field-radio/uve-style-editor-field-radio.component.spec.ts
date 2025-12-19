@@ -236,9 +236,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
                 {
                     label: 'Left Layout',
                     value: 'left',
-                    imageURL: 'https://example.com/left.png',
-                    width: 80,
-                    height: 50
+                    imageURL: 'https://example.com/left.png'
                 },
                 { label: 'Right Layout', value: 'right' }
             ]);
@@ -292,9 +290,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
                 {
                     label: 'Left Layout',
                     value: 'left',
-                    imageURL: 'https://example.com/left.png',
-                    width: 80,
-                    height: 50
+                    imageURL: 'https://example.com/left.png'
                 }
             ]);
 
