@@ -69,17 +69,18 @@ public class UserPermissionsPaginator implements Paginator<UserPermissionAssetVi
             final int offset,
             final Map<String, Object> params) throws PaginationException {
 
-        try {
-            final Role role = (Role) params.get(ROLE_PARAM);
+        final Role role = (Role) params.get(ROLE_PARAM);
+        final String userId = (String) params.get(USER_ID_PARAM);
 
+        try {
             if (role == null) {
                 throw new PaginationException(
                         new IllegalArgumentException("Role parameter is required"));
             }
 
             Logger.debug(this, () -> String.format(
-                    "UserPermissionsPaginator: role=%s, offset=%d, limit=%d",
-                    role.getId(), offset, limit));
+                    "UserPermissionsPaginator: userId=%s, role=%s, offset=%d, limit=%d",
+                    userId, role.getId(), offset, limit));
 
             // Get all assets (in-memory pagination like SiteViewPaginator)
             final List<UserPermissionAssetView> allAssets =
@@ -104,7 +105,8 @@ public class UserPermissionsPaginator implements Paginator<UserPermissionAssetVi
             return result;
 
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting user permission assets for pagination", e);
+            Logger.error(this, String.format(
+                    "Error getting user permission assets for pagination, userId=%s", userId), e);
             throw new DotRuntimeException("Error retrieving user permission assets", e);
         }
     }
