@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.system.permission;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.Pagination;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -25,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.pagination.UserPermissionsPaginator;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -373,7 +375,7 @@ public class PermissionResource {
         @ApiResponse(responseCode = "200",
                     description = "User permissions retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityUserPermissionsView.class))),
+                                      schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -389,7 +391,7 @@ public class PermissionResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityUserPermissionsView getUserPermissions(
+    public ResponseEntityPaginatedDataView getUserPermissions(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response,
             @Parameter(description = "User ID or email address", required = true, example = "dotcms.org.1")
@@ -421,49 +423,42 @@ public class PermissionResource {
         // Get user's individual role
         final Role userRole = roleAPI.loadRoleById(targetUser.getUserId());
 
-        // Calculate offset from 1-based page (consistent with PaginationUtil pattern)
-        final int pageValue = page <= 0 ? 1 : page;
-        final int offset = (pageValue - 1) * perPage;
-
-        // Use Paginator to get paginated assets (consistent with codebase patterns like SiteViewPaginator)
-        final Map<String, Object> extraParams = Map.of(
-                UserPermissionsPaginator.ROLE_PARAM, userRole,
-                UserPermissionsPaginator.USER_ID_PARAM, targetUser.getUserId()
-        );
-
-        final var paginatedAssets = userPermissionsPaginator
-                .getItems(requestingUser, perPage, offset, extraParams);
-
-        final long totalAssets = paginatedAssets.getTotalResults();
-
-        // Build response with user info and assets
+        // Build user info (needed in function closure)
         final UserInfoView userInfo = UserInfoView.builder()
                 .id(targetUser.getUserId())
                 .name(targetUser.getFullName())
                 .email(targetUser.getEmailAddress())
                 .build();
 
-        final UserPermissionsView result = UserPermissionsView.builder()
-                .user(userInfo)
-                .roleId(userRole.getId())
-                .assets(paginatedAssets)
-                .build();
+        final String roleId = userRole.getId();
 
-        final Pagination pagination = new Pagination.Builder()
-                .currentPage(pageValue)
-                .perPage(perPage)
-                .totalEntries(totalAssets)
-                .build();
+        // Use PaginationUtil with function to build complex response
+        final PaginationUtil paginationUtil = new PaginationUtil(userPermissionsPaginator);
 
-        // Add HTTP pagination headers (consistent with PaginationUtil pattern)
-        response.setHeader(PaginationUtil.PAGINATION_PER_PAGE_HEADER_NAME, String.valueOf(perPage));
-        response.setHeader(PaginationUtil.PAGINATION_CURRENT_PAGE_HEADER_NAME, String.valueOf(pageValue));
-        response.setHeader(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME, String.valueOf(totalAssets));
+        final Map<String, Object> extraParams = Map.of(
+                UserPermissionsPaginator.ROLE_PARAM, userRole,
+                UserPermissionsPaginator.USER_ID_PARAM, targetUser.getUserId()
+        );
 
-        Logger.debug(this, () -> String.format("Retrieved %d permission assets for user %s (page %d of %d)",
-                paginatedAssets.size(), userId, pageValue, (totalAssets + perPage - 1) / perPage));
+        final PaginationUtilParams<UserPermissionAssetView, UserPermissionsView> params =
+                new PaginationUtilParams.Builder<UserPermissionAssetView, UserPermissionsView>()
+                        .withRequest(request)
+                        .withResponse(response)
+                        .withUser(requestingUser)
+                        .withPage(page)
+                        .withPerPage(perPage)
+                        .withExtraParams(extraParams)
+                        .withFunction(paginatedAssets -> UserPermissionsView.builder()
+                                .user(userInfo)
+                                .roleId(roleId)
+                                .assets(paginatedAssets)
+                                .build())
+                        .build();
 
-        return new ResponseEntityUserPermissionsView(result, pagination);
+        Logger.debug(this, () -> String.format("Retrieving permission assets for user %s (page %d, perPage %d)",
+                userId, page, perPage));
+
+        return paginationUtil.getPageView(params);
     }
 
     /**

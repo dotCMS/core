@@ -10734,7 +10734,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
           description: User permissions retrieved successfully
         "401":
           content:
@@ -22324,19 +22324,6 @@ components:
           type: string
         last:
           type: string
-    ImmutableListUserPermissionAssetView:
-      type: array
-      description: List of permission assets (hosts and folders) with their permission
-        assignments
-      items:
-        $ref: "#/components/schemas/UserPermissionAssetView"
-      properties:
-        empty:
-          type: boolean
-        first:
-          $ref: "#/components/schemas/UserPermissionAssetView"
-        last:
-          $ref: "#/components/schemas/UserPermissionAssetView"
     ImmutableListVariantResult:
       type: array
       items:
@@ -25234,29 +25221,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityUserPermissionsView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/UserPermissionsView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityUserUpdateView:
       type: object
       properties:
@@ -27849,26 +27813,6 @@ components:
       - email
       - firstName
       - lastName
-    UserInfoView:
-      type: object
-      description: User information
-      properties:
-        email:
-          type: string
-          description: User's email address
-          example: admin@dotcms.com
-        id:
-          type: string
-          description: User identifier
-          example: admin@dotcms.com
-        name:
-          type: string
-          description: User's full name
-          example: Admin User
-      required:
-      - email
-      - id
-      - name
     UserPermissionAssetView:
       type: object
       description: The updated asset with new permission assignments
@@ -27950,32 +27894,6 @@ components:
       - path
       - permissions
       - type
-    UserPermissionsView:
-      type: object
-      properties:
-        assets:
-          type: array
-          description: List of permission assets (hosts and folders) with their permission
-            assignments
-          items:
-            $ref: "#/components/schemas/UserPermissionAssetView"
-          properties:
-            empty:
-              type: boolean
-            first:
-              $ref: "#/components/schemas/UserPermissionAssetView"
-            last:
-              $ref: "#/components/schemas/UserPermissionAssetView"
-        roleId:
-          type: string
-          description: User's individual role identifier
-          example: abc-123-def-456
-        user:
-          $ref: "#/components/schemas/UserInfoView"
-      required:
-      - assets
-      - roleId
-      - user
     VanityUrlContentType:
       type: object
       allOf:
