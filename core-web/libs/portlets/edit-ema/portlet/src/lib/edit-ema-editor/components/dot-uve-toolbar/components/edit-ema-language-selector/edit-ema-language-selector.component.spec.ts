@@ -23,9 +23,17 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
-describe('DotEmaLanguageSelectorComponent', () => {
+describe('EditEmaLanguageSelectorComponent', () => {
     let spectator: Spectator<EditEmaLanguageSelectorComponent>;
     let component: EditEmaLanguageSelectorComponent;
+
+    const mockLanguage = {
+        id: 1,
+        language: 'English',
+        countryCode: 'US',
+        languageCode: 'EN',
+        country: 'United States'
+    };
 
     const createComponent = createComponentFactory({
         component: EditEmaLanguageSelectorComponent,
@@ -36,23 +44,17 @@ describe('DotEmaLanguageSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                language: {
-                    id: 1,
-                    language: 'English',
-                    countryCode: 'US',
-                    languageCode: 'EN',
-                    country: 'United States'
-                }
+                language: mockLanguage
             }
         });
 
         component = spectator.component;
+        spectator.detectChanges();
     });
 
     describe('DOM', () => {
         it('should render a button with the language that comes from the page', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('language-button')).textContent).toBe('English - US');
+            expect(spectator.query(byTestId('language-button'))?.textContent).toBe('English - US');
         });
 
         it('should render a overlay panel', () => {
@@ -74,11 +76,66 @@ describe('DotEmaLanguageSelectorComponent', () => {
         });
     });
 
+    describe('Model synchronization', () => {
+        it('should sync model signal when language input changes', () => {
+            const newLanguage = {
+                id: 2,
+                language: 'Italian',
+                countryCode: 'IT',
+                languageCode: 'IT',
+                country: 'Italy'
+            };
+
+            spectator.setInput('language', newLanguage);
+            spectator.detectChanges();
+
+            const model = component.selectedLanguageModel();
+            expect(model).not.toBeNull();
+            expect(model?.id).toBe(2);
+            expect(model?.label).toBe('Italian - IT');
+        });
+
+        it('should not update model if language id has not changed', () => {
+            const initialModel = component.selectedLanguageModel();
+            expect(initialModel).not.toBeNull();
+
+            // Update language with same id but different properties
+            spectator.setInput('language', {
+                ...mockLanguage,
+                language: 'English Updated'
+            });
+            spectator.detectChanges();
+
+            const updatedModel = component.selectedLanguageModel();
+            expect(updatedModel?.id).toBe(initialModel?.id);
+        });
+
+        it('should compute selectedLanguage with correct label format', () => {
+            const selected = component.selectedLanguage();
+            expect(selected).not.toBeNull();
+            expect(selected?.id).toBe(1);
+            expect(selected?.label).toBe('English - US');
+        });
+
+        it('should compute selectedLanguage label without country code when countryCode is empty', () => {
+            spectator.setInput('language', {
+                id: 3,
+                language: 'Spanish',
+                countryCode: '',
+                languageCode: 'ES',
+                country: 'Spain'
+            });
+            spectator.detectChanges();
+
+            const selected = component.selectedLanguage();
+            expect(selected?.label).toBe('Spanish');
+        });
+    });
+
     describe('events', () => {
-        it('should trigger the languageChange emitter when the language changes', () => {
+        it('should emit selected event when language changes', () => {
             const languageChangeSpy = jest.spyOn(component.selected, 'emit');
 
-            // Call onChange directly to test the event emission
             component.onChange({
                 originalEvent: new Event('change'),
                 value: {
@@ -92,6 +149,51 @@ describe('DotEmaLanguageSelectorComponent', () => {
             });
 
             expect(languageChangeSpy).toHaveBeenCalledWith(2);
+        });
+    });
+
+    describe('resetModel', () => {
+        it('should reset the model to the provided language', () => {
+            const newLanguage = {
+                id: 3,
+                language: 'French',
+                countryCode: 'FR',
+                languageCode: 'FR',
+                country: 'France'
+            };
+
+            // Test that resetModel sets the model correctly
+            component.resetModel(newLanguage);
+            const immediateModel = component.selectedLanguageModel();
+            expect(immediateModel).not.toBeNull();
+            expect(immediateModel?.id).toBe(3);
+            expect(immediateModel?.label).toBe('French - FR');
+        });
+
+        it('should create label correctly when resetting model', () => {
+            const languageWithoutCountry = {
+                id: 4,
+                language: 'German',
+                countryCode: '',
+                languageCode: 'DE',
+                country: 'Germany'
+            };
+
+            component.resetModel(languageWithoutCountry);
+            const immediateModel = component.selectedLanguageModel();
+            expect(immediateModel?.label).toBe('German');
+        });
+
+        it('should reset model to current input language (use case: dialog rejection)', () => {
+            // This is the actual use case: resetting to the current input language
+            // when a confirmation dialog is rejected
+            component.resetModel(mockLanguage);
+            spectator.detectChanges();
+
+            const model = component.selectedLanguageModel();
+            expect(model).not.toBeNull();
+            expect(model?.id).toBe(mockLanguage.id);
+            expect(model?.label).toBe('English - US');
         });
     });
 });
