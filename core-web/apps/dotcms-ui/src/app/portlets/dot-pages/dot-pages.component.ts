@@ -11,7 +11,6 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterModule } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -89,7 +88,6 @@ type SavePageEventData = {
     imports: [
         MenuModule,
         CommonModule,
-        RouterModule,
         ProgressSpinnerModule,
         DotAddToBundleComponent,
         DotPageFavoritesPanelComponent,
@@ -115,6 +113,7 @@ export class DotPagesComponent {
 
     /**
      * Handle switch site
+     * This will trigger a new fetch of pages when site loads for the first time
      *
      * @param {SiteEntity} _site
      * @memberof DotPagesComponent
@@ -125,7 +124,7 @@ export class DotPagesComponent {
     });
 
     constructor() {
-        this.dotCMSPagesStore.getPages();
+        // this.dotCMSPagesStore.getPages();
         this.dotCMSPagesStore.getFavoritePages();
 
         this.listenSavePageEvent();
@@ -171,17 +170,6 @@ export class DotPagesComponent {
         this.#dotPageActionsService.getItems(data).subscribe((actions) => {
             this.menuItems.set(actions);
         });
-    }
-
-    /**
-     * Load pages on deactivation
-     *
-     * @memberof DotPagesComponent
-     */
-    loadPagesOnDeactivation() {
-        // this.#store.getPages({
-        //     offset: 0
-        // });
     }
 
     /**
@@ -237,26 +225,10 @@ export class DotPagesComponent {
     }
 
     /**
-     * Get the save page event info
+     * Listen to the save page event
      *
-     * @param {DotCMSWorkflowActionEvent} event
-     * @return {*}  {identifier: string; isFavoritePage: boolean}
      * @memberof DotPagesComponent
      */
-    private getSavePageEventInfo(event: DotEvent<SavePageEventData>): {
-        identifier: string;
-        isFavoritePage: boolean;
-    } {
-        const payload = event.data?.payload;
-
-        return {
-            identifier: payload?.identifier ?? payload?.contentletIdentifier ?? '',
-            isFavoritePage:
-                payload?.contentType === 'dotFavoritePage' ||
-                payload?.contentletType === 'dotFavoritePage'
-        };
-    }
-
     private listenSavePageEvent(): void {
         this.#dotEventsService
             .listen('save-page')
@@ -264,12 +236,15 @@ export class DotPagesComponent {
             .subscribe((event: DotEvent<SavePageEventData>) => {
                 const { data } = event;
                 const { value, payload } = data;
-                const { contentletIdentifier, contentletType } = payload ?? {};
+                const { contentletIdentifier, identifier, contentletType, contentType } =
+                    payload ?? {};
+                const baseType = contentType ?? contentletType;
+                const baseIdentifier = identifier ?? contentletIdentifier;
 
-                if (contentletType === 'dotFavoritePage') {
-                    this.dotCMSPagesStore.updateFavoritePageNode(contentletIdentifier);
+                if (baseType === 'dotFavoritePage') {
+                    this.dotCMSPagesStore.updateFavoritePageNode(baseIdentifier);
                 } else {
-                    this.dotCMSPagesStore.updatePageNode(contentletIdentifier);
+                    this.dotCMSPagesStore.updatePageNode(baseIdentifier);
                 }
 
                 this.#dotMessageDisplayService.push({

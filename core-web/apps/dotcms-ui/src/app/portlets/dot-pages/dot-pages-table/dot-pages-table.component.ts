@@ -13,7 +13,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { debounceTime, distinctUntilChanged, skip, startWith } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
@@ -131,21 +131,15 @@ export class DotPagesTableComponent {
      */
     constructor() {
         this.searchControl.valueChanges
-            .pipe(
-                startWith(this.searchControl.value),
-                debounceTime(300),
-                distinctUntilChanged(),
-                skip(1),
-                takeUntilDestroyed()
-            )
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
             .subscribe((keyword) => this.search.emit(keyword));
 
         this.languageControl.valueChanges
-            .pipe(distinctUntilChanged(), skip(1), takeUntilDestroyed())
+            .pipe(distinctUntilChanged(), takeUntilDestroyed())
             .subscribe((languageId) => this.languageChange.emit(languageId));
 
         this.archivedControl.valueChanges
-            .pipe(distinctUntilChanged(), skip(1), takeUntilDestroyed())
+            .pipe(distinctUntilChanged(), takeUntilDestroyed())
             .subscribe((archived) => this.archivedChange.emit(archived));
     }
 
