@@ -380,7 +380,17 @@ export class DotBubbleMenuComponent implements OnInit {
      * If allowedBlocks is not provided or empty, returns the options unchanged.
      */
     private filterByAllowed(options: NodeTypeOption[]): NodeTypeOption[] {
-        const allowedBlocks = this.editor().storage.dotConfig?.allowedBlocks || [];
+        const allowedBlocks = this.editor().storage.dotConfig?.allowedBlocks;
+
+        // If allowedBlocks is not provided, empty, or only contains the default 'paragraph',
+        // treat it as "no restrictions" and return all options.
+        if (
+            !allowedBlocks?.length ||
+            (allowedBlocks.length === 1 && allowedBlocks[0] === 'paragraph')
+        ) {
+            return options;
+        }
+
         return options.filter((opt) => allowedBlocks.includes(opt.value));
     }
 
