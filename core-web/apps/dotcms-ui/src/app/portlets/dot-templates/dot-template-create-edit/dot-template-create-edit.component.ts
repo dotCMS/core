@@ -10,7 +10,7 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 
 import { takeUntil, tap } from 'rxjs/operators';
 
@@ -180,7 +180,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private createTemplate(): void {
-        const ref: DynamicDialogRef = this.dialogService.open(DotTemplatePropsComponent, {
+        const ref = this.dialogService.open(DotTemplatePropsComponent, {
             header: this.dotMessageService.get('templates.create.title'),
             width: '40rem',
             closable: false,

@@ -261,7 +261,6 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
 
-        const fakeCommand = jest.spyOn(fakeActions[0].menuItem, 'command');
         const mockContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -279,14 +278,25 @@ describe('ActionMenuButtonComponent', () => {
         spectator.setInput('item', mockContentType);
         spectator.detectChanges();
 
+        // Get the dot-menu component
+        const dotMenuComponent = spectator.query(DotMenuComponent);
+        expect(dotMenuComponent).toBeTruthy();
+
+        // Get the menu model from the PrimeNG menu
+        const menuModel = dotMenuComponent.menu.model;
+        expect(menuModel.length).toBeGreaterThan(0);
+
+        // Click the button to open the menu
         const actionButtonMenu = spectator.query(byTestId('dot-menu-button'));
         spectator.click(actionButtonMenu);
         spectator.detectChanges();
 
-        const menuItemsLink = spectator.queryAll('.p-menuitem-link');
-        spectator.click(menuItemsLink[1]);
+        // Simulate click on first menu item by calling its command
+        const firstMenuItem = menuModel[0];
+        const clickEvent = new MouseEvent('click');
+        firstMenuItem.command({ item: firstMenuItem, originalEvent: clickEvent });
 
-        expect(fakeCommand).toHaveBeenCalledTimes(1);
-        expect(fakeCommand).toHaveBeenCalledWith(mockContentType);
+        expect(mockCommand).toHaveBeenCalledTimes(1);
+        expect(mockCommand).toHaveBeenCalledWith(mockContentType);
     });
 });

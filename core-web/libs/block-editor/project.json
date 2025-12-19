@@ -4,6 +4,7 @@
     "projectType": "library",
     "sourceRoot": "libs/block-editor/src",
     "prefix": "dotcms",
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "lint": {
             "executor": "@nx/eslint:lint",
@@ -13,7 +14,8 @@
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/libs/block-editor"],
             "options": {
-                "jestConfig": "libs/block-editor/jest.config.ts"
+                "jestConfig": "libs/block-editor/jest.config.ts",
+                "tsConfig": "libs/block-editor/tsconfig.spec.json"
             }
         },
         "storybook": {
@@ -56,6 +58,5 @@
                 }
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

@@ -28,7 +28,7 @@
         }
 
         .p-tabview-panel[aria-hidden="false"] {
-            max-height: 30rem; /* This must be greater than the maximum expected content */
+            max-height: 24rem; /* This must be greater than the maximum expected content */
             opacity: 1;
             display: block;
         }

@@ -1,74 +1,80 @@
 <form
     (ngSubmit)="handleSubmit()"
-    [ngClass]="{ 'locale-add__edit-form': languageId?.value }"
+    [ngClass]="{ 'min-h-80': languageId?.value, 'min-h-122': !languageId?.value }"
     [formGroup]="form"
-    class="p-fluid">
+    class="flex flex-col gap-6">
     @if (languageId?.value) {
         <!--Edit language-->
-        <div class="field">
-            <label class="p-label-input-required" for="langEdit">
-                {{ 'locale.display.name' | dm }}
-            </label>
+
+        <div class="field flex flex-col gap-2">
+            <label for="langEdit">{{ 'locale.display.name' | dm }}</label>
             <input
                 [maxlength]="50"
+                pInputText
                 id="langEdit"
+                aria-describedby="langEdit-help"
+                [maxlength]="50"
                 data-testId="langEdit"
                 formControlName="language"
-                pInputText
                 type="text" />
         </div>
 
-        <div class="field">
+        <div class="field flex flex-col gap-2">
             <label for="isoCodeEdit">{{ 'locale.id' | dm }}</label>
-            <span class="p-input-icon-right">
-                @if (localeIDInput.value) {
-                    <dot-copy-button [copy]="localeIDInput.value" customClass="p-button-rounded" />
-                }
+
+            <p-iconField iconPosition="right" class="flex items-center justify-center">
                 <input
                     id="isoCodeEdit"
                     #localeIDInput
                     data-testId="isoCodeEdit"
                     formControlName="isoCode"
                     pInputText
+                    class="w-full"
                     type="text" />
-            </span>
-        </div>
-        <div class="field">
-            <label for="id">{{ 'locale.language.id' | dm }}</label>
-            <span class="p-input-icon-right">
-                @if (languageIDInput.value) {
-                    <dot-copy-button
-                        [copy]="languageIDInput.value"
-                        customClass="p-button-rounded" />
+                @if (localeIDInput.value) {
+                    <p-inputIcon class="flex items-center bottom-2">
+                        <dot-copy-button [copy]="localeIDInput.value" />
+                    </p-inputIcon>
                 }
+            </p-iconField>
+        </div>
+
+        <div class="field flex flex-col gap-2">
+            <label for="id">{{ 'locale.language.id' | dm }}</label>
+            <p-iconField iconPosition="right" class="flex items-center justify-center">
                 <input
                     id="id"
                     #languageIDInput
                     data-testId="id"
                     formControlName="id"
                     pInputText
+                    class="w-full"
                     type="text" />
-            </span>
+                @if (languageIDInput.value) {
+                    <p-inputIcon class="flex items-center bottom-2">
+                        <dot-copy-button [copy]="languageIDInput.value" />
+                    </p-inputIcon>
+                }
+            </p-iconField>
         </div>
     } @else {
         <!--Add new language-->
-        <div class="field">
+        <div class="field flex flex-col gap-2">
             <label for="localeType">{{ 'locales.type' | dm }}</label>
+
             <p-select
                 (onChange)="handleTypeChange()"
                 [options]="localeType"
                 id="localeType"
-                #localeTypeDropdown
+                formControlName="localeType"
                 data-testId="localeType"
                 appendTo="body"></p-select>
         </div>
 
-        @if (localeTypeDropdown.value == 1) {
+        @if (form.get('localeType')?.value === 1) {
             <!--Standard Locale-->
-            <div class="field">
-                <label class="p-label-input-required" for="languageDropdown">
-                    {{ 'locales.language' | dm }}
-                </label>
+            <div class="field flex flex-col gap-2">
+                <label for="languageDropdown">{{ 'locales.language' | dm }}</label>
                 <p-select
                     [filter]="true"
                     [options]="data.languages"
@@ -85,9 +91,9 @@
                         {{ language.name }} - {{ language.code }}
                     </ng-template>
                 </p-select>
-                <span class="p-field-hint">{{ 'locales.language.hint' | dm }}</span>
+                <small class="text-gray-500">{{ 'locales.language.hint' | dm }}</small>
             </div>
-            <div class="field">
+            <div class="field flex flex-col gap-2">
                 <label for="countryDropdown">{{ 'locales.country' | dm }}</label>
                 <p-select
                     [filter]="true"
@@ -105,16 +111,11 @@
                         {{ country.name }} - {{ country.code }}
                     </ng-template>
                 </p-select>
-                <span class="p-field-hint">{{ 'locales.country.hint' | dm }}</span>
+                <small class="text-gray-500">{{ 'locales.country.hint' | dm }}</small>
             </div>
-            <div class="field">
+            <div class="field flex flex-col gap-2">
                 <label for="isoCode">{{ 'locale.id' | dm }}</label>
-                <span class="p-input-icon-right">
-                    @if (isoCodeInput.value) {
-                        <dot-copy-button
-                            [copy]="isoCodeInput.value"
-                            customClass="p-button-rounded" />
-                    }
+                <p-inputgroup>
                     <input
                         [placeholder]="'locale.id.placeholder' | dm"
                         id="isoCode"
@@ -123,12 +124,28 @@
                         formControlName="isoCode"
                         pInputText
                         type="text" />
-                </span>
-                <span class="p-field-hint">{{ 'locale.id.standard.hint' | dm }}</span>
+                    @if (isoCodeInput.value) {
+                        <p-inputgroup-addon class="bg-transparent border-l-0">
+                            <dot-copy-button [copy]="isoCodeInput.value" />
+                        </p-inputgroup-addon>
+                    }
+                </p-inputgroup>
+                <small class="text-gray-500">{{ 'locale.id.standard.hint' | dm }}</small>
             </div>
         } @else {
             <!--Custom Locale-->
-            <div class="field">
+            <div class="field flex flex-col gap-2">
+                <label for="language">{{ 'locale.display.name' | dm }}</label>
+                <input
+                    [maxlength]="50"
+                    id="language"
+                    data-testId="language"
+                    formControlName="language"
+                    pInputText
+                    type="text" />
+                <small class="text-gray-500">{{ 'locale.display.name.hint' | dm }}</small>
+            </div>
+            <!-- <div class="field">
                 <label class="p-label-input-required" for="language">
                     {{ 'locale.display.name' | dm }}
                 </label>
@@ -140,9 +157,20 @@
                     pInputText
                     type="text" />
                 <span class="p-field-hint">{{ 'locale.display.name.hint' | dm }}</span>
-            </div>
-            <div class="field">
-                <label class="p-label-input-required" for="languageCode">
+            </div> -->
+            <div class="field flex flex-col gap-2">
+                <label for="languageCode">{{ 'locale.id' | dm }}</label>
+                <p-inputgroup>
+                    <input
+                        [maxlength]="5"
+                        id="languageCode"
+                        data-testId="languageCode"
+                        formControlName="languageCode"
+                        pInputText
+                        type="text" />
+                </p-inputgroup>
+                <small class="text-gray-500">{{ 'locale.id.hint' | dm }}</small>
+                <!-- <label class="p-label-input-required" for="languageCode">
                     {{ 'locale.id' | dm }}
                 </label>
                 <input
@@ -152,17 +180,17 @@
                     formControlName="languageCode"
                     pInputText
                     type="text" />
-                <span class="p-field-hint">{{ 'locale.id.hint' | dm }}</span>
+                <span class="p-field-hint">{{ 'locale.id.hint' | dm }}</span> -->
             </div>
         }
     }
     @if (showError | async) {
-        <span class="locale-add__error-message" data-testId="error-message">
+        <span class="my-1 text-sm text-red-500" data-testId="error-message">
             {{ 'locale.error.message' | dm }}
         </span>
     }
 
-    <div class="locale-add__buttons">
+    <div class="flex gap-3 mt-auto justify-end">
         <button
             (click)="ref.close()"
             [label]="'Cancel' | dm"
