@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.taillog;
 
+import static com.dotmarketing.util.FileUtil.isValidFilePath;
+import static com.dotmarketing.util.FileUtil.sanitizeFilePath;
+
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -69,7 +72,7 @@ public class TailLogResource {
         }
 
         //This prevents any evil attack attempt allowing for paths including subfolders
-        if(!FileUtil.isValidFilePath(fileName)){
+        if(!isValidFilePath(fileName)){
             return sendError("Invalid File name param");
         }
 
@@ -83,7 +86,7 @@ public class TailLogResource {
         final File logFile 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder + sanitizedFileName));
 
 
-        // if the logFile is outside of the logFolder, die
+        // if the logFile is outside the logFolder, die
         if ( !logFolder.exists() || !logFolder.canRead()
                 ||   !logFile.getCanonicalPath().startsWith(logFolder.getCanonicalPath())) {
 
@@ -146,36 +149,6 @@ public class TailLogResource {
         }
 
         return eventOutput;
-    }
-
-    /**
-     * Sanitizes a file path by decomposing it into individual components and sanitizing each part separately.
-     * This provides enhanced security by ensuring that both directory names and file names are properly cleaned
-     * to prevent directory traversal attacks and other malicious file path manipulations.
-     *
-     * @param fileName the file path to sanitize, can include directory components
-     * @return the sanitized file path with all components individually cleaned
-     */
-    private String sanitizeFilePath(final String fileName) {
-        // Decompose fileName into directory parts and file name, sanitize each individually
-        final java.nio.file.Path filePath = Paths.get(fileName);
-
-        if (filePath.getParent() != null) {
-            // Has directory components - sanitize each part individually
-            final StringBuilder sanitizedPath = new StringBuilder();
-
-            for (java.nio.file.Path part : filePath) {
-                if (sanitizedPath.length() > 0) {
-                    sanitizedPath.append(File.separator);
-                }
-                sanitizedPath.append(FileUtil.sanitizeFileName(part.toString()));
-            }
-
-            return sanitizedPath.toString();
-        } else {
-            // No directory components - sanitize as single file name
-            return FileUtil.sanitizeFileName(fileName);
-        }
     }
 
 
