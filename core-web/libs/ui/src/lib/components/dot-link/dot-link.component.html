@@ -1,6 +1,6 @@
 @if (link) {
-    <a [href]="link" [title]="link" class="p-button-sm p-button-text" pButton target="_blank">
-        <i [class]="classNames"></i>
-        <span class="p-button-label">{{ this.label | dm }}</span>
+    <a [href]="link" [title]="link" pButton class="p-button-link" size="small" target="_blank">
+        <i [class]="classNames" pButtonIcon></i>
+        <span pButtonLabel>{{ this.label | dm }}</span>
     </a>
 }

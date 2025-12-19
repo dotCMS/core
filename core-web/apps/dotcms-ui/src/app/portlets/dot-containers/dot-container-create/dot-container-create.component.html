@@ -1,21 +1,21 @@
 <dot-portlet-base [boxed]="false">
-    <p-tabs value="0">
-        <p-tablist>
-            <p-tab [value]="0">
+    <p-tabs class="h-full flex flex-col" [(value)]="activeTab">
+        <p-tablist class="shrink-0">
+            <p-tab class="flex-1 text-center" [value]="0">
                 {{ 'message.containers.tab.properties' | dm }}
             </p-tab>
             @if (containerId) {
-                <p-tab [value]="1">
+                <p-tab class="flex-1 text-center" [value]="1">
                     {{ 'message.containers.tab.permissions' | dm }}
                 </p-tab>
             }
             @if (containerId) {
-                <p-tab [value]="2">
+                <p-tab class="flex-1 text-center" [value]="2">
                     {{ 'message.containers.tab.history' | dm }}
                 </p-tab>
             }
         </p-tablist>
-        <p-tabpanels>
+        <p-tabpanels class="grow overflow-auto">
             <p-tabpanel [value]="0">
                 <dot-container-properties></dot-container-properties>
             </p-tabpanel>

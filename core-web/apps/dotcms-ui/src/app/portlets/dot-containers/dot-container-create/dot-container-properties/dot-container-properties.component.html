@@ -48,7 +48,6 @@
                     <button
                         (click)="clearContentConfirmationModal()"
                         [label]="'message.containers.create.clear' | dm"
-                        class="p-button-info dot-container-properties__button-clear"
                         data-testId="clearContent"
                         pButton
                         type="button"></button>
@@ -88,14 +87,14 @@
             <button
                 (click)="cancel()"
                 [label]="'Cancel' | dm"
-                class="p-button-outlined"
+                outlined
                 pButton
                 type="button"></button>
             <button
                 (click)="save()"
                 [disabled]="vm.invalidForm"
                 [label]="'Save' | dm"
-                class="p-button-primary"
+                primary
                 data-testId="saveBtn"
                 pButton
                 type="submit"></button>

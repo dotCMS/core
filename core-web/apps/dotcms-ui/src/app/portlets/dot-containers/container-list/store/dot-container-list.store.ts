@@ -405,6 +405,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                         assetIdentifier: selectedContainers
                             .map((container) => container.identifier)
                             .toString(),
+
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
                     });
                 }

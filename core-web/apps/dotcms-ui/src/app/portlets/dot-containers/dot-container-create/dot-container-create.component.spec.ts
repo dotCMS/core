@@ -6,13 +6,32 @@ import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotEventsService, DotRouterService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { ConfirmationService } from 'primeng/api';
+
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotGlobalMessageService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotRouterService
+} from '@dotcms/data-access';
+import {
+    CoreWebService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    LoggerService,
+    StringUtils
+} from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotContainerCreateComponent } from './dot-container-create.component';
+
+import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 
 @Pipe({
     name: 'dm'
@@ -71,7 +90,18 @@ describe('ContainerCreateComponent', () => {
                         }
                     }
                 },
-                DotRouterService
+                DotRouterService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotGlobalMessageService,
+                DotHttpErrorManagerService,
+                DotMessageDisplayService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                LoggerService,
+                StringUtils,
+                DotContentTypeService,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory }
             ]
         })
             .overrideComponent(DotContainerCreateComponent, {
