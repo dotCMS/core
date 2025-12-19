@@ -53,6 +53,14 @@
     color: colors.$black;
     text-decoration: none;
     display: flex;
+    align-items: flex-start;
+
+    img {
+        width: 2.625rem;
+        aspect-ratio: 1;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
 }
 
 .page-tools-list__description {

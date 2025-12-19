@@ -4,7 +4,8 @@
         "outDir": "../../../../dist/out-tsc",
         "module": "commonjs",
         "types": ["jest", "node"],
-        "target": "es2016"
+        "target": "es2016",
+        "emitDecoratorMetadata": false
     },
     "files": ["src/test-setup.ts"],
     "include": [

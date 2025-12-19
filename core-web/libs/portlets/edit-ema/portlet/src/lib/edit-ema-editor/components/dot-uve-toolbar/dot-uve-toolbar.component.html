@@ -3,134 +3,148 @@
 @let runningExperiment = $toolbar().runningExperiment;
 
 <p-toolbar styleClass="uve-toolbar">
-    <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
-        @if ($isEditMode()) {
-            <button
-                pButton
-                type="button"
-                class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
-                (click)="togglePalette()"
-                data-testId="uve-toolbar-palette-toggle">
-                <img
-                    src="./assets/edit-uve-toolbar/left_panel_open.svg"
-                    alt="Left Panel Open"
-                    [class.hidden]="!$isPaletteOpen()"
-                    data-testId="palette-open-icon" />
-                <img
-                    src="./assets/edit-uve-toolbar/left_panel_close.svg"
-                    alt="Left Panel Close"
-                    [class.hidden]="$isPaletteOpen()"
-                    data-testId="palette-close-icon" />
-            </button>
-        }
-        <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
-        <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
-        <p-button
-            (click)="op.toggle($event)"
-            [pTooltip]="'editpage.header.copy' | dm"
-            tooltipPosition="bottom"
-            icon="pi pi-copy"
-            class="p-button-text p-button-sm p-button-rounded"
-            data-testId="uve-toolbar-copy-url">
-            <p-popover #op>
-                <div class="url-list">
-                    @for (url of $pageURLS(); track url.value) {
-                        <div class="url-item">
-                            <span class="url-label">{{ url.label | dm }}:</span>
-                            <div class="url-value">
-                                <a [href]="url.value" target="_blank" rel="noreferrer noopener">
-                                    {{ url.value }}
-                                </a>
-                                <p-button
-                                    icon="pi pi-copy"
-                                    class="p-button-text p-button-sm p-button-rounded"
-                                    (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                    [cdkCopyToClipboard]="url.value"
-                                    data-testId="copy-url-button" />
-                            </div>
-                        </div>
-                    }
-                </div>
-            </p-popover>
-        </p-button>
-        <a
-            title="Page API URL"
-            [pTooltip]="'uve.toolbar.page.api.url' | dm"
-            tooltipPosition="bottom"
-            pButton
-            label="API"
-            class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
-            target="_blank"
-            data-testId="uve-toolbar-api-link"
-            [href]="$apiURL()"></a>
-        @if (preview || live) {
-            @if ($devices()?.length) {
-                <dot-uve-device-selector
-                    [devices]="$devices()"
-                    data-testId="uve-toolbar-device-selector" />
-            }
-        } @else {
-            @if ($urlContentMap(); as urlContentMap) {
+    <ng-template #start>
+        <div class="flex items-center gap-1" [ngClass]="{ 'p-0': preview || live }">
+            @if ($isEditMode()) {
                 <p-button
-                    (click)="editUrlContentMap.emit(urlContentMap)"
-                    [pTooltip]="
-                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
-                    "
-                    tooltipPosition="bottom"
-                    icon="pi pi-pencil"
-                    class="p-button-text p-button-sm p-button-rounded"
-                    data-testId="edit-url-content-map" />
+                    [text]="true"
+                    size="small"
+                    [rounded]="true"
+                    (click)="togglePalette()"
+                    data-testId="uve-toolbar-palette-toggle">
+                    <img
+                        src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                        alt="Left Panel Open"
+                        [class.hidden]="!$isPaletteOpen()"
+                        data-testId="palette-open-icon" />
+                    <img
+                        src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                        alt="Left Panel Close"
+                        [class.hidden]="$isPaletteOpen()"
+                        data-testId="palette-close-icon" />
+                </p-button>
             }
-        }
-    </div>
-
-    @if (live && !$socialMedia()) {
-        <div class="p-toolbar-group-center">
-            <p-datePicker
-                inputStyleClass="p-inputtext-sm"
-                [ngModel]="$previewDate()"
-                (ngModelChange)="fetchPageOnDate($event)"
-                [showTime]="true"
-                [hourFormat]="'12'"
-                dataType="date"
-                [minDate]="$MIN_DATE()"
-                [readonlyInput]="true"
-                data-testId="uve-toolbar-calendar" />
+            <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
+            <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
             <p-button
-                class="uve-toolbar-chips"
-                [label]="'Today' | dm"
-                alt="Page Day"
-                (click)="fetchPageOnDate()"
-                data-testId="uve-toolbar-calendar-today-button" />
+                (click)="op.toggle($event)"
+                [pTooltip]="'editpage.header.copy' | dm"
+                tooltipPosition="bottom"
+                icon="pi pi-copy"
+                [text]="true"
+                size="small"
+                [rounded]="true"
+                data-testId="uve-toolbar-copy-url">
+                <p-popover #op>
+                    <div class="url-list">
+                        @for (url of $pageURLS(); track url.value) {
+                            <div class="url-item">
+                                <span class="url-label">{{ url.label | dm }}:</span>
+                                <div class="url-value">
+                                    <a [href]="url.value" target="_blank" rel="noreferrer noopener">
+                                        {{ url.value }}
+                                    </a>
+                                    <p-button
+                                        icon="pi pi-copy"
+                                        [text]="true"
+                                        size="small"
+                                        [rounded]="true"
+                                        (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                        [cdkCopyToClipboard]="url.value"
+                                        data-testId="copy-url-button" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </p-popover>
+            </p-button>
+            <a
+                title="Page API URL"
+                [pTooltip]="'uve.toolbar.page.api.url' | dm"
+                tooltipPosition="bottom"
+                pButton
+                class="p-button-text p-button-sm p-button-rounded"
+                target="_blank"
+                data-testId="uve-toolbar-api-link"
+                [href]="$apiURL()">
+                <span pButtonLabel>API</span>
+            </a>
+            @if (preview || live) {
+                @if ($devices()?.length) {
+                    <dot-uve-device-selector
+                        [devices]="$devices()"
+                        data-testId="uve-toolbar-device-selector" />
+                }
+            } @else {
+                @if ($urlContentMap(); as urlContentMap) {
+                    <p-button
+                        (click)="editUrlContentMap.emit(urlContentMap)"
+                        [pTooltip]="
+                            'editpage.toolbar.edit.url.map.content'
+                                | dm: [urlContentMap.contentType]
+                        "
+                        tooltipPosition="bottom"
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        size="small"
+                        [rounded]="true"
+                        data-testId="edit-url-content-map" />
+                }
+            }
         </div>
-    }
+    </ng-template>
 
-    <div class="p-toolbar-group-end">
-        <dot-toggle-lock-button />
-
-        @if (runningExperiment) {
-            <dot-ema-running-experiment
-                [runningExperiment]="runningExperiment"
-                data-testId="uve-toolbar-running-experiment" />
+    <ng-template #center>
+        @if (live && !$socialMedia()) {
+            <div class="flex items-center gap-1">
+                <p-datePicker
+                    inputStyleClass="p-inputtext-sm"
+                    [ngModel]="$previewDate()"
+                    (ngModelChange)="fetchPageOnDate($event)"
+                    [showTime]="true"
+                    [hourFormat]="'12'"
+                    dataType="date"
+                    [minDate]="$MIN_DATE()"
+                    [readonlyInput]="true"
+                    data-testId="uve-toolbar-calendar" />
+                <p-button
+                    class="uve-toolbar-chips"
+                    [label]="'Today' | dm"
+                    alt="Page Day"
+                    (click)="fetchPageOnDate()"
+                    data-testId="uve-toolbar-calendar-today-button" />
+            </div>
         }
-        <dot-edit-ema-language-selector
-            #languageSelector
-            (selected)="onLanguageSelected($event)"
-            [language]="$toolbar().currentLanguage"
-            data-testId="uve-toolbar-language-selector" />
+    </ng-template>
 
-        <dot-edit-ema-persona-selector
-            (selected)="onPersonaSelected($event)"
-            (despersonalize)="onDespersonalize($event)"
-            [pageId]="$personaSelectorProps().pageId"
-            [value]="$personaSelectorProps().value"
-            #personaSelector
-            data-testId="uve-toolbar-persona-selector" />
+    <ng-template #end>
+        <div class="flex items-center gap-1">
+            <dot-toggle-lock-button />
 
-        @if ($showWorkflowActions()) {
-            <dot-uve-workflow-actions />
-        }
-    </div>
+            @if (runningExperiment) {
+                <dot-ema-running-experiment
+                    [runningExperiment]="runningExperiment"
+                    data-testId="uve-toolbar-running-experiment" />
+            }
+            <dot-edit-ema-language-selector
+                #languageSelector
+                (selected)="onLanguageSelected($event)"
+                [language]="$toolbar().currentLanguage"
+                data-testId="uve-toolbar-language-selector" />
+
+            <dot-edit-ema-persona-selector
+                (selected)="onPersonaSelected($event)"
+                (despersonalize)="onDespersonalize($event)"
+                [pageId]="$personaSelectorProps().pageId"
+                [value]="$personaSelectorProps().value"
+                #personaSelector
+                data-testId="uve-toolbar-persona-selector" />
+
+            @if ($showWorkflowActions()) {
+                <dot-uve-workflow-actions />
+            }
+        </div>
+    </ng-template>
 </p-toolbar>
 
 @if ($infoDisplayProps(); as options) {

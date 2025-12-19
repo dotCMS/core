@@ -13,9 +13,27 @@
         grid-template-columns: minmax(0, 1fr) 45%;
     }
 
-    .dot-favorite-dialog-footer__delete-button {
+    .field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: spacing.$spacing-3;
+
+        label {
+            display: block;
+            margin-bottom: spacing.$spacing-1;
+        }
+    }
+
+    // Position the delete button on the left (using ::ng-deep because class is on p-button host)
+    ::ng-deep .dot-favorite-dialog-footer__delete-button {
         left: 0;
         position: absolute;
+
+        // Fix disabled state for p-button (uses .p-disabled, not :disabled)
+        &.p-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
     }
 
     dot-pages-favorite-page-empty-skeleton,

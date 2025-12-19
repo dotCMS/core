@@ -30,7 +30,9 @@ p-avatar {
         min-width: spacing.$spacing-6;
         max-width: spacing.$spacing-6;
 
-        .p-avatar-text {
+        // Support both old (.p-avatar-text) and new (.p-avatar-label) class names
+        .p-avatar-text,
+        .p-avatar-label {
             font-size: spacing.$spacing-5;
             line-height: spacing.$spacing-6;
         }
@@ -39,7 +41,8 @@ p-avatar {
         width: spacing.$spacing-7;
         height: spacing.$spacing-7;
 
-        .p-avatar-text {
+        .p-avatar-text,
+        .p-avatar-label {
             font-size: spacing.$spacing-6;
             line-height: spacing.$spacing-7;
         }
@@ -51,7 +54,9 @@ p-avatar {
     color: colors.$white;
     background-color: colors.$color-palette-secondary;
 
-    .p-avatar-text {
+    // Support both old (.p-avatar-text) and new (.p-avatar-label) class names
+    .p-avatar-text,
+    .p-avatar-label {
         font-size: spacing.$spacing-4;
         line-height: spacing.$spacing-5;
     }

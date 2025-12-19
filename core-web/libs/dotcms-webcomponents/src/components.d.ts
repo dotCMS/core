@@ -5,21 +5,30 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "@dotcms/dotcms-models";
+import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
 import { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 import { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
 import { DotContentletItem } from "./models/dot-contentlet-item.model";
 import { DotContextMenuOption } from "./models/dot-context-menu.model";
 import { DotContextMenuAction } from "./models/dot-context-menu-action.model";
 import { DotSelectButtonOption } from "./models/dotSelectButtonOption";
+export { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
+export { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
+export { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
+export { DotContentletItem } from "./models/dot-contentlet-item.model";
+export { DotContextMenuOption } from "./models/dot-context-menu.model";
+export { DotContextMenuAction } from "./models/dot-context-menu-action.model";
+export { DotSelectButtonOption } from "./models/dotSelectButtonOption";
 export namespace Components {
     interface DotAssetDropZone {
         /**
           * Allowed file extensions
+          * @default []
          */
         "acceptTypes": string[];
         /**
           * Legend to be shown when creating dotAssets
+          * @default 'Creating DotAssets'
          */
         "createAssetsText": string;
         "customUploadFiles": (props: {
@@ -30,76 +39,107 @@ export namespace Components {
     }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
+          * @default {         closeButton: 'Close',         uploadErrorHeader: 'Uploading File Results',         dotAssetErrorHeader: '$0 of $1 uploaded file(s) failed',         errorHeader: 'Error'     }
          */
         "dialogLabels": { closeButton: string; uploadErrorHeader: string; dotAssetErrorHeader: string; errorHeader: string; };
+        /**
+          * @default false
+         */
         "displayIndicator": boolean;
         /**
           * URL to endpoint to create dotAssets
+          * @default '/api/v1/workflow/actions/default/fire/PUBLISH'
          */
         "dotAssetsURL": string;
         /**
           * Legend to be shown when dropping files
+          * @default 'Drop Files to Upload'
          */
         "dropFilesText": string;
         /**
           * Specify the the folder where the dotAssets will be placed
+          * @default ''
          */
         "folder": string;
         /**
           * Specify the max size of each file to be uploaded
+          * @default ''
          */
         "maxFileSize": string;
         /**
           * Error to be shown when try to upload a bigger size file than allowed
+          * @default 'One or more of the files exceeds the maximum file size'
          */
         "multiMaxSizeErrorLabel": string;
         /**
           * Error to be shown when try to upload a bigger size file than allowed
+          * @default 'The file exceeds the maximum file size'
          */
         "singeMaxSizeErrorLabel": string;
         /**
           * Allowed file extensions
+          * @default 'This action only allows $0 files.'
          */
         "typesErrorLabel": string;
         /**
           * Error to be shown when an error happened on the uploading process
+          * @default 'Drop action not allowed.'
          */
         "uploadErrorLabel": string;
         /**
           * Legend to be shown when uploading files
+          * @default 'Uploading Files...'
          */
         "uploadFileText": string;
     }
     interface DotAutocomplete {
         /**
           * Function or array of string to get the data to use for the autocomplete search
+          * @default null
          */
         "data": () => Promise<string[]> | string[];
         /**
           * (optional) Duraction in ms to start search into the autocomplete
+          * @default 300
          */
         "debounce": number;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional)  Max results to show after a autocomplete search
+          * @default 0
          */
         "maxResults": number;
         /**
           * (optional) text to show when no value is set
+          * @default ''
          */
         "placeholder": string;
         /**
           * (optional)  Min characters to start search in the autocomplete input
+          * @default 0
          */
         "threshold": number;
     }
     interface DotBadge {
+        /**
+          * @default null
+         */
         "bgColor": string;
+        /**
+          * @default false
+         */
         "bordered": boolean;
+        /**
+          * @default null
+         */
         "color": string;
+        /**
+          * @default null
+         */
         "size": string;
     }
     /**
@@ -110,14 +150,17 @@ export namespace Components {
     interface DotBinaryFile {
         /**
           * (optional) Text that be shown when the URL is not valid
+          * @default 'The specified URL is not valid'
          */
         "URLValidationMessage": string;
         /**
           * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
+          * @default ''
          */
         "accept": string;
         /**
           * (optional) Text that be shown in the browse file button
+          * @default 'Browse'
          */
         "buttonLabel": string;
         /**
@@ -126,50 +169,62 @@ export namespace Components {
         "clearValue": () => Promise<void>;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Text that be shown in the browse file button
+          * @default ''
          */
         "errorMessage": string;
         /**
           * (optional) Text that be shown when the file size is not valid
+          * @default 'File size is not valid'
          */
         "fileSizeValidationMessage": string;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * (optional) Set the max file size limit
+          * @default ''
          */
         "maxFileLength": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Placeholder specifies a short hint that describes the expected value of the input field
+          * @default 'Drop or paste a file or url'
          */
         "placeholder": string;
         /**
           * (optional) Name of the file uploaded
+          * @default ''
          */
         "previewImageName": string;
         /**
           * (optional) URL of the file uploaded
+          * @default ''
          */
         "previewImageUrl": string;
         /**
           * (optional) Determine if it is required
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -178,6 +233,7 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Text that be shown when the Regular Expression condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage": string;
     }
@@ -189,14 +245,17 @@ export namespace Components {
     interface DotBinaryFilePreview {
         /**
           * (optional) Delete button's label
+          * @default 'Delete'
          */
         "deleteLabel": string;
         /**
           * file name to be displayed
+          * @default ''
          */
         "fileName": string;
         /**
           * (optional) file URL to be displayed
+          * @default ''
          */
         "previewUrl": string;
     }
@@ -212,22 +271,27 @@ export namespace Components {
         "accept": string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Placeholder specifies a short hint that describes the expected value of the input field
+          * @default ''
          */
         "placeholder": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * Value specifies the value of the <input> element
+          * @default null
          */
         "value": any;
     }
@@ -243,22 +307,27 @@ export namespace Components {
         "accept": string;
         /**
           * (optional) Text that be shown in the browse file button
+          * @default ''
          */
         "buttonLabel": string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Set the max file size limit
+          * @default ''
          */
         "maxFileLength": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
     }
@@ -267,46 +336,68 @@ export namespace Components {
     interface DotCardContentlet {
         "checked": boolean;
         "hideMenu": () => Promise<void>;
+        /**
+          * @default '96px'
+         */
         "iconSize": string;
         "item": DotCardContentletItem;
         "showMenu": (x: number, y: number) => Promise<void>;
+        /**
+          * @default false
+         */
         "showVideoThumbnail": boolean;
+        /**
+          * @default '260'
+         */
         "thumbnailSize": string;
     }
     interface DotCardView {
         "clearValue": () => Promise<void>;
         "getValue": () => Promise<DotContentletItem[]>;
+        /**
+          * @default []
+         */
         "items": DotCardContentletItem[];
+        /**
+          * @default true
+         */
         "showVideoThumbnail": boolean;
         "value": string;
     }
     interface DotCheckbox {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * Value/Label checkbox options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default `This field is required`
          */
         "requiredMessage": string;
         /**
@@ -316,20 +407,24 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * Value set from the checkbox option
+          * @default ''
          */
         "value": string;
     }
     interface DotChip {
         /**
           * (optional) Delete button's label
+          * @default 'Delete'
          */
         "deleteLabel": string;
         /**
           * (optional) If is true disabled the delete button
+          * @default false
          */
         "disabled": boolean;
         /**
           * Chip's label
+          * @default ''
          */
         "label": string;
     }
@@ -339,27 +434,66 @@ export namespace Components {
      * @class DotFileIcon
      */
     interface DotContentletIcon {
+        /**
+          * @default ''
+         */
         "icon": string;
+        /**
+          * @default ''
+         */
         "size": string;
     }
     interface DotContentletLockIcon {
         "locked": boolean;
+        /**
+          * @default '16px'
+         */
         "size": string;
     }
     interface DotContentletThumbnail {
+        /**
+          * @default ''
+         */
         "alt": string;
+        /**
+          * @default false
+         */
         "backgroundImage": boolean;
         "contentlet": DotContentletItem;
+        /**
+          * @default ''
+         */
         "fieldVariable": string;
+        /**
+          * @default ''
+         */
         "height": string;
+        /**
+          * @default ''
+         */
         "iconSize": string;
+        /**
+          * @default false
+         */
         "playableVideo": boolean;
+        /**
+          * @default true
+         */
         "showVideoThumbnail": boolean;
+        /**
+          * @default ''
+         */
         "width": string;
     }
     interface DotContextMenu {
+        /**
+          * @default '16px'
+         */
         "fontSize": string;
         "hide": () => Promise<void>;
+        /**
+          * @default []
+         */
         "options": DotContextMenuOption<DotContextMenuAction>[];
         "show": (x: number, y: number, position?: string) => Promise<void>;
     }
@@ -369,34 +503,42 @@ export namespace Components {
     interface DotDate {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * (optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd
+          * @default ''
          */
         "max": string;
         /**
           * (optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd
+          * @default ''
          */
         "min": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -405,60 +547,74 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Step specifies the legal number intervals for the input field
+          * @default '1'
          */
         "step": string;
         /**
           * (optional) Text that be shown when min or max are set and condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage": string;
         /**
           * Value format yyyy-mm-dd  e.g., 2005-12-01
+          * @default ''
          */
         "value": string;
     }
     interface DotDateRange {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Date format used by the field when displayed
+          * @default 'Y-m-d'
          */
         "displayFormat": string;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * (optional) Max value that the field will allow to set
+          * @default ''
          */
         "max": string;
         /**
           * (optional) Min value that the field will allow to set
+          * @default ''
          */
         "min": string;
         /**
           * Name that will be used as ID
+          * @default 'daterange'
          */
         "name": string;
         /**
           * (optional) Text to be rendered next to presets field
+          * @default 'Presets'
          */
         "presetLabel": string;
         /**
           * (optional) Array of date presets formatted as [{ label: 'PRESET_LABEL', days: NUMBER }]
+          * @default [         {             label: 'Date Presets',             days: 0         },         {             label: 'Last Week',             days: -7         },         {             label: 'Next Week',             days: 7         },         {             label: 'Last Month',             days: -30         },         {             label: 'Next Month',             days: 30         }     ]
          */
         "presets": { label: string; days: number; }[];
         /**
           * (optional) Determine if it is needed
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -467,44 +623,54 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Value formatted with start and end date splitted with a comma
+          * @default ''
          */
         "value": string;
     }
     interface DotDateTime {
         /**
           * (optional) The string to use in the date label field
+          * @default 'Date'
          */
         "dateLabel": string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * (optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd hh:mm:ss | yyyy-mm-dd | hh:mm:ss
+          * @default ''
          */
         "max": string;
         /**
           * (optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd hh:mm:ss | yyyy-mm-dd | hh:mm:ss
+          * @default ''
          */
         "min": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -513,18 +679,22 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Step specifies the legal number intervals for the input fields date && time e.g., 2,10
+          * @default '1,1'
          */
         "step": string;
         /**
           * (optional) The string to use in the time label field
+          * @default 'Time'
          */
         "timeLabel": string;
         /**
           * (optional) Text that be shown when min or max are set and condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage": string;
         /**
           * Value format yyyy-mm-dd hh:mm:ss e.g., 2005-12-01 15:22:00
+          * @default ''
          */
         "value": string;
     }
@@ -537,18 +707,22 @@ export namespace Components {
         "fieldsToShow": string;
         /**
           * Layout metada to be rendered
+          * @default []
          */
         "layout": DotCMSContentTypeLayoutRow[];
         /**
           * (optional) Text to be rendered on Reset button
+          * @default 'Reset'
          */
         "resetLabel": string;
         /**
           * (optional) Text to be rendered on Submit button
+          * @default 'Submit'
          */
         "submitLabel": string;
         /**
           * Content type variable name
+          * @default ''
          */
         "variable": string;
     }
@@ -573,29 +747,43 @@ export namespace Components {
         "row": DotCMSContentTypeLayoutRow;
     }
     interface DotHtmlToImage {
+        /**
+          * @default ''
+         */
         "height": string;
+        /**
+          * @default ''
+         */
         "value": string;
+        /**
+          * @default ''
+         */
         "width": string;
     }
     interface DotInputCalendar {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Max, maximum value that the field will allow to set, expect a Date Format
+          * @default ''
          */
         "max": string;
         /**
           * (optional) Min, minimum value that the field will allow to set, expect a Date Format.
+          * @default ''
          */
         "min": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
@@ -604,24 +792,29 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Step specifies the legal number intervals for the input field
+          * @default '1'
          */
         "step": string;
         /**
           * type specifies the type of input element to display
+          * @default ''
          */
         "type": string;
         /**
           * Value specifies the value of the input element
+          * @default ''
          */
         "value": string;
     }
     interface DotKeyValue {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default 'The key already exists'
          */
         "duplicatedKeyMessage": string;
         /**
@@ -646,10 +839,12 @@ export namespace Components {
         "formValuePlaceholder": string;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
@@ -658,14 +853,17 @@ export namespace Components {
         "listDeleteLabel": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -674,10 +872,12 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Allows unique keys only
+          * @default false
          */
         "uniqueKeys": boolean;
         /**
           * Value of the field
+          * @default ''
          */
         "value": string;
         /**
@@ -697,48 +897,59 @@ export namespace Components {
     interface DotLabel {
         /**
           * (optional) Text to be rendered
+          * @default ''
          */
         "label": string;
         /**
           * (optional) Field name
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
     }
     interface DotMaterialIconPicker {
         /**
           * Label set for the input color
+          * @default 'Color'
          */
         "colorLabel": string;
         /**
           * Color value set from the input
+          * @default '#000'
          */
         "colorValue": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * Value for input placeholder
+          * @default ''
          */
         "placeholder": string;
         /**
           * Show/Hide color picker
+          * @default null
          */
         "showColor": string;
         /**
           * Size value set for font-size
+          * @default null
          */
         "size": string;
         /**
           * Values that the auto-complete textbox should search for
+          * @default MaterialIconClasses
          */
         "suggestionlist": string[];
         /**
           * Value set from the dropdown option
+          * @default ''
          */
         "value": string;
     }
@@ -750,30 +961,37 @@ export namespace Components {
     interface DotMultiSelect {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * Value/Label dropdown options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default `This field is required`
          */
         "requiredMessage": string;
         /**
@@ -783,10 +1001,12 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Size number of the multi-select dropdown (default=3)
+          * @default '3'
          */
         "size": string;
         /**
           * Value set from the dropdown option
+          * @default ''
          */
         "value": string;
     }
@@ -798,10 +1018,12 @@ export namespace Components {
     interface DotProgressBar {
         /**
           * indicates the progress to be show, a value 1 to 100
+          * @default 0
          */
         "progress": number;
         /**
           * text to be show bellow the progress bar
+          * @default 'Uploading Files...'
          */
         "text": string;
     }
@@ -813,30 +1035,37 @@ export namespace Components {
     interface DotRadio {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * Value/Label ratio options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default ''
          */
         "requiredMessage": string;
         /**
@@ -845,6 +1074,7 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * Value set from the ratio option
+          * @default ''
          */
         "value": string;
     }
@@ -856,30 +1086,37 @@ export namespace Components {
     interface DotSelect {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * Value/Label dropdown options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default `This field is required`
          */
         "requiredMessage": string;
         /**
@@ -889,53 +1126,78 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * Value set from the dropdown option
+          * @default ''
          */
         "value": string;
     }
     interface DotSelectButton {
+        /**
+          * @default []
+         */
         "options": DotSelectButtonOption[];
+        /**
+          * @default ''
+         */
         "value": string;
     }
     interface DotStateIcon {
+        /**
+          * @default {         archived: 'Archived',         published: 'Published',         revision: 'Revision',         draft: 'Draft'     }
+         */
         "labels": { archived: string; published: string; revision: string; draft: string; };
+        /**
+          * @default '16px'
+         */
         "size": string;
+        /**
+          * @default null
+         */
         "state": DotContentState;
     }
     interface DotTags {
         /**
           * Function or array of string to get the data to use for the autocomplete search
+          * @default null
          */
         "data": () => Promise<string[]> | string[];
         /**
           * Duraction in ms to start search into the autocomplete
+          * @default 300
          */
         "debounce": number;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) text to show when no value is set
+          * @default ''
          */
         "placeholder": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and value is not set
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -944,10 +1206,12 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * Min characters to start search in the autocomplete input
+          * @default 1
          */
         "threshold": number;
         /**
           * Value formatted splitted with a comma, for example: tag-1,tag-2
+          * @default ''
          */
         "value": string;
     }
@@ -959,30 +1223,37 @@ export namespace Components {
     interface DotTextarea {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to textarea element
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Regular expresion that is checked against the value to determine if is valid
+          * @default ''
          */
         "regexCheck": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -992,10 +1263,12 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Text that be shown when the Regular Expression condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage": string;
         /**
           * Value specifies the value of the textarea element
+          * @default ''
          */
         "value": string;
     }
@@ -1007,34 +1280,42 @@ export namespace Components {
     interface DotTextfield {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Placeholder specifies a short hint that describes the expected value of the input field
+          * @default ''
          */
         "placeholder": string;
         /**
           * (optional) Regular expresion that is checked against the value to determine if is valid
+          * @default ''
          */
         "regexCheck": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -1043,48 +1324,59 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * type specifies the type of input element to display
+          * @default 'text'
          */
         "type": string;
         /**
           * (optional) Text that be shown when the Regular Expression condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage": string;
         /**
           * Value specifies the value of the input element
+          * @default ''
          */
         "value": string;
     }
     interface DotTime {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint": string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label": string;
         /**
           * (optional) Max, maximum value that the field will allow to set. Format should be  hh:mm:ss
+          * @default ''
          */
         "max": string;
         /**
           * (optional) Min, minimum value that the field will allow to set. Format should be hh:mm:ss
+          * @default ''
          */
         "min": string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name": string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required": boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage": string;
         /**
@@ -1093,14 +1385,17 @@ export namespace Components {
         "reset": () => Promise<void>;
         /**
           * (optional) Step specifies the legal number intervals for the input field
+          * @default '1'
          */
         "step": string;
         /**
           * (optional) Text that be shown when min or max are set and condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage": string;
         /**
           * Value format hh:mm:ss e.g., 15:22:00
+          * @default ''
          */
         "value": string;
     }
@@ -1108,6 +1403,9 @@ export namespace Components {
         "content": string;
         "delay": number;
         "for": string;
+        /**
+          * @default 'center bottom'
+         */
         "position": string;
     }
     interface DotVideoThumbnail {
@@ -1119,12 +1417,14 @@ export namespace Components {
         /**
           * @type {boolean}
           * @memberof DotVideoThumbnail
+          * @default true
          */
         "cover": boolean;
         /**
           * If the video is playable or not.
           * @type {boolean}
           * @memberof DotVideoThumbnail
+          * @default false
          */
         "playable": boolean;
         /**
@@ -1136,52 +1436,64 @@ export namespace Components {
     interface KeyValueForm {
         /**
           * (optional) Label for the add item button
+          * @default 'Add'
          */
         "addButtonLabel": string;
         /**
           * (optional) Disables all form interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Label for the empty option in white-list select
+          * @default 'Pick an option'
          */
         "emptyDropdownOptionLabel": string;
         /**
           * (optional) The string to use in the key input label
+          * @default 'Key'
          */
         "keyLabel": string;
         /**
           * (optional) Placeholder for the key input text
+          * @default ''
          */
         "keyPlaceholder": string;
         /**
           * (optional) The string to use in the value input label
+          * @default 'Value'
          */
         "valueLabel": string;
         /**
           * (optional) Placeholder for the value input text
+          * @default ''
          */
         "valuePlaceholder": string;
         /**
           * (optional) The string to use for white-list key/values
+          * @default ''
          */
         "whiteList": string;
     }
     interface KeyValueTable {
         /**
           * (optional) Label for the delete button in each item list
+          * @default 'Delete'
          */
         "buttonLabel": string;
         /**
           * (optional) Disables all form interaction
+          * @default false
          */
         "disabled": boolean;
         /**
           * (optional) Message to show when the list of items is empty
+          * @default 'No values'
          */
         "emptyMessage": string;
         /**
           * (optional) Items to render in the list of key value
+          * @default []
          */
         "items": DotKeyValueField[];
     }
@@ -1299,13 +1611,37 @@ export interface KeyValueTableCustomEvent<T> extends CustomEvent<T> {
     target: HTMLKeyValueTableElement;
 }
 declare global {
+    interface HTMLDotAssetDropZoneElementEventMap {
+        "uploadComplete": DotCMSContentlet[] | DotHttpErrorResponse[] | any;
+    }
     interface HTMLDotAssetDropZoneElement extends Components.DotAssetDropZone, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotAssetDropZoneElementEventMap>(type: K, listener: (this: HTMLDotAssetDropZoneElement, ev: DotAssetDropZoneCustomEvent<HTMLDotAssetDropZoneElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotAssetDropZoneElementEventMap>(type: K, listener: (this: HTMLDotAssetDropZoneElement, ev: DotAssetDropZoneCustomEvent<HTMLDotAssetDropZoneElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotAssetDropZoneElement: {
         prototype: HTMLDotAssetDropZoneElement;
         new (): HTMLDotAssetDropZoneElement;
     };
+    interface HTMLDotAutocompleteElementEventMap {
+        "selection": string;
+        "enter": string;
+        "lostFocus": FocusEvent;
+    }
     interface HTMLDotAutocompleteElement extends Components.DotAutocomplete, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotAutocompleteElementEventMap>(type: K, listener: (this: HTMLDotAutocompleteElement, ev: DotAutocompleteCustomEvent<HTMLDotAutocompleteElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotAutocompleteElementEventMap>(type: K, listener: (this: HTMLDotAutocompleteElement, ev: DotAutocompleteCustomEvent<HTMLDotAutocompleteElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotAutocompleteElement: {
         prototype: HTMLDotAutocompleteElement;
@@ -1317,45 +1653,91 @@ declare global {
         prototype: HTMLDotBadgeElement;
         new (): HTMLDotBadgeElement;
     };
+    interface HTMLDotBinaryFileElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms binary file control.
      * @export 
      * @class DotBinaryFileComponent
      */
     interface HTMLDotBinaryFileElement extends Components.DotBinaryFile, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryFileElementEventMap>(type: K, listener: (this: HTMLDotBinaryFileElement, ev: DotBinaryFileCustomEvent<HTMLDotBinaryFileElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryFileElementEventMap>(type: K, listener: (this: HTMLDotBinaryFileElement, ev: DotBinaryFileCustomEvent<HTMLDotBinaryFileElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryFileElement: {
         prototype: HTMLDotBinaryFileElement;
         new (): HTMLDotBinaryFileElement;
     };
+    interface HTMLDotBinaryFilePreviewElementEventMap {
+        "delete": any;
+    }
     /**
      * Represent a dotcms text field for the binary file preview.
      * @export 
      * @class DotBinaryFilePreviewComponent
      */
     interface HTMLDotBinaryFilePreviewElement extends Components.DotBinaryFilePreview, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryFilePreviewElementEventMap>(type: K, listener: (this: HTMLDotBinaryFilePreviewElement, ev: DotBinaryFilePreviewCustomEvent<HTMLDotBinaryFilePreviewElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryFilePreviewElementEventMap>(type: K, listener: (this: HTMLDotBinaryFilePreviewElement, ev: DotBinaryFilePreviewCustomEvent<HTMLDotBinaryFilePreviewElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryFilePreviewElement: {
         prototype: HTMLDotBinaryFilePreviewElement;
         new (): HTMLDotBinaryFilePreviewElement;
     };
+    interface HTMLDotBinaryTextFieldElementEventMap {
+        "fileChange": DotBinaryFileEvent;
+        "lostFocus": any;
+    }
     /**
      * Represent a dotcms text field for the binary file element.
      * @export 
      * @class DotBinaryFile
      */
     interface HTMLDotBinaryTextFieldElement extends Components.DotBinaryTextField, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryTextFieldElementEventMap>(type: K, listener: (this: HTMLDotBinaryTextFieldElement, ev: DotBinaryTextFieldCustomEvent<HTMLDotBinaryTextFieldElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryTextFieldElementEventMap>(type: K, listener: (this: HTMLDotBinaryTextFieldElement, ev: DotBinaryTextFieldCustomEvent<HTMLDotBinaryTextFieldElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryTextFieldElement: {
         prototype: HTMLDotBinaryTextFieldElement;
         new (): HTMLDotBinaryTextFieldElement;
     };
+    interface HTMLDotBinaryUploadButtonElementEventMap {
+        "fileChange": DotBinaryFileEvent;
+    }
     /**
      * Represent a dotcms text field for the binary file element.
      * @export 
      * @class DotBinaryFile
      */
     interface HTMLDotBinaryUploadButtonElement extends Components.DotBinaryUploadButton, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryUploadButtonElementEventMap>(type: K, listener: (this: HTMLDotBinaryUploadButtonElement, ev: DotBinaryUploadButtonCustomEvent<HTMLDotBinaryUploadButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryUploadButtonElementEventMap>(type: K, listener: (this: HTMLDotBinaryUploadButtonElement, ev: DotBinaryUploadButtonCustomEvent<HTMLDotBinaryUploadButtonElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryUploadButtonElement: {
         prototype: HTMLDotBinaryUploadButtonElement;
@@ -1367,25 +1749,72 @@ declare global {
         prototype: HTMLDotCardElement;
         new (): HTMLDotCardElement;
     };
+    interface HTMLDotCardContentletElementEventMap {
+        "checkboxChange": DotCardContentletEvent;
+        "contextMenuClick": MouseEvent;
+    }
     interface HTMLDotCardContentletElement extends Components.DotCardContentlet, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotCardContentletElementEventMap>(type: K, listener: (this: HTMLDotCardContentletElement, ev: DotCardContentletCustomEvent<HTMLDotCardContentletElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotCardContentletElementEventMap>(type: K, listener: (this: HTMLDotCardContentletElement, ev: DotCardContentletCustomEvent<HTMLDotCardContentletElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotCardContentletElement: {
         prototype: HTMLDotCardContentletElement;
         new (): HTMLDotCardContentletElement;
     };
+    interface HTMLDotCardViewElementEventMap {
+        "selected": any;
+        "cardClick": any;
+    }
     interface HTMLDotCardViewElement extends Components.DotCardView, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotCardViewElementEventMap>(type: K, listener: (this: HTMLDotCardViewElement, ev: DotCardViewCustomEvent<HTMLDotCardViewElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotCardViewElementEventMap>(type: K, listener: (this: HTMLDotCardViewElement, ev: DotCardViewCustomEvent<HTMLDotCardViewElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotCardViewElement: {
         prototype: HTMLDotCardViewElement;
         new (): HTMLDotCardViewElement;
     };
+    interface HTMLDotCheckboxElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotCheckboxElement extends Components.DotCheckbox, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotCheckboxElementEventMap>(type: K, listener: (this: HTMLDotCheckboxElement, ev: DotCheckboxCustomEvent<HTMLDotCheckboxElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotCheckboxElementEventMap>(type: K, listener: (this: HTMLDotCheckboxElement, ev: DotCheckboxCustomEvent<HTMLDotCheckboxElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotCheckboxElement: {
         prototype: HTMLDotCheckboxElement;
         new (): HTMLDotCheckboxElement;
     };
+    interface HTMLDotChipElementEventMap {
+        "remove": String;
+    }
     interface HTMLDotChipElement extends Components.DotChip, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotChipElementEventMap>(type: K, listener: (this: HTMLDotChipElement, ev: DotChipCustomEvent<HTMLDotChipElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotChipElementEventMap>(type: K, listener: (this: HTMLDotChipElement, ev: DotChipCustomEvent<HTMLDotChipElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotChipElement: {
         prototype: HTMLDotChipElement;
@@ -1426,19 +1855,55 @@ declare global {
         prototype: HTMLDotDataViewButtonElement;
         new (): HTMLDotDataViewButtonElement;
     };
+    interface HTMLDotDateElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotDateElement extends Components.DotDate, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotDateElementEventMap>(type: K, listener: (this: HTMLDotDateElement, ev: DotDateCustomEvent<HTMLDotDateElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotDateElementEventMap>(type: K, listener: (this: HTMLDotDateElement, ev: DotDateCustomEvent<HTMLDotDateElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotDateElement: {
         prototype: HTMLDotDateElement;
         new (): HTMLDotDateElement;
     };
+    interface HTMLDotDateRangeElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotDateRangeElement extends Components.DotDateRange, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotDateRangeElementEventMap>(type: K, listener: (this: HTMLDotDateRangeElement, ev: DotDateRangeCustomEvent<HTMLDotDateRangeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotDateRangeElementEventMap>(type: K, listener: (this: HTMLDotDateRangeElement, ev: DotDateRangeCustomEvent<HTMLDotDateRangeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotDateRangeElement: {
         prototype: HTMLDotDateRangeElement;
         new (): HTMLDotDateRangeElement;
     };
+    interface HTMLDotDateTimeElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotDateTimeElement extends Components.DotDateTime, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotDateTimeElementEventMap>(type: K, listener: (this: HTMLDotDateTimeElement, ev: DotDateTimeCustomEvent<HTMLDotDateTimeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotDateTimeElementEventMap>(type: K, listener: (this: HTMLDotDateTimeElement, ev: DotDateTimeCustomEvent<HTMLDotDateTimeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotDateTimeElement: {
         prototype: HTMLDotDateTimeElement;
@@ -1450,7 +1915,18 @@ declare global {
         prototype: HTMLDotErrorMessageElement;
         new (): HTMLDotErrorMessageElement;
     };
+    interface HTMLDotFormElementEventMap {
+        "submit": DotCMSContentlet;
+    }
     interface HTMLDotFormElement extends Components.DotForm, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotFormElementEventMap>(type: K, listener: (this: HTMLDotFormElement, ev: DotFormCustomEvent<HTMLDotFormElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotFormElementEventMap>(type: K, listener: (this: HTMLDotFormElement, ev: DotFormCustomEvent<HTMLDotFormElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotFormElement: {
         prototype: HTMLDotFormElement;
@@ -1468,19 +1944,57 @@ declare global {
         prototype: HTMLDotFormRowElement;
         new (): HTMLDotFormRowElement;
     };
+    interface HTMLDotHtmlToImageElementEventMap {
+        "pageThumbnail": {
+        file: File;
+        error?: string;
+    };
+    }
     interface HTMLDotHtmlToImageElement extends Components.DotHtmlToImage, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotHtmlToImageElementEventMap>(type: K, listener: (this: HTMLDotHtmlToImageElement, ev: DotHtmlToImageCustomEvent<HTMLDotHtmlToImageElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotHtmlToImageElementEventMap>(type: K, listener: (this: HTMLDotHtmlToImageElement, ev: DotHtmlToImageCustomEvent<HTMLDotHtmlToImageElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotHtmlToImageElement: {
         prototype: HTMLDotHtmlToImageElement;
         new (): HTMLDotHtmlToImageElement;
     };
+    interface HTMLDotInputCalendarElementEventMap {
+        "_dotValueChange": DotFieldValueEvent;
+        "_dotStatusChange": DotInputCalendarStatusEvent;
+    }
     interface HTMLDotInputCalendarElement extends Components.DotInputCalendar, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotInputCalendarElementEventMap>(type: K, listener: (this: HTMLDotInputCalendarElement, ev: DotInputCalendarCustomEvent<HTMLDotInputCalendarElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotInputCalendarElementEventMap>(type: K, listener: (this: HTMLDotInputCalendarElement, ev: DotInputCalendarCustomEvent<HTMLDotInputCalendarElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotInputCalendarElement: {
         prototype: HTMLDotInputCalendarElement;
         new (): HTMLDotInputCalendarElement;
     };
+    interface HTMLDotKeyValueElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotKeyValueElement extends Components.DotKeyValue, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotKeyValueElementEventMap>(type: K, listener: (this: HTMLDotKeyValueElement, ev: DotKeyValueCustomEvent<HTMLDotKeyValueElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotKeyValueElementEventMap>(type: K, listener: (this: HTMLDotKeyValueElement, ev: DotKeyValueCustomEvent<HTMLDotKeyValueElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotKeyValueElement: {
         prototype: HTMLDotKeyValueElement;
@@ -1497,18 +2011,41 @@ declare global {
         prototype: HTMLDotLabelElement;
         new (): HTMLDotLabelElement;
     };
+    interface HTMLDotMaterialIconPickerElementEventMap {
+        "dotValueChange": { name: string; value: string; colorValue: string };
+    }
     interface HTMLDotMaterialIconPickerElement extends Components.DotMaterialIconPicker, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotMaterialIconPickerElementEventMap>(type: K, listener: (this: HTMLDotMaterialIconPickerElement, ev: DotMaterialIconPickerCustomEvent<HTMLDotMaterialIconPickerElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotMaterialIconPickerElementEventMap>(type: K, listener: (this: HTMLDotMaterialIconPickerElement, ev: DotMaterialIconPickerCustomEvent<HTMLDotMaterialIconPickerElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotMaterialIconPickerElement: {
         prototype: HTMLDotMaterialIconPickerElement;
         new (): HTMLDotMaterialIconPickerElement;
     };
+    interface HTMLDotMultiSelectElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms multi select control.
      * @export 
      * @class DotSelectComponent
      */
     interface HTMLDotMultiSelectElement extends Components.DotMultiSelect, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotMultiSelectElementEventMap>(type: K, listener: (this: HTMLDotMultiSelectElement, ev: DotMultiSelectCustomEvent<HTMLDotMultiSelectElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotMultiSelectElementEventMap>(type: K, listener: (this: HTMLDotMultiSelectElement, ev: DotMultiSelectCustomEvent<HTMLDotMultiSelectElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotMultiSelectElement: {
         prototype: HTMLDotMultiSelectElement;
@@ -1525,29 +2062,64 @@ declare global {
         prototype: HTMLDotProgressBarElement;
         new (): HTMLDotProgressBarElement;
     };
+    interface HTMLDotRadioElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms radio control.
      * @export 
      * @class DotRadioComponent
      */
     interface HTMLDotRadioElement extends Components.DotRadio, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotRadioElementEventMap>(type: K, listener: (this: HTMLDotRadioElement, ev: DotRadioCustomEvent<HTMLDotRadioElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotRadioElementEventMap>(type: K, listener: (this: HTMLDotRadioElement, ev: DotRadioCustomEvent<HTMLDotRadioElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotRadioElement: {
         prototype: HTMLDotRadioElement;
         new (): HTMLDotRadioElement;
     };
+    interface HTMLDotSelectElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms select control.
      * @export 
      * @class DotSelectComponent
      */
     interface HTMLDotSelectElement extends Components.DotSelect, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotSelectElementEventMap>(type: K, listener: (this: HTMLDotSelectElement, ev: DotSelectCustomEvent<HTMLDotSelectElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotSelectElementEventMap>(type: K, listener: (this: HTMLDotSelectElement, ev: DotSelectCustomEvent<HTMLDotSelectElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotSelectElement: {
         prototype: HTMLDotSelectElement;
         new (): HTMLDotSelectElement;
     };
+    interface HTMLDotSelectButtonElementEventMap {
+        "selected": string;
+    }
     interface HTMLDotSelectButtonElement extends Components.DotSelectButton, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotSelectButtonElementEventMap>(type: K, listener: (this: HTMLDotSelectButtonElement, ev: DotSelectButtonCustomEvent<HTMLDotSelectButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotSelectButtonElementEventMap>(type: K, listener: (this: HTMLDotSelectButtonElement, ev: DotSelectButtonCustomEvent<HTMLDotSelectButtonElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotSelectButtonElement: {
         prototype: HTMLDotSelectButtonElement;
@@ -1559,35 +2131,83 @@ declare global {
         prototype: HTMLDotStateIconElement;
         new (): HTMLDotStateIconElement;
     };
+    interface HTMLDotTagsElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotTagsElement extends Components.DotTags, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTagsElementEventMap>(type: K, listener: (this: HTMLDotTagsElement, ev: DotTagsCustomEvent<HTMLDotTagsElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTagsElementEventMap>(type: K, listener: (this: HTMLDotTagsElement, ev: DotTagsCustomEvent<HTMLDotTagsElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTagsElement: {
         prototype: HTMLDotTagsElement;
         new (): HTMLDotTagsElement;
     };
+    interface HTMLDotTextareaElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms textarea control.
      * @export 
      * @class DotTextareaComponent
      */
     interface HTMLDotTextareaElement extends Components.DotTextarea, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTextareaElementEventMap>(type: K, listener: (this: HTMLDotTextareaElement, ev: DotTextareaCustomEvent<HTMLDotTextareaElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTextareaElementEventMap>(type: K, listener: (this: HTMLDotTextareaElement, ev: DotTextareaCustomEvent<HTMLDotTextareaElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTextareaElement: {
         prototype: HTMLDotTextareaElement;
         new (): HTMLDotTextareaElement;
     };
+    interface HTMLDotTextfieldElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms input control.
      * @export 
      * @class DotTextfieldComponent
      */
     interface HTMLDotTextfieldElement extends Components.DotTextfield, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTextfieldElementEventMap>(type: K, listener: (this: HTMLDotTextfieldElement, ev: DotTextfieldCustomEvent<HTMLDotTextfieldElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTextfieldElementEventMap>(type: K, listener: (this: HTMLDotTextfieldElement, ev: DotTextfieldCustomEvent<HTMLDotTextfieldElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTextfieldElement: {
         prototype: HTMLDotTextfieldElement;
         new (): HTMLDotTextfieldElement;
     };
+    interface HTMLDotTimeElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotTimeElement extends Components.DotTime, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTimeElementEventMap>(type: K, listener: (this: HTMLDotTimeElement, ev: DotTimeCustomEvent<HTMLDotTimeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTimeElementEventMap>(type: K, listener: (this: HTMLDotTimeElement, ev: DotTimeCustomEvent<HTMLDotTimeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTimeElement: {
         prototype: HTMLDotTimeElement;
@@ -1605,13 +2225,38 @@ declare global {
         prototype: HTMLDotVideoThumbnailElement;
         new (): HTMLDotVideoThumbnailElement;
     };
+    interface HTMLKeyValueFormElementEventMap {
+        "add": DotKeyValueField;
+        "keyChanged": string;
+        "lostFocus": FocusEvent;
+    }
     interface HTMLKeyValueFormElement extends Components.KeyValueForm, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLKeyValueFormElementEventMap>(type: K, listener: (this: HTMLKeyValueFormElement, ev: KeyValueFormCustomEvent<HTMLKeyValueFormElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLKeyValueFormElementEventMap>(type: K, listener: (this: HTMLKeyValueFormElement, ev: KeyValueFormCustomEvent<HTMLKeyValueFormElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLKeyValueFormElement: {
         prototype: HTMLKeyValueFormElement;
         new (): HTMLKeyValueFormElement;
     };
+    interface HTMLKeyValueTableElementEventMap {
+        "delete": number;
+        "reorder": any;
+    }
     interface HTMLKeyValueTableElement extends Components.KeyValueTable, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLKeyValueTableElementEventMap>(type: K, listener: (this: HTMLKeyValueTableElement, ev: KeyValueTableCustomEvent<HTMLKeyValueTableElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLKeyValueTableElementEventMap>(type: K, listener: (this: HTMLKeyValueTableElement, ev: KeyValueTableCustomEvent<HTMLKeyValueTableElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLKeyValueTableElement: {
         prototype: HTMLKeyValueTableElement;
@@ -1667,10 +2312,12 @@ declare namespace LocalJSX {
     interface DotAssetDropZone {
         /**
           * Allowed file extensions
+          * @default []
          */
         "acceptTypes"?: string[];
         /**
           * Legend to be shown when creating dotAssets
+          * @default 'Creating DotAssets'
          */
         "createAssetsText"?: string;
         "customUploadFiles"?: (props: {
@@ -1681,27 +2328,36 @@ declare namespace LocalJSX {
     }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
+          * @default {         closeButton: 'Close',         uploadErrorHeader: 'Uploading File Results',         dotAssetErrorHeader: '$0 of $1 uploaded file(s) failed',         errorHeader: 'Error'     }
          */
         "dialogLabels"?: { closeButton: string; uploadErrorHeader: string; dotAssetErrorHeader: string; errorHeader: string; };
+        /**
+          * @default false
+         */
         "displayIndicator"?: boolean;
         /**
           * URL to endpoint to create dotAssets
+          * @default '/api/v1/workflow/actions/default/fire/PUBLISH'
          */
         "dotAssetsURL"?: string;
         /**
           * Legend to be shown when dropping files
+          * @default 'Drop Files to Upload'
          */
         "dropFilesText"?: string;
         /**
           * Specify the the folder where the dotAssets will be placed
+          * @default ''
          */
         "folder"?: string;
         /**
           * Specify the max size of each file to be uploaded
+          * @default ''
          */
         "maxFileSize"?: string;
         /**
           * Error to be shown when try to upload a bigger size file than allowed
+          * @default 'One or more of the files exceeds the maximum file size'
          */
         "multiMaxSizeErrorLabel"?: string;
         /**
@@ -1710,36 +2366,44 @@ declare namespace LocalJSX {
         "onUploadComplete"?: (event: DotAssetDropZoneCustomEvent<DotCMSContentlet[] | DotHttpErrorResponse[] | any>) => void;
         /**
           * Error to be shown when try to upload a bigger size file than allowed
+          * @default 'The file exceeds the maximum file size'
          */
         "singeMaxSizeErrorLabel"?: string;
         /**
           * Allowed file extensions
+          * @default 'This action only allows $0 files.'
          */
         "typesErrorLabel"?: string;
         /**
           * Error to be shown when an error happened on the uploading process
+          * @default 'Drop action not allowed.'
          */
         "uploadErrorLabel"?: string;
         /**
           * Legend to be shown when uploading files
+          * @default 'Uploading Files...'
          */
         "uploadFileText"?: string;
     }
     interface DotAutocomplete {
         /**
           * Function or array of string to get the data to use for the autocomplete search
+          * @default null
          */
         "data"?: () => Promise<string[]> | string[];
         /**
           * (optional) Duraction in ms to start search into the autocomplete
+          * @default 300
          */
         "debounce"?: number;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional)  Max results to show after a autocomplete search
+          * @default 0
          */
         "maxResults"?: number;
         "onEnter"?: (event: DotAutocompleteCustomEvent<string>) => void;
@@ -1747,17 +2411,31 @@ declare namespace LocalJSX {
         "onSelection"?: (event: DotAutocompleteCustomEvent<string>) => void;
         /**
           * (optional) text to show when no value is set
+          * @default ''
          */
         "placeholder"?: string;
         /**
           * (optional)  Min characters to start search in the autocomplete input
+          * @default 0
          */
         "threshold"?: number;
     }
     interface DotBadge {
+        /**
+          * @default null
+         */
         "bgColor"?: string;
+        /**
+          * @default false
+         */
         "bordered"?: boolean;
+        /**
+          * @default null
+         */
         "color"?: string;
+        /**
+          * @default null
+         */
         "size"?: string;
     }
     /**
@@ -1768,68 +2446,84 @@ declare namespace LocalJSX {
     interface DotBinaryFile {
         /**
           * (optional) Text that be shown when the URL is not valid
+          * @default 'The specified URL is not valid'
          */
         "URLValidationMessage"?: string;
         /**
           * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
+          * @default ''
          */
         "accept"?: string;
         /**
           * (optional) Text that be shown in the browse file button
+          * @default 'Browse'
          */
         "buttonLabel"?: string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Text that be shown in the browse file button
+          * @default ''
          */
         "errorMessage"?: string;
         /**
           * (optional) Text that be shown when the file size is not valid
+          * @default 'File size is not valid'
          */
         "fileSizeValidationMessage"?: string;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * (optional) Set the max file size limit
+          * @default ''
          */
         "maxFileLength"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotBinaryFileCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotBinaryFileCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Placeholder specifies a short hint that describes the expected value of the input field
+          * @default 'Drop or paste a file or url'
          */
         "placeholder"?: string;
         /**
           * (optional) Name of the file uploaded
+          * @default ''
          */
         "previewImageName"?: string;
         /**
           * (optional) URL of the file uploaded
+          * @default ''
          */
         "previewImageUrl"?: string;
         /**
           * (optional) Determine if it is required
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Text that be shown when the Regular Expression condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage"?: string;
     }
@@ -1841,10 +2535,12 @@ declare namespace LocalJSX {
     interface DotBinaryFilePreview {
         /**
           * (optional) Delete button's label
+          * @default 'Delete'
          */
         "deleteLabel"?: string;
         /**
           * file name to be displayed
+          * @default ''
          */
         "fileName"?: string;
         /**
@@ -1853,6 +2549,7 @@ declare namespace LocalJSX {
         "onDelete"?: (event: DotBinaryFilePreviewCustomEvent<any>) => void;
         /**
           * (optional) file URL to be displayed
+          * @default ''
          */
         "previewUrl"?: string;
     }
@@ -1868,24 +2565,29 @@ declare namespace LocalJSX {
         "accept"?: string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         "onFileChange"?: (event: DotBinaryTextFieldCustomEvent<DotBinaryFileEvent>) => void;
         "onLostFocus"?: (event: DotBinaryTextFieldCustomEvent<any>) => void;
         /**
           * (optional) Placeholder specifies a short hint that describes the expected value of the input field
+          * @default ''
          */
         "placeholder"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * Value specifies the value of the <input> element
+          * @default null
          */
         "value"?: any;
     }
@@ -1901,23 +2603,28 @@ declare namespace LocalJSX {
         "accept"?: string;
         /**
           * (optional) Text that be shown in the browse file button
+          * @default ''
          */
         "buttonLabel"?: string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Set the max file size limit
+          * @default ''
          */
         "maxFileLength"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onFileChange"?: (event: DotBinaryUploadButtonCustomEvent<DotBinaryFileEvent>) => void;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
     }
@@ -1925,67 +2632,93 @@ declare namespace LocalJSX {
     }
     interface DotCardContentlet {
         "checked"?: boolean;
+        /**
+          * @default '96px'
+         */
         "iconSize"?: string;
         "item"?: DotCardContentletItem;
         "onCheckboxChange"?: (event: DotCardContentletCustomEvent<DotCardContentletEvent>) => void;
         "onContextMenuClick"?: (event: DotCardContentletCustomEvent<MouseEvent>) => void;
+        /**
+          * @default false
+         */
         "showVideoThumbnail"?: boolean;
+        /**
+          * @default '260'
+         */
         "thumbnailSize"?: string;
     }
     interface DotCardView {
+        /**
+          * @default []
+         */
         "items"?: DotCardContentletItem[];
         "onCardClick"?: (event: DotCardViewCustomEvent<any>) => void;
         "onSelected"?: (event: DotCardViewCustomEvent<any>) => void;
+        /**
+          * @default true
+         */
         "showVideoThumbnail"?: boolean;
         "value"?: string;
     }
     interface DotCheckbox {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotCheckboxCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotCheckboxCustomEvent<DotFieldValueEvent>) => void;
         /**
           * Value/Label checkbox options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default `This field is required`
          */
         "requiredMessage"?: string;
         /**
           * Value set from the checkbox option
+          * @default ''
          */
         "value"?: string;
     }
     interface DotChip {
         /**
           * (optional) Delete button's label
+          * @default 'Delete'
          */
         "deleteLabel"?: string;
         /**
           * (optional) If is true disabled the delete button
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * Chip's label
+          * @default ''
          */
         "label"?: string;
         "onRemove"?: (event: DotChipCustomEvent<String>) => void;
@@ -1996,26 +2729,65 @@ declare namespace LocalJSX {
      * @class DotFileIcon
      */
     interface DotContentletIcon {
+        /**
+          * @default ''
+         */
         "icon"?: string;
+        /**
+          * @default ''
+         */
         "size"?: string;
     }
     interface DotContentletLockIcon {
         "locked"?: boolean;
+        /**
+          * @default '16px'
+         */
         "size"?: string;
     }
     interface DotContentletThumbnail {
+        /**
+          * @default ''
+         */
         "alt"?: string;
+        /**
+          * @default false
+         */
         "backgroundImage"?: boolean;
         "contentlet"?: DotContentletItem;
+        /**
+          * @default ''
+         */
         "fieldVariable"?: string;
+        /**
+          * @default ''
+         */
         "height"?: string;
+        /**
+          * @default ''
+         */
         "iconSize"?: string;
+        /**
+          * @default false
+         */
         "playableVideo"?: boolean;
+        /**
+          * @default true
+         */
         "showVideoThumbnail"?: boolean;
+        /**
+          * @default ''
+         */
         "width"?: string;
     }
     interface DotContextMenu {
+        /**
+          * @default '16px'
+         */
         "fontSize"?: string;
+        /**
+          * @default []
+         */
         "options"?: DotContextMenuOption<DotContextMenuAction>[];
     }
     interface DotDataViewButton {
@@ -2024,156 +2796,192 @@ declare namespace LocalJSX {
     interface DotDate {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * (optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd
+          * @default ''
          */
         "max"?: string;
         /**
           * (optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd
+          * @default ''
          */
         "min"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotDateCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotDateCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Step specifies the legal number intervals for the input field
+          * @default '1'
          */
         "step"?: string;
         /**
           * (optional) Text that be shown when min or max are set and condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage"?: string;
         /**
           * Value format yyyy-mm-dd  e.g., 2005-12-01
+          * @default ''
          */
         "value"?: string;
     }
     interface DotDateRange {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Date format used by the field when displayed
+          * @default 'Y-m-d'
          */
         "displayFormat"?: string;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * (optional) Max value that the field will allow to set
+          * @default ''
          */
         "max"?: string;
         /**
           * (optional) Min value that the field will allow to set
+          * @default ''
          */
         "min"?: string;
         /**
           * Name that will be used as ID
+          * @default 'daterange'
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotDateRangeCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotDateRangeCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Text to be rendered next to presets field
+          * @default 'Presets'
          */
         "presetLabel"?: string;
         /**
           * (optional) Array of date presets formatted as [{ label: 'PRESET_LABEL', days: NUMBER }]
+          * @default [         {             label: 'Date Presets',             days: 0         },         {             label: 'Last Week',             days: -7         },         {             label: 'Next Week',             days: 7         },         {             label: 'Last Month',             days: -30         },         {             label: 'Next Month',             days: 30         }     ]
          */
         "presets"?: { label: string; days: number; }[];
         /**
           * (optional) Determine if it is needed
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Value formatted with start and end date splitted with a comma
+          * @default ''
          */
         "value"?: string;
     }
     interface DotDateTime {
         /**
           * (optional) The string to use in the date label field
+          * @default 'Date'
          */
         "dateLabel"?: string;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * (optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd hh:mm:ss | yyyy-mm-dd | hh:mm:ss
+          * @default ''
          */
         "max"?: string;
         /**
           * (optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd hh:mm:ss | yyyy-mm-dd | hh:mm:ss
+          * @default ''
          */
         "min"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotDateTimeCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotDateTimeCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Step specifies the legal number intervals for the input fields date && time e.g., 2,10
+          * @default '1,1'
          */
         "step"?: string;
         /**
           * (optional) The string to use in the time label field
+          * @default 'Time'
          */
         "timeLabel"?: string;
         /**
           * (optional) Text that be shown when min or max are set and condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage"?: string;
         /**
           * Value format yyyy-mm-dd hh:mm:ss e.g., 2005-12-01 15:22:00
+          * @default ''
          */
         "value"?: string;
     }
@@ -2186,6 +2994,7 @@ declare namespace LocalJSX {
         "fieldsToShow"?: string;
         /**
           * Layout metada to be rendered
+          * @default []
          */
         "layout"?: DotCMSContentTypeLayoutRow[];
         /**
@@ -2194,14 +3003,17 @@ declare namespace LocalJSX {
         "onSubmit"?: (event: DotFormCustomEvent<DotCMSContentlet>) => void;
         /**
           * (optional) Text to be rendered on Reset button
+          * @default 'Reset'
          */
         "resetLabel"?: string;
         /**
           * (optional) Text to be rendered on Submit button
+          * @default 'Submit'
          */
         "submitLabel"?: string;
         /**
           * Content type variable name
+          * @default ''
          */
         "variable"?: string;
     }
@@ -2226,57 +3038,76 @@ declare namespace LocalJSX {
         "row"?: DotCMSContentTypeLayoutRow;
     }
     interface DotHtmlToImage {
+        /**
+          * @default ''
+         */
         "height"?: string;
         "onPageThumbnail"?: (event: DotHtmlToImageCustomEvent<{
         file: File;
         error?: string;
     }>) => void;
+        /**
+          * @default ''
+         */
         "value"?: string;
+        /**
+          * @default ''
+         */
         "width"?: string;
     }
     interface DotInputCalendar {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Max, maximum value that the field will allow to set, expect a Date Format
+          * @default ''
          */
         "max"?: string;
         /**
           * (optional) Min, minimum value that the field will allow to set, expect a Date Format.
+          * @default ''
          */
         "min"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "on_dotStatusChange"?: (event: DotInputCalendarCustomEvent<DotInputCalendarStatusEvent>) => void;
         "on_dotValueChange"?: (event: DotInputCalendarCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Step specifies the legal number intervals for the input field
+          * @default '1'
          */
         "step"?: string;
         /**
           * type specifies the type of input element to display
+          * @default ''
          */
         "type"?: string;
         /**
           * Value specifies the value of the input element
+          * @default ''
          */
         "value"?: string;
     }
     interface DotKeyValue {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default 'The key already exists'
          */
         "duplicatedKeyMessage"?: string;
         /**
@@ -2301,10 +3132,12 @@ declare namespace LocalJSX {
         "formValuePlaceholder"?: string;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
@@ -2313,24 +3146,29 @@ declare namespace LocalJSX {
         "listDeleteLabel"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotKeyValueCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotKeyValueCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Allows unique keys only
+          * @default false
          */
         "uniqueKeys"?: boolean;
         /**
           * Value of the field
+          * @default ''
          */
         "value"?: string;
         /**
@@ -2350,49 +3188,60 @@ declare namespace LocalJSX {
     interface DotLabel {
         /**
           * (optional) Text to be rendered
+          * @default ''
          */
         "label"?: string;
         /**
           * (optional) Field name
+          * @default ''
          */
         "name"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
     }
     interface DotMaterialIconPicker {
         /**
           * Label set for the input color
+          * @default 'Color'
          */
         "colorLabel"?: string;
         /**
           * Color value set from the input
+          * @default '#000'
          */
         "colorValue"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotValueChange"?: (event: DotMaterialIconPickerCustomEvent<{ name: string; value: string; colorValue: string }>) => void;
         /**
           * Value for input placeholder
+          * @default ''
          */
         "placeholder"?: string;
         /**
           * Show/Hide color picker
+          * @default null
          */
         "showColor"?: string;
         /**
           * Size value set for font-size
+          * @default null
          */
         "size"?: string;
         /**
           * Values that the auto-complete textbox should search for
+          * @default MaterialIconClasses
          */
         "suggestionlist"?: string[];
         /**
           * Value set from the dropdown option
+          * @default ''
          */
         "value"?: string;
     }
@@ -2404,40 +3253,49 @@ declare namespace LocalJSX {
     interface DotMultiSelect {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotMultiSelectCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotMultiSelectCustomEvent<DotFieldValueEvent>) => void;
         /**
           * Value/Label dropdown options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default `This field is required`
          */
         "requiredMessage"?: string;
         /**
           * (optional) Size number of the multi-select dropdown (default=3)
+          * @default '3'
          */
         "size"?: string;
         /**
           * Value set from the dropdown option
+          * @default ''
          */
         "value"?: string;
     }
@@ -2449,10 +3307,12 @@ declare namespace LocalJSX {
     interface DotProgressBar {
         /**
           * indicates the progress to be show, a value 1 to 100
+          * @default 0
          */
         "progress"?: number;
         /**
           * text to be show bellow the progress bar
+          * @default 'Uploading Files...'
          */
         "text"?: string;
     }
@@ -2464,36 +3324,44 @@ declare namespace LocalJSX {
     interface DotRadio {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotRadioCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotRadioCustomEvent<DotFieldValueEvent>) => void;
         /**
           * Value/Label ratio options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default ''
          */
         "requiredMessage"?: string;
         /**
           * Value set from the ratio option
+          * @default ''
          */
         "value"?: string;
     }
@@ -2505,94 +3373,128 @@ declare namespace LocalJSX {
     interface DotSelect {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotSelectCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotSelectCustomEvent<DotFieldValueEvent>) => void;
         /**
           * Value/Label dropdown options separated by comma, to be formatted as: Value|Label
+          * @default ''
          */
         "options"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that will be shown when required is set and condition is not met
+          * @default `This field is required`
          */
         "requiredMessage"?: string;
         /**
           * Value set from the dropdown option
+          * @default ''
          */
         "value"?: string;
     }
     interface DotSelectButton {
         "onSelected"?: (event: DotSelectButtonCustomEvent<string>) => void;
+        /**
+          * @default []
+         */
         "options"?: DotSelectButtonOption[];
+        /**
+          * @default ''
+         */
         "value"?: string;
     }
     interface DotStateIcon {
+        /**
+          * @default {         archived: 'Archived',         published: 'Published',         revision: 'Revision',         draft: 'Draft'     }
+         */
         "labels"?: { archived: string; published: string; revision: string; draft: string; };
+        /**
+          * @default '16px'
+         */
         "size"?: string;
+        /**
+          * @default null
+         */
         "state"?: DotContentState;
     }
     interface DotTags {
         /**
           * Function or array of string to get the data to use for the autocomplete search
+          * @default null
          */
         "data"?: () => Promise<string[]> | string[];
         /**
           * Duraction in ms to start search into the autocomplete
+          * @default 300
          */
         "debounce"?: number;
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotTagsCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotTagsCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) text to show when no value is set
+          * @default ''
          */
         "placeholder"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and value is not set
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * Min characters to start search in the autocomplete input
+          * @default 1
          */
         "threshold"?: number;
         /**
           * Value formatted splitted with a comma, for example: tag-1,tag-2
+          * @default ''
          */
         "value"?: string;
     }
@@ -2604,40 +3506,49 @@ declare namespace LocalJSX {
     interface DotTextarea {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to textarea element
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotTextareaCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotTextareaCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Regular expresion that is checked against the value to determine if is valid
+          * @default ''
          */
         "regexCheck"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Text that be shown when the Regular Expression condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage"?: string;
         /**
           * Value specifies the value of the textarea element
+          * @default ''
          */
         "value"?: string;
     }
@@ -2649,96 +3560,118 @@ declare namespace LocalJSX {
     interface DotTextfield {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotTextfieldCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotTextfieldCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Placeholder specifies a short hint that describes the expected value of the input field
+          * @default ''
          */
         "placeholder"?: string;
         /**
           * (optional) Regular expresion that is checked against the value to determine if is valid
+          * @default ''
          */
         "regexCheck"?: string;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * type specifies the type of input element to display
+          * @default 'text'
          */
         "type"?: string;
         /**
           * (optional) Text that be shown when the Regular Expression condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage"?: string;
         /**
           * Value specifies the value of the input element
+          * @default ''
          */
         "value"?: string;
     }
     interface DotTime {
         /**
           * (optional) Disables field's interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Hint text that suggest a clue of the field
+          * @default ''
          */
         "hint"?: string;
         /**
           * (optional) Text to be rendered next to input field
+          * @default ''
          */
         "label"?: string;
         /**
           * (optional) Max, maximum value that the field will allow to set. Format should be  hh:mm:ss
+          * @default ''
          */
         "max"?: string;
         /**
           * (optional) Min, minimum value that the field will allow to set. Format should be hh:mm:ss
+          * @default ''
          */
         "min"?: string;
         /**
           * Name that will be used as ID
+          * @default ''
          */
         "name"?: string;
         "onDotStatusChange"?: (event: DotTimeCustomEvent<DotFieldStatusEvent>) => void;
         "onDotValueChange"?: (event: DotTimeCustomEvent<DotFieldValueEvent>) => void;
         /**
           * (optional) Determine if it is mandatory
+          * @default false
          */
         "required"?: boolean;
         /**
           * (optional) Text that be shown when required is set and condition not met
+          * @default 'This field is required'
          */
         "requiredMessage"?: string;
         /**
           * (optional) Step specifies the legal number intervals for the input field
+          * @default '1'
          */
         "step"?: string;
         /**
           * (optional) Text that be shown when min or max are set and condition not met
+          * @default "The field doesn't comply with the specified format"
          */
         "validationMessage"?: string;
         /**
           * Value format hh:mm:ss e.g., 15:22:00
+          * @default ''
          */
         "value"?: string;
     }
@@ -2746,6 +3679,9 @@ declare namespace LocalJSX {
         "content"?: string;
         "delay"?: number;
         "for"?: string;
+        /**
+          * @default 'center bottom'
+         */
         "position"?: string;
     }
     interface DotVideoThumbnail {
@@ -2757,12 +3693,14 @@ declare namespace LocalJSX {
         /**
           * @type {boolean}
           * @memberof DotVideoThumbnail
+          * @default true
          */
         "cover"?: boolean;
         /**
           * If the video is playable or not.
           * @type {boolean}
           * @memberof DotVideoThumbnail
+          * @default false
          */
         "playable"?: boolean;
         /**
@@ -2774,22 +3712,27 @@ declare namespace LocalJSX {
     interface KeyValueForm {
         /**
           * (optional) Label for the add item button
+          * @default 'Add'
          */
         "addButtonLabel"?: string;
         /**
           * (optional) Disables all form interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Label for the empty option in white-list select
+          * @default 'Pick an option'
          */
         "emptyDropdownOptionLabel"?: string;
         /**
           * (optional) The string to use in the key input label
+          * @default 'Key'
          */
         "keyLabel"?: string;
         /**
           * (optional) Placeholder for the key input text
+          * @default ''
          */
         "keyPlaceholder"?: string;
         /**
@@ -2806,32 +3749,39 @@ declare namespace LocalJSX {
         "onLostFocus"?: (event: KeyValueFormCustomEvent<FocusEvent>) => void;
         /**
           * (optional) The string to use in the value input label
+          * @default 'Value'
          */
         "valueLabel"?: string;
         /**
           * (optional) Placeholder for the value input text
+          * @default ''
          */
         "valuePlaceholder"?: string;
         /**
           * (optional) The string to use for white-list key/values
+          * @default ''
          */
         "whiteList"?: string;
     }
     interface KeyValueTable {
         /**
           * (optional) Label for the delete button in each item list
+          * @default 'Delete'
          */
         "buttonLabel"?: string;
         /**
           * (optional) Disables all form interaction
+          * @default false
          */
         "disabled"?: boolean;
         /**
           * (optional) Message to show when the list of items is empty
+          * @default 'No values'
          */
         "emptyMessage"?: string;
         /**
           * (optional) Items to render in the list of key value
+          * @default []
          */
         "items"?: DotKeyValueField[];
         /**

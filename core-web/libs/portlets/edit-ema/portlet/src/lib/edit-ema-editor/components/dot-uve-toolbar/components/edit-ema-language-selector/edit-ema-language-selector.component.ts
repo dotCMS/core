@@ -13,8 +13,9 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { Listbox, ListboxChangeEvent, ListboxModule } from 'primeng/listbox';
+import { Listbox, ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
+import { ListboxChangeEvent } from 'primeng/types/listbox';
 
 import { map } from 'rxjs/operators';
 
@@ -40,7 +41,7 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
             label: this.createLanguageLabel(this.language())
         };
         // This method internally set a signal. We need to use untracked to avoid unnecessary updates
-        untracked(() => this.listbox?.writeValue(selected));
+        untracked(() => this.listbox?.updateModel(selected, null));
 
         return selected;
     });
@@ -57,7 +58,7 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
         );
 
     ngAfterViewInit(): void {
-        this.listbox.writeValue(this.selectedLanguage());
+        this.listbox.updateModel(this.selectedLanguage(), null);
     }
 
     /**
@@ -68,8 +69,7 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
      */
     onChange({ value }: ListboxChangeEvent) {
         this.selected.emit(value.id);
-
-        this.listbox.writeValue(this.selectedLanguage());
+        // Note: updateModel is not called here as the computed signal handles it via untracked
     }
 
     /**

@@ -2,7 +2,7 @@
     [blockScroll]="true"
     [closeOnEscape]="false"
     [dismissible]="false"
-    [showCloseIcon]="false"
+    [closable]="false"
     [visible]="!!contentlet()"
     data-testId="sidebar"
     position="right">
@@ -16,20 +16,18 @@
                 data-testId="dot-block-editor" />
         }
         <footer>
-            <button
-                pButton
+            <p-button
                 (click)="close()"
                 [label]="'Cancel' | dm"
                 [disabled]="loading()"
-                class="p-button-outlined"
-                data-testId="cancel-btn"></button>
-            <button
-                pButton
+                [outlined]="true"
+                data-testId="cancel-btn" />
+            <p-button
                 (click)="saveEditorChanges()"
                 [disabled]="!value() || loading()"
                 [label]="'Save' | dm"
                 [loading]="loading()"
-                data-testId="save-btn"></button>
+                data-testId="save-btn" />
         </footer>
     </div>
 </p-drawer>

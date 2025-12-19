@@ -66,11 +66,11 @@ export class DotUvePaletteComponent {
 
     /**
      * Called whenever the tab changes in the p-tabs component (PrimeNG v21).
-     * The event contains the new tab value.
+     * The valueChange event emits the new tab value directly.
      *
-     * @param event Object containing the new tab value.
+     * @param value The new tab value.
      */
-    protected handleTabChange(event: { value: number }): void {
-        this.onTabChange.emit(event.value as UVE_PALETTE_TABS);
+    protected handleTabChange(value: string | number): void {
+        this.onTabChange.emit(value as UVE_PALETTE_TABS);
     }
 }

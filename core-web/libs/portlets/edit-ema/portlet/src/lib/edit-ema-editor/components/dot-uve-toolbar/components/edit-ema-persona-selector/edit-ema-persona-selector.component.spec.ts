@@ -188,7 +188,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
             const onRemoveSpy = jest.spyOn(component, 'onRemove');
 
-            const removeIcon = spectator.query(byTestId('persona-chip-remove'));
+            const removeIcon = spectator.query('.p-chip-remove-icon');
             spectator.click(removeIcon);
 
             expect(onRemoveSpy).toHaveBeenCalledWith(
@@ -206,7 +206,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
             const onRemoveSpy = jest.spyOn(component, 'onRemove');
 
-            const removeIcon = spectator.query(byTestId('persona-chip-remove'));
+            const removeIcon = spectator.query('.p-chip-remove-icon');
             spectator.click(removeIcon);
 
             expect(onRemoveSpy).toHaveBeenCalledWith(

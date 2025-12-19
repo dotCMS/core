@@ -35,6 +35,21 @@ import {
 import { DotUveWorkflowActionsComponent } from './dot-uve-workflow-actions.component';
 
 import { MOCK_RESPONSE_VTL } from '../../../../../shared/mocks';
+
+// Mock window.matchMedia for PrimeNG components
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {

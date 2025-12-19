@@ -18,9 +18,7 @@
                         [routerLink]="linkToAddDevice"
                         [queryParams]="linkToEditDeviceQueryParams"
                         data-testId="dot-device-link-add">
-                        <p-button
-                            icon="pi pi-pencil"
-                            class="p-button-rounded p-button-text"></p-button>
+                        <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" />
                     </a>
                 }
             </div>

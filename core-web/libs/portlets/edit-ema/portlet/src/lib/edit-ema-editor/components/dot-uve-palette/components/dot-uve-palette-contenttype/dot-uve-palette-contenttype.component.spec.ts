@@ -96,8 +96,9 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 name: 'New Content Type Name'
             };
 
-            spectator.setHostInput({ contentType: newContentType });
-            spectator.detectChanges();
+            spectator.hostComponent.contentType = newContentType;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
 
             const element = spectator.element as HTMLElement;
             const dataItem = element.getAttribute('data-item') as string;
@@ -112,16 +113,15 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
     describe('View Input and CSS Classes', () => {
         it('should not have list-view class when view is "grid"', () => {
-            spectator.setHostInput({ view: 'grid grid-cols-12 gap-4' });
-            spectator.detectChanges();
-
+            // Default view is 'grid', so no need to change input
             const element = spectator.element as HTMLElement;
             expect(element.classList.contains('list-view')).toBe(false);
         });
 
         it('should have list-view class when view is "list"', () => {
-            spectator.setHostInput({ view: 'list' });
-            spectator.detectChanges();
+            spectator.hostComponent.view = 'list';
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
 
             const element = spectator.element as HTMLElement;
             expect(element.classList.contains('list-view')).toBe(true);
@@ -130,16 +130,19 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         it('should toggle list-view class when view changes', () => {
             const element = spectator.element as HTMLElement;
 
-            spectator.setHostInput({ view: 'grid grid-cols-12 gap-4' });
-            spectator.detectChanges();
+            spectator.hostComponent.view = 'grid grid-cols-12 gap-4';
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
             expect(element.classList.contains('list-view')).toBe(false);
 
-            spectator.setHostInput({ view: 'list' });
-            spectator.detectChanges();
+            spectator.hostComponent.view = 'list';
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
             expect(element.classList.contains('list-view')).toBe(true);
 
-            spectator.setHostInput({ view: 'grid grid-cols-12 gap-4' });
-            spectator.detectChanges();
+            spectator.hostComponent.view = 'grid grid-cols-12 gap-4';
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
             expect(element.classList.contains('list-view')).toBe(false);
         });
     });
@@ -172,8 +175,9 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 icon: undefined
             };
 
-            spectator.setHostInput({ contentType: newContentType });
-            spectator.detectChanges();
+            spectator.hostComponent.contentType = newContentType;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
 
             const iconElement = spectator.query('.content .icon i');
 
@@ -196,8 +200,9 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 name: 'Updated Content Type'
             };
 
-            spectator.setHostInput({ contentType: newContentType });
-            spectator.detectChanges();
+            spectator.hostComponent.contentType = newContentType;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
 
             const nameElement = spectator.query('.content .name');
             expect(nameElement?.textContent?.trim()).toBe('Updated Content Type');
@@ -241,8 +246,9 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 variable: 'NewVariableName'
             };
 
-            spectator.setHostInput({ contentType: newContentType });
-            spectator.detectChanges();
+            spectator.hostComponent.contentType = newContentType;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
 
             spectator.output('onSelectContentType').subscribe((value: string) => {
                 expect(value).toBe('NewVariableName');
