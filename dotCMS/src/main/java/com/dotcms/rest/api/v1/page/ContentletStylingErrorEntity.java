@@ -11,7 +11,7 @@ public class ContentletStylingErrorEntity extends ErrorEntity {
     private final String containerId;
 
     public ContentletStylingErrorEntity(String code, String message, String contentletId,
-            String uuid, String containerId) {
+            String containerId, String uuid) {
         super(code, message);
         this.contentletId = contentletId;
         this.containerId = containerId;

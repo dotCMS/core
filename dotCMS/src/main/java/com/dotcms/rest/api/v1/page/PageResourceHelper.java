@@ -148,9 +148,12 @@ public class PageResourceHelper implements Serializable {
      *                         {@link PageContainerForm.ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
      * @throws DotDataException An error occurred when interacting with the data source.
+     * @param variantName      The variant name
+     * @return The list of saved Contentlets with the containerId, contentletId, uuid and styleProperties.
+     * @throws BadRequestException if style validation fails
      */
     @WrapInTransaction
-    public void saveContent(final String pageId,
+    public List<ContentletStylingView> saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
             final Language language, String variantName) throws DotDataException {
 
@@ -164,7 +167,7 @@ public class PageResourceHelper implements Serializable {
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
             final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
 
-            // Validate style properties INLINE during iteration
+            // Validate style properties during the saving process
             stylePropertiesValidation(stylePropertiesMap, contentIds,
                     containerEntry.getContainerId(), containerEntry.getContainerUUID());
 
@@ -218,8 +221,24 @@ public class PageResourceHelper implements Serializable {
                     multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
         }
+
+        // MultiTrees as a flattened list
+        final List<MultiTree> savedMultiTrees = multiTreesMap.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        // Response with container, contentlet and styleProperties
+        return buildSaveContentResponse(savedMultiTrees);
     }
 
+    /**
+     * Validates the style properties during the saving process.
+     * @param stylePropertiesMap The map of style properties.
+     * @param contentIds The list of contentlet ids.
+     * @param containerId The id of the container.
+     * @param containerUUID The uuid of the container.
+     * @throws BadRequestException if the style properties are invalid.
+     */
     private void stylePropertiesValidation(
             Map<String, Map<String, Object>> stylePropertiesMap,
             List<String> contentIds, String containerId, String containerUUID
@@ -244,6 +263,31 @@ public class PageResourceHelper implements Serializable {
                         "Invalid Style Properties configuration");
             }
         }
+    }
+
+    /**
+     * Returns a list of saved Contentlets and Style Properites.
+     * @param savedMultiTrees The list of saved MultiTrees.
+     * @return A list of the saved Contentlets with the containerId, uuid, contentletId and
+     * styleProperties.
+     */
+    private List<ContentletStylingView> buildSaveContentResponse(List<MultiTree> savedMultiTrees) {
+        return savedMultiTrees.stream()
+                .map(multiTree -> {
+                    ContentletStylingView.Builder builder = ContentletStylingView.builder()
+                            .containerId(multiTree.getContainer())
+                            .contentletId(multiTree.getContentlet())
+                            .uuid(multiTree.getRelationType());
+
+                    // Add Style properties if present
+                    final Map<String, Object> styleProperties = multiTree.getStyleProperties();
+                    if (styleProperties != null && !styleProperties.isEmpty()) {
+                        builder.putAllStyleProperties(styleProperties);
+                    }
+
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
     }
 
     public void saveMultiTree(final String containerId,

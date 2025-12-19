@@ -774,9 +774,11 @@ public class PageResource {
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
-            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
+            // Save content and Get the saved contentlets
+            final List<ContentletStylingView> savedContent = pageResourceHelper.saveContent(
+                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
-            return Response.ok(new ResponseEntityView<>("ok")).build();
+            return Response.ok(new ResponseEntityContentletStylingView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
                     pageId);
