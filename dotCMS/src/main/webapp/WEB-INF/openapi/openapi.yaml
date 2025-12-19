@@ -19479,13 +19479,24 @@ components:
     BundleMap:
       type: object
       properties:
+        builtWithMaven:
+          type: boolean
         bundleId:
           type: integer
           format: int64
+        dotcmsCoreDependencyVersion:
+          type: string
         jarFile:
+          type: string
+        javaClassVersion:
+          type: integer
+          format: int32
+        javaVersion:
           type: string
         location:
           type: string
+        multiRelease:
+          type: boolean
         separator:
           type: string
         state:
@@ -19494,6 +19505,8 @@ components:
         symbolicName:
           type: string
         system:
+          type: boolean
+        usesDotcmsApis:
           type: boolean
         version:
           type: string
