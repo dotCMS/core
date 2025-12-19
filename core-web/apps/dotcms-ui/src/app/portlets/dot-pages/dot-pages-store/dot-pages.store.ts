@@ -876,6 +876,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 switchMap(({ item, actionMenuDomId }) => {
                     return forkJoin({
                         workflowsData: this.getWorflowActionsFn(item),
+                        // Check this
                         dotFavorite: this.getFavoritePagesData({
                             limit: 1,
                             url:
