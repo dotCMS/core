@@ -13,12 +13,19 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
     imports: [CardModule, ButtonModule, TooltipModule, DotPagesFavoritePageEmptySkeletonComponent]
 })
 export class DotPagesCardComponent {
+    /** The action button id. */
     readonly $actionButtonId = input<string>('', { alias: 'actionButtonId' });
+    /** The image uri. */
     readonly $imageUri = input<string>('', { alias: 'imageUri' });
+    /** The title. */
     readonly $title = input<string>('', { alias: 'title' });
+    /** The url. */
     readonly $url = input<string>('', { alias: 'url' });
 
+    /** Emits when the edit button is clicked. */
     readonly edit = output<boolean>();
+    /** Emits when the navigate to page button is clicked. */
     readonly navigateToPage = output<boolean>();
+    /** Emits when the actions menu is opened. */
     readonly openMenu = output<MouseEvent>();
 }

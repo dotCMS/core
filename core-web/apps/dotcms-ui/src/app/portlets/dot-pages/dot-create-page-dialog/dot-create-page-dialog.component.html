@@ -13,7 +13,6 @@
             <input
                 class="w-full"
                 [placeholder]="'Search' | dm"
-                #searchInput
                 type="text"
                 [formControl]="searchControl"
                 pInputText
@@ -31,6 +30,8 @@
                     @for (item of $filteredPageTypes(); track item.variable) {
                         <div
                             (click)="goToCreatePage(item.variable)"
+                            data-testid="dot-pages-create-page-dialog__page-type-row"
+                            [attr.data-page-type]="item.variable"
                             class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-surface-900 hover:bg-surface-100">
                             <span class="text-surface-600" style="font-size: 18px">
                                 <i class="material-icons">

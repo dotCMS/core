@@ -27,7 +27,7 @@
                 {{ cardUrl }}
             </span>
             <p-button
-                (onClick)="openMenu.emit($event)"
+                (onClick)="$event.stopPropagation(); openMenu.emit($event)"
                 [id]="$actionButtonId()"
                 icon="pi pi-ellipsis-v"
                 styleClass="p-button-rounded p-button-text p-button-sm shrink-0" />
