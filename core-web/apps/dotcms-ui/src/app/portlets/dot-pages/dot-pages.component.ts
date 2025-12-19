@@ -43,10 +43,10 @@ import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
-import { DotPageListService } from './dot-page-list.service';
-import { DotPageActionsService } from './dot-page.actions.service';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.component';
+import { DotPageActionsService } from './services/dot-page-actions.service';
+import { DotPageListService } from './services/dot-page-list.service';
 import { DotCMSPagesStore } from './store/store';
 
 export interface DotActionsMenuEventParams {

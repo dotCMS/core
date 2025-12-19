@@ -32,7 +32,7 @@ import {
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
-import { DotCMSPagesStore } from './store/store';
+import { DotCMSPagesStore } from '../store/store';
 
 interface DotPermissions {
     canRead: boolean;

@@ -11,7 +11,7 @@ import {
     DotPagination
 } from '@dotcms/dotcms-models';
 
-import { DotPageListService, ListPagesParams } from '../dot-page-list.service';
+import { DotPageListService, ListPagesParams } from '../services/dot-page-list.service';
 
 export interface DotCMSPagesPortletState {
     pages: DotCMSContentlet[];

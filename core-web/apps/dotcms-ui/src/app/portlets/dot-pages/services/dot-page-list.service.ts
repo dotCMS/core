@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators';
 
 import { DotCMSAPIResponse, DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
 
-import { FAVORITE_PAGE_LIMIT } from './dot-pages-store/dot-pages.store';
+import { FAVORITE_PAGE_LIMIT } from '../dot-pages-store/dot-pages.store';
 
 export interface ListPagesParams {
     search: string;
