@@ -2,6 +2,7 @@
     [(visible)]="show"
     [header]="'compare' | dm"
     [modal]="true"
+    [draggable]="false"
     [style]="{ width: '90vw', height: '90vh' }"
     (visibleChange)="close()">
     <dot-content-compare (shutdown)="close()" [data]="data$ | async" />

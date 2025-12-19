@@ -1,7 +1,22 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+// Mock window.matchMedia for PrimeNG components
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -177,8 +192,9 @@ describe('DotUvePaletteListComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUvePaletteListComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore

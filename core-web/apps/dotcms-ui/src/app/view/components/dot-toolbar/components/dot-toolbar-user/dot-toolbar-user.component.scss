@@ -7,6 +7,15 @@
 p-avatar {
     cursor: pointer;
     padding: spacing.$spacing-2 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 }
 
 ::ng-deep #toolbar-header:hover {

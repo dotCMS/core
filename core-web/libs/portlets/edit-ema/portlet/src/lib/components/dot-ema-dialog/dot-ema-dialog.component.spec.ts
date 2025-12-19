@@ -169,13 +169,15 @@ describe('DotEmaDialogComponent', () => {
         it("should make the form selector visible when it's a form", () => {
             component.addForm(PAYLOAD_MOCK);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('form-selector'))).not.toBeNull();
+            // Dialog appends to body, so we need to query the document
+            expect(document.querySelector('[data-testId="form-selector"]')).not.toBeNull();
         });
 
         it("should make the iframe visible when it's not a form", () => {
             component.addContentlet(PAYLOAD_MOCK);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('dialog-iframe'))).not.toBeNull();
+            // Dialog appends to body, so we need to query the document
+            expect(document.querySelector('[data-testId="dialog-iframe"]')).not.toBeNull();
         });
     });
 

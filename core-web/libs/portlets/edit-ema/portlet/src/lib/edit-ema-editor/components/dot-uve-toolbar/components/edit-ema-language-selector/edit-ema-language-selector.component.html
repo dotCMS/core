@@ -1,11 +1,11 @@
-<button
+<p-button
     (click)="op.toggle($event)"
     [label]="selectedLanguage()?.label"
     [ngClass]="{ selected: selectedLanguage().id !== 1 }"
-    class="p-button-text p-button-sm"
-    pButton
+    [text]="true"
+    size="small"
     icon="pi pi-globe"
-    data-testId="language-button"></button>
+    data-testId="language-button" />
 <p-popover #op styleClass="edit-ema-selector" data-testId="language-op">
     <p-listbox
         [options]="languages$ | async"

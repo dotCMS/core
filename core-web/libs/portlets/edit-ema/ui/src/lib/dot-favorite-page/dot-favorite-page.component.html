@@ -30,12 +30,12 @@
                                         [src]="vm.formState.thumbnail + '?' + timeStamp" />
                                 </div>
                                 @if (vm.pageRenderedHtml !== '') {
-                                    <button
+                                    <p-button
                                         (click)="renderThumbnail()"
                                         [label]="'favoritePage.dialog.reload.image.button' | dm"
-                                        class="p-button-outlined favorite-dialog__image-reload"
-                                        data-testid="dotFavoriteDialogReloadThumbnailButton"
-                                        pButton></button>
+                                        [outlined]="true"
+                                        class="favorite-dialog__image-reload"
+                                        data-testid="dotFavoriteDialogReloadThumbnailButton" />
                                 }
                             }
                         </div>
@@ -76,14 +76,15 @@
                 </div>
             </form>
         }
-        <button
+        <p-button
             (click)="onDelete(vm.formState?.inode)"
             [disabled]="!vm.formState?.inode"
             [label]="'favoritePage.dialog.delete.button' | dm"
-            class="p-button-danger p-button-outlined dot-favorite-dialog-footer__delete-button"
+            severity="danger"
+            [outlined]="true"
+            class="dot-favorite-dialog-footer__delete-button"
             icon="pi pi-trash"
             footerActions
-            data-testid="dotFavoriteDialogDeleteButton"
-            pButton></button>
+            data-testid="dotFavoriteDialogDeleteButton" />
     </dot-form-dialog>
 }

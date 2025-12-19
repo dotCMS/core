@@ -8,6 +8,15 @@
     .uve-toolbar {
         padding: 0 spacing.$spacing-4;
         transition: padding 0.2s ease;
+
+        a[pButton] {
+            text-decoration: none;
+
+            // Override browser default link color to use theme primary color
+            .p-button-label {
+                color: colors.$color-palette-primary;
+            }
+        }
     }
 
     .p-button.uve-toolbar-chips,
@@ -30,13 +39,17 @@
     }
 }
 
-.p-toolbar-group-start,
-.p-toolbar-group-end,
-.p-toolbar-group-center {
-    padding: spacing.$spacing-1 0;
-    align-items: center;
-    gap: spacing.$spacing-1;
-    align-self: stretch;
+// Toolbar section styling (PrimeNG v21 uses p-toolbar-start, p-toolbar-center, p-toolbar-end)
+::ng-deep {
+    .p-toolbar-start,
+    .p-toolbar-end,
+    .p-toolbar-center {
+        display: flex;
+        padding: spacing.$spacing-1 0;
+        align-items: center;
+        gap: spacing.$spacing-1;
+        align-self: stretch;
+    }
 }
 
 .vertical-divider {

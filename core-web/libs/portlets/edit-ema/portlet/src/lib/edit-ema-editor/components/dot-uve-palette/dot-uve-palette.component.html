@@ -1,4 +1,4 @@
-<p-tabs [value]="$activeTab()" (onChange)="handleTabChange($event)">
+<p-tabs [value]="$activeTab()" (valueChange)="handleTabChange($event)">
     <p-tablist>
         <p-tab [value]="TABS_MAP.CONTENT_TYPES">
             <div class="tab-header" pTooltip="Content types" tooltipPosition="bottom">

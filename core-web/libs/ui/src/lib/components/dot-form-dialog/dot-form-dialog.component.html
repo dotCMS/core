@@ -4,17 +4,15 @@
 
 <div class="dot-form-dialog__actions">
     <ng-content select="[footerActions]"></ng-content>
-    <button
+    <p-button
         (click)="onSecondaryClick($event)"
         [label]="'cancel' | dm"
-        class="p-button-outlined"
-        data-testid="dotFormDialogCancel"
-        pButton></button>
-    <button
+        [outlined]="true"
+        data-testid="dotFormDialogCancel" />
+    <p-button
         (click)="onPrimaryClick($event)"
         [label]="'save' | dm"
         [disabled]="saveButtonDisabled"
         [loading]="saveButtonLoading"
-        data-testid="dotFormDialogSave"
-        pButton></button>
+        data-testid="dotFormDialogSave" />
 </div>

@@ -17,13 +17,13 @@
 }
 
 ::ng-deep {
-    p-sidebar {
-        .p-sidebar-right {
+    p-drawer {
+        .p-drawer-right {
             width: 50%;
             max-width: 1040px;
         }
 
-        .p-sidebar-content {
+        .p-drawer-content {
             .container {
                 height: 100%;
             }

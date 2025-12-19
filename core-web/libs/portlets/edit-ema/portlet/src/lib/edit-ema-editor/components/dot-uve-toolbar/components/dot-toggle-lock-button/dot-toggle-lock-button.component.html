@@ -22,9 +22,12 @@
             [escape]="false"
             tooltipPosition="bottom"
             icon="pi pi-lock"
-            styleClass="p-button-text p-button-sm p-button-rounded unlock-button"
+            [text]="true"
+            size="small"
+            [rounded]="true"
+            styleClass="unlock-button"
             [loading]="unlockButton.loading"
             (click)="unlockPage(unlockButton.inode)"
-            data-testId="uve-toolbar-unlock-button"></p-button>
+            data-testId="uve-toolbar-unlock-button" />
     }
 }
