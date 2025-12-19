@@ -147,6 +147,35 @@ describe('CollectionBuilder', () => {
             });
         });
 
+        it('should handle onfulfilled callback returning void', async () => {
+            const contentType = 'song';
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                config,
+                contentType,
+                new FetchHttpClient()
+            );
+
+            const onfulfilledCallback = jest.fn((_data) => {
+                // Callback with no return statement (returns void)
+            });
+
+            const result = await collectionBuilder.then(onfulfilledCallback);
+
+            expect(onfulfilledCallback).toHaveBeenCalledWith({
+                contentlets: [],
+                page: 1,
+                size: 0,
+                total: 0
+            });
+            expect(result).toEqual({
+                contentlets: [],
+                page: 1,
+                size: 0,
+                total: 0
+            });
+        });
+
         it('should build a query for a collection with a specific language', async () => {
             const contentType = 'ringsOfPower';
             const collectionBuilder = new CollectionBuilder(
