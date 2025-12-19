@@ -17678,6 +17678,40 @@ paths:
       tags:
       - Internationalization
   /v2/tags:
+    delete:
+      description: Deletes one or more tags by their IDs. User must have EDIT permission
+        on all contentlets associated with each tag.
+      operationId: delete_17
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              description: Array of tag IDs
+              example:
+              - tag-123
+              - tag-456
+              - tag-789
+        description: List of tag IDs to delete
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
+          description: Bulk delete result with success count and failures
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - tagIds list is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete tags
+      tags:
+      - Tags
     get:
       description: "Searches and lists tags with filtering, pagination, and sorting.\
         \ The filter parameter performs a case-insensitive search with wildcards on\
@@ -18113,27 +18147,6 @@ paths:
             application/json: {}
           description: Internal Server Error
       summary: Get tag by name or ID
-      tags:
-      - Tags
-  /v2/tags/{tagId}:
-    delete:
-      operationId: delete_17
-      parameters:
-      - in: path
-        name: tagId
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
       tags:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
@@ -19431,6 +19444,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ActionFail"
+        skippedCount:
+          type: integer
+          format: int64
+        successCount:
+          type: integer
+          format: int64
+    BulkResultView:
+      type: object
+      properties:
+        fails:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedResultView"
         skippedCount:
           type: integer
           format: int64
@@ -21019,6 +21045,13 @@ components:
           type: string
       required:
       - packages
+    FailedResultView:
+      type: object
+      properties:
+        element:
+          type: string
+        errorMessage:
+          type: string
     Field:
       type: object
       discriminator:
@@ -24020,6 +24053,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/BulkActionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBulkResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkResultView"
         errors:
           type: array
           items:
