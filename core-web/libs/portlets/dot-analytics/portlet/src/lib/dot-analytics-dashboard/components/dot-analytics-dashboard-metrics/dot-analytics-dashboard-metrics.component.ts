@@ -33,8 +33,8 @@ export class DotAnalyticsDashboardMetricsComponent {
     /** Metric display name (shown in uppercase) */
     readonly $name = input.required<string>({ alias: 'name' });
 
-    /** Metric value (number will be formatted with separators) */
-    readonly $value = input.required<number>({ alias: 'value' });
+    /** Metric value (number will be formatted with separators, or string for special formats like "2/3") */
+    readonly $value = input.required<number | string>({ alias: 'value' });
 
     /** Optional secondary text below the metric value */
     readonly $subtitle = input<string>('', { alias: 'subtitle' });
@@ -46,6 +46,28 @@ export class DotAnalyticsDashboardMetricsComponent {
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
 
     // Computed properties
+    /** Check if value is a fraction format (e.g., "2/3") */
+    protected readonly $isFraction = computed(() => {
+        const val = this.$value();
+
+        return typeof val === 'string' && val.includes('/');
+    });
+
+    /** Extract and format numerator and denominator from fraction string */
+    protected readonly $fractionParts = computed(() => {
+        const val = this.$value();
+        if (typeof val === 'string' && val.includes('/')) {
+            const [num, den] = val.split('/').map((s) => s.trim());
+
+            return {
+                numerator: parseInt(num, 10).toLocaleString(),
+                denominator: parseInt(den, 10).toLocaleString()
+            };
+        }
+
+        return null;
+    });
+
     /** Formats numeric values with locale-specific separators */
     protected readonly $formattedValue = computed(() => {
         const val = this.$value();
