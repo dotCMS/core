@@ -5,17 +5,21 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link TagAPI} interface.
@@ -420,6 +424,97 @@ public class TagAPIImpl implements TagAPI {
     public void deleteTag ( String tagId ) throws DotDataException {
         Tag tag = getTagByTagId(tagId);
         deleteTag(tag);
+    }
+
+    @WrapInTransaction
+    @Override
+    public void deleteTags(String... tagIds) throws DotDataException {
+        if (tagIds == null || tagIds.length == 0) {
+            return;
+        }
+        tagFactory.deleteTagsInBatch(java.util.Arrays.asList(tagIds));
+    }
+
+    /**
+     * Checks if a user has permission to delete a tag.
+     * <p>A tag can be deleted if:
+     * <ul>
+     *   <li>The user is an admin or system user</li>
+     *   <li>The tag has no contentlet associations (orphan tag)</li>
+     *   <li>The user has EDIT permission on ALL associated contentlets</li>
+     * </ul>
+     * User ownership records (fieldVarName=null) are ignored as they represent tag ownership, not content tagging.</p>
+     *
+     * @param user  the user requesting deletion
+     * @param tagId the tag ID to check
+     * @return true if deletion is allowed, false if denied
+     * @throws DotDataException if there's a data access error
+     */
+    @CloseDBIfOpened
+    @Override
+    public boolean canDeleteTag(final User user, final String tagId) throws DotDataException {
+        // Admin or system user - allow delete without checking contentlet permissions
+        if (user.isAdmin() || user.getUserId().equals(APILocator.systemUser().getUserId())) {
+            return true;
+        }
+
+        final List<TagInode> associations = tagFactory.getTagInodesByTagId(tagId);
+
+        // Filter to contentlet associations only (fieldVarName != null)
+        // User ownership records have null fieldVarName and should be ignored
+        final List<TagInode> contentletAssociations = associations.stream()
+                .filter(ti -> UtilMethods.isSet(ti.getFieldVarName()))
+                .collect(Collectors.toList());
+
+        // Orphan tag - no contentlet associations, allow delete
+        if (contentletAssociations.isEmpty()) {
+            return true;
+        }
+
+        // Check EDIT permission on each associated contentlet
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        for (final TagInode tagInode : contentletAssociations) {
+            try {
+                final Contentlet contentlet = APILocator.getContentletAPI()
+                        .find(tagInode.getInode(), APILocator.systemUser(), false);
+
+                // Orphan association - contentlet doesn't exist anymore, skip
+                if (contentlet == null) {
+                    continue;
+                }
+
+                // Check EDIT permission
+                if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user)) {
+                    Logger.debug(this, () -> String.format(
+                            "User '%s' lacks EDIT permission on contentlet '%s' for tag '%s'",
+                            user.getUserId(), contentlet.getIdentifier(), tagId));
+                    return false;
+                }
+            } catch (final DotSecurityException e) {
+                // User doesn't have read permission on the contentlet
+                Logger.debug(this, () -> String.format(
+                        "User '%s' lacks permission to access contentlet associated with tag '%s'",
+                        user.getUserId(), tagId));
+                return false;
+            }
+        }
+
+        // All permission checks passed
+        return true;
+    }
+
+    @Override
+    public boolean deleteTag(final User user, final String tagId) throws DotDataException {
+        // Check if user has permission to delete this tag
+        if (!canDeleteTag(user, tagId)) {
+            Logger.debug(this, () -> String.format(
+                    "User '%s' denied permission to delete tag '%s'",
+                    user.getUserId(), tagId));
+            return false;
+        }
+        // Permission check passed, delete the tag
+        deleteTag(tagId);
+        return true;
     }
 
     @WrapInTransaction
