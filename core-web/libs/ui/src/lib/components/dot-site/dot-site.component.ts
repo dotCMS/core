@@ -384,21 +384,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     }
 
     /**
-     * Handles the event when the select overlay is shown.
-     * Initializes the virtual scroller to ensure options are displayed correctly.
-     */
-    onSelectShow(): void {
-        this.onShow.emit();
-        // Initialize virtual scroller state to fix display issue with custom filter template
-        requestAnimationFrame(() => {
-            if (this.select?.scroller) {
-                this.select.scroller.setInitialState();
-                this.select.scroller.viewInit();
-            }
-        });
-    }
-
-    /**
      * Handles the event when the select overlay is hidden.
      */
     onSelectHide(): void {

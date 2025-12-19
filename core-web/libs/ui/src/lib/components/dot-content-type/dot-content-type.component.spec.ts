@@ -607,7 +607,7 @@ describe('DotContentTypeComponent', () => {
         it('should emit onShow output when select overlay is shown', () => {
             const onShowSpy = jest.spyOn(spectator.component.onShow, 'emit');
 
-            spectator.triggerEventHandler(Select, 'onShow', {});
+            spectator.triggerEventHandler(Select, 'onShow', {} as unknown as AnimationEvent);
 
             expect(onShowSpy).toHaveBeenCalled();
         });
@@ -615,7 +615,7 @@ describe('DotContentTypeComponent', () => {
         it('should emit onHide output when select overlay is hidden', () => {
             const onHideSpy = jest.spyOn(spectator.component.onHide, 'emit');
 
-            spectator.triggerEventHandler(Select, 'onHide', {});
+            spectator.triggerEventHandler(Select, 'onHide', {} as unknown as AnimationEvent);
 
             expect(onHideSpy).toHaveBeenCalled();
         });

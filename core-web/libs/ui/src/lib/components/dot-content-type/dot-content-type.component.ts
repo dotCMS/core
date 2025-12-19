@@ -75,7 +75,6 @@ interface DotContentTypeState {
         InputTextModule
     ],
     templateUrl: './dot-content-type.component.html',
-    styleUrl: './dot-content-type.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
@@ -370,28 +369,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
             { first: 0, last: this.pageSize - 1, itemsNeeded: this.pageSize },
             0
         );
-    }
-
-    /**
-     * Handles the event when the select overlay is shown.
-     * Initializes the virtual scroller to ensure options are displayed correctly.
-     */
-    onSelectShow(): void {
-        this.onShow.emit();
-        // Initialize virtual scroller state to fix display issue with custom filter template
-        requestAnimationFrame(() => {
-            if (this.select?.scroller) {
-                this.select.scroller.setInitialState();
-                this.select.scroller.viewInit();
-            }
-        });
-    }
-
-    /**
-     * Handles the event when the select overlay is hidden.
-     */
-    onSelectHide(): void {
-        this.onHide.emit();
     }
 
     // ControlValueAccessor implementation

@@ -1,9 +1,9 @@
 <p-select
     #select
     (onChange)="onContentTypeChange($event.value)"
-    (onHide)="onSelectHide()"
+    (onHide)="onHide.emit()"
     (onLazyLoad)="onLazyLoad($event)"
-    (onShow)="onSelectShow()"
+    (onShow)="onShow.emit()"
     [appendTo]="'body'"
     [class]="class()"
     [disabled]="$disabled()"
