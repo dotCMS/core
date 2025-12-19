@@ -25,8 +25,9 @@ a:visited {
 /*
 Since we using space-y-5, we need to hide the empty fields.
 This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.
+TODO: (migration) check all the forms for the "hint" or "error" messages when empty it adds extra space between fields
 */
-.form
+/* .form
     *:not(
         .p-checkbox-box,
         .p-radiobutton-icon,
@@ -39,7 +40,7 @@ This selector needs work, I don't want to have to specify every single component
         textarea
     ):empty {
     @apply hidden;
-}
+} */
 
 .form .field {
     @apply flex flex-col gap-1;

@@ -47,12 +47,11 @@
         <label for="content-type-form-host">
             {{ 'contenttypes.form.field.host_folder.label' | dm }}
         </label>
-        <dot-site-selector-field
-            [system]="true"
+        <dot-site
             [tabindex]="4"
             id="content-type-form-host"
             formControlName="host"
-            width="100%" />
+        />
     </div>
     <div class="field">
         <label for="content-type-form-workflow">

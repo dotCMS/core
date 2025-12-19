@@ -30,7 +30,7 @@ import {
 } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
@@ -41,7 +41,6 @@ import {
     DotLayout,
     DotLayoutBody,
     DotTemplateDesigner,
-    DotTheme,
     DotContainerMap,
     DotTemplate
 } from '@dotcms/dotcms-models';
@@ -55,7 +54,6 @@ import { TemplateBuilderBoxComponent } from './components/template-builder-box/t
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { TemplateBuilderSidebarComponent } from './components/template-builder-sidebar/template-builder-sidebar.component';
-import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
     BOX_WIDTH,
     DotGridStackNode,
@@ -81,7 +79,7 @@ import {
 @Component({
     selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
-    styleUrls: ['./template-builder.component.scss'],
+    styleUrls: ['./template-builder.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore],
     imports: [
@@ -355,7 +353,20 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         });
 
         this.addWidget.toArray().forEach(({ nativeElement }) => {
-            nativeElement.ddElement
+            type DDElementHostWithOn = DDElementHost & {
+                on: (eventName: string, cb: (...args: unknown[]) => void) => DDElementHostWithOn;
+            };
+
+            const ddElement = (nativeElement as unknown as { ddElement?: DDElementHostWithOn })
+                ?.ddElement;
+
+            // In unit tests (and some non-browser environments) `ddElement` may not be initialized.
+            // Guard so grid setup doesn't crash; runtime behavior is unchanged when ddElement exists.
+            if (!ddElement?.on) {
+                return;
+            }
+
+            ddElement
                 .on('dragstart', ({ target }) => {
                     const helper = (target as DDElementHost).ddElement.ddDraggable?.helper;
                     this.draggingElement = (helper || target) as HTMLElement;
@@ -453,6 +464,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
         const ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+            closeOnEscape: true,
+            closable: true,
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
                 selectedClasses: box.styleClass || []
@@ -479,35 +492,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      *
      * @memberof TemplateBuilderComponent
      */
-    openThemeSelectorDynamicDialog(): void {
-        let ref: DynamicDialogRef;
-
-        this.themeId$.pipe(take(1)).subscribe((themeId) => {
-            ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
-                header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
-                resizable: false,
-                width: '80%',
-                closeOnEscape: true,
-                data: {
-                    themeId
-                }
-            });
-        });
-
-        ref.onClose
-            .pipe(
-                take(1),
-                filter((theme: DotTheme) => !!theme)
-            )
-            .subscribe(
-                (theme: DotTheme) => {
-                    this.store.updateThemeId(theme.identifier);
-                },
-                () => {
-                    /* */
-                },
-                () => ref.destroy() // Destroy the dialog when it's closed
-            );
+    updateTheme(themeId: string): void {
+        this.store.updateThemeId(themeId);
     }
 
     /**

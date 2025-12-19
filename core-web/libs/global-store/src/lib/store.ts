@@ -16,7 +16,7 @@ import { computed, inject } from '@angular/core';
 import { switchMap } from 'rxjs/operators';
 
 import { DotSiteService } from '@dotcms/data-access';
-import { SiteEntity } from '@dotcms/dotcms-models';
+import { DotSite } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
 import { withMenu } from './features/menu/with-menu.feature';
@@ -35,7 +35,7 @@ export interface GlobalState {
      *
      * Contains the complete site entity from the API endpoint. Set to `null` when no site is selected.
      */
-    siteDetails: SiteEntity | null;
+    siteDetails: DotSite | null;
 }
 
 /**
@@ -143,12 +143,12 @@ export const GlobalStore = signalStore(
              * Sets the current site in the global store.
              *
              * This method updates the siteDetails property in the global state
-             * with the provided SiteEntity.
+             * with the provided DotSite.
              *
-             * @param site - The SiteEntity to set as the current site
+             * @param site - The DotSite to set as the current site
              *
              */
-            setCurrentSite: (site: SiteEntity) => {
+            setCurrentSite: (site: DotSite) => {
                 patchState(store, {
                     siteDetails: site
                 });

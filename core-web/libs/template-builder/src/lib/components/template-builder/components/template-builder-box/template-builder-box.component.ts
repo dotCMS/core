@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { CommonModule, NgClass } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -14,6 +14,7 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { SelectModule } from 'primeng/select';
@@ -29,11 +30,10 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
 @Component({
     selector: 'dotcms-template-builder-box',
     templateUrl: './template-builder-box.component.html',
-    styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgClass,
         ButtonModule,
+        CardModule,
         ScrollPanelModule,
         RemoveConfirmDialogComponent,
         DialogModule,

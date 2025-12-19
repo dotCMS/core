@@ -7,7 +7,7 @@ import { Select } from 'primeng/select';
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService, DotSiteService } from '@dotcms/data-access';
-import { Site } from '@dotcms/dotcms-js';
+import { DotSite } from '@dotcms/dotcms-models';
 
 @Directive({
     selector: '[dotSiteSelector]',
@@ -60,7 +60,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      * Set the options of the dropdown
      * @param options
      */
-    private setOptions(options: Array<Site>): void {
+    private setOptions(options: Array<DotSite>): void {
         this.primeDropdown.options = [...options];
         this.cd.detectChanges();
     }
@@ -72,8 +72,8 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      */
     private getSitesList(filter = ''): void {
         this.dotSiteService
-            .getSites(filter, this.pageSize)
+            .getSites({ filter, per_page: this.pageSize })
             .pipe(take(1))
-            .subscribe((items: Site[]) => this.setOptions(items));
+            .subscribe(({ sites }) => this.setOptions(sites));
     }
 }

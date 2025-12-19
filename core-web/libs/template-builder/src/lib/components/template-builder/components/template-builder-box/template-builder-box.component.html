@@ -18,54 +18,71 @@
 
 <!-- Large -->
 <ng-template #largeTemplate>
-    <div
-        [ngClass]="{
-            'template-builder-box--medium': boxVariant === templateBuilderSizes.medium,
-            'template-builder-box--large': boxVariant === templateBuilderSizes.large
-        }"
-        class="template-builder-box"
-        data-testId="template-builder-box">
-        <div class="template-builder-box__header-container">
-            @if (actions.includes('add')) {
-                <p-select
-                    (onChange)="onContainerSelect($event)"
-                    [showClear]="false"
-                    [filter]="true"
-                    [placeholder]="dropdownLabel"
-                    [formControl]="formControl"
-                    scrollHeight="18.75rem"
-                    dotContainerOptions
-                    data-testId="btn-plus"
-                    appendTo="body"
-                    dropdownIcon="pi pi-plus"
-                    optionLabel="label"
-                    styleClass="p-dropdown-sm">
-                    <ng-template pTemplate="selectedItem">
-                        {{ dropdownLabel }}
-                    </ng-template>
-                </p-select>
+    <p-card
+        class="border border-primary-200 rounded-md h-full w-full bg-white overflow-hidden"
+        [class.template-builder-box--medium]="boxVariant === templateBuilderSizes.medium"
+        [class.template-builder-box--large]="boxVariant === templateBuilderSizes.large"
+        [dt]="{
+            body: {
+                padding: '0'
             }
-            <div class="header-container__last-buttons">
-                @if (actions.includes('edit')) {
-                    <p-button
-                        (onClick)="editClasses.emit()"
-                        data-testId="box-style-class-button"
-                        icon="pi pi-palette"
-                        class="p-button-rounded p-button-text p-button-sm"></p-button>
+        }"
+        data-testId="template-builder-box">
+        <ng-template pTemplate="header">
+            <div class="flex justify-between items-center p-2 bg-primary-50 border-b border-primary-200">
+                @if (actions.includes('add')) {
+                    <p-select
+                        (onChange)="onContainerSelect($event)"
+                        [showClear]="false"
+                        [filter]="true"
+                        [placeholder]="dropdownLabel"
+                        [formControl]="formControl"
+                        scrollHeight="18.75rem"
+                        dotContainerOptions
+                        data-testId="btn-plus"
+                        appendTo="body"
+                        dropdownIcon="pi pi-plus"
+                        optionLabel="label"
+                        styleClass="p-dropdown-sm"
+                        [pt]="{
+                            label: { hidden: true },
+                            root: {
+                                style: {
+                                    height: 'var(--p-button-sm-icon-only-width)',
+                                }
+                            }
+                        }">
+                        <ng-template pTemplate="selectedItem">
+                            {{ dropdownLabel }}
+                        </ng-template>
+                    </p-select>
                 }
+                <div>
+                    @if (actions.includes('edit')) {
+                        <p-button
+                            (onClick)="editClasses.emit()"
+                            data-testId="box-style-class-button"
+                            icon="pi pi-palette"
+                            [rounded]="true"
+                            variant="text"
+                            size="small"></p-button>
+                    }
 
-                @if (actions.includes('delete')) {
-                    <dotcms-remove-confirm-dialog
-                        (deleteConfirmed)="requestColumnDelete()"
-                        (deleteRejected)="deleteColumnRejected.emit()"
-                        [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
-                }
+                    @if (actions.includes('delete')) {
+                        <dotcms-remove-confirm-dialog
+                            (deleteConfirmed)="requestColumnDelete()"
+                            (deleteRejected)="deleteColumnRejected.emit()"
+                            [skipConfirmation]="items.length === 0"
+                            data-testId="btn-delete-column"></dotcms-remove-confirm-dialog>
+                    }
+                </div>
             </div>
-        </div>
-        <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
+        </ng-template>
+        <p-scrollpanel [style]="{ width: '100%', height: '183px' }">
             @for (item of items; track $index) {
-                <div class="template-builder-box__item">
-                    <p data-testId="container-title">
+                <div
+                    class="flex items-center justify-between h-10 pr-2 pl-4 mx-4 my-2 first:mt-3 last:mb-4">
+                    <p class="truncate" data-testId="container-title">
                         @let identifier = item.identifier;
                         {{ containerMap?.[identifier]?.title || identifier }}
                     </p>
@@ -74,20 +91,22 @@
                         data-testId="btn-trash-container" />
                 </div>
             }
-        </p-scrollPanel>
-    </div>
+        </p-scrollpanel>
+    </p-card>
 </ng-template>
 
 <!-- Small -->
 <ng-template #smallTemplate>
     <div
-        class="template-builder-box template-builder-box--small"
+        class="border bg-white py-4 border-primary-200 rounded-md flex flex-col items-center justify-between h-full"
         data-testId="template-builder-box-small">
         @if (actions.includes('add')) {
             <p-button
                 (onClick)="dialogVisible = true"
                 icon="pi pi-plus"
-                class="p-button-rounded p-button-text p-button-sm"
+                [rounded]="true"
+                variant="text"
+                size="small"
                 data-testId="btn-plus-small"></p-button>
         }
         @if (actions.includes('edit')) {
@@ -95,7 +114,9 @@
                 (onClick)="editClasses.emit()"
                 data-testId="box-style-class-button-small"
                 icon="pi pi-palette"
-                class="p-button-rounded p-button-text p-button-sm"></p-button>
+                [rounded]="true"
+                variant="text"
+                size="small"></p-button>
         }
         @if (actions.includes('delete')) {
             <dotcms-remove-confirm-dialog

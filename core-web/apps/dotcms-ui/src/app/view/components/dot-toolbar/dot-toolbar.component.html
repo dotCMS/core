@@ -5,15 +5,13 @@
     <ng-template pTemplate="end">
         <div class="flex gap-1 items-center">
             <div class="px-2">
-                <dot-site-selector
-                    (switch)="siteChange($event)"
-                    (hide)="iframeOverlayService.hide()"
-                    (display)="iframeOverlayService.show()"
-                    [archive]="false"
-                    class="toolbar__site-selector"
-                    #siteSelector
-                    width="12.5rem"
-                    cssClass="d-secondary" />
+                <dot-site
+                    [value]="$currentSite()?.identifier"
+                    [placeholder]="'Select a site'"
+                    class="w-64"
+                    (onChange)="siteChange($event)"
+                    (onShow)="iframeOverlayService.show()"
+                    (onHide)="iframeOverlayService.hide()" />
             </div>
             <ng-container *dotShowHideFeature="featureFlagAnnouncements">
                 <dot-toolbar-announcements />

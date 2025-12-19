@@ -1,8 +1,12 @@
-<button
-    (click)="selectTheme.emit()"
-    [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
-    class="p-button-text p-button-vertical"
-    data-testid="btn-select-theme"
-    pButton
-    icon="pi pi-palette"></button>
+<dot-theme [ngModel]="selectedThemeId" (ngModelChange)="onThemeChange($event)">
+    <ng-template #buttonTemplate let-popover="popover">
+        <button
+            (click)="popover.toggle($event)"
+            [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
+            class="p-button-text p-button-vertical"
+            data-testid="btn-select-theme"
+            pButton
+            icon="pi pi-palette"></button>
+    </ng-template>
+</dot-theme>
 <dot-layout-properties [group]="group"></dot-layout-properties>

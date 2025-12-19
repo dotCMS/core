@@ -1,11 +1,13 @@
-<i class="material-icons">drag_indicator</i>
-<div class="add-widget-container">
-    <div class="add-widget-container__icon">
-        @if (!imageError) {
-            <img (error)="imageError = true" [src]="icon" alt="drag-icon" draggable="false" />
-        } @else {
-            <i class="material-icons" data-testId="material-icons-fallback">{{ icon }}</i>
-        }
+<div class="flex items-center gap-4 py-2 pl-1 pr-4 w-fit bg-white border-[1.5px] border-primary-500 rounded-md">
+    <i class="material-icons text-base text-gray-500">drag_indicator</i>
+    <div class="flex justify-center items-center gap-3">
+        <div class="flex justify-center items-center min-w-6 min-h-6">
+            @if (!imageError) {
+                <img (error)="imageError = true" [src]="icon" alt="drag-icon" draggable="false" />
+            } @else {
+                <i class="material-icons text-base text-gray-500" data-testId="material-icons-fallback">{{ icon }}</i>
+            }
+        </div>
+        <span class="text-sm leading-[140%] text-black" data-testid="addWidgetLabel">{{ label }}</span>
     </div>
-    <span class="add-widget-container__label" data-testid="addWidgetLabel">{{ label }}</span>
 </div>

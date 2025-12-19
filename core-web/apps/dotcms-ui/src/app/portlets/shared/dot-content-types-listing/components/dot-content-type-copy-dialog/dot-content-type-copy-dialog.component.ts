@@ -11,7 +11,6 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild,
     inject
 } from '@angular/core';
 import {
@@ -35,11 +34,11 @@ import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
+    DotSiteComponent,
     DotValidators
 } from '@dotcms/ui';
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
-import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
 
 @Component({
@@ -55,10 +54,10 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
         InputTextModule,
         DotFieldValidationMessageComponent,
         DotMdIconSelectorComponent,
-        DotSiteSelectorFieldComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        DotSiteComponent
     ]
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked, OnDestroy {
@@ -67,7 +66,6 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     private readonly cd = inject(ChangeDetectorRef);
     private readonly destroy$ = new Subject<boolean>();
 
-    @ViewChild('dot-site-selector-field') siteSelector;
     dialogActions: DotDialogActions;
     inputNameWithType = '';
     dialogTitle = '';

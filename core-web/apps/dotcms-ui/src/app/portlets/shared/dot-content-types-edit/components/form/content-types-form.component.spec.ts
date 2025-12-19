@@ -5,72 +5,40 @@ import { Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, forwardRef, Injectable, Input } from '@angular/core';
-import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { Injectable } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
-
 import {
-    DotAlertConfirmService,
-    DotContentTypesInfoService,
-    DotEventsService,
     DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageDisplayService,
     DotMessageService,
-    DotSystemConfigService,
+    DotSiteService,
     DotWorkflowService,
-    DotWorkflowsActionsService,
-    PaginatorService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotSiteComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
-    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
-    LoginServiceMock,
     MockDotMessageService,
     mockWorkflows,
-    mockWorkflowsActions,
-    SiteServiceMock
+    mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
 
-import { MockDotSystemConfigService } from '../../../../../test/dot-test-bed';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
-@Component({
-    selector: 'dot-site-selector-field',
-    template: '',
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotSiteSelectorComponent)
-        }
-    ],
-    standalone: false
-})
-class DotSiteSelectorComponent implements ControlValueAccessor {
-    @Input() system;
-
-    writeValue() {}
-
-    registerOnChange() {}
-
-    registerOnTouched() {}
-}
 
 @Injectable()
 class MockDotLicenseService {
@@ -162,27 +130,42 @@ describe('ContentTypesFormComponent', () => {
 
     const createComponent = createComponentFactory({
         component: ContentTypesFormComponent,
-        componentProviders: [DotSiteSelectorComponent],
+        componentProviders: [DotSiteComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            provideAnimations(),
-            { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-            { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: SiteService, useClass: SiteServiceMock },
+            {
+                provide: DotSiteService,
+                useValue: {
+                    getSites: jest.fn().mockReturnValue(
+                        of({
+                            sites: [
+                                {
+                                    hostname: 'demo.dotcms.com',
+                                    identifier: '123-xyz-567-xxl',
+                                    archived: false,
+                                    aliases: null
+                                }
+                            ],
+                            pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                        })
+                    ),
+                    getSiteById: jest.fn().mockReturnValue(
+                        of({
+                            hostname: 'demo.dotcms.com',
+                            identifier: '123-xyz-567-xxl',
+                            archived: false,
+                            aliases: null
+                        })
+                    )
+                }
+            },
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
-            DotcmsConfigService,
-            DotContentTypesInfoService,
-            DotEventsService,
-            PaginatorService,
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotAlertConfirmService),
-            mockProvider(ConfirmationService),
             mockProvider(DotWorkflowsActionsService),
             {
                 provide: DotWorkflowsActionsSelectorFieldService,
@@ -737,6 +720,8 @@ describe('ContentTypesFormComponent', () => {
             jest.spyOn(spectator.component, 'submitForm');
             spectator.component.send.subscribe((res) => (data = res));
             spectator.component.form.controls.name.setValue('A content type name');
+            // Set host to match SiteServiceMock currentSite identifier
+            spectator.component.form.controls.host.setValue('123-xyz-567-xxl');
             spectator.detectChanges();
         });
 

@@ -3,12 +3,7 @@ import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import {
-    DotContentDriveFolder,
-    DotContentDriveItem,
-    DotFolder,
-    SiteEntity
-} from '@dotcms/dotcms-models';
+import { DotContentDriveFolder, DotContentDriveItem, DotFolder, DotSite } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { QueryBuilder } from '@dotcms/query-builder';
 
@@ -224,7 +219,7 @@ export function buildContentDriveQuery({
     filters = {}
 }: {
     path?: string;
-    currentSite: SiteEntity;
+    currentSite: DotSite;
     filters?: DotContentDriveFilters;
 }): string {
     const query = new QueryBuilder();
