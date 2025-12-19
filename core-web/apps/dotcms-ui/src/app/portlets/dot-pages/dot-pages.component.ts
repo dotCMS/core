@@ -62,6 +62,7 @@ type SavePageEventData = {
         contentType?: string;
         contentletType?: string;
     };
+    value?: string;
 };
 
 @Component({
@@ -260,10 +261,20 @@ export class DotPagesComponent {
         this.#dotEventsService
             .listen('save-page')
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => {
+            .subscribe((event: DotEvent<SavePageEventData>) => {
+                const { data } = event;
+                const { value, payload } = data;
+                const { contentletIdentifier, contentletType } = payload ?? {};
+
+                if (contentletType === 'dotFavoritePage') {
+                    this.dotCMSPagesStore.updateFavoritePageNode(contentletIdentifier);
+                } else {
+                    this.dotCMSPagesStore.updatePageNode(contentletIdentifier);
+                }
+
                 this.#dotMessageDisplayService.push({
                     life: 3000,
-                    message: event.data['value'],
+                    message: value,
                     severity: DotMessageSeverity.SUCCESS,
                     type: DotMessageType.SIMPLE_MESSAGE
                 });

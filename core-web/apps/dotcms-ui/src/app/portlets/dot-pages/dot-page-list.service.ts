@@ -5,7 +5,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSAPIResponse, ESContent } from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
 
 import { FAVORITE_PAGE_LIMIT } from './dot-pages-store/dot-pages.store';
 
@@ -52,6 +52,17 @@ export class DotPageListService {
                 offset: 0
             })
             .pipe(map((response) => response.entity));
+    }
+
+    getSinglePage(identifier: string): Observable<DotCMSContentlet> {
+        return this.#http
+            .post<DotCMSAPIResponse<ESContent>>(this.#url, {
+                query: `+identifier:${identifier}`,
+                sort: 'title ASC',
+                limit: 1,
+                offset: 0
+            })
+            .pipe(map((response) => response.entity.jsonObjectView.contentlets[0]));
     }
 
     /**

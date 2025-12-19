@@ -98,6 +98,15 @@ export const DotCMSPagesStore = signalStore(
                     ? `${sortField} ${sortOrder === 1 ? 'ASC' : 'DESC'}`
                     : 'title ASC';
                 fetchPages({ offset, sort });
+            },
+            updatePageNode: (identifier: string) => {
+                dotPageListService.getSinglePage(identifier).subscribe((updatedPage) => {
+                    const currentPages = store.pages();
+                    const nextPages = currentPages.map((page) =>
+                        page?.identifier === identifier ? updatedPage : page
+                    );
+                    patchState(store, { pages: nextPages });
+                });
             }
         };
     }),
@@ -115,6 +124,15 @@ export const DotCMSPagesStore = signalStore(
         return {
             getFavoritePages: () => {
                 fetchFavoritePages();
+            },
+            updateFavoritePageNode: (identifier: string) => {
+                dotPageListService.getSinglePage(identifier).subscribe((updatedPage) => {
+                    const currentFavoritePages = store.favoritePages();
+                    const nextFavoritePages = currentFavoritePages.map((page) =>
+                        page?.identifier === identifier ? updatedPage : page
+                    );
+                    patchState(store, { favoritePages: nextFavoritePages });
+                });
             }
         };
     })

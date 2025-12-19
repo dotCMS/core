@@ -32,6 +32,8 @@ import {
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
+import { DotCMSPagesStore } from './store/store';
+
 interface DotPermissions {
     canRead: boolean;
     canWrite: boolean;
@@ -68,6 +70,7 @@ export class DotPageActionsService {
     readonly #dotCurrentUser = inject(DotCurrentUserService);
     readonly #pushPublishService = inject(PushPublishService);
     readonly #globalStore = inject(GlobalStore);
+    readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
 
     /**
      * Cached result of whether Push Publish is actionable for this installation.
@@ -107,9 +110,9 @@ export class DotPageActionsService {
      * @returns PrimeNG menu model.
      */
     getItems(item: DotCMSContentlet): Observable<MenuItem[]> {
-        return this.#dotActionsService.getByInode(item.inode, DotRenderMode.LISTING).pipe(
-            map((actions: DotCMSWorkflowAction[]) => this.#buildMenuItems(item, actions))
-        );
+        return this.#dotActionsService
+            .getByInode(item.inode, DotRenderMode.LISTING)
+            .pipe(map((actions: DotCMSWorkflowAction[]) => this.#buildMenuItems(item, actions)));
     }
 
     /**
@@ -209,14 +212,10 @@ export class DotPageActionsService {
                             favoritePage: item
                         },
                         onSave: () => {
-                            // eslint-disable-next-line no-console
-                            console.log('onSave');
-                            // this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                            this.#dotCMSPagesStore.getFavoritePages();
                         },
                         onDelete: () => {
-                            // eslint-disable-next-line no-console
-                            console.log('onDelete');
-                            // this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                            this.#dotCMSPagesStore.getFavoritePages();
                         }
                     }
                 });
@@ -230,12 +229,19 @@ export class DotPageActionsService {
      * Currently a placeholder (disabled unless item is a favorite).
      * When implemented, it should delete the favorite contentlet and refresh the listing.
      */
-    #deleteFavoritePageAction(): MenuItem {
-
+    #deleteFavoritePageAction(inode: string): MenuItem {
         return {
             label: this.#dotMessageService.get('favoritePage.dialog.delete.button'),
             command: () => {
-                // TODO: Implement delete favorite page (requires DotFavoritePageService integration).
+                this.#dotWorkflowActionsFireService
+                    .deleteContentlet({ inode })
+                    .pipe(take(1))
+                    .subscribe({
+                        next: () => {
+                            this.#dotCMSPagesStore.getFavoritePages();
+                        },
+                        error: (error) => this.#httpErrorManagerService.handle(error, true)
+                    });
             }
         };
     }
@@ -286,7 +292,7 @@ export class DotPageActionsService {
         }
         const isFavorite = item.contentType === 'dotFavoritePage';
         if (isFavorite) {
-            menuActions.push(this.#deleteFavoritePageAction());
+            menuActions.push(this.#deleteFavoritePageAction(item.inode));
         }
         menuActions.push(this.#separatorItem);
 
