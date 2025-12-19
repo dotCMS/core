@@ -53,14 +53,7 @@ describe('TemplateBuilderActionsComponent', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
 
-        // Get the dot-theme component and trigger onChange event
-        const dotThemeDebugElement = spectator.debugElement.query(By.css('dot-theme'));
-        if (dotThemeDebugElement) {
-            spectator.triggerEventHandler(dotThemeDebugElement, 'onChange', 'test-theme-id');
-        } else {
-            // Fallback: directly emit the event to verify the binding works
-            spectator.component.selectTheme.emit('test-theme-id');
-        }
+        spectator.component.onThemeChange('test-theme-id');
 
         expect(spy).toHaveBeenCalledWith('test-theme-id');
     });

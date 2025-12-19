@@ -10,7 +10,7 @@ import {
     Output,
     inject
 } from '@angular/core';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { FormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -24,9 +24,17 @@ import { DotLayoutPropertiesComponent } from '../dot-layout-properties/dot-layou
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    imports: [ButtonModule, DotLayoutPropertiesComponent, DotMessagePipe, DotThemeComponent],
+    host: {
+        class: 'flex gap-2'
+    },
+    imports: [
+        ButtonModule,
+        FormsModule,
+        DotLayoutPropertiesComponent,
+        DotMessagePipe,
+        DotThemeComponent
+    ],
     templateUrl: './template-builder-actions.component.html',
-    styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
@@ -43,7 +51,11 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
         this._layoutProperties = { ...layoutProperties };
     }
 
-    @Input() themeId: string | null = null;
+    @Input() set themeId(themeId: string | null) {
+        this.selectedThemeId = themeId;
+    }
+
+    selectedThemeId: string | null = null;
 
     private _layoutProperties: DotTemplateLayoutProperties;
 
@@ -55,6 +67,14 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
     group: UntypedFormGroup;
 
     destroy$: Subject<boolean> = new Subject<boolean>();
+
+    onThemeChange(themeId: string | null): void {
+        this.selectedThemeId = themeId;
+        // Parent expects `string` (see TemplateBuilderComponent.updateTheme), so ignore clears.
+        if (themeId) {
+            this.selectTheme.emit(themeId);
+        }
+    }
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({
