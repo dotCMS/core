@@ -850,7 +850,7 @@ public class PageResource {
 
             data.contentIds.addAll(containerEntry.getContentIds());
 
-            // Merge styles. Keys that appear again overwrite previous ones (last one wins)
+            // Merge styles. Duplicated keys overwrite previous ones (last one wins)
             final Map<String, Map<String, Object>> incomingStyles = Optional.ofNullable(
                     containerEntry.getStylePropertiesMap()).orElse(Collections.emptyMap());
 

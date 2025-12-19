@@ -10,6 +10,8 @@ import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -150,8 +152,8 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     public void saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
-
             final Language language, String variantName) throws DotDataException {
+
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -161,6 +163,10 @@ public class PageResourceHelper implements Serializable {
                     Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
             final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
+
+            // Validate style properties INLINE during iteration
+            stylePropertiesValidation(stylePropertiesMap, contentIds,
+                    containerEntry.getContainerId(), containerEntry.getContainerUUID());
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
@@ -211,6 +217,32 @@ public class PageResourceHelper implements Serializable {
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
                     multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
+        }
+    }
+
+    private void stylePropertiesValidation(
+            Map<String, Map<String, Object>> stylePropertiesMap,
+            List<String> contentIds, String containerId, String containerUUID
+    ) {
+        if (!stylePropertiesMap.isEmpty()) {
+            final List<ErrorEntity> errors = new ArrayList<>();
+
+            stylePropertiesMap.forEach((contentletId, styleProps) -> {
+                if (!contentIds.contains(contentletId)) {
+                    errors.add(new ContentletStylingErrorEntity(
+                            "INVALID_CONTENTLET",
+                            "Could not define Style Properties for non-existing contentlet",
+                            contentletId,
+                            containerId,
+                            containerUUID
+                    ));
+                }
+            });
+
+            if (!errors.isEmpty()) {
+                throw new BadRequestException(null, new ResponseEntityView<>(errors),
+                        "Invalid Style Properties configuration");
+            }
         }
     }
 
