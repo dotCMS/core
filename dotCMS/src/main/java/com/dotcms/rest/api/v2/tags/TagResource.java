@@ -589,7 +589,7 @@ public class TagResource {
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param deleteRequest The request body containing the tag IDs to delete.
+     * @param tagIds   The list of tag IDs to delete.
      *
      * @return A {@link ResponseEntityBulkResultView} containing success count and failures.
      */
@@ -603,7 +603,7 @@ public class TagResource {
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400",
-                    description = "Invalid request - tagIds field is required",
+                    description = "Invalid request - tagIds list is required",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized access",
@@ -616,21 +616,17 @@ public class TagResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityBulkResultView delete(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
-                                               @RequestBody(description = "Tag IDs to delete", required = true,
-                                                          content = @Content(schema = @Schema(type = "object",
-                                                                                            description = "Object containing array of tag IDs",
-                                                                                            example = "{\"tagIds\": [\"tag-123\", \"tag-456\", \"tag-789\"]}")))
-                                               final java.util.Map<String, Object> deleteRequest) {
+                                               @RequestBody(description = "List of tag IDs to delete", required = true,
+                                                          content = @Content(schema = @Schema(type = "array",
+                                                                                            description = "Array of tag IDs",
+                                                                                            example = "[\"tag-123\", \"tag-456\", \"tag-789\"]")))
+                                               final List<String> tagIds) {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
 
-        // Extract tag IDs from JSON object
-        @SuppressWarnings("unchecked")
-        final java.util.List<String> tagIds = (java.util.List<String>) deleteRequest.get("tagIds");
-
         if (tagIds == null || tagIds.isEmpty()) {
-            throw new BadRequestException("tagIds field is required and cannot be empty");
+            throw new BadRequestException("Tag IDs list is required and cannot be empty");
         }
 
         Logger.debug(TagResource.class, () -> String.format(
@@ -644,17 +640,17 @@ public class TagResource {
 
         for (final String tagId : tagIds) {
             try {
-                // Check if tag exists
+                // Check if tag exists - skip silently if not (idempotent behavior)
                 final Tag tag = tagAPI.getTagByTagId(tagId);
                 if (tag == null || !UtilMethods.isSet(tag.getTagId())) {
-                    failedToDelete.add(new FailedResultView(tagId, "Tag does not exist"));
+                    // Tag doesn't exist - desired end state already achieved, skip silently
                     continue;
                 }
 
                 // Check permission without deleting
-                final String permissionError = tagAPI.canDeleteTag(user, tagId);
-                if (permissionError != null) {
-                    failedToDelete.add(new FailedResultView(tagId, permissionError));
+                if (!tagAPI.canDeleteTag(user, tagId)) {
+                    failedToDelete.add(new FailedResultView(tagId,
+                            String.format("User lacks permission to delete tag '%s'", tagId)));
                 } else {
                     tagsToDelete.add(tagId);
                 }

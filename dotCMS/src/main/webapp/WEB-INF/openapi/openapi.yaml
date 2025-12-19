@@ -17686,14 +17686,13 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              description: Object containing array of tag IDs
+              type: array
+              description: Array of tag IDs
               example:
-                tagIds:
-                - tag-123
-                - tag-456
-                - tag-789
-        description: Tag IDs to delete
+              - tag-123
+              - tag-456
+              - tag-789
+        description: List of tag IDs to delete
         required: true
       responses:
         "200":
@@ -17705,7 +17704,7 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Invalid request - tagIds field is required
+          description: Invalid request - tagIds list is required
         "401":
           content:
             application/json: {}

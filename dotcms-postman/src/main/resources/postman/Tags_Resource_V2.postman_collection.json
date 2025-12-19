@@ -2258,7 +2258,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"tagIds\": [\n    \"{{deleteTestTagId}}\"\n  ]\n}"
+					"raw": "[\n  \"{{deleteTestTagId}}\"\n]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -2291,18 +2291,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 200 OK (bulk delete succeeds even for non-existent tags)\", function () {",
+							"pm.test(\"HTTP Status code must be 200 OK (bulk delete is idempotent)\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response body should contain BulkResultView with non-existent tag in fails\", function () {",
+							"pm.test(\"Response body should contain BulkResultView with empty results (non-existent tags are skipped silently)\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity).to.be.an('object');",
 							"    pm.expect(jsonData.entity.successCount).to.equal(0);",
 							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
-							"    pm.expect(jsonData.entity.fails).to.be.an('array');",
-							"    pm.expect(jsonData.entity.fails.length).to.equal(1);",
-							"    pm.expect(jsonData.entity.fails[0].element).to.equal('non-existent-tag-id-12345');",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
 							"});",
 							""
 						],
@@ -2346,7 +2344,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"tagIds\": [\n    \"non-existent-tag-id-12345\"\n  ]\n}"
+					"raw": "[\n  \"non-existent-tag-id-12345\"\n]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",
@@ -2359,7 +2357,7 @@
 						"tags"
 					]
 				},
-				"description": "Tests bulk delete with non-existent tag ID. The bulk delete API succeeds even when no tags are actually deleted."
+				"description": "Tests bulk delete with non-existent tag ID. The bulk delete API is idempotent - non-existent tags are skipped silently."
 			},
 			"response": []
 		},
@@ -2511,7 +2509,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"tagIds\": [\n    \"{{bulkDeleteTag1Id}}\",\n    \"{{bulkDeleteTag2Id}}\",\n    \"{{bulkDeleteTag3Id}}\"\n  ]\n}"
+					"raw": "[\n  \"{{bulkDeleteTag1Id}}\",\n  \"{{bulkDeleteTag2Id}}\",\n  \"{{bulkDeleteTag3Id}}\"\n]"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags",

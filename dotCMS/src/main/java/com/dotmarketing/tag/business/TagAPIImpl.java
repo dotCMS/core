@@ -435,41 +435,27 @@ public class TagAPIImpl implements TagAPI {
         tagFactory.deleteTagsInBatch(java.util.Arrays.asList(tagIds));
     }
 
-    @CloseDBIfOpened
-    @Override
-    public String canDeleteTag(final User user, final String tagId) throws DotDataException {
-        return checkTagDeletePermission(tagId, user);
-    }
-
-    @Override
-    public void deleteTag(final User user, final String tagId) throws DotDataException, DotSecurityException {
-        // Check if user has permission to delete this tag
-        final String permissionError = canDeleteTag(user, tagId);
-        if (permissionError != null) {
-            throw new DotSecurityException(permissionError);
-        }
-        // Permission check passed, delete the tag
-        deleteTag(tagId);
-    }
-
     /**
      * Checks if a user has permission to delete a tag.
      * <p>A tag can be deleted if:
      * <ul>
+     *   <li>The user is an admin or system user</li>
      *   <li>The tag has no contentlet associations (orphan tag)</li>
      *   <li>The user has EDIT permission on ALL associated contentlets</li>
      * </ul>
      * User ownership records (fieldVarName=null) are ignored as they represent tag ownership, not content tagging.</p>
      *
-     * @param tagId the tag ID to check
      * @param user  the user requesting deletion
-     * @return null if deletion is allowed, or an error message if denied
+     * @param tagId the tag ID to check
+     * @return true if deletion is allowed, false if denied
      * @throws DotDataException if there's a data access error
      */
-    private String checkTagDeletePermission(final String tagId, final User user) throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public boolean canDeleteTag(final User user, final String tagId) throws DotDataException {
         // Admin or system user - allow delete without checking contentlet permissions
         if (user.isAdmin() || user.getUserId().equals(APILocator.systemUser().getUserId())) {
-            return null;
+            return true;
         }
 
         final List<TagInode> associations = tagFactory.getTagInodesByTagId(tagId);
@@ -482,7 +468,7 @@ public class TagAPIImpl implements TagAPI {
 
         // Orphan tag - no contentlet associations, allow delete
         if (contentletAssociations.isEmpty()) {
-            return null;
+            return true;
         }
 
         // Check EDIT permission on each associated contentlet
@@ -499,18 +485,36 @@ public class TagAPIImpl implements TagAPI {
 
                 // Check EDIT permission
                 if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user)) {
-                    return String.format("User '%s' lacks EDIT permission on contentlet '%s'",
-                            user.getUserId(), contentlet.getIdentifier());
+                    Logger.debug(this, () -> String.format(
+                            "User '%s' lacks EDIT permission on contentlet '%s' for tag '%s'",
+                            user.getUserId(), contentlet.getIdentifier(), tagId));
+                    return false;
                 }
             } catch (final DotSecurityException e) {
                 // User doesn't have read permission on the contentlet
-                return String.format("User '%s' lacks permission to access associated contentlet",
-                        user.getUserId());
+                Logger.debug(this, () -> String.format(
+                        "User '%s' lacks permission to access contentlet associated with tag '%s'",
+                        user.getUserId(), tagId));
+                return false;
             }
         }
 
         // All permission checks passed
-        return null;
+        return true;
+    }
+
+    @Override
+    public boolean deleteTag(final User user, final String tagId) throws DotDataException {
+        // Check if user has permission to delete this tag
+        if (!canDeleteTag(user, tagId)) {
+            Logger.debug(this, () -> String.format(
+                    "User '%s' denied permission to delete tag '%s'",
+                    user.getUserId(), tagId));
+            return false;
+        }
+        // Permission check passed, delete the tag
+        deleteTag(tagId);
+        return true;
     }
 
     @WrapInTransaction

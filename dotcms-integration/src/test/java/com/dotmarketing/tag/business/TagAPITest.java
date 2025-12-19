@@ -1011,18 +1011,18 @@ public class TagAPITest extends IntegrationTestBase {
 	/**
 	 * Method to test: {@link TagAPI#canDeleteTag(User, String)}
 	 * Given scenario: Tag with no contentlet associations (orphan tag)
-	 * Expected result: Returns null (deletion allowed)
+	 * Expected result: Returns true (deletion allowed)
 	 */
 	@Test
-	public void canDeleteTag_OrphanTag_ReturnsNull() throws Exception {
+	public void canDeleteTag_OrphanTag_ReturnsTrue() throws Exception {
 		// Create a tag with no associations
 		final String tagName = "candeleteorphan" + System.currentTimeMillis();
 		final Tag tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
 		assertNotNull(tag);
 
-		// Check permission - should return null (allowed)
-		final String result = tagAPI.canDeleteTag(testUser, tag.getTagId());
-		assertNull("Orphan tag should be deletable", result);
+		// Check permission - should return true (allowed)
+		final boolean result = tagAPI.canDeleteTag(testUser, tag.getTagId());
+		assertTrue("Orphan tag should be deletable", result);
 
 		// Verify tag still exists (canDeleteTag doesn't delete)
 		final Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
@@ -1035,10 +1035,10 @@ public class TagAPITest extends IntegrationTestBase {
 	/**
 	 * Method to test: {@link TagAPI#canDeleteTag(User, String)}
 	 * Given scenario: Tag associated with contentlet user cannot edit
-	 * Expected result: Returns error message (deletion denied)
+	 * Expected result: Returns false (deletion denied)
 	 */
 	@Test
-	public void canDeleteTag_WithoutPermission_ReturnsErrorMessage() throws Exception {
+	public void canDeleteTag_WithoutPermission_ReturnsFalse() throws Exception {
 		// Create a limited user with no permissions
 		final Role limitedRole = new RoleDataGen().nextPersisted();
 		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
@@ -1055,11 +1055,9 @@ public class TagAPITest extends IntegrationTestBase {
 			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
 			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
-			// Check permission - should return error message (denied)
-			final String result = tagAPI.canDeleteTag(limitedUser, tag.getTagId());
-			assertNotNull("Should return error message when permission denied", result);
-			assertTrue("Error message should mention permission",
-					result.contains("lacks") || result.contains("permission"));
+			// Check permission - should return false (denied)
+			final boolean result = tagAPI.canDeleteTag(limitedUser, tag.getTagId());
+			assertFalse("Should return false when permission denied", result);
 
 			// Verify tag still exists (canDeleteTag doesn't delete)
 			final Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
@@ -1138,10 +1136,10 @@ public class TagAPITest extends IntegrationTestBase {
 	/**
 	 * Method to test: {@link TagAPI#deleteTag(User, String)}
 	 * Given scenario: Tag associated with contentlet that user does NOT have EDIT permission on
-	 * Expected result: DotSecurityException should be thrown
+	 * Expected result: Returns false (permission denied, no exception thrown)
 	 */
-	@Test(expected = DotSecurityException.class)
-	public void deleteTag_WithoutPermission_ShouldFail() throws Exception {
+	@Test
+	public void deleteTag_WithoutPermission_ShouldReturnFalse() throws Exception {
 		// Create a limited user with no permissions
 		final Role limitedRole = new RoleDataGen().nextPersisted();
 		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
@@ -1167,10 +1165,13 @@ public class TagAPITest extends IntegrationTestBase {
 			assertFalse("Limited user should NOT have EDIT permission",
 					permissionAPI.doesUserHavePermission(contentAsset, PermissionAPI.PERMISSION_EDIT, limitedUser));
 
-			// Try to delete using limited user - should throw DotSecurityException
-			tagAPI.deleteTag(limitedUser, tag.getTagId());
+			// Try to delete using limited user - should return false (permission denied)
+			final boolean deleted = tagAPI.deleteTag(limitedUser, tag.getTagId());
+			assertFalse("Delete should return false when permission denied", deleted);
 
-			fail("Should have thrown DotSecurityException");
+			// Verify tag still exists (was not deleted)
+			final Tag tagAfterAttempt = tagAPI.getTagByTagId(tag.getTagId());
+			assertNotNull("Tag should still exist after failed delete attempt", tagAfterAttempt);
 		} finally {
 			// Cleanup
 			if (tag != null) {
@@ -1280,10 +1281,10 @@ public class TagAPITest extends IntegrationTestBase {
 	/**
 	 * Method to test: {@link TagAPI#deleteTag(User, String)}
 	 * Given scenario: Tag associated with multiple contentlets - user lacks permission on one
-	 * Expected result: DotSecurityException should be thrown
+	 * Expected result: Returns false (permission denied, no exception thrown)
 	 */
-	@Test(expected = DotSecurityException.class)
-	public void deleteTag_MultipleContentletsMixedPermissions_ShouldFail() throws Exception {
+	@Test
+	public void deleteTag_MultipleContentletsMixedPermissions_ShouldReturnFalse() throws Exception {
 		// Create a limited user with a role
 		final Role limitedRole = new RoleDataGen().nextPersisted();
 		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
@@ -1321,11 +1322,14 @@ public class TagAPITest extends IntegrationTestBase {
 			List<TagInode> tagInodes = tagAPI.getTagInodesByTagId(tag.getTagId());
 			assertEquals(2, tagInodes.size());
 
-			// Try to delete using limited user - should throw DotSecurityException
+			// Try to delete using limited user - should return false
 			// because user lacks permission on second contentlet
-			tagAPI.deleteTag(limitedUser, tag.getTagId());
+			final boolean deleted = tagAPI.deleteTag(limitedUser, tag.getTagId());
+			assertFalse("Delete should return false when permission denied on any contentlet", deleted);
 
-			fail("Should have thrown DotSecurityException");
+			// Verify tag still exists (was not deleted)
+			final Tag tagAfterAttempt = tagAPI.getTagByTagId(tag.getTagId());
+			assertNotNull("Tag should still exist after failed delete attempt", tagAfterAttempt);
 		} finally {
 			// Cleanup
 			if (tag != null) {

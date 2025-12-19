@@ -239,26 +239,28 @@ public interface TagAPI {
 	/**
 	 * Checks if a user has permission to delete a tag based on contentlet associations.
 	 * <p>If the tag has no contentlet associations (orphan tag), deletion is allowed.
-	 * If the tag is associated with contentlets, the user must have EDIT permission on ALL of them.</p>
+	 * If the tag is associated with contentlets, the user must have EDIT permission on ALL of them.
+	 * Admin and system users always have permission to delete.</p>
 	 *
 	 * @param user  the user to check permissions for
 	 * @param tagId tagId of the tag to check
-	 * @return null if deletion is allowed, or an error message explaining why deletion is denied
+	 * @return true if deletion is allowed, false if denied
 	 * @throws DotDataException if there's a data access error
 	 */
-	public String canDeleteTag(User user, String tagId) throws DotDataException;
+	public boolean canDeleteTag(User user, String tagId) throws DotDataException;
 
 	/**
 	 * Deletes a tag after verifying the user has EDIT permission on all associated contentlets.
 	 * <p>If the tag has no contentlet associations (orphan tag), deletion is allowed.
-	 * If the tag is associated with contentlets, the user must have EDIT permission on ALL of them.</p>
+	 * If the tag is associated with contentlets, the user must have EDIT permission on ALL of them.
+	 * Admin and system users always have permission to delete.</p>
 	 *
 	 * @param user  the user requesting the deletion (used for permission checks)
 	 * @param tagId tagId of the tag to be deleted
-	 * @throws DotDataException     if there's a data access error
-	 * @throws DotSecurityException if the user lacks EDIT permission on any associated contentlet
+	 * @return true if the tag was deleted successfully, false if permission was denied
+	 * @throws DotDataException if there's a data access error
 	 */
-	public void deleteTag(User user, String tagId) throws DotDataException, DotSecurityException;
+	public boolean deleteTag(User user, String tagId) throws DotDataException;
 
 	/**
 	 * Renames a tag
