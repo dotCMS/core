@@ -30,7 +30,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
 @Component({
     selector: 'dotcms-template-builder-box',
     templateUrl: './template-builder-box.component.html',
-    styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,

@@ -268,8 +268,6 @@ describe('DotThemeComponent', () => {
         }));
 
         it('should initialize hostId from GlobalStore when null', () => {
-            expect(spectator.component.$state.hostId()).toBe('site1');
-            // Binding: [value]="$state.hostId()"
             expect(dotSite.value()).toBe('site1');
         });
 

@@ -80,8 +80,9 @@
         </ng-template>
         <p-scrollpanel [style]="{ width: '100%', height: '183px' }">
             @for (item of items; track $index) {
-                <div class="template-builder-box__item">
-                    <p data-testId="container-title">
+                <div
+                    class="flex items-center justify-between h-10 pr-2 pl-4 mx-4 my-2 first:mt-3 last:mb-4">
+                    <p class="truncate" data-testId="container-title">
                         @let identifier = item.identifier;
                         {{ containerMap?.[identifier]?.title || identifier }}
                     </p>
@@ -97,7 +98,7 @@
 <!-- Small -->
 <ng-template #smallTemplate>
     <div
-        class="template-builder-box template-builder-box--small"
+        class="border py-4 border-primary-200 rounded-md flex flex-col items-center justify-between h-full"
         data-testId="template-builder-box-small">
         @if (actions.includes('add')) {
             <p-button
