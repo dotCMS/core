@@ -39,18 +39,14 @@
             }
         </p-tabpanel>
         <p-tabpanel [value]="1">
-            <dot-portlet-box>
-                <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
-            </dot-portlet-box>
+            <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
         </p-tabpanel>
         <p-tabpanel [value]="2">
-            <dot-portlet-box>
-                <dot-iframe
-                    (custom)="custom.emit($event)"
-                    [src]="historyUrl"
-                    #historyIframe
-                    data-testId="historyIframe"></dot-iframe>
-            </dot-portlet-box>
+            <dot-iframe
+                (custom)="custom.emit($event)"
+                [src]="historyUrl"
+                #historyIframe
+                data-testId="historyIframe"></dot-iframe>
         </p-tabpanel>
     </p-tabpanels>
 </p-tabs>

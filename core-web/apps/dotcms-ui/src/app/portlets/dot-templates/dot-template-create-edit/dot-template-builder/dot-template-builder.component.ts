@@ -22,7 +22,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
-import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotTemplateAdvancedComponent } from '../dot-template-advanced/dot-template-advanced.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -31,13 +30,11 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
-    styleUrls: ['./dot-template-builder.component.scss'],
     imports: [
         DotMessagePipe,
         DotTemplateAdvancedComponent,
         TabsModule,
         IframeComponent,
-        DotPortletBoxComponent,
         TemplateBuilderComponent,
         ButtonModule,
         DotGlobalMessageComponent
