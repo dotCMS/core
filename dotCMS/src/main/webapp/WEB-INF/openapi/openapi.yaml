@@ -9674,6 +9674,7 @@ paths:
         required: true
         schema:
           type: string
+          pattern: .+
       - in: query
         name: linesBack
         schema:
@@ -9729,6 +9730,7 @@ paths:
         required: true
         schema:
           type: string
+          pattern: .+
       responses:
         default:
           content:
