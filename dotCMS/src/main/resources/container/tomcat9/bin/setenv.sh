@@ -136,6 +136,10 @@ export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/jdk.internal.misc=ALL
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.transform.TransformerFactory=com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl"
+export CATALINA_OPTS="$CATALINA_OPTS -XX:+EnableDynamicAgentLoading"
+
+
+
 
 # Set Log4j properties if not already set
 if echo "$CATALINA_OPTS" | grep -q '\-Dlog4j2\.configurationFile'; then

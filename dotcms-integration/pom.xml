@@ -309,6 +309,44 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${version.compiler.plugin}</version>
+                <executions>
+                    <!-- Process annotations during test compilation to generate immutable classes -->
+                    <execution>
+                        <id>process-test-annotations</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Only process annotations, don't fail on errors from missing generated classes -->
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.immutables.processor.ProxyProcessor</annotationProcessor>
+                            </annotationProcessors>
+                        </configuration>
+                    </execution>
+                    <!-- Normal test compilation with generated sources available -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Disable annotation processing in this phase since it was already done -->
+                            <proc>none</proc>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.immutables</groupId>
+                            <artifactId>value</artifactId>
+                            <version>${immutables.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
