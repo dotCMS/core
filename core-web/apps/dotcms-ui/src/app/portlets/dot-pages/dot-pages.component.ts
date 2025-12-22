@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
     Component,
+    computed,
     DestroyRef,
     ElementRef,
     HostListener,
@@ -35,7 +36,8 @@ import {
     DotCMSContentlet,
     DotEvent,
     DotMessageSeverity,
-    DotMessageType
+    DotMessageType,
+    DotSystemLanguage
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
@@ -102,9 +104,19 @@ export class DotPagesComponent {
     readonly #element = inject(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
 
-    readonly dotCMSPagesStore = inject(DotCMSPagesStore);
-    readonly globalStore = inject(GlobalStore);
+    readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
+    readonly #globalStore = inject(GlobalStore);
 
+    protected readonly $favoritePages = this.#dotCMSPagesStore.favoritePages;
+    protected readonly $isFavoritePagesLoading = this.#dotCMSPagesStore.$isFavoritePagesLoading;
+    protected readonly $pages = this.#dotCMSPagesStore.pages;
+    protected readonly $isPagesLoading = this.#dotCMSPagesStore.$isPagesLoading;
+    protected readonly $totalRecords = this.#dotCMSPagesStore.$totalRecords;
+    protected readonly $showBundleDialog = this.#dotCMSPagesStore.$showBundleDialog;
+    protected readonly $assetIdentifier = this.#dotCMSPagesStore.$assetIdentifier;
+    protected readonly $systemLanguages = computed<DotSystemLanguage[]>(
+        () => this.#globalStore.systemConfig()?.languages ?? []
+    );
     protected readonly dialogVisible = signal<boolean>(false);
 
     readonly menu = viewChild<Menu>('menu');
@@ -177,7 +189,7 @@ export class DotPagesComponent {
      * @memberof DotPagesComponent
      */
     protected onSearch(keyword: string): void {
-        this.dotCMSPagesStore.searchPages(keyword);
+        this.#dotCMSPagesStore.searchPages(keyword);
     }
 
     /**
@@ -187,7 +199,7 @@ export class DotPagesComponent {
      * @memberof DotPagesComponent
      */
     protected onLanguageChange(languageId: number): void {
-        this.dotCMSPagesStore.filterByLanguage(languageId);
+        this.#dotCMSPagesStore.filterByLanguage(languageId);
     }
 
     /**
@@ -197,7 +209,7 @@ export class DotPagesComponent {
      * @memberof DotPagesComponent
      */
     protected onArchivedChange(archived: boolean): void {
-        this.dotCMSPagesStore.filterByArchived(archived);
+        this.#dotCMSPagesStore.filterByArchived(archived);
     }
 
     /**
@@ -207,7 +219,7 @@ export class DotPagesComponent {
      * @memberof DotPagesComponent
      */
     protected onLazyLoad(event: LazyLoadEvent): void {
-        this.dotCMSPagesStore.onLazyLoad(event);
+        this.#dotCMSPagesStore.onLazyLoad(event);
     }
 
     /**
@@ -216,7 +228,7 @@ export class DotPagesComponent {
      * @memberof DotPagesComponent
      */
     protected onCloseBundleDialog(): void {
-        this.dotCMSPagesStore.hideBundleDialog();
+        this.#dotCMSPagesStore.hideBundleDialog();
     }
 
     /**
@@ -237,9 +249,9 @@ export class DotPagesComponent {
                 const baseIdentifier = identifier ?? contentletIdentifier;
 
                 if (baseType === 'dotFavoritePage') {
-                    this.dotCMSPagesStore.updateFavoritePageNode(baseIdentifier);
+                    this.#dotCMSPagesStore.updateFavoritePageNode(baseIdentifier);
                 } else {
-                    this.dotCMSPagesStore.updatePageNode(baseIdentifier);
+                    this.#dotCMSPagesStore.updatePageNode(baseIdentifier);
                 }
 
                 this.#dotMessageDisplayService.push({

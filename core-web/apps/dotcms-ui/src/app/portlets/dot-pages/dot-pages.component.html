@@ -2,14 +2,14 @@
     <div class="flex flex-col gap-4">
         <dot-page-favorites-panel
             (navigateToPage)="navigateToPage($event)"
-            [favoritePages]="dotCMSPagesStore.favoritePages()"
-            [isLoading]="dotCMSPagesStore.$isFavoritePagesLoading()"
+            [favoritePages]="$favoritePages()"
+            [isLoading]="$isFavoritePagesLoading()"
             (openMenu)="toggleMenu($event)" />
         <dot-pages-table
-            [pages]="dotCMSPagesStore.pages()"
-            [languages]="globalStore.systemConfig()?.languages ?? []"
-            [totalRecords]="dotCMSPagesStore.$totalRecords()"
-            [isLoading]="dotCMSPagesStore.$isPagesLoading()"
+            [pages]="$pages()"
+            [languages]="$systemLanguages()"
+            [totalRecords]="$totalRecords()"
+            [isLoading]="$isPagesLoading()"
             (navigateToPage)="navigateToPage($event)"
             (openMenu)="toggleMenu($event)"
             (pageChange)="scrollToTop()"
@@ -28,8 +28,6 @@
 
 <p-menu (onHide)="closeMenu()" [appendTo]="'body'" [popup]="true" #menu [model]="menuItems()" />
 
-@if (dotCMSPagesStore.$showBundleDialog()) {
-    <dot-add-to-bundle
-        (cancel)="onCloseBundleDialog()"
-        [assetIdentifier]="dotCMSPagesStore.$assetIdentifier()" />
+@if ($showBundleDialog()) {
+    <dot-add-to-bundle (cancel)="onCloseBundleDialog()" [assetIdentifier]="$assetIdentifier()" />
 }
