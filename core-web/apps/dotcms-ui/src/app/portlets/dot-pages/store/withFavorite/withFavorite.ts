@@ -41,7 +41,7 @@ export const withFavorites = () => {
         withMethods((store) => {
             const dotPageListService = inject(DotPageListService);
             const globalStore = inject(GlobalStore);
-            const fetchFavoritePages = (params: Partial<ListPagesParams>) => {
+            const fetchFavoritePages = (params: Partial<ListPagesParams> = {}) => {
                 patchState(store, { favoriteState: 'loading' });
                 const userId = globalStore.loggedUser()?.userId ?? 'dotcms.org.1';
                 dotPageListService
@@ -55,7 +55,7 @@ export const withFavorites = () => {
             };
 
             return {
-                getFavoritePages: (params: Partial<ListPagesParams>) => fetchFavoritePages(params),
+                getFavoritePages: (params?: Partial<ListPagesParams>) => fetchFavoritePages(params),
                 updateFavoritePageNode: (identifier: string) => {
                     dotPageListService.getSinglePage(identifier).subscribe((updatedPage) => {
                         const currentFavoritePages = store.favoritePages();
@@ -72,6 +72,7 @@ export const withFavorites = () => {
             return {
                 onInit: () => {
                     const handleSwitchSite = signalMethod<SiteEntity>((site: SiteEntity) => {
+                        if (!site) return;
                         const host = site.identifier;
                         store.getFavoritePages({ host });
                     });

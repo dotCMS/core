@@ -3,6 +3,7 @@ import { Component, inject, input, output, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -17,12 +18,20 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     selector: 'dot-page-favorites-panel',
     templateUrl: './dot-page-favorites-panel.component.html',
     styleUrls: ['./dot-page-favorites-panel.component.scss'],
-    imports: [CommonModule, DotMessagePipe, DotPagesCardComponent, PanelModule, ButtonModule]
+    imports: [
+        CommonModule,
+        DotMessagePipe,
+        DotPagesCardComponent,
+        PanelModule,
+        ButtonModule,
+        ProgressSpinnerModule
+    ]
 })
 export class DotPageFavoritesPanelComponent {
     readonly #dotLocalstorageService = inject(DotLocalstorageService);
 
     readonly $favoritePages = input<DotCMSContentlet[]>([], { alias: 'favoritePages' });
+    readonly $isLoading = input<boolean>(false, { alias: 'isLoading' });
     readonly navigateToPage = output<string>();
     readonly openMenu = output<DotActionsMenuEventParams>();
 

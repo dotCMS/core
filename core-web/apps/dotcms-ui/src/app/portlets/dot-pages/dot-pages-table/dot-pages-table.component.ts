@@ -9,7 +9,6 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -43,7 +42,6 @@ type TableRowSelectEvent<T> = {
         DotRelativeDatePipe,
         SelectModule,
         InputTextModule,
-        SkeletonModule,
         TableModule,
         TooltipModule,
         RouterModule,
@@ -59,6 +57,8 @@ export class DotPagesTableComponent {
     readonly $languages = input.required<DotSystemLanguage[]>({ alias: 'languages' });
     /** The total number of records. */
     readonly $totalRecords = input.required<number>({ alias: 'totalRecords' });
+    /** Whether the table is currently loading. */
+    readonly $isLoading = input<boolean>(false, { alias: 'isLoading' });
 
     /** Emits a navigation URL when the user selects a row. */
     readonly navigateToPage = output<string>();

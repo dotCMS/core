@@ -112,6 +112,36 @@ describe('DotPageFavoritesPanelComponent', () => {
     });
 
     describe('Template Rendering', () => {
+        it('should render loading state when isLoading is true', () => {
+            spectator.setInput('isLoading', true);
+            spectator.setInput('favoritePages', []);
+            spectator.detectChanges();
+
+            const loading = spectator.query('[data-testId="favoritesLoading"]');
+            expect(loading).toBeTruthy();
+
+            const spinner = spectator.query('[data-testId="favoritesLoadingSpinner"]');
+            expect(spinner).toBeTruthy();
+
+            const emptyState = spectator.query('[data-testid="dot-pages-empty__content"]');
+            expect(emptyState).toBeNull();
+
+            const cards = spectator.queryAll('dot-pages-card');
+            expect(cards).toHaveLength(0);
+        });
+
+        it('should not render cards when isLoading is true (regardless of favorite pages)', () => {
+            spectator.setInput('isLoading', true);
+            spectator.setInput('favoritePages', MOCK_FAVORITE_PAGES);
+            spectator.detectChanges();
+
+            const loading = spectator.query('[data-testId="favoritesLoading"]');
+            expect(loading).toBeTruthy();
+
+            const cards = spectator.queryAll('dot-pages-card');
+            expect(cards).toHaveLength(0);
+        });
+
         it('should render panel with correct header', () => {
             const panel = spectator.query('p-panel');
             expect(panel).toBeTruthy();

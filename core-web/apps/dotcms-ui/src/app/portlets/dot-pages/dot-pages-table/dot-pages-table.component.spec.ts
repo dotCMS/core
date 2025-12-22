@@ -4,12 +4,12 @@ import { MockProvider } from 'ng-mocks';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import type { FilterMetadata, LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { SelectModule } from 'primeng/select';
-import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -39,6 +39,7 @@ describe('DotPagesTableComponent', () => {
         pages: DotCMSContentlet[];
         languages: DotSystemLanguage[];
         totalRecords: number;
+        isLoading?: boolean;
     }
 
     const host = () => spectator.hostComponent as HostComponent;
@@ -126,7 +127,6 @@ describe('DotPagesTableComponent', () => {
             ButtonModule,
             CheckboxModule,
             SelectModule,
-            SkeletonModule,
             TableModule,
             TooltipModule,
             DotAutofocusDirective,
@@ -154,13 +154,15 @@ describe('DotPagesTableComponent', () => {
                 [pages]="pages"
                 [languages]="languages"
                 [totalRecords]="totalRecords"
+                [isLoading]="isLoading"
             />`,
             {
                 providers: [{ provide: DotMessageService, useValue: mockDotMessageService }],
                 hostProps: {
                     pages: MOCK_PAGES,
                     languages: MOCK_LANGUAGES,
-                    totalRecords: 3
+                    totalRecords: 3,
+                    isLoading: false
                 }
             }
         );
@@ -175,6 +177,14 @@ describe('DotPagesTableComponent', () => {
             expect(spectator.component.$pages()).toEqual(MOCK_PAGES);
             expect(spectator.component.$languages()).toEqual(MOCK_LANGUAGES);
             expect(spectator.component.$totalRecords()).toBe(3);
+        });
+
+        it('should bind p-table loading state from isLoading input (default false)', () => {
+            const tableDE = spectator.debugElement.query(By.css('p-table'));
+            expect(tableDE).toBeTruthy();
+
+            // PrimeNG Table component exposes the bound input as `loading`.
+            expect(tableDE.componentInstance.loading).toBe(false);
         });
 
         it('should initialize form controls with default values', () => {

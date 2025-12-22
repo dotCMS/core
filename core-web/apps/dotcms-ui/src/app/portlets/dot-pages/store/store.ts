@@ -143,6 +143,7 @@ export const DotCMSPagesStore = signalStore(
         return {
             onInit: () => {
                 const handleSwitchSite = signalMethod<SiteEntity>((site: SiteEntity) => {
+                    if (!site) return;
                     const host = site.identifier;
                     store.getPages({ ...initialFilters, host });
                 });

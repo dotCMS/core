@@ -86,10 +86,11 @@ export class DotPageListService {
      * @param params - The parameters for the request
      * @returns The query for the favorite pages API
      */
-    #buildFavoritePagesQuery(params: ListPagesParams, userId: string): string {
-        const { host } = params;
-        const hostQuery = host ? `+conhost:${host}` : '';
+    #buildFavoritePagesQuery(_params: ListPagesParams, userId: string): string {
+        // NOTE: Host scoping (+conhost) is currently not supported/working for dotFavoritePage queries.
+        // If you need host-scoped favorites, please create a ticket (suggested title: "Favorite pages API ignores host (+conhost) filter")
+        // and include an example request/query plus expected vs actual results.
 
-        return `+contentType:dotFavoritePage +deleted:false +working:true ${hostQuery} +owner:${userId}`;
+        return `+contentType:dotFavoritePage +deleted:false +working:true +owner:${userId}`;
     }
 }

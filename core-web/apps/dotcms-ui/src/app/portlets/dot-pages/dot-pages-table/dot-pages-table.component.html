@@ -1,12 +1,11 @@
-<!-- [loading]="vm.isPagesLoading" -->
-
 @let languageIsoCodeById = $languageIsoCodeById();
 
 <p-table
     (onLazyLoad)="loadPagesLazy($event)"
     (onRowSelect)="onRowSelect($event)"
     (onPage)="pageChange.emit()"
-    [value]="$pages()"
+    [loading]="$isLoading()"
+    [value]="[]"
     [totalRecords]="$totalRecords()"
     [lazy]="true"
     [paginator]="true"
@@ -108,10 +107,19 @@
             </td>
         </tr>
     </ng-template>
+    <ng-template #loadingbody>
+        <tr>
+            <td [attr.colspan]="7">
+                <div class="flex items-center justify-center gap-2 py-8 text-surface-600">
+                    <span>{{ 'page.listing.loading.table' | dm }}</span>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
     <ng-template #emptymessage>
         <tr>
             <td [attr.colspan]="7">
-                {{ 'favoritePage.listing.empty.table' | dm }}
+                {{ 'page.listing.empty.table' | dm }}
             </td>
         </tr>
     </ng-template>
