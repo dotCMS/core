@@ -304,7 +304,7 @@ public class PageRenderUtil implements Serializable {
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
 
-                    if (container.getMaxContentlets() < contentsSize) {
+                    if (container.getMaxContentlets() <= contentsSize) {
 
                         Logger.debug(this, ()-> "Contentlet: "          + contentlet.getIdentifier()
                                 + ", has been skipped. Max contentlet capacity: " + container.getMaxContentlets()
