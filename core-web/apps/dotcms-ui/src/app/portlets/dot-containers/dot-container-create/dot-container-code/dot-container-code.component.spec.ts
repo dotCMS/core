@@ -376,9 +376,8 @@ describe('DotContentEditorComponent', () => {
             expect(loader).toBeDefined();
         });
 
-        it('should have a menu with max height in 300px and overflow auto', () => {
-            expect(menu.style['max-height']).toBe('300px');
-            expect(menu.style.overflow).toBe('auto');
+        it('should have a menu with max height in 200px and overflow auto using Tailwind classes', () => {
+            expect(menu.styleClass).toBe('max-h-64 overflow-auto');
         });
 
         it('should handle tab click correctly', () => {

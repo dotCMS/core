@@ -398,7 +398,7 @@ describe('ContainerListComponent', () => {
             );
 
             fixture.detectChanges();
-            
+
             comp.selectedContainers = containersMock;
 
             comp.handleActionMenuOpen({} as MouseEvent);
@@ -499,9 +499,9 @@ describe('ContainerListComponent', () => {
 
         it('should update selectedContainers in store when actions button is clicked', () => {
             jest.spyOn(store, 'updateSelectedContainers');
-            
+
             fixture.detectChanges();
-            
+
             comp.selectedContainers = [containersMock[0]];
 
             comp.handleActionMenuOpen({} as MouseEvent);

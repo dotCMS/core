@@ -1,11 +1,11 @@
-@if (link) {
+@if (link()) {
     <a
-        [href]="link"
-        [title]="link"
+        [href]="link()"
+        [title]="link()"
         class="inline-flex items-center gap-1 text-sm text-primary disable-underline"
         target="_blank"
         rel="noopener noreferrer">
-        <i [class]="classNames"></i>
-        <span>{{ label | dm }}</span>
+        <i [class]="classNames()"></i>
+        <span>{{ label() | dm }}</span>
     </a>
 }

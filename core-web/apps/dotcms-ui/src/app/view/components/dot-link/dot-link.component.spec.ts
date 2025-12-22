@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -10,17 +10,17 @@ import { DotLinkComponent } from '././dot-link.component';
 
 @Component({
     template: `
-        <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>
+        <dot-link [href]="href()" [icon]="icon()" [label]="label()"></dot-link>
     `,
     standalone: false
 })
 class TestHostComponent {
-    href = 'api/v1/123';
-    icon = 'pi-link';
-    label = 'dot.common.testing';
+    href = signal('api/v1/123');
+    icon = signal('pi-link');
+    label = signal('dot.common.testing');
 
-    updateLink(href: string): void {
-        this.href = href;
+    updateLink(newHref: string): void {
+        this.href.set(newHref);
     }
 }
 
@@ -70,6 +70,9 @@ describe('DotLinkComponent', () => {
         hostComp.updateLink('/api/new/1000');
         hostFixture.detectChanges();
 
+        // Re-query the link after changes
+        link = de.query(By.css('a'));
+
         expect(link.properties.href).toEqual('/api/new/1000');
         expect(link.properties.title).toEqual('/api/new/1000');
     });
@@ -77,6 +80,9 @@ describe('DotLinkComponent', () => {
     it('should set the link relative always', () => {
         hostComp.updateLink('api/no/start/slash');
         hostFixture.detectChanges();
+
+        // Re-query the link after changes
+        link = de.query(By.css('a'));
 
         expect(link.properties.href).toEqual('/api/no/start/slash');
         expect(link.properties.title).toEqual('/api/no/start/slash');
