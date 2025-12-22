@@ -1,14 +1,12 @@
 import { Component, Input } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-link',
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     templateUrl: './dot-link.component.html',
-    styleUrls: ['./dot-link.component.scss']
+    styleUrls: ['./dot-link.component.css']
 })
 export class DotLinkComponent {
     @Input()

@@ -13,7 +13,7 @@ import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 
@@ -35,7 +35,6 @@ interface DotContainerContent extends DotCMSContentType {
     ],
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
-    styleUrls: ['./dot-container-code.component.scss'],
     imports: [
         ReactiveFormsModule,
         TabsModule,
@@ -44,7 +43,7 @@ interface DotContainerContent extends DotCMSContentType {
         DotMessagePipe,
         ButtonModule,
         DynamicDialogModule,
-        DotIconComponent,
+
         SkeletonModule,
         DotFieldRequiredDirective
     ],
@@ -63,22 +62,25 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     contentTypeNamesById = {};
 
     ngOnInit() {
-        this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
-            this.contentTypeNamesById[id] = name;
-        });
+        if (this.contentTypes && this.contentTypes.length > 0) {
+            this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+                this.contentTypeNamesById[id] = name;
+            });
+        }
 
         this.init();
         this.updateActiveTabIndex(this.getcontainerStructures.length);
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        changes.contentTypes.currentValue.map(({ id, name }: DotCMSContentType) => {
-            this.contentTypeNamesById[id] = name;
-        });
+        if (changes.contentTypes?.currentValue?.length > 0) {
+            changes.contentTypes.currentValue.forEach(({ id, name }: DotCMSContentType) => {
+                this.contentTypeNamesById[id] = name;
+            });
 
-        this.init();
-        this.updateActiveTabIndex(this.getcontainerStructures.length);
-        if (changes.contentTypes.currentValue.length > 0) {
+            this.init();
+            this.updateActiveTabIndex(this.getcontainerStructures.length);
+
             Object.keys(this.monacoEditors).forEach((editorId) => {
                 this.monacoEditors[editorId].updateOptions({ readOnly: false });
             });
@@ -96,22 +98,31 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     /**
+     * Handles tab change from p-tabs valueChange event
+     * @param {number} value - The new tab index value
+     * @memberof DotContentEditorComponent
+     */
+    public handleTabChange(value: number): void {
+        if (value !== 0) {
+            this.updateActiveTabIndex(value);
+            this.focusCurrentEditor(value);
+        }
+    }
+
+    /**
      * If the index is null or 0, prevent the default action and stop propagation. Otherwise, update the active tab index
      * and push the container content
-     * @param event - The change event object (TabView onChange) or click event (MouseEvent)
+     * @param event - The click event (MouseEvent)
      * @param {number} [index=null] - number = null
      * @returns false
      */
-    public handleTabClick(event: MouseEvent | { value: number }, index: number = null): boolean {
-        const tabIndex = index !== null ? index : 'value' in event ? event.value : 0;
-        if (tabIndex === 0) {
-            if (event instanceof MouseEvent) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        } else {
-            this.updateActiveTabIndex(tabIndex);
-            this.focusCurrentEditor(tabIndex);
+    public handleTabClick(event: MouseEvent, index: number = null): boolean {
+        if (index === 0) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else if (index !== null) {
+            this.updateActiveTabIndex(index);
+            this.focusCurrentEditor(index);
         }
 
         return false;
@@ -215,10 +226,10 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     private init(): void {
-        this.menuItems = this.getMenuItems(this.contentTypes);
+        this.menuItems = this.getMenuItems(this.contentTypes || []);
 
         // default content type if content type does not exist
-        if (this.getcontainerStructures.length === 0) {
+        if (this.getcontainerStructures.length === 0 && this.contentTypes?.length > 0) {
             this.getcontainerStructures.push(
                 new FormGroup({
                     code: new FormControl(''),

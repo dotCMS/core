@@ -8,7 +8,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotLinkComponent } from './dot-link.component';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { DotApiLinkComponent } from '../dot-api-link/dot-api-link.component';
 
 @Component({
     standalone: false,
@@ -40,7 +39,7 @@ describe('DotLinkComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
-            imports: [DotApiLinkComponent, DotMessagePipe, DotLinkComponent],
+            imports: [DotMessagePipe, DotLinkComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     }));
@@ -56,7 +55,7 @@ describe('DotLinkComponent', () => {
     });
 
     it('should show label', () => {
-        expect(link.nativeElement.textContent).toBe('This is a test');
+        expect(link.nativeElement.textContent.trim()).toBe('This is a test');
     });
 
     it('should set link properties and attr correctly', () => {
