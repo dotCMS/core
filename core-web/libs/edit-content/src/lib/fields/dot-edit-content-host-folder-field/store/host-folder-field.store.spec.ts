@@ -4,20 +4,21 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
+import { DotBrowsingService } from '@dotcms/data-access';
+
 import { SYSTEM_HOST_NAME, HostFolderFiledStore } from './host-folder-field.store';
 
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK } from '../../../utils/mocks';
 
 describe('HostFolderFiledStore', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
-    let service: SpyObject<DotEditContentService>;
+    let service: SpyObject<DotBrowsingService>;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 HostFolderFiledStore,
-                mockProvider(DotEditContentService, {
+                mockProvider(DotBrowsingService, {
                     getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK))
                 })
             ]
@@ -25,7 +26,7 @@ describe('HostFolderFiledStore', () => {
 
         store = TestBed.inject(HostFolderFiledStore);
 
-        service = TestBed.inject(DotEditContentService) as SpyObject<DotEditContentService>;
+        service = TestBed.inject(DotBrowsingService) as SpyObject<DotBrowsingService>;
     });
 
     describe('Method: loadSites', () => {

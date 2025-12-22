@@ -17,7 +17,8 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService, DotBrowsingService } from '@dotcms/data-access';
+import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
@@ -25,8 +26,6 @@ import { LanguageFieldComponent } from './components/language-field/language-fie
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 import { SearchComponent, DEBOUNCE_TIME } from './search.component';
 
-import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../../../../services/dot-edit-content.service';
 import { SearchParams } from '../../../../models/search.model';
 
 // Mock components for testing
@@ -140,7 +139,7 @@ describe('SearchComponent', () => {
         detectChanges: true,
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotEditContentService, {
+            mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
                 getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
             }),

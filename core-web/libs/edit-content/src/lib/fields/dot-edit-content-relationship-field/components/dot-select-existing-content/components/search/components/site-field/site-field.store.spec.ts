@@ -1,24 +1,21 @@
 import { createFakeEvent } from '@ngneat/spectator';
 import { mockProvider, SpyObject } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/data-access';
+import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 
 import { PEER_PAGE_LIMIT, SiteFieldStore } from './site-field.store';
 
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
-
 describe('SiteFieldStore', () => {
     let store: InstanceType<typeof SiteFieldStore>;
-    let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotBrowsingService: SpyObject<DotBrowsingService>;
 
     const mockSites: TreeNodeItem[] = [
         {
@@ -62,7 +59,7 @@ describe('SiteFieldStore', () => {
         TestBed.configureTestingModule({
             providers: [
                 SiteFieldStore,
-                mockProvider(DotEditContentService, {
+                mockProvider(DotBrowsingService, {
                     getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
                     getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
                 })
@@ -70,9 +67,7 @@ describe('SiteFieldStore', () => {
         });
 
         store = TestBed.inject(SiteFieldStore);
-        dotEditContentService = TestBed.inject(
-            DotEditContentService
-        ) as SpyObject<DotEditContentService>;
+        dotBrowsingService = TestBed.inject(DotBrowsingService) as SpyObject<DotBrowsingService>;
     });
 
     describe('Initial State', () => {
@@ -86,9 +81,29 @@ describe('SiteFieldStore', () => {
     });
 
     describe('Computed Properties', () => {
+        it('should compute isLoading as true when status is LOADING', () => {
+            patchState(unprotected(store), { status: ComponentStatus.LOADING });
+            expect(store.isLoading()).toBeTruthy();
+        });
+
+        it('should compute isLoading as false when status is not LOADING', () => {
+            patchState(unprotected(store), { status: ComponentStatus.LOADED });
+            expect(store.isLoading()).toBeFalsy();
+        });
+
+        it('should compute isLoading as false when status is ERROR', () => {
+            patchState(unprotected(store), { status: ComponentStatus.ERROR });
+            expect(store.isLoading()).toBeFalsy();
+        });
+
+        it('should compute isLoading as false when status is INIT', () => {
+            patchState(unprotected(store), { status: ComponentStatus.INIT });
+            expect(store.isLoading()).toBeFalsy();
+        });
+
         it('should indicate loading state correctly', fakeAsync(() => {
             const mockObservable = of(mockSites).pipe(delay(100));
-            dotEditContentService.getSitesTreePath.mockReturnValue(mockObservable);
+            dotBrowsingService.getSitesTreePath.mockReturnValue(mockObservable);
 
             store.loadSites();
             expect(store.isLoading()).toBeTruthy();
@@ -100,72 +115,98 @@ describe('SiteFieldStore', () => {
         }));
 
         it('should return correct value for valueToSave when node is selected (type: folder)', () => {
-            const mockNode: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    label: 'Test Node',
-                    data: {
-                        id: '123',
-                        hostname: 'test.com',
-                        path: 'test',
-                        type: 'folder'
-                    },
-                    icon: 'pi pi-folder',
-                    leaf: true,
-                    children: []
-                }
+            const mockNode: TreeNodeItem = {
+                label: 'Test Node',
+                data: {
+                    id: '123',
+                    hostname: 'test.com',
+                    path: 'test',
+                    type: 'folder'
+                },
+                icon: 'pi pi-folder',
+                leaf: true,
+                children: []
             };
-            store.chooseNode(mockNode);
+            patchState(unprotected(store), { nodeSelected: mockNode });
             expect(store.valueToSave()).toBe('folder:123');
         });
 
         it('should return correct value for valueToSave when node is selected (type: site)', () => {
-            const mockNode: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    label: 'Test Node',
-                    data: {
-                        id: '456',
-                        hostname: 'test.com',
-                        path: '',
-                        type: 'site'
-                    },
-                    icon: 'pi pi-globe',
-                    leaf: true,
-                    children: []
-                }
+            const mockNode: TreeNodeItem = {
+                label: 'Test Node',
+                data: {
+                    id: '456',
+                    hostname: 'test.com',
+                    path: '',
+                    type: 'site'
+                },
+                icon: 'pi pi-globe',
+                leaf: true,
+                children: []
             };
-            store.chooseNode(mockNode);
+            patchState(unprotected(store), { nodeSelected: mockNode });
             expect(store.valueToSave()).toBe('site:456');
         });
 
         it('should return null for valueToSave when no node is selected', () => {
+            patchState(unprotected(store), { nodeSelected: null });
             expect(store.valueToSave()).toBeNull();
         });
 
         it('should return null for valueToSave when node data is missing', () => {
-            const mockNode: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    label: 'Invalid Node',
-                    data: null,
-                    icon: 'pi pi-folder',
-                    leaf: true,
-                    children: []
-                }
+            const mockNode: TreeNodeItem = {
+                label: 'Invalid Node',
+                data: null,
+                icon: 'pi pi-folder',
+                leaf: true,
+                children: []
             };
-            store.chooseNode(mockNode);
+            patchState(unprotected(store), { nodeSelected: mockNode });
+            expect(store.valueToSave()).toBeNull();
+        });
+
+        it('should return null for valueToSave when node data id is missing', () => {
+            const mockNode: TreeNodeItem = {
+                label: 'Invalid Node',
+                data: {
+                    id: '',
+                    hostname: 'test.com',
+                    path: 'test',
+                    type: 'folder'
+                },
+                icon: 'pi pi-folder',
+                leaf: true,
+                children: []
+            };
+            patchState(unprotected(store), { nodeSelected: mockNode });
+            expect(store.valueToSave()).toBeNull();
+        });
+
+        it('should return null for valueToSave when node data type is missing', () => {
+            const mockNode: TreeNodeItem = {
+                label: 'Invalid Node',
+                data: {
+                    id: '123',
+                    hostname: 'test.com',
+                    path: 'test',
+                    type: undefined as 'site' | 'folder' | undefined
+                },
+                icon: 'pi pi-folder',
+                leaf: true,
+                children: []
+            };
+            patchState(unprotected(store), { nodeSelected: mockNode });
             expect(store.valueToSave()).toBeNull();
         });
     });
 
     describe('loadSites', () => {
         it('should load sites successfully', () => {
-            dotEditContentService.getSitesTreePath.mockReturnValue(of(mockSites));
+            dotBrowsingService.getSitesTreePath.mockReturnValue(of(mockSites));
 
             store.loadSites();
 
-            expect(dotEditContentService.getSitesTreePath).toHaveBeenCalledWith({
+            expect(dotBrowsingService.getSitesTreePath).toHaveBeenCalledWith({
                 perPage: PEER_PAGE_LIMIT,
                 filter: '*',
                 page: 1
@@ -176,7 +217,7 @@ describe('SiteFieldStore', () => {
         });
 
         it('should handle error when loading sites fails', () => {
-            dotEditContentService.getSitesTreePath.mockReturnValue(
+            dotBrowsingService.getSitesTreePath.mockReturnValue(
                 throwError(() => new Error('Failed to load sites'))
             );
 
@@ -190,9 +231,9 @@ describe('SiteFieldStore', () => {
 
     describe('loadChildren', () => {
         it('should load children nodes successfully', () => {
-            dotEditContentService.getFoldersTreeNode.mockReturnValue(of(mockFolders));
+            dotBrowsingService.getFoldersTreeNode.mockReturnValue(of(mockFolders));
 
-            const mockEvent = {
+            const mockEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: {
                     label: 'Parent',
@@ -210,7 +251,7 @@ describe('SiteFieldStore', () => {
 
             store.loadChildren(mockEvent);
 
-            expect(dotEditContentService.getFoldersTreeNode).toHaveBeenCalledWith(
+            expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledWith(
                 'demo.dotcms.com/parent'
             );
             expect(store.nodeExpanded()).toEqual({
@@ -222,11 +263,11 @@ describe('SiteFieldStore', () => {
         });
 
         it('should handle error when loading children fails', () => {
-            dotEditContentService.getFoldersTreeNode.mockReturnValue(
+            dotBrowsingService.getFoldersTreeNode.mockReturnValue(
                 throwError(() => new Error('Failed to load folders'))
             );
 
-            const mockEvent = {
+            const mockEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: {
                     label: 'Parent',
@@ -250,7 +291,7 @@ describe('SiteFieldStore', () => {
 
     describe('chooseNode', () => {
         it('should update selected node', () => {
-            const mockEvent = {
+            const mockEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: {
                     label: 'Selected Node',
@@ -271,7 +312,7 @@ describe('SiteFieldStore', () => {
         });
 
         it('should not update selected node when data is missing', () => {
-            const mockEvent = {
+            const mockEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: {
                     label: 'Invalid Node',
@@ -290,7 +331,7 @@ describe('SiteFieldStore', () => {
     describe('clearSelection', () => {
         it('should clear the selected node', () => {
             // First select a node
-            const mockEvent = {
+            const mockEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: {
                     label: 'Selected Node',

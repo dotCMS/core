@@ -6,6 +6,7 @@ import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { DotBrowsingService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockMatchMedia } from '@dotcms/utils-testing';
 
@@ -13,7 +14,6 @@ import { DotHostFolderFieldComponent } from './components/host-folder-field/host
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK, HOST_FOLDER_TEXT_MOCK } from '../../utils/mocks';
 
 @Component({
@@ -31,7 +31,7 @@ export class MockFormComponent {
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentHostFolderFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof HostFolderFiledStore>;
-    let service: SpyObject<DotEditContentService>;
+    let service: SpyObject<DotBrowsingService>;
     let hostFormControl: FormControl;
     let field: DotHostFolderFieldComponent;
 
@@ -41,7 +41,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             HostFolderFiledStore,
-            mockProvider(DotEditContentService, {
+            mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
                 getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
                 buildTreeByPaths: jest.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null }))
@@ -69,7 +69,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         );
         field = spectator.query(DotHostFolderFieldComponent);
         store = field.store;
-        service = spectator.inject(DotEditContentService);
+        service = spectator.inject(DotBrowsingService);
         hostFormControl = spectator.hostComponent.formGroup.get(
             HOST_FOLDER_TEXT_MOCK.variable
         ) as FormControl;
