@@ -51,6 +51,7 @@ cube('ContentAttribution', {
            conversions_total.cluster_id = events_total.cluster_id AND
            conversions_total.context_user_id = events_total.context_user_id AND
            conversions_total.context_site_id = events_total.context_site_id AND
+           conversions_total.event_type = events_total.event_type AND
            conversions_total.identifier = events_total.identifier AND
            conversions_total.title = events_total.title`,
     dimensions: {
@@ -125,6 +126,20 @@ cube('ContentAttribution', {
             type: `number`,
             title: 'Conversion Rate',
             description: '(conversion * 100)/ events'
+        }
+    },
+    measures: {
+        sumConversions: {
+            sql: `conversions`,
+            type: `sum`,
+            title: 'Conversions',
+            description: 'Total of conversion that this content helped achieve'
+        },
+        sumEvents: {
+            sql: `totalEvents`,
+            type: `sum`,
+            title: 'Total of Events',
+            description: 'Total of events'
         }
     }
 });
