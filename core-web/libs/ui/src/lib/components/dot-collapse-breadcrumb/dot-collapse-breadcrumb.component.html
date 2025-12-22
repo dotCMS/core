@@ -7,15 +7,17 @@
                     (click)="menu.toggle($event)"
                     icon="pi pi-ellipsis-h"
                     type="button"
-                    data-testid="btn-collapse"
-                    styleClass="p-button-rounded p-button-text p-button-sm outline-0" />
+                    data-testid="btn-collapse" />
             </div>
             <div class="mx-2">
                 <ChevronRightIcon />
             </div>
         </div>
     }
-    <p-breadcrumb [model]="$itemsToShow()" (onItemClick)="onItemClick.emit($event)">
+    <p-breadcrumb
+        [dt]="{ background: 'transparent', padding: '0' }"
+        [model]="$itemsToShow()"
+        (onItemClick)="onItemClick.emit($event)">
         <ng-template pTemplate="separator">
             <i class="pi pi-angle-right text-gray-700"></i>
         </ng-template>

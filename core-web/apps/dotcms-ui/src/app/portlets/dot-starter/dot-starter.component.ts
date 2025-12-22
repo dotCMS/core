@@ -13,7 +13,6 @@ import { DotAccountService } from '../../api/services/dot-account-service';
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    styleUrls: ['./dot-starter.component.scss'],
     standalone: false
 })
 export class DotStarterComponent implements OnInit {
