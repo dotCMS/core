@@ -11,7 +11,7 @@ interface SimpleWidgetProps extends DotCMSBasicContentlet {
 }
 export default function SimpleWidget({
   widgetTitle,
-  identifier
+  identifier,
 }: SimpleWidgetProps) {
   const isEditMode = useIsEditMode();
   if (TRAVEL_BOT_KEY == identifier) {

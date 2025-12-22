@@ -138,6 +138,12 @@ describe('DotFolderListViewComponent', () => {
 
             expect(spectator.component.$loading()).toBe(true);
         });
+
+        it('should set offset input property', () => {
+            spectator.setInput('offset', 20);
+
+            expect(spectator.component.$offset()).toBe(20);
+        });
     });
 
     describe('Languages Service', () => {
@@ -271,32 +277,50 @@ describe('DotFolderListViewComponent', () => {
             expect(paginator).toBeFalsy();
         });
 
-        it('should set first value when calling onPage', () => {
+        it('should emit paginate event when calling onPage', () => {
             spectator.setInput('totalItems', 50); // Enable pagination
             spectator.detectChanges();
 
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
             const mockEvent = { first: 20, rows: 20 };
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
 
-            expect(spectator.component.state.currentPageFirstRowIndex()).toBe(20);
+            expect(paginateSpy).toHaveBeenCalledWith(mockEvent);
         });
 
-        it('should reset first to 0 when showPagination becomes true', () => {
-            // Start with no pagination (totalItems <= MIN_ROWS_PER_PAGE)
-            spectator.setInput('totalItems', 15);
+        it('should sync table first value when firstChange event is emitted', () => {
+            spectator.setInput('offset', 40);
+            spectator.setInput('totalItems', 50); // Enable pagination so table renders
             spectator.detectChanges();
 
-            // Set first to some value
-            const mockEvent = { first: 20, rows: 20 };
-            spectator.component.onPage(mockEvent);
-            spectator.detectChanges();
+            // Mock the dataTable viewChild to return a mock table
+            const mockTable = { first: 0 };
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => mockTable,
+                writable: true
+            });
 
-            // Now enable pagination by setting totalItems > MIN_ROWS_PER_PAGE
+            const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
+            spectator.triggerEventHandler(table, 'firstChange', null);
+
+            expect(mockTable.first).toBe(40);
+        });
+
+        it('should not throw when firstChange event is emitted without table instance', () => {
+            spectator.setInput('offset', 40);
             spectator.setInput('totalItems', 50);
             spectator.detectChanges();
 
-            expect(spectator.component.state.currentPageFirstRowIndex()).toBe(0);
+            // Mock the dataTable viewChild to return undefined
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => undefined,
+                writable: true
+            });
+
+            const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
+
+            expect(() => spectator.triggerEventHandler(table, 'firstChange', null)).not.toThrow();
         });
     });
 

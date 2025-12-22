@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
@@ -171,7 +172,7 @@ public class MaintenanceResource implements Serializable {
      * @return octet stream response with file contents
      * @throws IOException
      */
-    @Path("/_downloadLog/{fileName}")
+    @Path("/_downloadLog/{fileName:.+}")
     @GET
     @JSONP
     @NoCache
@@ -186,6 +187,11 @@ public class MaintenanceResource implements Serializable {
                 .getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
         if (!tailLogFolder.endsWith(File.separator)) {
             tailLogFolder = tailLogFolder + File.separator;
+        }
+
+        //This should prevent any attack
+        if(!FileUtil.isValidFilePath(fileName)){
+            throw new BadRequestException("Requested LogFile: " + fileName + " is not valid.");
         }
 
         final File logFile = new File(FileUtil.getAbsolutlePath(tailLogFolder + fileName));

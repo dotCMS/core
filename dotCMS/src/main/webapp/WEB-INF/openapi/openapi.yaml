@@ -9674,6 +9674,7 @@ paths:
         required: true
         schema:
           type: string
+          pattern: .+
       - in: query
         name: linesBack
         schema:
@@ -9729,6 +9730,7 @@ paths:
         required: true
         schema:
           type: string
+          pattern: .+
       responses:
         default:
           content:
@@ -13574,8 +13576,24 @@ paths:
   /v1/usage/summary:
     get:
       description: "Retrieves key business metrics optimized for dashboard display\
-        \ including content, sites, users, and system metrics"
+        \ including content, sites, users, and system metrics. Supports optional profile\
+        \ parameter (MINIMAL, STANDARD, FULL) to override the default metric collection\
+        \ profile."
       operationId: getSummary
+      parameters:
+      - description: "Metric collection profile to use. MINIMAL (default): Fast collection\
+          \ with 10-15 core metrics. STANDARD: Comprehensive collection with ~50 metrics.\
+          \ FULL: Complete collection with all available metrics. This allows administrators\
+          \ to view additional metrics beyond the default MINIMAL profile."
+        in: query
+        name: profile
+        schema:
+          type: string
+          default: MINIMAL
+          enum:
+          - MINIMAL
+          - STANDARD
+          - FULL
       responses:
         "200":
           content:
@@ -13583,6 +13601,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityUsageSummaryView"
           description: Dashboard summary retrieved successfully
+        "400":
+          description: Invalid profile parameter
         "401":
           description: Unauthorized
         "403":
@@ -17660,6 +17680,40 @@ paths:
       tags:
       - Internationalization
   /v2/tags:
+    delete:
+      description: Deletes one or more tags by their IDs. User must have EDIT permission
+        on all contentlets associated with each tag.
+      operationId: delete_17
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              description: Array of tag IDs
+              example:
+              - tag-123
+              - tag-456
+              - tag-789
+        description: List of tag IDs to delete
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
+          description: Bulk delete result with success count and failures
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - tagIds list is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete tags
+      tags:
+      - Tags
     get:
       description: "Searches and lists tags with filtering, pagination, and sorting.\
         \ The filter parameter performs a case-insensitive search with wildcards on\
@@ -18095,27 +18149,6 @@ paths:
             application/json: {}
           description: Internal Server Error
       summary: Get tag by name or ID
-      tags:
-      - Tags
-  /v2/tags/{tagId}:
-    delete:
-      operationId: delete_17
-      parameters:
-      - in: path
-        name: tagId
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
       tags:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
@@ -19419,6 +19452,19 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkResultView:
+      type: object
+      properties:
+        fails:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedResultView"
+        skippedCount:
+          type: integer
+          format: int64
+        successCount:
+          type: integer
+          format: int64
     BulkWorkflowSchemeView:
       type: object
       properties:
@@ -19440,13 +19486,24 @@ components:
     BundleMap:
       type: object
       properties:
+        builtWithMaven:
+          type: boolean
         bundleId:
           type: integer
           format: int64
+        dotcmsCoreDependencyVersion:
+          type: string
         jarFile:
+          type: string
+        javaClassVersion:
+          type: integer
+          format: int32
+        javaVersion:
           type: string
         location:
           type: string
+        multiRelease:
+          type: boolean
         separator:
           type: string
         state:
@@ -19455,6 +19512,8 @@ components:
         symbolicName:
           type: string
         system:
+          type: boolean
+        usesDotcmsApis:
           type: boolean
         version:
           type: string
@@ -20092,23 +20151,6 @@ components:
       required:
       - file
       - form
-    ContentMetrics:
-      type: object
-      properties:
-        contentTypes:
-          type: integer
-          format: int64
-        contentTypesWithWorkflows:
-          type: integer
-          format: int64
-        lastContentEdited:
-          type: string
-        recentlyEdited:
-          type: integer
-          format: int64
-        totalContent:
-          type: integer
-          format: int64
     ContentReferenceView:
       type: object
       properties:
@@ -21005,6 +21047,13 @@ components:
           type: string
       required:
       - packages
+    FailedResultView:
+      type: object
+      properties:
+        element:
+          type: string
+        errorMessage:
+          type: string
     Field:
       type: object
       discriminator:
@@ -24024,6 +24073,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityBulkResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBundleListView:
       type: object
       properties:
@@ -26741,21 +26813,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
-    SiteMetrics:
-      type: object
-      properties:
-        activeSites:
-          type: integer
-          format: int64
-        siteAliases:
-          type: integer
-          format: int64
-        templates:
-          type: integer
-          format: int64
-        totalSites:
-          type: integer
-          format: int64
     SiteVariableForm:
       type: object
       properties:
@@ -26888,24 +26945,6 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
-    SystemMetrics:
-      type: object
-      properties:
-        builderTemplates:
-          type: integer
-          format: int64
-        languages:
-          type: integer
-          format: int64
-        liveContainers:
-          type: integer
-          format: int64
-        workflowSchemes:
-          type: integer
-          format: int64
-        workflowSteps:
-          type: integer
-          format: int64
     TabDividerField:
       type: object
       allOf:
@@ -27578,17 +27617,15 @@ components:
     UsageSummary:
       type: object
       properties:
-        contentMetrics:
-          $ref: "#/components/schemas/ContentMetrics"
         lastUpdated:
           type: string
           format: date-time
-        siteMetrics:
-          $ref: "#/components/schemas/SiteMetrics"
-        systemMetrics:
-          $ref: "#/components/schemas/SystemMetrics"
-        userMetrics:
-          $ref: "#/components/schemas/UserMetrics"
+        metrics:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
     User:
       type: object
       properties:
@@ -27838,20 +27875,6 @@ components:
       - email
       - firstName
       - lastName
-    UserMetrics:
-      type: object
-      properties:
-        activeUsers:
-          type: integer
-          format: int64
-        lastLogin:
-          type: string
-        recentLogins:
-          type: integer
-          format: int64
-        totalUsers:
-          type: integer
-          format: int64
     UserPermissionAssetView:
       type: object
       description: The updated asset with new permission assignments
