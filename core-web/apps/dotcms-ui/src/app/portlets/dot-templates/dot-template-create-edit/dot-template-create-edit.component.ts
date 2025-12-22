@@ -32,7 +32,7 @@ import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet
     templateUrl: './dot-template-create-edit.component.html',
     providers: [DotTemplateStore, DotTemplatesService, DialogService],
     host: {
-        'class': 'flex flex-col h-full'
+        class: 'flex flex-col h-full'
     },
     imports: [
         ButtonModule,

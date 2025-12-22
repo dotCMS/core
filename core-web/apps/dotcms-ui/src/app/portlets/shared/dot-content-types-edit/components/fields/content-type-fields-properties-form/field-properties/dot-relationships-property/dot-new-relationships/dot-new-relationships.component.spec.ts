@@ -1,9 +1,4 @@
-import {
-    createComponentFactory,
-    mockProvider,
-    Spectator,
-    SpyObject
-} from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -194,7 +189,9 @@ describe('DotNewRelationshipsComponent', () => {
             spectator.component.onContentTypeChange(mockContentType.variable);
             tick();
 
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith(mockContentType.variable);
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith(
+                mockContentType.variable
+            );
             expect(spectator.component.contentType).toEqual(mockContentType);
             expect(emitSpy).toHaveBeenCalledWith({
                 velocityVar: mockContentType.variable,
@@ -385,7 +382,9 @@ describe('DotNewRelationshipsComponent', () => {
             spectator.triggerEventHandler('dot-content-type', 'onChange', mockContentType.variable);
             tick();
 
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith(mockContentType.variable);
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith(
+                mockContentType.variable
+            );
             expect(spectator.component.contentType).toEqual(mockContentType);
             expect(emitSpy).toHaveBeenCalled();
         }));
@@ -406,4 +405,3 @@ describe('DotNewRelationshipsComponent', () => {
         });
     });
 });
-

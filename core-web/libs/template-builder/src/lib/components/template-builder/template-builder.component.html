@@ -37,7 +37,8 @@
         #templateContainerRef
         data-testId="template-builder-main">
         @if (vm.layoutProperties.header) {
-            <dotcms-template-builder-section class="mb-4"
+            <dotcms-template-builder-section
+                class="mb-4"
                 (deleteSection)="deleteSection('header')"
                 data-testId="template-builder-header">
                 {{ 'dot.template.builder.header' | dm }}
@@ -107,7 +108,8 @@
             </div>
         </div>
         @if (vm.layoutProperties.footer) {
-            <dotcms-template-builder-section class="mt-2"
+            <dotcms-template-builder-section
+                class="mt-2"
                 (deleteSection)="deleteSection('footer')"
                 data-testId="template-builder-footer">
                 {{ 'dot.template.builder.footer' | dm }}

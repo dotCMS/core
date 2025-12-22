@@ -186,7 +186,8 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         if (filterValue) {
             const pinnedName = (pinned.name || '').toLowerCase();
             const pinnedVariable = (pinned.variable || '').toLowerCase();
-            const matchesFilter = pinnedName.includes(filterValue) || pinnedVariable.includes(filterValue);
+            const matchesFilter =
+                pinnedName.includes(filterValue) || pinnedVariable.includes(filterValue);
 
             if (!matchesFilter) {
                 return loaded;
@@ -194,7 +195,7 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         }
 
         // Filter out pinned from loaded to avoid duplicates, then prepend pinned
-        const filtered = loaded.filter(ct => ct.variable !== pinned.variable);
+        const filtered = loaded.filter((ct) => ct.variable !== pinned.variable);
 
         return [pinned, ...filtered];
     });
@@ -430,7 +431,6 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         return value.variable;
     }
 
-
     /**
      * Parses and validates lazy load event, calculates items needed.
      * Returns null if event contains invalid values (NaN) from PrimeNG Scroller initialization.
@@ -585,7 +585,9 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
                         this.setContentTypes(contentTypes);
                     } else {
                         // For subsequent pages, merge with existing (lazy loading)
-                        const existingVariables = new Set(currentContentTypes.map((ct) => ct.variable));
+                        const existingVariables = new Set(
+                            currentContentTypes.map((ct) => ct.variable)
+                        );
                         const newContentTypes = contentTypes.filter(
                             (ct) => !existingVariables.has(ct.variable)
                         );

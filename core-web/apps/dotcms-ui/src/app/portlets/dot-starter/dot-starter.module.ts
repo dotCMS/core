@@ -11,7 +11,6 @@ import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
 import { dotStarterRoutes } from './dot-starter.routes';
 
-
 import { DotToolbarAnnouncementsComponent } from '../../view/components/dot-toolbar/components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 
 @NgModule({
@@ -22,7 +21,7 @@ import { DotToolbarAnnouncementsComponent } from '../../view/components/dot-tool
         DotMessagePipe,
         CheckboxModule,
         DotToolbarAnnouncementsComponent,
-        ButtonModule,
+        ButtonModule
     ],
     providers: [DotStarterResolver]
 })

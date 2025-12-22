@@ -20,11 +20,7 @@ import {
     DotMessagePipe,
     DotSiteComponent
 } from '@dotcms/ui';
-import {
-    mockDotCMSTempFile,
-    MockDotMessageService,
-    mockSites
-} from '@dotcms/utils-testing';
+import { mockDotCMSTempFile, MockDotMessageService, mockSites } from '@dotcms/utils-testing';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 

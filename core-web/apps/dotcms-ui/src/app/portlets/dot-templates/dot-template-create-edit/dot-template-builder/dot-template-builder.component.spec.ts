@@ -128,7 +128,9 @@ describe('DotTemplateBuilderComponent', () => {
         const permissionsIframeDe = spectator.debugElement.query(
             By.css('dot-iframe[data-testId="permissionsIframe"]')
         );
-        const historyIframeDe = spectator.debugElement.query(By.css('dot-iframe[data-testId="historyIframe"]'));
+        const historyIframeDe = spectator.debugElement.query(
+            By.css('dot-iframe[data-testId="historyIframe"]')
+        );
 
         expect(permissionsIframeDe.componentInstance.src).toBe(
             '/html/templates/permissions.jsp?templateId=abc&popup=true'
@@ -205,8 +207,8 @@ describe('DotTemplateBuilderComponent', () => {
 
             spectator.detectChanges();
 
-            const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement.contentWindow
-                .location.reload as jest.Mock;
+            const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement
+                .contentWindow.location.reload as jest.Mock;
 
             const updated = createDesignItem({ identifier: 'id-2', theme: 't-2' });
             spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);

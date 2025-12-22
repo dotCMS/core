@@ -90,7 +90,9 @@ describe('DotContentTypeComponent', () => {
 
             const select = spectator.query(Select);
 
-            expect(spectator.component.$options()).toEqual(expect.arrayContaining(mockContentTypes));
+            expect(spectator.component.$options()).toEqual(
+                expect.arrayContaining(mockContentTypes)
+            );
             expect(select.loading).toBe(false);
             expect(select.virtualScroll).toBe(true);
             expect(select.lazy).toBe(true);
@@ -211,7 +213,10 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should handle invalid lazy load events with NaN values', () => {
-            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: NaN, last: NaN } as SelectLazyLoadEvent);
+            spectator.triggerEventHandler(Select, 'onLazyLoad', {
+                first: NaN,
+                last: NaN
+            } as SelectLazyLoadEvent);
 
             expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
         });
@@ -354,8 +359,13 @@ describe('DotContentTypeComponent', () => {
             // Now manually remove it from the content types list and clear pinnedOption to simulate the scenario
             // where it was added but then the list was cleared/reloaded
             const currentContentTypes = spectator.component.$state.contentTypes();
-            const contentTypesWithoutMissing = currentContentTypes.filter((ct) => ct.variable !== 'Missing');
-            patchState(spectator.component.$state, { contentTypes: contentTypesWithoutMissing, pinnedOption: null });
+            const contentTypesWithoutMissing = currentContentTypes.filter(
+                (ct) => ct.variable !== 'Missing'
+            );
+            patchState(spectator.component.$state, {
+                contentTypes: contentTypesWithoutMissing,
+                pinnedOption: null
+            });
 
             jest.clearAllMocks();
 
@@ -387,7 +397,9 @@ describe('DotContentTypeComponent', () => {
             tick(); // Allow overlay to render
 
             // Query document.body since overlay is appended there
-            const input = document.body.querySelector<HTMLInputElement>('input[type="text"][role="searchbox"]');
+            const input = document.body.querySelector<HTMLInputElement>(
+                'input[type="text"][role="searchbox"]'
+            );
             expect(input).toBeTruthy();
 
             // Set the value and trigger the actual DOM input event
@@ -473,7 +485,9 @@ describe('DotContentTypeComponent', () => {
             tick(); // Allow overlay to render
 
             // Query document.body since overlay is appended there
-            const input = document.body.querySelector<HTMLInputElement>('input[type="text"][role="searchbox"]');
+            const input = document.body.querySelector<HTMLInputElement>(
+                'input[type="text"][role="searchbox"]'
+            );
 
             expect(input.value).toBe('');
             expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
@@ -670,7 +684,10 @@ describe('DotContentTypeComponent', () => {
 
         it('should return only loaded options when pinnedOption is null', () => {
             const loadedTypes = mockContentTypes.slice(0, 2);
-            patchState(spectator.component.$state, { contentTypes: loadedTypes, pinnedOption: null });
+            patchState(spectator.component.$state, {
+                contentTypes: loadedTypes,
+                pinnedOption: null
+            });
 
             const options = spectator.component.$options();
             expect(options).toEqual(loadedTypes);
@@ -847,7 +864,9 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should reset loading state on service error', () => {
-            contentTypeService.getContentTypesWithPagination.mockReturnValue(throwError(() => new Error('API Error')));
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                throwError(() => new Error('API Error'))
+            );
 
             spectator.detectChanges();
 
@@ -1010,7 +1029,11 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         component: DotContentTypeComponent,
         host: FormHostComponent,
         imports: [ReactiveFormsModule],
-        providers: [mockProvider(DotContentTypeService), provideHttpClient(), provideHttpClientTesting()],
+        providers: [
+            mockProvider(DotContentTypeService),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
         detectChanges: false
     });
 

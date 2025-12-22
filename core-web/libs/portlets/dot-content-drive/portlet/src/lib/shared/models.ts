@@ -1,4 +1,9 @@
-import { DotContentDriveFolder, DotContentDriveItem, DotFolder, DotSite } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveFolder,
+    DotContentDriveItem,
+    DotFolder,
+    DotSite
+} from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DIALOG_TYPE } from './constants';

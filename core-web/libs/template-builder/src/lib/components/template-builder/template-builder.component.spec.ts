@@ -9,8 +9,12 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { pluck, take } from 'rxjs/operators';
 
-
-import { DotContainersService, DotEventsService, DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotContainersService,
+    DotEventsService,
+    DotMessageService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     containersMock,

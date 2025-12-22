@@ -61,10 +61,7 @@ export class DotToolbarComponent implements OnInit {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ data, currentSite }) => {
-                if (
-                    data.hostname === currentSite.hostname &&
-                    data.archived
-                ) {
+                if (data.hostname === currentSite.hostname && data.archived) {
                     this.#siteService.switchSite(null).subscribe((defaultSite: DotSite) => {
                         this.siteChange(defaultSite.identifier);
                     });

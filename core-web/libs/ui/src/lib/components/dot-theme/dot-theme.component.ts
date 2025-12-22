@@ -199,7 +199,11 @@ export class DotThemeComponent implements ControlValueAccessor, OnDestroy {
      * Used to prevent race conditions from rapid pagination or search changes.
      * @private
      */
-    private readonly loadRequest$ = new Subject<{ page: number; hostId: string; search?: string }>();
+    private readonly loadRequest$ = new Subject<{
+        page: number;
+        hostId: string;
+        search?: string;
+    }>();
 
     /**
      * Tracks the identifier of a theme currently being fetched individually.
@@ -434,7 +438,6 @@ export class DotThemeComponent implements ControlValueAccessor, OnDestroy {
         this.loadThemes(page, hostId, searchValue);
     }
 
-
     /**
      * Gets the thumbnail URL for a theme.
      *
@@ -498,10 +501,7 @@ export class DotThemeComponent implements ControlValueAccessor, OnDestroy {
      * @param themes Optional themes array to search. If not provided, uses current state themes.
      * @returns The found theme or null
      */
-    private findThemeByIdentifier(
-        identifier: string | null,
-        themes?: DotTheme[]
-    ): DotTheme | null {
+    private findThemeByIdentifier(identifier: string | null, themes?: DotTheme[]): DotTheme | null {
         if (!identifier) {
             return null;
         }

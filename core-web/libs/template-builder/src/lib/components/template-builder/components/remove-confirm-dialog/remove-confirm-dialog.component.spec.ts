@@ -33,13 +33,15 @@ describe('RemoveConfirmDialogComponent', () => {
     it('should emit confirm event and call accept function', () => {
         const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        const confirmSpy = jest.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
-            // Simulate accept callback
-            if (options.accept) {
-                options.accept();
-            }
-            return {} as ConfirmationService;
-        }) as jest.Mock;
+        const confirmSpy = jest
+            .spyOn(confirmationService, 'confirm')
+            .mockImplementation((options) => {
+                // Simulate accept callback
+                if (options.accept) {
+                    options.accept();
+                }
+                return {} as ConfirmationService;
+            }) as jest.Mock;
 
         const deleteButtonComponent = spectator.query(byTestId('btn-remove-item'));
         const mockEvent = { target: deleteButtonComponent } as unknown as Event;
@@ -52,13 +54,15 @@ describe('RemoveConfirmDialogComponent', () => {
     it('should emit confirm event and call reject function', () => {
         const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        const confirmSpy = jest.spyOn(confirmationService, 'confirm').mockImplementation((options) => {
-            // Simulate reject callback
-            if (options.reject) {
-                options.reject();
-            }
-            return {} as ConfirmationService;
-        }) as jest.Mock;
+        const confirmSpy = jest
+            .spyOn(confirmationService, 'confirm')
+            .mockImplementation((options) => {
+                // Simulate reject callback
+                if (options.reject) {
+                    options.reject();
+                }
+                return {} as ConfirmationService;
+            }) as jest.Mock;
 
         const deleteButtonComponent = spectator.query(byTestId('btn-remove-item'));
         const mockEvent = { target: deleteButtonComponent } as unknown as Event;

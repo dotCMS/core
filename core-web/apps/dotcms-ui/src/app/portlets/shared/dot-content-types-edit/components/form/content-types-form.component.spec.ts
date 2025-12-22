@@ -39,7 +39,6 @@ import { ContentTypesFormComponent } from './content-types-form.component';
 
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
-
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {

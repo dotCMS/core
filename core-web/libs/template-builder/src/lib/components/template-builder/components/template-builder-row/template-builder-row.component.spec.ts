@@ -136,7 +136,8 @@ describe('TemplateBuilderRowComponent', () => {
         const removeConfirmDialog = fixture.debugElement.query(
             By.css('dotcms-remove-confirm-dialog')
         );
-        const removeConfirmComponent = removeConfirmDialog.componentInstance as RemoveConfirmDialogComponent;
+        const removeConfirmComponent =
+            removeConfirmDialog.componentInstance as RemoveConfirmDialogComponent;
 
         // Trigger the deleteConfirmed event directly
         removeConfirmComponent.deleteConfirmed.emit();
@@ -150,7 +151,8 @@ describe('TemplateBuilderRowComponent', () => {
         const removeConfirmDialog = fixture.debugElement.query(
             By.css('dotcms-remove-confirm-dialog')
         );
-        const removeConfirmComponent = removeConfirmDialog.componentInstance as RemoveConfirmDialogComponent;
+        const removeConfirmComponent =
+            removeConfirmDialog.componentInstance as RemoveConfirmDialogComponent;
 
         // Trigger the deleteRejected event directly (which happens when user clicks no)
         removeConfirmComponent.deleteRejected.emit();
