@@ -53,6 +53,17 @@ export class DotPageListService {
             .pipe(map((response) => response.entity));
     }
 
+    getFavoritePageByURL(url: string): Observable<DotCMSContentlet> {
+        return this.#http
+            .post<DotCMSAPIResponse<ESContent>>(this.#url, {
+                query: `+DotFavoritePage.url_dotraw:${url}`,
+                sort: 'title ASC',
+                limit: 1,
+                offset: 0
+            })
+            .pipe(map((response) => response.entity.jsonObjectView.contentlets[0]));
+    }
+
     getSinglePage(identifier: string): Observable<DotCMSContentlet> {
         return this.#http
             .post<DotCMSAPIResponse<ESContent>>(this.#url, {

@@ -30,6 +30,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 
 import { DotPageActionsService } from './dot-page-actions.service';
+import { DotPageListService } from './dot-page-list.service';
 
 import { DotCMSPagesStore } from '../store/store';
 
@@ -150,6 +151,7 @@ describe('DotPageActionsService', () => {
     let mockPushPublishService: jest.Mocked<PushPublishService>;
     let mockGlobalStore: { loggedUser: ReturnType<typeof signal> };
     let mockPagesStore: PagesStoreMock;
+    let mockDotPageListService: jest.Mocked<Pick<DotPageListService, 'getFavoritePageByURL'>>;
 
     const createService = createServiceFactory({
         service: DotPageActionsService,
@@ -211,6 +213,13 @@ describe('DotPageActionsService', () => {
             getFavoritePages: jest.fn()
         };
 
+        mockDotPageListService = {
+            // For non-favorite pages the service queries by URL; returning `undefined` means "not found".
+            getFavoritePageByURL: jest
+                .fn()
+                .mockReturnValue(of(undefined as unknown as DotCMSContentlet))
+        };
+
         spectator = createService({
             providers: [
                 { provide: DotMessageService, useValue: mockMessageService },
@@ -231,7 +240,8 @@ describe('DotPageActionsService', () => {
                 { provide: DotCurrentUserService, useValue: mockCurrentUserService },
                 { provide: PushPublishService, useValue: mockPushPublishService },
                 { provide: GlobalStore, useValue: mockGlobalStore },
-                { provide: DotCMSPagesStore, useValue: mockPagesStore }
+                { provide: DotCMSPagesStore, useValue: mockPagesStore },
+                { provide: DotPageListService, useValue: mockDotPageListService }
             ]
         });
     });
@@ -256,10 +266,6 @@ describe('DotPageActionsService', () => {
         it('should fetch push publish environments on initialization', () => {
             expect(mockPushPublishService.getEnvironments).toHaveBeenCalled();
         });
-
-        // Note: Permission and push publish error handling is tested implicitly
-        // through the service initialization. These errors are logged and handled
-        // by the error manager service, but don't prevent service creation.
     });
 
     describe('getItems', () => {

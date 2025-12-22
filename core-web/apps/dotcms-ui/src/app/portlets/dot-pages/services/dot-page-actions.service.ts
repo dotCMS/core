@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
 import { inject, Injectable, signal } from '@angular/core';
 
@@ -31,6 +31,9 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
+import { generateDotFavoritePageUrl } from '@dotcms/utils';
+
+import { DotPageListService } from './dot-page-list.service';
 
 import { DotCMSPagesStore } from '../store/store';
 
@@ -76,6 +79,7 @@ export class DotPageActionsService {
     readonly #pushPublishService = inject(PushPublishService);
     readonly #globalStore = inject(GlobalStore);
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
+    readonly #dotPageListService = inject(DotPageListService);
 
     /**
      * Cached result of whether Push Publish is actionable for this installation.
@@ -106,6 +110,13 @@ export class DotPageActionsService {
     }
 
     /**
+     * Refresh favorites list after a mutation (create/update/delete).
+     */
+    #refreshFavorites(): void {
+        this.#dotCMSPagesStore.getFavoritePages();
+    }
+
+    /**
      * Returns the full context-menu model for a given contentlet.
      *
      * This method is intentionally pure from the caller’s perspective: it fetches workflow actions
@@ -115,9 +126,17 @@ export class DotPageActionsService {
      * @returns PrimeNG menu model.
      */
     getItems(item: DotCMSContentlet): Observable<MenuItem[]> {
-        return this.#dotActionsService
-            .getByInode(item.inode, DotRenderMode.LISTING)
-            .pipe(map((actions: DotCMSWorkflowAction[]) => this.#buildMenuItems(item, actions)));
+        const actions = this.#dotActionsService.getByInode(item.inode, DotRenderMode.LISTING);
+        const relatedFavoritePage = this.#getFavoritePageData(item);
+
+        return forkJoin({
+            actions,
+            relatedFavoritePage
+        }).pipe(
+            map(({ actions, relatedFavoritePage }) =>
+                this.#buildMenuItems({ item, actions, relatedFavoritePage })
+            )
+        );
     }
 
     /**
@@ -200,11 +219,19 @@ export class DotPageActionsService {
      * Opens the favorite page dialog.
      * The label changes depending on whether the item is already a favorite.
      */
-    #favoritePageAction(item: DotCMSContentlet): MenuItem {
-        const isFavorite = item.contentType === 'dotFavoritePage';
-
+    #favoritePageAction({
+        item,
+        relatedFavoritePage
+    }: {
+        item: DotCMSContentlet;
+        relatedFavoritePage: DotCMSContentlet;
+    }): MenuItem {
+        const hasFavorite = !!relatedFavoritePage;
+        const favoritePageUrl = hasFavorite
+            ? relatedFavoritePage.url
+            : this.#getFavoritePageUrl(item);
         return {
-            label: isFavorite
+            label: hasFavorite
                 ? this.#dotMessageService.get('favoritePage.contextMenu.action.edit')
                 : this.#dotMessageService.get('favoritePage.contextMenu.action.add'),
             command: () => {
@@ -213,15 +240,11 @@ export class DotPageActionsService {
                     width: '80rem',
                     data: {
                         page: {
-                            favoritePageUrl: '',
-                            favoritePage: item
+                            favoritePageUrl,
+                            favoritePage: relatedFavoritePage
                         },
-                        onSave: () => {
-                            this.#dotCMSPagesStore.getFavoritePages();
-                        },
-                        onDelete: () => {
-                            this.#dotCMSPagesStore.getFavoritePages();
-                        }
+                        onSave: () => this.#refreshFavorites(),
+                        onDelete: () => this.#refreshFavorites()
                     }
                 });
             }
@@ -231,8 +254,7 @@ export class DotPageActionsService {
     /**
      * Delete favorite page action
      *
-     * Currently a placeholder (disabled unless item is a favorite).
-     * When implemented, it should delete the favorite contentlet and refresh the listing.
+     * Deletes the favorite contentlet and refreshes the favorites listing on success.
      */
     #deleteFavoritePageAction(inode: string): MenuItem {
         return {
@@ -242,9 +264,7 @@ export class DotPageActionsService {
                     .deleteContentlet({ inode })
                     .pipe(take(1))
                     .subscribe({
-                        next: () => {
-                            this.#dotCMSPagesStore.getFavoritePages();
-                        },
+                        next: () => this.#refreshFavorites(),
                         error: (error) => this.#httpErrorManagerService.handle(error, true)
                     });
             }
@@ -284,20 +304,47 @@ export class DotPageActionsService {
     }
 
     /**
+     * Fetches the favorite page data for the provided item.
+     * If the item is a regular page, we need to check if it has a related favorite page.
+     *
+     * @param item - The item to fetch the favorite page data for.
+     * @returns The favorite page data.
+     */
+    #getFavoritePageData(item: DotCMSContentlet): Observable<DotCMSContentlet> {
+        const isFavorite = this.#isFavorite(item);
+
+        if (isFavorite) {
+            return of(item);
+        }
+
+        const url = this.#getFavoritePageUrl(item);
+
+        return this.#dotPageListService.getFavoritePageByURL(url);
+    }
+
+    /**
      * Combines static actions and workflow actions into the final menu model.
      *
      * @param item Selected contentlet.
      * @param actions Workflow actions resolved for the item.
      */
-    #buildMenuItems(item: DotCMSContentlet, actions: DotCMSWorkflowAction[]): MenuItem[] {
+    #buildMenuItems({
+        item,
+        actions,
+        relatedFavoritePage
+    }: {
+        item: DotCMSContentlet;
+        actions: DotCMSWorkflowAction[];
+        relatedFavoritePage: DotCMSContentlet;
+    }): MenuItem[] {
         const menuActions: MenuItem[] = [];
 
         if (!item.archived) {
-            menuActions.push(this.#favoritePageAction(item));
+            menuActions.push(this.#favoritePageAction({ item, relatedFavoritePage }));
         }
-        const isFavorite = item.contentType === 'dotFavoritePage';
+        const isFavorite = this.#isFavorite(relatedFavoritePage || item);
         if (isFavorite) {
-            menuActions.push(this.#deleteFavoritePageAction(item.inode));
+            menuActions.push(this.#deleteFavoritePageAction(relatedFavoritePage.inode));
         }
         menuActions.push(this.#separatorItem);
 
@@ -356,5 +403,17 @@ export class DotPageActionsService {
                     this.#havePushPublishEnvironments.set(havePushPublishEnvironments),
                 error: (error) => this.#httpErrorManagerService.handle(error, true)
             });
+    }
+
+    #getFavoritePageUrl(item: DotCMSContentlet): string {
+        return generateDotFavoritePageUrl({
+            pageURI: item.urlMap || item.url.split('?')[0],
+            languageId: item.languageId,
+            siteId: item.host
+        });
+    }
+
+    #isFavorite(item: DotCMSContentlet): boolean {
+        return item.contentType === 'dotFavoritePage';
     }
 }

@@ -5,7 +5,7 @@
     (onRowSelect)="onRowSelect($event)"
     (onPage)="pageChange.emit()"
     [loading]="$isLoading()"
-    [value]="[]"
+    [value]="$pages()"
     [totalRecords]="$totalRecords()"
     [lazy]="true"
     [paginator]="true"
