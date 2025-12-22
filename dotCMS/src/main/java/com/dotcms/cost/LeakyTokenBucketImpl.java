@@ -96,9 +96,19 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     @Override
     public void drainFromBucket(long drainTokens) {
 
-        tokenCount.updateAndGet(current ->
+        long tokensRemaining = tokenCount.updateAndGet(current ->
                 Math.max(Math.min(current, maximumBucketSize) - drainTokens, 0)
         );
+
+        // we could throw an OutOfTokensException runtime exception here and
+        // catch it higher up in the endpoints to deliver a custom error, killing the current request
+        // otherwise, the next request will be blocked.
+
+        if (tokensRemaining == 0 && !enabled) {
+            Logger.debug(this.getClass(),
+                    " - Token Bucket is empty.  This request would be rate limited if rate limiting was enabled.");
+
+        }
 
     }
 
