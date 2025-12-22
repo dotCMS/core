@@ -87,9 +87,21 @@
 
             <!-- Contenido principal -->
             <div class="flex flex-column gap-3" [@fadeInContent]>
-                <div class="metric-value" data-testid="metric-value">
-                    {{ formattedValue }}
-                </div>
+                @if ($isFraction()) {
+                    <div class="metric-value metric-value--fraction" data-testid="metric-value">
+                        <span class="metric-value__numerator">
+                            {{ $fractionParts()?.numerator }}
+                        </span>
+                        <span class="metric-value__separator">/</span>
+                        <span class="metric-value__denominator">
+                            {{ $fractionParts()?.denominator }}
+                        </span>
+                    </div>
+                } @else {
+                    <div class="metric-value" data-testid="metric-value">
+                        {{ formattedValue }}
+                    </div>
+                }
             </div>
 
             <!-- Subtítulo -->
