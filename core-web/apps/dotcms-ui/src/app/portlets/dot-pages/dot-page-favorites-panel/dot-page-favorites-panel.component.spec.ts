@@ -237,8 +237,11 @@ describe('DotPageFavoritesPanelComponent', () => {
     });
 
     describe('Panel Collapse/Expand', () => {
-        it('should collapse panel and save to localStorage', () => {
-            spectator.component['collapsePanel']();
+        it('should collapse panel and save to localStorage (via p-panel collapsedChange)', () => {
+            spectator.component.$isCollapsed.set(false);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('p-panel', 'collapsedChange', true);
 
             expect(spectator.component.$isCollapsed()).toBe(true);
             expect(mockLocalStorageService.setItem).toHaveBeenCalledWith(
@@ -247,8 +250,11 @@ describe('DotPageFavoritesPanelComponent', () => {
             );
         });
 
-        it('should expand panel and save to localStorage', () => {
-            spectator.component['expandPanel']();
+        it('should expand panel and save to localStorage (via p-panel collapsedChange)', () => {
+            spectator.component.$isCollapsed.set(true);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('p-panel', 'collapsedChange', false);
 
             expect(spectator.component.$isCollapsed()).toBe(false);
             expect(mockLocalStorageService.setItem).toHaveBeenCalledWith(
@@ -317,29 +323,32 @@ describe('DotPageFavoritesPanelComponent', () => {
                 emittedEvent = event;
             });
 
-            const mockEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true
-            });
-            const mockPage = MOCK_FAVORITE_PAGES[0];
+            spectator.setInput('favoritePages', MOCK_FAVORITE_PAGES);
+            spectator.detectChanges();
 
-            spectator.component['handleOpenMenu'](mockEvent, mockPage);
+            const mockEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+            // Emit from the first card; panel template binds (openMenu)="handleOpenMenu($event, favoritePage)"
+            spectator.triggerEventHandler('dot-pages-card', 'openMenu', mockEvent);
 
             expect(emittedEvent).toBeTruthy();
             expect(emittedEvent?.originalEvent).toBe(mockEvent);
-            expect(emittedEvent?.data).toBe(mockPage);
+            expect(emittedEvent?.data).toBe(MOCK_FAVORITE_PAGES[0]);
         });
 
         it('should stop event propagation when opening menu', () => {
-            const mockEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true
-            });
-            const stopPropagationSpy = jest.spyOn(mockEvent, 'stopPropagation');
+            spectator.setInput('favoritePages', MOCK_FAVORITE_PAGES);
+            spectator.detectChanges();
 
-            spectator.component['handleOpenMenu'](mockEvent, MOCK_FAVORITE_PAGES[0]);
+            // Use a MouseEvent-like object so we can assert stopPropagation is called.
+            const stopPropagation = jest.fn();
+            const mockEvent = {
+                stopPropagation
+            } as unknown as MouseEvent;
 
-            expect(stopPropagationSpy).toHaveBeenCalled();
+            spectator.triggerEventHandler('dot-pages-card', 'openMenu', mockEvent);
+
+            expect(stopPropagation).toHaveBeenCalled();
         });
     });
 
@@ -371,7 +380,7 @@ describe('DotPageFavoritesPanelComponent', () => {
             });
 
             const mockEvent = new MouseEvent('click');
-            spectator.component['handleOpenMenu'](mockEvent, MOCK_FAVORITE_PAGES[0]);
+            spectator.triggerEventHandler('dot-pages-card', 'openMenu', mockEvent);
 
             expect(emittedEvent?.data).toBe(MOCK_FAVORITE_PAGES[0]);
 

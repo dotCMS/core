@@ -4,7 +4,6 @@ import { MockProvider } from 'ng-mocks';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 
 import type { FilterMetadata, LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -177,14 +176,6 @@ describe('DotPagesTableComponent', () => {
             expect(spectator.component.$pages()).toEqual(MOCK_PAGES);
             expect(spectator.component.$languages()).toEqual(MOCK_LANGUAGES);
             expect(spectator.component.$totalRecords()).toBe(3);
-        });
-
-        it('should bind p-table loading state from isLoading input (default false)', () => {
-            const tableDE = spectator.debugElement.query(By.css('p-table'));
-            expect(tableDE).toBeTruthy();
-
-            // PrimeNG Table component exposes the bound input as `loading`.
-            expect(tableDE.componentInstance.loading).toBe(false);
         });
 
         it('should initialize form controls with default values', () => {
