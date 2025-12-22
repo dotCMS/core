@@ -397,7 +397,7 @@ describe('utils functions', () => {
             });
         });
 
-        it('should add container to pageContainers and insert in specific position - issue #31790', () => {
+        it('should add container to pageContainers but not insert when maxContentlets limit is reached - issue #31790', () => {
             // Current page with no containers
             const pageContainers = [];
 
@@ -431,12 +431,13 @@ describe('utils functions', () => {
             });
 
             expect(result).toEqual({
-                didInsert: true,
+                didInsert: false,
+                errorCode: 'CONTAINER_LIMIT_REACHED',
                 pageContainers: [
                     {
                         identifier: 'test',
                         uuid: 'test',
-                        contentletsId: ['test123', '000'],
+                        contentletsId: ['test123'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
                         maxContentlets: 1,
@@ -444,6 +445,148 @@ describe('utils functions', () => {
                     }
                 ]
             });
+        });
+
+        it('should allow inserting into empty container when limit is 1', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: [],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet1',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1']);
+        });
+
+        it('should NOT allow inserting when container with limit 1 already has 1 contentlet', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1'],
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1'],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet2',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1']);
+        });
+
+        it('should allow inserting into container with limit 2 that has 1 contentlet', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1'],
+                    acceptTypes: 'test',
+                    maxContentlets: 2,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1'],
+                maxContentlets: 2,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet2',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
+        });
+
+        it('should NOT allow inserting when container with limit 2 already has 2 contentlets', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1', 'contentlet2'],
+                    acceptTypes: 'test',
+                    maxContentlets: 2,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1', 'contentlet2'],
+                maxContentlets: 2,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet3',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
         });
     });
 
