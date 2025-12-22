@@ -27,6 +27,12 @@ export const CustomLaraPreset = definePreset(Lara, {
             body: {
                 padding: '1rem'
             }
+        },
+        toolbar: {
+            root: {
+                borderRadius: '0',
+                padding: '0.5rem 1rem'
+            }
         }
     }
 });

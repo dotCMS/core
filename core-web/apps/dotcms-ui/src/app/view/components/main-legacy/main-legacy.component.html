@@ -2,26 +2,24 @@
 <dot-create-contentlet (custom)="onCustomEvent($event)" />
 <dot-message-display />
 
-<div class="layout">
+<div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] h-full w-full">
     <aside
-        class="layout__navigation"
+        class="col-span-1 row-span-2 bg-primary-950"
         data-testid="navigation-sidebar"
         role="navigation"
         aria-label="Main navigation">
         <dot-main-nav />
     </aside>
-    <main class="layout__main">
-        <header class="layout__branding-bar" data-testid="branding-bar" role="banner">
-            <dot-toolbar />
-        </header>
-        <div
-            class="layout__viewport"
-            data-testid="content-viewport"
-            role="region"
-            aria-label="Main content area">
-            <router-outlet />
-        </div>
-    </main>
+    <header data-testid="branding-bar" role="banner">
+        <dot-toolbar />
+    </header>
+    <div
+        class="overflow-auto"
+        data-testid="content-viewport"
+        role="region"
+        aria-label="Main content area">
+        <router-outlet />
+    </div>
 </div>
 
 <!-- After the router-outlet to make sure always shows up on top of any other dialog in the system -->
