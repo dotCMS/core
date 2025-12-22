@@ -14,6 +14,10 @@ import {
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
@@ -41,12 +45,15 @@ export interface DotLocaleCreateEditData {
         ReactiveFormsModule,
         ButtonModule,
         DotMessagePipe,
+        InputGroupModule,
+        InputGroupAddonModule,
         InputTextModule,
         TooltipModule,
-        DotCopyButtonComponent
+        DotCopyButtonComponent,
+        IconFieldModule,
+        InputIconModule
     ],
     templateUrl: './dot-locale-create-edit.component.html',
-    styleUrl: './dot-locale-create-edit.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocaleCreateEditComponent implements OnInit {
@@ -108,6 +115,7 @@ export class DotLocaleCreateEditComponent implements OnInit {
             countryCode: new FormControl(this.data.locale?.countryCode),
             id: new FormControl({ value: this.data.locale?.id, disabled: true }),
             isoCode: new FormControl({ value: this.data.locale?.isoCode, disabled: true }),
+            localeType: new FormControl(1),
             languageDropdown: new FormControl(''),
             countryDropdown: new FormControl('')
         });

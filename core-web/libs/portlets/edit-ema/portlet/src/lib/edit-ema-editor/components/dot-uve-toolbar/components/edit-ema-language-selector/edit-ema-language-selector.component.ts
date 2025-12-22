@@ -1,49 +1,72 @@
 import { AsyncPipe, NgClass } from '@angular/common';
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Output,
-    ViewChild,
     inject,
     input,
     computed,
-    untracked
+    effect,
+    model
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { Listbox, ListboxChangeEvent, ListboxModule } from 'primeng/listbox';
+import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
+import { ListboxChangeEvent } from 'primeng/types/listbox';
 
 import { map } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
+interface DotLanguageWithLabel extends DotLanguage {
+    label: string;
+}
+
 @Component({
     selector: 'dot-edit-ema-language-selector',
-    imports: [PopoverModule, ListboxModule, ButtonModule, AsyncPipe, NgClass],
+    imports: [PopoverModule, ListboxModule, ButtonModule, AsyncPipe, NgClass, FormsModule],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaLanguageSelectorComponent implements AfterViewInit {
-    @ViewChild('listbox') listbox: Listbox;
+export class EditEmaLanguageSelectorComponent {
     @Output() selected: EventEmitter<number> = new EventEmitter();
 
     language = input<DotLanguage>();
 
-    selectedLanguage = computed(() => {
-        const selected = {
-            ...this.language(),
-            label: this.createLanguageLabel(this.language())
-        };
-        // This method internally set a signal. We need to use untracked to avoid unnecessary updates
-        untracked(() => this.listbox?.writeValue(selected));
+    // Model signal for two-way binding with listbox
+    selectedLanguageModel = model<DotLanguageWithLabel | null>(null);
 
-        return selected;
+    selectedLanguage = computed(() => {
+        const lang = this.language();
+        if (!lang) return null;
+
+        return {
+            ...lang,
+            label: this.createLanguageLabel(lang)
+        };
     });
+
+    constructor() {
+        // Sync input signal to model signal when language changes from parent
+        effect(() => {
+            const lang = this.language();
+            if (lang) {
+                const currentModel = this.selectedLanguageModel();
+                // Only update if the language actually changed to avoid loops
+                if (!currentModel || currentModel.id !== lang.id) {
+                    this.selectedLanguageModel.set({
+                        ...lang,
+                        label: this.createLanguageLabel(lang)
+                    });
+                }
+            }
+        });
+    }
 
     languages$ = inject(DotLanguagesService)
         .get()
@@ -56,10 +79,6 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
             )
         );
 
-    ngAfterViewInit(): void {
-        this.listbox.writeValue(this.selectedLanguage());
-    }
-
     /**
      * Handle the change of the language
      *
@@ -67,9 +86,23 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
      * @memberof EmaLanguageSelectorComponent
      */
     onChange({ value }: ListboxChangeEvent) {
+        // Emit to parent when user selects a language
+        // Note: ngModel already updates selectedLanguageModel automatically
         this.selected.emit(value.id);
+    }
 
-        this.listbox.writeValue(this.selectedLanguage());
+    /**
+     * Reset the model to a specific language
+     * Used by parent component to reset the selector when needed
+     *
+     * @param {DotLanguage} lang - The language to reset to
+     * @memberof EmaLanguageSelectorComponent
+     */
+    resetModel(lang: DotLanguage): void {
+        this.selectedLanguageModel.set({
+            ...lang,
+            label: this.createLanguageLabel(lang)
+        });
     }
 
     /**

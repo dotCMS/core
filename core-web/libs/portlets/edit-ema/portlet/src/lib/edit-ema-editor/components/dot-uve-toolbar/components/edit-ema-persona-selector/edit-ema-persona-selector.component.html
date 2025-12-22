@@ -1,9 +1,9 @@
-<button
+<p-button
     (click)="op.toggle($event)"
     [label]="value.name"
     [ngClass]="{ selected: value.identifier !== 'modes.persona.no.persona' }"
-    class="p-button-text p-button-sm"
-    pButton
+    [text]="true"
+    size="small"
     data-testId="persona-button">
     @if (value?.identifier !== 'modes.persona.no.persona') {
         <p-avatar
@@ -17,7 +17,7 @@
             styleClass="ema-persona__avatar-selected"
             dotAvatar></p-avatar>
     }
-</button>
+</p-button>
 <p-popover #op styleClass="edit-ema-selector" data-testId="persona-op">
     <p-listbox
         (onChange)="onSelect($event); op.toggle($event)"
@@ -37,16 +37,16 @@
                     <span>{{ persona.name }}</span>
                 </div>
                 @if (persona.personalized) {
-                    <p-chip styleClass="p-chip-sm" data-testId="persona-chip">
-                        <i
-                            (click)="
-                                onRemove($event, persona, value.identifier === persona.identifier);
-                                op.toggle($event)
-                            "
-                            class="pi pi-times-circle p-chip-icon"
-                            data-testId="persona-chip-remove"></i>
-                        <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
-                    </p-chip>
+                    <p-chip
+                        [label]="'modes.persona.personalized' | dm"
+                        [removable]="true"
+                        removeIcon="pi pi-times-circle"
+                        (onRemove)="
+                            onRemove($event, persona, value.identifier === persona.identifier);
+                            op.toggle($event)
+                        "
+                        styleClass="p-chip-sm"
+                        data-testId="persona-chip" />
                 }
             </div>
         </ng-template>

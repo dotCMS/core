@@ -2,5 +2,7 @@
 <p-button
     (onClick)="openConfirmationDialog($event)"
     data-testId="btn-remove-item"
-    class="p-button-text p-button-sm p-button-rounded"
-    icon="pi pi-trash"></p-button>
+    icon="pi pi-trash"
+    [rounded]="true"
+    variant="text"
+    size="small"></p-button>

@@ -1,0 +1,51 @@
+<p-select
+    #select
+    (onChange)="onContentTypeChange($event.value)"
+    (onHide)="onHide.emit()"
+    (onLazyLoad)="onLazyLoad($event)"
+    (onShow)="onShow.emit()"
+    [appendTo]="'body'"
+    [class]="class()"
+    [disabled]="$disabled()"
+    [filter]="true"
+    [inputId]="id()"
+    [lazy]="true"
+    [loading]="$state.loading()"
+    [ngModel]="$state.pinnedOption()"
+    [options]="$options()"
+    [placeholder]="placeholder()"
+    [scrollHeight]="'300px'"
+    [virtualScroll]="true"
+    [virtualScrollOptions]="{
+        itemSize: 34,
+        step: 40,
+        autoSize: false,
+        style: {
+            height: '300px',
+            minHeight: '300px'
+        }
+    }"
+    dataKey="variable"
+    optionLabel="name">
+    <ng-template pTemplate="filter" let-options>
+        <p-iconfield>
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="$state.filterValue() || ''"
+                [placeholder]="'Search content types...'"
+                (input)="onFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+            <p-inputicon class="pi pi-search" />
+        </p-iconfield>
+    </ng-template>
+
+    <ng-template let-contentType let-index="index" #item>
+        <span [class.font-bold]="$state.pinnedOption()?.variable === contentType.variable">
+          {{ contentType.name }}
+        </span>
+    </ng-template>
+</p-select>

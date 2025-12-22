@@ -1,9 +1,0 @@
-@use "../../../../../../../dotcms-scss/shared/colors";
-
-@use "variables" as *;
-
-::ng-deep {
-    .p-button.p-button-text .pi.pi-trash {
-        color: colors.$color-palette-primary-400;
-    }
-}

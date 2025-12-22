@@ -1,33 +1,54 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { Observable, of } from 'rxjs';
-
 import {
-    Component,
-    DebugElement,
-    EventEmitter,
-    forwardRef,
-    Injectable,
-    Input,
-    Output
-} from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { ControlValueAccessor, FormGroupDirective, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
 
-import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { DotCMSClazzes, DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
+
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotContentTypeComponent } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 
-import { DOTTestBed } from '../../../../../../../../../test/dot-test-bed';
-import { PaginationEvent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '../services/dot-relationship.service';
 
-const cardinalities = [
+const mockContentType: DotCMSContentType = {
+    id: '123',
+    name: 'Blog',
+    variable: 'Blog'
+} as DotCMSContentType;
+
+const mockContentTypeWithDot: DotCMSContentType = {
+    id: '456',
+    name: 'News Article',
+    variable: 'NewsArticle'
+} as DotCMSContentType;
+
+const formMock = new FormGroup({
+    contentType: new FormControl('')
+});
+
+const formGroupDirectiveMock = new FormGroupDirective([], []);
+formGroupDirectiveMock.form = formMock;
+
+const messageServiceMock = new MockDotMessageService({
+    'contenttypes.field.properties.relationships.contentType.label': 'Content Type',
+    'contenttypes.field.properties.relationships.label': 'Cardinality',
+    'contenttypes.field.properties.relationship.new.content_type.placeholder': 'Select Content Type'
+});
+
+const mockCardinalities: DotRelationshipCardinality[] = [
     {
         label: 'Many to many',
         id: 0,
@@ -40,399 +61,349 @@ const cardinalities = [
     }
 ];
 
-const contentTypeMock: DotCMSContentType = {
-    ...dotcmsContentTypeBasicMock,
-    clazz: DotCMSClazzes.TEXT,
-    defaultType: false,
-    fixed: false,
-    folder: 'folder',
-    host: 'host',
-    name: 'Banner',
-    id: '1',
-    variable: 'banner',
-    owner: 'user',
-    system: true
-};
-
-@Component({
-    selector: 'dot-host-component',
-    template: `
-        <dot-new-relationships
-            [cardinality]="cardinalityIndex"
-            [velocityVar]="velocityVar"
-            [editing]="editing"></dot-new-relationships>
-    `,
-    standalone: false
-})
-class HostTestComponent {
-    cardinalityIndex: number;
-    velocityVar: string;
-    editing: boolean;
-}
-
-@Component({
-    selector: 'dot-searchable-dropdown',
-    template: '',
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => MockSearchableDropdownComponent)
-        }
-    ],
-    standalone: false
-})
-class MockSearchableDropdownComponent implements ControlValueAccessor {
-    @Input() data: string[];
-    @Input() labelPropertyName: string | string[];
-    @Input() pageLinkSize = 3;
-    @Input() rows: number;
-    @Input() totalRecords: number;
-    @Input() placeholder = '';
-
-    @Output() switch: EventEmitter<any> = new EventEmitter();
-    @Output() filterChange: EventEmitter<string> = new EventEmitter();
-    @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
-
-    writeValue(): void {
-        /* */
-    }
-
-    registerOnChange(): void {
-        /* */
-    }
-
-    registerOnTouched(): void {
-        /* */
-    }
-
-    setDisabledState?(): void {
-        /* */
-    }
-}
-
-@Component({
-    selector: 'dot-cardinality-selector',
-    template: '',
-    standalone: false
-})
-class MockCardinalitySelectorComponent {
-    @Input() value: number;
-
-    @Input() disabled: boolean;
-
-    @Output() switch: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
-}
-
-@Injectable()
-class MockPaginatorService {
-    url: string;
-
-    public paginationPerPage: 10;
-    public maxLinksPage: 5;
-    public totalRecords: 40;
-
-    public getWithOffset(): Observable<any[]> {
-        return null;
-    }
-}
-
-@Injectable()
-class MockRelationshipService {
-    loadCardinalities(): Observable<DotRelationshipCardinality[]> {
-        return of(cardinalities);
-    }
-}
-
-@Injectable()
-class MockDotContentTypeService {
-    getContentType(): Observable<DotCMSContentType> {
-        return of(contentTypeMock);
-    }
-}
-
 describe('DotNewRelationshipsComponent', () => {
-    let fixtureHostComponent: ComponentFixture<HostTestComponent>;
-    let comp: DotNewRelationshipsComponent;
-    let de: DebugElement;
+    let spectator: Spectator<DotNewRelationshipsComponent>;
+    let contentTypeService: SpyObject<DotContentTypeService>;
 
-    let paginatorService: PaginatorService;
-
-    const messageServiceMock = new MockDotMessageService({
-        'contenttypes.field.properties.relationship.new.label': 'new',
-        'contenttypes.field.properties.relationship.new.content_type.placeholder':
-            'Select Content Type',
-        'contenttypes.field.properties.relationships.contentType.label': 'Content Type',
-        'contenttypes.field.properties.relationships.label': 'Relationship'
+    const createComponent = createComponentFactory({
+        component: DotNewRelationshipsComponent,
+        imports: [
+            MockComponent(DotContentTypeComponent),
+            MockComponent(DotCardinalitySelectorComponent)
+        ],
+        providers: [
+            mockProvider(DotContentTypeService),
+            mockProvider(DotRelationshipService, {
+                loadCardinalities: jest.fn().mockReturnValue(of(mockCardinalities))
+            }),
+            { provide: FormGroupDirective, useValue: formGroupDirectiveMock },
+            { provide: DotMessageService, useValue: messageServiceMock },
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                HostTestComponent,
-                MockSearchableDropdownComponent,
-                MockCardinalitySelectorComponent
-            ],
-            imports: [DotFieldRequiredDirective, DotMessagePipe, DotNewRelationshipsComponent],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: DotRelationshipService, useClass: MockRelationshipService },
-                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
-                FormGroupDirective
-            ]
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        contentTypeService = spectator.inject(DotContentTypeService, true);
+        contentTypeService.getContentTypesWithPagination.mockReturnValue(
+            of({
+                contentTypes: [mockContentType, mockContentTypeWithDot],
+                pagination: {
+                    currentPage: 1,
+                    perPage: 40,
+                    totalEntries: 2
+                }
+            })
+        );
+        contentTypeService.getContentType.mockImplementation((variable: string) =>
+            of(
+                [mockContentType, mockContentTypeWithDot].find((ct) => ct.variable === variable) ||
+                    mockContentType
+            )
+        );
+    });
+
+    describe('Component Initialization', () => {
+        it('should create', () => {
+            expect(spectator.component).toBeTruthy();
         });
 
-        fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
-        de = fixtureHostComponent.debugElement.query(By.css('dot-new-relationships'));
-        comp = de.componentInstance;
+        it('should initialize with default values', () => {
+            expect(spectator.component.contentType).toBeUndefined();
+            expect(spectator.component.currentCardinalityIndex).toBeUndefined();
+        });
+    });
 
-        paginatorService = de.injector.get(PaginatorService);
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([contentTypeMock]));
-    }));
+    describe('ngOnChanges', () => {
+        it('should load content type when velocityVar changes', () => {
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
-    describe('Content Types', () => {
+            spectator.setInput('velocityVar', 'Blog');
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('Blog');
+            expect(spectator.component.contentType).toEqual(mockContentType);
+        });
+
+        it('should handle velocityVar with dot notation', () => {
+            contentTypeService.getContentType.mockReturnValue(of(mockContentTypeWithDot));
+
+            spectator.setInput('velocityVar', 'NewsArticle.field');
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('NewsArticle');
+            expect(spectator.component.contentType).toEqual(mockContentTypeWithDot);
+        });
+
+        it('should set contentType to null when velocityVar is empty', () => {
+            spectator.setInput('velocityVar', '');
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+            expect(spectator.component.contentType).toBeNull();
+        });
+
+        it('should set contentType to null when velocityVar is undefined', () => {
+            spectator.setInput('velocityVar', undefined);
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+            expect(spectator.component.contentType).toBeNull();
+        });
+
+        it('should handle null contentType from service', () => {
+            contentTypeService.getContentType.mockReturnValue(of(null));
+
+            spectator.setInput('velocityVar', 'NonExistent');
+            spectator.detectChanges();
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('NonExistent');
+            expect(spectator.component.contentType).toBeNull();
+        });
+
+        it('should update currentCardinalityIndex when cardinality changes', () => {
+            spectator.setInput('cardinality', 2);
+            spectator.detectChanges();
+
+            expect(spectator.component.currentCardinalityIndex).toBe(2);
+        });
+
+        it('should handle both velocityVar and cardinality changes', () => {
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            spectator.setInput('velocityVar', 'Blog');
+            spectator.setInput('cardinality', 1);
+            spectator.detectChanges();
+
+            expect(spectator.component.contentType).toEqual(mockContentType);
+            expect(spectator.component.currentCardinalityIndex).toBe(1);
+        });
+    });
+
+    describe('onContentTypeChange', () => {
         beforeEach(() => {
-            fixtureHostComponent.componentInstance.velocityVar = contentTypeMock.variable;
+            spectator.detectChanges();
         });
 
-        it('should set url to get content types', () => {
-            fixtureHostComponent.detectChanges();
-            expect(paginatorService.url).toBe('v1/contenttype');
-        });
+        it('should update contentType and emit switch event', fakeAsync(() => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.component.currentCardinalityIndex = 1;
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
-        it('should has a dot-searchable-dropdown and it should has the right attributes values', () => {
-            fixtureHostComponent.detectChanges();
+            spectator.component.onContentTypeChange(mockContentType.variable);
+            tick();
 
-            const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-
-            expect(dotSearchableDropdown).not.toBeUndefined();
-            expect(dotSearchableDropdown.componentInstance.pageLinkSize).toBe(
-                paginatorService.maxLinksPage
-            );
-            expect(dotSearchableDropdown.componentInstance.rows).toBe(
-                paginatorService.paginationPerPage
-            );
-            // totalRecords is now set after initialization
-            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(1);
-            expect(dotSearchableDropdown.componentInstance.labelPropertyName).toBe('name');
-            expect(dotSearchableDropdown.componentInstance.placeholder).toBe('Select Content Type');
-        });
-
-        it('should handle filter change into pagination', () => {
-            const newFilter = 'new filter';
-
-            fixtureHostComponent.detectChanges();
-            jest.clearAllMocks(); // Clear the initial call from component initialization
-
-            const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-            dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
-
-            expect(paginatorService.filter).toBe(newFilter);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-
-            fixtureHostComponent.detectChanges();
-
-            expect(dotSearchableDropdown.componentInstance.data).toEqual([contentTypeMock]);
-        });
-
-        it('should handle page change into pagination', () => {
-            const event = {
-                filter: 'new filter',
-                first: 2
-            };
-
-            fixtureHostComponent.detectChanges();
-            jest.clearAllMocks(); // Clear the initial call from component initialization
-
-            const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-            dotSearchableDropdown.componentInstance.pageChange.emit(event);
-
-            expect(paginatorService.filter).toBe(event.filter);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-
-            fixtureHostComponent.detectChanges();
-
-            expect(dotSearchableDropdown.componentInstance.data).toEqual([contentTypeMock]);
-        });
-
-        it('should clear paginator links and update lastSearch when getContentTypeList is called', () => {
-            const filter = 'test filter';
-            const offset = 10;
-
-            fixtureHostComponent.detectChanges();
-
-            // Set up initial links to verify they get cleared
-            paginatorService.links = { next: 'some-url', prev: 'some-other-url' };
-
-            comp.getContentTypeList(filter, offset);
-
-            expect(paginatorService.links).toEqual({});
-            expect(comp.lastSearch()).toEqual({ filter, offset });
-            expect(paginatorService.filter).toBe(filter);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(offset);
-        });
-
-        it('should skip search when editing is true and not update lastSearch', () => {
-            const filter = 'test filter';
-            const offset = 10;
-            const initialLastSearch = comp.lastSearch();
-
-            fixtureHostComponent.componentInstance.editing = true;
-            fixtureHostComponent.detectChanges();
-
-            jest.clearAllMocks();
-
-            comp.getContentTypeList(filter, offset);
-
-            expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
-            expect(comp.lastSearch()).toEqual(initialLastSearch);
-        });
-
-        it('should skip search when filter and offset match lastSearch values', () => {
-            const filter = 'same filter';
-            const offset = 5;
-
-            fixtureHostComponent.detectChanges();
-            jest.clearAllMocks(); // Clear the initial call from component initialization
-
-            // First call - should execute
-            comp.getContentTypeList(filter, offset);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-
-            jest.clearAllMocks();
-
-            // Second call with same parameters - should skip
-            comp.getContentTypeList(filter, offset);
-            expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
-        });
-
-        it('should not skip search when filter or offset are different from lastSearch', () => {
-            const initialFilter = 'initial filter';
-            const initialOffset = 0;
-            const newFilter = 'new filter';
-            const newOffset = 10;
-
-            fixtureHostComponent.detectChanges();
-            jest.clearAllMocks(); // Clear the initial call from component initialization
-
-            // First call
-            comp.getContentTypeList(initialFilter, initialOffset);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-
-            jest.clearAllMocks();
-
-            // Second call with different filter
-            comp.getContentTypeList(newFilter, initialOffset);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-
-            jest.clearAllMocks();
-
-            // Third call with different offset
-            comp.getContentTypeList(initialFilter, newOffset);
-            expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-        });
-
-        it('should update lastSearch signal when getContentTypeList executes successfully', () => {
-            const filter = 'test filter';
-            const offset = 20;
-
-            fixtureHostComponent.detectChanges();
-
-            // After initialization, lastSearch is set to default values ('', 0) from the initial call
-            expect(comp.lastSearch()).toEqual({ filter: '', offset: 0 });
-
-            comp.getContentTypeList(filter, offset);
-
-            expect(comp.lastSearch()).toEqual({ filter, offset });
-        });
-
-        it('should tigger change event when content type changed', (done) => {
-            fixtureHostComponent.detectChanges();
-
-            comp.switch.subscribe((relationshipSelect: any) => {
-                expect(relationshipSelect).toEqual({
-                    velocityVar: 'banner',
-                    cardinality: undefined
-                });
-                done();
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith(mockContentType.variable);
+            expect(spectator.component.contentType).toEqual(mockContentType);
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: mockContentType.variable,
+                cardinality: 1
             });
+        }));
 
-            const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-            dotSearchableDropdown.componentInstance.switch.emit(contentTypeMock);
-        });
+        it('should handle null variable', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.component.currentCardinalityIndex = 0;
 
-        it('should set the correct labels', () => {
-            fixtureHostComponent.detectChanges();
-            const labels = de.queryAll(By.css('label'));
-            const contentTypeLabel = labels[0].nativeElement;
-            const relationshipsLabel = labels[1].nativeElement.textContent;
-            expect(contentTypeLabel.textContent.trim()).toEqual('Content Type');
-            expect(contentTypeLabel.classList.contains('p-label-input-required')).toBeTruthy();
-            expect(relationshipsLabel).toEqual('Relationship');
-        });
+            spectator.component.onContentTypeChange(null);
 
-        describe('inverse relationships', () => {
-            beforeEach(() => {
-                fixtureHostComponent.componentInstance.velocityVar = `${contentTypeMock.name}.${contentTypeMock.variable}`;
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+            expect(spectator.component.contentType).toBeNull();
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: undefined,
+                cardinality: 0
             });
+        });
 
-            it('should load content type, and emit change event with the right variableValue', (done) => {
-                // Set up the spy BEFORE detectChanges so it tracks the ngOnChanges call
-                const contentTypeService = de.injector.get(DotContentTypeService);
-                const contentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
+        it('should prioritize velocityVar input over contentType variable when emitting', fakeAsync(() => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.setInput('velocityVar', 'CustomVar');
+            spectator.component.currentCardinalityIndex = 2;
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+            spectator.detectChanges();
 
-                fixtureHostComponent.detectChanges();
+            spectator.component.onContentTypeChange(mockContentType.variable);
+            tick();
 
-                // Clear getWithOffset call count from initialization, but keep contentTypeSpy
-                const paginatorGetWithOffsetSpy = paginatorService.getWithOffset as jest.Mock;
-                paginatorGetWithOffsetSpy.mockClear();
+            expect(spectator.component.contentType).toEqual(mockContentType);
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: 'CustomVar',
+                cardinality: 2
+            });
+        }));
+    });
 
-                comp.switch.subscribe((relationshipSelect: any) => {
-                    expect(relationshipSelect).toEqual({
-                        velocityVar: `${contentTypeMock.name}.${contentTypeMock.variable}`,
-                        cardinality: undefined
-                    });
-                    done();
-                });
+    describe('cardinalityChanged', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
 
-                comp.triggerChanged();
+        it('should update currentCardinalityIndex and emit switch event', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.setInput('velocityVar', 'Blog');
+            spectator.component.contentType = mockContentType;
+            spectator.detectChanges();
 
-                // getContentType should have been called during ngOnChanges (not by triggerChanged)
-                expect(contentTypeSpy).toHaveBeenCalled();
-                // For inverse relationships, getWithOffset should NOT be called after initialization
-                expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
+            spectator.component.cardinalityChanged(3);
+
+            expect(spectator.component.currentCardinalityIndex).toBe(3);
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: 'Blog',
+                cardinality: 3
+            });
+        });
+
+        it('should use contentType variable when velocityVar is not set', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.component.contentType = mockContentType;
+            spectator.detectChanges();
+
+            spectator.component.cardinalityChanged(1);
+
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: mockContentType.variable,
+                cardinality: 1
+            });
+        });
+
+        it('should handle undefined velocityVar and contentType', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+
+            spectator.component.cardinalityChanged(0);
+
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: undefined,
+                cardinality: 0
             });
         });
     });
 
-    describe('Cardinalitys Selector', () => {
+    describe('triggerChanged', () => {
         beforeEach(() => {
-            fixtureHostComponent.componentInstance.cardinalityIndex = 2;
-
-            fixtureHostComponent.detectChanges();
+            spectator.detectChanges();
         });
 
-        it('should hava a dot-cardinality-selector with the right attributes', () => {
-            const dotCardinalitySelector = de.query(By.css('dot-cardinality-selector'));
-            expect(dotCardinalitySelector).not.toBeUndefined();
+        it('should emit switch event with velocityVar input when available', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.setInput('velocityVar', 'CustomVar');
+            spectator.component.currentCardinalityIndex = 2;
+            spectator.detectChanges();
 
-            expect(dotCardinalitySelector.componentInstance.value).toEqual(comp.cardinality);
-        });
+            spectator.component.triggerChanged();
 
-        it('should tigger change event when cardinality changed', (done) => {
-            comp.switch.subscribe((relationshipSelect: any) => {
-                expect(relationshipSelect).toEqual({
-                    velocityVar: undefined,
-                    cardinality: 0
-                });
-                done();
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: 'CustomVar',
+                cardinality: 2
             });
+        });
 
-            const dotCardinalitySelector = de.query(By.css('dot-cardinality-selector'));
-            dotCardinalitySelector.componentInstance.switch.emit(0);
+        it('should emit switch event with contentType variable when velocityVar is not set', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.component.contentType = mockContentType;
+            spectator.component.currentCardinalityIndex = 1;
+            spectator.detectChanges();
+
+            spectator.component.triggerChanged();
+
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: mockContentType.variable,
+                cardinality: 1
+            });
+        });
+
+        it('should emit switch event with undefined velocityVar when neither input nor contentType is set', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.component.currentCardinalityIndex = 0;
+            spectator.detectChanges();
+
+            spectator.component.triggerChanged();
+
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: undefined,
+                cardinality: 0
+            });
+        });
+    });
+
+    describe('Template Integration', () => {
+        beforeEach(() => {
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+            spectator.setInput('velocityVar', 'Blog');
+            spectator.setInput('cardinality', 1);
+            spectator.detectChanges();
+        });
+
+        it('should render dot-content-type component', () => {
+            const contentTypeComponent = spectator.query('dot-content-type');
+            expect(contentTypeComponent).toBeTruthy();
+        });
+
+        it('should render dot-cardinality-selector component', () => {
+            const cardinalitySelector = spectator.query('dot-cardinality-selector');
+            expect(cardinalitySelector).toBeTruthy();
+        });
+
+        it('should pass disabled prop to dot-content-type when editing', () => {
+            spectator.setInput('editing', true);
+            spectator.detectChanges();
+
+            const contentTypeComponent = spectator.query('dot-content-type');
+            expect(contentTypeComponent).toBeTruthy();
+            expect(spectator.component.editing).toBe(true);
+        });
+
+        it('should pass disabled prop to dot-cardinality-selector when editing', () => {
+            spectator.setInput('editing', true);
+            spectator.detectChanges();
+
+            const cardinalitySelector = spectator.query('dot-cardinality-selector');
+            expect(cardinalitySelector).toBeTruthy();
+            expect(spectator.component.editing).toBe(true);
+        });
+
+        it('should pass cardinality value to dot-cardinality-selector', () => {
+            spectator.setInput('cardinality', 2);
+            spectator.detectChanges();
+
+            const cardinalitySelector = spectator.query('dot-cardinality-selector');
+            expect(cardinalitySelector).toBeTruthy();
+            expect(spectator.component.cardinality).toBe(2);
+        });
+    });
+
+    describe('Event Handling', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should handle content type change from dot-content-type component', fakeAsync(() => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.component.currentCardinalityIndex = 1;
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            spectator.triggerEventHandler('dot-content-type', 'onChange', mockContentType.variable);
+            tick();
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith(mockContentType.variable);
+            expect(spectator.component.contentType).toEqual(mockContentType);
+            expect(emitSpy).toHaveBeenCalled();
+        }));
+
+        it('should handle cardinality change from dot-cardinality-selector component', () => {
+            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            spectator.setInput('velocityVar', 'Blog');
+            spectator.component.contentType = mockContentType;
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('dot-cardinality-selector', 'switch', 2);
+
+            expect(spectator.component.currentCardinalityIndex).toBe(2);
+            expect(emitSpy).toHaveBeenCalledWith({
+                velocityVar: 'Blog',
+                cardinality: 2
+            });
         });
     });
 });
+

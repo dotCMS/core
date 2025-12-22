@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+
+:host {
+    @apply flex relative items-center justify-center bg-primary-100 h-20 text-primary text-xl rounded-md py-0 px-1;
+
+    p-button {
+        @apply absolute right-0 h-full flex items-center pr-1;
+    }
+}

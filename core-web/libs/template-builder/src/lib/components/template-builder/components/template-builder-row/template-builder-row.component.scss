@@ -1,69 +1,9 @@
-@use "../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../dotcms-scss/shared/shadows";
-@use "../../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
+// Host selector for dynamically added drag class (added by drag library)
 :host {
     &.ui-draggable-dragging {
-        .row {
-            background-color: colors.$white;
-            box-shadow: shadows.$shadow-s;
+        > div {
+            background-color: white;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
         }
     }
-}
-
-.row {
-    display: flex;
-    height: 16rem;
-    border: 1px solid colors.$color-palette-primary;
-    border-radius: common.$border-radius-md;
-    z-index: -2;
-
-    &:active {
-        box-shadow: shadows.$shadow-s;
-    }
-}
-
-dotcms-template-builder-background-columns {
-    position: absolute;
-    inset: spacing.$spacing-3 3.625rem spacing.$spacing-4 spacing.$spacing-3;
-    z-index: -1;
-    transition: opacity 0.35s ease-in-out;
-}
-
-.row__actions-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 2.625rem;
-    flex-direction: column;
-    gap: spacing.$spacing-1;
-    padding: spacing.$spacing-1 0;
-    background-color: colors.$color-palette-gray-200;
-    border-left: 1px solid colors.$color-palette-primary;
-    border-radius: 0 common.$border-radius-md common.$border-radius-md 0;
-}
-
-.row__drag-container {
-    padding: spacing.$spacing-2;
-
-    .drag-container__drag-handler {
-        color: colors.$color-palette-primary-500;
-        user-select: none;
-    }
-
-    &:hover {
-        cursor: grab;
-    }
-
-    &:active {
-        cursor: grabbing;
-    }
-}
-
-.row__content-container {
-    flex-grow: 1;
-    padding: 0 spacing.$spacing-1;
 }

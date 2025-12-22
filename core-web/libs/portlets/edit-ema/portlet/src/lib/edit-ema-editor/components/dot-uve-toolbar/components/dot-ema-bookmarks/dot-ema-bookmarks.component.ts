@@ -50,6 +50,7 @@ export class DotEmaBookmarksComponent implements OnInit {
         this.dialogService.open(DotFavoritePageComponent, {
             header: this.dotMessageService.get('favoritePage.dialog.header'),
             width: '80rem',
+            draggable: false,
             data: {
                 page: {
                     favoritePageUrl: this.url,

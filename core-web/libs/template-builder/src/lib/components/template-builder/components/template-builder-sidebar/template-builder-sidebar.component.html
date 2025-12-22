@@ -1,5 +1,5 @@
-<div class="template-builder-sidebar__header">
-    <h5 class="header__title">{{ 'dot.template.builder.sidebar.header.title' | dm }}</h5>
+<div class="flex justify-between items-center">
+    <h5 class="text-base m-0 leading-[140%] font-medium">{{ 'dot.template.builder.sidebar.header.title' | dm }}</h5>
     <p-select
         (onChange)="widthChange($event)"
         [options]="widthOptions"
@@ -7,7 +7,7 @@
         data-testId="select-sidebar-width"></p-select>
 </div>
 
-<div class="template-builder-sidebar__body-container">
+<div class="flex-1">
     <dotcms-template-builder-box
         (addContainer)="addContainer($event)"
         (deleteContainer)="deleteContainer($event)"

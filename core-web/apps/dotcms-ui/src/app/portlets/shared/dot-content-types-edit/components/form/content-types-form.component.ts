@@ -46,13 +46,13 @@ import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSiteComponent
 } from '@dotcms/ui';
 import { isEqual, FieldUtil } from '@dotcms/utils';
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotPageSelectorComponent } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.component';
-import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 import { DotWorkflowsSelectorFieldComponent } from '../../../../../view/components/_common/dot-workflows-selector-field/dot-workflows-selector-field.component';
@@ -82,7 +82,7 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
         DotAutofocusDirective,
         DotFieldValidationMessageComponent,
         DotMdIconSelectorComponent,
-        DotSiteSelectorFieldComponent,
+        DotSiteComponent,
         DotWorkflowsSelectorFieldComponent,
         DotWorkflowsActionsSelectorFieldComponent,
         DotPageSelectorComponent,

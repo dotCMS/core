@@ -313,7 +313,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
+                this.$languageSelector()?.resetModel(this.$toolbar().currentLanguage);
             }
         });
     }

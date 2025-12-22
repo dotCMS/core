@@ -3,7 +3,7 @@ import { createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
-import { Sidebar } from 'primeng/drawer';
+import { Drawer } from 'primeng/drawer';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
@@ -122,14 +122,14 @@ describe('DotBlockEditorSidebarComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should set sidebar with correct inputs', () => {
-        const sidebar = spectator.query(Sidebar);
-        expect(sidebar.position).toBe('right');
-        expect(sidebar.blockScroll).toBe(true);
-        expect(sidebar.dismissible).toBe(false);
-        expect(sidebar.showCloseIcon).toBe(false);
-        expect(sidebar.closeOnEscape).toBe(false);
-        expect(sidebar.visible).toBe(true);
+    it('should set drawer with correct inputs', () => {
+        const drawer = spectator.query(Drawer);
+        expect(drawer.position()).toBe('right');
+        expect(drawer.blockScroll).toBe(true);
+        expect(drawer.dismissible).toBe(false);
+        expect(drawer.closable).toBe(false);
+        expect(drawer.closeOnEscape).toBe(false);
+        expect(drawer.visible).toBe(true);
     });
 
     it('should set inputs to the block editor', () => {
@@ -159,15 +159,15 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(spyWorkflowService).toHaveBeenCalledWith({ testName: JSON.stringify(newValue) });
     });
 
-    it('should close the sidebar', () => {
+    it('should close the drawer', () => {
         const cancelBtn = spectator.query(byTestId('cancel-btn')) as HTMLButtonElement;
 
         cancelBtn.click();
         spectator.detectChanges();
 
-        const sidebar = spectator.query(Sidebar);
+        const drawer = spectator.query(Drawer);
 
-        expect(sidebar.visible).toBe(false);
+        expect(drawer.visible).toBe(false);
     });
 
     it('should display a toast on saving error', () => {

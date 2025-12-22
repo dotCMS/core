@@ -6,7 +6,6 @@ import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
-    styleUrls: ['./dot-crumbtrail.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotCollapseBreadcrumbComponent]
 })

@@ -340,7 +340,7 @@ describe('DotContentCompareTableComponent', () => {
             ).toEqual('edit.content.sidebar.history.menu.current');
         });
         it('should show dropdown', () => {
-            const dropdown: Select = de.query(By.css('p-dropdown')).componentInstance;
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
         });
         it('should show selectButton', () => {
@@ -353,14 +353,14 @@ describe('DotContentCompareTableComponent', () => {
             ]);
         });
         it('should show versions selectButton with transformed label', async () => {
-            const dropdown = de.query(By.css('p-dropdown'));
+            const dropdown = de.query(By.css('p-select'));
 
             dropdown.componentInstance.show();
             hostFixture.detectChanges();
 
             const versions = hostComponent.data.versions;
 
-            dropdown.queryAll(By.css('.p-dropdown-item')).forEach((item, index) => {
+            dropdown.queryAll(By.css('.p-select-option')).forEach((item, index) => {
                 const textContent = item.nativeElement.textContent;
                 const text = `${versions[index].modDate} by ${versions[index].modUserName}`;
                 expect(textContent).toContain(text);
@@ -481,7 +481,7 @@ describe('DotContentCompareTableComponent', () => {
     describe('events', () => {
         it('should emit changeVersion', () => {
             jest.spyOn(hostComponent.changeVersion, 'emit');
-            const dropdown: Select = de.query(By.css('p-dropdown')).componentInstance;
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             dropdown.onChange.emit({ value: 'test', originalEvent: createFakeEvent('click') });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledWith('test');

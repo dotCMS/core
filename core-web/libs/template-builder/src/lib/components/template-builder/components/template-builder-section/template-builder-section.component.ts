@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 @Component({
     selector: 'dotcms-template-builder-section',
     templateUrl: './template-builder-section.component.html',
-    styleUrls: ['./template-builder-section.component.scss'],
+    styleUrls: ['./template-builder-section.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule]
 })

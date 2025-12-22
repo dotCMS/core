@@ -115,22 +115,20 @@ export class DotEditContentService {
     }): Observable<TreeNodeItem[]> {
         const { filter, perPage, page } = data;
 
-        return this.#siteService.getSites(filter, perPage, page).pipe(
-            map((sites) => {
-                return sites.map((site) => ({
-                    key: site.identifier,
-                    label: site.hostname,
-                    data: {
-                        id: site.identifier,
-                        hostname: site.hostname,
-                        path: '',
-                        type: 'site'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
-                    leaf: false
-                }));
-            })
+        return this.#siteService.getSites({ filter, per_page: perPage, page }).pipe(
+            map(({ sites }) => sites.map((site) => ({
+                key: site.identifier,
+                label: site.hostname,
+                data: {
+                    id: site.identifier,
+                    hostname: site.hostname,
+                    path: '',
+                    type: 'site'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                leaf: false
+            })))
         );
     }
 

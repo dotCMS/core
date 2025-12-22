@@ -45,14 +45,13 @@
                                     (onChange)="changeDiff.emit($event.value)"
                                     [(ngModel)]="showDiff"
                                     [options]="displayOptions"
-                                    class="p-button-compact"
-                                    data-testid="show-diff"></p-selectButton>
-                                <button
+                                    styleClass="p-button-compact"
+                                    data-testid="show-diff" />
+                                <p-button
                                     (click)="bringBack.emit(data.compare.inode)"
                                     [label]="'Bring-Back' | dm"
-                                    class="p-button-sm p-button"
-                                    data-testId="table-bring-back"
-                                    pButton></button>
+                                    size="small"
+                                    data-testId="table-bring-back" />
                             </div>
                         }
                     </div>

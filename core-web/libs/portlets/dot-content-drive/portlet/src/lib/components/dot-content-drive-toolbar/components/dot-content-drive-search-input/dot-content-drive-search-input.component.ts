@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
     effect,
     inject,
@@ -39,6 +40,10 @@ export class DotContentDriveSearchInputComponent implements OnInit {
         if (searchValue !== this.searchControl.value) {
             this.searchControl.setValue(searchValue as string, { emitEvent: false });
         }
+    });
+
+    readonly $title = computed(() => this.#store.getFilterValue('title') || '', {
+        equal: (a, b) => a === b
     });
 
     // We need to use ngOnInit to retrieve the filter value from the store

@@ -3,29 +3,36 @@
         [icon]="device.icon"
         [pTooltip]="device.name | dm"
         tooltipPosition="bottom"
-        styleClass="p-button-text p-button-sm p-button-rounded"
+        [text]="true"
+        size="small"
+        [rounded]="true"
         [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
         (click)="onDeviceSelect(device)"
         [attr.data-testId]="device.inode" />
 }
 
 <p-button
-    styleClass="p-button-text p-button-sm p-button-rounded orientation p-button-icon-only"
+    [text]="true"
+    size="small"
+    [rounded]="true"
+    styleClass="orientation"
     [disabled]="$disableOrientation()"
     (click)="onOrientationChange()"
     data-testId="orientation">
-    <svg
-        [ngClass]="$currentOrientation()"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        width="24px"
-        height="24px">
-        <use
-            data-testId="orientation"
-            href="./assets/edit-ema/orientation.svg#orientation"
+    <ng-template pTemplate="content">
+        <svg
+            [ngClass]="$currentOrientation()"
+            fill="currentColor"
+            viewBox="0 0 24 24"
             width="24px"
-            height="24px"></use>
-    </svg>
+            height="24px">
+            <use
+                data-testId="orientation"
+                href="./assets/edit-ema/orientation.svg#orientation"
+                width="24px"
+                height="24px"></use>
+        </svg>
+    </ng-template>
 </p-button>
 
 @if ($menuItems().length) {
@@ -34,7 +41,9 @@
         iconPos="right"
         [label]="$moreButtonLabel() | dm"
         [class.active]="$isMoreButtonActive()"
-        styleClass="p-button-text p-2 p-button-sm"
+        [text]="true"
+        size="small"
+        styleClass="p-2"
         (click)="menu.toggle($event)"
         data-testId="more-button" />
 

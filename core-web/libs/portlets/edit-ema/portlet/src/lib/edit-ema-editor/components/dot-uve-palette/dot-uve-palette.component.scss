@@ -11,40 +11,72 @@
     height: 100%; // Ensure the component takes full height
     min-height: 0; // Allow shrinking
 
-    // Tab header styling
-    ::ng-deep .p-tabview {
+    // Tab header styling (PrimeNG v21 uses p-tabs, p-tablist, p-tab, p-tabpanels, p-tabpanel)
+    ::ng-deep p-tabs {
         height: 100%;
         display: flex;
         flex-direction: column;
 
-        .p-tabview-panels {
+        .p-tabs {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        p-tablist,
+        .p-tablist {
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .p-tablist-content {
+            width: 100%;
+        }
+
+        .p-tablist-tab-list {
+            border: none;
+            background: transparent;
+            display: flex;
+            width: 100%;
+        }
+
+        // Hide the active bar indicator (we use border-bottom instead)
+        .p-tablist-active-bar {
+            display: none;
+        }
+
+        p-tabpanels,
+        .p-tabpanels {
             height: 100%;
             flex: 1;
             overflow: hidden;
         }
 
-        .p-tabview-panel {
+        p-tabpanel,
+        .p-tabpanel {
             height: 100%;
             overflow: hidden;
         }
 
-        .p-tabview-nav li {
-            .p-tabview-nav-link {
-                height: 70px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0;
+        p-tab,
+        .p-tab {
+            height: 70px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+            margin: 0 !important;
 
-                .pi {
-                    width: 14px;
-                    height: 14px;
-                    color: colors.$color-palette-gray-600;
-                    font-size: fonts.$font-size-default;
-                }
+            .pi {
+                width: 14px;
+                height: 14px;
+                color: colors.$color-palette-gray-600;
+                font-size: fonts.$font-size-default;
             }
 
-            &.p-highlight .p-tabview-nav-link {
+            &[data-p-active="true"],
+            &.p-tab-active {
                 border-bottom: 2px solid colors.$color-palette-primary;
 
                 .pi {

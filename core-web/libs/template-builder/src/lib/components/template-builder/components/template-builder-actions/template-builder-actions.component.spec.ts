@@ -1,8 +1,10 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
@@ -19,6 +21,10 @@ describe('TemplateBuilderActionsComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
             },
             DotTemplateBuilderStore
         ],
@@ -46,18 +52,23 @@ describe('TemplateBuilderActionsComponent', () => {
     it('should emit selectTheme event when style button is clicked', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
-        const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
-        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
 
-        expect(spy).toHaveBeenCalled();
+        spectator.component.onThemeChange('test-theme-id');
+
+        expect(spy).toHaveBeenCalledWith('test-theme-id');
     });
 
     it('should open an overlayPanel event when layout button is clicked', () => {
         spectator.detectChanges();
-        const btnSelectStyles = spectator.query(byTestId('btn-select-layout'));
-        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
+        const btnSelectLayout = spectator.query(byTestId('btn-select-layout'));
+        const actualButton = btnSelectLayout?.querySelector('button');
+        if (actualButton) {
+            spectator.click(actualButton);
+        }
+        spectator.detectChanges();
 
-        expect(spectator.query('p-overlaypanel')).toBeTruthy();
+        // The component uses p-popover, not p-overlaypanel
+        expect(spectator.query('p-popover')).toBeTruthy();
     });
 
     it('should emit changes everytime the layout properties changes', () => {

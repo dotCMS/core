@@ -1,17 +1,19 @@
-<div class="row">
-    <div class="row__content-container">
+<div class="flex h-[257px] border border-primary rounded-md -z-[2] active:shadow-sm">
+    <div class="flex-1 px-2">
         <ng-content></ng-content>
     </div>
-    <div class="row__actions-container">
+    <div class="flex justify-between items-center w-[2.625rem] flex-col gap-2 py-2 bg-gray-200 border-l border-primary rounded-r-md">
         <p-button
             (onClick)="editClasses()"
             data-testid="row-style-class-button"
-            styleClass="p-button-text p-button-sm p-button-rounded"
-            icon="pi pi-palette"></p-button>
-        <div class="row__drag-container">
+            icon="pi pi-palette"
+            [rounded]="true"
+            variant="text"
+            size="small"></p-button>
+        <div class="p-3 hover:cursor-grab active:cursor-grabbing">
             <i
                 [style.font-size.px]="20"
-                class="drag-container__drag-handler material-icons"
+                class="text-primary-500 select-none material-icons"
                 data-testid="row-drag-handler">
                 drag_indicator
             </i>
@@ -20,6 +22,7 @@
             (deleteConfirmed)="deleteRow()"></dotcms-remove-confirm-dialog>
     </div>
     <dotcms-template-builder-background-columns
+        class="absolute top-4 right-[3.625rem] bottom-6 left-4 -z-[1] transition-opacity duration-350 ease-in-out"
         [ngStyle]="{
             opacity: isResizing ? 1 : 0
         }"></dotcms-template-builder-background-columns>
