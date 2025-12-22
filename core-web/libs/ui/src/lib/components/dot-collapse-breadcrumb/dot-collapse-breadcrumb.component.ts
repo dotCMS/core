@@ -17,6 +17,7 @@ import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
     imports: [ButtonModule, MenuModule, RouterModule, BreadcrumbModule],
     selector: 'dot-collapse-breadcrumb',
     templateUrl: './dot-collapse-breadcrumb.component.html',
+    styleUrls: ['./dot-collapse-breadcrumb.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCollapseBreadcrumbComponent {

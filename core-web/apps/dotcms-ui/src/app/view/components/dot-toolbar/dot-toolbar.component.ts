@@ -23,7 +23,6 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
 
 @Component({
     selector: 'dot-toolbar',
-    styleUrls: ['./dot-toolbar.component.scss'],
     templateUrl: './dot-toolbar.component.html',
     imports: [
         ToolbarModule,

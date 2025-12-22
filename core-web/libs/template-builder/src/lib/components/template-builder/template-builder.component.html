@@ -1,10 +1,5 @@
 @if (vm$ | async; as vm) {
-    <p-toolbar [dt]="{
-        root: {
-            borderRadius: '0',
-            padding: '0.25rem 1rem'
-        }
-    }">
+    <p-toolbar>
         <ng-template #start>
             <ng-content select="[toolbar-left]"></ng-content>
         </ng-template>

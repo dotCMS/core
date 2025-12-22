@@ -15,7 +15,7 @@
             </div>
         </div>
     }
-    <p-breadcrumb [model]="$itemsToShow()" (onItemClick)="onItemClick.emit($event)">
+    <p-breadcrumb [model]="$itemsToShow()" (onItemClick)="onItemClick.emit($event)" styleClass="dot-collapse-breadcrumb__breadcrumb">
         <ng-template pTemplate="separator">
             <i class="pi pi-angle-right text-gray-700"></i>
         </ng-template>
