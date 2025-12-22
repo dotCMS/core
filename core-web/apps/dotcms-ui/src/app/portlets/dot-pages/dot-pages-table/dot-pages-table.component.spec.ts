@@ -2,9 +2,8 @@ import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import type { FilterMetadata, LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -15,7 +14,7 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
@@ -26,8 +25,9 @@ type LazyLoadArg = Parameters<DotPagesTableComponent['loadPagesLazy']>[0];
 type RowSelectArg = Parameters<DotPagesTableComponent['onRowSelect']>[0];
 type OpenMenuArg = Parameters<DotPagesTableComponent['openMenu']['emit']>[0];
 
-const contentlet = (partial: Partial<DotCMSContentlet>): DotCMSContentlet =>
-    partial as unknown as DotCMSContentlet;
+const mockContentlet = (partial: Partial<DotCMSContentlet>): DotCMSContentlet => {
+    return partial as DotCMSContentlet;
+};
 
 const rowSelectEvent = (data: DotCMSContentlet): RowSelectArg => ({ data }) as RowSelectArg;
 
@@ -123,7 +123,6 @@ describe('DotPagesTableComponent', () => {
     const createHost = createHostFactory({
         component: DotPagesTableComponent,
         imports: [
-            NoopAnimationsModule,
             ButtonModule,
             CheckboxModule,
             SelectModule,
@@ -135,12 +134,9 @@ describe('DotPagesTableComponent', () => {
             DotRelativeDatePipe,
             ReactiveFormsModule
         ],
+        schemas: [NO_ERRORS_SCHEMA],
         providers: [
             MockProvider(DotFormatDateService),
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
             {
                 provide: DotcmsEventsService,
                 useClass: DotcmsEventsServiceMock
@@ -149,15 +145,9 @@ describe('DotPagesTableComponent', () => {
     });
 
     beforeEach(() => {
-        TestBed.overrideComponent(DotPagesTableComponent, {
-            set: {
-                schemas: [NO_ERRORS_SCHEMA]
-            }
-        });
-
         mockDotMessageService = {
             get: jest.fn((key: string) => key)
-        } as unknown as jest.Mocked<Pick<DotMessageService, 'get'>>;
+        };
 
         spectator = createHost(
             `<dot-pages-table
@@ -486,7 +476,9 @@ describe('DotPagesTableComponent', () => {
             spectator.triggerEventHandler(
                 'p-table',
                 'onRowSelect',
-                rowSelectEvent(contentlet({ urlMap: '/contact', url: '/fallback', languageId: 1 }))
+                rowSelectEvent(
+                    mockContentlet({ urlMap: '/contact', url: '/fallback', languageId: 1 })
+                )
             );
 
             expect(navigateToPageSpy).toHaveBeenCalledWith('/contact?language_id=1&device_inode=');
@@ -499,7 +491,7 @@ describe('DotPagesTableComponent', () => {
             spectator.triggerEventHandler(
                 'p-table',
                 'onRowSelect',
-                rowSelectEvent(contentlet({ languageId: 1 }))
+                rowSelectEvent(mockContentlet({ languageId: 1 }))
             );
 
             expect(navigateToPageSpy).toHaveBeenCalledWith('?language_id=1&device_inode=');
@@ -512,7 +504,7 @@ describe('DotPagesTableComponent', () => {
             spectator.triggerEventHandler(
                 'p-table',
                 'onRowSelect',
-                rowSelectEvent(contentlet({ urlMap: '/home' }))
+                rowSelectEvent(mockContentlet({ urlMap: '/home' }))
             );
 
             expect(navigateToPageSpy).toHaveBeenCalledWith('/home?language_id=&device_inode=');
@@ -526,7 +518,7 @@ describe('DotPagesTableComponent', () => {
             spectator.triggerEventHandler(
                 'p-table',
                 'onRowSelect',
-                rowSelectEvent(contentlet({ urlMap: '/page1', languageId: 1 }))
+                rowSelectEvent(mockContentlet({ urlMap: '/page1', languageId: 1 }))
             );
             expect(navigateToPageSpy).toHaveBeenCalledWith('/page1?language_id=1&device_inode=');
 
@@ -535,7 +527,7 @@ describe('DotPagesTableComponent', () => {
                 'p-table',
                 'onRowSelect',
                 rowSelectEvent(
-                    contentlet({ urlMap: '/page2', languageId: '2' as unknown as number })
+                    mockContentlet({ urlMap: '/page2', languageId: '2' as unknown as number })
                 )
             );
             expect(navigateToPageSpy).toHaveBeenCalledWith('/page2?language_id=2&device_inode=');
@@ -691,7 +683,7 @@ describe('DotPagesTableComponent', () => {
                 'p-table',
                 'onRowSelect',
                 rowSelectEvent(
-                    contentlet({
+                    mockContentlet({
                         urlMap: null as unknown as string,
                         url: null as unknown as string,
                         languageId: 1
