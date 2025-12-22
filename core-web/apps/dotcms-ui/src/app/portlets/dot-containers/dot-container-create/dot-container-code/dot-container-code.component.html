@@ -21,12 +21,9 @@
                 <p-menu
                     [model]="menuItems"
                     [popup]="true"
-             
                     styleClass="max-h-64 overflow-auto"
                     #actionsMenu
-                    appendTo="body"/>
-
-               
+                    appendTo="body" />
             </p-tab>
             @for (
                 containerContent of getcontainerStructures.controls;

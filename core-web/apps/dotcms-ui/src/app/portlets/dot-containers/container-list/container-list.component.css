@@ -2,7 +2,6 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
 
-
 .disabled-row {
     @apply bg-gray-200 text-gray-500 pointer-events-none;
 }
@@ -14,4 +13,3 @@
 .p-datatable {
     @apply flex flex-col justify-between;
 }
-
