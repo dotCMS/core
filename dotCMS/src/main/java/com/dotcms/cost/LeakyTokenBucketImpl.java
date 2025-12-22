@@ -3,39 +3,56 @@ package com.dotcms.cost;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.enterprise.context.ApplicationScoped;
 
-public class LeakyTokenBucket {
+@ApplicationScoped
+public class LeakyTokenBucketImpl implements LeakyTokenBucket {
 
 
-    final long refreshPerSecond;
+    final long refillPerSecond;
     final long maximumBucketSize;
     final boolean enabled;
     private final AtomicLong lastRefill = new AtomicLong(0);
     private final AtomicLong tokenCount = new AtomicLong(0);
 
 
-    LeakyTokenBucket(boolean enabled, long refreshPerSecond, long maximumBucketSize) {
+    LeakyTokenBucketImpl(boolean enabled, long refillPerSecond, long maximumBucketSize) {
         this.enabled = enabled;
         this.maximumBucketSize = maximumBucketSize;
-        this.refreshPerSecond = refreshPerSecond;
+        this.refillPerSecond = refillPerSecond;
     }
 
-    LeakyTokenBucket() {
+    LeakyTokenBucketImpl() {
         this(
                 Config.getBooleanProperty("RATE_LIMIT_ENABLED", false),
-                Config.getLongProperty("RATE_LIMIT_REFRESH_PER_SECOND", 100),
+                Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 100),
                 Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 10000)
         );
     }
 
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
 
-    boolean allow() {
+    @Override
+    public long getMaximumBucketSize() {
+        return maximumBucketSize;
+    }
+
+    @Override
+    public long getRefillPerSecond() {
+        return refillPerSecond;
+    }
+
+    @Override
+    public boolean allow() {
         refillTokens();
         long currentCount = getTokenCount();
 
         if (enabled && currentCount <= 0) {
             Logger.debug(this.getClass(),
-                    "Rate limited - no request tokens, refreshing" + refreshPerSecond + " per second");
+                    "Rate limited - no request tokens, refilling @ " + refillPerSecond + " per second");
             return false;
         }
 
@@ -55,30 +72,33 @@ public class LeakyTokenBucket {
 
         // Only update if we win the race
         if (lastRefill.compareAndSet(lastRefillTime, currentTime)) {
-            long tokensToAdd = elapsedTimeSecs * refreshPerSecond;
+            long tokensToAdd = elapsedTimeSecs * refillPerSecond;
             tokenCount.updateAndGet(current ->
                     Math.min(maximumBucketSize, current + tokensToAdd));
         }
     }
 
-
-    long getTokenCount() {
+    @Override
+    public long getTokenCount() {
 
         return Math.min(tokenCount.get(), maximumBucketSize);
 
     }
 
-    long getLastRefillTime() {
+    @Override
+    public long getLastRefillTime() {
 
         return lastRefill.get();
 
 
     }
 
+    @Override
+    public void drainFromBucket(long drainTokens) {
 
-    void drainFromBucket(long drainTokens) {
-
-        tokenCount.set(Math.max(getTokenCount() - drainTokens, 0));
+        tokenCount.updateAndGet(current ->
+                Math.max(Math.min(current, maximumBucketSize) - drainTokens, 0)
+        );
 
     }
 

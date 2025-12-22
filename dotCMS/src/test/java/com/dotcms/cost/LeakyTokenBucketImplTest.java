@@ -16,7 +16,7 @@ import org.junit.Test;
  * Unit tests for {@link LeakyTokenBucket}. Tests the token bucket rate limiting implementation including token refill,
  * draining, and concurrent access scenarios.
  */
-public class LeakyTokenBucketTest extends UnitTestBase {
+public class LeakyTokenBucketImplTest extends UnitTestBase {
 
     /**
      * Test: New bucket should allow requests Expected: allow() returns true when bucket has tokens
@@ -24,7 +24,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_allow_newBucket_shouldReturnTrue() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
 
         // When
         boolean allowed = bucket.allow();
@@ -39,7 +39,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_allow_disabledBucket_shouldAlwaysReturnTrue() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(false, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(false, 100, 1000);
         bucket.drainFromBucket(Long.MAX_VALUE); // Empty the bucket
 
         // When
@@ -56,7 +56,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     public void test_getTokenCount_shouldBeCappedAtMaximum() {
         // Given
         long maxSize = 500;
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, maxSize);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, maxSize);
 
         // When - trigger refill
         bucket.allow();
@@ -72,7 +72,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_drainFromBucket_shouldReduceTokens() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
         bucket.allow(); // Initialize and refill
         long initialCount = bucket.getTokenCount();
 
@@ -91,7 +91,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_drainFromBucket_shouldNotGoBelowZero() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
         bucket.allow();
 
         // When - drain more than available
@@ -108,7 +108,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_allow_emptyBucket_shouldReturnFalse() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 1, 100);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 1, 100);
         bucket.allow(); // Initialize
         bucket.drainFromBucket(Long.MAX_VALUE); // Empty the bucket
 
@@ -125,7 +125,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_allow_shouldRefillOverTime() throws InterruptedException {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
         bucket.allow();
         bucket.drainFromBucket(500);
         long countAfterDrain = bucket.getTokenCount();
@@ -148,7 +148,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     public void test_refill_shouldNotExceedMaximum() throws InterruptedException {
         // Given
         long maxSize = 200;
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 1000, maxSize);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 1000, maxSize);
 
         // When - wait and trigger multiple refills
         Thread.sleep(1100);
@@ -167,7 +167,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_multipleDrains_shouldAccumulate() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
         bucket.allow();
         long initialCount = bucket.getTokenCount();
 
@@ -188,7 +188,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_drainFromBucket_withZero_shouldNotChange() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
         bucket.allow();
         long initialCount = bucket.getTokenCount();
 
@@ -206,7 +206,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_concurrentAccess_shouldNotCorruptState() throws InterruptedException {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 1000, 10000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 1000, 10000);
         bucket.allow(); // Initialize
 
         int threadCount = 10;
@@ -252,7 +252,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     public void test_rapidCalls_shouldNotAddTokensWithoutTimeElapsed() {
         // Given
         long refreshRate = 100;
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, refreshRate, 10000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, refreshRate, 10000);
 
         // When - rapid successive calls without waiting
         bucket.allow();
@@ -277,12 +277,12 @@ public class LeakyTokenBucketTest extends UnitTestBase {
         long customMax = 250;
 
         // When
-        LeakyTokenBucket bucket = new LeakyTokenBucket(customEnabled, customRefresh, customMax);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(customEnabled, customRefresh, customMax);
 
         // Then
-        assertEquals("Should use custom enabled", customEnabled, bucket.enabled);
-        assertEquals("Should use custom refresh rate", customRefresh, bucket.refreshPerSecond);
-        assertEquals("Should use custom max size", customMax, bucket.maximumBucketSize);
+        assertEquals("Should use custom enabled", customEnabled, bucket.isEnabled());
+        assertEquals("Should use custom refresh rate", customRefresh, bucket.getRefillPerSecond());
+        assertEquals("Should use custom max size", customMax, bucket.getMaximumBucketSize());
     }
 
     /**
@@ -292,7 +292,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     public void test_allow_atMaxCapacity_shouldNotOverfill() throws InterruptedException {
         // Given
         long maxSize = 100;
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 1000, maxSize);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 1000, maxSize);
 
         // Fill the bucket
         Thread.sleep(1100);
@@ -317,7 +317,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_drainFromBucket_exactAmount_shouldBeZero() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
         bucket.allow();
         long currentCount = bucket.getTokenCount();
 
@@ -335,8 +335,8 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_enabledFlag_controlsRateLimiting() {
         // Given
-        LeakyTokenBucket enabledBucket = new LeakyTokenBucket(true, 100, 1000);
-        LeakyTokenBucket disabledBucket = new LeakyTokenBucket(false, 100, 1000);
+        LeakyTokenBucket enabledBucket = new LeakyTokenBucketImpl(true, 100, 1000);
+        LeakyTokenBucket disabledBucket = new LeakyTokenBucketImpl(false, 100, 1000);
 
         // Drain both buckets
         enabledBucket.allow();
@@ -359,7 +359,7 @@ public class LeakyTokenBucketTest extends UnitTestBase {
     @Test
     public void test_firstCall_initializesTimestamp() {
         // Given
-        LeakyTokenBucket bucket = new LeakyTokenBucket(true, 100, 1000);
+        LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000);
 
         // When - first call
         bucket.allow();

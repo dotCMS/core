@@ -2,6 +2,7 @@ package com.dotcms.cost;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -40,6 +41,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     // make the request cost points look like $$
     private float requestCostDenominator = 1;
     private volatile boolean skipZeroRequests = false;
+    private final LeakyTokenBucket bucket = CDIUtils.getBeanThrows(LeakyTokenBucket.class);
 
     public RequestCostApiImpl() {
         enableForTests = Optional.empty();
@@ -212,7 +214,8 @@ public class RequestCostApiImpl implements RequestCostApi {
             getAccountList(request).add(load);
         }
 
-        String logMessage = "cost:" + price.price + " , method:" + clazz.getSimpleName() + "." + method;
+        String logMessage =
+                "<--- REQUESTCOST price:" + price.price + " , method:" + clazz.getSimpleName() + "." + method;
 
         // log requests if a fuller accounting is enabled
         // Note: Cannot use lambdas with inline=true due to synthetic method access issues
@@ -224,6 +227,7 @@ public class RequestCostApiImpl implements RequestCostApi {
 
         request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, getRequestCost(request) + price.price);
         requestCostForWindow.add(price.price);
+        bucket.drainFromBucket(price.price);
     }
 
     private Map<String, Object> createAccountingEntry(Price price, Class clazz, String method,
@@ -255,7 +259,10 @@ public class RequestCostApiImpl implements RequestCostApi {
         this.requestCountForWindow.increment();
 
         Accounting accounting = resolveAccounting(request);
-        Logger.debug(this.getClass(), "<Starting request cost accounting ---");
+        if (accounting.ordinal() > Accounting.HEADER.ordinal()) {
+            Logger.info(this.getClass(), "<--- REQUESTCOST --- : " + request.getRequestURI());
+        }
+
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         request.setAttribute(REQUEST_COST_ACCOUNTING_TYPE, accounting);
@@ -267,7 +274,11 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     @Override
     public void endAccounting(HttpServletRequest request) {
-        Logger.debug(this.getClass(), "</Ending request cost accounting  ---");
+        Accounting accounting = resolveAccounting(request);
+        if (accounting.ordinal() > Accounting.HEADER.ordinal()) {
+            Logger.info(this.getClass(),
+                    "</--- REQUESTCOST TOTAL : " + request.getAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE));
+        }
         request.removeAttribute(REQUEST_COST_ATTRIBUTE);
         request.removeAttribute(REQUEST_COST_ACCOUNTING_TYPE);
         request.removeAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE);

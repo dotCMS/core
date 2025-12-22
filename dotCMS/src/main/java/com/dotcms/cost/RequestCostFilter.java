@@ -1,14 +1,11 @@
 package com.dotcms.cost;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.servlet.NullServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -17,27 +14,25 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
 
 public class RequestCostFilter implements Filter {
 
 
     private final RequestCostApi requestCostApi;
-    private final LeakyTokenBucket bucket;
+    private final LeakyTokenBucket bucket = CDIUtils.getBeanThrows(LeakyTokenBucket.class);
+
+
+
+
+
 
     public RequestCostFilter() {
-        this(APILocator.getRequestCostAPI(), new LeakyTokenBucket());
+        this(APILocator.getRequestCostAPI());
     }
+
 
     RequestCostFilter(RequestCostApi requestCostApi) {
-        this(requestCostApi, new LeakyTokenBucket());
-    }
-
-
-    RequestCostFilter(RequestCostApi requestCostApi, LeakyTokenBucket bucket) {
         this.requestCostApi = requestCostApi;
-        this.bucket = bucket;
-
     }
 
 
@@ -51,16 +46,16 @@ public class RequestCostFilter implements Filter {
         Accounting fullAccounting = requestCostApi.resolveAccounting(request);
 
         boolean allowed = bucket.allow();
-        response.addHeader("X-dotRateLimit-Toks/Max", bucket.getTokenCount() + "/" + bucket.maximumBucketSize);
+        response.addHeader("X-dotRateLimit-Toks/Max", bucket.getTokenCount() + "/" + bucket.getMaximumBucketSize());
 
         if (!allowed) {
             response.sendError(429);
             return;
         }
 
-        HttpServletResponse wrapper =
-                fullAccounting == Accounting.HTML ? new NullServletResponse(response)
-                        : new RequestCostResponseWrapper(request, response);
+        HttpServletResponse wrapper = fullAccounting == Accounting.HTML
+                ? new NullServletResponse(response)
+                : response;
         requestCostApi.addCostHeader(request, wrapper);
         chain.doFilter(req, wrapper);
         requestCostApi.addCostHeader(request, wrapper);
@@ -70,7 +65,6 @@ public class RequestCostFilter implements Filter {
             PrintWriter out = response.getWriter();
             out.write(new RequestCostReport().writeAccounting(request));
         }
-        bucket.drainFromBucket(requestCostApi.getRequestCost(request));
 
 
     }
@@ -84,49 +78,6 @@ public class RequestCostFilter implements Filter {
     }
 
 
-    class RequestCostResponseWrapper extends HttpServletResponseWrapper {
-
-        HttpServletRequest request;
-
-        public RequestCostResponseWrapper(HttpServletRequest request, HttpServletResponse response) throws IOException {
-            super(response);
-            this.request = request;
-
-        }
-
-        @Override
-        public boolean containsHeader(String name) {
-            if (RequestCostApi.REQUEST_COST_HEADER_NAME.equalsIgnoreCase(name)) {
-                return true;
-            }
-            return super.containsHeader(name);
-        }
-
-        @Override
-        public String getHeader(String name) {
-            if (RequestCostApi.REQUEST_COST_HEADER_NAME.equalsIgnoreCase(name)) {
-                return String.valueOf(requestCostApi.getRequestCost(request));
-            }
-            return super.getHeader(name);
-        }
-
-        @Override
-        public Collection<String> getHeaders(String name) {
-            if (RequestCostApi.REQUEST_COST_HEADER_NAME.equalsIgnoreCase(name)) {
-                return List.of(String.valueOf(requestCostApi.getRequestCost(request)));
-            }
-            return super.getHeaders(name);
-        }
-
-        @Override
-        public Collection<String> getHeaderNames() {
-            Set<String> headers = new HashSet<>(super.getHeaderNames());
-            headers.add(RequestCostApi.REQUEST_COST_HEADER_NAME);
-            return headers;
-        }
-
-
-    }
 
 
 }
