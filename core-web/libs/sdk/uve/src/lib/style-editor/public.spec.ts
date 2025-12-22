@@ -11,6 +11,7 @@ describe('styleEditorField', () => {
     describe('input', () => {
         it('should create an input field with number type and number defaultValue', () => {
             const config = {
+                id: 'font-size',
                 label: 'Font Size',
                 inputType: 'number' as const,
                 placeholder: 'Enter font size',
@@ -30,6 +31,7 @@ describe('styleEditorField', () => {
 
         it('should create an input field with text type and string defaultValue', () => {
             const config = {
+                id: 'font-name',
                 label: 'Font Name',
                 inputType: 'text' as const,
                 placeholder: 'Enter font name',
@@ -49,6 +51,7 @@ describe('styleEditorField', () => {
 
         it('should create an input field without defaultValue', () => {
             const config = {
+                id: 'font-size',
                 label: 'Font Size',
                 inputType: 'number' as const,
                 placeholder: 'Enter font size'
@@ -65,6 +68,7 @@ describe('styleEditorField', () => {
 
         it('should create an input field without placeholder', () => {
             const config = {
+                id: 'font-size',
                 label: 'Font Size',
                 inputType: 'number' as const,
                 defaultValue: 16
@@ -81,6 +85,7 @@ describe('styleEditorField', () => {
 
         it('should preserve all properties from config', () => {
             const config = {
+                id: 'custom-field',
                 label: 'Custom Field',
                 inputType: 'text' as const,
                 placeholder: 'Custom placeholder',
@@ -99,6 +104,7 @@ describe('styleEditorField', () => {
     describe('dropdown', () => {
         it('should create a dropdown field with string options', () => {
             const config = {
+                id: 'font-family',
                 label: 'Font Family',
                 options: ['Arial', 'Helvetica', 'Times New Roman'],
                 defaultValue: 'Arial',
@@ -119,6 +125,7 @@ describe('styleEditorField', () => {
 
         it('should create a dropdown field with object options', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     { label: 'Light Theme', value: 'light' },
@@ -142,6 +149,7 @@ describe('styleEditorField', () => {
 
         it('should create a dropdown field with mixed string and object options', () => {
             const config = {
+                id: 'font-family',
                 label: 'Font Family',
                 options: [
                     'Arial',
@@ -162,6 +170,7 @@ describe('styleEditorField', () => {
 
         it('should create a dropdown field without defaultValue', () => {
             const config = {
+                id: 'font-family',
                 label: 'Font Family',
                 options: ['Arial', 'Helvetica']
             };
@@ -173,6 +182,7 @@ describe('styleEditorField', () => {
 
         it('should create a dropdown field without placeholder', () => {
             const config = {
+                id: 'font-family',
                 label: 'Font Family',
                 options: ['Arial', 'Helvetica'],
                 defaultValue: 'Arial'
@@ -187,6 +197,7 @@ describe('styleEditorField', () => {
     describe('radio', () => {
         it('should create a radio field with string options', () => {
             const config = {
+                id: 'alignment',
                 label: 'Alignment',
                 options: ['Left', 'Center', 'Right'],
                 defaultValue: 'Left'
@@ -205,6 +216,7 @@ describe('styleEditorField', () => {
 
         it('should create a radio field with object options', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     { label: 'Light', value: 'light' },
@@ -223,14 +235,13 @@ describe('styleEditorField', () => {
 
         it('should create a radio field with options including images', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     {
                         label: 'Light',
                         value: 'light',
-                        imageURL: 'https://example.com/light-theme.png',
-                        width: 100,
-                        height: 60
+                        imageURL: 'https://example.com/light-theme.png'
                     },
                     { label: 'Dark', value: 'dark' }
                 ],
@@ -242,22 +253,19 @@ describe('styleEditorField', () => {
             expect(result.options[0]).toEqual({
                 label: 'Light',
                 value: 'light',
-                imageURL: 'https://example.com/light-theme.png',
-                width: 100,
-                height: 60
+                imageURL: 'https://example.com/light-theme.png'
             });
         });
 
         it('should create a radio field with mixed string and object options', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     {
                         label: 'Light',
                         value: 'light',
-                        imageURL: 'https://example.com/light-theme.png',
-                        width: 100,
-                        height: 60
+                        imageURL: 'https://example.com/light-theme.png'
                     },
                     { label: 'Dark', value: 'dark' },
                     'Auto'
@@ -274,6 +282,7 @@ describe('styleEditorField', () => {
 
         it('should create a radio field without defaultValue', () => {
             const config = {
+                id: 'alignment',
                 label: 'Alignment',
                 options: ['Left', 'Center', 'Right']
             };
@@ -285,6 +294,7 @@ describe('styleEditorField', () => {
 
         it('should handle options with only imageURL', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     {
@@ -303,14 +313,13 @@ describe('styleEditorField', () => {
                 value: 'light',
                 imageURL: 'https://example.com/light.png'
             });
-            expect(result.options[0]).not.toHaveProperty('width');
-            expect(result.options[0]).not.toHaveProperty('height');
         });
     });
 
     describe('checkboxGroup', () => {
         it('should create a checkbox group field with string options', () => {
             const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: ['Underline', 'Overline', 'Line Through'],
                 defaultValue: {
@@ -337,6 +346,7 @@ describe('styleEditorField', () => {
 
         it('should create a checkbox group field with object options', () => {
             const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [
                     { label: 'Underline', value: 'underline' },
@@ -366,6 +376,7 @@ describe('styleEditorField', () => {
 
         it('should create a checkbox group field with mixed string and object options', () => {
             const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [
                     { label: 'Underline', value: 'underline' },
@@ -391,6 +402,7 @@ describe('styleEditorField', () => {
 
         it('should create a checkbox group field without defaultValue', () => {
             const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [
                     { label: 'Underline', value: 'underline' },
@@ -405,6 +417,7 @@ describe('styleEditorField', () => {
 
         it('should handle empty defaultValue object', () => {
             const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [{ label: 'Underline', value: 'underline' }],
                 defaultValue: {}
@@ -417,6 +430,7 @@ describe('styleEditorField', () => {
 
         it('should handle defaultValue with all options checked', () => {
             const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [
                     { label: 'Underline', value: 'underline' },
@@ -452,6 +466,7 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'input',
+                            id: 'font-size',
                             label: 'Font Size',
                             config: {
                                 inputType: 'number',
@@ -472,6 +487,7 @@ describe('defineStyleEditorSchema', () => {
                     title: 'Typography',
                     fields: [
                         styleEditorField.input({
+                            id: 'font-size',
                             label: 'Font Size',
                             inputType: 'number',
                             defaultValue: 16
@@ -497,6 +513,7 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'input',
+                            id: 'font-size',
                             label: 'Font Size',
                             config: { inputType: 'number', defaultValue: 16 }
                         }
@@ -508,6 +525,7 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'dropdown',
+                            id: 'primary-color',
                             label: 'Primary Color',
                             config: { options: [{ label: 'Red', value: 'red' }] }
                         }
@@ -525,6 +543,7 @@ describe('defineStyleEditorSchema', () => {
                     title: 'Typography',
                     fields: [
                         styleEditorField.input({
+                            id: 'font-size',
                             label: 'Font Size',
                             inputType: 'number',
                             defaultValue: 16
@@ -535,6 +554,7 @@ describe('defineStyleEditorSchema', () => {
                     title: 'Colors',
                     fields: [
                         styleEditorField.dropdown({
+                            id: 'primary-color',
                             label: 'Primary Color',
                             options: [{ label: 'Red', value: 'red' }]
                         })
@@ -559,12 +579,14 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'input',
+                            id: 'width',
                             label: 'Width',
                             config: { inputType: 'number' }
                         },
 
                         {
                             type: 'input',
+                            id: 'height',
                             label: 'Height',
                             config: { inputType: 'number' }
                         }
@@ -583,11 +605,13 @@ describe('defineStyleEditorSchema', () => {
 
                     fields: [
                         styleEditorField.input({
+                            id: 'width',
                             label: 'Width',
                             inputType: 'number'
                         }),
 
                         styleEditorField.input({
+                            id: 'height',
                             label: 'Height',
                             inputType: 'number'
                         })
