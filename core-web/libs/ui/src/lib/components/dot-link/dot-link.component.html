@@ -1,6 +1,11 @@
-@if (link) {
-    <a [href]="link" [title]="link" class="p-button-sm p-button-text" pButton target="_blank">
-        <i [class]="classNames"></i>
-        <span class="p-button-label">{{ this.label | dm }}</span>
+@if (link()) {
+    <a
+        [href]="link()"
+        [title]="link()"
+        class="inline-flex items-center gap-1 text-sm text-primary disable-underline"
+        target="_blank"
+        rel="noopener noreferrer">
+        <i [class]="classNames()"></i>
+        <span>{{ label() | dm }}</span>
     </a>
 }

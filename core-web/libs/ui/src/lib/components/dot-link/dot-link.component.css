@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+.disable-underline{
+    @apply no-underline hover:no-underline;
+}

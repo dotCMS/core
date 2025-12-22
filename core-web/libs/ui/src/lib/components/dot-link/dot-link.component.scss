@@ -1,8 +1,0 @@
-@use "variables" as *;
-@use "mixins";
-
-a,
-a:focus,
-a:active {
-    text-decoration: none;
-}

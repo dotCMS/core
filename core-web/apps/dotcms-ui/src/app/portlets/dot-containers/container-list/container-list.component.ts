@@ -55,7 +55,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
-    styleUrls: ['./container-list.component.scss'],
+    styleUrls: ['./container-list.component.css'],
     imports: [
         CommonModule,
         DotPortletBaseComponent,
@@ -254,6 +254,7 @@ export class ContainerListComponent implements OnDestroy {
 
     private showErrorDialog(result: DotActionBulkResult): void {
         this.dialogService.open(DotBulkInformationComponent, {
+            closable: true,
             header: this.dotMessageService.get('Results'),
             width: '40rem',
             contentStyle: { 'max-height': '500px', overflow: 'auto' },

@@ -28,7 +28,7 @@ export class DotContentTypeSelectorComponent implements OnInit {
     options$: Observable<SelectItem[]>;
 
     ngOnInit() {
-        this.options$ = this.dotContentTypeService.getContentTypes({ page: 999 }).pipe(
+        this.options$ = this.dotContentTypeService.getContentTypes({ per_page: 999 }).pipe(
             take(1),
             map((contentTypes: DotCMSContentType[]) => this.setOptions(contentTypes))
         );

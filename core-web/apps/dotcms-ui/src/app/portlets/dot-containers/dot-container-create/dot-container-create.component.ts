@@ -19,7 +19,6 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-create',
     templateUrl: './dot-container-create.component.html',
-    styleUrls: ['./dot-container-create.component.scss'],
     imports: [
         DotPortletBaseComponent,
         TabsModule,
@@ -35,6 +34,7 @@ export class DotContainerCreateComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
 
     containerId = '';
+    activeTab = 0;
 
     ngOnInit() {
         this.activatedRoute.data

@@ -1,4 +1,4 @@
-<div [formGroup]="fg" class="dot-container-code__content-tab-container">
+<div [formGroup]="fg" class="px-4">
     <div class="field mb-1">
         <label dotFieldRequired>
             {{ 'message.containers.create.content_type_code' | dm }}
@@ -7,15 +7,13 @@
     <p-tabs
         class="border border-gray-200"
         [value]="activeTabIndex"
-        (onChange)="handleTabClick($event, $event.value)"
+        (valueChange)="handleTabChange($event)"
         [scrollable]="true"
         [@contentCodeAnimation]>
         <p-tablist>
-            <p-tab [value]="0" styleClass="tab-panel-btn">
+            <p-tab [value]="0" (click)="handleTabClick($event, 0); actionsMenu.toggle($event)">
                 @if (contentTypes.length > 0) {
-                    <i
-                        (click)="handleTabClick($event, 0); actionsMenu.toggle($event)"
-                        class="pi pi-plus add-tab-icon"></i>
+                    <i class="pi pi-plus"></i>
                 } @else {
                     <p-skeleton borderRadius="0px" height="3.9rem" width="4rem"></p-skeleton>
                 }
@@ -23,19 +21,16 @@
                 <p-menu
                     [model]="menuItems"
                     [popup]="true"
-                    [style]="{
-                        'max-height': '300px',
-                        overflow: 'auto'
-                    }"
+                    styleClass="max-h-64 overflow-auto"
                     #actionsMenu
-                    appendTo="body"></p-menu>
+                    appendTo="body" />
             </p-tab>
             @for (
                 containerContent of getcontainerStructures.controls;
                 track containerContent;
                 let i = $index
             ) {
-                <p-tab [value]="i + 1" formArrayName="containerStructures">
+                <p-tab [value]="i + 1">
                     <span>{{ contentTypeNamesById[containerContent.value.structureId] }}</span>
                     <i
                         (click)="removeItem(i + 1); $event.stopPropagation()"
@@ -46,15 +41,12 @@
         </p-tablist>
         <p-tabpanels>
             <p-tabpanel [value]="0">
-                <div
-                    class="dot-container-code__empty-content flex justify-center items-center flex-col">
-                    <dot-icon data-testId="code" name="code" size="100"></dot-icon>
-                    <div
-                        class="dot-container-code__empty-content-title"
-                        data-testId="empty-content-title">
+                <div class="h-[500px] flex justify-center items-center flex-col">
+                    <i data-testId="code" class="pi pi-code text-[100px] text-primary"></i>
+                    <div class="text-base" data-testId="empty-content-title">
                         {{ 'message.containers.empty.content_type_message' | dm }}
                     </div>
-                    <div class="dot-container-code__empty-content-subtitle mb-1">
+                    <div class="text-sm mb-1">
                         <span data-testId="empty-content-subtitle">
                             {{ 'message.containers.empty.content_type_need_help' | dm }}?
                         </span>
@@ -67,32 +59,34 @@
                     </div>
                 </div>
             </p-tabpanel>
-            @for (
-                containerContent of getcontainerStructures.controls;
-                track containerContent;
-                let i = $index
-            ) {
-                <p-tabpanel [value]="i + 1">
-                    <div [formGroupName]="i">
-                        <button
-                            (click)="handleAddVariable(containerContent.value)"
-                            [disabled]="contentTypes.length === 0"
-                            [label]="'add-variable' | dm"
-                            class="p-button-outlined dot-container-code__variable-btn ml-4 mb-2 mt-2 p-button-sm"
-                            pButton></button>
-                        <dot-textarea-content
-                            (monacoInit)="monacoInit($event)"
-                            [attr.data-testid]="containerContent.value.structureId"
-                            [customStyles]="{ border: 'none', height: '500px' }"
-                            [editorName]="containerContent.value.structureId"
-                            [show]="['code']"
-                            [value]="containerContent.value.code"
-                            #body
-                            formControlName="code"
-                            language="html"></dot-textarea-content>
-                    </div>
-                </p-tabpanel>
-            }
+            <ng-container formArrayName="containerStructures">
+                @for (
+                    containerContent of getcontainerStructures.controls;
+                    track containerContent;
+                    let i = $index
+                ) {
+                    <p-tabpanel [value]="i + 1">
+                        <div [formGroupName]="i">
+                            <button
+                                (click)="handleAddVariable(containerContent.value)"
+                                [disabled]="contentTypes.length === 0"
+                                [label]="'add-variable' | dm"
+                                class="p-button-outlined ml-4 mb-2 mt-2 p-button-sm"
+                                pButton></button>
+                            <dot-textarea-content
+                                (monacoInit)="monacoInit($event)"
+                                [attr.data-testid]="containerContent.value.structureId"
+                                [customStyles]="{ border: 'none', height: '500px' }"
+                                [editorName]="containerContent.value.structureId"
+                                [show]="['code']"
+                                [value]="containerContent.value.code"
+                                #body
+                                formControlName="code"
+                                language="html"></dot-textarea-content>
+                        </div>
+                    </p-tabpanel>
+                }
+            </ng-container>
         </p-tabpanels>
     </p-tabs>
 </div>

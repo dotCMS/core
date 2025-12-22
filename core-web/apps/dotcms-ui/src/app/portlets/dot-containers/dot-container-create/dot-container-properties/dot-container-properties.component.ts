@@ -50,7 +50,6 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
     ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
-    styleUrls: ['./dot-container-properties.component.scss'],
     imports: [
         CommonModule,
         ReactiveFormsModule,

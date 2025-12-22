@@ -1,0 +1,15 @@
+
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+.disabled-row {
+    @apply bg-gray-200 text-gray-500 pointer-events-none;
+}
+
+.disabled-row td {
+    @apply text-gray-500;
+}
+
+.p-datatable {
+    @apply flex flex-col justify-between;
+}

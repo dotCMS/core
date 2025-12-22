@@ -1,32 +1,27 @@
-import { Component, Input } from '@angular/core';
-
-import { ButtonModule } from 'primeng/button';
+import { Component, computed, input } from '@angular/core';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-link',
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     templateUrl: './dot-link.component.html',
-    styleUrls: ['./dot-link.component.scss']
+    styleUrls: ['./dot-link.component.css']
 })
 export class DotLinkComponent {
-    @Input()
-    label: string;
+    label = input<string>();
+    href = input<string>();
+    icon = input<string>();
 
-    classNames: string;
+    link = computed(() => {
+        const hrefValue = this.href();
+        return hrefValue ? this.getFixedLink(hrefValue) : '';
+    });
 
-    link: string;
-
-    @Input()
-    set href(value: string) {
-        this.link = this.getFixedLink(value);
-    }
-
-    @Input()
-    set icon(value: string) {
-        this.classNames = `pi ${value}`;
-    }
+    classNames = computed(() => {
+        const iconValue = this.icon();
+        return iconValue ? `pi ${iconValue}` : '';
+    });
 
     private getFixedLink(link: string): string {
         return link.startsWith('/') ? link : `/${link}`;

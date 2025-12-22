@@ -217,7 +217,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     readonly loadContentTypesAndUpdateVisibility = this.effect<void>(
         pipe(
             switchMap(() => {
-                return this.dotContentTypeService.getContentTypes({ page: 999 });
+                return this.dotContentTypeService.getContentTypes({ per_page: 999 });
             }),
             tap((contentTypes: DotCMSContentType[]) => {
                 this.updateContentTypes(contentTypes);
