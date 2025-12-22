@@ -86,6 +86,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1241,7 +1242,7 @@ public class ContentTypeResource implements Serializable {
 						String.format("Content Type with ID or var name '%s' was not found", idOrVar));
 			}
 			if (null != session) {
-				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
+                //session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
 			final boolean live = paramLive == null ?
 					(PageMode.get(Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull())).showLive
