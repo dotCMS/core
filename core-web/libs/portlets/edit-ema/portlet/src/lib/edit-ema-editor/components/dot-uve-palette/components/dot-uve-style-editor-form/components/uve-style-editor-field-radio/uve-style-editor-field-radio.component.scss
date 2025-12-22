@@ -1,0 +1,66 @@
+@use "variables" as *;
+
+/* Regular Radio Styles */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+}
+
+/* Radio Image Styles */
+.field-radio-image {
+    margin-bottom: $spacing-4;
+}
+
+.radio-image-group {
+    display: grid;
+    gap: $spacing-3;
+}
+
+.radio-image-item {
+    position: relative;
+}
+
+.radio-image-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.radio-image-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-1;
+    padding: $spacing-2;
+    border: 1px solid $color-palette-surface-500;
+    border-radius: $spacing-1;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    background: $white;
+}
+
+.radio-image-label:hover {
+    border-color: $color-palette-surface-800;
+    box-shadow: $shadow-m;
+}
+
+.radio-image-input:checked + .radio-image-label {
+    border-color: $color-palette-primary-500;
+}
+
+.radio-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    width: 100%;
+}
+
+.radio-image-input:checked + .radio-image-label .radio-image-text {
+    color: $color-palette-primary-500;
+}

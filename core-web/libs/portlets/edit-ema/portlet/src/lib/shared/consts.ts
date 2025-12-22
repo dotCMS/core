@@ -1,5 +1,6 @@
 import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFieldType } from '@dotcms/uve';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -105,3 +106,14 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
         _isDefault: true
     }
 ];
+
+/**
+ * Constants for style editor field types.
+ * Use these constants in templates instead of hardcoded strings.
+ */
+export const STYLE_EDITOR_FIELD_TYPES = {
+    INPUT: 'input',
+    DROPDOWN: 'dropdown',
+    RADIO: 'radio',
+    CHECKBOX_GROUP: 'checkboxGroup'
+} as const satisfies Record<string, StyleEditorFieldType>;
