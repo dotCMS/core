@@ -1,6 +1,7 @@
 <p-dialog
     [visible]="$visibility()"
     (visibleChange)="visibilityChange.emit($event)"
+    (onHide)="resetSearchControl()"
     [modal]="true"
     [draggable]="false"
     [header]="'create.page' | dm"

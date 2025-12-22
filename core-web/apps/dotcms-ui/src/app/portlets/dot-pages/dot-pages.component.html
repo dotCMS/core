@@ -31,3 +31,5 @@
 @if ($showBundleDialog()) {
     <dot-add-to-bundle (cancel)="onCloseBundleDialog()" [assetIdentifier]="$assetIdentifier()" />
 }
+
+<router-outlet (deactivate)="getPages()"></router-outlet>

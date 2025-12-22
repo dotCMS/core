@@ -148,6 +148,20 @@ describe('DotCreatePageDialogComponent', () => {
 
             expect(emittedValue).toBe(false);
         });
+
+        it('should reset searchControl on dialog hide', fakeAsync(() => {
+            spectator.detectChanges();
+
+            spectator.component.searchControl.setValue('blog');
+            tick(300);
+            expect(spectator.component.$searchTerm()).toBe('blog');
+
+            spectator.triggerEventHandler('p-dialog', 'onHide', null);
+            expect(spectator.component.searchControl.value).toBe('');
+
+            tick(300);
+            expect(spectator.component.$searchTerm()).toBe('');
+        }));
     });
 
     describe('Search Functionality', () => {

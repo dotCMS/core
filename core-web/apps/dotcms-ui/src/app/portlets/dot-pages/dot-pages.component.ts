@@ -10,6 +10,7 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterOutlet } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -89,6 +90,7 @@ type SavePageEventData = {
     imports: [
         MenuModule,
         CommonModule,
+        RouterOutlet,
         ProgressSpinnerModule,
         DotAddToBundleComponent,
         DotPageFavoritesPanelComponent,
@@ -261,6 +263,10 @@ export class DotPagesComponent {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
+    }
+
+    protected getPages(): void {
+        this.#dotCMSPagesStore.getPages({ offset: 0 });
     }
 
     /**

@@ -90,6 +90,15 @@ export class DotCreatePageDialogComponent {
     }
 
     /**
+     * Resets the search input (used on dialog show/hide).
+     */
+    protected resetSearchControl(): void {
+        this.searchControl.setValue('');
+        this.searchControl.markAsPristine();
+        this.searchControl.markAsUntouched();
+    }
+
+    /**
      * Redirect to Create content page
      * @param {string} variableName
      *
