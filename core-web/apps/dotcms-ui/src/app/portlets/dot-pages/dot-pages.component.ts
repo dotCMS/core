@@ -85,7 +85,6 @@ type SavePageEventData = {
         DotPageActionsService
     ],
     selector: 'dot-pages',
-    styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html',
     imports: [
         MenuModule,
@@ -96,7 +95,10 @@ type SavePageEventData = {
         DotPageFavoritesPanelComponent,
         DotPagesTableComponent,
         DotCreatePageDialogComponent
-    ]
+    ],
+    host: {
+        class: 'h-full overflow-auto p-6 block'
+    }
 })
 export class DotPagesComponent {
     readonly #dotRouterService = inject(DotRouterService);
