@@ -69,7 +69,8 @@ public class PermissionResource {
         this(new WebResource(),
              PermissionHelper.getInstance(),
              APILocator.getUserAPI(),
-             new PermissionSaveHelper());
+             new PermissionSaveHelper(),
+             new AssetPermissionHelper());
     }
 
     @VisibleForTesting
@@ -77,29 +78,21 @@ public class PermissionResource {
         this(new WebResource(),
              PermissionHelper.getInstance(),
              APILocator.getUserAPI(),
-             permissionSaveHelper);
-        this(new WebResource(), PermissionHelper.getInstance(),
-             new AssetPermissionHelper(), APILocator.getUserAPI());
+             permissionSaveHelper,
+             new AssetPermissionHelper());
     }
 
     @VisibleForTesting
-    public PermissionResource(final WebResource          webResource,
-                              final PermissionHelper     permissionHelper,
-                              final UserAPI              userAPI,
-                              final PermissionSaveHelper permissionSaveHelper) {
-    public PermissionResource(final WebResource      webResource,
+    public PermissionResource(final WebResource webResource,
                               final PermissionHelper permissionHelper,
-                              final AssetPermissionHelper assetPermissionHelper,
-                              final UserAPI          userAPI) {
-
-        this.webResource          = webResource;
-        this.permissionHelper     = permissionHelper;
-        this.userAPI              = userAPI;
-        this.permissionSaveHelper = permissionSaveHelper;
-        this.webResource      = webResource;
+                              final UserAPI userAPI,
+                              final PermissionSaveHelper permissionSaveHelper,
+                              final AssetPermissionHelper assetPermissionHelper) {
+        this.webResource = webResource;
         this.permissionHelper = permissionHelper;
+        this.userAPI = userAPI;
+        this.permissionSaveHelper = permissionSaveHelper;
         this.assetPermissionHelper = assetPermissionHelper;
-        this.userAPI          = userAPI;
     }
 
     /**
