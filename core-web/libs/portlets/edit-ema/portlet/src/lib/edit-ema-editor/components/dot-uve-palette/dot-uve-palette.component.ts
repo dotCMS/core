@@ -21,7 +21,12 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
  */
 @Component({
     selector: 'dot-uve-palette',
-    imports: [TabsModule, DotUvePaletteListComponent, TooltipModule, JsonPipe, DotUveStyleEditorFormComponent],
+    imports: [
+        TabsModule,
+        DotUvePaletteListComponent,
+        TooltipModule,
+        DotUveStyleEditorFormComponent
+    ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
