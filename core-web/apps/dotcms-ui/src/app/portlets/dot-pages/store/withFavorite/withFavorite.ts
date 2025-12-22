@@ -11,6 +11,7 @@ import {
 
 import { computed, inject } from '@angular/core';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentlet, SiteEntity } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -41,28 +42,40 @@ export const withFavorites = () => {
         withMethods((store) => {
             const dotPageListService = inject(DotPageListService);
             const globalStore = inject(GlobalStore);
+            const httpErrorManagerService = inject(DotHttpErrorManagerService);
             const fetchFavoritePages = (params: Partial<ListPagesParams> = {}) => {
                 patchState(store, { favoriteState: 'loading' });
                 const userId = globalStore.loggedUser()?.userId ?? 'dotcms.org.1';
                 dotPageListService
                     .getFavoritePages({ ...store.filters(), ...params }, userId)
-                    .subscribe(({ jsonObjectView }) => {
-                        patchState(store, {
-                            favoritePages: jsonObjectView.contentlets,
-                            favoriteState: 'loaded'
-                        });
+                    .subscribe({
+                        next: ({ jsonObjectView }) => {
+                            patchState(store, {
+                                favoritePages: jsonObjectView.contentlets,
+                                favoriteState: 'loaded'
+                            });
+                        },
+                        error: (error) => {
+                            patchState(store, { favoriteState: 'error' });
+                            httpErrorManagerService.handle(error);
+                        }
                     });
             };
 
             return {
                 getFavoritePages: (params?: Partial<ListPagesParams>) => fetchFavoritePages(params),
                 updateFavoritePageNode: (identifier: string) => {
-                    dotPageListService.getSinglePage(identifier).subscribe((updatedPage) => {
-                        const currentFavoritePages = store.favoritePages();
-                        const nextFavoritePages = currentFavoritePages.map((page) =>
-                            page?.identifier === identifier ? updatedPage : page
-                        );
-                        patchState(store, { favoritePages: nextFavoritePages });
+                    dotPageListService.getSinglePage(identifier).subscribe({
+                        next: (updatedPage) => {
+                            const currentFavoritePages = store.favoritePages();
+                            const nextFavoritePages = currentFavoritePages.map((page) =>
+                                page?.identifier === identifier ? updatedPage : page
+                            );
+                            patchState(store, { favoritePages: nextFavoritePages });
+                        },
+                        error: (error) => {
+                            httpErrorManagerService.handle(error);
+                        }
                     });
                 }
             };

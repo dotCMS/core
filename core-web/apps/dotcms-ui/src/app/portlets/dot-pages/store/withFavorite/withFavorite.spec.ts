@@ -1,10 +1,11 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentlet, ESContent, SiteEntity } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -68,6 +69,7 @@ describe('withFavorites', () => {
     let dotPageListService: jest.Mocked<
         Pick<DotPageListService, 'getFavoritePages' | 'getSinglePage'>
     >;
+    let httpErrorManagerService: jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
 
     const siteDetailsSig = signal<SiteEntity | null>(null);
     const loggedUserMock = jest.fn(() => ({ userId: 'user-1' }) as unknown);
@@ -80,6 +82,12 @@ describe('withFavorites', () => {
                 useValue: {
                     getFavoritePages: jest.fn().mockReturnValue(of(MOCK_ES_CONTENT)),
                     getSinglePage: jest.fn().mockReturnValue(of(MOCK_FAVORITES[0]))
+                }
+            },
+            {
+                provide: DotHttpErrorManagerService,
+                useValue: {
+                    handle: jest.fn()
                 }
             },
             {
@@ -99,6 +107,9 @@ describe('withFavorites', () => {
         dotPageListService = spectator.inject(DotPageListService) as unknown as jest.Mocked<
             Pick<DotPageListService, 'getFavoritePages' | 'getSinglePage'>
         >;
+        httpErrorManagerService = spectator.inject(
+            DotHttpErrorManagerService
+        ) as unknown as jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
 
         // Reset base state between tests; keep the feature defaults.
         patchState(store, initialState);
@@ -108,6 +119,7 @@ describe('withFavorites', () => {
         loggedUserMock.mockClear();
         (dotPageListService.getFavoritePages as jest.Mock).mockClear();
         (dotPageListService.getSinglePage as jest.Mock).mockClear();
+        (httpErrorManagerService.handle as jest.Mock).mockClear();
     });
 
     it('should initialize favorite state', () => {
@@ -151,6 +163,17 @@ describe('withFavorites', () => {
         expect(userId).toBe('dotcms.org.1');
     });
 
+    it('getFavoritePages() should call httpErrorManagerService.handle(error) and set favoriteState=error when request fails', () => {
+        const error = new Error('Favorites failed');
+        dotPageListService.getFavoritePages.mockReturnValueOnce(throwError(error));
+
+        store.getFavoritePages();
+
+        expect(httpErrorManagerService.handle).toHaveBeenCalledWith(error);
+        expect(store.favoriteState()).toBe('error');
+        expect(store.$isFavoritePagesLoading()).toBe(false);
+    });
+
     it('updateFavoritePageNode() should replace the matching favorite page with the updated one', () => {
         const current = [
             mockContentlet({ identifier: 'page-1', title: 'Home', url: '/home' }),
@@ -169,5 +192,21 @@ describe('withFavorites', () => {
 
         expect(dotPageListService.getSinglePage).toHaveBeenCalledWith('page-2');
         expect(store.favoritePages()).toEqual([current[0], updated]);
+    });
+
+    it('updateFavoritePageNode() should call httpErrorManagerService.handle(error) when request fails', () => {
+        const current = [
+            mockContentlet({ identifier: 'page-1', title: 'Home', url: '/home' }),
+            mockContentlet({ identifier: 'page-2', title: 'About', url: '/about' })
+        ];
+        patchState(store, { favoritePages: current, favoriteState: 'loaded' });
+
+        const error = new Error('Single page failed');
+        dotPageListService.getSinglePage.mockReturnValueOnce(throwError(error));
+
+        store.updateFavoritePageNode('page-2');
+
+        expect(httpErrorManagerService.handle).toHaveBeenCalledWith(error);
+        expect(store.favoritePages()).toEqual(current);
     });
 });

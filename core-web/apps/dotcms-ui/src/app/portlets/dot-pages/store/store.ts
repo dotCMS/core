@@ -12,6 +12,7 @@ import { computed, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCurrentUser,
@@ -77,6 +78,7 @@ export const DotCMSPagesStore = signalStore(
     }),
     withMethods((store) => {
         const dotPageListService = inject(DotPageListService);
+        const httpErrorManagerService = inject(DotHttpErrorManagerService);
 
         const fetchPages = (params: Partial<ListPagesParams> = {}) => {
             const nextFilters: ListPagesParams = { ...store.filters(), ...params };
@@ -88,9 +90,8 @@ export const DotCMSPagesStore = signalStore(
                 filters: nextFilters
             });
 
-            dotPageListService
-                .getPages(nextFilters)
-                .subscribe(({ jsonObjectView, resultsSize }) => {
+            dotPageListService.getPages(nextFilters).subscribe({
+                next: ({ jsonObjectView, resultsSize }) => {
                     patchState(store, {
                         status: 'loaded',
                         pages: jsonObjectView.contentlets,
@@ -100,7 +101,12 @@ export const DotCMSPagesStore = signalStore(
                             totalEntries: resultsSize
                         }
                     });
-                });
+                },
+                error: (error) => {
+                    patchState(store, { status: 'error' });
+                    httpErrorManagerService.handle(error);
+                }
+            });
         };
         return {
             getPages: (params: Partial<ListPagesParams> = {}) => fetchPages(params),
@@ -122,12 +128,17 @@ export const DotCMSPagesStore = signalStore(
                 fetchPages({ offset, sort });
             },
             updatePageNode: (identifier: string) => {
-                dotPageListService.getSinglePage(identifier).subscribe((updatedPage) => {
-                    const currentPages = store.pages();
-                    const nextPages = currentPages.map((page) =>
-                        page?.identifier === identifier ? updatedPage : page
-                    );
-                    patchState(store, { pages: nextPages });
+                dotPageListService.getSinglePage(identifier).subscribe({
+                    next: (updatedPage) => {
+                        const currentPages = store.pages();
+                        const nextPages = currentPages.map((page) =>
+                            page?.identifier === identifier ? updatedPage : page
+                        );
+                        patchState(store, { pages: nextPages });
+                    },
+                    error: (error) => {
+                        httpErrorManagerService.handle(error);
+                    }
                 });
             },
             showBundleDialog: (pageIdentifier: string) => {
