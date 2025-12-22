@@ -12,9 +12,18 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -335,7 +344,12 @@ public class PermissionSaveHelper {
 
         Logger.info(this, () -> String.format("Successfully saved permissions for user %s on asset %s", userId, assetId));
 
-        return new SaveUserPermissionsView(userId, userRole.getId(), updatedAsset, cascadeInitiated);
+        return SaveUserPermissionsView.builder()
+            .userId(userId)
+            .roleId(userRole.getId())
+            .asset(updatedAsset)
+            .cascadeInitiated(cascadeInitiated)
+            .build();
     }
 
     /**
@@ -423,5 +437,123 @@ public class PermissionSaveHelper {
         }
         Logger.debug(this, "Unknown permission type: " + permissionType);
         return permissionType.toUpperCase();
+    }
+
+    // ========== GET User Permissions Methods ==========
+
+    /**
+     * Gets all permission assets for a user's role.
+     * Returns hosts and folders that the role has direct permissions on.
+     *
+     * @param role The user's individual role
+     * @param requestingUser The user making the request (for permission checks)
+     * @return List of permission assets with their permissions
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    public List<UserPermissionAssetView> getUserPermissionAssets(final Role role, final User requestingUser)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = userAPI.getSystemUser();
+        final Host systemHost = APILocator.systemHost();
+        final boolean respectFrontendRoles = false;
+
+        final Set<Permissionable> permissionAssets = new HashSet<>();
+        final Map<String, List<Permission>> permissionsByInode = new HashMap<>();
+
+        final List<Permission> permissions = permissionAPI.getPermissionsByRole(role, true, true);
+
+        // Collect assets from permissions
+        for (final Permission permission : permissions) {
+            permissionsByInode.computeIfAbsent(permission.getInode(), k -> new ArrayList<>()).add(permission);
+
+            final Folder folder = folderAPI.find(permission.getInode(), systemUser, respectFrontendRoles);
+
+            if (UtilMethods.isSet(() -> folder.getIdentifier())) {
+                permissionAssets.add(folder);
+            } else {
+                final Host host = hostAPI.find(permission.getInode(), systemUser, respectFrontendRoles);
+                if (host != null) {
+                    permissionAssets.add(host);
+                }
+            }
+        }
+
+        final List<UserPermissionAssetView> result = new ArrayList<>();
+        boolean systemHostInList = false;
+
+        for (final Permissionable asset : permissionAssets) {
+            if (asset instanceof Host && ((Host) asset).isSystemHost()) {
+                systemHostInList = true;
+            }
+
+            final String assetId = getAssetId(asset);
+            final List<Permission> assetPermissions = permissionsByInode.get(assetId);
+            result.add(buildAssetResponse(asset, assetPermissions, requestingUser, systemUser));
+        }
+
+        // Always include system host
+        if (!systemHostInList) {
+            result.add(buildAssetResponse(systemHost, new ArrayList<>(), requestingUser, systemUser));
+        }
+
+        return result;
+    }
+
+    /**
+     * Gets paginated permission assets for a user's role.
+     *
+     * @param role The user's individual role
+     * @param requestingUser The user making the request
+     * @param page Page number (0-based)
+     * @param perPage Number of items per page
+     * @return Paginated list of permission assets
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    public List<UserPermissionAssetView> getUserPermissionAssetsPaginated(
+            final Role role,
+            final User requestingUser,
+            final int page,
+            final int perPage) throws DotDataException, DotSecurityException {
+
+        final List<UserPermissionAssetView> allAssets = getUserPermissionAssets(role, requestingUser);
+
+        final int totalEntries = allAssets.size();
+        final int offset = page * perPage;
+
+        if (offset >= totalEntries) {
+            return new ArrayList<>();
+        }
+
+        final int endIndex = Math.min(offset + perPage, totalEntries);
+        return allAssets.subList(offset, endIndex);
+    }
+
+    /**
+     * Gets total count of permission assets for a role.
+     * Used for pagination metadata.
+     *
+     * @param role The role to count assets for
+     * @param requestingUser The user making the request
+     * @return Total number of assets
+     * @throws DotDataException if data access fails
+     * @throws DotSecurityException if security check fails
+     */
+    public int getTotalPermissionAssetCount(final Role role, final User requestingUser)
+            throws DotDataException, DotSecurityException {
+        return getUserPermissionAssets(role, requestingUser).size();
+    }
+
+    /**
+     * Gets the asset ID for a permissionable (host identifier or folder inode).
+     */
+    private String getAssetId(final Permissionable asset) {
+        if (asset instanceof Host) {
+            return ((Host) asset).getIdentifier();
+        } else if (asset instanceof Folder) {
+            return ((Folder) asset).getInode();
+        }
+        return StringPool.BLANK;
     }
 }

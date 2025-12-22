@@ -10,6 +10,11 @@ import com.dotcms.rest.api.v1.system.permission.PermissionSaveHelper;
 import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsView;
 import com.dotcms.rest.api.v1.system.permission.UserPermissionAssetView;
 import com.dotcms.rest.api.v1.system.permission.ResponseEntitySaveUserPermissionsView;
+import com.dotcms.rest.api.v1.system.permission.UserPermissionsView;
+import com.dotcms.rest.api.v1.system.permission.UserInfoView;
+import com.dotcms.rest.api.v1.system.permission.PermissionMetadataView;
+import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionMetadataView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -32,16 +37,21 @@ import org.glassfish.jersey.internal.util.Base64;
 import static org.junit.Assert.*;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotmarketing.exception.DotSecurityException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  * Integration tests for PermissionResource user permissions endpoints.
- * Tests PUT /api/v1/permissions/user/{userId}/asset/{assetId}
+ * Tests:
+ * - GET /api/v1/permissions/ (permission metadata)
+ * - GET /api/v1/permissions/user/{userId} (get user permissions)
+ * - PUT /api/v1/permissions/user/{userId}/asset/{assetId} (update user permissions)
  */
 public class PermissionResourceIntegrationTest {
 
@@ -190,11 +200,11 @@ public class PermissionResourceIntegrationTest {
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
         assertNotNull(data);
-        assertFalse("Cascade should not be initiated", data.isCascadeInitiated());
-        assertEquals(updateTestUser.getUserId(), data.getUserId());
+        assertFalse("Cascade should not be initiated", data.cascadeInitiated());
+        assertEquals(updateTestUser.getUserId(), data.userId());
 
         // Verify asset in response
-        UserPermissionAssetView asset = data.getAsset();
+        UserPermissionAssetView asset = data.asset();
         assertEquals(updateTestHost.getIdentifier(), asset.id());
         Set<String> individualPerms = asset.permissions().get("INDIVIDUAL");
         assertNotNull(individualPerms);
@@ -230,7 +240,7 @@ public class PermissionResourceIntegrationTest {
         // Assert response
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        UserPermissionAssetView asset = data.getAsset();
+        UserPermissionAssetView asset = data.asset();
 
         // Verify all 3 scopes present
         Map<String, Set<String>> permMap = asset.permissions();
@@ -278,14 +288,14 @@ public class PermissionResourceIntegrationTest {
         // Assert response successful
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        assertEquals(childFolder.getInode(), data.getAsset().id());
+        assertEquals(childFolder.getInode(), data.asset().id());
 
         // VERIFY inheritance broken after PUT (critical assertion)
         assertFalse("Child folder should NOT be inheriting after PUT",
                 APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
 
         // Verify permissions set on child
-        UserPermissionAssetView childAsset = data.getAsset();
+        UserPermissionAssetView childAsset = data.asset();
         assertFalse("Child should not be inheriting", childAsset.inheritsPermissions());
         assertTrue("Child should have READ and WRITE",
                 childAsset.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE")));
@@ -320,7 +330,7 @@ public class PermissionResourceIntegrationTest {
         // Assert cascade was initiated
         assertNotNull(response);
         SaveUserPermissionsView data = response.getEntity();
-        assertTrue("Cascade should be initiated for parent permissionable", data.isCascadeInitiated());
+        assertTrue("Cascade should be initiated for parent permissionable", data.cascadeInitiated());
     }
 
     /**
@@ -348,7 +358,7 @@ public class PermissionResourceIntegrationTest {
         ResponseEntitySaveUserPermissionsView setupResponse = resource.updateUserPermissions(
                 request, this.response, updateTestUser.getUserId(), updateTestHost.getIdentifier(), setupForm
         );
-        UserPermissionAssetView hostAsset1 = setupResponse.getEntity().getAsset();
+        UserPermissionAssetView hostAsset1 = setupResponse.getEntity().asset();
         assertTrue("Setup should have all 3 permissions",
                 hostAsset1.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
@@ -363,7 +373,7 @@ public class PermissionResourceIntegrationTest {
 
         // Assert: Should have ONLY READ (replacement not merge)
         assertNotNull(response);
-        UserPermissionAssetView asset = response.getEntity().getAsset();
+        UserPermissionAssetView asset = response.getEntity().asset();
         Set<String> resultPerms = asset.permissions().get("INDIVIDUAL");
         assertEquals("Should have only 1 permission", 1, resultPerms.size());
         assertTrue("Should have READ", resultPerms.contains("READ"));
@@ -528,5 +538,198 @@ public class PermissionResourceIntegrationTest {
             assertTrue("Error message should contain 'cannot be empty' or scope validation error",
                     entity.contains("cannot be empty") || entity.contains("Invalid permission scope"));
         }
+    }
+
+    // ==================== GET User Permissions Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user retrieves permissions for another user
+     *     who has permission assets.</li>
+     *     <li><b>Expected Result:</b> Permissions are retrieved successfully with user info,
+     *     role ID, and list of permission assets.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getUserPermissions_adminAccessingOtherUser_success() throws Exception {
+        HttpServletRequest request = mockRequest();
+
+        // Get permissions for updateTestUser (who has permissions on updateTestHost)
+        ResponseEntityPaginatedDataView response = resource.getUserPermissions(
+                request, this.response, updateTestUser.getUserId(), 1, 40
+        );
+
+        // Assert response structure
+        assertNotNull(response);
+        UserPermissionsView data = (UserPermissionsView) response.getEntity();
+        assertNotNull(data);
+
+        // Verify user info
+        UserInfoView userInfo = data.user();
+        assertNotNull(userInfo);
+        assertEquals(updateTestUser.getUserId(), userInfo.id());
+        assertEquals(updateTestUser.getFullName(), userInfo.name());
+        assertEquals(updateTestUser.getEmailAddress(), userInfo.email());
+
+        // Verify role ID is present
+        assertNotNull(data.roleId());
+        assertFalse(data.roleId().isEmpty());
+
+        // Verify assets list is returned (may contain permission assets from setup)
+        List<UserPermissionAssetView> assets = data.assets();
+        assertNotNull(assets);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> A non-admin user retrieves their own permissions.</li>
+     *     <li><b>Expected Result:</b> Permissions are retrieved successfully since users
+     *     can always view their own permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getUserPermissions_userAccessingSelf_success() throws Exception {
+        // Setup request as limitedUser (non-admin) accessing their own permissions
+        MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(
+                                new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request()
+                        ).request()
+                ).request()
+        );
+
+        request.getSession().setAttribute(WebKeys.USER_ID, limitedUser.getUserId());
+        request.getSession().setAttribute(WebKeys.USER, limitedUser);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
+
+        // User accessing their own permissions - should succeed
+        ResponseEntityPaginatedDataView response = resource.getUserPermissions(
+                request, this.response, limitedUser.getUserId(), 1, 40
+        );
+
+        // Assert response
+        assertNotNull(response);
+        UserPermissionsView data = (UserPermissionsView) response.getEntity();
+        assertNotNull(data);
+
+        // Verify correct user info returned
+        assertEquals(limitedUser.getUserId(), data.user().id());
+        assertEquals(limitedUser.getEmailAddress(), data.user().email());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> A non-admin user attempts to retrieve another user's
+     *     permissions.</li>
+     *     <li><b>Expected Result:</b> A DotSecurityException is thrown indicating that only
+     *     admin users can view other users' permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getUserPermissions_userAccessingOther_forbidden() throws Exception {
+        // Setup request as limitedUser (non-admin)
+        MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(
+                                new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request()
+                        ).request()
+                ).request()
+        );
+
+        request.getSession().setAttribute(WebKeys.USER_ID, limitedUser.getUserId());
+        request.getSession().setAttribute(WebKeys.USER, limitedUser);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
+
+        // Non-admin trying to access another user's permissions
+        try {
+            resource.getUserPermissions(
+                    request, this.response, updateTestUser.getUserId(), 1, 40
+            );
+            fail("Should have thrown DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertTrue("Error message should indicate admin-only access",
+                    e.getMessage().contains("Only admin user can retrieve other users permissions"));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getUserPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user retrieves permissions with pagination
+     *     parameters.</li>
+     *     <li><b>Expected Result:</b> Paginated results are returned and pagination metadata
+     *     is correct.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getUserPermissions_pagination_success() throws Exception {
+        HttpServletRequest request = mockRequest();
+
+        // Request with specific pagination parameters
+        int page = 1;
+        int perPage = 10;
+
+        ResponseEntityPaginatedDataView response = resource.getUserPermissions(
+                request, this.response, adminUser.getUserId(), page, perPage
+        );
+
+        // Assert response
+        assertNotNull(response);
+        UserPermissionsView data = (UserPermissionsView) response.getEntity();
+        assertNotNull(data);
+
+        // Verify pagination object is present
+        assertNotNull(response.getPagination());
+        assertEquals(page, response.getPagination().getCurrentPage());
+        assertEquals(perPage, response.getPagination().getPerPage());
+
+        // Total entries should be set (could be 0 or more)
+        assertTrue(response.getPagination().getTotalEntries() >= 0);
+    }
+
+    // ==================== GET Permission Metadata Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionMetadata}</li>
+     *     <li><b>Given Scenario:</b> Backend user requests permission metadata.</li>
+     *     <li><b>Expected Result:</b> Available permission levels and scopes are returned.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPermissionMetadata_success() throws Exception {
+        HttpServletRequest request = mockRequest();
+
+        ResponseEntityPermissionMetadataView response = resource.getPermissionMetadata(
+                request, this.response
+        );
+
+        // Assert response
+        assertNotNull(response);
+        PermissionMetadataView metadata = response.getEntity();
+        assertNotNull(metadata);
+
+        // Verify permission levels
+        Set<String> levels = metadata.levels();
+        assertNotNull(levels);
+        assertFalse("Should have permission levels", levels.isEmpty());
+        assertTrue("Should include READ level", levels.contains("READ"));
+        assertTrue("Should include WRITE level", levels.contains("WRITE"));
+        assertTrue("Should include PUBLISH level", levels.contains("PUBLISH"));
+        assertTrue("Should include EDIT_PERMISSIONS level", levels.contains("EDIT_PERMISSIONS"));
+        assertTrue("Should include CAN_ADD_CHILDREN level", levels.contains("CAN_ADD_CHILDREN"));
+
+        // Verify permission scopes
+        Set<String> scopes = metadata.scopes();
+        assertNotNull(scopes);
+        assertFalse("Should have permission scopes", scopes.isEmpty());
+        assertTrue("Should include INDIVIDUAL scope", scopes.contains("INDIVIDUAL"));
+        assertTrue("Should include HOST scope", scopes.contains("HOST"));
+        assertTrue("Should include FOLDER scope", scopes.contains("FOLDER"));
     }
 }
