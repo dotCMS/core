@@ -9674,6 +9674,7 @@ paths:
         required: true
         schema:
           type: string
+          pattern: .+
       - in: query
         name: linesBack
         schema:
@@ -9729,6 +9730,7 @@ paths:
         required: true
         schema:
           type: string
+          pattern: .+
       responses:
         default:
           content:
@@ -10699,6 +10701,57 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Get permissions by permission type
+      tags:
+      - Permissions
+  /v1/permissions/user/{userId}:
+    get:
+      description: "Retrieves permissions for a user's individual role, organized\
+        \ by assets (hosts and folders). Admin users can view any user's permissions.\
+        \ Non-admin users can only view their own permissions."
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Page number (1-based)
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: User permissions retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - non-admin user attempted to view another user's
+            permissions
+        "404":
+          content:
+            application/json: {}
+          description: User not found
+      summary: Get user permissions
       tags:
       - Permissions
   /v1/permissions/user/{userId}/asset/{assetId}:
@@ -14087,36 +14140,6 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Find an user
-      tags:
-      - Users
-  /v1/users/{userId}/permissions:
-    get:
-      description: "Retrieves permissions for a user's individual role, organized\
-        \ by asset type and permission scope"
-      operationId: getUserPermissions
-      parameters:
-      - description: User ID or email address
-        in: path
-        name: userId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
-          description: User permissions retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid user id
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-      summary: Get user permissions
       tags:
       - Users
   /v1/variants:
@@ -17678,6 +17701,40 @@ paths:
       tags:
       - Internationalization
   /v2/tags:
+    delete:
+      description: Deletes one or more tags by their IDs. User must have EDIT permission
+        on all contentlets associated with each tag.
+      operationId: delete_17
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              description: Array of tag IDs
+              example:
+              - tag-123
+              - tag-456
+              - tag-789
+        description: List of tag IDs to delete
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
+          description: Bulk delete result with success count and failures
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - tagIds list is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete tags
+      tags:
+      - Tags
     get:
       description: "Searches and lists tags with filtering, pagination, and sorting.\
         \ The filter parameter performs a case-insensitive search with wildcards on\
@@ -18113,27 +18170,6 @@ paths:
             application/json: {}
           description: Internal Server Error
       summary: Get tag by name or ID
-      tags:
-      - Tags
-  /v2/tags/{tagId}:
-    delete:
-      operationId: delete_17
-      parameters:
-      - in: path
-        name: tagId
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBooleanView"
-          description: default response
       tags:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
@@ -19437,6 +19473,19 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkResultView:
+      type: object
+      properties:
+        fails:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedResultView"
+        skippedCount:
+          type: integer
+          format: int64
+        successCount:
+          type: integer
+          format: int64
     BulkWorkflowSchemeView:
       type: object
       properties:
@@ -19458,13 +19507,24 @@ components:
     BundleMap:
       type: object
       properties:
+        builtWithMaven:
+          type: boolean
         bundleId:
           type: integer
           format: int64
+        dotcmsCoreDependencyVersion:
+          type: string
         jarFile:
+          type: string
+        javaClassVersion:
+          type: integer
+          format: int32
+        javaVersion:
           type: string
         location:
           type: string
+        multiRelease:
+          type: boolean
         separator:
           type: string
         state:
@@ -19473,6 +19533,8 @@ components:
         symbolicName:
           type: string
         system:
+          type: boolean
+        usesDotcmsApis:
           type: boolean
         version:
           type: string
@@ -21006,6 +21068,13 @@ components:
           type: string
       required:
       - packages
+    FailedResultView:
+      type: object
+      properties:
+        element:
+          type: string
+        errorMessage:
+          type: string
     Field:
       type: object
       discriminator:
@@ -24025,6 +24094,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityBulkResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBundleListView:
       type: object
       properties:
@@ -25169,31 +25261,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/UsageSummary"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityUserPermissionsView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
         errors:
           type: array
           items:

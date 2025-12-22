@@ -9,7 +9,7 @@
  * - `checkboxGroup`: Multiple-value selection from checkbox options
  * - `switch`: Boolean toggle switch (reserved for future implementation)
  */
-export type StyleEditorFieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup' | 'switch';
+export type StyleEditorFieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGroup';
 
 /**
  * Available input types for input fields in the style editor.
@@ -67,6 +67,8 @@ export type StyleEditorInputValueType<T extends StyleEditorFieldInputType> = T e
  * ```
  */
 export interface StyleEditorInputFieldConfig<T extends StyleEditorFieldInputType> {
+    /** The unique identifier for this field */
+    id: string;
     /** The label text displayed to users for this field */
     label: string;
     /** The input type that determines the value type ('text' for strings, 'number' for numbers) */
@@ -102,16 +104,10 @@ export interface StyleEditorOptionObject {
  * @property label - Display label shown to users
  * @property value - Value returned when this option is selected
  * @property imageURL - Optional URL to an image displayed for this option
- * @property width - Optional width of the image in pixels
- * @property height - Optional height of the image in pixels
  */
 export interface StyleEditorRadioOptionObject extends StyleEditorOptionObject {
     /** Optional URL to an image displayed for this option */
     imageURL?: string;
-    /** Optional width of the image in pixels */
-    width?: number;
-    /** Optional height of the image in pixels */
-    height?: number;
 }
 
 /**
@@ -149,9 +145,7 @@ export type StyleEditorOption = string | StyleEditorOptionObject;
  * const imageOption: StyleEditorRadioOption = {
  *   label: 'Left Layout',
  *   value: 'left',
- *   imageURL: 'https://example.com/left-layout.png',
- *   width: 80,
- *   height: 50
+ *   imageURL: 'https://example.com/left-layout.png'
  * };
  * ```
  */
@@ -186,6 +180,8 @@ export type StyleEditorCheckboxDefaultValue = Record<string, boolean>;
  * @property label - The human-readable label displayed for this field in the UI
  */
 export interface StyleEditorBaseField {
+    /** The unique identifier for this field */
+    id: string;
     /** The type of field, used to discriminate between different field types in union types */
     type: StyleEditorFieldType;
     /** The label text displayed to users for this field */
@@ -325,16 +321,12 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
  *     {
  *       label: 'Left',
  *       value: 'left',
- *       imageURL: 'https://example.com/layout-left.png',
- *       width: 80,
- *       height: 50
+ *       imageURL: 'https://example.com/layout-left.png'
  *     },
  *     {
  *       label: 'Right',
  *       value: 'right',
- *       imageURL: 'https://example.com/layout-right.png',
- *       width: 80,
- *       height: 50
+ *       imageURL: 'https://example.com/layout-right.png'
  *     },
  *     { label: 'Center', value: 'center' },
  *     { label: 'Overlap', value: 'overlap' }
@@ -349,7 +341,7 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
     /**
      * Array of selectable options. Can be:
      * - Simple strings (used as both label and value)
-     * - Objects with label, value, and optional imageURL, width, height for visual options
+     * - Objects with label, value, and optional imageURL for visual options
      */
     options: StyleEditorRadioOption[];
     /** Optional default selected value (must match one of the option values) */
@@ -582,7 +574,7 @@ export interface StyleEditorFieldSchemaConfig {
  * **Normalization Process:**
  * - Type-specific properties (like `inputType`, `options`, `placeholder`) are moved into `config`
  * - String options are normalized to `{ label, value }` objects
- * - Radio field image properties (`imageURL`, `width`, `height`) are preserved in option objects
+ * - Radio field image properties (`imageURL`) are preserved in option objects
  * - The `type` and `label` remain at the top level for easy access
  *
  * @property type - The field type identifier (discriminator for field types)
@@ -590,6 +582,8 @@ export interface StyleEditorFieldSchemaConfig {
  * @property config - Object containing all field-specific configuration properties
  */
 export interface StyleEditorFieldSchema {
+    /** The unique identifier for this field */
+    id: string;
     /** The field type identifier */
     type: StyleEditorFieldType;
     /** The field label */
