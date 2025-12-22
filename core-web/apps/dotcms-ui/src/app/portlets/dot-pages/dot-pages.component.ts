@@ -17,6 +17,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
+import { take } from 'rxjs/operators';
+
 import {
     DotESContentService,
     DotEventsService,
@@ -109,7 +111,7 @@ export class DotPagesComponent {
     protected readonly dialogVisible = signal<boolean>(false);
 
     readonly menu = viewChild<Menu>('menu');
-    readonly menuItems = signal<MenuItem[]>([{ label: 'Test' }]);
+    readonly menuItems = signal<MenuItem[]>([]);
 
     /**
      * Handle switch site
@@ -156,6 +158,7 @@ export class DotPagesComponent {
     @HostListener('window:click')
     closeMenu(): void {
         this.menu().hide();
+        this.menuItems.set([]);
     }
 
     /**
@@ -164,12 +167,14 @@ export class DotPagesComponent {
      * @param {DotActionsMenuEventParams} event
      * @memberof DotPagesComponent
      */
-    protected openMenu({ originalEvent, data }: DotActionsMenuEventParams): void {
+    protected toggleMenu({ originalEvent, data }: DotActionsMenuEventParams): void {
         originalEvent.stopPropagation();
-        this.menu().toggle(originalEvent);
-        this.#dotPageActionsService.getItems(data).subscribe((actions) => {
-            this.menuItems.set(actions);
-        });
+        if (this.menu()?.visible) {
+            this.closeMenu();
+            return;
+        }
+
+        this.openMenu({ originalEvent, data });
     }
 
     /**
@@ -225,6 +230,15 @@ export class DotPagesComponent {
     }
 
     /**
+     * Close the bundle dialog
+     *
+     * @memberof DotPagesComponent
+     */
+    protected onCloseBundleDialog(): void {
+        this.dotCMSPagesStore.hideBundleDialog();
+    }
+
+    /**
      * Listen to the save page event
      *
      * @memberof DotPagesComponent
@@ -253,6 +267,44 @@ export class DotPagesComponent {
                     severity: DotMessageSeverity.SUCCESS,
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
+            });
+    }
+
+    /**
+     * Opens the PrimeNG popup menu for a page row after loading its actions asynchronously.
+     *
+     * Why this helper exists:
+     * - `DotPageActionsService.getItems(...)` is async, so we can't always show the menu immediately.
+     * - PrimeNG `Menu.show(event)` positions the overlay using `event.currentTarget`.
+     *   After the original click handler completes, `currentTarget` can be lost (null),
+     *   causing the popup to render in the wrong place.
+     *
+     * What we do:
+     * - Capture the anchor element synchronously (`currentTarget`/`target`) before awaiting data.
+     * - Fetch menu items.
+     * - Show the menu using a synthetic event that reuses the captured anchor.
+     * - Then set the menu model (`menuItems`) so the first render already has content.
+     *
+     * Notes for feature devs:
+     * - If/when we introduce an endpoint that returns pages with actions precomputed,
+     *   this can be simplified to a synchronous menu open (no subscription required).
+     *
+     * @param event Menu trigger payload containing the original mouse event and the page contentlet.
+     */
+    private openMenu({ originalEvent, data }: DotActionsMenuEventParams): void {
+        // Capture the anchor element now—after the async call resolves, `currentTarget` may be null,
+        // and PrimeNG uses it to position the popup menu.
+        const anchor = originalEvent.currentTarget || originalEvent.target;
+        this.#dotPageActionsService
+            .getItems(data)
+            .pipe(take(1))
+            .subscribe((actions) => {
+                // Show with a stable anchor so the popup is positioned correctly.
+                this.menu().show({
+                    currentTarget: anchor,
+                    target: anchor
+                } as unknown as MouseEvent);
+                this.menuItems.set(actions);
             });
     }
 }

@@ -42,19 +42,24 @@ interface DotPermissions {
 /**
  * Builds the context-menu items shown in the Pages listing.
  *
- * Notes:
- * - Workflow actions are resolved per contentlet via `DotWorkflowsActionsService`.
- * - Edit permission is derived from the logged-in user's permissions for HTML Pages and Contentlets.
- * - Push Publish is only shown when at least one environment exists.
+ * IMPORTANT (temporary workaround):
+ * This service should not exist as a long-term pattern.
  *
- * Menu ordering (high-level):
- * - Favorite (add/edit) (hidden for archived items)
- * - Delete favorite (disabled for non-favorites)
- * - Separator
- * - Workflow actions (per item)
- * - Edit (only when `#canEdit()` is true)
- * - Add to bundle (currently disabled until Pages UI wiring is enabled)
- * - Push Publish (only when push-publish environments exist)
+ * Why it exists:
+ * - We currently do not have a single API endpoint that returns the Pages listing with:
+ *   - the workflow actions for each page (render-mode LISTING), and
+ *   - whether the page contentlet has a related Favorite Page (and minimal data for that relation).
+ * - Without that endpoint, the UI must fetch actions asynchronously *after* the user opens the menu,
+ *   which can cause poor UX on slow connections (empty/late menus) and extra network chatter.
+ *
+ * Migration note:
+ * This service was introduced during the migration from the old Pages store to preserve behavior
+ * that previously lived in the legacy store method:
+ * `apps/dotcms-ui/src/app/portlets/dot-pages/dot-pages-store/dot-pages.store.ts#L928`
+ *
+ * TODO: Replace this service by enhancing the Pages listing endpoint to include the minimal
+ * data needed to render the menu synchronously, then delete this service and simplify callers.
+ *
  */
 @Injectable()
 export class DotPageActionsService {
@@ -137,10 +142,10 @@ export class DotPageActionsService {
      *
      * @returns The menu item model.
      */
-    #addToBundleAction(): MenuItem {
+    #addToBundleAction(item: DotCMSContentlet): MenuItem {
         return {
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
-            disabled: true
+            command: () => this.#dotCMSPagesStore.showBundleDialog(item.identifier)
         };
     }
 
@@ -302,7 +307,7 @@ export class DotPageActionsService {
             menuActions.push(this.#editAction(item));
         }
 
-        menuActions.push(this.#addToBundleAction());
+        menuActions.push(this.#addToBundleAction(item));
 
         if (this.#havePushPublishEnvironments()) {
             menuActions.push(this.#pushPublishAction(item));

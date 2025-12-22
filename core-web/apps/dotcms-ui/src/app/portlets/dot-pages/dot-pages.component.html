@@ -3,13 +3,13 @@
         <dot-page-favorites-panel
             (navigateToPage)="navigateToPage($event)"
             [favoritePages]="dotCMSPagesStore.favoritePages()"
-            (openMenu)="openMenu($event)" />
+            (openMenu)="toggleMenu($event)" />
         <dot-pages-table
             [pages]="dotCMSPagesStore.pages()"
             [languages]="globalStore.systemConfig().languages"
             [totalRecords]="dotCMSPagesStore.$totalRecords()"
             (navigateToPage)="navigateToPage($event)"
-            (openMenu)="openMenu($event)"
+            (openMenu)="toggleMenu($event)"
             (pageChange)="scrollToTop()"
             (createPage)="dialogVisible.set(true)"
             (search)="onSearch($event)"
@@ -30,10 +30,10 @@
     [visibility]="dialogVisible()"
     (visibilityChange)="dialogVisible.set($event)" />
 
-<p-menu (onHide)="closeMenu()" [popup]="true" #menu [model]="menuItems()" />
+<p-menu (onHide)="closeMenu()" [appendTo]="'body'" [popup]="true" #menu [model]="menuItems()" />
 
-<!-- @if (vm.pages.addToBundleCTId) {
+@if (dotCMSPagesStore.$showBundleDialog()) {
     <dot-add-to-bundle
-        (cancel)="vm.pages.addToBundleCTId = null"
-        [assetIdentifier]="vm.pages.addToBundleCTId" />
-} -->
+        (cancel)="onCloseBundleDialog()"
+        [assetIdentifier]="dotCMSPagesStore.$assetIdentifier()" />
+}

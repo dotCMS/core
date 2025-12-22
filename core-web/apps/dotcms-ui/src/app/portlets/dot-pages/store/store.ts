@@ -20,6 +20,10 @@ export interface DotCMSPagesPortletState {
     filters: ListPagesParams;
     languages: DotLanguage[];
     currentUser?: DotCurrentUser;
+    bundleDialog: {
+        show: boolean;
+        pageIdentifier: string;
+    };
     status: 'loading' | 'loaded' | 'error' | 'idle'; // replaces portletStatus
 }
 
@@ -41,6 +45,10 @@ const initialState: DotCMSPagesPortletState = {
         perPage: 40,
         totalEntries: 0
     },
+    bundleDialog: {
+        show: false,
+        pageIdentifier: ''
+    },
     languages: [],
     currentUser: null,
     status: 'loading'
@@ -50,7 +58,9 @@ export const DotCMSPagesStore = signalStore(
     withState(initialState),
     withComputed((store) => {
         return {
-            $totalRecords: computed<number>(() => store.pagination.totalEntries())
+            $totalRecords: computed<number>(() => store.pagination.totalEntries()),
+            $showBundleDialog: computed<boolean>(() => store.bundleDialog.show()),
+            $assetIdentifier: computed<string>(() => store.bundleDialog.pageIdentifier())
         };
     }),
     withMethods((store) => {
@@ -107,6 +117,12 @@ export const DotCMSPagesStore = signalStore(
                     );
                     patchState(store, { pages: nextPages });
                 });
+            },
+            showBundleDialog: (pageIdentifier: string) => {
+                patchState(store, { bundleDialog: { show: true, pageIdentifier } });
+            },
+            hideBundleDialog: () => {
+                patchState(store, { bundleDialog: { show: false, pageIdentifier: '' } });
             }
         };
     }),
