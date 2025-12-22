@@ -108,16 +108,16 @@
     </ng-template>
     <ng-template #emptymessage>
         <tr>
-            @if ($isLoading()) {
+            <td [attr.colspan]="7">
                 <div class="flex items-center justify-center gap-2 py-8 text-surface-600">
-                    <span class="pi pi-spinner pi-spin"></span>
-                    <span>{{ 'page.listing.loading.table' | dm }}</span>
+                    @if ($isLoading()) {
+                        <span class="pi pi-spinner pi-spin"></span>
+                        <span>{{ 'page.listing.loading.table' | dm }}</span>
+                    } @else {
+                        <span>{{ 'page.listing.empty.table' | dm }}</span>
+                    }
                 </div>
-            } @else {
-                <td [attr.colspan]="7">
-                    {{ 'page.listing.empty.table' | dm }}
-                </td>
-            }
+            </td>
         </tr>
     </ng-template>
 </p-table>

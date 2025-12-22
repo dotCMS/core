@@ -2,7 +2,6 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { By } from '@angular/platform-browser';
 
 import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';

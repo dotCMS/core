@@ -35,7 +35,6 @@ import {
 import { DotUveWorkflowActionsComponent } from './dot-uve-workflow-actions.component';
 
 import { MOCK_RESPONSE_VTL } from '../../../../../shared/mocks';
-
 // Mock window.matchMedia for PrimeNG components
 Object.defineProperty(window, 'matchMedia', {
     writable: true,

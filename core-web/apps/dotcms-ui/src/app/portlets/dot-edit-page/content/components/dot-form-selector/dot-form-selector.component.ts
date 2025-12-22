@@ -7,7 +7,6 @@ import {
     Output,
     SimpleChanges,
     ViewChild,
-    WritableSignal,
     inject
 } from '@angular/core';
 

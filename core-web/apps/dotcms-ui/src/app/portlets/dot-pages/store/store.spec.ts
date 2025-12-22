@@ -5,7 +5,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet, ESContent, SiteEntity } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, ESContent, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotCMSPagesStore } from './store';
@@ -31,7 +31,7 @@ describe('DotCMSPagesStore', () => {
     >;
     let httpErrorManagerService: jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
 
-    const siteDetailsSig = signal<SiteEntity | null>(null);
+    const siteDetailsSig = signal<DotSite | null>(null);
     const loggedUserMock = jest.fn(() => ({ userId: 'user-1' }) as unknown);
 
     const createService = createServiceFactory({

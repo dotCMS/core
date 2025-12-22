@@ -12,7 +12,7 @@ import {
 import { computed, inject } from '@angular/core';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet, SiteEntity } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotPageListService, ListPagesParams } from '../../services/dot-page-list.service';
@@ -84,7 +84,7 @@ export const withFavorites = () => {
             const globalStore = inject(GlobalStore);
             return {
                 onInit: () => {
-                    const handleSwitchSite = signalMethod<SiteEntity>((site: SiteEntity) => {
+                    const handleSwitchSite = signalMethod<DotSite>((site: DotSite) => {
                         if (!site) return;
                         const host = site.identifier;
                         store.getFavoritePages({ host });

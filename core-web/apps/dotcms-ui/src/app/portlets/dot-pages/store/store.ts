@@ -18,7 +18,7 @@ import {
     DotCurrentUser,
     DotLanguage,
     DotPagination,
-    SiteEntity
+    DotSite
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -153,7 +153,7 @@ export const DotCMSPagesStore = signalStore(
         const globalStore = inject(GlobalStore);
         return {
             onInit: () => {
-                const handleSwitchSite = signalMethod<SiteEntity>((site: SiteEntity) => {
+                const handleSwitchSite = signalMethod<DotSite>((site: DotSite) => {
                     if (!site) return;
                     const host = site.identifier;
                     store.getPages({ ...initialFilters, host });
