@@ -10420,10 +10420,30 @@ paths:
             schema:
               $ref: "#/components/schemas/PageContainerForm"
       responses:
-        default:
+        "200":
           content:
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - containerId: some-container-id
+                  contentletId: some-contentlet-id
+                  styleProperties:
+                    color: "#FF0000"
+                    margin: 10px
+                    width: 100px
+                  uuid: some-uuid
+                - containerId: other-container-id
+                  contentletId: other-contentlet-id
+                  styleProperties: null
+                  uuid: other-uuid
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Contentlets saved successfully
+        "400":
+          description: Bad request or data exception
       tags:
       - Page
   /v1/page/{pageId}/content/tree:
