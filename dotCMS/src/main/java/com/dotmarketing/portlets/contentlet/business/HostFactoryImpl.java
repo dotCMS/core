@@ -85,11 +85,12 @@ public class HostFactoryImpl implements HostFactory {
     private static final String SELECT_SYSTEM_HOST = "SELECT id FROM identifier WHERE id = '"+ Host.SYSTEM_HOST+"' ";
 
     private static final String FROM_JOINED_TABLES = "INNER JOIN identifier i " +
-            "ON c.identifier = i.id AND i.asset_subtype = '" + Host.HOST_VELOCITY_VAR_NAME + "' " +
+            "ON c.identifier = i.id " +
             "INNER JOIN contentlet_version_info cvi " +
             "ON c.inode = cvi.working_inode " +
             "LEFT JOIN contentlet clive " +
-            "ON clive.inode = cvi.live_inode ";
+            "ON clive.inode = cvi.live_inode " +
+            "WHERE c.structure_inode = ? ";
 
     private static final String SELECT_SITE_INODE =
             "SELECT c.inode, cvi.live_inode FROM contentlet c " +
@@ -107,9 +108,9 @@ public class HostFactoryImpl implements HostFactory {
             ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + Host.ALIASES_KEY + ".value') ";
     private static final String ALIASES_COLUMN = "%s.text_area1";
 
-    private static final String SITE_NAME_LIKE = "LOWER(%s) LIKE ? ";
+    private static final String SITE_NAME_LIKE = "%s ILIKE ? ";
 
-    private static final String SITE_NAME_EQUALS ="LOWER(%s) = ? ";
+    private static final String SITE_NAME_EQUALS ="%s ILIKE ? ";
 
     private static final String POSTGRES_SITENAME_COLUMN = "%s." +
             ContentletJsonAPI.CONTENTLET_AS_JSON +
@@ -121,7 +122,7 @@ public class HostFactoryImpl implements HostFactory {
 
     private static final String SITENAME_COLUMN = "%s.text1";
 
-    private static final String ALIAS_LIKE = "LOWER(%s) LIKE ? ";
+    private static final String ALIAS_LIKE = "%s ILIKE ? ";
 
     private static final String EXCLUDE_SYSTEM_HOST = "i.id <> '" + Host
             .SYSTEM_HOST +
@@ -141,8 +142,8 @@ public class HostFactoryImpl implements HostFactory {
             getDBTrue();
 
     private static final String SELECT_SITE_COUNT = "SELECT COUNT(cvi.working_inode) " +
-            "FROM contentlet_version_info cvi, identifier i " + "WHERE i.asset_subtype = '" +
-            Host.HOST_VELOCITY_VAR_NAME + "' " + " AND cvi.identifier = i.id ";
+            "FROM contentlet_version_info cvi, identifier i, contentlet c " +
+            "WHERE c.structure_inode = ? AND c.identifier = i.id AND cvi.identifier = i.id ";
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
@@ -195,6 +196,26 @@ public class HostFactoryImpl implements HostFactory {
         return this.contentletAPI;
     }
 
+    /**
+     * Returns the inode (structure_inode) of the Host content type.
+     * This is used for queries that filter contentlets by content type.
+     *
+     * @return The inode of the Host content type.
+     * @throws DotRuntimeException if the Host content type cannot be found.
+     */
+    private String getHostContentTypeInode() {
+        try {
+            final ContentType hostContentType = APILocator.getContentTypeAPI(APILocator.systemUser(), false)
+                    .find(Host.HOST_VELOCITY_VAR_NAME);
+            if (hostContentType == null) {
+                throw new DotRuntimeException("Host content type not found");
+            }
+            return hostContentType.inode();
+        } catch (final DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException("Error retrieving Host content type: " + e.getMessage(), e);
+        }
+    }
+
     @Override
     public Host bySiteName(final String siteName, boolean retrieveLiveVersion) {
         Host site;
@@ -206,14 +227,16 @@ public class HostFactoryImpl implements HostFactory {
             site = cachedSiteByName;
         } else {
             final DotConnect dc = new DotConnect();
+            final String hostTypeInode = getHostContentTypeInode();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
-                .append(WHERE)
+                .append(AND)
                 .append(getSiteNameOrAliasColumn(SITE_NAME_EQUALS, true, "c"))
                 .append(OR)
                 .append(getSiteNameOrAliasColumn(SITE_NAME_EQUALS, true, "clive"));
             dc.setSQL(sqlQuery.toString());
-            dc.addParam(siteName.toLowerCase());
-            dc.addParam(siteName.toLowerCase());
+            dc.addParam(hostTypeInode);
+            dc.addParam(siteName);
+            dc.addParam(siteName);
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
@@ -272,15 +295,17 @@ public class HostFactoryImpl implements HostFactory {
             site = cachedSiteByAlias;
         } else {
             final DotConnect dc = new DotConnect();
+            final String hostTypeInode = getHostContentTypeInode();
             final StringBuilder sqlQuery = new StringBuilder()
                     .append(getSiteNameOrAliasColumn(SELECT_SITE_INODE_AND_ALIASES, false, "c", "clive"))
-                    .append(WHERE)
+                    .append(AND)
                     .append(getSiteNameOrAliasColumn(ALIAS_LIKE, false, "c"))
                     .append(OR)
                     .append(getSiteNameOrAliasColumn(ALIAS_LIKE, false, "clive"));
             dc.setSQL(sqlQuery.toString());
-            dc.addParam("%" + alias.toLowerCase() + "%");
-            dc.addParam("%" + alias.toLowerCase() + "%");
+            dc.addParam(hostTypeInode);
+            dc.addParam("%" + alias + "%");
+            dc.addParam("%" + alias + "%");
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
@@ -371,10 +396,9 @@ public class HostFactoryImpl implements HostFactory {
     public List<Host> findAll(final int limit, final int offset, final String orderBy,
                               final boolean includeSystemHost, final boolean retrieveLiveVersion) throws DotDataException, DotSecurityException {
         final DotConnect dc = new DotConnect();
+        final String hostTypeInode = getHostContentTypeInode();
         final StringBuilder sqlQuery = new StringBuilder()
-                .append(SELECT_SITE_INODE)
-                .append(WHERE)
-                .append(" true ");
+                .append(SELECT_SITE_INODE);
         if (!includeSystemHost) {
             sqlQuery.append(AND);
             sqlQuery.append(EXCLUDE_SYSTEM_HOST);
@@ -384,6 +408,7 @@ public class HostFactoryImpl implements HostFactory {
             sqlQuery.append(ORDER_BY);
         }
         dc.setSQL(sqlQuery.toString());
+        dc.addParam(hostTypeInode);
         if (UtilMethods.isSet(sanitizedSortBy)) {
             dc.addParam(sanitizedSortBy);
         }
@@ -878,7 +903,9 @@ public class HostFactoryImpl implements HostFactory {
     @Override
     public long count() throws DotDataException {
         final DotConnect dc = new DotConnect();
+        final String hostTypeInode = getHostContentTypeInode();
         dc.setSQL(SELECT_SITE_COUNT);
+        dc.addParam(hostTypeInode);
         final List<Map<String, String>> dbResults = dc.loadResults();
         final String total = dbResults.get(0).get("count");
         return ConversionUtils.toLong(total, 0L);
@@ -942,8 +969,9 @@ public class HostFactoryImpl implements HostFactory {
     protected Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles, List<Host> hostList) {
         final DotConnect dc = new DotConnect();
+        final String hostTypeInode = getHostContentTypeInode();
         final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE);
-        sqlQuery.append(WHERE);
+        sqlQuery.append(AND);
         sqlQuery.append("cvi.identifier = i.id");
         if (UtilMethods.isSet(siteNameFilter)) {
             sqlQuery.append(AND);
@@ -962,6 +990,7 @@ public class HostFactoryImpl implements HostFactory {
         }
 
         dc.setSQL(sqlQuery.toString());
+        dc.addParam(hostTypeInode);
         if (UtilMethods.isSet(siteNameFilter)) {
             // Add the site name filter parameter
             dc.addParam(("%" + siteNameFilter.trim() + "%").replace("%%", "%"));

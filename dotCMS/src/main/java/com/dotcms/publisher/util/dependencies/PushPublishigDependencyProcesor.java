@@ -189,11 +189,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     .forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer,
                             PusheableAsset.CONTAINER));
 
-            PaginatedContentlets contentletsPaginatedByHost = this.contentletAPI.get().findContentletsPaginatedByHost(site,
-                    APILocator.systemUser(), false);
-            // Content dependencies
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentletsPaginatedByHost,
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(site));
+            // Content dependencies - use try-with-resources to ensure Scroll context cleanup
+            try (PaginatedContentlets contentletsPaginatedByHost = this.contentletAPI.get().findContentletsPaginatedByHost(site,
+                    APILocator.systemUser(), false)) {
+                tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentletsPaginatedByHost,
+                        ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(site));
+            }
 
             // Structure dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
