@@ -59,7 +59,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Collection;
@@ -82,6 +81,14 @@ public class PageRenderUtil implements Serializable {
 
     public static String CONTAINER_UUID_PREFIX = "uuid-";
     private static final long serialVersionUID = 1L;
+
+    /**
+     * ThreadLocal StringBuilder to avoid allocating new StringBuilder/StringWriter objects
+     * in the asString() method. This reduces GC pressure during page rendering as asString()
+     * is called for every page load to generate Velocity variable assignments.
+     */
+    private static final ThreadLocal<StringBuilder> STRING_BUILDER =
+            ThreadLocal.withInitial(() -> new StringBuilder(2048));
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
@@ -746,18 +753,24 @@ public class PageRenderUtil implements Serializable {
     /**
      * Return the Velocity code to set the Page's variables as: contentletList, contentType,
      * totalSize, etc.
+     * <p>
+     * Uses a ThreadLocal StringBuilder to minimize object allocation during page rendering.
      *
-     * @return
+     * @return The Velocity code as a String
      */
     public String asString() {
+        final StringBuilder sb = STRING_BUILDER.get();
+        sb.setLength(0);  // Reset without reallocation
 
-        final StringWriter s = new StringWriter();
-        for (String key : this.contextMap.keySet()) {
-            s.append("#set($").append(key.replace(":", "")).append("=").append(new StringifyObject(this.contextMap.get(key)).from()).append(')');
+        for (final Map.Entry<String, Object> entry : this.contextMap.entrySet()) {
+            sb.append("#set($")
+              .append(entry.getKey().replace(":", ""))
+              .append('=')
+              .append(new StringifyObject(entry.getValue()).from())
+              .append(')');
         }
 
-        return s.toString();
-
+        return sb.toString();
     }
 
     /**

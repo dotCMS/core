@@ -212,21 +212,42 @@ public class VelocityUtil {
 	}
 
 	/**
-	 * Returns a basic Velocity Context without any toolbox or request
-	 * response, session objects;
-	 * @return
+	 * Shared singleton instances of stateless utility classes.
+	 * These are placed in every Velocity context but don't need to be recreated
+	 * for each request since they contain no mutable state.
 	 */
+	private static final UtilMethods UTIL_METHODS_INSTANCE = new UtilMethods();
+	private static final PortletURLUtil PORTLET_URL_UTIL_INSTANCE = new PortletURLUtil();
+	private static final InodeUtils INODE_UTILS_INSTANCE = new InodeUtils();
 
+	/**
+	 * Constant string values used in every context.
+	 * Interned to ensure we use the same String instances.
+	 */
+	private static final String QUOTE_VALUE = "\"";
+	private static final String POUNDS_VALUE = "##";
+	private static final String RETURN_VALUE = "\n";
+	private static final String DEFAULT_LANGUAGE = "1";
+
+	/**
+	 * Returns a basic Velocity Context without any toolbox or request
+	 * response, session objects.
+	 * <p>
+	 * Uses singleton instances of stateless utility classes to reduce
+	 * object allocation during page rendering.
+	 *
+	 * @return a new VelocityContext with basic utilities pre-populated
+	 */
 	public static Context getBasicContext() {
-		Context context = new VelocityContext();
-		context.put("UtilMethods", new UtilMethods());
-		context.put("PortletURLUtil", new PortletURLUtil());
-		context.put("quote", "\"");
-		context.put("pounds", "##");
-		context.put("return", "\n");
+		final Context context = new VelocityContext();
+		context.put("UtilMethods", UTIL_METHODS_INSTANCE);
+		context.put("PortletURLUtil", PORTLET_URL_UTIL_INSTANCE);
+		context.put("quote", QUOTE_VALUE);
+		context.put("pounds", POUNDS_VALUE);
+		context.put("return", RETURN_VALUE);
 		context.put("velocityContext", context);
-		context.put("language", "1");
-		context.put("InodeUtils", new InodeUtils());
+		context.put("language", DEFAULT_LANGUAGE);
+		context.put("InodeUtils", INODE_UTILS_INSTANCE);
 
 		return context;
 	}
