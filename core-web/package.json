@@ -135,7 +135,7 @@
         "turndown": "^7.2.0",
         "uuid": "^9.0.0",
         "webpack-dev-middleware": "^6.1.2",
-        "zod": "^3.25.67",
+        "zod": "4.1.9",
         "zone.js": "0.15.1",
         "axios": "^1.13.2",
         "chalk": "^5.6.2",
