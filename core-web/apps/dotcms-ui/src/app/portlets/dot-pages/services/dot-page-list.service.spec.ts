@@ -257,12 +257,7 @@ describe('DotPageListService', () => {
 
     describe('getFavoritePages', () => {
         it('should make POST request to correct endpoint', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123').subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.method).toBe('POST');
@@ -271,12 +266,7 @@ describe('DotPageListService', () => {
         });
 
         it('should send correct query for favorite pages', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123').subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body).toEqual({
@@ -290,13 +280,9 @@ describe('DotPageListService', () => {
         });
 
         it('should use fixed sort order for favorite pages', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                sort: 'modDate DESC', // This should be ignored
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service
+                .getFavoritePages({ ...DEFAULT_LIST_PARAMS, sort: 'modDate DESC' }, 'user-123')
+                .subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.sort).toBe('title ASC');
@@ -305,13 +291,9 @@ describe('DotPageListService', () => {
         });
 
         it('should use FAVORITE_PAGE_LIMIT constant for limit', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                limit: 100, // This should be ignored
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service
+                .getFavoritePages({ ...DEFAULT_LIST_PARAMS, limit: 100 }, 'user-123')
+                .subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.limit).toBe(FAVORITE_PAGE_LIMIT);
@@ -320,13 +302,9 @@ describe('DotPageListService', () => {
         });
 
         it('should always use offset 0 for favorite pages', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                offset: 50, // This should be ignored
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service
+                .getFavoritePages({ ...DEFAULT_LIST_PARAMS, offset: 50 }, 'user-123')
+                .subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.offset).toBe(0);
@@ -337,11 +315,10 @@ describe('DotPageListService', () => {
         it('should include host in query when provided', () => {
             const params: ListPagesParams = {
                 ...DEFAULT_LIST_PARAMS,
-                host: 'mysite.com',
-                userId: 'user-123'
+                host: 'mysite.com'
             };
 
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service.getFavoritePages(params, 'user-123').subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.query).toContain('+conhost:mysite.com');
@@ -352,11 +329,10 @@ describe('DotPageListService', () => {
         it('should omit host from query when empty', () => {
             const params: ListPagesParams = {
                 ...DEFAULT_LIST_PARAMS,
-                host: '',
-                userId: 'user-123'
+                host: ''
             };
 
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service.getFavoritePages(params, 'user-123').subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.query).not.toContain('+conhost:');
@@ -365,12 +341,7 @@ describe('DotPageListService', () => {
         });
 
         it('should include userId in query', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                userId: 'user-456'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
+            spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-456').subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.query).toContain('+owner:user-456');
@@ -379,15 +350,12 @@ describe('DotPageListService', () => {
         });
 
         it('should return ESContent from response entity', (done) => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe((result) => {
-                expect(result).toEqual(MOCK_ES_CONTENT);
-                done();
-            });
+            spectator.service
+                .getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123')
+                .subscribe((result) => {
+                    expect(result).toEqual(MOCK_ES_CONTENT);
+                    done();
+                });
 
             const req = httpMock.expectOne('/api/content/_search');
             req.flush({ entity: MOCK_ES_CONTENT });
@@ -551,12 +519,7 @@ describe('DotPageListService', () => {
         });
 
         it('should propagate HTTP errors from getFavoritePages', (done) => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                userId: 'user-123'
-            };
-
-            spectator.service.getFavoritePages(params).subscribe({
+            spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123').subscribe({
                 next: () => fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(404);
@@ -644,20 +607,6 @@ describe('DotPageListService', () => {
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.limit).toBe(1000);
             expect(req.request.body.offset).toBe(5000);
-
-            req.flush({ entity: MOCK_ES_CONTENT });
-        });
-
-        it('should handle undefined userId in favorite pages', () => {
-            const params: ListPagesParams = {
-                ...DEFAULT_LIST_PARAMS,
-                userId: undefined
-            };
-
-            spectator.service.getFavoritePages(params).subscribe();
-
-            const req = httpMock.expectOne('/api/content/_search');
-            expect(req.request.body.query).toContain('+owner:undefined');
 
             req.flush({ entity: MOCK_ES_CONTENT });
         });

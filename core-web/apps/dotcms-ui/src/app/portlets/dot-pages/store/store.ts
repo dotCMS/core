@@ -1,4 +1,12 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalMethod,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
 import { computed, inject } from '@angular/core';
 
@@ -8,14 +16,17 @@ import {
     DotCMSContentlet,
     DotCurrentUser,
     DotLanguage,
-    DotPagination
+    DotPagination,
+    SiteEntity
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+
+import { withFavorites } from './withFavorite/withFavorite';
 
 import { DotPageListService, ListPagesParams } from '../services/dot-page-list.service';
 
 export interface DotCMSPagesPortletState {
     pages: DotCMSContentlet[];
-    favoritePages: DotCMSContentlet[];
     pagination: DotPagination;
     filters: ListPagesParams;
     languages: DotLanguage[];
@@ -27,19 +38,19 @@ export interface DotCMSPagesPortletState {
     status: 'loading' | 'loaded' | 'error' | 'idle'; // replaces portletStatus
 }
 
+const initialFilters: ListPagesParams = {
+    search: '',
+    sort: 'modDate DESC',
+    limit: 40,
+    languageId: null, // null means all languages
+    archived: false,
+    offset: 0,
+    host: ''
+};
+
 const initialState: DotCMSPagesPortletState = {
     pages: [],
-    favoritePages: [],
-    filters: {
-        search: '',
-        sort: 'modDate DESC',
-        limit: 40,
-        languageId: null, // null means all languages
-        archived: false,
-        offset: 0,
-        host: '',
-        userId: 'dotcms.org.1'
-    },
+    filters: initialFilters,
     pagination: {
         currentPage: 1,
         perPage: 40,
@@ -60,7 +71,8 @@ export const DotCMSPagesStore = signalStore(
         return {
             $totalRecords: computed<number>(() => store.pagination.totalEntries()),
             $showBundleDialog: computed<boolean>(() => store.bundleDialog.show()),
-            $assetIdentifier: computed<string>(() => store.bundleDialog.pageIdentifier())
+            $assetIdentifier: computed<string>(() => store.bundleDialog.pageIdentifier()),
+            $isPagesLoading: computed<boolean>(() => store.status() === 'loading')
         };
     }),
     withMethods((store) => {
@@ -126,30 +138,17 @@ export const DotCMSPagesStore = signalStore(
             }
         };
     }),
-    // This will be a signal feature
-    withMethods((store) => {
-        const dotPageListService = inject(DotPageListService);
-        const fetchFavoritePages = () => {
-            dotPageListService.getFavoritePages(store.filters()).subscribe(({ jsonObjectView }) => {
-                patchState(store, {
-                    favoritePages: jsonObjectView.contentlets
-                });
-            });
-        };
-
+    withHooks((store) => {
+        const globalStore = inject(GlobalStore);
         return {
-            getFavoritePages: () => {
-                fetchFavoritePages();
-            },
-            updateFavoritePageNode: (identifier: string) => {
-                dotPageListService.getSinglePage(identifier).subscribe((updatedPage) => {
-                    const currentFavoritePages = store.favoritePages();
-                    const nextFavoritePages = currentFavoritePages.map((page) =>
-                        page?.identifier === identifier ? updatedPage : page
-                    );
-                    patchState(store, { favoritePages: nextFavoritePages });
+            onInit: () => {
+                const handleSwitchSite = signalMethod<SiteEntity>((site: SiteEntity) => {
+                    const host = site.identifier;
+                    store.getPages({ ...initialFilters, host });
                 });
+                handleSwitchSite(globalStore.siteDetails);
             }
         };
-    })
+    }),
+    withFavorites()
 );

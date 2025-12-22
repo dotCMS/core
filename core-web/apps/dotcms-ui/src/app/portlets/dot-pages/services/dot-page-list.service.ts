@@ -17,7 +17,6 @@ export interface ListPagesParams {
     languageId: number | null;
     host: string;
     archived: boolean;
-    userId?: string;
 }
 
 @Injectable()
@@ -43,10 +42,10 @@ export class DotPageListService {
             .pipe(map((response) => response.entity));
     }
 
-    getFavoritePages(params: ListPagesParams): Observable<ESContent> {
+    getFavoritePages(params: ListPagesParams, userId: string): Observable<ESContent> {
         return this.#http
             .post<DotCMSAPIResponse<ESContent>>(this.#url, {
-                query: this.#buildFavoritePagesQuery(params),
+                query: this.#buildFavoritePagesQuery(params, userId),
                 sort: 'title ASC',
                 limit: FAVORITE_PAGE_LIMIT,
                 offset: 0
@@ -87,8 +86,8 @@ export class DotPageListService {
      * @param params - The parameters for the request
      * @returns The query for the favorite pages API
      */
-    #buildFavoritePagesQuery(params: ListPagesParams): string {
-        const { host, userId } = params;
+    #buildFavoritePagesQuery(params: ListPagesParams, userId: string): string {
+        const { host } = params;
         const hostQuery = host ? `+conhost:${host}` : '';
 
         return `+contentType:dotFavoritePage +deleted:false +working:true ${hostQuery} +owner:${userId}`;

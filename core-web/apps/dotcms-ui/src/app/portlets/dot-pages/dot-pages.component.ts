@@ -1,5 +1,3 @@
-import { signalMethod } from '@ngrx/signals';
-
 import { CommonModule } from '@angular/common';
 import {
     Component,
@@ -37,8 +35,7 @@ import {
     DotCMSContentlet,
     DotEvent,
     DotMessageSeverity,
-    DotMessageType,
-    SiteEntity
+    DotMessageType
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
@@ -113,24 +110,8 @@ export class DotPagesComponent {
     readonly menu = viewChild<Menu>('menu');
     readonly menuItems = signal<MenuItem[]>([]);
 
-    /**
-     * Handle switch site
-     * This will trigger a new fetch of pages when site loads for the first time
-     *
-     * @param {SiteEntity} _site
-     * @memberof DotPagesComponent
-     */
-    readonly handleSwitchSite = signalMethod<SiteEntity>((_site: SiteEntity) => {
-        this.dotCMSPagesStore.getPages({ offset: 0 });
-        this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
-    });
-
     constructor() {
-        // this.dotCMSPagesStore.getPages();
-        this.dotCMSPagesStore.getFavoritePages();
-
         this.listenSavePageEvent();
-        this.handleSwitchSite(this.globalStore.siteDetails());
     }
 
     /**
