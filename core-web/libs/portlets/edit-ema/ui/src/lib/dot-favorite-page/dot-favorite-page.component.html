@@ -9,7 +9,7 @@
             <form [formGroup]="form" class="p-fluid" data-testId="form">
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div class="lg:col-span-2">
-                        <div class="flex flex-col gap-2" data-testId="thumbnailField">
+                        <div class="flex flex-col gap-4" data-testId="thumbnailField">
                             @if (vm.showFavoriteEmptySkeleton) {
                                 <dot-pages-favorite-page-empty-skeleton />
                             } @else {
