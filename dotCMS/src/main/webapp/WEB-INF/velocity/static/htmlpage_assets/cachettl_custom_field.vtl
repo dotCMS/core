@@ -1,17 +1,5 @@
-<script type="application/javascript">
-dojo.ready(function() {
-	var currentValue=dojo.byId('cachettl').value;
-	if(currentValue==="") {
-		currentValue=$config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS",15);
-		dojo.byId('cachettl').value=currentValue;
-	}
-	new dijit.form.TextBox({
-		name: "cachettlbox",
-		value: currentValue,
-		onChange: function() {
-			dojo.byId('cachettl').value=this.get('value');
-		}
-	},"cachettlbox");
-});
-</script>
-<input id="cachettlbox"/>
+#if( $structures.isNewEditModeEnabled() )
+	#parse('/static/htmlpage_assets/cachettl_custom_field_new.vtl')
+#else
+	#parse('/static/htmlpage_assets/cachettl_custom_field_old.vtl')
+#end
