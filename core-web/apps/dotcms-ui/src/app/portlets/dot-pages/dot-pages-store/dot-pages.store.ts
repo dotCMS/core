@@ -52,7 +52,7 @@ import {
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
+import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 export interface DotPagesInfo {
     actionMenuDomId?: string;
@@ -359,14 +359,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly getPageTypes = this.effect<void>((trigger$) =>
         trigger$.pipe(
             switchMap(() => {
-                return this.dotPageTypesService.getPages().pipe(
+                return this.dotPageTypesService.getPageContentTypes().pipe(
                     take(1),
                     tapResponse({
                         next: (pageTypes: DotCMSContentType[]) => {
                             this.patchState({
                                 pageTypes
                             });
-                            this.dialogService.open(DotPagesCreatePageDialogComponent, {
+                            this.dialogService.open(DotCreatePageDialogComponent, {
                                 header: this.dotMessageService.get('create.page'),
                                 width: '58rem',
                                 data: {
@@ -876,6 +876,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 switchMap(({ item, actionMenuDomId }) => {
                     return forkJoin({
                         workflowsData: this.getWorflowActionsFn(item),
+                        // Check this
                         dotFavorite: this.getFavoritePagesData({
                             limit: 1,
                             url:

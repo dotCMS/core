@@ -7,84 +7,93 @@
         data-testId="dialogForm">
         @if (form) {
             <form [formGroup]="form" class="p-fluid" data-testId="form">
-                <div class="fields-col">
-                    @if (vm.showFavoriteEmptySkeleton) {
-                        <dot-pages-favorite-page-empty-skeleton></dot-pages-favorite-page-empty-skeleton>
-                    } @else {
-                        <div
-                            class="dot-favorite-dialog__thumbnailField"
-                            data-testId="thumbnailField">
-                            @if (vm.renderThumbnail) {
-                                @if (vm.renderThumbnail) {
-                                    <dot-html-to-image
-                                        [value]="vm.pageRenderedHtml"
-                                        [width]="vm.imgWidth"
-                                        [height]="vm.imgHeight"></dot-html-to-image>
-                                }
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div class="lg:col-span-2">
+                        <div class="flex flex-col gap-4" data-testId="thumbnailField">
+                            @if (vm.showFavoriteEmptySkeleton) {
+                                <dot-pages-favorite-page-empty-skeleton />
                             } @else {
                                 <div
-                                    class="dot-favorite-dialog__image-container"
-                                    data-testId="favoriteCardImageContainer">
-                                    <img
-                                        [alt]="vm.formState.title"
-                                        [src]="vm.formState.thumbnail + '?' + timeStamp" />
+                                    class="w-full overflow-hidden rounded-md border border-surface-200">
+                                    @if (vm.renderThumbnail) {
+                                        <dot-html-to-image
+                                            [value]="vm.pageRenderedHtml"
+                                            [width]="vm.imgWidth"
+                                            [height]="vm.imgHeight" />
+                                    } @else {
+                                        <div data-testId="favoriteCardImageContainer">
+                                            <img
+                                                class="h-auto w-full object-cover"
+                                                [alt]="vm.formState.title"
+                                                [src]="vm.formState.thumbnail + '?' + timeStamp" />
+                                        </div>
+                                    }
                                 </div>
-                                @if (vm.pageRenderedHtml !== '') {
-                                    <p-button
-                                        (click)="renderThumbnail()"
-                                        [label]="'favoritePage.dialog.reload.image.button' | dm"
-                                        [outlined]="true"
-                                        class="favorite-dialog__image-reload"
-                                        data-testid="dotFavoriteDialogReloadThumbnailButton" />
+
+                                @if (!vm.renderThumbnail && vm.pageRenderedHtml !== '') {
+                                    <div class="flex justify-end">
+                                        <button
+                                            (click)="renderThumbnail()"
+                                            class="p-button-outlined p-button-sm"
+                                            data-testId="dotFavoriteDialogReloadThumbnailButton"
+                                            pButton
+                                            type="button">
+                                            <i class="pi pi-refresh" pButtonIcon></i>
+                                            <span pButtonLabel>
+                                                {{ 'favoritePage.dialog.reload.image.button' | dm }}
+                                            </span>
+                                        </button>
+                                    </div>
                                 }
                             }
                         </div>
-                    }
-                </div>
-                <div class="fields-col">
-                    <div class="field" data-testId="titleField">
-                        <label dotFieldRequired for="title">{{ 'title' | dm }}</label>
-                        <input
-                            id="title"
-                            pInputText
-                            formControlName="title"
-                            autofocus
-                            data-testId="favoritePageTitleField" />
-                        <dot-field-validation-message
-                            [field]="form.get('title')"></dot-field-validation-message>
                     </div>
-                    <div class="field" data-testId="urlField">
-                        <label dotFieldRequired for="url">{{ 'url' | dm }}</label>
-                        <input
-                            id="url"
-                            pInputText
-                            formControlName="url"
-                            data-testId="favoritePageUrlField" />
-                        <dot-field-validation-message
-                            [field]="form.get('url')"></dot-field-validation-message>
-                    </div>
-                    <div class="field" data-testId="orderField">
-                        <label dotFieldRequired for="order">{{ 'order' | dm }}</label>
-                        <input
-                            id="order"
-                            pInputText
-                            formControlName="order"
-                            data-testId="favoritePageOrderField" />
-                        <dot-field-validation-message
-                            [field]="form.get('order')"></dot-field-validation-message>
+
+                    <div class="flex flex-col gap-4 lg:pt-2">
+                        <div class="field flex flex-col gap-1" data-testId="titleField">
+                            <label dotFieldRequired for="title">{{ 'title' | dm }}</label>
+                            <input
+                                id="title"
+                                pInputText
+                                formControlName="title"
+                                autofocus
+                                data-testId="favoritePageTitleField" />
+                            <dot-field-validation-message [field]="form.get('title')" />
+                        </div>
+
+                        <div class="field flex flex-col gap-1" data-testId="urlField">
+                            <label dotFieldRequired for="url">{{ 'url' | dm }}</label>
+                            <input
+                                id="url"
+                                pInputText
+                                formControlName="url"
+                                data-testId="favoritePageUrlField" />
+                            <dot-field-validation-message [field]="form.get('url')" />
+                        </div>
+
+                        <div class="field flex flex-col gap-1" data-testId="orderField">
+                            <label dotFieldRequired for="order">{{ 'order' | dm }}</label>
+                            <input
+                                id="order"
+                                pInputText
+                                formControlName="order"
+                                data-testId="favoritePageOrderField" />
+                            <dot-field-validation-message [field]="form.get('order')" />
+                        </div>
                     </div>
                 </div>
             </form>
         }
-        <p-button
+        <button
             (click)="onDelete(vm.formState?.inode)"
             [disabled]="!vm.formState?.inode"
-            [label]="'favoritePage.dialog.delete.button' | dm"
-            severity="danger"
-            [outlined]="true"
-            class="dot-favorite-dialog-footer__delete-button"
-            icon="pi pi-trash"
+            class="p-button-danger p-button-outlined"
+            data-testId="dotFavoriteDialogDeleteButton"
             footerActions
-            data-testid="dotFavoriteDialogDeleteButton" />
+            pButton
+            type="button">
+            <i class="pi pi-trash" pButtonIcon></i>
+            <span pButtonLabel>{{ 'favoritePage.dialog.delete.button' | dm }}</span>
+        </button>
     </dot-form-dialog>
 }

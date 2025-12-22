@@ -29,7 +29,8 @@
         }"
         data-testId="template-builder-box">
         <ng-template pTemplate="header">
-            <div class="flex justify-between items-center p-2 bg-primary-50 border-b border-primary-200">
+            <div
+                class="flex justify-between items-center p-2 bg-primary-50 border-b border-primary-200">
                 @if (actions.includes('add')) {
                     <p-select
                         (onChange)="onContainerSelect($event)"
@@ -48,7 +49,7 @@
                             label: { hidden: true },
                             root: {
                                 style: {
-                                    height: 'var(--p-button-sm-icon-only-width)',
+                                    height: 'var(--p-button-sm-icon-only-width)'
                                 }
                             }
                         }">

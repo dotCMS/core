@@ -10,7 +10,13 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotEventsService, DotPropertiesService, DotRouterService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotPropertiesService,
+    DotRouterService,
+    DotSiteService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -106,9 +112,11 @@ describe('DotToolbarComponent', () => {
                         }
                     })
                 ),
-                getSiteById: jest.fn().mockImplementation((id: string) =>
-                    of(mockSites.find((s) => s.identifier === id) || siteMock)
-                )
+                getSiteById: jest
+                    .fn()
+                    .mockImplementation((id: string) =>
+                        of(mockSites.find((s) => s.identifier === id) || siteMock)
+                    )
             }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             { provide: SiteService, useValue: siteServiceMock },

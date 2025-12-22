@@ -9,7 +9,7 @@ export const SYSTEM_HOST: DotSite = {
     aliases: '',
     archived: false,
     hostname: 'SYSTEM_HOST',
-    identifier: 'SYSTEM_HOST',
+    identifier: 'SYSTEM_HOST'
 };
 
 // We want to exclude forms and Hosts, and only show contentlets that are not deleted

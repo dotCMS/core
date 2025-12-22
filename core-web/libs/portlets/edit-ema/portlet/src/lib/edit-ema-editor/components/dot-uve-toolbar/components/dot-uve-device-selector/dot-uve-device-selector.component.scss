@@ -29,30 +29,30 @@
 
     ::ng-deep p-button {
         &.p-disabled {
-                .p-button {
-                    use {
-                        color: inherit;
-                }
-            }
-        }
-
             .p-button {
-                max-width: 124px; // To avoid overflow on the more button
-
                 use {
-                    color: colors.$color-palette-primary;
+                    color: inherit;
+                }
             }
         }
-                }
+
+        .p-button {
+            max-width: 124px; // To avoid overflow on the more button
+
+            use {
+                color: colors.$color-palette-primary;
+            }
+        }
+    }
 
     // Orientation button rotation - target SVG directly
     ::ng-deep {
-                svg {
-                    transform: rotate(0deg);
-                    transition: all 0.3s ease-in-out;
+        svg {
+            transform: rotate(0deg);
+            transition: all 0.3s ease-in-out;
 
-                    &.landscape {
-                        transform: rotate(90deg);
+            &.landscape {
+                transform: rotate(90deg);
             }
         }
     }

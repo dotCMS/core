@@ -1,0 +1,56 @@
+@let favoritePages = $favoritePages();
+@let isLoading = $isLoading();
+@let isEmpty = favoritePages.length === 0;
+
+<p-panel
+    (collapsedChange)="onToggleChange($event)"
+    [toggleable]="true"
+    [collapsed]="$isCollapsed()"
+    toggler="header"
+    iconPos="end"
+    expandIcon="pi pi-angle-down"
+    collapseIcon="pi pi-angle-up">
+    <ng-template pTemplate="header">
+        <span class="flex items-center gap-2">
+            <i class="pi pi-star-fill" data-testId="bookmarksIcon"></i>
+            <span class="font-bold">{{ 'favoritePage.panel.header' | dm }}</span>
+        </span>
+    </ng-template>
+
+    @if (isLoading) {
+        <div
+            class="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center"
+            data-testId="favoritesLoading">
+            <p-progressSpinner
+                [style]="{ width: '40px', height: '40px' }"
+                data-testId="favoritesLoadingSpinner"
+                strokeWidth="4" />
+            <div class="text-sm text-surface-600">{{ 'message.favorites.loading' | dm }}</div>
+        </div>
+    } @else if (isEmpty) {
+        <div class="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+            <span
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-100 text-surface-600">
+                <i class="pi pi-star text-2xl"></i>
+            </span>
+            <div class="text-base font-semibold text-surface-900">
+                {{ 'favoritePage.listing.empty.header' | dm }}
+            </div>
+            <p
+                class="max-w-prose text-sm text-surface-600"
+                data-testid="dot-pages-empty__content"
+                innerHTML="{{ 'favoritePage.listing.empty.content' | dm }}"></p>
+        </div>
+    } @else {
+        <div class="grid gap-6 [grid-template-columns:repeat(auto-fill,250px)]">
+            @for (favoritePage of favoritePages; track $index; let i = $index) {
+                <dot-pages-card
+                    [actionButtonId]="'favoritePageActionButton-' + i"
+                    [imageUri]="getScreenshotUri(favoritePage)"
+                    [title]="favoritePage.title"
+                    [url]="favoritePage.url"
+                    (openMenu)="handleOpenMenu($event, favoritePage)" />
+            }
+        </div>
+    }
+</p-panel>

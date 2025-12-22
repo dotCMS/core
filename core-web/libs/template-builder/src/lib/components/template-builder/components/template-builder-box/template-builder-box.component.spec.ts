@@ -164,7 +164,10 @@ describe('TemplateBuilderBoxComponent', () => {
 
         it('should trigger editClasses when clicking palette button', () => {
             const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
-            spectator.dispatchFakeEvent(spectator.query(byTestId('box-style-class-button')), 'onClick');
+            spectator.dispatchFakeEvent(
+                spectator.query(byTestId('box-style-class-button')),
+                'onClick'
+            );
             expect(editStyleMock).toHaveBeenCalled();
         });
 

@@ -1,0 +1,36 @@
+<!-- Declare variable here because of an issue with signals nad ng-templates in PrimeNG components -->
+@let cardUrl = $url();
+@let cardTitle = $title();
+@let cardImage = $imageUri();
+
+<p-card
+    class="cursor-pointer"
+    [style]="{ width: '250px', overflow: 'hidden' }"
+    (click)="navigateToPage.emit(true)"
+    data-testid="pageCard">
+    <ng-template #header>
+        @if (!cardImage) {
+            <dot-pages-favorite-page-empty-skeleton />
+        } @else {
+            <img class="w-full" [alt]="cardTitle" [src]="cardImage" />
+        }
+    </ng-template>
+
+    <ng-template #title>
+        <div class="truncate w-full">
+            {{ cardTitle }}
+        </div>
+    </ng-template>
+    <ng-template #content>
+        <div class="flex items-center justify-between gap-2 w-full">
+            <span class="truncate w-full text-sm">
+                {{ cardUrl }}
+            </span>
+            <p-button
+                (onClick)="$event.stopPropagation(); openMenu.emit($event)"
+                [id]="$actionButtonId()"
+                icon="pi pi-ellipsis-v"
+                styleClass="p-button-rounded p-button-text p-button-sm shrink-0" />
+        </div>
+    </ng-template>
+</p-card>

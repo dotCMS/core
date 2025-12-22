@@ -1,34 +1,35 @@
-@if (vm$ | async; as vm) {
-    <div class="dot-pages__container">
-        @if (!vm.isPortletLoading) {
-            <div class="dot-pages__inner-container">
-                <dot-pages-favorite-panel
-                    (goToUrl)="goToUrl($event)"
-                    (showActionsMenu)="showActionsMenu($event)"></dot-pages-favorite-panel>
-                <p-menu
-                    (onHide)="closedActionsMenu($event)"
-                    [popup]="true"
-                    [model]="vm.pages.menuActions"
-                    #menu></p-menu>
-                <dot-pages-listing-panel
-                    (goToUrl)="goToUrl($event)"
-                    (showActionsMenu)="showActionsMenu($event)"
-                    (pageChange)="scrollToTop()"
-                    data-testId="pages-listing-panel"></dot-pages-listing-panel>
-                @if (vm.pages.addToBundleCTId) {
-                    <dot-add-to-bundle
-                        (cancel)="vm.pages.addToBundleCTId = null"
-                        [assetIdentifier]="vm.pages.addToBundleCTId"></dot-add-to-bundle>
-                }
-            </div>
-        } @else {
-            <div class="dot-pages__spinner-container">
-                <div class="dot-pages__spinner-container dot-pages__spinner-overlay">
-                    <p-progressSpinner styleClass="p-progress-spinner-custom"></p-progressSpinner>
-                </div>
-            </div>
-        }
+<div>
+    <div class="flex flex-col gap-4">
+        <dot-page-favorites-panel
+            (navigateToPage)="navigateToPage($event)"
+            [favoritePages]="$favoritePages()"
+            [isLoading]="$isFavoritePagesLoading()"
+            (openMenu)="toggleMenu($event)" />
+        <dot-pages-table
+            [pages]="$pages()"
+            [languages]="$systemLanguages()"
+            [totalRecords]="$totalRecords()"
+            [isLoading]="$isPagesLoading()"
+            (navigateToPage)="navigateToPage($event)"
+            (openMenu)="toggleMenu($event)"
+            (pageChange)="scrollToTop()"
+            (createPage)="dialogVisible.set(true)"
+            (search)="onSearch($event)"
+            (languageChange)="onLanguageChange($event)"
+            (archivedChange)="onArchivedChange($event)"
+            (lazyLoad)="onLazyLoad($event)"
+            data-testId="pages-listing-panel" />
     </div>
+</div>
+
+<dot-create-page-dialog
+    [visibility]="dialogVisible()"
+    (visibilityChange)="dialogVisible.set($event)" />
+
+<p-menu (onHide)="closeMenu()" [appendTo]="'body'" [popup]="true" #menu [model]="menuItems()" />
+
+@if ($showBundleDialog()) {
+    <dot-add-to-bundle (cancel)="onCloseBundleDialog()" [assetIdentifier]="$assetIdentifier()" />
 }
 
-<router-outlet (deactivate)="loadPagesOnDeactivation()"></router-outlet>
+<router-outlet (deactivate)="getPages()"></router-outlet>

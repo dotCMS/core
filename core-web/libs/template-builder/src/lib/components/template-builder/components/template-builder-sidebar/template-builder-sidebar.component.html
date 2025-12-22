@@ -1,5 +1,7 @@
 <div class="flex justify-between items-center">
-    <h5 class="text-base m-0 leading-[140%] font-medium">{{ 'dot.template.builder.sidebar.header.title' | dm }}</h5>
+    <h5 class="text-base m-0 leading-[140%] font-medium">
+        {{ 'dot.template.builder.sidebar.header.title' | dm }}
+    </h5>
     <p-select
         (onChange)="widthChange($event)"
         [options]="widthOptions"

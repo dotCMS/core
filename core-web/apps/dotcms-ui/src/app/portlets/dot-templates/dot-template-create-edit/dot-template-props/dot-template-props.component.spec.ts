@@ -143,10 +143,7 @@ describe('DotTemplatePropsComponent', () => {
                     imports: [DotTemplateThumbnailFieldComponent, DotThemeComponent]
                 },
                 add: {
-                    imports: [
-                        DotTemplateThumbnailFieldMockComponent,
-                        DotThemeMockComponent
-                    ]
+                    imports: [DotTemplateThumbnailFieldMockComponent, DotThemeMockComponent]
                 }
             })
             .compileComponents();

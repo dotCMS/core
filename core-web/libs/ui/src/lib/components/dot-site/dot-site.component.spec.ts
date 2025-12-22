@@ -65,11 +65,7 @@ describe('DotSiteComponent', () => {
     const createComponent = createComponentFactory({
         component: DotSiteComponent,
         imports: [ReactiveFormsModule],
-        providers: [
-            mockProvider(DotSiteService),
-            provideHttpClient(),
-            provideHttpClientTesting()
-        ]
+        providers: [mockProvider(DotSiteService), provideHttpClient(), provideHttpClientTesting()]
     });
 
     beforeEach(() => {
@@ -214,7 +210,10 @@ describe('DotSiteComponent', () => {
         });
 
         it('should handle invalid lazy load events with NaN values', () => {
-            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: NaN, last: NaN } as SelectLazyLoadEvent);
+            spectator.triggerEventHandler(Select, 'onLazyLoad', {
+                first: NaN,
+                last: NaN
+            } as SelectLazyLoadEvent);
 
             expect(siteService.getSites).not.toHaveBeenCalled();
         });
@@ -362,7 +361,10 @@ describe('DotSiteComponent', () => {
             // where it was added but then the list was cleared/reloaded
             const currentSites = spectator.component.$state.sites();
             const sitesWithoutMissing = currentSites.filter((s) => s.identifier !== 'missing-site');
-            patchState(spectator.component.$state, { sites: sitesWithoutMissing, pinnedOption: null });
+            patchState(spectator.component.$state, {
+                sites: sitesWithoutMissing,
+                pinnedOption: null
+            });
 
             jest.clearAllMocks();
 
@@ -394,7 +396,9 @@ describe('DotSiteComponent', () => {
             tick(); // Allow overlay to render
 
             // Query document.body since overlay is appended there
-            const input = document.body.querySelector<HTMLInputElement>('input[type="text"][role="searchbox"]');
+            const input = document.body.querySelector<HTMLInputElement>(
+                'input[type="text"][role="searchbox"]'
+            );
             expect(input).toBeTruthy();
 
             // Set the value and trigger the actual DOM input event
@@ -485,7 +489,9 @@ describe('DotSiteComponent', () => {
             tick(); // Allow overlay to render
 
             // Query document.body since overlay is appended there
-            const input = document.body.querySelector<HTMLInputElement>('input[type="text"][role="searchbox"]');
+            const input = document.body.querySelector<HTMLInputElement>(
+                'input[type="text"][role="searchbox"]'
+            );
 
             expect(input.value).toBe('');
             expect(siteService.getSites).toHaveBeenCalledWith({
@@ -1019,9 +1025,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
     let hostSiteService: SpyObject<DotSiteService>;
 
     beforeEach(() => {
-        hostSpectator = createHost(
-            `<dot-site [formControl]="siteControl"></dot-site>`
-        );
+        hostSpectator = createHost(`<dot-site [formControl]="siteControl"></dot-site>`);
         hostComponent = hostSpectator.hostComponent;
         hostSiteService = hostSpectator.inject(DotSiteService, true);
 

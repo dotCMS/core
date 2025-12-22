@@ -9,11 +9,7 @@ import { By } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSiteService } from '@dotcms/data-access';
-import {
-    DotFieldValidationMessageComponent,
-    DotMessagePipe,
-    DotSiteComponent
-} from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
@@ -146,7 +142,6 @@ describe('DotContentTypeCopyDialogComponent', () => {
         expect(component.closeDialog).toHaveBeenCalledTimes(1);
         expect(component.cancelBtn.emit).toHaveBeenCalledWith(true);
     });
-
 
     it("shouldn't emit form values when accept button is clicked and form is invalid", () => {
         const copyButton: DebugElement = dialog.query(
